@@ -1,308 +1,308 @@
-# SPEC.md - FE09 Fine Management
+# SPEC.md - FE09 Quản lý tiền phạt
 
-# Version: 0.4.3
+# Phiên bản: 0.4.3
 
-# Status: APPROVED BASELINE 2026-07-17 - PHASE 2 EXIT COMPLETE
+# Trạng thái: APPROVED - MỐC CƠ SỞ 2026-07-17 - CỔNG THOÁT GIAI ĐOẠN 2 COMPLETE
 
-# Owner: Dung
+# Chủ sở hữu: Dung
 
-# Last Updated: 2026-07-21
+# Cập nhật lần cuối: 2026-07-21
 
-# Feature ID: FE09
+# ID tính năng: FE09
 
-# Feature folder: `.sdd/specs/feat-fine-management/`
+# Thư mục tính năng: `.sdd/specs/feat-fine-management/`
 
-> Current delivery status (2026-07-20): `COMPLETE` for the approved Phase 1 scope.
-> `TASKS.md` and `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`
-> are authoritative for current implementation state. Older `Not Started`,
-> `PARTIAL`, `READY FOR REVIEW`, or pending-review labels retained below are
-> historical planning/evidence snapshots, not the current delivery state.
+> Trạng thái bàn giao hiện tại (2026-07-20): `COMPLETE` cho phạm vi Giai đoạn 1 đã được phê duyệt.
+> `TASKS.md` và `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`
+> là nguồn chuẩn cho trạng thái triển khai hiện tại. Các nhãn cũ `Not Started`,
+> `PARTIAL`, `READY FOR REVIEW` hoặc đang chờ rà soát được giữ lại bên dưới chỉ là
+> ảnh chụp nhanh kế hoạch/bằng chứng lịch sử, không phải trạng thái bàn giao hiện tại.
 
-> Source of truth for FE09 Fine Management. Baseline v0.4.0 is approved after payment, resolution, pagination, timezone, and server-prototype boundaries were made deterministic.
-
----
-
-## 1. Feature Overview
-
-### 1.1 Feature Name
-
-Fine Management
-
-### 1.2 Business Context
-
-The library needs a traceable way to calculate and collect fines when books are returned late or violate library policy. Fines affect member trust, borrowing eligibility, staff workload, and reports.
-
-Fine Management must calculate fines consistently from borrowing data, record collection status, and avoid charging the same member twice for the same borrowing violation.
-
-### 1.3 Goal / Outcome
-
-The system shall:
-
-- Allow authorized users to view fine information.
-- Calculate overdue fines using approved policy.
-- Record fine collection.
-- Mark fines as paid when collection is complete.
-- Let librarian/admin manage the fine list UI with search/filter/detail and ascending fine ID ordering for traceable review.
-- Keep fine calculation traceable and testable.
-- Provide unpaid fine status for borrowing eligibility and reports.
-
-### 1.4 Scope Level
-
-- [x] Full Spec - core business logic, high risk, must be correct from the beginning
-- [ ] Standard Spec - normal feature with business rules and validations
-- [ ] Light Spec - simple UI, documentation, or low-risk feature
+> Nguồn chuẩn cho Quản lý tiền phạt FE09. Mốc cơ sở v0.4.0 được phê duyệt sau khi các ranh giới về thanh toán, giải quyết tiền phạt, phân trang, múi giờ và nguyên mẫu máy chủ đã được xác định tất định.
 
 ---
 
-## 2. Actors and Permissions
+## 1. Tổng quan về tính năng
 
-| Actor | Description | Permission / Responsibility |
+### 1.1 Tên tính năng
+
+Quản lý tiền phạt
+
+### 1.2 Bối cảnh nghiệp vụ
+
+Thư viện cần một phương thức có khả năng truy vết để tính và thu tiền phạt khi sách được trả muộn hoặc vi phạm chính sách thư viện. Tiền phạt ảnh hưởng đến niềm tin của Thành viên, điều kiện mượn sách, khối lượng công việc của nhân viên và báo cáo.
+
+Quản lý tiền phạt phải tính tiền phạt nhất quán từ dữ liệu mượn, ghi nhận trạng thái thu tiền và tránh tính phí hai lần cho cùng một Thành viên đối với cùng một vi phạm mượn sách.
+
+### 1.3 Mục tiêu / Kết quả
+
+Hệ thống sẽ:
+
+- Cho phép người dùng được cấp quyền xem thông tin tiền phạt.
+- Tính tiền phạt quá hạn theo chính sách đã phê duyệt.
+- Ghi nhận việc thu tiền phạt.
+- Đánh dấu tiền phạt là đã thanh toán khi việc thu tiền hoàn tất.
+- Cho phép Thủ thư/Quản trị viên quản lý giao diện danh sách tiền phạt với chức năng tìm kiếm/lọc/xem chi tiết và sắp xếp ID tiền phạt tăng dần để phục vụ truy vết.
+- Bảo đảm việc tính tiền phạt có thể truy vết và kiểm thử.
+- Cung cấp trạng thái tiền phạt chưa thanh toán cho việc đánh giá điều kiện mượn sách và lập báo cáo.
+
+### 1.4 Mức đặc tả
+
+- [x] Đặc tả đầy đủ - logic nghiệp vụ cốt lõi, rủi ro cao, phải đúng ngay từ đầu
+- [ ] Đặc tả tiêu chuẩn - chức năng thông thường có quy tắc nghiệp vụ và kiểm tra hợp lệ
+- [ ] Đặc tả rút gọn - giao diện đơn giản, tài liệu hoặc chức năng ít rủi ro
+
+---
+
+## 2. Tác nhân và quyền
+
+| Tác nhân | Mô tả | Quyền / Trách nhiệm |
 | ----- | ----------- | --------------------------- |
-| Member | Registered library user | View own fine information. |
-| Librarian | Library staff | View member fines, calculate/confirm fines, record collection, mark paid if allowed. |
-| Admin | System administrator | Has librarian permissions and may manage all fine records. |
-| Guest | Unauthenticated visitor | No fine access. |
-| Borrowing Feature | Internal feature | Provides due date, return date, and overdue data. |
-| Notification Feature | Internal feature | Sends fine/overdue notifications when requested. |
+| Thành viên | Người dùng thư viện đã đăng ký | Xem thông tin tiền phạt của chính mình. |
+| Thủ thư | Nhân viên thư viện | Xem tiền phạt của Thành viên, tính/xác nhận tiền phạt, ghi nhận việc thu tiền và đánh dấu đã thanh toán khi được phép. |
+| Quản trị viên | Quản trị viên hệ thống | Có quyền của Thủ thư và có thể quản lý mọi bản ghi tiền phạt. |
+| Khách | Khách truy cập chưa xác thực | Không có quyền truy cập tiền phạt. |
+| Chức năng mượn sách | Chức năng nội bộ | Cung cấp hạn trả, ngày trả và dữ liệu quá hạn. |
+| Chức năng thông báo | Chức năng nội bộ | Gửi thông báo tiền phạt/quá hạn khi được yêu cầu. |
 
 ---
 
-## 3. Preconditions
+## 3. Điều kiện tiên quyết
 
-The feature can only start when:
+Tính năng này chỉ có thể bắt đầu khi:
 
-- PRE-FE09-001: The member user exists.
-- PRE-FE09-002: The borrowing detail exists before a fine can reference it.
-- PRE-FE09-003: Due date exists for the borrowed item.
-- PRE-FE09-004: Fine policy values are approved: overdue rate, start date, and blocking rule.
-- PRE-FE09-005: Protected fine actions are performed by authenticated actors with correct roles.
-
----
-
-## 4. Main Flows
-
-### MF-FE09-001: View Fine Information
-
-1. Member opens own fine page, or librarian/admin opens a member's fine information.
-2. The system verifies actor permissions.
-3. The system retrieves fine records.
-4. The system displays amount, reason, status, and related borrowing detail; it displays payment timestamp and collection metadata when the record is `PAID`.
-5. The system does not expose another member's fine information to ordinary members.
-
-### MF-FE09-002: Calculate Fine
-
-1. FE07 or librarian/admin identifies a borrow detail that may be overdue.
-2. The system loads due date, return date or current server date, member, and existing fine records.
-3. The system calculates overdue days starting the day after due date.
-4. The system multiplies overdue days by the approved daily rate.
-5. If the calculated amount is greater than zero, the system creates an `UNPAID` fine when none exists. If an existing fine for the same borrow detail and reason is still `UNPAID`, the system updates its server-calculated `overdueDays`, `amount`, and `calculatedAt` instead of creating a duplicate. Terminal fines are returned unchanged.
-6. If the calculated amount is zero, the system creates no fine record.
-
-### MF-FE09-003: Record Fine Collection
-
-1. Librarian/admin opens an unpaid fine.
-2. Librarian/admin records one full offline collection using a required payment method and optional note; partial amounts are not accepted in Phase 1.
-3. The system validates actor permission and fine state.
-4. In one transaction, the system sets `PaidAmount = Amount`, `CollectedBy`, `PaymentMethod`, `PaidAt`, and `Status = PAID`.
-5. The system writes collection and audit metadata without exposing sensitive data.
-6. The system keeps the fine traceable.
-
-### MF-FE09-004: Mark Fine As Paid
-
-1. Librarian/admin selects an unpaid fine.
-2. The system verifies the fine exists and is payable.
-3. In one transaction, the system sets `PaidAmount = Amount`, `CollectedBy`, `PaymentMethod`, `PaidAt`, and `Status = PAID`.
-4. The system writes the paid-state audit log entry in the same transaction.
-
-### MF-FE09-005: Manage Fine List In Librarian UI
-
-1. Librarian opens Fine Management.
-2. The system lists fines with member, book, overdue days, amount, status, and related borrow detail.
-3. The list is always sorted by fine ID ascending for Phase 1 reconciliation.
-4. Librarian can search/filter and view detail without modifying the record.
-5. Paid/resolved fines remain visible for traceability.
-
-### MF-FE09-006: Resolve Fine Without Collection
-
-1. Admin selects an `UNPAID` fine that must be waived or cancelled.
-2. Admin supplies a trimmed reason of 1..500 characters.
-3. The system changes the fine to `WAIVED` or `CANCELLED` atomically with the audit record.
-4. The resolved fine remains visible and no longer blocks FE07 borrowing eligibility.
+- PRE-FE09-001: Người dùng là Thành viên tồn tại.
+- PRE-FE09-002: Chi tiết mượn tồn tại trước khi một khoản tiền phạt có thể tham chiếu tới nó.
+- PRE-FE09-003: Bản sao được mượn có hạn trả.
+- PRE-FE09-004: Các giá trị của chính sách tiền phạt đã được phê duyệt: mức phạt quá hạn, ngày bắt đầu tính và quy tắc chặn.
+- PRE-FE09-005: Các hành động tiền phạt được bảo vệ do tác nhân đã xác thực có đúng vai trò thực hiện.
 
 ---
 
-## 5. Alternative Flows
+## 4. Luồng chính
 
-### AF-FE09-001: Not Overdue
+### MF-FE09-001: Xem thông tin tiền phạt
 
-1. Fine calculation runs for a borrow detail.
-2. Return/current date is on or before due date.
-3. The system calculates zero overdue days.
-4. The system does not create an overdue fine.
+1. Thành viên mở trang tiền phạt của mình, hoặc Thủ thư/Quản trị viên mở thông tin tiền phạt của một Thành viên.
+2. Hệ thống xác minh quyền của tác nhân.
+3. Hệ thống truy xuất các bản ghi tiền phạt.
+4. Hệ thống hiển thị số tiền, lý do, trạng thái và chi tiết mượn liên quan; khi bản ghi là `PAID`, hệ thống hiển thị dấu thời gian thanh toán và siêu dữ liệu thu tiền.
+5. Hệ thống không làm lộ thông tin tiền phạt của Thành viên khác cho Thành viên thông thường.
 
-### AF-FE09-002: Fine Already Exists
+### MF-FE09-002: Tính tiền phạt
 
-1. Fine calculation runs for a borrow detail that already has an active overdue fine.
-2. The system detects existing fine.
-3. If the existing fine is `UNPAID`, the system recalculates and updates its server-derived amount, overdue days, and calculation timestamp under the same fine lock; if it is terminal, the system returns it unchanged.
+1. FE07 hoặc Thủ thư/Quản trị viên xác định chi tiết mượn có thể đã quá hạn.
+2. Hệ thống tải hạn trả, ngày trả hoặc ngày máy chủ hiện tại, Thành viên và các bản ghi tiền phạt hiện có.
+3. Hệ thống tính số ngày quá hạn bắt đầu từ ngày sau ngày đến hạn.
+4. Hệ thống nhân số ngày quá hạn với mức phạt hằng ngày đã phê duyệt.
+5. Nếu số tiền được tính lớn hơn không, hệ thống sẽ tạo khoản phạt `UNPAID` khi chưa có bản ghi. Nếu khoản phạt hiện có cho cùng chi tiết mượn và lý do vẫn là `UNPAID`, hệ thống sẽ cập nhật `overdueDays`, `amount` và `calculatedAt` do máy chủ tính thay vì tạo bản ghi trùng lặp. Các khoản phạt ở trạng thái cuối được trả về mà không thay đổi.
+6. Nếu số tiền được tính bằng không, hệ thống sẽ không tạo bản ghi phạt.
 
-### AF-FE09-003: Unauthorized Fine Update
+### MF-FE09-003: Ghi nhận việc thu tiền phạt
 
-1. Member attempts to mark a fine as paid or record collection.
-2. The system checks role permission.
-3. The system denies the action.
+1. Thủ thư/Quản trị viên mở một khoản tiền phạt chưa thanh toán.
+2. Thủ thư/Quản trị viên ghi nhận một lần thu đủ toàn bộ số tiền ngoại tuyến bằng phương thức thanh toán bắt buộc và ghi chú tùy chọn; Giai đoạn 1 không chấp nhận số tiền một phần.
+3. Hệ thống kiểm tra quyền của tác nhân và trạng thái tiền phạt.
+4. Trong một giao dịch, hệ thống đặt `PaidAmount = Amount`, `CollectedBy`, `PaymentMethod`, `PaidAt` và `Status = PAID`.
+5. Hệ thống ghi siêu dữ liệu thu tiền và kiểm toán mà không làm lộ dữ liệu nhạy cảm.
+6. Hệ thống duy trì khả năng truy vết của khoản tiền phạt.
 
-### AF-FE09-004: Paid Fine Updated Again
+### MF-FE09-004: Đánh dấu phạt là đã thanh toán
 
-1. Librarian/admin attempts to mark an already paid fine as paid again.
-2. The system rejects the request with `409 FINE_NOT_PAYABLE`.
-3. `PaidAt` and all payment metadata remain unchanged.
+1. Thủ thư/Quản trị viên chọn một khoản tiền phạt chưa thanh toán.
+2. Hệ thống xác minh khoản tiền phạt tồn tại và phải trả.
+3. Trong một giao dịch, hệ thống đặt `PaidAmount = Amount`, `CollectedBy`, `PaymentMethod`, `PaidAt` và `Status = PAID`.
+4. Hệ thống ghi mục nhật ký kiểm toán trạng thái đã thanh toán trong cùng giao dịch.
 
-### AF-FE09-005: Resolve Fine Without Collection
+### MF-FE09-005: Quản lý danh sách tiền phạt trong giao diện Thủ thư
 
-1. Admin attempts to waive or cancel an `UNPAID` fine without a valid reason.
-2. The system trims the reason; an empty result returns `REASON_REQUIRED`, and a result longer than 500 characters returns `REASON_TOO_LONG`.
-3. The fine and audit state remain unchanged.
+1. Thủ thư mở Quản lý tiền phạt.
+2. Hệ thống liệt kê các khoản tiền phạt cùng Thành viên, sách, số ngày quá hạn, số tiền, trạng thái và chi tiết mượn liên quan.
+3. Trong Giai đoạn 1, danh sách luôn được sắp xếp theo ID tiền phạt tăng dần để đối chiếu.
+4. Thủ thư có thể tìm kiếm/lọc và xem chi tiết mà không sửa đổi bản ghi.
+5. Các khoản tiền phạt đã thanh toán/giải quyết vẫn được hiển thị để truy vết.
 
----
+### MF-FE09-006: Giải quyết tiền phạt mà không thu tiền
 
-## 6. Business Rules
-
-Use these stable IDs for tasks and tests.
-
-- BR-FE09-001: Guests cannot view or manage fines.
-- BR-FE09-002: Members can view only their own fine information.
-- BR-FE09-003: Librarians/admins can view fine information for any member.
-- BR-FE09-004: Only librarians/admins may record fine collection or mark fines as paid.
-- BR-FE09-005: Overdue fine is 5,000 VND per overdue day per copy for Phase 1.
-- BR-FE09-006: Overdue days start the day after the due date.
-- BR-FE09-007: Fine calculation must use server-side date values and stored due/return dates.
-- BR-FE09-008: Fine amount must not be accepted directly from member/client input for calculation.
-- BR-FE09-009: A borrow detail must not have duplicate active overdue fines for the same reason; an existing `UNPAID` fine is recalculated in place, while terminal fine records are never reopened.
-- BR-FE09-010: Fine records must reference the related member and borrow detail.
-- BR-FE09-011: Unpaid fines must remain visible until they transition to `PAID`, `WAIVED`, or `CANCELLED`.
-- BR-FE09-012: Marking a fine as paid must set status `PAID` and record `PaidAt`.
-- BR-FE09-013: Paid fines must not block borrowing.
-- BR-FE09-014: Any `UNPAID` fine with amount greater than 0 blocks new borrowing and renewal according to approved FE07 policy.
-- BR-FE09-015: Fine calculation and payment state changes must be traceable.
-- BR-FE09-016: Online payment gateway is out of scope; FE09 records offline collection/payment status only.
-- BR-FE09-017: Phase 1 does not require an admin confirm/refuse payment step after librarian collection; a full offline collection by librarian/admin may directly resolve the fine as `PAID`.
-- BR-FE09-018: Fine lists must use stable ordering by fine ID ascending by default to support reconciliation and classroom review.
-- BR-FE09-019: Overdue-day calculation uses the current server business date in `Asia/Ho_Chi_Minh`.
-- BR-FE09-020: `GET /api/fines/me` is Member self-service and requires the account's single role to be `MEMBER`; Librarian/Admin use the staff fine workspace, Member cannot collect or resolve fines, and Admin-only waive/cancel authority remains unchanged.
+1. Quản trị viên chọn một khoản tiền phạt `UNPAID` cần được miễn hoặc hủy.
+2. Quản trị viên cung cấp lý do đã loại khoảng trắng đầu/cuối dài 1..500 ký tự.
+3. Hệ thống đổi khoản tiền phạt thành `WAIVED` hoặc `CANCELLED` theo cách nguyên tử cùng bản ghi kiểm toán.
+4. Khoản tiền phạt đã giải quyết vẫn được hiển thị và không còn chặn điều kiện mượn sách FE07.
 
 ---
 
-## 7. Functional Requirements
+## 5. Luồng thay thế
 
-- FR-FE09-001: When a member views fine information, the system shall return only that member's fine records.
-- FR-FE09-002: When a librarian/admin views fine information, the system shall allow lookup by member or fine status.
-- FR-FE09-003: When calculating overdue fine, the system shall compute overdue days from due date and return/current server date.
-- FR-FE09-004: If overdue days are zero or negative, then the system shall not create an overdue fine.
-- FR-FE09-005: When overdue days are positive, the system shall calculate amount using 5,000 VND per day per copy.
-- FR-FE09-006: If an `UNPAID` fine already exists for the same borrow detail and reason, then the system shall recalculate its server-derived amount, overdue days, and calculation timestamp in place without creating a duplicate; terminal fines remain unchanged.
-- FR-FE09-007: When a librarian/admin records fine collection, the system shall validate the fine and record collection information.
-- FR-FE09-008: When a librarian/admin marks a fine as paid, the system shall set status to `PAID` and record paid timestamp.
-- FR-FE09-009: If an unauthorized actor attempts fine collection or paid marking, then the system shall deny access.
-- FR-FE09-010: When fine status changes, the system shall make the new status available for FE07 and FE12.
-- FR-FE09-011: When displaying the librarian fine list, the system shall support search/filter and default to fine ID ascending order.
-- FR-FE09-012: When a librarian/admin records full offline collection for an unpaid fine, the system shall mark the fine `PAID`, set payment metadata supported by the schema, and expose the updated state to borrowing eligibility and reports.
-- FR-FE09-013: IF a client submits collection for a resolved fine, the system shall return `409 FINE_NOT_COLLECTIBLE` without collecting again or changing terminal metadata.
-- FR-FE09-014: When an admin waives an unpaid fine with a valid reason, the system shall set status `WAIVED` and write the audit record atomically.
-- FR-FE09-015: When an admin cancels an unpaid fine with a valid reason, the system shall set status `CANCELLED` and write the audit record atomically.
-- FR-FE09-016: IF a supplied fine-list page, limit, status, or user ID is invalid, the system shall reject the request without normalizing the value or querying fines.
-- FR-FE09-017: When calculating a fine, the system shall derive overdue days from the `Asia/Ho_Chi_Minh` business date and stored due/return dates.
-- FR-FE09-018: The Librarian/Admin fine workspace shall preserve the selected fine across list, calculation, collection, and paid-reconciliation steps. A newly calculated overdue fine shall become the selected `UNPAID` fine for collection, and payment steps shall reject entry unless an `UNPAID` fine is selected, including when that selected fine is outside the currently rendered server page.
-- FR-FE09-019: WHEN a single-role Member views “Tiền phạt của tôi”, the system shall return only that Member's fines with the related book, `borrowDetailId`, due date, return date, amount, reason, status, and paid timestamp; the frontend shall explain that positive `UNPAID` fines block FE07 borrowing/renewal, link to borrowing history for reconciliation, and remain read-only.
+### AF-FE09-001: Chưa quá hạn
 
----
+1. Quá trình tính tiền phạt chạy cho một chi tiết mượn.
+2. Ngày trả/ngày hiện tại trùng hoặc trước hạn trả.
+3. Hệ thống tính số ngày quá hạn bằng không.
+4. Hệ thống không tạo ra khoản phạt quá hạn.
 
-## 8. Acceptance Criteria
+### AF-FE09-002: Tiền phạt đã tồn tại
 
-- AC-FE09-001: Given a logged-in member, when the member views fines, then only that member's fines are returned.
-- AC-FE09-002: Given a librarian/admin, when viewing a member's fines, then the selected member's fines are returned.
-- AC-FE09-003: Given a borrow detail returned after due date, when fine is calculated, then amount equals overdue days times 5,000 VND.
-- AC-FE09-004: Given a borrow detail returned on or before due date, when fine is calculated, then no overdue fine is created.
-- AC-FE09-005: Given an existing `UNPAID` overdue fine for the same borrow detail, when calculation runs again, then the existing fine is recalculated in place without creating a duplicate; terminal fines are unchanged.
-- AC-FE09-006: Given an unpaid fine, when a librarian/admin records collection, then collection information is stored according to approved schema.
-- AC-FE09-007: Given an unpaid fine, when a librarian/admin marks it paid, then status becomes `PAID` and `PaidAt` is recorded.
-- AC-FE09-008: Given a member, when the member attempts to mark a fine paid, then access is denied.
-- AC-FE09-009: Given a paid fine, when borrowing eligibility checks unpaid fines, then the paid fine does not block borrowing.
-- AC-FE09-010: Given a member has any `UNPAID` fine with amount greater than 0, when FE07 checks borrowing or renewal eligibility, then the member is considered blocked.
-- AC-FE09-011: Given fines exist, when a librarian opens the fine list, then records are shown in fine ID ascending order by default and can be searched/filtered.
-- AC-FE09-012: Given an unpaid fine and full offline collection, when librarian/admin records the collection, then the fine becomes `PAID` and no longer blocks FE07 borrowing eligibility.
-- AC-FE09-013: Given an unpaid fine and a valid admin reason, when the admin waives the fine, then status becomes `WAIVED`, the fine remains visible, and an audit record is written atomically.
-- AC-FE09-014: Given an unpaid fine and a valid admin reason, when the admin cancels the fine, then status becomes `CANCELLED`, the fine remains visible, and an audit record is written atomically.
-- AC-FE09-015: Given a fine calculation at a timezone boundary, when the server business date is evaluated, then overdue days use `Asia/Ho_Chi_Minh` consistently.
-- AC-FE09-016: Given a Librarian/Admin calculates or selects an unpaid fine, when moving to collection or paid reconciliation, then the same fine ID, member, borrowing context, and amount remain selected; after success, the returned canonical `PAID` fine is shown and FE07/FE12 consume the resolved state.
-- AC-FE09-017: Given Guest, Librarian, Admin, and Member actors, when they access `/api/fines/me`, then Guest receives `401`, Librarian/Admin receive `403 ROLE_REQUIRED`, and only Member receives their own borrowing-linked fine records; Member sees no calculate, collect, paid, waive, or cancel action.
+1. Quá trình tính tiền phạt chạy cho một chi tiết mượn đã có khoản phạt quá hạn đang hoạt động.
+2. Hệ thống phát hiện khoản tiền phạt hiện có.
+3. Nếu khoản tiền phạt hiện có là `UNPAID`, hệ thống tính lại và cập nhật số tiền do máy chủ suy ra, số ngày quá hạn và dấu thời gian tính dưới cùng khóa tiền phạt; nếu khoản tiền phạt ở trạng thái cuối, hệ thống trả về mà không thay đổi.
+
+### AF-FE09-003: Cập nhật tiền phạt trái phép
+
+1. Thành viên cố đánh dấu khoản tiền phạt đã thanh toán hoặc ghi nhận việc thu tiền.
+2. Hệ thống kiểm tra quyền của vai trò.
+3. Hệ thống từ chối hành động.
+
+### AF-FE09-004: Cập nhật lại khoản tiền phạt đã thanh toán
+
+1. Thủ thư/Quản trị viên cố đánh dấu lại một khoản tiền phạt đã thanh toán là đã thanh toán.
+2. Hệ thống từ chối yêu cầu bằng `409 FINE_NOT_PAYABLE`.
+3. `PaidAt` và tất cả siêu dữ liệu thanh toán không thay đổi.
+
+### AF-FE09-005: Giải quyết tiền phạt mà không thu tiền
+
+1. Quản trị viên cố miễn hoặc hủy khoản tiền phạt `UNPAID` mà không có lý do hợp lệ.
+2. Hệ thống loại khoảng trắng đầu/cuối của lý do; kết quả rỗng trả về `REASON_REQUIRED`, còn kết quả dài hơn 500 ký tự trả về `REASON_TOO_LONG`.
+3. Trạng thái tiền phạt và kiểm toán giữ nguyên.
 
 ---
 
-## 9. Edge Cases and Error Handling
+## 6. Quy tắc nghiệp vụ
 
-| ID | Edge Case / Error | Expected System Behavior |
+Dùng các ID ổn định này cho nhiệm vụ và kiểm thử.
+
+- BR-FE09-001: Khách không thể xem hoặc quản lý tiền phạt.
+- BR-FE09-002: Thành viên chỉ có thể xem thông tin tiền phạt của chính mình.
+- BR-FE09-003: Thủ thư/Quản trị viên có thể xem thông tin tiền phạt của mọi Thành viên.
+- BR-FE09-004: Chỉ Thủ thư/Quản trị viên được ghi nhận việc thu tiền phạt hoặc đánh dấu tiền phạt đã thanh toán.
+- BR-FE09-005: Trong Giai đoạn 1, mức phạt quá hạn là 5,000 VND cho mỗi ngày quá hạn trên mỗi bản sao.
+- BR-FE09-006: Ngày quá hạn bắt đầu từ ngày sau ngày đến hạn.
+- BR-FE09-007: Việc tính tiền phạt phải dùng các giá trị ngày phía máy chủ và hạn trả/ngày trả đã lưu.
+- BR-FE09-008: Không được dùng trực tiếp số tiền phạt do Thành viên/máy khách cung cấp làm đầu vào tính toán.
+- BR-FE09-009: Một chi tiết mượn không được có các khoản phạt quá hạn đang hoạt động trùng lặp cho cùng một lý do; khoản tiền phạt `UNPAID` hiện có được tính lại tại chỗ, còn bản ghi tiền phạt ở trạng thái cuối không bao giờ được mở lại.
+- BR-FE09-010: Bản ghi tiền phạt phải tham chiếu Thành viên và chi tiết mượn liên quan.
+- BR-FE09-011: Tiền phạt chưa thanh toán phải tiếp tục được hiển thị cho đến khi chuyển sang `PAID`, `WAIVED` hoặc `CANCELLED`.
+- BR-FE09-012: Đánh dấu một khoản tiền phạt đã thanh toán phải thiết lập trạng thái `PAID` và ghi `PaidAt`.
+- BR-FE09-013: Tiền phạt đã thanh toán không được chặn mượn sách.
+- BR-FE09-014: Mọi khoản tiền phạt `UNPAID` có số tiền lớn hơn 0 phải chặn lượt mượn mới và gia hạn theo chính sách FE07 đã phê duyệt.
+- BR-FE09-015: Việc tính tiền phạt và các thay đổi trạng thái thanh toán phải có khả năng truy vết.
+- BR-FE09-016: Cổng thanh toán trực tuyến nằm ngoài phạm vi; FE09 chỉ ghi nhận việc thu tiền/trạng thái thanh toán ngoại tuyến.
+- BR-FE09-017: Giai đoạn 1 không yêu cầu bước Quản trị viên xác nhận/từ chối thanh toán sau khi Thủ thư thu tiền; một lần thu đủ toàn bộ số tiền ngoại tuyến do Thủ thư/Quản trị viên thực hiện có thể trực tiếp giải quyết khoản tiền phạt thành `PAID`.
+- BR-FE09-018: Theo mặc định, danh sách tiền phạt phải dùng thứ tự ổn định theo ID tiền phạt tăng dần để hỗ trợ đối chiếu và rà soát trên lớp.
+- BR-FE09-019: Việc tính số ngày quá hạn phải dùng ngày nghiệp vụ hiện tại của máy chủ theo `Asia/Ho_Chi_Minh`.
+- BR-FE09-020: `GET /api/fines/me` là chức năng tự phục vụ của Thành viên và yêu cầu vai trò duy nhất của tài khoản là `MEMBER`; Thủ thư/Quản trị viên dùng không gian làm việc tiền phạt dành cho nhân viên, Thành viên không thể thu hoặc giải quyết tiền phạt, và quyền miễn/hủy chỉ dành cho Quản trị viên vẫn giữ nguyên.
+
+---
+
+## 7. Yêu cầu chức năng
+
+- FR-FE09-001: Khi Thành viên xem thông tin tiền phạt, hệ thống phải chỉ trả về bản ghi tiền phạt của Thành viên đó.
+- FR-FE09-002: Khi Thủ thư/Quản trị viên xem thông tin tiền phạt, hệ thống phải cho phép tra cứu theo Thành viên hoặc trạng thái tiền phạt.
+- FR-FE09-003: Khi tính tiền phạt quá hạn, hệ thống phải tính số ngày quá hạn từ hạn trả và ngày trả/ngày máy chủ hiện tại.
+- FR-FE09-004: Nếu số ngày quá hạn bằng không hoặc âm thì hệ thống không được tạo khoản phạt quá hạn.
+- FR-FE09-005: Khi số ngày quá hạn dương, hệ thống phải tính số tiền theo mức 5,000 VND mỗi ngày trên mỗi bản sao.
+- FR-FE09-006: Nếu đã tồn tại khoản tiền phạt `UNPAID` cho cùng chi tiết mượn và lý do, hệ thống phải tính lại tại chỗ số tiền do máy chủ suy ra, số ngày quá hạn và dấu thời gian tính mà không tạo bản ghi trùng lặp; các khoản phạt ở trạng thái cuối phải giữ nguyên.
+- FR-FE09-007: Khi Thủ thư/Quản trị viên ghi nhận việc thu tiền phạt, hệ thống phải kiểm tra khoản tiền phạt và ghi thông tin thu tiền.
+- FR-FE09-008: Khi Thủ thư/Quản trị viên đánh dấu tiền phạt đã thanh toán, hệ thống phải thiết lập trạng thái `PAID` và ghi dấu thời gian thanh toán.
+- FR-FE09-009: Nếu tác nhân không được cấp quyền cố thu tiền phạt hoặc đánh dấu đã thanh toán, hệ thống phải từ chối truy cập.
+- FR-FE09-010: Khi trạng thái tiền phạt thay đổi, hệ thống phải cung cấp trạng thái mới cho FE07 và FE12.
+- FR-FE09-011: Khi hiển thị danh sách tiền phạt cho Thủ thư, hệ thống phải hỗ trợ tìm kiếm/lọc và mặc định sắp xếp theo ID tiền phạt tăng dần.
+- FR-FE09-012: Khi Thủ thư/Quản trị viên ghi nhận việc thu đủ toàn bộ số tiền ngoại tuyến cho một khoản tiền phạt chưa thanh toán, hệ thống phải chuyển khoản tiền phạt thành `PAID`, thiết lập siêu dữ liệu thanh toán được lược đồ hỗ trợ và cung cấp trạng thái cập nhật cho việc đánh giá điều kiện mượn sách và báo cáo.
+- FR-FE09-013: NẾU máy khách gửi yêu cầu thu tiền cho một khoản phạt đã giải quyết, hệ thống phải trả về `409 FINE_NOT_COLLECTIBLE` mà không thu lại hoặc thay đổi siêu dữ liệu ở trạng thái cuối.
+- FR-FE09-014: Khi Quản trị viên miễn khoản tiền phạt chưa thanh toán với lý do hợp lệ, hệ thống phải thiết lập trạng thái `WAIVED` và ghi bản ghi kiểm toán theo cách nguyên tử.
+- FR-FE09-015: Khi Quản trị viên hủy khoản tiền phạt chưa thanh toán với lý do hợp lệ, hệ thống phải thiết lập trạng thái `CANCELLED` và ghi bản ghi kiểm toán theo cách nguyên tử.
+- FR-FE09-016: NẾU trang, giới hạn, trạng thái hoặc ID người dùng được cung cấp cho danh sách tiền phạt không hợp lệ, hệ thống phải từ chối yêu cầu mà không chuẩn hóa giá trị hoặc truy vấn tiền phạt.
+- FR-FE09-017: Khi tính tiền phạt, hệ thống phải suy ra số ngày quá hạn từ ngày nghiệp vụ `Asia/Ho_Chi_Minh` và hạn trả/ngày trả đã lưu.
+- FR-FE09-018: Không gian làm việc tiền phạt của Thủ thư/Quản trị viên phải giữ khoản tiền phạt đã chọn xuyên suốt các bước liệt kê, tính toán, thu tiền và đối chiếu đã thanh toán. Khoản tiền phạt quá hạn mới được tính phải trở thành khoản `UNPAID` được chọn để thu, còn các bước thanh toán phải từ chối truy cập nếu chưa chọn khoản tiền phạt `UNPAID`, kể cả khi khoản đã chọn nằm ngoài trang máy chủ đang hiển thị.
+- FR-FE09-019: KHI Thành viên chỉ có một vai trò xem “Tiền phạt của tôi”, hệ thống phải chỉ trả về các khoản tiền phạt của Thành viên đó cùng sách liên quan, `borrowDetailId`, hạn trả, ngày trả, số tiền, lý do, trạng thái và dấu thời gian thanh toán; giao diện phải giải thích rằng khoản tiền phạt `UNPAID` có số tiền dương sẽ chặn việc mượn/gia hạn FE07, liên kết tới lịch sử mượn để đối chiếu và giữ ở chế độ chỉ đọc.
+
+---
+
+## 8. Tiêu chí chấp nhận
+
+- AC-FE09-001: Với Thành viên đã đăng nhập, khi Thành viên xem tiền phạt, hệ thống phải chỉ trả về tiền phạt của Thành viên đó.
+- AC-FE09-002: Với Thủ thư/Quản trị viên, khi xem tiền phạt của một Thành viên, hệ thống phải trả về tiền phạt của Thành viên đã chọn.
+- AC-FE09-003: Với một chi tiết mượn được trả sau hạn, khi tính tiền phạt, số tiền phải bằng số ngày quá hạn nhân với 5,000 VND.
+- AC-FE09-004: Với một chi tiết mượn được trả vào hoặc trước hạn trả, khi tính tiền phạt, hệ thống phải không tạo khoản phạt quá hạn.
+- AC-FE09-005: Với một khoản phạt quá hạn `UNPAID` hiện có cho cùng chi tiết mượn, khi tính lại, khoản tiền phạt hiện có phải được tính lại tại chỗ mà không tạo bản ghi trùng lặp; khoản phạt ở trạng thái cuối phải giữ nguyên.
+- AC-FE09-006: Với khoản tiền phạt chưa thanh toán, khi Thủ thư/Quản trị viên ghi nhận việc thu tiền, thông tin thu tiền phải được lưu theo lược đồ đã phê duyệt.
+- AC-FE09-007: Với khoản tiền phạt chưa thanh toán, khi Thủ thư/Quản trị viên đánh dấu đã thanh toán, trạng thái phải chuyển thành `PAID` và `PaidAt` phải được ghi.
+- AC-FE09-008: Với một Thành viên, khi Thành viên cố đánh dấu khoản tiền phạt đã thanh toán, hệ thống phải từ chối truy cập.
+- AC-FE09-009: Với khoản tiền phạt đã thanh toán, khi quy trình đánh giá điều kiện mượn kiểm tra tiền phạt chưa thanh toán, khoản tiền phạt đã thanh toán không được chặn mượn sách.
+- AC-FE09-010: Với một Thành viên có bất kỳ khoản tiền phạt `UNPAID` nào có số tiền lớn hơn 0, khi FE07 kiểm tra điều kiện mượn hoặc gia hạn, Thành viên phải được xem là bị chặn.
+- AC-FE09-011: Với các khoản tiền phạt hiện có, khi Thủ thư mở danh sách tiền phạt, theo mặc định các bản ghi phải được hiển thị theo ID tiền phạt tăng dần và có thể tìm kiếm/lọc.
+- AC-FE09-012: Với khoản tiền phạt chưa thanh toán và một lần thu đủ toàn bộ số tiền ngoại tuyến, khi Thủ thư/Quản trị viên ghi nhận việc thu tiền, khoản tiền phạt phải chuyển thành `PAID` và không còn chặn điều kiện mượn sách FE07.
+- AC-FE09-013: Với khoản tiền phạt chưa thanh toán và lý do hợp lệ của Quản trị viên, khi Quản trị viên miễn tiền phạt, trạng thái phải chuyển thành `WAIVED`, khoản tiền phạt phải tiếp tục hiển thị và bản ghi kiểm toán phải được ghi nguyên tử.
+- AC-FE09-014: Với khoản tiền phạt chưa thanh toán và lý do hợp lệ của Quản trị viên, khi Quản trị viên hủy tiền phạt, trạng thái phải chuyển thành `CANCELLED`, khoản tiền phạt phải tiếp tục hiển thị và bản ghi kiểm toán phải được ghi nguyên tử.
+- AC-FE09-015: Với phép tính tiền phạt tại ranh giới múi giờ, khi đánh giá ngày nghiệp vụ của máy chủ, số ngày quá hạn phải dùng `Asia/Ho_Chi_Minh` một cách nhất quán.
+- AC-FE09-016: Với Thủ thư/Quản trị viên tính hoặc chọn một khoản tiền phạt chưa thanh toán, khi chuyển sang thu tiền hoặc đối chiếu đã thanh toán, cùng ID tiền phạt, Thành viên, bối cảnh mượn và số tiền phải tiếp tục được chọn; sau khi thành công, hệ thống phải hiển thị khoản phạt chuẩn `PAID` được trả về và FE07/FE12 phải sử dụng trạng thái đã giải quyết.
+- AC-FE09-017: Với các tác nhân Khách, Thủ thư, Quản trị viên và Thành viên, khi truy cập `/api/fines/me`, Khách phải nhận `401`, Thủ thư/Quản trị viên phải nhận `403 ROLE_REQUIRED`, và chỉ Thành viên được nhận bản ghi tiền phạt liên kết với lượt mượn của chính mình; Thành viên không được thấy hành động tính, thu tiền, đánh dấu đã thanh toán, miễn hoặc hủy.
+
+---
+
+## 9. Trường hợp biên và xử lý lỗi
+
+| ID | Trường hợp biên / Lỗi | Hành vi hệ thống dự kiến |
 | -- | ----------------- | ------------------------ |
-| EC-FE09-001 | Member ID does not exist | Return not found. |
-| EC-FE09-002 | Borrow detail does not exist | Reject fine calculation. |
-| EC-FE09-003 | Borrow detail has no due date | Reject calculation as incomplete borrowing data. |
-| EC-FE09-004 | Return date before due date | Calculate zero overdue fine. |
-| EC-FE09-005 | Return date missing for active borrowed item | Use current `Asia/Ho_Chi_Minh` server business date. |
-| EC-FE09-006 | Duplicate fine calculation request | Recalculate an existing `UNPAID` fine in place under a database lock; do not create a duplicate. Return terminal fines unchanged. |
-| EC-FE09-007 | Fine amount would be negative | Treat as zero and do not create overdue fine. |
-| EC-FE09-008 | Unauthorized actor marks paid | Return forbidden response. |
-| EC-FE09-009 | Fine already paid | `PATCH /paid` returns `409 FINE_NOT_PAYABLE`; `POST /collections` returns `409 FINE_NOT_COLLECTIBLE`; payment metadata remains unchanged. |
-| EC-FE09-010 | Database update partially fails | Roll back fine status/payment/audit changes. |
-| EC-FE09-011 | Collection attempted on resolved fine | Return `409 FINE_NOT_COLLECTIBLE`; do not double-collect or change terminal metadata. |
-| EC-FE09-012 | Waive/cancel reason missing or over 500 characters | Return validation error and preserve fine/audit state. |
-| EC-FE09-013 | Fine-list query contains invalid page/limit/status/user ID | Return validation error before repository query. |
-| EC-FE09-014 | Business date crosses UTC/local-day boundary | Use `Asia/Ho_Chi_Minh` date only. |
+| EC-FE09-001 | ID Thành viên không tồn tại | Trả về lỗi không tìm thấy. |
+| EC-FE09-002 | Chi tiết mượn không tồn tại | Từ chối tính tiền phạt. |
+| EC-FE09-003 | Chi tiết mượn không có hạn trả | Từ chối tính vì dữ liệu mượn chưa đầy đủ. |
+| EC-FE09-004 | Ngày trả trước hạn trả | Tính số tiền phạt quá hạn bằng không. |
+| EC-FE09-005 | Thiếu ngày trả cho bản sao đang được mượn | Dùng ngày nghiệp vụ hiện tại của máy chủ theo `Asia/Ho_Chi_Minh`. |
+| EC-FE09-006 | Yêu cầu tính tiền phạt trùng lặp | Tính lại khoản phạt `UNPAID` hiện có tại chỗ dưới khóa cơ sở dữ liệu; không tạo bản ghi trùng lặp. Trả về các khoản phạt ở trạng thái cuối mà không thay đổi. |
+| EC-FE09-007 | Số tiền phạt có thể âm | Xem như bằng không và không tạo khoản phạt quá hạn. |
+| EC-FE09-008 | Tác nhân không được cấp quyền đánh dấu đã thanh toán | Trả về phản hồi bị cấm. |
+| EC-FE09-009 | Tiền phạt đã thanh toán | `PATCH /paid` trả về `409 FINE_NOT_PAYABLE`; `POST /collections` trả về `409 FINE_NOT_COLLECTIBLE`; siêu dữ liệu thanh toán giữ nguyên. |
+| EC-FE09-010 | Cập nhật cơ sở dữ liệu thất bại một phần | Hoàn tác các thay đổi trạng thái tiền phạt/thanh toán/kiểm toán. |
+| EC-FE09-011 | Cố thu tiền cho khoản phạt đã giải quyết | Trả về `409 FINE_NOT_COLLECTIBLE`; không thu hai lần hoặc thay đổi siêu dữ liệu ở trạng thái cuối. |
+| EC-FE09-012 | Thiếu lý do miễn/hủy hoặc lý do dài hơn 500 ký tự | Trả về lỗi kiểm tra hợp lệ và giữ nguyên trạng thái tiền phạt/kiểm toán. |
+| EC-FE09-013 | Truy vấn danh sách tiền phạt chứa trang/giới hạn/trạng thái/ID người dùng không hợp lệ | Trả về lỗi kiểm tra hợp lệ trước khi truy vấn tầng kho lưu trữ. |
+| EC-FE09-014 | Ngày nghiệp vụ vượt ranh giới ngày UTC/cục bộ | Chỉ dùng ngày `Asia/Ho_Chi_Minh`. |
 
 ---
 
-## 10. Data Requirements
+## 10. Yêu cầu về dữ liệu
 
-### 10.1 Entities Involved
+### 10.1 Các thực thể có liên quan
 
-| Entity | Purpose in this feature |
+| Thực thể | Mục đích trong tính năng này |
 | ------ | ----------------------- |
-| Users | Identifies member and staff actors. |
-| UserRoles | Checks fine management permission. |
-| BorrowRequests | Provides member relationship for borrowing records. |
-| BorrowDetails | Provides due date, return date, and copy relationship. |
-| BookCopies | Provides copy reference/status for fine context. |
-| Fines | Stores fine amount, reason, status, and payment timestamp. |
-| AuditLogs | Records fine calculation, collection, paid, waive, and cancel actions. |
+| Users | Xác định tác nhân là Thành viên và nhân viên. |
+| UserRoles | Kiểm tra quyền quản lý tiền phạt. |
+| BorrowRequests | Cung cấp quan hệ Thành viên cho các bản ghi mượn. |
+| BorrowDetails | Cung cấp hạn trả, ngày trả và quan hệ với bản sao. |
+| BookCopies | Cung cấp tham chiếu/trạng thái bản sao cho ngữ cảnh tiền phạt. |
+| Fines | Lưu số tiền phạt, lý do, trạng thái và dấu thời gian thanh toán. |
+| AuditLogs | Ghi các hành động tính, thu tiền, đánh dấu đã thanh toán, miễn và hủy. |
 
-### 10.2 Data Fields
+### 10.2 Trường dữ liệu
 
-| Field | Type | Required | Validation / Notes |
+| Trường | Kiểu | Bắt buộc | Kiểm tra hợp lệ / Ghi chú |
 | ----- | ---- | -------- | ------------------ |
-| fineId | integer | Yes for updates | Must exist in `Fines`. |
-| userId | integer | Yes | Must reference member user. |
-| borrowDetailId | integer | Yes | Must reference related borrow detail. |
-| bookTitle | string | Read projection | FE05 title joined through FE07 copy context. |
-| dueDate | date | Read projection | Canonical FE07 due date used for Member/staff reconciliation. |
-| returnDate | date/null | Read projection | Canonical FE07 return date; null while not returned. |
-| borrowStatus | string | Read projection | Canonical `BorrowDetails.Status`; FE09 does not mutate it. |
-| overdueDays | integer | Yes | Server-calculated non-negative number of overdue business days. |
-| ratePerDay | decimal | Yes | Server-controlled Phase 1 rate: 5,000 VND. |
-| amount | decimal | Yes | Server-calculated; strictly greater than 0 for persisted fine rows. |
-| reason | string | Yes | Phase 1 value is `OVERDUE`; lost/damaged fines are out of scope. |
-| status | string | Yes | Values: `UNPAID`, `PAID`, `WAIVED`, `CANCELLED`. |
-| paidAmount | decimal | Yes | Schema field `PaidAmount`; `0` while `UNPAID`, `WAIVED`, or `CANCELLED`, and exactly `Amount` when `PAID`. Partial payment is not accepted. |
-| paidAt | datetime | Required when paid | Set by server when marked paid; null for `UNPAID`, `WAIVED`, and `CANCELLED`. |
-| calculatedAt | datetime | Yes | Server calculation timestamp. |
-| createdBy | integer | Required on calculation | Staff actor who triggered manual calculation. |
-| collectedBy | integer | Required when paid | Staff actor who recorded full offline collection or reconciliation. |
-| paymentMethod | string | Required when paid | Schema field `PaymentMethod`; trimmed and validated at 1..50 characters. Null for `UNPAID`, `WAIVED`, and `CANCELLED`. |
-| collectionNote | string | Not persisted | Optional note is stored only in audit metadata, not in `Fines`. |
+| fineId | integer | Có khi cập nhật | Phải tồn tại trong `Fines`. |
+| userId | integer | Có | Phải tham chiếu người dùng là Thành viên. |
+| borrowDetailId | integer | Có | Phải tham chiếu chi tiết mượn liên quan. |
+| bookTitle | string | Phép chiếu đọc | Tiêu đề FE05 được liên kết qua ngữ cảnh bản sao FE07. |
+| dueDate | date | Phép chiếu đọc | Hạn trả chuẩn của FE07 dùng để Thành viên/nhân viên đối chiếu. |
+| returnDate | date/null | Phép chiếu đọc | Ngày trả chuẩn của FE07; là null khi chưa trả. |
+| borrowStatus | string | Phép chiếu đọc | Giá trị chuẩn `BorrowDetails.Status`; FE09 không thay đổi trường này. |
+| overdueDays | integer | Có | Số ngày nghiệp vụ quá hạn không âm do máy chủ tính. |
+| ratePerDay | decimal | Có | Mức phạt Giai đoạn 1 do máy chủ kiểm soát: 5,000 VND. |
+| amount | decimal | Có | Do máy chủ tính; lớn hơn 0 đối với mọi bản ghi tiền phạt được lưu bền. |
+| reason | string | Có | Giá trị Giai đoạn 1 là `OVERDUE`; tiền phạt do mất/hỏng nằm ngoài phạm vi. |
+| status | string | Có | Các giá trị: `UNPAID`, `PAID`, `WAIVED`, `CANCELLED`. |
+| paidAmount | decimal | Có | Trường lược đồ `PaidAmount`; bằng `0` khi là `UNPAID`, `WAIVED` hoặc `CANCELLED`, và chính xác bằng `Amount` khi là `PAID`. Không chấp nhận thanh toán một phần. |
+| paidAt | datetime | Bắt buộc khi đã thanh toán | Do máy chủ thiết lập khi đánh dấu đã thanh toán; là null đối với `UNPAID`, `WAIVED` và `CANCELLED`. |
+| calculatedAt | datetime | Có | Dấu thời gian máy chủ tính tiền phạt. |
+| createdBy | integer | Bắt buộc khi tính | Tác nhân nhân viên kích hoạt phép tính thủ công. |
+| collectedBy | integer | Bắt buộc khi đã thanh toán | Tác nhân nhân viên ghi nhận việc thu đủ toàn bộ số tiền ngoại tuyến hoặc đối chiếu. |
+| paymentMethod | string | Bắt buộc khi đã thanh toán | Trường lược đồ `PaymentMethod`; được loại khoảng trắng đầu/cuối và kiểm tra trong giới hạn 1..50 ký tự. Là null đối với `UNPAID`, `WAIVED` và `CANCELLED`. |
+| collectionNote | string | Không lưu bền | Ghi chú tùy chọn chỉ được lưu trong siêu dữ liệu kiểm toán, không nằm trong `Fines`. |
 
-### 10.3 State Model & Transition Rules (Fine)
+### 10.3 Mô hình trạng thái và quy tắc chuyển đổi (Tiền phạt)
 
-This subsection formalizes the lifecycle of `Fine.status`. The state set is `UNPAID`, `PAID`, `WAIVED`, and `CANCELLED`. Phase 1 has no partial payment, so a full offline collection sets `PaidAmount = Amount` and moves an `UNPAID` fine directly to `PAID`. `amount` and `overdueDays` may be recalculated while a fine is `UNPAID`, but are immutable after a terminal transition.
+Tiểu mục này chính thức hóa vòng đời của `Fine.status`. Tập trạng thái gồm `UNPAID`, `PAID`, `WAIVED` và `CANCELLED`. Giai đoạn 1 không có thanh toán một phần, vì vậy một lần thu đủ toàn bộ số tiền ngoại tuyến sẽ thiết lập `PaidAmount = Amount` và chuyển trực tiếp khoản tiền phạt từ `UNPAID` sang `PAID`. `amount` và `overdueDays` có thể được tính lại khi khoản tiền phạt là `UNPAID`, nhưng trở thành bất biến sau khi chuyển sang trạng thái cuối.
 
-#### a) State Diagram
+#### a) Sơ đồ trạng thái
 
 ```mermaid
 stateDiagram-v2
@@ -315,235 +315,235 @@ stateDiagram-v2
     CANCELLED --> [*]
 ```
 
-Note: when calculated overdue days are zero or negative, **no fine record is created** (FR-FE09-004, AF-FE09-001, EC-FE09-004/007); the lifecycle starts only when `amount > 0`.
+Lưu ý: khi số ngày quá hạn được tính bằng không hoặc âm, **không có bản ghi phạt nào được tạo** (FR-FE09-004, AF-FE09-001, EC-FE09-004/007); vòng đời chỉ bắt đầu khi `amount > 0`.
 
-#### b) State Descriptions
+#### b) Mô tả trạng thái
 
-| State | Description |
+| Trạng thái | Mô tả |
 | ----- | ----------- |
-| `UNPAID` | A fine has been created with `amount > 0` and is awaiting collection. Blocks new borrowing/renewal in FE07 (BR-FE09-014). This is the only entry state. |
-| `PAID` | Full amount has been collected; `PaidAt` is recorded. Terminal state. Does not block borrowing (BR-FE09-013). |
-| `WAIVED` | Admin forgave the fine with a required reason and audit log (Q-FE09-005). Terminal state. No collection expected. |
-| `CANCELLED` | Fine was cancelled/voided by admin with a required reason and audit log (e.g. created in error). Terminal state. |
+| `UNPAID` | Khoản tiền phạt đã được tạo với `amount > 0` và đang chờ thu. Chặn lượt mượn/gia hạn mới trong FE07 (BR-FE09-014). Đây là trạng thái đầu vào duy nhất. |
+| `PAID` | Toàn bộ số tiền đã được thu; `PaidAt` được ghi. Đây là trạng thái cuối và không chặn mượn sách (BR-FE09-013). |
+| `WAIVED` | Quản trị viên đã miễn tiền phạt với lý do bắt buộc và nhật ký kiểm toán (Q-FE09-005). Đây là trạng thái cuối; không dự kiến thu tiền. |
+| `CANCELLED` | Quản trị viên đã hủy/vô hiệu hóa khoản tiền phạt với lý do bắt buộc và nhật ký kiểm toán (ví dụ: khoản phạt được tạo nhầm). Đây là trạng thái cuối. |
 
-#### c) Valid Transitions
+#### c) Chuyển đổi hợp lệ
 
-| From | To | Trigger | Condition | Related FR/BR/AF/EC |
+| Từ | Đến | Tác nhân kích hoạt | Điều kiện | FR/BR/AF/EC liên quan |
 | ---- | -- | ------- | --------- | ------------------- |
-| `[*]` | `UNPAID` | Fine calculated (on return or manual run) | Overdue days > 0 and computed `amount > 0`; no existing active fine for same borrow detail + reason | MF-FE09-002, FR-FE09-005, FR-FE09-006, BR-FE09-005, BR-FE09-006, BR-FE09-009 |
-| `UNPAID` | `PAID` | Librarian/admin marks fine paid | Actor is librarian/admin; fine exists and is `UNPAID`; full amount collected; sets `PaidAt` | MF-FE09-004, FR-FE09-008, BR-FE09-004, BR-FE09-012 |
-| `UNPAID` | `WAIVED` | Admin waives fine | Actor is admin; required reason provided; audit log written | Q-FE09-005, BR-FE09-011, BR-FE09-015 |
-| `UNPAID` | `CANCELLED` | Admin cancels/voids fine | Actor is admin; required reason provided; audit log written | Q-FE09-005, BR-FE09-011, BR-FE09-015 |
+| `[*]` | `UNPAID` | Tính tiền phạt (khi trả sách hoặc chạy thủ công) | Số ngày quá hạn > 0 và `amount > 0` được tính; không có khoản phạt đang hoạt động cho cùng chi tiết mượn + lý do | MF-FE09-002, FR-FE09-005, FR-FE09-006, BR-FE09-005, BR-FE09-006, BR-FE09-009 |
+| `UNPAID` | `PAID` | Thủ thư/Quản trị viên đánh dấu tiền phạt đã thanh toán | Tác nhân là Thủ thư/Quản trị viên; khoản tiền phạt tồn tại và là `UNPAID`; đã thu đủ toàn bộ số tiền; thiết lập `PaidAt` | MF-FE09-004, FR-FE09-008, BR-FE09-004, BR-FE09-012 |
+| `UNPAID` | `WAIVED` | Quản trị viên miễn tiền phạt | Tác nhân là Quản trị viên; đã cung cấp lý do bắt buộc; đã ghi nhật ký kiểm toán | Q-FE09-005, BR-FE09-011, BR-FE09-015 |
+| `UNPAID` | `CANCELLED` | Quản trị viên hủy/vô hiệu hóa tiền phạt | Tác nhân là Quản trị viên; đã cung cấp lý do bắt buộc; đã ghi nhật ký kiểm toán | Q-FE09-005, BR-FE09-011, BR-FE09-015 |
 
-#### d) Invalid Transitions (explicitly forbidden)
+#### d) Chuyển đổi không hợp lệ (bị cấm rõ ràng)
 
-| Forbidden | Reason | Related |
+| Bị cấm | Lý do | Liên quan |
 | --------- | ------ | ------- |
-| `PAID` → `UNPAID` | A collected fine must not be reverted to unpaid; terminal state. | BR-FE09-012, AF-FE09-004 |
-| `WAIVED` / `CANCELLED` → any state | Terminal states cannot be reactivated. | Q-FE09-005, BR-FE09-011 |
-| `PAID` → `PAID` (re-collect) | No collection or paid action on a fine already `PAID`; collection returns `409 FINE_NOT_COLLECTIBLE` and paid reconciliation returns `409 FINE_NOT_PAYABLE`. `PaidAt` and payment metadata are not overwritten. | AF-FE09-004, EC-FE09-009, FR-FE09-008 |
-| Any collection on `PAID` / `WAIVED` / `CANCELLED` | No money may be collected against a resolved fine. | BR-FE09-004, NFR-FE09-TXN-002 |
-| Change `amount` after creation | An existing `UNPAID` fine may be recalculated from stored dates; `PAID`, `WAIVED`, and `CANCELLED` fines cannot be reopened or changed. | BR-FE09-008, BR-FE09-009, AF-FE09-002, EC-FE09-006 |
-| Direct `[*]` → `PAID` / `WAIVED` / `CANCELLED` | A fine must first exist as `UNPAID`; it cannot be born resolved. | MF-FE09-002 |
+| `PAID` → `UNPAID` | Khoản tiền phạt đã thu không được hoàn nguyên thành chưa thanh toán; đây là trạng thái cuối. | BR-FE09-012, AF-FE09-004 |
+| `WAIVED` / `CANCELLED` → bất kỳ trạng thái nào | Các trạng thái cuối không thể được kích hoạt lại. | Q-FE09-005, BR-FE09-011 |
+| `PAID` → `PAID` (thu lại) | Không được thu hoặc đánh dấu đã thanh toán lại khoản tiền phạt đã là `PAID`; thao tác thu trả về `409 FINE_NOT_COLLECTIBLE`, còn đối chiếu đã thanh toán trả về `409 FINE_NOT_PAYABLE`. `PaidAt` và siêu dữ liệu thanh toán không bị ghi đè. | AF-FE09-004, EC-FE09-009, FR-FE09-008 |
+| Mọi thao tác thu tiền trên `PAID` / `WAIVED` / `CANCELLED` | Không được thu tiền đối với khoản tiền phạt đã giải quyết. | BR-FE09-004, NFR-FE09-TXN-002 |
+| Thay đổi `amount` sau khi tạo | Khoản tiền phạt `UNPAID` hiện có có thể được tính lại từ các ngày đã lưu; các khoản tiền phạt `PAID`, `WAIVED` và `CANCELLED` không thể được mở lại hoặc thay đổi. | BR-FE09-008, BR-FE09-009, AF-FE09-002, EC-FE09-006 |
+| Trực tiếp `[*]` → `PAID` / `WAIVED` / `CANCELLED` | Khoản tiền phạt trước tiên phải tồn tại dưới dạng `UNPAID`; không thể được tạo ra ngay ở trạng thái đã giải quyết. | MF-FE09-002 |
 
-#### e) Invariants
+#### e) Bất biến
 
-- INV-1: A fine always has exactly one `status` from {`UNPAID`, `PAID`, `WAIVED`, `CANCELLED`} at any time.
-- INV-2: `amount > 0` for any persisted fine; if computed overdue amount is ≤ 0, no fine is created (FR-FE09-004, EC-FE09-007).
-- INV-3: `amount`, `overdueDays`, and `calculatedAt` may change only while `status = UNPAID`; all three are immutable after a terminal transition.
-- INV-4: `PaidAmount = 0`, `PaidAt = null`, `CollectedBy = null`, and `PaymentMethod = null` while `status` is `UNPAID`, `WAIVED`, or `CANCELLED`; `PAID` requires `PaidAmount = Amount`, `PaidAt`, `CollectedBy`, and `PaymentMethod`.
-- INV-5: `status = PAID` **if and only if** `PaidAmount = Amount` and `PaidAt` is set (no partial-paid state in Phase 1, per Q-FE09-003).
-- INV-6: A fine in `PAID`, `WAIVED`, or `CANCELLED` is terminal and accepts no further state change or collection.
-- INV-7: Only `UNPAID` fines with `amount > 0` block borrowing/renewal in FE07 (BR-FE09-013, BR-FE09-014).
-- INV-8: Every state transition (calculate, collect, mark paid, waive, cancel) is traceable via audit log; idempotent retries must not produce duplicate active fines or double-collect (BR-FE09-009, BR-FE09-015, NFR-FE09-TXN-001, NFR-FE09-TXN-002, EC-FE09-006).
+- INV-1: Một khoản tiền phạt luôn có đúng một `status` trong {`UNPAID`, `PAID`, `WAIVED`, `CANCELLED`} tại mọi thời điểm.
+- INV-2: `amount > 0` đối với mọi khoản tiền phạt được lưu bền; nếu số tiền quá hạn được tính là ≤ 0 thì không tạo khoản tiền phạt (FR-FE09-004, EC-FE09-007).
+- INV-3: `amount`, `overdueDays` và `calculatedAt` chỉ được thay đổi khi `status = UNPAID`; cả ba trở thành bất biến sau khi chuyển sang trạng thái cuối.
+- INV-4: `PaidAmount = 0`, `PaidAt = null`, `CollectedBy = null` và `PaymentMethod = null` trong khi `status` là `UNPAID`, `WAIVED` hoặc `CANCELLED`; `PAID` yêu cầu `PaidAmount = Amount`, `PaidAt`, `CollectedBy` và `PaymentMethod`.
+- INV-5: `status = PAID` **khi và chỉ khi** `PaidAmount = Amount` và `PaidAt` đã được thiết lập (Giai đoạn 1 không có trạng thái thanh toán một phần, theo Q-FE09-003).
+- INV-6: Khoản tiền phạt ở `PAID`, `WAIVED` hoặc `CANCELLED` là trạng thái cuối và không chấp nhận thay đổi trạng thái hoặc thu thêm tiền.
+- INV-7: Chỉ khoản tiền phạt `UNPAID` có `amount > 0` mới chặn mượn/gia hạn trong FE07 (BR-FE09-013, BR-FE09-014).
+- INV-8: Mọi chuyển đổi trạng thái (tính, thu tiền, đánh dấu đã thanh toán, miễn, hủy) phải có khả năng truy vết qua nhật ký kiểm toán; các lần thử lại có tính lũy đẳng không được tạo khoản phạt đang hoạt động trùng lặp hoặc thu hai lần (BR-FE09-009, BR-FE09-015, NFR-FE09-TXN-001, NFR-FE09-TXN-002, EC-FE09-006).
 
 ---
 
-## 11. API / Interface Contract
+## 11. API / Hợp đồng giao diện
 
-> The endpoints and request/response shapes below are the canonical Phase 1 contract for this feature.
+> Các điểm cuối và cấu trúc yêu cầu/phản hồi dưới đây là hợp đồng chuẩn của Giai đoạn 1 cho chức năng này.
 
-| Method | Endpoint | Actor | Request | Response | Notes |
+| Phương thức | Điểm cuối | Tác nhân | Yêu cầu | Phản hồi | Ghi chú |
 | ------ | -------- | ----- | ------- | -------- | ----- |
-| GET | `/api/fines/me` | Member only | Query: `status?, page?, limit?` | Own fines with book and borrowing dates | Defaults `page = 1`, `limit = 20`; single-role Member sees own fines only; Librarian/Admin receive `403 ROLE_REQUIRED`. |
-| GET | `/api/fines` | Librarian/Admin | Query: `q?, userId?, status?, page?, limit?` | Fine list | Defaults `page = 1`, `limit = 20`; fixed order is `FineId ASC`. |
-| GET | `/api/fines/{fineId}` | Owner or Librarian/Admin | - | Fine detail | Owner can view own fine only. |
-| POST | `/api/fines/calculate` | Librarian/Admin | `{ borrowDetailId }` | Fine result | Manual Phase 1 calculation from stored borrowing data; no scheduler actor. |
-| POST | `/api/fines/{fineId}/collections` | Librarian/Admin | `{ paymentMethod: string, note?: string }` | Paid fine | Records one full offline collection and sets `PaidAmount = Amount`, `CollectedBy`, `PaidAt`, `PaymentMethod`, `Status = PAID` atomically. |
-| PATCH | `/api/fines/{fineId}/paid` | Librarian/Admin | `{ paymentMethod: string, note?: string }` | Paid fine | Explicit full-payment reconciliation; same atomic metadata and terminal-state rules as collection. |
-| PATCH | `/api/fines/{fineId}/waive` | Admin | `{ reason }` | Waived fine | Reason trimmed 1..500; atomic state/audit update. |
-| PATCH | `/api/fines/{fineId}/cancel` | Admin | `{ reason }` | Cancelled fine | Reason trimmed 1..500; atomic state/audit update. |
+| GET | `/api/fines/me` | Chỉ Thành viên | Truy vấn: `status?, page?, limit?` | Tiền phạt của bản thân cùng sách và các ngày mượn | Mặc định `page = 1`, `limit = 20`; Thành viên chỉ có một vai trò chỉ thấy tiền phạt của mình; Thủ thư/Quản trị viên nhận `403 ROLE_REQUIRED`. |
+| GET | `/api/fines` | Thủ thư/Quản trị viên | Truy vấn: `q?, userId?, status?, page?, limit?` | Danh sách tiền phạt | Mặc định `page = 1`, `limit = 20`; thứ tự cố định là `FineId ASC`. |
+| GET | `/api/fines/{fineId}` | Chủ sở hữu hoặc Thủ thư/Quản trị viên | - | Chi tiết tiền phạt | Chủ sở hữu chỉ được xem tiền phạt của mình. |
+| POST | `/api/fines/calculate` | Thủ thư/Quản trị viên | `{ borrowDetailId }` | Kết quả tiền phạt | Tính thủ công trong Giai đoạn 1 từ dữ liệu mượn đã lưu; không có tác nhân bộ lập lịch. |
+| POST | `/api/fines/{fineId}/collections` | Thủ thư/Quản trị viên | `{ paymentMethod: string, note?: string }` | Tiền phạt đã thanh toán | Ghi nhận một lần thu đủ toàn bộ số tiền ngoại tuyến và thiết lập nguyên tử `PaidAmount = Amount`, `CollectedBy`, `PaidAt`, `PaymentMethod`, `Status = PAID`. |
+| PATCH | `/api/fines/{fineId}/paid` | Thủ thư/Quản trị viên | `{ paymentMethod: string, note?: string }` | Tiền phạt đã thanh toán | Đối chiếu rõ ràng việc thanh toán đủ toàn bộ số tiền; dùng cùng quy tắc nguyên tử về siêu dữ liệu và trạng thái cuối như thao tác thu tiền. |
+| PATCH | `/api/fines/{fineId}/waive` | Quản trị viên | `{ reason }` | Tiền phạt đã miễn | Lý do đã loại khoảng trắng đầu/cuối dài 1..500 ký tự; cập nhật trạng thái/kiểm toán theo cách nguyên tử. |
+| PATCH | `/api/fines/{fineId}/cancel` | Quản trị viên | `{ reason }` | Tiền phạt đã hủy | Lý do đã loại khoảng trắng đầu/cuối dài 1..500 ký tự; cập nhật trạng thái/kiểm toán theo cách nguyên tử. |
 
-### 11.1 Deterministic Error Contract
+### 11.1 Hợp đồng lỗi tất định
 
-- A collection request against `PAID`, `WAIVED`, or `CANCELLED` returns `409 FINE_NOT_COLLECTIBLE`.
-- A paid-reconciliation request against `PAID`, `WAIVED`, or `CANCELLED` returns `409 FINE_NOT_PAYABLE`.
-- A waive/cancel request against `PAID`, `WAIVED`, or `CANCELLED` returns `409 FINE_NOT_RESOLVABLE`.
-- A missing or whitespace-only admin reason returns `400 REASON_REQUIRED`; a trimmed reason longer than 500 characters returns `400 REASON_TOO_LONG`.
+- Yêu cầu thu tiền đối với `PAID`, `WAIVED` hoặc `CANCELLED` trả về `409 FINE_NOT_COLLECTIBLE`.
+- Yêu cầu đối chiếu đã thanh toán đối với `PAID`, `WAIVED` hoặc `CANCELLED` trả về `409 FINE_NOT_PAYABLE`.
+- Yêu cầu miễn/hủy đối với `PAID`, `WAIVED` hoặc `CANCELLED` trả về `409 FINE_NOT_RESOLVABLE`.
+- Thiếu lý do của Quản trị viên hoặc lý do chỉ chứa khoảng trắng trả về `400 REASON_REQUIRED`; lý do sau khi loại khoảng trắng đầu/cuối dài hơn 500 ký tự trả về `400 REASON_TOO_LONG`.
 
-### 11.2 Prototype Alignment Note
+### 11.2 Lưu ý về sự phù hợp của nguyên mẫu
 
-The current FE09 React prototype may keep fine records in browser storage for classroom/demo workflows. This is not production completion evidence. The production-aligned implementation must use the server-side FE09 API for calculation, list/detail, collection, paid, waive, and cancel behavior.
-
----
-
-## 12. Non-functional Requirements
-
-### 12.1 Security
-
-- NFR-FE09-SEC-001: Fine endpoints must require authentication; Phase 1 exposes manual calculation only to Librarian/Admin.
-- NFR-FE09-SEC-002: Members must not view another member's fine records.
-- NFR-FE09-SEC-003: Collection and paid marking must enforce librarian/admin permission on the server.
-- NFR-FE09-SEC-004: Fine amount calculation must not trust client-provided amount.
-- NFR-FE09-SEC-005: Fine IDs, status, payment method, collection notes, and date-related parameters must be validated server-side.
-
-### 12.2 Transaction Integrity
-
-- NFR-FE09-TXN-001: Fine calculation/create and recalculation of an existing `UNPAID` fine must be atomic under a database lock; terminal fine records must not be modified.
-- NFR-FE09-TXN-002: Collection, paid, waive, and cancel must update fine state, payment/reason metadata, and audit records atomically.
-
-### 12.3 Performance
-
-- NFR-FE09-PERF-001: Fine lists use `page = 1`, `limit = 20` by default; supplied `page` is an integer >= 1 and `limit` is an integer 1..100.
-- NFR-FE09-PERF-002: Borrow-detail lookup for fine calculation must use the `BorrowDetails` primary key or its approved foreign-key path; unbounded scans are not permitted.
-
-### 12.4 Logging and Audit
-
-- NFR-FE09-LOG-001: Fine calculation, collection, paid marking, waiver, cancellation, and failed state changes must be traceable.
-- NFR-FE09-LOG-002: Logs must not expose sensitive personal data beyond what is required for audit.
-
-### 12.5 Usability
-
-- NFR-FE09-UX-001: Fine display must show amount, reason, status, and related borrowing context clearly.
-- NFR-FE09-UX-002: Payment/collection errors must explain whether the fine is already paid, missing, or unauthorized.
-- NFR-FE09-TIME-001: Overdue-day calculation uses the `Asia/Ho_Chi_Minh` business date for both returned and active borrowed details.
+Nguyên mẫu React FE09 hiện tại có thể lưu bản ghi tiền phạt trong bộ nhớ trình duyệt cho luồng thao tác trên lớp/trình diễn. Đây không phải bằng chứng hoàn thành ở môi trường vận hành. Phần triển khai phù hợp môi trường vận hành phải dùng API FE09 phía máy chủ cho các hành vi tính, danh sách/chi tiết, thu tiền, đánh dấu đã thanh toán, miễn và hủy.
 
 ---
 
-## 13. Out of Scope
+## 12. Yêu cầu phi chức năng
 
-This feature does not include:
+### 12.1 Bảo mật
 
-- Borrow approval, return processing, or due date assignment.
-- Physical copy condition/status management.
-- Online payment gateway or payment provider integration.
-- Notification delivery.
-- Reporting dashboard implementation.
-- Membership approval.
+- NFR-FE09-SEC-001: Các điểm cuối tiền phạt phải yêu cầu xác thực; Giai đoạn 1 chỉ cho phép Thủ thư/Quản trị viên tính thủ công.
+- NFR-FE09-SEC-002: Thành viên không được xem bản ghi tiền phạt của Thành viên khác.
+- NFR-FE09-SEC-003: Việc thu tiền và đánh dấu đã thanh toán phải thực thi quyền Thủ thư/Quản trị viên ở máy chủ.
+- NFR-FE09-SEC-004: Việc tính số tiền phạt không được tin tưởng số tiền do máy khách cung cấp.
+- NFR-FE09-SEC-005: ID tiền phạt, trạng thái, phương thức thanh toán, ghi chú thu tiền và các tham số liên quan đến ngày phải được kiểm tra hợp lệ ở máy chủ.
+
+### 12.2 Tính toàn vẹn của giao dịch
+
+- NFR-FE09-TXN-001: Việc tính/tạo tiền phạt và tính lại khoản phạt `UNPAID` hiện có phải được thực hiện nguyên tử dưới khóa cơ sở dữ liệu; không được sửa các bản ghi tiền phạt ở trạng thái cuối.
+- NFR-FE09-TXN-002: Thu tiền, đánh dấu đã thanh toán, miễn và hủy phải cập nhật nguyên tử trạng thái tiền phạt, siêu dữ liệu thanh toán/lý do và bản ghi kiểm toán.
+
+### 12.3 Hiệu năng
+
+- NFR-FE09-PERF-001: Danh sách tiền phạt mặc định dùng `page = 1`, `limit = 20`; giá trị `page` được cung cấp phải là số nguyên >= 1 và `limit` phải là số nguyên trong 1..100.
+- NFR-FE09-PERF-002: Việc tra cứu chi tiết mượn để tính tiền phạt phải dùng khóa chính `BorrowDetails` hoặc đường dẫn khóa ngoại đã phê duyệt; không được phép quét không giới hạn.
+
+### 12.4 Ghi nhật ký và kiểm toán
+
+- NFR-FE09-LOG-001: Việc tính tiền phạt, thu tiền, đánh dấu đã thanh toán, miễn, hủy và các thay đổi trạng thái thất bại phải có khả năng truy vết.
+- NFR-FE09-LOG-002: Nhật ký không được làm lộ dữ liệu cá nhân nhạy cảm vượt quá mức cần thiết cho kiểm toán.
+
+### 12.5 Khả năng sử dụng
+
+- NFR-FE09-UX-001: Phần hiển thị tiền phạt phải nêu rõ số tiền, lý do, trạng thái và bối cảnh mượn liên quan.
+- NFR-FE09-UX-002: Lỗi thanh toán/thu tiền phải giải thích khoản tiền phạt đã thanh toán, không tồn tại hay tác nhân không được cấp quyền.
+- NFR-FE09-TIME-001: Việc tính số ngày quá hạn phải dùng ngày nghiệp vụ `Asia/Ho_Chi_Minh` cho cả chi tiết đã trả và chi tiết đang mượn.
 
 ---
 
-## 14. Dependencies
+## 13. Ngoài phạm vi
 
-| Dependency | Type | Notes |
+Tính năng này không bao gồm:
+
+- Phê duyệt mượn sách, xử lý trả sách hoặc gán hạn trả.
+- Quản lý tình trạng/trạng thái bản sao vật lý.
+- Cổng thanh toán trực tuyến hoặc tích hợp nhà cung cấp thanh toán.
+- Gửi thông báo.
+- Triển khai bảng điều khiển báo cáo.
+- Phê duyệt tư cách thành viên.
+
+---
+
+## 14. Phụ thuộc
+
+| Phụ thuộc | Loại | Ghi chú |
 | ---------- | ---- | ----- |
-| FE07 Borrowing Management | Internal | Provides borrow detail due/return data and may call fine calculation. Checked on 2026-06-10: FE07 treats any `UNPAID` fine with amount greater than 0 as blocking new borrowing and renewal. |
-| FE06 Inventory / Book Copy Management | Internal | Provides copy condition/status for lost/damaged cases. |
-| FE10 Notification Management | Internal | Sends fine/overdue notifications. |
-| FE11 User & Role Management | Internal | Provides staff permissions. |
-| FE12 Reporting & Statistics | Internal | Reads fine data for reports. |
-| SQL Server database | Technical | Current SQL script has `Fines`. |
+| Quản lý mượn sách FE07 | Nội bộ | Cung cấp dữ liệu hạn trả/ngày trả của chi tiết mượn và có thể gọi tính tiền phạt. Đã kiểm tra ngày 2026-06-10: FE07 xem mọi khoản tiền phạt `UNPAID` có số tiền lớn hơn 0 là yếu tố chặn lượt mượn mới và gia hạn. |
+| Quản lý kho / Bản sao sách FE06 | Nội bộ | Cung cấp tình trạng/trạng thái bản sao cho các trường hợp mất/hỏng. |
+| Quản lý thông báo FE10 | Nội bộ | Gửi thông báo tiền phạt/quá hạn. |
+| Quản lý người dùng và vai trò FE11 | Nội bộ | Cung cấp quyền của nhân viên. |
+| Báo cáo và thống kê FE12 | Nội bộ | Đọc dữ liệu tiền phạt để lập báo cáo. |
+| Cơ sở dữ liệu SQL Server | Kỹ thuật | Tập lệnh SQL hiện tại có `Fines`. |
 
 ---
 
-## 15. Resolved Questions
+## 15. Câu hỏi đã được giải quyết
 
-| ID | Approved Decision | Source | Status |
+| ID | Quyết định phê duyệt | Nguồn | Trạng thái |
 | -- | ----------------- | ------ | ------ |
-| Q-FE09-001 | Phase 1 supports overdue fines only; lost/damaged fines are out of scope. | Review packet 2026-06-10 | APPROVED |
-| Q-FE09-002 | Any UNPAID fine with amount greater than 0 blocks new borrowing and renewal. | Review packet 2026-06-10 | APPROVED |
-| Q-FE09-003 | No partial payments in Phase 1. | Review packet 2026-06-10 | APPROVED |
-| Q-FE09-004 | Phase 1 stores `CollectedBy`, `PaymentMethod`, and `PaidAt` on `Fines`; no separate payment table is required. The optional collection note is stored only in safe audit metadata and is not a `Fines` column. | Review packet 2026-06-10; payment normalization 2026-07-17 | APPROVED |
-| Q-FE09-005 | Admin can waive/cancel fines with required reason and audit log. | Review packet 2026-06-10 | APPROVED |
-| Q-FE09-006 | Fine calculation runs on return and may also run manually by librarian/admin; scheduled daily job is future work. | Review packet 2026-06-10 | APPROVED |
-| Q-FE09-007 | Prototype UI may store fine records locally for demo continuity, but final FE09 behavior must use server-side calculation and persistence. | User correction 2026-06-21 | APPROVED |
-| Q-FE09-008 | Phase 1 librarian collection resolves an offline-paid overdue fine directly; admin payment confirmation/refusal is not required. | User correction 2026-06-30 | APPROVED |
-| Q-FE09-009 | Librarian fine list defaults to fine ID ascending order for stable review. | User correction 2026-06-30 | APPROVED |
-| Q-FE09-010 | Overdue-day calculation uses the server business date in `Asia/Ho_Chi_Minh`. | Nhat normalization review 2026-07-17 | APPROVED |
-| Q-FE09-011 | An existing `UNPAID` overdue fine is recalculated in place from stored dates; terminal fine states are immutable and never reopened. | Fine policy normalization 2026-07-17 | APPROVED |
-| Q-FE09-012 | `PaymentMethod` is required for `PAID` fines; `PaidAmount`, `PaidAt`, `CollectedBy`, and `PaymentMethod` are zero/null for non-paid terminal states. | Fine payment normalization 2026-07-17 | APPROVED |
+| Q-FE09-001 | Giai đoạn 1 chỉ hỗ trợ tiền phạt quá hạn; tiền phạt do mất/hỏng nằm ngoài phạm vi. | Gói rà soát 2026-06-10 | APPROVED |
+| Q-FE09-002 | Mọi khoản tiền phạt UNPAID có số tiền lớn hơn 0 đều chặn lượt mượn mới và gia hạn. | Gói rà soát 2026-06-10 | APPROVED |
+| Q-FE09-003 | Giai đoạn 1 không có thanh toán một phần. | Gói rà soát 2026-06-10 | APPROVED |
+| Q-FE09-004 | Giai đoạn 1 lưu `CollectedBy`, `PaymentMethod` và `PaidAt` trên `Fines`; không yêu cầu bảng thanh toán riêng. Ghi chú thu tiền tùy chọn chỉ được lưu trong siêu dữ liệu kiểm toán an toàn và không phải cột của `Fines`. | Gói rà soát 2026-06-10; chuẩn hóa thanh toán 2026-07-17 | APPROVED |
+| Q-FE09-005 | Quản trị viên có thể miễn/hủy tiền phạt với lý do bắt buộc và nhật ký kiểm toán. | Gói rà soát 2026-06-10 | APPROVED |
+| Q-FE09-006 | Việc tính tiền phạt chạy khi trả sách và Thủ thư/Quản trị viên cũng có thể chạy thủ công; tác vụ hằng ngày theo lịch là công việc tương lai. | Gói rà soát 2026-06-10 | APPROVED |
+| Q-FE09-007 | Nguyên mẫu giao diện có thể lưu cục bộ bản ghi tiền phạt để duy trì phần trình diễn, nhưng hành vi FE09 cuối cùng phải dùng phép tính và cơ chế lưu bền phía máy chủ. | Người dùng chỉnh sửa 2026-06-21 | APPROVED |
+| Q-FE09-008 | Trong Giai đoạn 1, Thủ thư thu tiền sẽ trực tiếp giải quyết một khoản phạt quá hạn đã thanh toán ngoại tuyến; không yêu cầu Quản trị viên xác nhận/từ chối thanh toán. | Người dùng chỉnh sửa 2026-06-30 | APPROVED |
+| Q-FE09-009 | Danh sách tiền phạt của Thủ thư mặc định sắp xếp ID tiền phạt tăng dần để rà soát ổn định. | Người dùng chỉnh sửa 2026-06-30 | APPROVED |
+| Q-FE09-010 | Việc tính số ngày quá hạn dùng ngày nghiệp vụ của máy chủ theo `Asia/Ho_Chi_Minh`. | Rà soát chuẩn hóa của Nhat 2026-07-17 | APPROVED |
+| Q-FE09-011 | Khoản phạt quá hạn `UNPAID` hiện có được tính lại tại chỗ từ các ngày đã lưu; trạng thái cuối của tiền phạt là bất biến và không bao giờ được mở lại. | Chuẩn hóa chính sách tiền phạt 2026-07-17 | APPROVED |
+| Q-FE09-012 | `PaymentMethod` là bắt buộc đối với khoản tiền phạt `PAID`; `PaidAmount`, `PaidAt`, `CollectedBy` và `PaymentMethod` bằng không/null đối với các trạng thái cuối không phải đã thanh toán. | Chuẩn hóa thanh toán tiền phạt 2026-07-17 | APPROVED |
 
 ---
 
-## 16. Traceability Matrix
+## 16. Ma trận truy vết
 
-| Requirement ID | Related Use Case | Related Test Intent | Status |
+| ID yêu cầu | Trường hợp sử dụng liên quan | Ý định thử nghiệm liên quan | Trạng thái |
 | -------------- | ---------------- | ------------------- | ------ |
-| BR-FE09-001 | UC41-UC44 | Guest access denied on all fine endpoints | Ready for review |
-| BR-FE09-002 | UC41 | Member own-fines isolation test | Ready for review |
-| BR-FE09-003 | UC41 | Staff lookup by member/status test | Ready for review |
-| BR-FE09-004 | UC43, UC44 | Member collection/paid forbidden test | Ready for review |
-| BR-FE09-005 | UC42 | Server calculation rate test | Ready for review |
-| BR-FE09-006 | UC42 | Day-after-due-date boundary test | Ready for review |
-| BR-FE09-007 | UC42 | Stored-date/server-date calculation test | Ready for review |
-| BR-FE09-008 | UC42 | Client amount/overdueDays ignored test | Ready for review |
-| BR-FE09-009 | UC42 | Concurrent duplicate calculation test | Ready for review |
-| BR-FE09-010 | UC42, UC41 | Fine foreign-key/member-context test | Ready for review |
-| BR-FE09-011 | UC41, UC44 | Resolved fines remain visible test | Ready for review |
-| BR-FE09-012 | UC44 | Paid status, PaidAmount, PaidAt test | Ready for review |
-| BR-FE09-013 | UC42 | Paid fine does not block FE07 test | Ready for review |
-| BR-FE09-014 | UC42 | Unpaid positive fine blocks FE07 test | Ready for review |
-| BR-FE09-015 | UC42-UC44 | Audit coverage for all state changes | Ready for review |
-| BR-FE09-016 | UC43, UC44 | Online payment endpoint absence/scope test | Ready for review |
-| BR-FE09-017 | UC43, UC44 | Full collection directly resolves fine test | Ready for review |
-| BR-FE09-018 | UC41 | Fixed `FineId ASC` list order test | Ready for review |
-| BR-FE09-019 | UC42 | `Asia/Ho_Chi_Minh` date boundary test | Ready for review |
-| BR-FE09-020 | UC41-UC44 | FE09-T024 single-role own-list and staff mutation boundary tests | Automated pass; human review pending |
-| FR-FE09-001 | UC41 | Member own-fines endpoint | Ready for review |
-| FR-FE09-002 | UC41 | Staff list/detail filter endpoint | Ready for review |
-| FR-FE09-003 | UC42 | Overdue-day calculation endpoint | Ready for review |
-| FR-FE09-004 | UC42 | Non-overdue creates no fine | Ready for review |
-| FR-FE09-005 | UC42 | Positive overdue amount calculation | Ready for review |
-| FR-FE09-006 | UC42 | Recalculate `UNPAID` fine in place; terminal fine remains unchanged | Ready for review |
-| FR-FE09-007 | UC43 | Full collection records payment metadata | Ready for review |
-| FR-FE09-008 | UC44 | Mark-paid state transition | Ready for review |
-| FR-FE09-009 | UC43, UC44 | Role guard test | Ready for review |
-| FR-FE09-010 | UC41-UC44 | FE07/FE12 status readback contract | Ready for review |
-| FR-FE09-011 | UC41 | Paginated fixed-order staff list | Ready for review |
-| FR-FE09-012 | UC43, UC44 | Full offline collection resolves fine | Ready for review |
-| FR-FE09-013 | UC43, UC44 | Resolved-fine collection conflict | Ready for review |
-| FR-FE09-014 | UC44 | Admin waive with reason and audit | Ready for review |
-| FR-FE09-015 | UC44 | Admin cancel with reason and audit | Ready for review |
-| FR-FE09-016 | UC41 | Invalid list query rejected before repository | Ready for review |
-| FR-FE09-017 | UC42 | Business-date calculation boundary | Ready for review |
-| FR-FE09-018 | UC41-UC44 | Selected-fine workflow continuity source/UI test | Ready for review |
-| FR-FE09-019 | UC41 | FE09-T024 Member borrowing-context, blocker explanation, and role tests | Automated pass; human review pending |
-| AC-FE09-001 | UC41 | Own-fines response contains only actor records | Ready for review |
-| AC-FE09-002 | UC41 | Staff selected-member fines response | Ready for review |
-| AC-FE09-003 | UC42 | Overdue amount equals days * 5000 | Ready for review |
-| AC-FE09-004 | UC42 | On-time return creates no fine | Ready for review |
-| AC-FE09-005 | UC42 | Recalculation updates `UNPAID` fine without duplication | Ready for review |
-| AC-FE09-006 | UC43 | Collection metadata stored according to schema | Ready for review |
-| AC-FE09-007 | UC44 | Paid/PaidAmount/PaidAt committed | Ready for review |
-| AC-FE09-008 | UC43, UC44 | Member cannot collect or mark paid | Ready for review |
-| AC-FE09-009 | UC42 | Paid fine no longer blocks borrowing | Ready for review |
-| AC-FE09-010 | UC42 | Unpaid positive fine blocks borrowing/renewal | Ready for review |
-| AC-FE09-011 | UC41 | Fixed-order searchable/filterable list | Ready for review |
-| AC-FE09-012 | UC43 | Full collection resolves and unblocks FE07 | Ready for review |
-| AC-FE09-013 | UC44 | Valid admin waive is terminal and audited | Ready for review |
-| AC-FE09-014 | UC44 | Valid admin cancel is terminal and audited | Ready for review |
-| AC-FE09-015 | UC42 | Ho Chi Minh business date is deterministic | Ready for review |
-| AC-FE09-016 | UC41-UC44 | Calculate/select -> collect/paid preserves one canonical fine | Ready for review |
-| AC-FE09-017 | UC41-UC44 | Guest/staff own-list denial and read-only Member fine page | Automated pass; human review pending |
+| BR-FE09-001 | UC41-UC44 | Khách bị từ chối truy cập tại mọi điểm cuối tiền phạt | Sẵn sàng rà soát |
+| BR-FE09-002 | UC41 | Kiểm thử cô lập tiền phạt của chính Thành viên | Sẵn sàng rà soát |
+| BR-FE09-003 | UC41 | Kiểm thử nhân viên tra cứu theo Thành viên/trạng thái | Sẵn sàng rà soát |
+| BR-FE09-004 | UC43, UC44 | Kiểm thử cấm Thành viên thu tiền/đánh dấu đã thanh toán | Sẵn sàng rà soát |
+| BR-FE09-005 | UC42 | Kiểm thử mức phạt do máy chủ tính | Sẵn sàng rà soát |
+| BR-FE09-006 | UC42 | Kiểm thử ranh giới ngày sau hạn trả | Sẵn sàng rà soát |
+| BR-FE09-007 | UC42 | Kiểm thử tính từ ngày đã lưu/ngày máy chủ | Sẵn sàng rà soát |
+| BR-FE09-008 | UC42 | Kiểm thử bỏ qua amount/overdueDays do máy khách cung cấp | Sẵn sàng rà soát |
+| BR-FE09-009 | UC42 | Kiểm thử tính toán trùng lặp đồng thời | Sẵn sàng rà soát |
+| BR-FE09-010 | UC42, UC41 | Kiểm thử khóa ngoại/ngữ cảnh Thành viên của tiền phạt | Sẵn sàng rà soát |
+| BR-FE09-011 | UC41, UC44 | Kiểm thử tiền phạt đã giải quyết vẫn được hiển thị | Sẵn sàng rà soát |
+| BR-FE09-012 | UC44 | Kiểm thử trạng thái đã thanh toán, PaidAmount và PaidAt | Sẵn sàng rà soát |
+| BR-FE09-013 | UC42 | Kiểm thử tiền phạt đã thanh toán không chặn FE07 | Sẵn sàng rà soát |
+| BR-FE09-014 | UC42 | Kiểm thử tiền phạt dương chưa thanh toán chặn FE07 | Sẵn sàng rà soát |
+| BR-FE09-015 | UC42-UC44 | Kiểm thử ghi nhật ký kiểm toán cho mọi thay đổi trạng thái | Sẵn sàng rà soát |
+| BR-FE09-016 | UC43, UC44 | Kiểm thử phạm vi và việc không có điểm cuối thanh toán trực tuyến | Sẵn sàng rà soát |
+| BR-FE09-017 | UC43, UC44 | Kiểm thử thu đủ tiền trực tiếp giải quyết tiền phạt | Sẵn sàng rà soát |
+| BR-FE09-018 | UC41 | Kiểm thử thứ tự danh sách cố định `FineId ASC` | Sẵn sàng rà soát |
+| BR-FE09-019 | UC42 | Kiểm thử ranh giới ngày `Asia/Ho_Chi_Minh` | Sẵn sàng rà soát |
+| BR-FE09-020 | UC41-UC44 | FE09-T024 kiểm thử danh sách của chính mình với một vai trò và ranh giới thao tác của nhân viên | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
+| FR-FE09-001 | UC41 | Điểm cuối tiền phạt của chính Thành viên | Sẵn sàng rà soát |
+| FR-FE09-002 | UC41 | Điểm cuối danh sách/chi tiết có bộ lọc dành cho nhân viên | Sẵn sàng rà soát |
+| FR-FE09-003 | UC42 | Điểm cuối tính số ngày quá hạn | Sẵn sàng rà soát |
+| FR-FE09-004 | UC42 | Không tạo tiền phạt khi chưa quá hạn | Sẵn sàng rà soát |
+| FR-FE09-005 | UC42 | Tính số tiền phạt quá hạn dương | Sẵn sàng rà soát |
+| FR-FE09-006 | UC42 | Tính lại tiền phạt `UNPAID` tại chỗ; tiền phạt ở trạng thái cuối không đổi | Sẵn sàng rà soát |
+| FR-FE09-007 | UC43 | Thu đủ tiền và ghi siêu dữ liệu thanh toán | Sẵn sàng rà soát |
+| FR-FE09-008 | UC44 | Chuyển trạng thái sang đã thanh toán | Sẵn sàng rà soát |
+| FR-FE09-009 | UC43, UC44 | Kiểm thử chốt bảo vệ vai trò | Sẵn sàng rà soát |
+| FR-FE09-010 | UC41-UC44 | Hợp đồng đọc lại trạng thái FE07/FE12 | Sẵn sàng rà soát |
+| FR-FE09-011 | UC41 | Danh sách nhân viên được phân trang theo thứ tự cố định | Sẵn sàng rà soát |
+| FR-FE09-012 | UC43, UC44 | Thu đủ tiền ngoại tuyến để giải quyết tiền phạt | Sẵn sàng rà soát |
+| FR-FE09-013 | UC43, UC44 | Xung đột khi thu tiền cho tiền phạt đã giải quyết | Sẵn sàng rà soát |
+| FR-FE09-014 | UC44 | Quản trị viên miễn tiền phạt kèm lý do và nhật ký kiểm toán | Sẵn sàng rà soát |
+| FR-FE09-015 | UC44 | Quản trị viên hủy tiền phạt kèm lý do và nhật ký kiểm toán | Sẵn sàng rà soát |
+| FR-FE09-016 | UC41 | Từ chối truy vấn danh sách không hợp lệ trước tầng kho lưu trữ | Sẵn sàng rà soát |
+| FR-FE09-017 | UC42 | Ranh giới tính theo ngày nghiệp vụ | Sẵn sàng rà soát |
+| FR-FE09-018 | UC41-UC44 | Kiểm thử mã nguồn/giao diện về tính liên tục của quy trình với tiền phạt đã chọn | Sẵn sàng rà soát |
+| FR-FE09-019 | UC41 | FE09-T024 kiểm thử ngữ cảnh mượn của Thành viên, giải thích điều kiện chặn và vai trò | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
+| AC-FE09-001 | UC41 | Phản hồi tiền phạt của chính mình chỉ chứa bản ghi của tác nhân | Sẵn sàng rà soát |
+| AC-FE09-002 | UC41 | Phản hồi tiền phạt của Thành viên do nhân viên chọn | Sẵn sàng rà soát |
+| AC-FE09-003 | UC42 | Số tiền quá hạn bằng số ngày * 5000 | Sẵn sàng rà soát |
+| AC-FE09-004 | UC42 | Trả đúng hạn không tạo tiền phạt | Sẵn sàng rà soát |
+| AC-FE09-005 | UC42 | Tính lại cập nhật tiền phạt `UNPAID` mà không tạo bản ghi trùng | Sẵn sàng rà soát |
+| AC-FE09-006 | UC43 | Siêu dữ liệu thu tiền được lưu theo lược đồ | Sẵn sàng rà soát |
+| AC-FE09-007 | UC44 | Paid/PaidAmount/PaidAt được cam kết | Sẵn sàng rà soát |
+| AC-FE09-008 | UC43, UC44 | Thành viên không thể thu tiền hoặc đánh dấu đã thanh toán | Sẵn sàng rà soát |
+| AC-FE09-009 | UC42 | Tiền phạt đã thanh toán không còn chặn mượn sách | Sẵn sàng rà soát |
+| AC-FE09-010 | UC42 | Tiền phạt dương chưa thanh toán chặn mượn/gia hạn | Sẵn sàng rà soát |
+| AC-FE09-011 | UC41 | Danh sách theo thứ tự cố định, có thể tìm kiếm/lọc | Sẵn sàng rà soát |
+| AC-FE09-012 | UC43 | Thu đủ tiền để giải quyết tiền phạt và gỡ chặn FE07 | Sẵn sàng rà soát |
+| AC-FE09-013 | UC44 | Thao tác miễn tiền phạt hợp lệ của Quản trị viên là trạng thái cuối và được ghi nhật ký kiểm toán | Sẵn sàng rà soát |
+| AC-FE09-014 | UC44 | Thao tác hủy tiền phạt hợp lệ của Quản trị viên là trạng thái cuối và được ghi nhật ký kiểm toán | Sẵn sàng rà soát |
+| AC-FE09-015 | UC42 | Ngày nghiệp vụ tại Thành phố Hồ Chí Minh có tính xác định | Sẵn sàng rà soát |
+| AC-FE09-016 | UC41-UC44 | Tính/chọn -> thu tiền/đã thanh toán vẫn giữ một bản ghi tiền phạt chuẩn duy nhất | Sẵn sàng rà soát |
+| AC-FE09-017 | UC41-UC44 | Khách/nhân viên bị từ chối danh sách của chính mình và trang tiền phạt Thành viên chỉ cho phép đọc | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
 
 ---
 
-## 17. Review Checklist
+## 17. Danh sách kiểm tra rà soát
 
-Phase 1 approval checklist (completed on 2026-06-10):
+Danh sách kiểm tra phê duyệt Giai đoạn 1 (hoàn thành ngày 2026-06-10):
 
-- [x] Overdue fine policy is confirmed as 5,000 VND/day/copy or updated in shared context.
-- [x] Borrowing-block rule for unpaid fines is approved with FE07.
-- [x] Lost/damaged fine policy is approved or marked out of scope.
-- [x] Collection/paid schema is confirmed.
-- [x] Duplicate fine prevention rule is approved.
-- [x] API contract is approved in SPEC.md or copied to a dedicated shared API contract file if the team reintroduces one.
-- [x] Every acceptance criterion can become a test.
+- [x] Chính sách phạt quá hạn được xác nhận là 5,000 VND/ngày/bản sao hoặc được cập nhật trong ngữ cảnh dùng chung.
+- [x] Quy tắc cấm vay đối với các khoản tiền phạt chưa thanh toán được phê duyệt với FE07.
+- [x] Chính sách phạt đối với sách mất/hỏng được phê duyệt hoặc đánh dấu ngoài phạm vi.
+- [x] Lược đồ thu tiền/đã thanh toán được xác nhận.
+- [x] Quy tắc ngăn ngừa phạt trùng lặp được phê duyệt.
+- [x] Hợp đồng API được phê duyệt trong SPEC.md hoặc được sao chép vào một tệp hợp đồng API dùng chung chuyên biệt nếu nhóm tạo lại tệp đó.
+- [x] Mọi tiêu chí chấp nhận đều có thể trở thành một kiểm thử.
 
-### 17.1 Revision v0.4.0 Review Gate
+### 17.1 Cổng rà soát bản sửa đổi v0.4.0
 
-- [x] Confirm full offline collection is the only Phase 1 collection mode and `collectedAmount` is not accepted.
-- [x] Confirm `/waive` and `/cancel` are admin-only and require a 1..500 character reason.
-- [x] Confirm list pagination defaults/bounds and fixed `FineId ASC` ordering.
-- [x] Confirm overdue-day calculation uses `Asia/Ho_Chi_Minh`.
-- [x] Confirm fine state/payment/audit writes are atomic and terminal-state retries return deterministic conflicts.
+- [x] Xác nhận thu đủ tiền ngoại tuyến là chế độ thu tiền duy nhất của Giai đoạn 1 và không chấp nhận `collectedAmount`.
+- [x] Xác nhận `/waive` và `/cancel` chỉ dành cho Quản trị viên và yêu cầu lý do dài 1..500 ký tự.
+- [x] Xác nhận giá trị mặc định/giới hạn phân trang danh sách và thứ tự `FineId ASC` cố định.
+- [x] Xác nhận tính toán ngày quá hạn sử dụng `Asia/Ho_Chi_Minh`.
+- [x] Xác nhận việc ghi trạng thái/thanh toán/nhật ký kiểm toán tiền phạt là nguyên tử và các lần thử lại ở trạng thái cuối trả về xung đột xác định.
