@@ -351,7 +351,7 @@ function createAuthService({
       throw errors.badRequest('PASSWORD_MISMATCH', 'Password confirmation must match password.');
     }
 
-    // @spec FR-FE02-015 — reject registration with an already-registered email; no new user is created (AF-FE02-001, EC-FE02-003, BR-FE02-001)
+    // @spec FR-FE02-015 — reject a registered username/email before creating verification state
     const existingByEmail = await userRepository.findByEmail(email);
     if (existingByEmail) {
       throw errors.conflict('EMAIL_ALREADY_REGISTERED', 'Email is already registered. Please login or use forgot password.');
@@ -383,8 +383,11 @@ function createAuthService({
     } catch (error) {
       const number = error?.number ?? error?.originalError?.info?.number;
       const message = String(error?.message || error?.originalError?.message || '');
-      if ([2601, 2627].includes(number) && /UX_Users_Email/i.test(message)) {
-        throw errors.conflict('EMAIL_ALREADY_REGISTERED', 'Email is already registered. Please login or use forgot password.');
+      if ([2601, 2627].includes(number)) {
+        if (/UX_Users_Email/i.test(message)) {
+          throw errors.conflict('EMAIL_ALREADY_REGISTERED', 'Email is already registered. Please login or use forgot password.');
+        }
+        throw errors.conflict('USERNAME_ALREADY_REGISTERED', 'Username is already in use.');
       }
       throw error;
     }

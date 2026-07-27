@@ -309,3 +309,11 @@ This evidence closes the Authentication/OTP UX task group only. The separate FE0
   - Maps to: MF-FE02-006, FR-FE02-010, NFR-FE02-DEP-001.
   - DoD: the staging package includes the reviewed `CHANGE_PASSWORD_OTP` constraint migration; startup skips it when compatible, applies it when stale, verifies the postcondition, and fails closed before listening on failure.
   - Evidence: schema readiness and startup regressions pass 9/9; deployment policy proves the migration is packaged with the backend.
+
+## Phase 8: Convergence
+
+- [x] **FE02-T066 - Reject duplicate registration identities before OTP delivery.**
+  - Maps to: MF-FE02-001, AF-FE02-001, BR-FE02-001, FR-FE02-001, FR-FE02-015, AC-FE02-001, EC-FE02-003 (`partial`).
+  - Dependencies: FE02-T010, FE02-T020, FE02-T025.
+  - DoD: `POST /api/auth/register` returns the matching `409 EMAIL_ALREADY_REGISTERED` or `409 USERNAME_ALREADY_REGISTERED` for pre-existing and concurrent duplicate values; no new user, verification token, or OTP-delivery request is created; the frontend remains on the registration form with field-specific feedback and enters the OTP step only after successful registration; focused backend/frontend regressions pass.
+  - Evidence: `authService.register` checks normalized username/email before verification state and maps both unique-race conflicts; registration duplicate regressions prove no additional user/token/request state; frontend keeps Vietnamese duplicate feedback on step 1. Focused backend passes 62/62, frontend 242/242, lint/build and traceability pass.

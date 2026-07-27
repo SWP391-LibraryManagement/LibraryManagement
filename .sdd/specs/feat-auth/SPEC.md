@@ -1,6 +1,6 @@
 # SPEC.md - FE02 Authentication
 
-# Version: 0.6.18
+# Version: 0.6.19
 
 # Status: APPROVED BASELINE 2026-07-17 - CONTRACT RECONCILIATION PENDING HUMAN REVIEW
 
@@ -93,8 +93,8 @@ The feature can only start when:
 ### MF-FE02-001: User Registration
 
 1. Guest accesses the registration form.
-2. Guest enters email, password, confirm password, and optional full name/phone.
-3. The system validates input and checks for duplicate email.
+2. Guest enters username, email, password, confirm password, and optional full name/phone.
+3. The system validates input and checks that both username and email are not already registered before creating any account or verification OTP state.
 4. The system hashes the password with bcrypt.
 5. The system creates a user record with status `INACTIVE`.
 6. The system assigns the `Member` role through `UserRoles`; self-registration cannot create a `Librarian` or `Admin` account.
@@ -192,11 +192,11 @@ The feature can only start when:
 
 ## 5. Alternative Flows
 
-### AF-FE02-001: User Email Already Registered
+### AF-FE02-001: Username Or Email Already Registered
 
-1. Guest submits registration form with email already in use.
-2. The system detects duplicate email.
-3. The system returns error: "Email is already registered. Please login or use forgot password."
+1. Guest submits a registration form with a username or email already in use.
+2. The system detects the duplicate before sending a verification OTP, including when a concurrent registration wins after the initial check.
+3. The system returns a field-specific conflict and keeps the user on the registration form.
 
 ### AF-FE02-002: Email Verification Credential Expired
 
@@ -242,7 +242,7 @@ The feature can only start when:
 
 Use these stable IDs for tasks and tests.
 
-- BR-FE02-001: A guest must provide valid email, password, and confirmations to register.
+- BR-FE02-001: A guest must provide a valid unique email, password, and confirmation to register; a supplied or system-derived username must also be unique.
 - BR-FE02-002: A guest cannot access member/librarian/admin features without logging in.
 - BR-FE02-003: A user can only be created in the registration flow; users cannot be created by other actors in this feature.
 - BR-FE02-004: A registered user account must be verified via email before being activated.
@@ -275,7 +275,7 @@ Use these stable IDs for tasks and tests.
 
 ## 7. Functional Requirements
 
-- FR-FE02-001: When a guest submits valid registration data, the system shall create a new user with `INACTIVE` status.
+- FR-FE02-001: When a guest submits valid registration data with an available username and email, the system shall create a new user with `INACTIVE` status.
 - FR-FE02-002: When a user is registered, FE02 shall create a six-digit verification OTP with a 15-minute expiry, store only its hash, and submit one FE02-bound `ACCOUNT_VERIFICATION` notification request containing the token ID and required template data; legacy verification tokens remain accepted for compatibility.
 - FR-FE02-003: When a user submits a valid verification OTP and email, or a valid legacy verification token, for an eligible pending self-registration account, the system shall atomically activate the account, invalidate the OTP/token, and record the verification audit; a deactivated account shall remain inactive and the credential shall remain unconsumed.
 - FR-FE02-004: When a user submits login form with valid credentials and the persisted account remains `ACTIVE` when the login transaction commits, the system shall create a session/token and return it to the client.
@@ -295,7 +295,7 @@ Use these stable IDs for tasks and tests.
 
 The following requirements formalize the error-handling and abnormal-condition branches already described in Sections 5 (Alternative Flows), 6 (Business Rules), and 9 (Edge Cases). Each is expressed in EARS Unwanted syntax (`IF ...` / `WHERE ...`) and traces back to a source AF/EC/BR.
 
-- FR-FE02-015: IF a guest submits registration data with an email that is already registered, including when a concurrent insert wins after the duplicate pre-check, the system shall reject the registration and return the message "Email is already registered. Please login or use forgot password." without creating a new user record. (Source: AF-FE02-001, EC-FE02-003, BR-FE02-001)
+- FR-FE02-015: IF a guest submits registration data with a username or email that is already registered, including when a concurrent insert wins after the duplicate pre-check, the system shall reject the registration with `USERNAME_ALREADY_REGISTERED` or `EMAIL_ALREADY_REGISTERED`, keep the client on the registration form with field-specific feedback, and create no user, verification token, or OTP-delivery request. (Source: AF-FE02-001, EC-FE02-003, BR-FE02-001)
 - FR-FE02-016: IF a user submits an email verification OTP/token that is expired, malformed, or does not match any user record, the system shall reject activation, keep the account `INACTIVE`, and offer to resend a new verification email. (Source: AF-FE02-002, BR-FE02-004)
 - FR-FE02-017: IF a user attempts to log in to an account whose status is `LOCKED`, the system shall reject the login and return the account-lock message instructing the user to reset their password or wait until `lockedUntil` elapses. (Source: AF-FE02-003, BR-FE02-009)
 - FR-FE02-018: IF a user submits a password-reset or account-setup credential that has already been used, expired, or does not match an eligible user, the system shall reject the request and return a safe invalid-code message without changing any password. (Source: AF-FE02-005, BR-FE02-014)
@@ -312,7 +312,7 @@ The following requirements formalize the error-handling and abnormal-condition b
 
 ## 8. Acceptance Criteria
 
-- AC-FE02-001: Given valid registration data and unique email, when a guest registers, then the system creates an inactive user, persists a verification OTP hash with an exact 15-minute expiry, submits one FE02-bound notification request, and FE10 synchronously attempts provider delivery, recording `SENT` or `FAILED`; successful provider acceptance sends one verification OTP email.
+- AC-FE02-001: Given valid registration data and an available username and email, when a guest registers, then the system creates an inactive user, persists the verification OTP hash, and requests delivery; given either value already exists, the system returns field-specific feedback before OTP delivery and keeps the registration form active.
 - AC-FE02-002: Given a valid verification credential for an eligible pending self-registration account, when the user submits it, then activation, credential consumption, and the verification audit commit together and the user can login; OTP and legacy-token verification reject a deactivated account without consuming the credential.
 - AC-FE02-003: Given an expired verification OTP/token, when the user submits it, then the system rejects it and offers to resend.
 - AC-FE02-004: Given valid email and password and active account, when user logs in, then the system returns a valid session/token.
@@ -347,7 +347,7 @@ The following requirements formalize the error-handling and abnormal-condition b
 | -- | ----------------- | ------------------------ |
 | EC-FE02-001 | Registration with SQL injection payload in email | Sanitize input and reject as invalid email format. |
 | EC-FE02-002 | Registration with password longer than 255 characters | Reject with a field validation error and create no account. |
-| EC-FE02-003 | Duplicate registration attempt with the same email, including concurrent requests that race after the duplicate pre-check | Reject with `409 EMAIL_ALREADY_REGISTERED` and the approved message; create no additional user/token/delivery state. |
+| EC-FE02-003 | Duplicate registration attempt with the same username or email, including concurrent requests that race after the duplicate pre-check | Reject with the matching `409 USERNAME_ALREADY_REGISTERED` or `409 EMAIL_ALREADY_REGISTERED`; keep the registration form active and create no additional user/token/delivery state. |
 | EC-FE02-004 | User registration with email containing spaces or special chars | Validate email format strictly. |
 | EC-FE02-005 | Login attempt with SQL injection in username field | Use parameterized queries; reject as invalid. |
 | EC-FE02-006 | User locks their own account by exceeding failed login attempts | Provide password reset or wait until `lockedUntil`; Phase 1 has no admin-unlock action. |
@@ -385,7 +385,7 @@ The following requirements formalize the error-handling and abnormal-condition b
 | ----- | ---- | -------- | ------------------ |
 | userId | integer | Yes | Primary key. |
 | email | string | Yes | Unique, valid email format, max 255 chars. |
-| username | string | No | Optional alternative login field. |
+| username | string | No | Unique alternative login field, 3..50 characters when supplied; otherwise derived from the email. |
 | passwordHash | string | Yes | bcrypt hash, never plaintext. Before setup, FE11 stores an unusable bcrypt hash of a discarded server-generated random value; fixed literal placeholders are forbidden. |
 | fullName | string | No | User's display name. |
 | phoneNumber | string | No | User's phone number. |
@@ -468,7 +468,7 @@ stateDiagram-v2
 
 | Method | Endpoint | Actor | Request | Response | Notes |
 | ------ | -------- | ----- | ------- | -------- | ----- |
-| POST | `/api/auth/register` | Guest | `{ email: string, username?: string, password: string, confirmPassword: string, fullName?: string, phoneNumber?: string }` | `{ userId: number, email: string, message: "Verification email sent" }` | Sends a six-digit verification OTP. |
+| POST | `/api/auth/register` | Guest | `{ email: string, username?: string, password: string, confirmPassword: string, fullName?: string, phoneNumber?: string }` | `{ userId: number, email: string, message: "Verification email sent" }` | Checks supplied/derived username and email uniqueness before creating or sending the six-digit verification OTP; duplicate values return the matching `409` conflict. |
 | POST | `/api/auth/verify-email` | Guest | `{ email: string, otp: string }` or `{ token: string }` | `{ message: "Account verified. You can now login." }` | Primary OTP flow plus legacy token compatibility. |
 | POST | `/api/auth/resend-verification` | Guest | `{ email: string }` | `{ message: "Verification email sent" }` | Resends only for an eligible pending self-registration account; other states retain the same public response. |
 | POST | `/api/auth/login` | Guest | `{ email: string, password: string }` | Success: `{ userId: number, email: string, roles: string[], accessToken: string, refreshToken: string, expiresIn: 900 }`; pending verification: `403 { error: { code: "EMAIL_VERIFICATION_REQUIRED", message: string, details: { email: string } } }` | The legacy `email` field accepts an email address or username. The 403 recovery response is returned only after correct password proof for an eligible self-registration account and never creates a session. |
@@ -635,7 +635,7 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 
 | AC ID | Acceptance Criterion | Related FR | Related BR | Test Case | Status |
 | ----- | -------------------- | ---------- | ---------- | --------- | ------ |
-| AC-FE02-001 | Guest registers with valid data and unique email -> system creates INACTIVE user, persists the 15-minute OTP hash, submits one FE02-bound request, and FE10 attempts provider delivery with `SENT`/`FAILED` outcome; successful acceptance sends one verification OTP email | FR-FE02-001, FR-FE02-002, FR-FE02-022 | BR-FE02-001, BR-FE02-003, BR-FE02-004, BR-FE02-020, BR-FE02-021, BR-FE02-027 | FT05 | Accepted; automated evidence recorded |
+| AC-FE02-001 | Available username/email -> create INACTIVE user and request OTP delivery; duplicate username/email -> field-specific conflict before any new user/token/delivery state and registration form remains active | FR-FE02-001, FR-FE02-002, FR-FE02-015, FR-FE02-022 | BR-FE02-001, BR-FE02-003, BR-FE02-004, BR-FE02-020, BR-FE02-021, BR-FE02-027 | `backend/tests/authRoutes.test.js`; `frontend/test/verificationRecoveryFrontend.test.js` | Accepted; automated evidence recorded |
 | AC-FE02-002 | Valid verification OTP/email or legacy token for an eligible account -> activation/token consumption/audit commit; deactivated account remains inactive | FR-FE02-003 | BR-FE02-004 | `backend/tests/authRoutes.test.js` eligible and deactivated verification regressions | Accepted; automated evidence recorded |
 | AC-FE02-003 | Expired verification OTP/token submitted -> system rejects, offers resend | FR-FE02-003, FR-FE02-016 | BR-FE02-004 | FT05 | Accepted; automated evidence recorded |
 | AC-FE02-004 | Valid email/password/active account at login -> system returns session/token | FR-FE02-004 | BR-FE02-001, BR-FE02-005, BR-FE02-010 | FT06 | Accepted; automated evidence recorded |

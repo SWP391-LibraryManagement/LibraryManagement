@@ -1,5 +1,12 @@
 # CHANGELOG.md - FE02 Authentication
 
+## 2026-07-28 - Specify registration identity availability checks
+
+- Require both username and email availability before creating verification state or requesting OTP delivery.
+- Keep duplicate feedback on the registration form and retain database uniqueness as the concurrent-registration authority.
+- Reuse the existing registration endpoint; no separate availability endpoint is introduced.
+- Focused backend passes 62/62, frontend passes 242/242, and frontend lint/build plus traceability pass.
+
 ## 2026-07-28 - Disable login submission during timed account lock
 
 - Return `ACCOUNT_LOCKED` with `retryAfterSeconds` on the fifth failed password attempt and subsequent attempts during the timed lock.

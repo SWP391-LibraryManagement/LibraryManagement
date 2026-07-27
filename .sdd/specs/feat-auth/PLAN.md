@@ -231,3 +231,11 @@ duplicate registration, and current-state login writes are closed.
 Reconciliation remains open until the FE02-T043 H3 closeout is linked and
 human review of SPEC v0.6.16 is complete. The valid-login and token-validation
 performance targets have repeatable local evidence under FE02-T048.
+
+## 17. Registration Identity Availability Follow-up
+
+1. Reuse `POST /api/auth/register`; do not add a separate availability endpoint.
+2. Check normalized username and email before password hashing, account creation, verification-token creation, or OTP delivery.
+3. Preserve database uniqueness as the concurrency authority and map either username or email races to the matching safe `409` conflict.
+4. Keep duplicate feedback on the registration form and proceed to OTP only after successful registration.
+5. Add focused backend and frontend regressions, then run FE02 traceability and frontend lint/build.

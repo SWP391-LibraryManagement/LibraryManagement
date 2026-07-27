@@ -422,6 +422,41 @@ describe('FE02 auth vertical slice', () => {
     }).toEqual(stateBeforeDuplicate);
   });
 
+  test('duplicate username is rejected before creating a user, token, or notification', async () => {
+    const { app, dependencies } = makeTestApp();
+    const firstResponse = await request(app)
+      .post('/api/auth/register')
+      .send({
+        username: 'duplicate-user',
+        email: 'first-username@example.test',
+        password: 'Password1!',
+        confirmPassword: 'Password1!',
+      });
+    expect(firstResponse.status).toBe(201);
+    const stateBeforeDuplicate = {
+      users: dependencies.state.users.length,
+      tokens: dependencies.state.tokens.length,
+      notificationRequests: dependencies.state.notificationRequests.length,
+    };
+
+    const duplicateResponse = await request(app)
+      .post('/api/auth/register')
+      .send({
+        username: 'duplicate-user',
+        email: 'second-username@example.test',
+        password: 'Password1!',
+        confirmPassword: 'Password1!',
+      });
+
+    expect(duplicateResponse.status).toBe(409);
+    expect(duplicateResponse.body.error.code).toBe('USERNAME_ALREADY_REGISTERED');
+    expect({
+      users: dependencies.state.users.length,
+      tokens: dependencies.state.tokens.length,
+      notificationRequests: dependencies.state.notificationRequests.length,
+    }).toEqual(stateBeforeDuplicate);
+  });
+
   test('concurrent duplicate registration maps the SQL email conflict to 409', async () => {
     const { app, dependencies } = makeTestApp();
     const conflict = Object.assign(new Error("Violation of UNIQUE INDEX 'UX_Users_Email'."), {
@@ -444,6 +479,29 @@ describe('FE02 auth vertical slice', () => {
     });
     expect(dependencies.state.users).toHaveLength(0);
     expect(dependencies.state.tokens).toHaveLength(0);
+  });
+
+  test('concurrent duplicate registration maps the SQL username conflict to 409', async () => {
+    const { app, dependencies } = makeTestApp();
+    const conflict = Object.assign(new Error("Violation of UNIQUE KEY constraint 'UQ__Users__Username'."), {
+      number: 2627,
+    });
+    jest.spyOn(dependencies.userRepository, 'createRegisteredUser').mockRejectedValueOnce(conflict);
+
+    const response = await request(app)
+      .post('/api/auth/register')
+      .send({
+        username: 'concurrent-user',
+        email: 'concurrent-username@example.test',
+        password: 'Password1!',
+        confirmPassword: 'Password1!',
+      });
+
+    expect(response.status).toBe(409);
+    expect(response.body.error.code).toBe('USERNAME_ALREADY_REGISTERED');
+    expect(dependencies.state.users).toHaveLength(0);
+    expect(dependencies.state.tokens).toHaveLength(0);
+    expect(dependencies.state.notificationRequests).toHaveLength(0);
   });
 
   // @spec FR-FE02-019 AC-FE02-001

@@ -4,7 +4,7 @@ import test from 'node:test';
 
 const sourceUrl = (path) => new URL(path, import.meta.url);
 
-test('verification recovery has a standalone route and page after registration state is lost', async () => {
+test('duplicate registration identities stay on the registration form before OTP', async () => {
   const appSource = await readFile(sourceUrl('../src/App.jsx'), 'utf8');
   const registerSource = await readFile(sourceUrl('../src/page/RegisterPage.jsx'), 'utf8');
   const verifyPagePath = sourceUrl('../src/page/VerifyEmailPage.jsx');
@@ -12,7 +12,10 @@ test('verification recovery has a standalone route and page after registration s
   await access(verifyPagePath);
   assert.match(appSource, /path="\/verify-email"/);
   assert.match(registerSource, /EMAIL_ALREADY_REGISTERED/);
-  assert.match(registerSource, /navigate\('\/verify-email'/);
+  assert.match(registerSource, /USERNAME_ALREADY_REGISTERED/);
+  assert.match(registerSource, /Email đã tồn tại trong hệ thống/);
+  assert.match(registerSource, /Tên đăng nhập đã tồn tại trong hệ thống/);
+  assert.doesNotMatch(registerSource, /EMAIL_ALREADY_REGISTERED[\s\S]{0,200}navigate\('\/verify-email'/);
 });
 
 test('login resumes verified credentials for an inactive self-registration on the verification page', async () => {

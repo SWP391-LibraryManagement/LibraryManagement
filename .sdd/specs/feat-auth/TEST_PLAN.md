@@ -27,7 +27,7 @@ Registration, email verification, login, token refresh/logout, current-user look
 
 ## 3. API / Integration Test Targets
 
-- `POST /auth/register`: happy path, duplicate email including a concurrent unique-index race with no additional persistence/delivery, weak password with no persistence, invalid input.
+- `POST /auth/register`: happy path; duplicate username/email including concurrent unique-index races with no additional persistence/delivery; weak password with no persistence; invalid input.
 - FE02/FE10 OTP boundary: registration and password-reset flows submit exactly one FE02-bound requester call with `AuthToken` source ID and token-ID idempotency; direct duplicate delivery is rejected while `CHANGE_PASSWORD_OTP` remains FE02-owned.
 - `POST /auth/verify-email`: canonical email/OTP and legacy-token happy paths, invalid/expired credentials, atomic activation/token/audit completion, and rejection of terminally deactivated accounts without credential consumption.
 - `POST /auth/resend-verification`: eligible pending self-registration, unknown user, deactivated account, and admin-created setup account.
@@ -55,8 +55,8 @@ Registration, email verification, login, token refresh/logout, current-user look
 
 - `backend/tests/authRoutes.test.js`
 - `backend/tests/authUtils.test.js`
-- Focused FE02 evidence: 66/66 auth route/utility/repository tests pass on 2026-07-27, including concurrent duplicate registration, current-state login writes, stale auto-unlock rejection, terminal-deactivation verification guards, required-audit rollback, safe auth logging, 30-second JWT tolerance, exact rolling lockout, secure OTP generation, and transaction rollback failures.
-- Frontend evidence: 220/220 tests, lint, and production build pass on 2026-07-27; the login regression verifies navigation to `/verify-email` on `EMAIL_VERIFICATION_REQUIRED`.
+- Focused FE02 evidence: 62/62 auth route/repository tests pass on 2026-07-28, including existing and concurrent duplicate username/email rejection before verification state, current-state login writes, stale auto-unlock rejection, terminal-deactivation verification guards, required-audit rollback, safe auth logging, and exact rolling lockout.
+- Frontend evidence: 242/242 tests, lint, and production build pass on 2026-07-28; registration keeps duplicate username/email feedback before the OTP step, while login still navigates eligible pending self-registration to `/verify-email`.
 - Cross-feature inactive-account evidence: FE04/FE07/FE08 focused suites pass 114/114 with FE02's pre-handler `401 INVALID_TOKEN` contract.
 - Full backend rerun: 60/61 suites and 1048/1050 tests pass; all FE02 suites pass, and only the two pre-existing `dbConfig.test.js` DNS/mock-isolation assertions against `sql.example.test` fail.
 - Focused transport evidence: `backend/tests/httpsEnforcement.test.js` passes `3/3`.
