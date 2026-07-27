@@ -1,6 +1,6 @@
 # SPEC.md - FE11 User & Role Management
 
-# Version: 0.6.5
+# Version: 0.6.6
 
 # Status: APPROVED - PERSONAL DATA OWNERSHIP REVISION 2026-07-22
 
@@ -348,7 +348,7 @@ These EARS Unwanted-behavior requirements promote existing error/abnormal branch
 
 ## 8. Acceptance Criteria
 
-- AC-FE11-001: Given admin access, when viewing user list, then the system displays the safe paginated list with defaults/bounds, stable order, status/role filters, and trimmed email/name/user-ID search.
+- AC-FE11-001: Given admin access, when viewing user list, then the system displays the safe paginated list with defaults/bounds, stable order, status/role filters, trimmed email/name/user-ID search, and readable non-overlapping email and username values.
 - AC-FE11-002: Given admin access, when viewing a user detail page, then the safe `UserManagementView` DTO and approved related summaries are displayed without credentials, token/session data, setup/reset links, or secret audit metadata.
 - AC-FE11-003: Given valid user data, when Admin creates a new user account, then an inactive user, approved role, hashed setup token, and audit entry commit together and one FE10 setup delivery is requested.
 - AC-FE11-004: Given an existing account, when Admin submits `fullName`, `phone`, `address`, or `email`, then the system returns `403 PERSONAL_PROFILE_ADMIN_FORBIDDEN`, keeps every field and `UpdatedAt` unchanged, and writes no success audit; the Admin UI exposes those fields as read-only.

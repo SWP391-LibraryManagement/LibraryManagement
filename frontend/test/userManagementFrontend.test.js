@@ -148,11 +148,15 @@ test('FE11 desktop table and mobile cards expose profile editing for every manag
   assert.doesNotMatch(section, /openLibrarianWorkEditor|department|specialization/);
   assert.doesNotMatch(section, /openEditModal/);
   assert.match(section, /<th>Lần đăng nhập<\/th>/);
+  assert.match(section, /className="admin-user-username"/);
   assert.match(section, /placeholder="Tìm theo tên, email hoặc ID\.\.\."/);
   assert.match(css, /\.admin-user-cards\s*\{\s*display: none;/s);
   assert.match(css, /@media \(max-width: 1440px\)[^]*?\.admin-user-table \{ display: none; \}[^]*?\.admin-user-cards \{ display: grid;/);
   assert.match(css, /\.admin-shell__main\s*\{[^}]*min-width: 0;/s);
   assert.match(css, /\.admin-user-table\s*\{[^}]*overflow-x: auto;/s);
+  assert.match(css, /\.admin-user-table table\s*\{[^}]*min-width: 1240px;[^}]*table-layout: fixed;/s);
+  assert.match(css, /\.admin-user-username\s*\{[^}]*overflow-wrap: anywhere;[^}]*white-space: normal;/s);
+  assert.match(css, /\.admin-user-identity small\s*\{[^}]*overflow-wrap: anywhere;[^}]*white-space: normal;/s);
 });
 
 test('FE11 create and edit flows share profile fields while email remains read-only on edit', async () => {

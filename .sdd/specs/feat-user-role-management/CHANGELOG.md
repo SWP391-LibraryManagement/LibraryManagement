@@ -1,5 +1,10 @@
 # CHANGELOG.md - FE11 User & Role Management
 
+## 2026-07-27 - Keep email and username readable in the user table
+
+- Corrected the desktop user-table column widths from an over-constrained total to exactly 100%.
+- Increased the identity and username space and allowed long email/username values to wrap instead of hiding them behind ellipses.
+
 ## 2026-07-27 - Connect user editing to role replacement
 
 - Displayed the current sole role in the managed-user edit dialog.

@@ -383,7 +383,7 @@
 
 .admin-user-table table {
   width: 100%;
-  min-width: 1040px;
+  min-width: 1240px;
   border-collapse: collapse;
   table-layout: fixed;
 }
@@ -403,14 +403,14 @@
   text-transform: uppercase;
 }
 
-.admin-user-table th:nth-child(1) { width: 23%; }
-.admin-user-table th:nth-child(2) { width: 10%; }
-.admin-user-table th:nth-child(3) { width: 10%; }
-.admin-user-table th:nth-child(4) { width: 14%; }
-.admin-user-table th:nth-child(5) { width: 11%; }
-.admin-user-table th:nth-child(6) { width: 10%; }
-.admin-user-table th:nth-child(7) { width: 10%; }
-.admin-user-table th:nth-child(8) { width: 22%; }
+.admin-user-table th:nth-child(1) { width: 24%; }
+.admin-user-table th:nth-child(2) { width: 12%; }
+.admin-user-table th:nth-child(3) { width: 9%; }
+.admin-user-table th:nth-child(4) { width: 10%; }
+.admin-user-table th:nth-child(5) { width: 10%; }
+.admin-user-table th:nth-child(6) { width: 8%; }
+.admin-user-table th:nth-child(7) { width: 9%; }
+.admin-user-table th:nth-child(8) { width: 18%; }
 
 .admin-user-table tbody tr {
   cursor: pointer;
@@ -420,11 +420,15 @@
   background: color-mix(in srgb, var(--admin-brass) 5%, transparent);
 }
 
-.admin-user-cell--truncate,
 .admin-user-identity small {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.admin-user-username {
+  overflow-wrap: anywhere;
+  white-space: normal;
+  line-height: 1.35;
 }
 
 .admin-user-identity {

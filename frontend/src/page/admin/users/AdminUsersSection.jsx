@@ -401,7 +401,7 @@ export function AdminUsersSection({ onToast }) {
             <tbody>{users.map((user) => (
               <tr key={user.userId} onClick={() => openUserDetail(user.userId)}>
                 <td><button className="admin-user-identity" type="button" onClick={(event) => { event.stopPropagation(); openUserDetail(user.userId); }}><UserAvatar user={user} /><span><strong>{user.fullName || 'Chưa cập nhật tên'}</strong><small>#{user.userId} · {user.email}</small></span></button></td>
-                <td className="admin-user-cell--truncate" title={user.username || '-'}>{user.username || '-'}</td>
+                <td className="admin-user-username" title={user.username || '-'}>{user.username || '-'}</td>
                 <td>{user.phoneNumber || '-'}</td>
                 <td><div className="admin-badge-row">{(user.roles || []).map((role) => <RoleBadge key={role} role={role} />)}</div></td>
                 <td><StatusBadge status={user.status} /></td>
