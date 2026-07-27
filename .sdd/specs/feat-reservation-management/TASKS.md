@@ -193,10 +193,12 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
 | FR-FE08-029 | FE08-T035, FE08-T036, FE08-T037, FE08-T038, FE08-T039 |
 | FR-FE08-030 | FE08-T041 |
 | FR-FE08-031 | FE08-T042 |
+| FR-FE08-032 | FE08-T043 |
 | AC-FE08-015 | FE08-T035, FE08-T036, FE08-T037, FE08-T038 |
 | AC-FE08-016 | FE08-T035, FE08-T037, FE08-T038 |
 | AC-FE08-017 | FE08-T041 |
 | AC-FE08-018 | FE08-T042 |
+| AC-FE08-019 | FE08-T043 |
 | NFR-FE08-SEC-004 | FE08-T035, FE08-T036, FE08-T039 |
 | NFR-FE08-PERF-003 | FE08-T035, FE08-T036, FE08-T037, FE08-T039 |
 
@@ -225,3 +227,9 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
   - Read the FE01 `bookId` deep link, resolve its public title, and initialize the protected FE08 candidate search.
   - Keep candidate `copyId` selection and `POST /api/reservations` authoritative inside FE08; do not widen FE01 public data.
   - Verify focused FE01 action labels/routes and FE08 selected-book candidate initialization.
+
+- [x] **FE08-T043 - Separate current Member reservations from history.**
+  - Maps to: FR-FE08-010/032, AC-FE08-010/019, NFR-FE08-UX-001.
+  - Keep canonical own-list records, group `ACTIVE`/`NOTIFIED` separately from terminal history, and render every raw lifecycle state with a visible supported badge.
+  - Connect the candidate action to the matching current reservation so a held copy says `Đến lượt bạn` instead of looking cancelled or stale.
+  - Preserve Librarian/Admin queue ordering and FE07 state-transition ownership.

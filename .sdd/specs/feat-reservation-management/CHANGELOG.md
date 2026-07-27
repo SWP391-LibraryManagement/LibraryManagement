@@ -1,5 +1,12 @@
 # CHANGELOG.md - FE08 Reservation Management
 
+## 2026-07-27 - Clarify current Member reservations versus history
+
+- Separated canonical `ACTIVE`/`NOTIFIED` reservations from terminal reservation history so an older cancelled row cannot be mistaken for a newly created reservation.
+- Rendered every Member lifecycle badge from the raw FE08 status with supported visual tones, including a visible ready-for-pickup state and deadline.
+- Connected each candidate action to the matching current reservation: `Đang đặt chỗ` while waiting and `Đến lượt bạn` while held.
+- Preserved cancelled/fulfilled/expired history, Librarian/Admin queue ordering, and FE07-owned fulfillment transitions.
+
 ## 2026-07-27 - FE01 selected-book handoff
 
 - Connected the FE01 Member `Đặt chỗ sách này` deep link to FE08 through `bookId`.

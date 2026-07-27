@@ -181,3 +181,11 @@ Not included:
    keep promoted reservation DTOs unchanged.
 6. Verify repository transaction ordering, service/route behavior, frontend
    confirmation content, and full regression before H2.
+
+## 10. V0.5.6 Member Current State And History Presentation
+
+1. Keep `GET /api/reservations/me` as the canonical source and preserve all lifecycle records.
+2. Present `ACTIVE` and `NOTIFIED` as current reservations; present `FULFILLED`, `CANCELLED`, and `EXPIRED` in a separate history section.
+3. Derive visible Vietnamese labels and supported badge tones from the raw FE08 lifecycle status.
+4. Reflect the matching current reservation in the candidate action as `Đang đặt chỗ` or `Đến lượt bạn`.
+5. Reload canonical member reservations and candidates after create/cancel without changing the Librarian/Admin queue contract or FE07 fulfillment ownership.

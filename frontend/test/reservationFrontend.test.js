@@ -46,6 +46,24 @@ test('reservation mapping preserves the normalized backend lifecycle state', asy
   assert.equal(mapReservation({ reservationId: 7, copyId: 9, status: 'fulfilled' }).rawStatus, 'FULFILLED');
 });
 
+test('member reservation view separates current state from terminal history and uses visible badge tones', async () => {
+  const { memberReservationBadgeStatus, splitMemberReservations } = await loadViewModels();
+  const rows = [
+    { reservationId: 1, rawStatus: 'CANCELLED' },
+    { reservationId: 2, rawStatus: 'ACTIVE' },
+    { reservationId: 3, rawStatus: 'NOTIFIED' },
+    { reservationId: 4, rawStatus: 'FULFILLED' },
+  ];
+
+  assert.deepEqual(splitMemberReservations(rows), {
+    current: [rows[1], rows[2]],
+    history: [rows[0], rows[3]],
+  });
+  assert.equal(memberReservationBadgeStatus('ACTIVE'), 'waiting');
+  assert.equal(memberReservationBadgeStatus('NOTIFIED'), 'ready');
+  assert.equal(memberReservationBadgeStatus('CANCELLED'), 'cancelled');
+});
+
 test('keeps only active FE08 states in the librarian queue', async () => {
   const { isActiveReservationQueueStatus } = await loadReservationViewState();
 
@@ -236,6 +254,7 @@ test('FE08 pages adopt shared operational patterns and staff page uses canonical
   assert.match(mine, /publicBrowseApi\.detail\(requestedBookId\)/);
   assert.match(mine, /setSearch\(selectedTitle\)/);
   assert.match(mine, /@spec FR-FE08-031/);
+  assert.match(mine, /@spec FR-FE08-032/);
   assert.match(mine, /candidate\.copyId/);
   assert.match(mine, /activeReservedCopyIds/);
   assert.match(mine, /isOpenMemberReservationStatus/);
@@ -244,7 +263,11 @@ test('FE08 pages adopt shared operational patterns and staff page uses canonical
   assert.doesNotMatch(mine, /visibleCandidates/);
   assert.match(mine, /candidate\.hasActiveReservation/);
   assert.match(mine, /hasActiveReservation: true/);
-  assert.match(mine, /Đã đặt chỗ/);
+  assert.match(mine, /Đang đặt chỗ/);
+  assert.match(mine, /Đến lượt bạn/);
+  assert.match(mine, /splitMemberReservations/);
+  assert.match(mine, /getStatusLabel\(item\.status\)/);
+  assert.match(mine, /memberReservationBadgeStatus\(item\.rawStatus\)/);
   assert.doesNotMatch(mine, /Danh sách đang được đồng bộ từ thư viện|Đã cập nhật dữ liệu/);
   assert.doesNotMatch(mine, /candidate\.availableCopies|candidate\.eta|book\.availableCopies|book\.eta/);
   assert.match(mine, /setReservations\(\[\]\)/);
