@@ -1,23 +1,23 @@
-# Business Constraints — Library Management System
+# Ràng Buộc Nghiệp Vụ — Hệ Thống Quản Lý Thư Viện
 
-# Version: 0.1.1
+# Phiên bản: 0.1.1
 
-# Status: APPROVED - PHASE 1 BASELINE
+# Trạng thái: ĐÃ PHÊ DUYỆT - BASELINE GIAI ĐOẠN 1
 
-# Last Updated: 2026-07-20
+# Cập nhật lần cuối: 2026-07-20
 
-> Project-wide, high-level business rules every feature must respect. Detailed rules live in each feature's `SPEC.md` under [`.sdd/specs/feat-{name}/SPEC.md`](../specs).
+> Các quy tắc nghiệp vụ cấp cao áp dụng cho toàn dự án mà mọi chức năng phải tuân thủ. Quy tắc chi tiết nằm trong `SPEC.md` của từng chức năng tại [`.sdd/specs/feat-{name}/SPEC.md`](../specs).
 
-## High-Level Business Rules
+## Quy Tắc Nghiệp Vụ Cấp Cao
 
-- BR-G-001: A book cannot be borrowed if its available quantity is 0.
-- BR-G-002: A member cannot borrow more than 5 active borrowed copies at the same time. Daily borrowing is tiered by FE04 status: `APPROVED` members have a 5-copy daily limit; other active `MEMBER` accounts have a 3-copy daily limit.
-- BR-G-003: A member with overdue books or unpaid fines may be restricted from borrowing.
-- BR-G-004: Every borrow and return transaction must be recorded.
-- BR-G-005: Fine calculation must be traceable and testable.
-- BR-G-006: The default loan duration is 14 calendar days from the borrow approval date.
-- BR-G-007: Overdue fine is 5,000 VND per overdue day per copy, starting the day after the due date.
-- BR-G-008: Phase 1 user roles are Guest, Member, Librarian, and Admin. System/Scheduler is an internal actor, not a login role.
-- BR-G-009: Every persisted account has exactly one login role. `MEMBER`, `LIBRARIAN`, and `ADMIN` are mutually exclusive account roles; changing role replaces the current role atomically.
+- BR-G-001: Không thể mượn sách khi số lượng có sẵn bằng 0.
+- BR-G-002: Thành viên không được mượn quá 5 bản sao đang mượn tại cùng một thời điểm. Hạn mức mượn mỗi ngày được phân tầng theo trạng thái FE04: thành viên có trạng thái `APPROVED` có hạn mức 5 bản sao mỗi ngày; các tài khoản `MEMBER` đang hoạt động khác có hạn mức 3 bản sao mỗi ngày.
+- BR-G-003: Thành viên có sách quá hạn hoặc khoản phạt chưa thanh toán có thể bị hạn chế mượn sách.
+- BR-G-004: Mọi giao dịch mượn và trả sách đều phải được ghi nhận.
+- BR-G-005: Việc tính tiền phạt phải có khả năng truy vết và kiểm thử.
+- BR-G-006: Thời hạn mượn mặc định là 14 ngày theo lịch, tính từ ngày yêu cầu mượn được phê duyệt.
+- BR-G-007: Mức phạt quá hạn là 5,000 VND cho mỗi ngày quá hạn trên mỗi bản sao, bắt đầu từ ngày sau hạn trả.
+- BR-G-008: Các vai trò người dùng trong Giai đoạn 1 là Khách, Thành viên, Thủ thư và Quản trị viên. Hệ thống/Bộ lập lịch là tác nhân nội bộ, không phải vai trò đăng nhập.
+- BR-G-009: Mỗi tài khoản được lưu trữ có đúng một vai trò đăng nhập. `MEMBER`, `LIBRARIAN` và `ADMIN` là các vai trò tài khoản loại trừ lẫn nhau; việc đổi vai trò sẽ thay thế vai trò hiện tại theo cách nguyên tử.
 
-> These Phase 1 baseline decisions come from `.sdd/shared_context.md`. If the teacher or team lead changes them, update shared context, this file, and all affected feature specs together.
+> Các quyết định baseline của Giai đoạn 1 này bắt nguồn từ `.sdd/shared_context.md`. Nếu giảng viên hoặc trưởng nhóm thay đổi các quyết định đó, phải cập nhật đồng thời shared context, file này và mọi đặc tả chức năng bị ảnh hưởng.

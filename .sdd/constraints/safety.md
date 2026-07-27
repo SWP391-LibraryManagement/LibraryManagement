@@ -1,17 +1,17 @@
-# Safety Constraints — Library Management System
+# Ràng Buộc An Toàn — Hệ Thống Quản Lý Thư Viện
 
-# Version: 0.1.1
+# Phiên bản: 0.1.1
 
-# Status: APPROVED
+# Trạng thái: ĐÃ PHÊ DUYỆT
 
-# Last Updated: 2026-07-20
+# Cập nhật lần cuối: 2026-07-20
 
-> High-level security rules. These rules override convenience or speed. Detailed safety rules (audit, PII handling, dependency policy) will be added in later weeks.
+> Các quy tắc bảo mật cấp cao. Những quy tắc này được ưu tiên hơn sự tiện lợi hoặc tốc độ. Các quy tắc an toàn chi tiết (kiểm toán, xử lý PII, chính sách dependency) sẽ được bổ sung trong những tuần sau.
 
-## High-Level Security Rules
+## Quy Tắc Bảo Mật Cấp Cao
 
-- SAFE-001: No secrets are committed. API keys, passwords, tokens, private keys, and database credentials must never appear in source code, fixtures, or commit history.
-- SAFE-002: No hardcoded credentials, including admin accounts, default passwords, or seeded tokens.
-- SAFE-003: All user input must be validated on the server. Client-side validation alone is not sufficient.
-- SAFE-004: Role-based access must be enforced for every protected action. Authorization is checked on the server, not only in the UI.
-- SAFE-005: Internal error stack traces and framework messages must not be exposed to end users; return safe, generic error responses.
+- SAFE-001: Không được commit thông tin bí mật. Khóa API, mật khẩu, token, khóa riêng và thông tin xác thực cơ sở dữ liệu tuyệt đối không được xuất hiện trong mã nguồn, fixture hoặc lịch sử commit.
+- SAFE-002: Không được mã hóa cứng thông tin xác thực, bao gồm tài khoản quản trị, mật khẩu mặc định hoặc token được seed sẵn.
+- SAFE-003: Mọi dữ liệu đầu vào của người dùng phải được kiểm tra hợp lệ trên server. Chỉ kiểm tra ở phía client là không đủ.
+- SAFE-004: Kiểm soát truy cập dựa trên vai trò phải được thực thi đối với mọi hành động được bảo vệ. Quyền truy cập phải được kiểm tra trên server, không chỉ trên giao diện người dùng.
+- SAFE-005: Không được để lộ stack trace lỗi nội bộ và thông báo của framework cho người dùng cuối; phải trả về phản hồi lỗi chung, an toàn.
