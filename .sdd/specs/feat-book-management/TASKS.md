@@ -95,6 +95,7 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
 | BR-FE05-014 through BR-FE05-018 | FE05-T002, FE05-T003, FE05-T005, FE05-T006 |
 | BR-FE05-019, BR-FE05-020 | FE05-T009 |
 | BR-FE05-021 | FE05-T012 |
+| BR-FE05-022 | FE05-T013, FE05-T014 |
 | FR-FE05-001 through FR-FE05-004 | FE05-T003, FE05-T004 |
 | FR-FE05-005 through FR-FE05-010 | FE05-T004, FE05-T005, FE05-T006 |
 | FR-FE05-011 through FR-FE05-017 | FE05-T003, FE05-T005 |
@@ -103,6 +104,7 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
 | FR-FE05-027, FR-FE05-028 | FE05-T009 |
 | FR-FE05-029 | FE05-T011 |
 | FR-FE05-030 | FE05-T012 |
+| FR-FE05-031 | FE05-T013, FE05-T014 |
 | AC-FE05-001 through AC-FE05-004 | FE05-T004 |
 | AC-FE05-005 through AC-FE05-007 | FE05-T005 |
 | AC-FE05-008 through AC-FE05-010 | FE05-T005, FE05-T006 |
@@ -111,6 +113,7 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
 | AC-FE05-018, AC-FE05-019 | FE05-T009 |
 | AC-FE05-020 | FE05-T011 |
 | AC-FE05-021 | FE05-T012 |
+| AC-FE05-022 | FE05-T013, FE05-T014 |
 
 ## Completion Gate
 
@@ -156,3 +159,8 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
   - Add a bounded operator command that executes only the already reviewed `2026-07-22-library-metadata-compatibility.sql` migration and verifies the result.
   - Extend staging smoke so a code-only deploy cannot pass while the Admin metadata tabs remain broken.
   - Preserve the migration policy: liveness never mutates schema, and CI does not apply SQL automatically.
+- [x] **FE05-T014 - Add an explicit staging repair gate for the reviewed metadata migration.**
+  - Maps to: BR-FE05-022, FR-FE05-031, AC-FE05-022, NFR-FE05-DEP-001.
+  - Package only the bounded migration runner and the reviewed metadata SQL with the backend.
+  - Permit execution only from a default-off `workflow_dispatch` boolean; automatic post-CI deploys remain read-only with respect to schema.
+  - Invoke the command inside the Linux App Service so it uses the target runtime settings/network path, then require the existing readiness and smoke checks to pass.

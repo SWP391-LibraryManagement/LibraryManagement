@@ -1,4 +1,5 @@
 const fs = require('fs/promises');
+const fsSync = require('fs');
 const path = require('path');
 
 require('dotenv').config({
@@ -11,10 +12,20 @@ const {
   checkCatalogMetadataSchema,
 } = require('../src/services/schemaReadinessService');
 
-const migrationPath = path.resolve(
+const migrationFilename = '2026-07-22-library-metadata-compatibility.sql';
+const repositoryMigrationPath = path.resolve(
   __dirname,
-  '../../database/migrations/2026-07-22-library-metadata-compatibility.sql'
+  '../../database/migrations',
+  migrationFilename
 );
+const deployedMigrationPath = path.resolve(
+  __dirname,
+  '../database/migrations',
+  migrationFilename
+);
+const migrationPath = fsSync.existsSync(repositoryMigrationPath)
+  ? repositoryMigrationPath
+  : deployedMigrationPath;
 
 async function migrateLibraryMetadata({
   getPoolImpl = getPool,

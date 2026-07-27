@@ -9,6 +9,12 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      apply_library_metadata_migration:
+        description: Apply the reviewed FE05 metadata compatibility migration before smoke tests
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -35,6 +41,10 @@ jobs:
           New-Item -ItemType Directory -Force deploy/backend | Out-Null
           Copy-Item backend/package.json,backend/package-lock.json deploy/backend/
           Copy-Item backend/src deploy/backend/src -Recurse
+          New-Item -ItemType Directory -Force deploy/backend/scripts | Out-Null
+          Copy-Item backend/scripts/migrateLibraryMetadata.js deploy/backend/scripts/
+          New-Item -ItemType Directory -Force deploy/backend/database/migrations | Out-Null
+          Copy-Item database/migrations/2026-07-22-library-metadata-compatibility.sql deploy/backend/database/migrations/
 
       - name: Deploy backend
         uses: azure/webapps-deploy@v3
@@ -42,6 +52,13 @@ jobs:
           app-name: ${{ vars.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: deploy/backend
+
+      - name: Apply reviewed library metadata migration
+        if: github.event_name == 'workflow_dispatch' && inputs.apply_library_metadata_migration
+        shell: pwsh
+        env:
+          AZURE_WEBAPP_PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        run: ./scripts/invoke-appservice-library-metadata-migration.ps1
 
   deploy-frontend:
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'

@@ -4,6 +4,8 @@
 
 - Added read-only catalog schema readiness for persisted author/publisher/category `Status` and `CreatedAt`.
 - Added a bounded operator migration command for the existing reviewed metadata compatibility script.
+- Added a default-off manual staging workflow option that runs only that bounded migration inside
+  App Service; automatic post-CI deployments still never mutate schema.
 - Extended staging smoke to fail before acceptance when the deployed metadata schema is older than the repository contract.
 - Preserved Admin-only metadata mutation and Librarian/Admin active-choice reads without widening roles.
 
