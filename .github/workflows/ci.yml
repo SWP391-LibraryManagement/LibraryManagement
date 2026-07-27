@@ -7,6 +7,32 @@ on:
   workflow_dispatch:
 
 jobs:
+  migration-runtime-compatibility:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Kudu-compatible Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 18.17.1
+          cache: npm
+          cache-dependency-path: scripts/library-metadata-migration-runtime/package-lock.json
+
+      - name: Install locked migration runtime with strict engines
+        run: npm ci --omit=dev --engine-strict
+        working-directory: scripts/library-metadata-migration-runtime
+
+      - name: Audit isolated migration runtime
+        run: npm audit --omit=dev
+        working-directory: scripts/library-metadata-migration-runtime
+
+      - name: Exercise the SQL connection path
+        run: node -e "const sql = require('mssql'); const pool = new sql.ConnectionPool({ server: '127.0.0.1', port: 1, user: 'runtime-probe', password: 'runtime-probe', connectionTimeout: 250, options: { encrypt: false, trustServerCertificate: true } }); pool.connect().then(() => { throw new Error('Unexpected local SQL connection.'); }).catch((error) => { if (error.code !== 'ESOCKET') throw error; console.log('Kudu Node 18 SQL dependency path loaded.'); });"
+        working-directory: scripts/library-metadata-migration-runtime
+
   foundation-checks:
     runs-on: ubuntu-latest
 

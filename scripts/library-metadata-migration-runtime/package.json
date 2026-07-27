@@ -9,5 +9,22 @@
   "dependencies": {
     "dotenv": "17.4.2",
     "mssql": "11.0.1"
+  },
+  "overrides": {
+    "@azure/abort-controller": "2.1.2",
+    "@azure/core-auth": "1.9.0",
+    "@azure/core-client": "1.9.2",
+    "@azure/core-http-compat": "2.1.2",
+    "@azure/core-lro": "2.7.2",
+    "@azure/core-paging": "1.6.2",
+    "@azure/core-rest-pipeline": "1.18.0",
+    "@azure/core-tracing": "1.2.0",
+    "@azure/core-util": "1.11.0",
+    "@azure/identity": "4.2.1",
+    "@azure/keyvault-keys": "4.8.0",
+    "@azure/logger": "1.1.4",
+    "@azure/msal-browser": "3.20.0",
+    "@azure/msal-node": "2.16.2",
+    "uuid": "11.1.1"
   }
 }

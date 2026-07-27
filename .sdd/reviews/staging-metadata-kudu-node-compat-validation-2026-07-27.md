@@ -1,6 +1,6 @@
 # Staging Metadata Kudu Node Compatibility Validation - 2026-07-27
 
-Status: H1/H2 AUTO-APPROVED; LOCAL CANDIDATE PASS; H3 PENDING
+Status: H3 FINDING CORRECTED; LOCAL CANDIDATE PASS; H3 RE-REVIEW PENDING
 
 Baseline: `c0d22e7391dd77a521c06bff18587ab11c22e533`
 
@@ -42,6 +42,23 @@ partially migrated by repair attempt 1.
   17.4.2 successfully and exposed the expected `connect`/`config` functions.
 - The isolated production dependency audit reports zero vulnerabilities.
 
+## H3 Finding And Correction
+
+The first H3 review rejected the candidate because `mssql` 11.0.1 allowed
+transitive Azure packages whose latest releases declared Node 20 or 22. The
+initial top-level `require()` probe did not prove the complete dependency
+boundary.
+
+The corrected runtime now:
+
+- pins the Azure/MSAL transitive closure to releases declaring Node 18 support;
+- overrides `uuid` to patched 11.1.1 so the isolated audit remains clean;
+- installs the complete lockfile with `--engine-strict` under exact Node
+  18.17.1;
+- requires the SQL/Azure dependency path and exercises
+  `ConnectionPool.connect()` through the expected bounded socket failure;
+- adds this exact compatibility job to every PR and `main` CI run.
+
 ## Local Validation
 
 | Check | Result |
@@ -51,9 +68,10 @@ partially migrated by repair attempt 1.
 | Metadata migration/readiness backend tests | PASS - 2 suites, 3/3 |
 | Traceability enforcement | PASS - FE05 31/31; no implemented feature below 70% |
 | Isolated runtime production audit | PASS - 0 vulnerabilities |
-| Node 18.17.1 dependency-load probe | PASS |
+| Node 18.17.1 engine-strict install | PASS - complete production graph |
+| Node 18.17.1 SQL connection-load probe | PASS - expected bounded `ESOCKET` after dependency load |
 | Tracked and untracked whitespace | PASS |
-| Changed-path scope | PASS - nine approved files only |
+| Changed-path scope | PASS - ten approved files only |
 | Secret-value scan | PASS |
 
 ## Remaining Gates

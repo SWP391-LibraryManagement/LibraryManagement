@@ -233,7 +233,10 @@ The Kudu sidecar currently exposes Node 18.17, while the Node 22 application use
 release whose engine floor is Node 18.19. The deployment therefore installs the two migration-only
 dependencies from `scripts/library-metadata-migration-runtime/package-lock.json`: `dotenv` 17.4.2
 and Node-18-compatible `mssql` 11.0.1. This isolated lockfile does not downgrade the application
-dependency or expand the migration's SQL authority.
+dependency or expand the migration's SQL authority. The lockfile also pins the Azure/MSAL
+transitive closure to versions whose declared engines include Node 18.17 and overrides `uuid` to a
+patched release. CI installs that complete graph with `--engine-strict`, audits it, and exercises a
+bounded SQL connection-load probe under exact Node 18.17.1.
 The command therefore uses the App Service database settings and network path; the publish-profile
 secret is kept in the workflow environment and is not printed. If the remote command fails, the
 workflow reports its exit code and a length-limited diagnostic with publish credentials and common

@@ -15,7 +15,8 @@
 - Invoked the Kudu migration through `env NODE_PATH=...` because the command endpoint executes
   the first token directly instead of interpreting POSIX assignment-prefix syntax.
 - Isolated the Kudu migration dependencies from the application package and locked `mssql` 11.0.1
-  for the sidecar's Node 18.17 runtime while leaving the Node 22 backend on `mssql` 12.5.5.
+  plus its audited transitive closure for the sidecar's Node 18.17 runtime while leaving the Node
+  22 backend on `mssql` 12.5.5; CI now checks strict engines and exercises the SQL connection path.
 - Extended staging smoke to fail before acceptance when the deployed metadata schema is older than the repository contract.
 - Preserved Admin-only metadata mutation and Librarian/Admin active-choice reads without widening roles.
 

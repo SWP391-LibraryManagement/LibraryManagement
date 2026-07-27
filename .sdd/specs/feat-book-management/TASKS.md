@@ -166,5 +166,6 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
   - Provide a clearly named manual-only repair workflow so operators do not mistake `Re-run jobs` for a migration-enabled run.
   - Install locked production dependencies into a dedicated deployed migration runtime and set `NODE_PATH` explicitly so the Kudu execution context can load `dotenv`, `mssql`, and the readiness service independently of Azure Oryx layout.
   - Prefix the bounded Kudu command with `env` because `/api/command` executes its first token directly and does not interpret POSIX assignment-prefix syntax.
-  - Use a separate lockfile with `mssql` 11.0.1 for the Kudu Node 18.17 sidecar; do not downgrade the Node 22 application dependency.
+  - Use a separate lockfile with `mssql` 11.0.1 and a fully pinned, audited Node-18-compatible transitive closure for the Kudu Node 18.17 sidecar; do not downgrade the Node 22 application dependency.
+  - Run CI engine-strict installation and the SQL connection-load path under exact Node 18.17.1 so a Node 22 packaging job cannot hide an incompatible sidecar dependency.
   - Invoke the command inside the Linux App Service so it uses the target runtime settings/network path, then require the existing readiness and smoke checks to pass.

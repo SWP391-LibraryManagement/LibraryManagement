@@ -12,6 +12,10 @@ const repairWorkflow = fs.readFileSync(
   path.join(root, '.github/workflows/repair-staging-metadata.yml'),
   'utf8'
 );
+const ciWorkflow = fs.readFileSync(
+  path.join(root, '.github/workflows/ci.yml'),
+  'utf8'
+);
 const operatorScript = fs.readFileSync(
   path.join(root, 'scripts/invoke-appservice-library-metadata-migration.ps1'),
   'utf8'
@@ -68,6 +72,22 @@ test('locks the isolated migration runtime to the Kudu Node 18 dependency bounda
     migrationRuntimeLock.packages['node_modules/mssql'].engines.node,
     '>=18'
   );
+  const incompatibleEnginePackages = Object.entries(
+    migrationRuntimeLock.packages
+  )
+    .filter(([, packageMetadata]) => {
+      const engine = packageMetadata.engines?.node || '';
+      return (
+        /(?:>=|\^|>|=)\s*(?:19|[2-9]\d)(?:\.|$)/.test(engine)
+        || />=\s*18\.(?:1[8-9]|[2-9]\d)/.test(engine)
+      );
+    })
+    .map(([packagePath, packageMetadata]) => ({
+      packagePath,
+      version: packageMetadata.version,
+      engine: packageMetadata.engines.node,
+    }));
+  assert.deepEqual(incompatibleEnginePackages, []);
   assert.match(
     repairWorkflow,
     /Copy-Item scripts\/library-metadata-migration-runtime\/package\.json,scripts\/library-metadata-migration-runtime\/package-lock\.json deploy\/backend\/migration-runtime\//
@@ -75,6 +95,10 @@ test('locks the isolated migration runtime to the Kudu Node 18 dependency bounda
   assert.doesNotMatch(
     repairWorkflow,
     /Copy-Item backend\/package\.json,backend\/package-lock\.json deploy\/backend\/migration-runtime\//
+  );
+  assert.match(
+    ciWorkflow,
+    /migration-runtime-compatibility:[\s\S]*?node-version: 18\.17\.1[\s\S]*?npm ci --omit=dev --engine-strict[\s\S]*?npm audit --omit=dev[\s\S]*?Kudu Node 18 SQL dependency path loaded/
   );
 });
 
