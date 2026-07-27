@@ -1,17 +1,17 @@
-# Week 4 Database Gap Review
+# Rà soát khoảng trống cơ sở dữ liệu Tuần 4
 
-Date: 2026-06-10
-Status: REVIEW COMPLETE - SCHEMA REVISION NEEDED BEFORE WEEK 5 IMPLEMENTATION
+Ngày: 2026-06-10
+Trạng thái: RÀ SOÁT HOÀN TẤT - CẦN SỬA LƯỢC ĐỒ TRƯỚC KHI TRIỂN KHAI TUẦN 5
 
-## Scope
+## Phạm vi
 
-Review `database/Librarymanagement.sql` against approved Phase 1 specs and `.sdd/rfcs/ADR-002-database-design.md`.
+Rà soát `database/Librarymanagement.sql` theo các đặc tả Giai đoạn 1 đã phê duyệt và `.sdd/rfcs/ADR-002-database-design.md`.
 
-This review does not change the database schema. It identifies gaps that must be resolved before backend repositories/services are implemented.
+Bản rà soát này không thay đổi lược đồ cơ sở dữ liệu. Bản này xác định các khoảng trống phải được giải quyết trước khi triển khai kho lưu trữ/dịch vụ backend.
 
-## Current Tables Detected
+## Các bảng hiện tại được phát hiện
 
-| Table | Columns | Foreign Keys |
+| Bảng | Cột | Khóa ngoại |
 |---|---|---|
 | `Roles` | RoleId, RoleName | - |
 | `Users` | UserId, Username, Email, PasswordHash, Phone, Status, CreatedAt | - |
@@ -29,84 +29,84 @@ This review does not change the database schema. It identifies gaps that must be
 | `Fines` | FineId, UserId, BorrowDetailId, Amount, Reason, Status, PaidAt | FOREIGN KEY (UserId) REFERENCES Users(UserId)<br>FOREIGN KEY (BorrowDetailId) REFERENCES BorrowDetails(BorrowDetailId) |
 | `AuditLogs` | LogId, UserId, Action, CreatedAt | FOREIGN KEY (UserId) REFERENCES Users(UserId) |
 
-## Feature Coverage
+## Độ bao phủ tính năng
 
-| Area | Required By Specs/ADR | Status | Finding |
+| Khu vực | Được đặc tả/ADR yêu cầu | Trạng thái | Phát hiện |
 |---|---|---|---|
-| FE02/FE11 Users/Roles | Users, Roles, UserRoles with active/inactive status, unique username/email, password hash, role assignments | PARTIAL | Users/Roles/UserRoles exist; Users has Status and PasswordHash. Missing token/session tables, lock/rate-limit fields, email verification fields, UpdatedAt. Seed uses unsafe password-like values. |
-| FE03 User Profile | UserProfiles with own profile fields and user FK | PARTIAL | UserProfiles exists with FullName, Address, DateOfBirth, AvatarUrl. Phone is in Users, which is acceptable but should be confirmed in FE03/FE11 planning. |
-| FE04 Membership | Membership applications/status and link to user/member | PARTIAL | MembershipApplications exists. Missing explicit reviewed membership/member status table if FE04 needs approved member status separate from application status. |
-| FE01/FE05 Books | Books, Categories, Authors, Publishers; active/inactive book status; searchable metadata | PARTIAL | Core tables exist. Books lacks Status/IsActive and ISBN unique constraint; public browse rule needs inactive books hidden. |
-| FE06 Inventory | BookCopies with barcode, location, approved statuses | PARTIAL | BookCopies exists. Status is free text with no CHECK constraint for AVAILABLE/BORROWED/RESERVED/DAMAGED/LOST/INACTIVE. |
-| FE07 Borrowing | Borrow request/detail records with member, copy, borrow date, due date, return date, status, creator/processor | PARTIAL | BorrowRequests/BorrowDetails exist. Missing ApprovedAt/BorrowDate/CreatedBy/ProcessedBy and explicit requester/member naming. BorrowDetails Status defaults BORROWED even before approval may be ambiguous. |
-| FE08 Reservation | Reservations with user, copy, queue/status, expiry/hold data | PARTIAL | Reservations exists. Missing ExpiresAt/QueuePosition/NotifiedAt or hold deadline fields from reservation queue behavior. |
-| FE09 Fine | Fine calculation trace: overdue days, rate, amount, related borrow/copy, calculation date, paid/collection details | PARTIAL | Fines exists. Missing OverdueDays, RatePerDay, CalculatedAt, CreatedBy, payment/collection method/reference, waiver fields if needed. |
-| FE10 Notification | Notifications/templates/attempts without raw secrets | MISSING | No notification tables found. FE10 needs records/templates/attempts or documented mock-only storage decision. |
-| Audit Logs | Actor/action/target/timestamp/safe metadata | PARTIAL | AuditLogs exists but only UserId, Action, CreatedAt. Missing TargetType, TargetId, Metadata, IpAddress/request context if needed. |
-| FE12 Reporting | Read-only reporting over source tables | OK | No separate reporting table required in Phase 1; source tables exist partially but depend on gap fixes above. |
+| Người dùng/Vai trò FE02/FE11 | Users, Roles, UserRoles với trạng thái hoạt động/không hoạt động, tên người dùng/email duy nhất, hàm băm mật khẩu, gán vai trò | PARTIAL | Users/Roles/UserRoles tồn tại; Users có Status và PasswordHash. Thiếu bảng token/phiên, trường khóa/giới hạn tốc độ, trường xác minh email, UpdatedAt. Dữ liệu khởi tạo dùng giá trị không an toàn giống mật khẩu. |
+| Hồ sơ Người dùng FE03 | UserProfiles với trường hồ sơ riêng và FK người dùng | PARTIAL | UserProfiles tồn tại với FullName, Address, DateOfBirth, AvatarUrl. Phone nằm trong Users, điều này có thể chấp nhận nhưng cần được xác nhận khi lập kế hoạch FE03/FE11. |
+| Thành viên FE04 | Đơn/trạng thái thành viên và liên kết tới người dùng/thành viên | PARTIAL | MembershipApplications tồn tại. Thiếu bảng trạng thái tư cách thành viên/thành viên rõ ràng đã rà soát nếu FE04 cần trạng thái thành viên đã phê duyệt tách biệt với trạng thái đơn. |
+| Sách FE01/FE05 | Books, Categories, Authors, Publishers; trạng thái sách hoạt động/không hoạt động; siêu dữ liệu có thể tìm kiếm | PARTIAL | Các bảng Core tồn tại. Books thiếu Status/IsActive và ràng buộc duy nhất ISBN; quy tắc duyệt công khai cần ẩn sách không hoạt động. |
+| Kho FE06 | BookCopies với mã vạch, vị trí, trạng thái đã phê duyệt | PARTIAL | BookCopies tồn tại. Status là văn bản tự do, không có ràng buộc CHECK cho AVAILABLE/BORROWED/RESERVED/DAMAGED/LOST/INACTIVE. |
+| Mượn FE07 | Bản ghi yêu cầu/chi tiết mượn với thành viên, bản sao, ngày mượn, hạn trả, ngày trả, trạng thái, người tạo/xử lý | PARTIAL | BorrowRequests/BorrowDetails tồn tại. Thiếu ApprovedAt/BorrowDate/CreatedBy/ProcessedBy và tên rõ ràng cho bên yêu cầu/thành viên. BorrowDetails Status mặc định BORROWED ngay cả trước khi phê duyệt có thể gây mơ hồ. |
+| Đặt chỗ FE08 | Reservations với người dùng, bản sao, hàng đợi/trạng thái, dữ liệu hết hạn/giữ | PARTIAL | Reservations tồn tại. Thiếu ExpiresAt/QueuePosition/NotifiedAt hoặc trường hạn giữ từ hành vi hàng đợi đặt chỗ. |
+| Tiền phạt FE09 | Dấu vết tính tiền phạt: số ngày quá hạn, mức phí, số tiền, khoản mượn/bản sao liên quan, ngày tính, chi tiết đã trả/thu | PARTIAL | Fines tồn tại. Thiếu OverdueDays, RatePerDay, CalculatedAt, CreatedBy, phương thức/tham chiếu thanh toán/thu và trường miễn nếu cần. |
+| Thông báo FE10 | Thông báo/mẫu/lần thử không có bí mật thô | MISSING | Không tìm thấy bảng thông báo. FE10 cần bản ghi/mẫu/lần thử hoặc quyết định lưu trữ chỉ giả lập được ghi tài liệu. |
+| Nhật ký Kiểm toán | Tác nhân/hành động/mục tiêu/dấu thời gian/siêu dữ liệu an toàn | PARTIAL | AuditLogs tồn tại nhưng chỉ có UserId, Action, CreatedAt. Thiếu TargetType, TargetId, Metadata, IpAddress/ngữ cảnh yêu cầu nếu cần. |
+| Báo cáo FE12 | Báo cáo chỉ đọc trên các bảng nguồn | OK | Không cần bảng báo cáo riêng trong Giai đoạn 1; bảng nguồn tồn tại một phần nhưng phụ thuộc vào các bản sửa khoảng trống bên trên. |
 
-## Blockers Before Week 5
+## Các yếu tố chặn trước Tuần 5
 
-| ID | Severity | Issue | Required Action |
+| ID | Mức độ | Vấn đề | Hành động bắt buộc |
 |---|---|---|---|
-| DB-BLOCKER-001 | High | Seed data inserts `PasswordHash` values of `123`, which violates no plaintext/password-like seed rule. | Replace with non-login demo hashes or remove seeded users before implementation. Do not commit real credentials. |
-| DB-BLOCKER-002 | High | No refresh token, password reset token, email verification token, or account setup token storage model exists. | Add reviewed token/session tables or document a stateless/mock design in ADR/spec before FE02 implementation. |
-| DB-BLOCKER-003 | High | No notification tables exist for FE10 although FE10 requires records/templates/attempts. | Add `Notifications`, `NotificationTemplates`, `NotificationAttempts` or explicitly limit FE10 Phase 1 to mock-only without persistence and update spec/ADR. |
-| DB-BLOCKER-004 | High | Borrowing records do not fully capture borrow approval/creator/borrow date needed for traceability. | Revise borrow tables with approved date/user/status fields before FE07 repositories. |
-| DB-BLOCKER-005 | High | Fine table cannot fully trace fine calculation. | Add overdue days, rate, calculated timestamp, and collection metadata before FE09 implementation. |
-| DB-BLOCKER-006 | Medium | Book and copy statuses are free text without constraints; Books lacks active/inactive status. | Add CHECK constraints or controlled lookup strategy and book status field. |
-| DB-BLOCKER-007 | Medium | AuditLogs table is too thin for administrative action traceability. | Add target type/id and safe metadata fields. |
+| DB-BLOCKER-001 | Cao | Dữ liệu khởi tạo chèn giá trị `PasswordHash` là `123`, vi phạm quy tắc không có giá trị khởi tạo dạng văn bản thuần/giống mật khẩu. | Thay bằng hàm băm demo không thể đăng nhập hoặc xóa người dùng khởi tạo trước khi triển khai. Không commit thông tin xác thực thật. |
+| DB-BLOCKER-002 | Cao | Không tồn tại mô hình lưu trữ token làm mới, token đặt lại mật khẩu, token xác minh email hay token thiết lập tài khoản. | Thêm bảng token/phiên đã rà soát hoặc ghi thiết kế phi trạng thái/giả lập trong ADR/đặc tả trước khi triển khai FE02. |
+| DB-BLOCKER-003 | Cao | Không tồn tại bảng thông báo cho FE10 dù FE10 yêu cầu bản ghi/mẫu/lần thử. | Thêm `Notifications`, `NotificationTemplates`, `NotificationAttempts` hoặc giới hạn rõ Giai đoạn 1 FE10 chỉ giả lập không lưu trữ và cập nhật đặc tả/ADR. |
+| DB-BLOCKER-004 | Cao | Bản ghi mượn không ghi nhận đầy đủ phê duyệt/người tạo/ngày mượn cần cho truy vết. | Sửa các bảng mượn với trường ngày/người dùng/trạng thái phê duyệt trước kho lưu trữ FE07. |
+| DB-BLOCKER-005 | Cao | Bảng tiền phạt không thể truy vết đầy đủ cách tính tiền phạt. | Thêm số ngày quá hạn, mức phí, dấu thời gian tính và siêu dữ liệu thu trước khi triển khai FE09. |
+| DB-BLOCKER-006 | Trung bình | Trạng thái sách và bản sao là văn bản tự do không có ràng buộc; Books thiếu trạng thái hoạt động/không hoạt động. | Thêm ràng buộc CHECK hoặc chiến lược tra cứu được kiểm soát và trường trạng thái sách. |
+| DB-BLOCKER-007 | Trung bình | Bảng AuditLogs quá sơ sài để truy vết hành động quản trị. | Thêm loại/id mục tiêu và trường siêu dữ liệu an toàn. |
 
-## Recommended Schema Revision Tasks
+## Các tác vụ sửa lược đồ được đề xuất
 
-1. Create `database/schema-review-notes.md` or update `ADR-002` with final table decisions.
-2. Revise `database/Librarymanagement.sql` only after team approval of the blockers above.
-3. Prioritize FE02/FE11 schema first because Week 5 Sprint 1 starts with Auth & Users.
-4. Add token/session/audit tables before writing auth repositories.
-5. Add notification persistence or explicitly approve mock-only notification storage before FE10 planning.
-6. Keep seed data safe: no real emails, no raw passwords, no usable default admin credentials.
+1. Tạo `database/schema-review-notes.md` hoặc cập nhật `ADR-002` với các quyết định bảng cuối cùng.
+2. Chỉ sửa `database/Librarymanagement.sql` sau khi nhóm phê duyệt các yếu tố chặn bên trên.
+3. Ưu tiên lược đồ FE02/FE11 trước vì Sprint 1 Tuần 5 bắt đầu với Xác thực và Người dùng.
+4. Thêm bảng token/phiên/kiểm toán trước khi viết kho lưu trữ xác thực.
+5. Thêm lưu trữ thông báo hoặc phê duyệt rõ lưu trữ thông báo chỉ giả lập trước khi lập kế hoạch FE10.
+6. Giữ dữ liệu khởi tạo an toàn: không email thật, không mật khẩu thô, không thông tin xác thực quản trị viên mặc định có thể dùng.
 
-## Week 4 Gate Result
+## Kết quả cổng Tuần 4
 
-PASS AFTER REVISION. The current SQL script has been revised and smoke-tested locally. Team review is still required before merge because database schema is a Core artifact.
+PASS SAU KHI SỬA. Kịch bản SQL hiện tại đã được sửa và kiểm thử smoke cục bộ. Vẫn cần nhóm rà soát trước khi merge vì lược đồ cơ sở dữ liệu là sản phẩm Core.
 
-## Schema Revision Verification
+## Xác minh sửa lược đồ
 
-Status: PASSED LOCAL SQLCMD SMOKE TEST
+Trạng thái: ĐÃ ĐẠT KIỂM THỬ SMOKE SQLCMD CỤC BỘ
 
-After the initial gap review, `database/Librarymanagement.sql` was revised to address the Week 4 blockers:
+Sau lần rà soát khoảng trống ban đầu, `database/Librarymanagement.sql` đã được sửa để xử lý các yếu tố chặn Tuần 4:
 
-- Added auth token storage through `AuthTokens`.
-- Added notification persistence tables.
-- Added user auth/status fields.
-- Added member status table.
-- Added book/copy/status constraints.
-- Added borrowing, reservation, fine, and audit trace fields.
-- Replaced unsafe seed password values with non-production demo placeholder hashes.
-- Added `SET QUOTED_IDENTIFIER ON` and `SET ANSI_NULLS ON` for SQL Server filtered index support.
+- Đã thêm lưu trữ token xác thực qua `AuthTokens`.
+- Đã thêm các bảng lưu trữ thông báo.
+- Đã thêm trường xác thực/trạng thái người dùng.
+- Đã thêm bảng trạng thái thành viên.
+- Đã thêm ràng buộc sách/bản sao/trạng thái.
+- Đã thêm trường truy vết mượn, đặt chỗ, tiền phạt và kiểm toán.
+- Đã thay giá trị mật khẩu khởi tạo không an toàn bằng hàm băm giữ chỗ demo không dùng cho production.
+- Đã thêm `SET QUOTED_IDENTIFIER ON` và `SET ANSI_NULLS ON` để hỗ trợ chỉ mục lọc SQL Server.
 
-Local verification command:
+Lệnh xác minh cục bộ:
 
 ```powershell
 sqlcmd -S localhost -E -b -i database\Librarymanagement.sql
 ```
 
-Result: PASS on local SQL Server `MSSQLSERVER`.
+Kết quả: PASS trên SQL Server cục bộ `MSSQLSERVER`.
 
-Post-run check found 20 tables, including `AuthTokens`, `NotificationTemplates`, `Notifications`, and `NotificationAttempts`.
+Kiểm tra sau khi chạy tìm thấy 20 bảng, gồm `AuthTokens`, `NotificationTemplates`, `Notifications` và `NotificationAttempts`.
 
-## Additional Status-Alignment Findings From Phase 1 Audit
+## Phát hiện bổ sung về căn chỉnh trạng thái từ kiểm toán Giai đoạn 1
 
-Status: ACTION REQUIRED BEFORE FEATURE IMPLEMENTATION
+Trạng thái: CẦN HÀNH ĐỘNG TRƯỚC KHI TRIỂN KHAI TÍNH NĂNG
 
-The SQL script passes a local smoke test, but a later Phase 1 SPEC audit found enum/status alignment gaps that must be resolved before repositories and services are implemented:
+Kịch bản SQL đạt kiểm thử smoke cục bộ, nhưng lần kiểm toán SPEC Giai đoạn 1 sau đó phát hiện khoảng trống căn chỉnh enum/trạng thái phải được giải quyết trước khi triển khai kho lưu trữ và dịch vụ:
 
-| ID | Severity | Area | SPEC Requirement | Current SQL Gap | Required Action |
+| ID | Mức độ | Khu vực | Yêu cầu SPEC | Khoảng trống SQL hiện tại | Hành động bắt buộc |
 | --- | --- | --- | --- | --- | --- |
-| DB-FOLLOWUP-001 | High | FE07 Borrowing | `BorrowDetails.Status` must support requested and damaged/lost/returned lifecycle states. | `CK_BorrowDetails_Status` allows `BORROWED`, `RETURNED`, `OVERDUE`, `LOST`; it does not allow `REQUESTED` or `DAMAGED`. | Add approved FE07 detail status values before FE07 implementation. |
-| DB-FOLLOWUP-002 | High | FE07 Borrowing | `BorrowRequests.Status` must support `COMPLETED` when all details are terminal. | `CK_BorrowRequests_Status` allows `PENDING`, `APPROVED`, `REJECTED`, `CANCELLED`; it does not allow `COMPLETED`. | Add `COMPLETED` before FE07 return workflow implementation. |
-| DB-FOLLOWUP-003 | High | FE07 Borrowing | `BorrowDetails.DueDate` is required only when a borrow detail is approved/borrowed. | `DueDate` is `NOT NULL`, which conflicts with requested details created before approval. | Allow `DueDate` to be nullable until approval or revise the approved FE07 data rule. |
-| DB-FOLLOWUP-004 | Medium | FE08 Reservation | Reservation status values include `ACTIVE`, `CANCELLED`, `NOTIFIED`, `FULFILLED`, and `EXPIRED`. | `CK_Reservations_Status` allows `ACTIVE`, `FULFILLED`, `CANCELLED`, `EXPIRED`; it does not allow `NOTIFIED`. | Add `NOTIFIED` or update FE08 SPEC before FE08 implementation. |
-| DB-FOLLOWUP-005 | Medium | FE10 Notification | Notification status values include `PENDING`, `SENT`, `DELIVERED`, `FAILED`, and `SKIPPED`. | `CK_Notifications_Status` allows `PENDING`, `SENT`, `FAILED`, `CANCELLED`; it does not allow `DELIVERED` or `SKIPPED`, and adds `CANCELLED`. | Align SQL and FE10 SPEC status values before FE10 implementation. |
+| DB-FOLLOWUP-001 | Cao | Mượn FE07 | `BorrowDetails.Status` phải hỗ trợ các trạng thái vòng đời được yêu cầu và hư hỏng/mất/đã trả. | `CK_BorrowDetails_Status` cho phép `BORROWED`, `RETURNED`, `OVERDUE`, `LOST`; không cho phép `REQUESTED` hay `DAMAGED`. | Thêm các giá trị trạng thái chi tiết FE07 đã phê duyệt trước khi triển khai FE07. |
+| DB-FOLLOWUP-002 | Cao | Mượn FE07 | `BorrowRequests.Status` phải hỗ trợ `COMPLETED` khi mọi chi tiết ở trạng thái cuối. | `CK_BorrowRequests_Status` cho phép `PENDING`, `APPROVED`, `REJECTED`, `CANCELLED`; không cho phép `COMPLETED`. | Thêm `COMPLETED` trước khi triển khai quy trình trả FE07. |
+| DB-FOLLOWUP-003 | Cao | Mượn FE07 | `BorrowDetails.DueDate` chỉ bắt buộc khi chi tiết mượn được phê duyệt/đã mượn. | `DueDate` là `NOT NULL`, mâu thuẫn với chi tiết được yêu cầu tạo trước khi phê duyệt. | Cho phép `DueDate` có thể rỗng đến khi phê duyệt hoặc sửa quy tắc dữ liệu FE07 đã phê duyệt. |
+| DB-FOLLOWUP-004 | Trung bình | Đặt chỗ FE08 | Giá trị trạng thái đặt chỗ gồm `ACTIVE`, `CANCELLED`, `NOTIFIED`, `FULFILLED` và `EXPIRED`. | `CK_Reservations_Status` cho phép `ACTIVE`, `FULFILLED`, `CANCELLED`, `EXPIRED`; không cho phép `NOTIFIED`. | Thêm `NOTIFIED` hoặc cập nhật SPEC FE08 trước khi triển khai FE08. |
+| DB-FOLLOWUP-005 | Trung bình | Thông báo FE10 | Giá trị trạng thái thông báo gồm `PENDING`, `SENT`, `DELIVERED`, `FAILED` và `SKIPPED`. | `CK_Notifications_Status` cho phép `PENDING`, `SENT`, `FAILED`, `CANCELLED`; không cho phép `DELIVERED` hay `SKIPPED`, đồng thời thêm `CANCELLED`. | Căn chỉnh giá trị trạng thái SQL và SPEC FE10 trước khi triển khai FE10. |
 
-These are not Phase 1 SPEC blockers, but they are Week 4/implementation blockers.
+Đây không phải yếu tố chặn SPEC Giai đoạn 1 nhưng là yếu tố chặn Tuần 4/triển khai.

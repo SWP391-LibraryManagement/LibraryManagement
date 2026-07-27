@@ -1,112 +1,112 @@
-# Phase 1 Specification Closeout - Library Management System
+# Hoàn tất đặc tả Giai đoạn 1 - Hệ thống Quản lý Thư viện
 
-Date: 2026-06-10  
-Method: Hybrid Spec-Driven & Agent-Driven Development  
-Book step mapped: SDD Phase 1 - Specification
-
----
-
-## 1. Purpose
-
-This document closes the Specification phase for the current project baseline.
-
-According to the SDD workflow, the team must not move from Specification to Planning until each feature has:
-
-- A context-backed `SPEC.md`.
-- Clear scope and out-of-scope boundaries.
-- Concrete business rules and functional requirements.
-- Acceptance criteria that can become tests.
-- Resolved or explicitly approved design questions.
-- A completed review checklist.
-- `# Status: APPROVED` in the feature `SPEC.md`.
+Ngày: 2026-06-10
+Phương pháp: Phát triển Hybrid hướng Đặc tả và hướng Tác nhân
+Bước sách được ánh xạ: SDD Giai đoạn 1 - Đặc tả
 
 ---
 
-## 2. Phase 1 Result
+## 1. Mục đích
 
-Phase 1 Specification is now closed for the current baseline.
+Tài liệu này hoàn tất giai đoạn Đặc tả cho đường cơ sở dự án hiện tại.
 
-| Feature | Owner | SPEC Status | Phase 1 Result | Next Required Step |
+Theo quy trình SDD, nhóm không được chuyển từ Đặc tả sang Lập kế hoạch cho đến khi mỗi tính năng có:
+
+- Một `SPEC.md` có ngữ cảnh hỗ trợ.
+- Phạm vi và ranh giới ngoài phạm vi rõ ràng.
+- Quy tắc nghiệp vụ và yêu cầu chức năng cụ thể.
+- Tiêu chí chấp nhận có thể chuyển thành kiểm thử.
+- Câu hỏi thiết kế đã được giải quyết hoặc phê duyệt rõ ràng.
+- Danh sách kiểm tra rà soát đã hoàn tất.
+- `# Status: APPROVED` trong `SPEC.md` của tính năng.
+
+---
+
+## 2. Kết quả Giai đoạn 1
+
+Đặc tả Giai đoạn 1 hiện đã hoàn tất cho đường cơ sở hiện tại.
+
+| Tính năng | Chủ sở hữu | Trạng thái SPEC | Kết quả Giai đoạn 1 | Bước bắt buộc tiếp theo |
 | --- | --- | --- | --- | --- |
-| FE01 Public / Browse | Dung | APPROVED | Complete | Phase 2 PLAN.md |
-| FE02 Authentication | Dat | APPROVED | Complete | Continue approved implementation tasks |
-| FE03 User Profile | Dat | APPROVED | Complete | Phase 2 PLAN.md |
-| FE04 Membership Management | Dat | APPROVED | Complete | Phase 2 PLAN.md |
-| FE05 Book Management | Dung | APPROVED | Complete | Phase 2 PLAN.md |
-| FE06 Inventory / Book Copy Management | Dat | APPROVED | Complete | Phase 2 PLAN.md |
-| FE07 Borrowing Management | Nhat | APPROVED | Complete | Phase 2 PLAN.md |
-| FE08 Reservation Management | Nhat | APPROVED | Complete | Phase 2 PLAN.md |
-| FE09 Fine Management | Dung | APPROVED | Complete | Phase 2 PLAN.md |
-| FE10 Notification Management | Nhat | APPROVED | Complete | Phase 2 PLAN.md |
-| FE11 User & Role Management | Dung | APPROVED | Complete | Phase 2 PLAN.md |
-| FE12 Reporting & Statistics | Nhat | APPROVED | Complete | Phase 2 PLAN.md |
+| FE01 Công khai / Duyệt | Dung | APPROVED | Hoàn tất | PLAN.md Giai đoạn 2 |
+| FE02 Xác thực | Dat | APPROVED | Hoàn tất | Tiếp tục các tác vụ triển khai đã phê duyệt |
+| FE03 Hồ sơ Người dùng | Dat | APPROVED | Hoàn tất | PLAN.md Giai đoạn 2 |
+| FE04 Quản lý Tư cách Thành viên | Dat | APPROVED | Hoàn tất | PLAN.md Giai đoạn 2 |
+| FE05 Quản lý Sách | Dung | APPROVED | Hoàn tất | PLAN.md Giai đoạn 2 |
+| FE06 Quản lý Kho / Bản sao Sách | Dat | APPROVED | Hoàn tất | PLAN.md Giai đoạn 2 |
+| FE07 Quản lý Mượn | Nhat | APPROVED | Hoàn tất | PLAN.md Giai đoạn 2 |
+| FE08 Quản lý Đặt chỗ | Nhat | APPROVED | Hoàn tất | PLAN.md Giai đoạn 2 |
+| FE09 Quản lý Tiền phạt | Dung | APPROVED | Hoàn tất | PLAN.md Giai đoạn 2 |
+| FE10 Quản lý Thông báo | Nhat | APPROVED | Hoàn tất | PLAN.md Giai đoạn 2 |
+| FE11 Quản lý Người dùng và Vai trò | Dung | APPROVED | Hoàn tất | PLAN.md Giai đoạn 2 |
+| FE12 Báo cáo và Thống kê | Nhat | APPROVED | Hoàn tất | PLAN.md Giai đoạn 2 |
 
 ---
 
-## 3. What Was Cleaned Up
+## 3. Nội dung đã dọn dẹp
 
-The following documentation issues were aligned with Phase 1 completion:
+Các vấn đề tài liệu sau đã được căn chỉnh với việc hoàn tất Giai đoạn 1:
 
-- SPEC source-of-truth notes were changed from draft wording to approved-for-planning wording.
-- Review checklist headings were changed from pre-approval wording to completed Phase 1 wording.
-- Section 17 review checklist items were marked complete based on the existing `APPROVED` status and recorded Phase 1 decisions.
-- FE07 wording was aligned from open-question wording to resolved-question wording.
-- FE03 nested checklist formatting was fixed.
+- Ghi chú nguồn chân lý SPEC được đổi từ cách diễn đạt bản nháp sang cách diễn đạt đã phê duyệt để lập kế hoạch.
+- Tiêu đề danh sách kiểm tra rà soát được đổi từ cách diễn đạt trước phê duyệt sang cách diễn đạt đã hoàn tất Giai đoạn 1.
+- Các mục danh sách kiểm tra rà soát ở Phần 17 được đánh dấu hoàn tất dựa trên trạng thái `APPROVED` hiện có và các quyết định Giai đoạn 1 đã ghi.
+- Cách diễn đạt FE07 được căn chỉnh từ câu hỏi mở sang câu hỏi đã giải quyết.
+- Định dạng danh sách kiểm tra lồng nhau của FE03 đã được sửa.
 
-No feature source code was changed as part of this closeout.
+Không có mã nguồn tính năng nào thay đổi trong lần hoàn tất này.
 
 ---
 
-## 4. Important Gate For The Team
+## 4. Cổng quan trọng cho nhóm
 
-Phase 1 completion does not mean every feature is ready to code.
+Hoàn tất Giai đoạn 1 không có nghĩa mọi tính năng đã sẵn sàng để lập trình.
 
-Before implementing each feature, the team must complete:
+Trước khi triển khai mỗi tính năng, nhóm phải hoàn tất:
 
-1. Phase 2: `PLAN.md` approved.
-2. Phase 3: `TASKS.md` approved.
-3. Phase 4: implementation task-by-task with tests.
-4. Phase 5: validation report comparing code against SPEC.
+1. Giai đoạn 2: `PLAN.md` được phê duyệt.
+2. Giai đoạn 3: `TASKS.md` được phê duyệt.
+3. Giai đoạn 4: triển khai từng tác vụ cùng kiểm thử.
+4. Giai đoạn 5: báo cáo xác thực so sánh mã với SPEC.
 
-Current implementation readiness:
+Mức sẵn sàng triển khai hiện tại:
 
-| Feature Group | Status |
+| Nhóm tính năng | Trạng thái |
 | --- | --- |
-| FE02 | PLAN.md and TASKS.md already approved for Sprint 1 implementation. |
-| FE01, FE03-FE12 except FE02 | SPEC complete, but PLAN.md/TASKS.md still need to be written and approved before core coding. |
-| Nhat scope: FE07, FE08, FE10 | SPEC complete; next priority is FE07 PLAN.md, then FE07 TASKS.md. |
+| FE02 | PLAN.md và TASKS.md đã được phê duyệt cho triển khai Sprint 1. |
+| FE01, FE03-FE12 trừ FE02 | SPEC đã hoàn tất nhưng PLAN.md/TASKS.md vẫn cần được viết và phê duyệt trước khi lập trình core. |
+| Phạm vi của Nhat: FE07, FE08, FE10 | SPEC đã hoàn tất; ưu tiên tiếp theo là PLAN.md FE07, sau đó là TASKS.md FE07. |
 
 ---
 
-## 5. Recommended Next Order
+## 5. Thứ tự tiếp theo được đề xuất
 
-For Nhat's assigned work, proceed in this order:
+Đối với công việc được giao cho Nhat, tiến hành theo thứ tự này:
 
-1. FE07 Borrowing Management - write and approve `PLAN.md`.
-2. FE07 Borrowing Management - write and approve `TASKS.md`.
-3. FE07 implementation and tests.
-4. FE08 Reservation Management - plan/tasks after FE07 dependencies are clear.
-5. FE10 Notification Management - plan/tasks after notification integration points are clear.
+1. Quản lý Mượn FE07 - viết và phê duyệt `PLAN.md`.
+2. Quản lý Mượn FE07 - viết và phê duyệt `TASKS.md`.
+3. Triển khai và kiểm thử FE07.
+4. Quản lý Đặt chỗ FE08 - lập kế hoạch/tác vụ sau khi phần phụ thuộc FE07 rõ ràng.
+5. Quản lý Thông báo FE10 - lập kế hoạch/tác vụ sau khi điểm tích hợp thông báo rõ ràng.
 
-Reason: FE07 is the core circulation workflow and is depended on by FE08, FE09, FE10, FE11, and reports.
+Lý do: FE07 là quy trình lưu hành cốt lõi và được FE08, FE09, FE10, FE11 cùng các báo cáo phụ thuộc vào.
 
-## 6. Audit Boundary
+## 6. Ranh giới kiểm toán
 
-This closeout means the Phase 1 `SPEC.md` artifacts are internally consistent and ready for Phase 2 Planning. It does not mean the SQL schema or implementation is fully ready. Later gates must still verify database constraints, API contracts, code, tests, and validation reports.
+Lần hoàn tất này nghĩa là các sản phẩm `SPEC.md` Giai đoạn 1 nhất quán nội bộ và sẵn sàng cho Lập kế hoạch Giai đoạn 2. Điều đó không có nghĩa lược đồ SQL hay phần triển khai đã sẵn sàng hoàn toàn. Các cổng sau vẫn phải xác minh ràng buộc cơ sở dữ liệu, hợp đồng API, mã, kiểm thử và báo cáo xác thực.
 
-Known post-SPEC implementation watch item: FE07 borrowing SQL constraints must support the approved SPEC status values such as `REQUESTED`, `DAMAGED`, and `COMPLETED` before FE07 repositories/services are implemented.
+Hạng mục triển khai cần theo dõi đã biết sau SPEC: ràng buộc SQL mượn FE07 phải hỗ trợ các giá trị trạng thái SPEC đã phê duyệt như `REQUESTED`, `DAMAGED` và `COMPLETED` trước khi kho lưu trữ/dịch vụ FE07 được triển khai.
 
-## 7. Final Audit Result
+## 7. Kết quả kiểm toán cuối cùng
 
-Final audit result after rechecking all feature specs:
+Kết quả kiểm toán cuối cùng sau khi kiểm tra lại toàn bộ đặc tả tính năng:
 
-| Check | Result |
+| Kiểm tra | Kết quả |
 | --- | --- |
-| All 12 `SPEC.md` files have `# Status: APPROVED` | PASS |
-| All 12 `SPEC.md` files contain the required Phase 1 sections | PASS |
-| All Section 17 review checklist items in feature specs are checked | PASS |
-| Open-question decisions are approved in the resolution packet | PASS |
-| Review docs no longer use the old `NOT READY` verdict as current status | PASS |
-| Reviewer / team signoff | PASS |
+| Cả 12 tệp `SPEC.md` có `# Status: APPROVED` | PASS |
+| Cả 12 tệp `SPEC.md` chứa các phần bắt buộc của Giai đoạn 1 | PASS |
+| Tất cả mục trong danh sách kiểm tra rà soát Phần 17 của đặc tả tính năng đã được đánh dấu | PASS |
+| Quyết định cho câu hỏi mở được phê duyệt trong gói giải quyết | PASS |
+| Tài liệu rà soát không còn dùng kết luận cũ `NOT READY` làm trạng thái hiện tại | PASS |
+| Người rà soát / nhóm xác nhận | PASS |
 
-Signoff note: Phase 1 Specification is closed for the current planning baseline as of 2026-06-10.
+Ghi chú xác nhận: Đặc tả Giai đoạn 1 được hoàn tất cho đường cơ sở lập kế hoạch hiện tại kể từ 2026-06-10.
