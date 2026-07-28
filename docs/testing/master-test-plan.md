@@ -355,6 +355,8 @@ Current backend automated test files:
 | `backend/tests/fineRoutes.test.js` | FE09 fine API and business rules |
 | `backend/tests/integration.test.js` | Cross-feature FE02/FE07/FE08/FE09/FE10/FE12 flows |
 | `backend/tests/models.test.js` | Backend model-level checks |
+| `backend/tests/notificationInboxMigration.test.js` | FE10 additive schema/backfill/index migration contract and idempotence |
+| `backend/tests/notificationInboxRepository.test.js` | FE10 SQL ownership, allowlist, pagination, count, and read-state operations |
 | `backend/tests/notificationRoutes.test.js` | FE10 notification API and safety behavior |
 | `backend/tests/profileRoutes.test.js` | FE03 user profile API behavior |
 | `backend/tests/profileService.test.js` | FE03 profile service behavior |
@@ -377,7 +379,7 @@ Current backend automated test files:
 | FE07 Borrowing Management | `borrowingRoutes.test.js`, `integration.test.js` | Borrowing UI manual check | Backend covered; UI evidence needed |
 | FE08 Reservation Management | `reservationRoutes.test.js`, `integration.test.js` | Reservation UI manual check | Backend covered; UI evidence needed |
 | FE09 Fine Management | `fineRoutes.test.js`, `integration.test.js` | Fine flow manual check | Backend covered; UI evidence needed |
-| FE10 Notification Management | Existing `notificationRoutes.test.js`, `integration.test.js`; planned FE10-I01 migration/repository/API/frontend tests | Planned v0.5.0 personal-inbox E2E for MEMBER/LIBRARIAN/ADMIN plus cross-user negative evidence | Historical delivery backend covered; inbox implementation `NOT_STARTED` until governance activation reaches `main` |
+| FE10 Notification Management | `notificationInboxMigration.test.js`, `notificationInboxRepository.test.js`, `notificationRoutes.test.js`, `integration.test.js` | `frontend/test/notificationInboxFrontend.test.js`, `frontend/test/appShellFrontend.test.js`, and `tests/e2e/fe10-notification-inbox.spec.js` cover MEMBER/LIBRARIAN/ADMIN, responsive UI, privacy, filters/read state, and safe failure navigation | Historical head `cf0a236` passed exact-head CI `30315046007`, Azure staging `30315273298`, public transport/protected-route checks, Azure SQL schema/index verification, cleanup, and two-axis H3; after H1-approved documentation rebase to `main@30f936d`, fresh H2/exact-head gates, repeated H3, and merge remain pending |
 | FE11 User & Role Management | `userManagementRoutes.test.js` | User/role UI manual check if implemented | Backend covered |
 | FE12 Reporting & Statistics | `reportRoutes.test.js`, `integration.test.js` | Reporting UI manual check | Backend covered; UI evidence needed |
 
@@ -407,6 +409,12 @@ Build frontend:
 
 ```powershell
 npm.cmd --prefix frontend run build
+```
+
+Run the FE10 browser acceptance suite:
+
+```powershell
+npx.cmd playwright test tests/e2e/fe10-notification-inbox.spec.js --project=chromium
 ```
 
 Run traceability report:
@@ -558,9 +566,9 @@ CI passing does not replace human review. CI verifies automated conditions; revi
 | Gap | Why It Matters | Recommended Action |
 | --- | --- | --- |
 | No enforced coverage threshold yet | Playbook target is measurable coverage for business logic | Add Jest coverage script and agree threshold |
-| No frontend automated tests yet | UI regressions can slip through manual-only checks | Add React component or E2E tests for critical flows |
-| No E2E framework yet | Critical user flows are not browser-verified automatically | Evaluate Playwright for login, borrowing, reservation, reporting |
-| No SQL Server test DB path yet | In-memory tests do not catch schema/query issues | Add DB-backed integration test plan after DB setup stabilizes |
+| Frontend automated coverage is uneven outside current critical flows | UI regressions can slip through manual-only checks | Extend the existing frontend and Playwright suites feature by feature |
+| Browser E2E does not yet cover every feature | Some journeys remain API/manual evidence | Extend Playwright beyond the golden path and FE10 inbox as priorities require |
+| SQL-backed coverage is selective | In-memory tests do not catch every schema/query issue | Keep disposable SQL migration rehearsals and expand mutation-gated SQL integration tests |
 | Some features have no identified backend tests | Feature coverage is uneven | Add tests or mark pending with owner and reason |
 | Not all feature `PLAN.md` files include a test strategy | PLAN.md should include test strategy before implementation | Update active feature plans during next SDD documentation pass |
 | Manual UI evidence is not stored per release | Review evidence can disappear in chat/PR comments | Add release or PR test evidence notes under `docs/testing/` |

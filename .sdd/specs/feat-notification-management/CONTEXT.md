@@ -1,8 +1,8 @@
 # CONTEXT.md - FE10 Notification Management
 
-# Version: 0.3.0
+# Version: 0.5.0
 
-# Status: V0.5.0 H1 APPROVED - GOVERNANCE ACTIVATION PENDING MERGE
+# Status: V0.5.0 AZURE STAGING VERIFIED - H3 REMEDIATION IN PROGRESS
 
 # Owner: Nhat
 
@@ -92,7 +92,7 @@ the approved v0.5.0 extension adds the personal read-state contract:
 - `NotificationTemplates` with canonical template code, subject, body, status, and timestamps.
 - `Notifications` with type/template, recipient, delivery status, safe source
   metadata, all-status idempotency key, redacted payload, attempt count, safe
-  failure summary, and the v0.5.0-planned nullable `ReadAt` field.
+  failure summary, and the v0.5.0 nullable `ReadAt` field.
 - `NotificationAttempts` with attempt timestamp/status, safe error message, and provider message ID.
 - `UserNotificationPreferences` remains future work. The approved personal web
   inbox reuses `Notifications` and does not require a preference or projection
@@ -180,8 +180,44 @@ The approved SPEC and FE10-H01 through FE10-H09 resolved the implementation bloc
 ## 10. Current Hardening Status
 
 - `SPEC.md` v0.5.0, the personal inbox design, and FE10-I01..I08 plan are
-  H1-approved. Product implementation remains `NOT_STARTED` until the
-  governance activation reaches `main`.
+  H1-approved; governance PR #70 is merged as `25c09ec`.
+- FE10-I01 through FE10-I08, the migration-hash remediation, and the bounded
+  H3 round-one remediation are implemented. PR #75 historical head `cf0a236`
+  passed exact-head CI `30315046007`, Azure staging `30315273298`, and
+  two-axis H3 with no actionable finding.
+- H3 round one against `main@a5fcbb9...28c4f80` failed on missing ADR-002
+  read-state documentation, stale lifecycle source-of-truth text, two bounded
+  `/notifications` read-state controls, and a browser-reported popover stacking
+  defect. ADR-002, lifecycle documentation, page state, mark-all availability,
+  and open-popover stacking are now remediated with focused tests.
+- Fresh post-`main@a240705` gates passed: backend 69/69 suites and 1084/1084 tests;
+  frontend 259/259 plus lint/build; deployment 20/20; system 10/10;
+  traceability state 3/3 and FE10 14/16 (88%); Chromium 11/11; audits, Azure
+  schema preparation, and diff hygiene.
+- The user approved documentation-only drift through `main@30f936d`; upstream
+  CI `30315665010` and automatic Azure staging `30315842152` passed. The branch
+  rebased without runtime conflict and preserved the Vietnamese SDD
+  translation. Fresh H2/exact-head gates and repeated H3 are mandatory because
+  the earlier H2 authority cannot be reused after rebase.
+- Exact-head public HTTPS/CORS and protected inbox routing passed on Azure.
+  Azure SQL retained exactly one nullable `ReadAt` column and one supporting
+  index; temporary probe and firewall state was removed. Historical three-role
+  own-record verification remains recorded for unchanged backend head
+  `28c4f80`. Repeated H3, explicit H3 approval, merge, and exact post-merge
+  CI/deployment remain pending.
+- The complete post-`main@30f936d` reconciliation must be fingerprinted and
+  H2-approved; the resulting latest PR head must then pass exact-head gates
+  before repeated H3.
+- The 2026-07-28 H1 deployment addendum preserves upstream CI-gated automatic
+  staging while requiring exact migration-hash proof for both automatic and
+  manual runs; manual runs retain an additional human confirmation input.
+- The 2026-07-28 H1 Core-drift addendum preserves the upstream packaged
+  `CHANGE_PASSWORD_OTP` startup migration/readiness contract and Vietnamese
+  verification-email seed while retaining the FE10 migration gate.
+- The second 2026-07-28 H1 Core-drift addendum preserves upstream
+  FE07/FE08/FE10/FE12 round-two UI corrections through `main@db97f17`,
+  including the Vietnamese member-cancellation reason and responsive
+  return/reservation controls, while retaining the FE10 inbox API and styles.
 - FE10-H01 through FE10-H09 and FE10-S01 through FE10-S16 remain completed
   historical delivery work; FE10-I01 through FE10-I08 are the new bounded
   personal inbox tasks.

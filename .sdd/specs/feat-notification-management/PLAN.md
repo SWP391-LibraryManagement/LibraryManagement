@@ -1,6 +1,6 @@
 # PLAN.md - FE10 Notification Management
 
-Status: V0.5.0 H1 APPROVED - GOVERNANCE ACTIVATION PENDING MERGE
+Status: V0.5.0 IMPLEMENTED - POST-DRIFT H2/H3 IN PROGRESS
 
 Owner: Nhat
 
@@ -12,8 +12,16 @@ Workflow State: The approved Phase 2/G1-G12 and v0.4.5 delivery baseline
 remains complete. The user approved the v0.5.0 personal notification inbox
 design and consolidated written SPEC on 2026-07-27. The user approved the new
 implementation plan and FE10-I01..I08 task decomposition as H1 on 2026-07-28.
-Product implementation remains `NOT_STARTED` until the governance activation
-PR reaches `main` as required by Fast-Track Hybrid.
+Governance PR #70 reached `main` as `25c09ec`. FE10-I01 through FE10-I08,
+the migration-hash remediation, and the bounded H3 round-one remediation are
+implemented. PR #75 historical head `cf0a236` passed exact-head CI
+`30315046007`, Azure staging `30315273298`, public transport/protected-route
+checks, Azure SQL schema/index verification, cleanup, and final two-axis H3
+with no actionable finding. The user then approved documentation-only drift
+through `main@30f936d`; the branch rebased without runtime conflict and
+preserved the upstream Vietnamese SDD translation. The earlier H2 authority
+cannot be reused. A fresh fingerprint/H2, exact-head CI/Azure, repeated H3,
+explicit H3 approval, merge, and post-merge CI/deployment remain open.
 
 ---
 
@@ -337,3 +345,74 @@ The implementation sequence is additive and backend-first:
 - H2 reviews the complete local candidate. H3 rechecks specification,
   ownership, sensitive exclusion, migration safety, and staging evidence before
   merge.
+
+### 15.4 Current Candidate State
+
+- PR #75 head `28c4f80` contains the H2-approved FE10-I01..I08 candidate and
+  cross-platform migration-hash addendum.
+- Exact-head CI `30306805399` and Azure staging deployment `30307855616`
+  passed. Azure SQL retained one nullable `ReadAt` column and one supporting
+  index, protected aggregates were unchanged, and temporary probes/firewall
+  rules were removed.
+- Three-role API/browser checks passed own-record isolation, sensitive
+  exclusion, read replay, filters, navigation, HTTPS, and CORS.
+- H3 round one failed on bounded ADR/documentation and UI-state/stacking
+  findings. The remediation is local and must receive a new H2 fingerprint,
+  exact-head CI/Azure redeployment, and repeated H3 before merge. Post-merge
+  main CI and automatic staging remain unclaimed.
+
+### 15.5 H1 Deployment Addendum
+
+The user approved this addendum on 2026-07-28 after upstream `main@41282b4`
+introduced CI-gated automatic staging deployment:
+
+- preserve automatic deployment after successful exact-commit `main` CI and
+  preserve `workflow_dispatch` for an operator rerun;
+- require both paths to match the checked-out migration SHA-256 with the
+  non-secret GitHub `staging` Environment variable
+  `FE10_INBOX_MIGRATION_SHA256`;
+- additionally require `fe10_inbox_migration_confirmed=true` for manual runs;
+- keep preflight -> backend -> frontend -> smoke ordering;
+- apply/verify the migration, remove temporary firewall access, store the
+  migration hash, and manually verify the exact PR head before H3/merge;
+- after merge, monitor exact post-merge CI and the resulting automatic staging
+  run for the same migration proof.
+
+The user then approved the H1 Core-drift addendum for `main@5a3c84b` on
+2026-07-28. Reconciliation must preserve the upstream packaged
+`add_change_password_otp_token_type.sql` startup migration, its readiness
+documentation/tests, and the Vietnamese account-verification seed while
+retaining the FE10 preflight and ordered deployment. Complete post-drift gates
+and a new fingerprint/H2 are mandatory before publication.
+
+After that rebase, upstream advanced again by three commits through
+`main@db97f17`. The user approved a second H1 Core-drift addendum on
+2026-07-28. Reconciliation preserves the upstream Vietnamese default
+reservation-cancellation reason and responsive return/reservation tab styles,
+plus every other upstream FE07/FE08/FE10/FE12 round-two correction, while
+retaining the FE10 inbox client and scoped notification styles. Complete
+post-drift gates and a new fingerprint/H2 remain mandatory before publication.
+
+Upstream later advanced through `main@12faead` by deleting retired files only
+under `document/`. The user approved a third H1 drift addendum on 2026-07-28.
+There is no path or Core-contract overlap with the FE10 H3 remediation, and the
+rebase completed without conflict. Complete gates and a new H2 fingerprint
+remain mandatory; after publication, the exact head must replace current
+`main` on Azure staging and be verified there before repeated H3.
+
+The complete local matrix then passed: backend 69/69 suites and 1116/1116
+tests; frontend 259/259 plus lint/build; deployment 20/20; system 10/10;
+traceability state 3/3 and FE10 14/16 (88%); Chromium 11/11; audits, Azure
+schema preparation, diff hygiene, and focused contradiction scans.
+
+Before the approved round-3 H2 could be used, the mandatory pre-stage fetch
+advanced upstream to `main@a240705`. The user approved a fourth H1 drift
+addendum on 2026-07-28. Reconciliation preserves the upstream deletion of the
+FE11 Admin user-edit API/UI/test surface while retaining FE10. Main CI
+`30311801599` and Azure deployment `30311973740` passed, the branch rebased
+without conflict, and complete gates plus a new fingerprint/H2 are mandatory.
+
+Fresh validation on that exact base passed backend 69/69 suites and 1084/1084
+tests, frontend 259/259 plus lint/build, deployment 20/20, system 10/10,
+traceability state 3/3, FE10 traceability 14/16 (88%), Chromium 11/11, audits,
+Azure schema preparation, and diff hygiene. The new fingerprint/H2 remains.

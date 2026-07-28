@@ -15,6 +15,21 @@ function isSensitiveQueueNotification(notification) {
   );
 }
 
+const inboxTypeTemplatePairs = new Set([
+  'GENERAL_SYSTEM:MEMBERSHIP_RESULT',
+  'RESERVATION_AVAILABLE:RESERVATION_READY',
+  'DUE_DATE_REMINDER:DUE_DATE_REMINDER',
+  'OVERDUE_NOTICE:OVERDUE_NOTICE',
+  'FINE_NOTICE:FINE_NOTICE',
+]);
+
+function isInboxEligible(notification) {
+  return (
+    notification?.userId != null &&
+    inboxTypeTemplatePairs.has(`${notification?.type}:${notification?.templateKey}`)
+  );
+}
+
 function makeInMemoryNotificationDependencies() {
   let nextNotificationId = 1;
   const templates = [
@@ -135,6 +150,7 @@ function makeInMemoryNotificationDependencies() {
         lastErrorMessage: null,
         createdAt: new Date(),
         sentAt: null,
+        readAt: input.readAt || null,
       };
 
       nextNotificationId += 1;
@@ -163,6 +179,76 @@ function makeInMemoryNotificationDependencies() {
         sourceEntityId: input.sourceEntityId,
         safePayload: input.safePayload,
       });
+    },
+
+    async listInboxForUser({ userId, page = 1, limit = 20, readState = 'all', type = null }) {
+      const matching = notifications
+        .filter(
+          (notification) =>
+            Number(notification.userId) === Number(userId) &&
+            isInboxEligible(notification) &&
+            (readState === 'all' ||
+              (readState === 'unread' && notification.readAt == null) ||
+              (readState === 'read' && notification.readAt != null)) &&
+            (!type || notification.type === type)
+        )
+        .sort(
+          (left, right) =>
+            new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime() ||
+            right.notificationId - left.notificationId
+        );
+      const offset = (page - 1) * limit;
+
+      return {
+        notifications: matching.slice(offset, offset + limit).map(mapNotification),
+        total: matching.length,
+      };
+    },
+
+    async countUnreadForUser(userId) {
+      return notifications.filter(
+        (notification) =>
+          Number(notification.userId) === Number(userId) &&
+          isInboxEligible(notification) &&
+          notification.readAt == null
+      ).length;
+    },
+
+    async markInboxReadForUser({ notificationId, userId }) {
+      const notification = notifications.find(
+        (item) =>
+          item.notificationId === Number(notificationId) &&
+          Number(item.userId) === Number(userId) &&
+          isInboxEligible(item)
+      );
+
+      if (!notification) {
+        return null;
+      }
+
+      if (notification.readAt == null) {
+        notification.readAt = new Date().toISOString();
+      }
+
+      return mapNotification(notification);
+    },
+
+    async markAllInboxReadForUser(userId) {
+      const readAt = new Date().toISOString();
+      let updated = 0;
+
+      for (const notification of notifications) {
+        if (
+          Number(notification.userId) === Number(userId) &&
+          isInboxEligible(notification) &&
+          notification.readAt == null
+        ) {
+          notification.readAt = readAt;
+          updated += 1;
+        }
+      }
+
+      return { updated };
     },
 
     async listPending(limit = 20) {

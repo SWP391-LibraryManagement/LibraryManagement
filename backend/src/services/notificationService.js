@@ -1,4 +1,5 @@
 const errors = require('../utils/safeErrors');
+const { INBOX_TYPES, toSafeInboxItem } = require('../utils/notificationInbox');
 
 const supportedTypes = [
   'ACCOUNT_VERIFICATION',
@@ -59,6 +60,7 @@ const unsafeSourceEntityTypeFragments = [
   'otp',
 ];
 const allowedSourceFeatures = new Set(['FE02', 'FE04', 'FE07', 'FE08', 'FE09', 'FE11', 'SYSTEM']);
+const inboxRoles = ['MEMBER', 'LIBRARIAN', 'ADMIN'];
 
 function normalizeRole(role) {
   return String(role || '').toUpperCase();
@@ -248,6 +250,37 @@ function createNotificationService({
     if (!hasAnyRole(actor, ['LIBRARIAN', 'ADMIN'])) {
       throw errors.forbidden('ROLE_REQUIRED', 'Your role cannot perform this action.');
     }
+  }
+
+  function requireInboxActor(actor) {
+    const userId = Number(actor?.userId);
+
+    if (!hasAnyRole(actor, inboxRoles) || !Number.isInteger(userId) || userId <= 0) {
+      throw errors.forbidden('ROLE_REQUIRED', 'Your role cannot perform this action.');
+    }
+  }
+
+  function normalizeInboxListInput(input = {}) {
+    const page = Number(input.page ?? 1);
+    const limit = Number(input.limit ?? 20);
+    const readState = String(input.readState ?? 'all').trim().toLowerCase();
+    const type = input.type == null || input.type === ''
+      ? null
+      : String(input.type).trim().toUpperCase();
+
+    if (
+      !Number.isInteger(page) ||
+      page < 1 ||
+      !Number.isInteger(limit) ||
+      limit < 1 ||
+      limit > 100 ||
+      !['all', 'unread', 'read'].includes(readState) ||
+      (type && !INBOX_TYPES.includes(type))
+    ) {
+      throw errors.badRequest('VALIDATION_ERROR', 'Invalid request.');
+    }
+
+    return { page, limit, readState, type };
   }
 
   async function resolveRecipient({ userId, recipientEmail }) {
@@ -834,6 +867,50 @@ function createNotificationService({
     };
   }
 
+  async function listMyNotifications(input, actor) {
+    requireInboxActor(actor);
+    const filters = normalizeInboxListInput(input);
+    const result = await notificationRepository.listInboxForUser({
+      userId: Number(actor.userId),
+      ...filters,
+    });
+
+    return {
+      notifications: result.notifications.map(toSafeInboxItem),
+      pagination: {
+        page: filters.page,
+        limit: filters.limit,
+        total: result.total,
+        totalPages: result.total === 0 ? 0 : Math.ceil(result.total / filters.limit),
+      },
+    };
+  }
+
+  async function countMyUnreadNotifications(actor) {
+    requireInboxActor(actor);
+    const unreadCount = await notificationRepository.countUnreadForUser(Number(actor.userId));
+    return { unreadCount };
+  }
+
+  async function markMyNotificationRead(notificationId, actor) {
+    requireInboxActor(actor);
+    const notification = await notificationRepository.markInboxReadForUser({
+      notificationId: Number(notificationId),
+      userId: Number(actor.userId),
+    });
+
+    if (!notification) {
+      throw errors.notFound('NOTIFICATION_NOT_FOUND', 'Notification was not found.');
+    }
+
+    return toSafeInboxItem(notification);
+  }
+
+  async function markAllMyNotificationsRead(actor) {
+    requireInboxActor(actor);
+    return notificationRepository.markAllInboxReadForUser(Number(actor.userId));
+  }
+
   function createSourceNotificationRequester(sourceFeature) {
     const boundSourceFeature = normalizeSourceFeature(sourceFeature);
 
@@ -950,6 +1027,10 @@ function createNotificationService({
     createSystemNotificationProcessor,
     processPendingNotifications,
     retryNotification,
+    listMyNotifications,
+    countMyUnreadNotifications,
+    markMyNotificationRead,
+    markAllMyNotificationsRead,
   };
 }
 

@@ -24,5 +24,6 @@ module.exports = defineModel({
     { attribute: 'lastErrorMessage', name: 'LastErrorMessage', type: 'NVARCHAR(500)', nullable: true },
     { attribute: 'createdAt', name: 'CreatedAt', type: 'DATETIME', required: true, default: 'GETDATE()' },
     { attribute: 'sentAt', name: 'SentAt', type: 'DATETIME', nullable: true },
+    { attribute: 'readAt', name: 'ReadAt', type: 'DATETIME2', nullable: true },
   ],
 });

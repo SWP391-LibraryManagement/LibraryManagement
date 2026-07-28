@@ -283,6 +283,7 @@ CREATE TABLE Notifications (
     LastErrorMessage NVARCHAR(500) NULL,
     CreatedAt DATETIME NOT NULL DEFAULT GETDATE(),
     SentAt DATETIME NULL,
+    ReadAt DATETIME2 NULL,
     FOREIGN KEY (TemplateId) REFERENCES NotificationTemplates(TemplateId),
     FOREIGN KEY (UserId) REFERENCES Users(UserId),
     CONSTRAINT CK_Notifications_Type CHECK (NotificationType IS NULL OR NotificationType IN ('ACCOUNT_VERIFICATION', 'PASSWORD_RESET', 'ACCOUNT_SETUP', 'RESERVATION_AVAILABLE', 'DUE_DATE_REMINDER', 'OVERDUE_NOTICE', 'FINE_NOTICE', 'GENERAL_SYSTEM')),
@@ -293,6 +294,10 @@ CREATE TABLE Notifications (
 CREATE UNIQUE INDEX UX_Notifications_IdempotencyKey_NotNull
 ON Notifications(IdempotencyKey)
 WHERE IdempotencyKey IS NOT NULL;
+
+CREATE INDEX IX_Notifications_User_ReadAt_CreatedAt
+ON Notifications(UserId, ReadAt, CreatedAt DESC)
+INCLUDE (NotificationId, NotificationType, TemplateKey, Title, Body);
 
 CREATE TABLE NotificationAttempts (
     AttemptId INT IDENTITY PRIMARY KEY,

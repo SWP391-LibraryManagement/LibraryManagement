@@ -594,7 +594,31 @@ git commit -m "test(fe10): verify inbox fan-in and role flows"
 
 - [ ] **Step 1: Write RED deployment-policy assertions**
 
-Require an explicit operator confirmation that the FE10 migration has already passed on staging, require `deploy-backend` to depend on preflight, and require `deploy-frontend` to depend on successful backend deployment. Preserve manual-only deployment and fail-closed smoke testing.
+Require an explicit operator confirmation that the FE10 migration has already
+passed on staging, require `deploy-backend` to depend on preflight, and require
+`deploy-frontend` to depend on successful backend deployment. Preserve
+fail-closed smoke testing and the newer upstream CI-gated deployment contract
+described in the addendum below.
+
+H1 deployment addendum approved 2026-07-28: upstream `main@41282b4`
+introduced CI-gated automatic staging deployment while implementation was in
+progress. Preserve that newer contract instead of restoring manual-only mode.
+Both automatic and manual runs must check the exact migration SHA-256 stored in
+the GitHub `staging` Environment; manual runs additionally require the boolean
+confirmation. The FE10 migration proof must therefore exist before H3/merge.
+
+H1 Core-drift addendum approved 2026-07-28: rebase onto `main@5a3c84b` and
+preserve its packaged `add_change_password_otp_token_type.sql` startup
+migration, readiness guide/tests, and Vietnamese verification-email seed.
+Retain the FE10 migration preflight and ordered deploy, then rerun all gates
+and obtain a new H2 fingerprint before publication.
+
+Second H1 Core-drift addendum approved 2026-07-28: rebase onto
+`main@db97f17` and preserve its Vietnamese default reservation-cancellation
+reason, responsive return/reservation controls, and all other round-two
+FE07/FE08/FE10/FE12 corrections. Retain the FE10 inbox client and scoped
+notification styles, then rerun all gates and obtain a new H2 fingerprint
+before publication.
 
 ```js
 assert.match(workflow, /fe10_inbox_migration_confirmed/);
@@ -612,7 +636,13 @@ Expected: the new ordering/confirmation test FAILS against the parallel deployme
 
 - [ ] **Step 3: Update deployment ordering and operator guide**
 
-Add a required boolean `workflow_dispatch` input `fe10_inbox_migration_confirmed`, a preflight job that fails when false, `deploy-backend.needs: preflight`, and `deploy-frontend.needs: deploy-backend`. Keep smoke depending on both deployed applications.
+Keep upstream `workflow_run` for successful `main` CI and the manual
+`workflow_dispatch` path. Add required boolean input
+`fe10_inbox_migration_confirmed`, and make preflight check the checked-out
+migration SHA-256 against `FE10_INBOX_MIGRATION_SHA256` in the GitHub `staging`
+Environment. Manual runs also fail when the boolean is false.
+`deploy-backend.needs: preflight`, `deploy-frontend.needs: deploy-backend`, and
+smoke continues to depend on both deployed applications.
 
 Document the exact staging order:
 
@@ -663,7 +693,7 @@ npm.cmd run test:system
 npm.cmd run trace:enforce
 npm.cmd run test:traceability-state
 npm.cmd exec -- playwright test --project=chromium
-git diff --check origin/main...HEAD
+git diff --check
 git status --short
 ```
 
@@ -693,21 +723,27 @@ git commit -m "docs(fe10): close personal inbox h2 validation"
 
 - [ ] **Step 9: Deploy and verify Azure staging in approved order**
 
-After push/CI approval:
+After push/exact-head CI approval:
 
 1. apply and verify the migration twice with no PII/secret output;
-2. dispatch the manual workflow with confirmation true;
-3. verify `/health`, `/health/ready`, and anonymous inbox `401`;
-4. sign in as staging MEMBER, LIBRARIAN, and ADMIN and verify the bell/page;
-5. verify two different users cannot access each other's notification ID;
-6. verify sensitive rows never list/count/read;
-7. verify read operations do not change queue/delivery aggregates;
-8. verify the custom domain and API CORS origin used by the browser;
-9. remove every temporary firewall rule created for the task.
+2. remove every temporary firewall rule created for the task;
+3. set `FE10_INBOX_MIGRATION_SHA256` to the exact reviewed file hash;
+4. dispatch the manual workflow for the exact PR branch with confirmation true;
+5. verify `/health`, `/health/ready`, and anonymous inbox `401`;
+6. sign in as staging MEMBER, LIBRARIAN, and ADMIN and verify the bell/page;
+7. verify two different users cannot access each other's notification ID;
+8. verify sensitive rows never list/count/read;
+9. verify read operations do not change queue/delivery aggregates;
+10. verify the custom domain and API CORS origin used by the browser.
 
 - [ ] **Step 10: Run H3 against the exact deployed head and merge only on approval**
 
-H3 must compare implementation against SPEC v0.5.0, review SQL ownership filters and migration repeatability, confirm action paths cannot be injected, inspect frontend failure behavior, and reconcile local/CI/staging evidence. Record the exact head SHA and run IDs in the closeout file. Merge only after H3 approval and exact-head CI success.
+H3 must compare implementation against SPEC v0.5.0, review SQL ownership filters
+and migration repeatability, confirm action paths cannot be injected, inspect
+frontend failure behavior, and reconcile local/CI/staging evidence. Record the
+exact head SHA and run IDs in the closeout file. Merge only after H3 approval
+and exact-head CI success. After merge, monitor both exact post-merge `main` CI
+and the automatically triggered migration-hash-gated staging workflow.
 
 ---
 

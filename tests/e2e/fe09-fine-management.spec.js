@@ -59,6 +59,12 @@ test('[E2E-FE09-ACC01] Fine Management uses server search, status filtering, and
     body: JSON.stringify({ fullName: 'E2E Librarian', avatarUrl: null }),
   }));
 
+  await page.route('**/api/notifications/mine/unread-count', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ unreadCount: 0 }),
+  }));
+
   await page.route('**/api/fines**', async (route) => {
     const request = route.request();
     const url = new URL(request.url());

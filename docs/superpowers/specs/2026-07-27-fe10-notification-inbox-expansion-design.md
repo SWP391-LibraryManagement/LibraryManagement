@@ -1,6 +1,6 @@
 # FE10 Notification Inbox Expansion Design
 
-**Status:** DESIGN, WRITTEN SPEC, AND H1 PLAN APPROVED - GOVERNANCE ACTIVATION PENDING MERGE
+**Status:** IMPLEMENTED - POST-DRIFT H2/EXACT-HEAD GATES PENDING
 
 **Design approved:** 2026-07-27
 
@@ -14,11 +14,60 @@
 authorization, and migration; bounded ADD may later implement the approved UI
 shell.
 
-**Design baseline:** `origin/main` at
-`2b4f91477fbf7083165f0c1a8a8430d0708979fc`. The governance activation branch
-was last rebased onto non-overlapping `origin/main` drift at
-`7bf76b5cbe46119272e8564ae659f66afe25810b`; product implementation must start
-from the then-current `main` after this activation merges.
+**Implementation baseline:** governance PR #70 merged to `main` as
+`25c09ec5f90d21e4ab0228cccd838b3548d4d90d`. FE10-I01 through FE10-I08,
+the migration-hash remediation, and the bounded H3 round-one remediation are
+implemented. PR #75 historical head `cf0a236` passed exact-head CI
+`30315046007`, Azure staging `30315273298`, public HTTPS/CORS,
+protected-route, Azure SQL schema/index, cleanup, and final two-axis H3 with no
+actionable finding. Historical three-role API/browser evidence remains
+recorded for `28c4f80`. The approved documentation-only rebase to
+`main@30f936d` preserves runtime behavior but requires fresh H2, exact-head
+CI/Azure, repeated H3, merge, and post-merge gates.
+
+**H1 deployment addendum approved 2026-07-28:** preserve upstream CI-gated
+automatic staging deployment plus manual reruns. Both paths fail closed unless
+the exact checked-out FE10 migration SHA-256 matches
+`FE10_INBOX_MIGRATION_SHA256` in the GitHub `staging` Environment; manual runs
+also require `fe10_inbox_migration_confirmed=true`. Backend still precedes
+frontend and smoke, and the migration proof must exist before H3/merge.
+
+**H1 Core-drift addendum approved 2026-07-28:** reconcile with
+`main@5a3c84b` while preserving the newly packaged
+`add_change_password_otp_token_type.sql` startup migration, its readiness
+guide/tests, and the canonical Vietnamese account-verification seed. Reapply
+the FE10 migration preflight/order without weakening either upstream contract,
+then run complete validation and obtain a new H2 fingerprint.
+
+**Second H1 Core-drift addendum approved 2026-07-28:** reconcile with
+`main@db97f17` while preserving its Vietnamese default reservation-cancellation
+reason, responsive return/reservation controls, and all other round-two
+FE07/FE08/FE10/FE12 corrections. Retain the FE10 inbox client and scoped
+notification styles, then run complete validation and obtain a new H2
+fingerprint.
+
+**Third H1 drift addendum approved 2026-07-28:** reconcile with
+`main@12faead`, whose incoming changes delete only retired `document/`
+artifacts. There is no FE10 file or Core-contract overlap. Rebase the
+remediation without changing its contract, rerun complete validation, obtain a
+new H2 fingerprint, and redeploy the new exact head to Azure before repeated
+H3 because current staging serves the newer `main`.
+
+**Fourth H1 drift addendum approved 2026-07-28:** reconcile with
+`main@a240705`, which removes the FE11 Admin user-edit API, UI, and tests. The
+FE11 contract is independent from FE10 and has no path overlap with the H3
+remediation; the committed merge-tree is clean. Preserve both contracts, rerun
+complete validation, obtain a new H2 fingerprint, and redeploy the exact FE10
+head because upstream CI `30311801599` and Azure run `30311973740` now serve
+that newer `main`.
+
+**Fifth H1 drift addendum approved 2026-07-28:** reconcile with
+`main@30f936d`, which translates SDD documentation to Vietnamese without FE10
+runtime, API, migration, UI, or test changes. Exact upstream CI `30315665010`
+and automatic Azure staging `30315842152` passed. Preserve the Vietnamese
+translation and implemented v0.5.0 contract, invalidate the earlier H2
+authority, and require a fresh fingerprint/H2 plus exact-head CI/Azure and
+repeated H3 before merge.
 
 ## 1. Outcome And Scope
 

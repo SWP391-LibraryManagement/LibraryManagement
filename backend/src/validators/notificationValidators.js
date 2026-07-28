@@ -1,6 +1,7 @@
-const { body, param } = require('express-validator');
+const { body, param, query } = require('express-validator');
 const { handleValidationErrors } = require('./authValidators');
 const errors = require('../utils/safeErrors');
+const { INBOX_TYPES } = require('../utils/notificationInbox');
 
 const notificationTypes = [
   'ACCOUNT_VERIFICATION',
@@ -148,8 +149,46 @@ const retryNotificationValidators = [
   handleValidationErrors,
 ];
 
+const listMineValidators = [
+  query('page')
+    .optional()
+    .isInt({ min: 1, max: 2147483647 })
+    .withMessage('Page must be a positive integer.')
+    .toInt(),
+  query('limit')
+    .optional()
+    .isInt({ min: 1, max: 100 })
+    .withMessage('Limit must be between 1 and 100.')
+    .toInt(),
+  query('readState')
+    .optional()
+    .isString()
+    .trim()
+    .toLowerCase()
+    .isIn(['all', 'unread', 'read'])
+    .withMessage('Read state is not supported.'),
+  query('type')
+    .optional()
+    .isString()
+    .trim()
+    .toUpperCase()
+    .isIn(INBOX_TYPES)
+    .withMessage('Notification type is not supported.'),
+  handleValidationErrors,
+];
+
+const markReadValidators = [
+  param('id')
+    .isInt({ min: 1, max: 2147483647 })
+    .withMessage('Notification ID must be a positive integer.')
+    .toInt(),
+  handleValidationErrors,
+];
+
 module.exports = {
   createNotificationRequestValidators,
   processPendingNotificationsValidators,
   retryNotificationValidators,
+  listMineValidators,
+  markReadValidators,
 };

@@ -56,6 +56,15 @@ test('shared header has no decorative global search', async () => {
   assert.doesNotMatch(source, /className="app-search"/);
 });
 
+test('shared header composes the personal notification inbox without changing account behavior', async () => {
+  const source = await readFile(new URL('../src/component/layout/Header.jsx', import.meta.url), 'utf8');
+
+  assert.match(source, /import NotificationBell from '..\/notification\/NotificationBell';/);
+  assert.match(source, /<NotificationBell \/>/);
+  assert.match(source, /<UserMenuPopup/);
+  assert.match(source, /onLogout=\{handleLogout\}/);
+});
+
 test('app layout exposes an accessible mobile navigation drawer', async () => {
   const source = await readFile(new URL('../src/component/layout/AppLayout.jsx', import.meta.url), 'utf8');
   const header = await readFile(new URL('../src/component/layout/Header.jsx', import.meta.url), 'utf8');

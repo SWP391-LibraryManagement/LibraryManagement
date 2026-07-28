@@ -27,6 +27,22 @@ test('pending worker atomically claims one row with Azure SQL compatible locking
   expect(claimSource).not.toMatch(/return \{ notification, transaction \}/);
 });
 
+test('every SQL pending selector excludes all sensitive authentication and setup types', () => {
+  const listStart = repositorySource.indexOf('async function listPending');
+  const listEnd = repositorySource.indexOf('async function claimNextPending', listStart);
+  const listSource = repositorySource.slice(listStart, listEnd);
+  const claimStart = repositorySource.indexOf('async function claimNextPending');
+  const claimEnd = repositorySource.indexOf('async function markClaimSent', claimStart);
+  const claimSource = repositorySource.slice(claimStart, claimEnd);
+
+  for (const source of [listSource, claimSource]) {
+    expect(source).toMatch(/ACCOUNT_VERIFICATION/);
+    expect(source).toMatch(/PASSWORD_RESET/);
+    expect(source).toMatch(/ACCOUNT_SETUP/);
+    expect(source).toMatch(/EMAIL_VERIFY/);
+  }
+});
+
 test('claimed completion opens a new transaction and guards the PROCESSING state', () => {
   expect(repositorySource).toMatch(/async function markClaimSent/);
   expect(repositorySource).toMatch(/async function markClaimFailed/);

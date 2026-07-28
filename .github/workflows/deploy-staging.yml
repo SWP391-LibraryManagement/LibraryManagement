@@ -6,6 +6,12 @@ on:
     types: [completed]
     branches: [main]
   workflow_dispatch:
+    inputs:
+      fe10_inbox_migration_confirmed:
+        description: FE10 inbox migration was applied twice and verified on staging
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -15,8 +21,57 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy-backend:
+  preflight:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Verify FE10 inbox migration gate
+        shell: pwsh
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          MANUAL_CONFIRMATION: ${{ inputs.fe10_inbox_migration_confirmed }}
+          EXPECTED_MIGRATION_SHA256: ${{ vars.FE10_INBOX_MIGRATION_SHA256 }}
+        run: |
+          if (
+            $env:EVENT_NAME -eq 'workflow_dispatch' -and
+            "$env:MANUAL_CONFIRMATION".ToLowerInvariant() -ne 'true'
+          ) {
+            Write-Error 'Apply and verify the FE10 inbox migration twice before manual deployment.'
+            exit 1
+          }
+
+          $expectedHash = "$env:EXPECTED_MIGRATION_SHA256".Trim().ToLowerInvariant()
+          if ($expectedHash -notmatch '^[0-9a-f]{64}$') {
+            Write-Error 'The staging FE10 migration proof is missing or malformed.'
+            exit 1
+          }
+
+          $migrationPath = 'database/migrations/2026-07-27-fe10-personal-inbox-read-state.sql'
+          $utf8NoBom = [Text.UTF8Encoding]::new($false, $true)
+          $migrationText = [IO.File]::ReadAllText($migrationPath, $utf8NoBom)
+          $lfText = $migrationText.Replace("`r`n", "`n").Replace("`r", "`n")
+          $crlfText = $lfText.Replace("`n", "`r`n")
+          $lfHash = [Convert]::ToHexString(
+            [Security.Cryptography.SHA256]::HashData($utf8NoBom.GetBytes($lfText))
+          ).ToLowerInvariant()
+          $crlfHash = [Convert]::ToHexString(
+            [Security.Cryptography.SHA256]::HashData($utf8NoBom.GetBytes($crlfText))
+          ).ToLowerInvariant()
+          if ($expectedHash -notin @($lfHash, $crlfHash)) {
+            Write-Error 'The reviewed FE10 migration does not match the staging migration proof.'
+            exit 1
+          }
+
+          Write-Output 'FE10 migration proof accepted for the exact deployment head and LF/CRLF rendering.'
+
+  deploy-backend:
+    needs: preflight
     runs-on: ubuntu-latest
     environment:
       name: staging
@@ -43,7 +98,7 @@ jobs:
           package: deploy/backend
 
   deploy-frontend:
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    needs: deploy-backend
     runs-on: ubuntu-latest
     environment:
       name: staging

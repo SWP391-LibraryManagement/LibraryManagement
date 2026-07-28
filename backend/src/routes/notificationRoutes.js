@@ -5,12 +5,44 @@ const {
   createNotificationRequestValidators,
   processPendingNotificationsValidators,
   retryNotificationValidators,
+  listMineValidators,
+  markReadValidators,
 } = require('../validators/notificationValidators');
 
 function createNotificationRoutes({ authService, notificationService } = {}) {
   const router = express.Router();
   const controller = createNotificationController(notificationService);
   const authenticate = createAuthenticate(authService);
+
+  router.get(
+    '/mine',
+    authenticate,
+    requireAnyRole('MEMBER', 'LIBRARIAN', 'ADMIN'),
+    listMineValidators,
+    controller.listMine
+  );
+
+  router.get(
+    '/mine/unread-count',
+    authenticate,
+    requireAnyRole('MEMBER', 'LIBRARIAN', 'ADMIN'),
+    controller.unreadCount
+  );
+
+  router.patch(
+    '/mine/read-all',
+    authenticate,
+    requireAnyRole('MEMBER', 'LIBRARIAN', 'ADMIN'),
+    controller.markAllRead
+  );
+
+  router.patch(
+    '/:id/read',
+    authenticate,
+    requireAnyRole('MEMBER', 'LIBRARIAN', 'ADMIN'),
+    markReadValidators,
+    controller.markRead
+  );
 
   router.post(
     '/requests',

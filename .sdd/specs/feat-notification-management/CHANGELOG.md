@@ -1,5 +1,176 @@
 # CHANGELOG.md - FE10 Notification Management
 
+## 2026-07-28 - Reconcile Vietnamese SDD drift through main@30f936d
+
+- The user approved H1 drift reconciliation through `main@30f936d`. The
+  incoming PR #77 translates SDD documentation to Vietnamese and does not
+  change FE10 runtime, API, migration, UI, or test behavior.
+- Exact upstream CI `30315665010` and automatic Azure staging `30315842152`
+  passed. The FE10 branch rebased without runtime conflict; translated FE10
+  SPEC content was preserved and reconciled with the implemented v0.5.0
+  delivery state.
+- Historical PR #75 head `cf0a236` passed CI `30315046007`, Azure staging
+  `30315273298`, and final two-axis H3 with no actionable finding.
+- H2 round 7 approved a whitespace-only candidate but was superseded before
+  staging by the mandatory fetch of `main@30f936d`; no commit or push used
+  that authority. A fresh candidate fingerprint/H2 and exact-head gates are
+  required before repeated H3 and merge.
+
+## 2026-07-28 - Remediate FE10 inbox H3 round-one findings
+
+- H2 round 4 approved fingerprint
+  `f41dbf50680d9c5601ae00d3c53651a7bb782ff81724ca641ef49b7cd88844e4`.
+  The remediation is published as PR #75 runtime head `3f9f23a`; exact-head CI
+  `30313721511` and Azure staging `30313949983` passed. Public transport,
+  protected inbox routing, Azure SQL schema/index, and cleanup checks passed.
+  A bounded evidence-only closeout and latest-head gates remain before repeated
+  H3, explicit H3 approval, merge, and post-merge gates.
+- User approved H1 drift reconciliation through `main@a5fcbb9`. PR #75 head
+  `28c4f80` remained clean/mergeable; exact-head CI `30306805399` and Azure
+  staging deployment `30307855616` passed.
+- The user later approved H1 drift reconciliation through `main@12faead`.
+  Incoming changes delete only retired `document/` artifacts, have no path or
+  Core-contract overlap with this remediation, and rebased without conflict.
+  Current Azure staging now serves that `main`, so the remediation needs a new
+  exact-head deployment after H2 and publication.
+- Live Azure verification covered migration/index postconditions, protected
+  aggregate preservation, MEMBER/LIBRARIAN/ADMIN ownership, sensitive
+  exclusion, read replay, filters, safe navigation, HTTPS/CORS, and complete
+  probe/firewall cleanup.
+- H3 round one found missing ADR-002 read-state documentation, stale lifecycle
+  source-of-truth text, stale item state after a successful no-navigation read,
+  and mark-all incorrectly disabled by the current filtered page.
+- A user screenshot additionally proved the notification popover could be
+  painted below page content because the blurred topbar formed a lower stacking
+  context. Focused RED/GREEN coverage now fixes the two page-state defects and
+  elevates the topbar only while the popover is open. The popover keeps its
+  approved size and sits above every current layout layer.
+- At this earlier checkpoint the bounded remediation remained local; H2 round
+  4, publication as `3f9f23a`, exact-head CI, and Azure redeployment have since
+  closed those intermediate gates.
+- Fresh complete gates on the rebased candidate passed: backend 69/69 suites
+  and 1116/1116 tests; frontend 259/259 plus lint/build; deployment 20/20;
+  system 10/10; traceability state 3/3 and FE10 14/16 (88%); Chromium 11/11;
+  audits, Azure schema preparation, diff hygiene, and contradiction scans.
+- The user approved H2 fingerprint `e1143e6a...`, but the mandatory pre-stage
+  fetch found `main@a240705`, so no file was staged, committed, or pushed under
+  that authority. The user then approved `H1 drift addendum main@a240705`.
+  Reconciliation preserves the upstream FE11 Admin edit-action removal, exact
+  main CI `30311801599`, and Azure deployment `30311973740`; the branch rebased
+  without conflict and requires a new matrix/fingerprint/H2.
+- Fresh validation on `main@a240705` passed backend 69/69 suites and 1084/1084
+  tests, frontend 259/259 plus lint/build, deployment 20/20, system 10/10,
+  traceability state 3/3, FE10 14/16 (88%), Chromium 11/11, audits, Azure
+  schema preparation, and diff hygiene.
+
+## 2026-07-28 - Remediate cross-platform staging migration hash gate
+
+- H2 approved fingerprint `2b53d7e`; FE10 was published as commit `b11b59e`
+  on PR #75 and exact-head CI run `30304661463` passed.
+- Azure staging received the reviewed migration twice. It created one nullable
+  `ReadAt` column and one supporting index, backfilled 17 eligible historical
+  rows, kept 25 excluded rows unread, kept a post-run-one probe unread on run
+  two, preserved delivery/attempt/idempotency aggregates, and removed the
+  probe and every temporary FE10 firewall rule.
+- Manual deployment run `30305596861` failed closed before deployment because
+  the operator-applied Windows CRLF bytes hash to `6e8b6b4...`, while the
+  unchanged Linux checkout's LF bytes hash to `143cd8e...`.
+- RED/GREEN deployment-policy coverage now requires preflight to derive both
+  exact LF and CRLF byte renderings of the same strict UTF-8 content. The
+  stored hash must match one of them; any content change still fails closed.
+- Deployment policy passes 16/16. This post-H2 remediation remains local until
+  a new H2 addendum authorizes commit/push and exact-head redeployment.
+
+## 2026-07-28 - Synchronize non-overlapping upstream regression tests
+
+- Upstream advanced from `main@db97f17` to `main@f3ebe95` with one test-only
+  commit adding FE07/FE08 ARIA-tablist and toast-FIFO regression guards.
+- None of its three changed files overlapped the 48-entry FE10 candidate, so
+  the branch fast-forwarded mechanically with no new Core contract decision,
+  conflict, staged file, or product-code change.
+- The full frontend test suite passed 258/258 on the exact synchronized
+  baseline before the new H2 fingerprint is generated.
+
+## 2026-07-28 - Approve second Core-drift reconciliation addendum
+
+- Immediately after the approved `main@5a3c84b` reconciliation, upstream
+  advanced by three commits through `main@db97f17`.
+- The overlap was limited to `frontend/src/api/libraryFeatureApi.js` and
+  `frontend/src/styles/app-shell.css`; no candidate file was staged or
+  committed.
+- The user approved `H1 drift addendum main@db97f17`. The candidate now
+  preserves the upstream Vietnamese member-cancellation reason, responsive
+  return/reservation controls, and all other round-two upstream corrections
+  together with the FE10 inbox API and scoped notification styles.
+- Complete post-drift validation and a fresh H2 fingerprint remain required
+  before publication.
+- Fresh post-drift evidence passed: backend coverage 69/69 suites and
+  1114/1114 tests, frontend 258/258 plus lint/build, deployment 15/15, system
+  10/10, trace state 3/3, FE10 trace 14/16 (88%), and Chromium 11/11.
+- The exact migration passed twice with one `ReadAt` column, one supporting
+  index, historical-only backfill, protected aggregates unchanged, and zero
+  disposable databases remaining. Backend dependency audit reported zero
+  vulnerabilities; the repository frontend audit gate accepted only the
+  non-applicable unstable-RSC React Router advisory for this declarative
+  `BrowserRouter` application.
+- Final security-review TDD added a repository regression for the complete
+  sensitive pending-selector allowlist. RED proved legacy `listPending`
+  omitted `ACCOUNT_SETUP`; the minimal SQL predicate fix aligned it with the
+  active worker and in-memory selector, focused GREEN passed 161/161, and full
+  backend coverage passed 1114/1114.
+
+## 2026-07-28 - Approve Core-drift reconciliation addendum
+
+- A required post-H2 fetch found four new upstream commits ending at
+  `main@5a3c84b` with overlapping deployment workflow, schema, operator guide,
+  and deployment-test changes; no reviewed file had been staged or committed.
+- The user approved a new H1 drift addendum to preserve the packaged
+  `add_change_password_otp_token_type.sql` startup/readiness contract and
+  Vietnamese account-verification seed together with the FE10 migration
+  preflight and ordered deployment.
+- The candidate was rebased onto `main@5a3c84b`; complete post-drift validation
+  and a fresh H2 fingerprint are required before publication.
+
+## 2026-07-28 - Approve CI-gated deployment addendum
+
+- Reconciled the candidate with upstream `main@41282b4`, which introduced
+  automatic staging deployment after successful `main` CI.
+- Preserved automatic and manual deployment while making both fail closed on
+  the exact `FE10_INBOX_MIGRATION_SHA256` proof in the GitHub `staging`
+  Environment; manual runs also require the approved boolean confirmation.
+- Preserved preflight -> backend -> frontend -> smoke ordering and required
+  migration proof plus exact-head manual staging before H3/merge.
+- The user explicitly approved this H1 addendum on 2026-07-28. It changes
+  deployment orchestration only, not FE10 inbox behavior or authorization.
+
+## 2026-07-28 - Implement personal notification inbox candidate (v0.5.0)
+
+- Added the repeatable nullable `Notifications.ReadAt` migration, historical
+  eligible-row backfill, supporting own-user index, canonical schema/model,
+  and migration/repository contract tests.
+- Added SQL-filtered own-user list, unread count, mark-one, and mark-all API
+  operations with fixed eligible type/template pairs, exact safe DTOs,
+  backend-owned action paths, idempotent reads, and IDOR-safe `404` behavior.
+- Added the shared authenticated inbox context, non-overlapping 60-second
+  refresh, bell with `99+` badge and five-unread preview, `/notifications`
+  filters/pagination, and safe non-blocking navigation after read failure.
+- Added FE04/FE07/FE08 fan-in evidence plus MEMBER/LIBRARIAN/ADMIN Chromium
+  E2E covering privacy negatives, read behavior, responsive layout, and error
+  semantics. Sensitive FE02/FE11 and legacy/userless records remain excluded.
+- Added a fail-closed staging workflow gate requiring the two-run operator SQL
+  migration before ordered backend, frontend, smoke, and browser verification.
+- The first real SQL rehearsal exposed same-batch name resolution for the new
+  `ReadAt` references. A RED regression test now requires deferred compilation;
+  `sys.sp_executesql` fixed the migration, and the strict two-run rehearsal
+  passed with protected aggregates unchanged and the disposable database removed.
+- FE10-I01 through FE10-I07 and the FE10-I08 local validation matrix are green.
+  H2, publication, Azure staging, H3, merge, and post-merge CI remain pending
+  and unclaimed.
+- Final H2 audit closed an SQL pagination overflow boundary by binding the
+  validated page offset as `BIGINT`, and isolated the FE09 synthetic-auth E2E
+  fixture from the new background unread-count request; focused and full gates
+  passed after both corrections.
+
 ## 2026-07-28 - H1 plan approval and governance activation
 
 - Recorded the user's approval of the detailed FE10-I01..I08 implementation
@@ -113,7 +284,11 @@
 ## 2026-07-19 - OTP Integration B7 Closeout
 
 - FE10-S05 is complete through B7: PR #42 merged as `34d9180`, PR CI `29688102867` passed, and exact post-merge `main` CI `29688222757` passed.
-- FE02/FE10 ownership, source rejection, secret-boundary, failure, idempotency, and reset-event evidence is complete. Real provider delivery, inbox UI, and FE09 caller integration remain deferred.
+- FE02/FE10 ownership, source rejection, secret-boundary, failure,
+  idempotency, and reset-event evidence was complete at that historical
+  checkpoint. Real provider delivery, the then-future personal inbox, and FE09
+  caller integration were deferred; the v0.5.0 entry above supersedes only the
+  personal-inbox part of that boundary.
 
 ## 2026-07-19 - OTP Integration Human Acceptance And Evidence Expansion
 

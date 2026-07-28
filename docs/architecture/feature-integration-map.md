@@ -105,6 +105,7 @@ flowchart TD
 
   FE04 -->|"approved membership eligibility"| FE07
   FE04 -->|"approved membership eligibility"| FE08
+  FE04 -->|"membership-result notification"| FE10
   FE04 -->|"member stats source"| FE12
 
   FE05 -->|"book metadata"| FE01
@@ -195,13 +196,13 @@ integration points in Section 5, never by directly mutating another feature's ta
 | FE01 Public / Browse | FE05 book metadata, FE06 public availability, FE02 login/register navigation, FE04 membership application navigation | Public discovery flow before auth/membership; latest home/search/detail availability after staff changes | Data read, safety/privacy boundary |
 | FE02 Authentication | FE11 role data / user-role tables | Identity, tokens, sessions, account events, protected request user context | Auth / role foundation |
 | FE03 User Profile | FE02 authenticated identity, FE04 membership status read-only, FE11 role/status read-only | Safe personal profile data for workflows | Data read, safety/privacy boundary |
-| FE04 Membership Management | FE02 authenticated user, FE11 staff/admin roles | Approved membership status for FE07/FE08 and member stats for FE12 | Eligibility dependency |
+| FE04 Membership Management | FE02 authenticated user, FE11 staff/admin roles | Approved membership status for FE07/FE08, membership-result notification for FE10, and member stats for FE12 | Eligibility dependency, notification trigger |
 | FE05 Book Management | FE02 auth, FE11 Admin metadata boundary/staff roles, FE06 copy-status rules | Book metadata for FE01/FE06/FE07/FE08/FE12; active category/author/publisher choices for Librarian/Admin forms | Data owner dependency, role-protected reference integration |
 | FE06 Inventory / Book Copy | FE02 auth, FE05 book metadata, FE11 staff/admin roles, FE07/FE08 conflict records | Copy availability and copy status for FE01/FE07/FE08/FE12 | Data owner dependency, conflict check |
 | FE07 Borrowing Management | FE02 auth, FE04 membership, FE06 copy availability, FE08 reservation conflict, FE09 unpaid fine blocker, FE11 roles | Borrow records, due dates, return data, notification requests, report data | Core workflow, trigger, reporting source |
 | FE08 Reservation Management | FE02 auth, FE04 membership, FE06 copy status, FE11 roles | Reservation queue/status, reservation-ready notification requests, renewal conflict data | Core workflow, trigger, conflict check |
 | FE09 Fine Management | FE02 auth, FE07 borrow/return/due-date data, FE11 roles | Fine records, offline collection/paid state, unpaid fine blockers, fine notifications, report data | Derived workflow, eligibility blocker |
-| FE10 Notification Management | Source features FE02/FE07/FE08/FE09, approved templates, email/mock provider | Notification records, delivery attempts/status | Workflow trigger receiver |
+| FE10 Notification Management | Source features FE02/FE04/FE07/FE08/FE09/FE11, approved templates, email/mock provider, FE02/FE11 roles | Notification records, delivery attempts/status, own-user inbox projection and `ReadAt` | Workflow trigger receiver, authenticated personal read model |
 | FE11 User & Role Management | FE02/role tables, admin identity, FE07 request data for admin review, FE10 for password setup links if needed, FE12 for detailed reports | Role assignments, admin sidebar/permissions/audit surfaces, and account lifecycle data used by protected features | Authorization data owner, admin console shell |
 | FE12 Reporting & Statistics | FE02 auth, FE11 roles, FE04 membership, FE06 inventory, FE07 borrowing, FE08 reservations, FE09 fines | Read-only aggregate reports | Reporting source aggregation |
 
@@ -368,7 +369,33 @@ Integration notes:
 - FE12 must not mutate business records.
 - FE12 must enforce staff/admin access through FE02/FE11.
 
-### 6.7 Admin Console Flow
+### 6.7 Personal Notification Inbox Flow
+
+```text
+FE04 membership result / FE07 due or overdue / FE08 reservation ready
+  -> one eligible email-backed FE10 notification row
+  -> SQL-filtered projection for the authenticated owner only
+  -> bell unread count and five-unread preview
+  -> /notifications all/unread/read pages
+  -> mark-one or mark-all changes only Notifications.ReadAt
+  -> backend-owned action path to /membership, /reservations/mine,
+     /borrowing/history, or /fines/mine
+```
+
+Integration notes:
+
+- The implemented fan-in proves FE04 membership results, FE07 due/overdue events, and FE08
+  reservation-ready events. The `FINE_NOTICE` pair is eligible for projection, while a new FE09
+  caller remains deferred to FE09 ownership.
+- `ACCOUNT_VERIFICATION`, `PASSWORD_RESET`, `ACCOUNT_SETUP`, legacy `EMAIL_VERIFY`, userless rows,
+  and records belonging to another user never enter list, count, or read operations.
+- All authenticated `MEMBER`, `LIBRARIAN`, and `ADMIN` users use the same own-record boundary. Staff
+  roles do not receive a global notification log.
+- Mark-read failure is non-blocking for an already allowlisted action: the UI shows a safe warning
+  and still navigates. Polling is non-overlapping at 60 seconds and refreshes on focus and successful
+  mutations.
+
+### 6.8 Admin Console Flow
 
 ```text
 FE11 User & Role Management
@@ -393,6 +420,7 @@ Integration notes:
 | FE02 -> FE07 | `backend/tests/integration.test.js` | Member registers/verifies/logs in, then creates borrow request. |
 | FE02 -> FE08 | `backend/tests/integration.test.js` | Member registers/verifies/logs in, then creates reservation. |
 | FE02 -> FE10 | `backend/tests/integration.test.js` | Staff user authenticates, then creates notification request. |
+| FE04/FE07/FE08 -> FE10 personal inbox | `backend/tests/integration.test.js`, `tests/e2e/fe10-notification-inbox.spec.js` | One eligible source row appears only for its owner; sensitive, userless, and cross-user rows are absent; three roles, filters, pagination, read actions, `99+`, mobile layout, and non-blocking read failure are verified. |
 | FE02 -> FE12 | `backend/tests/integration.test.js` | Admin/staff authenticates, then views borrowing report. |
 | FE02/FE11 -> FE07/FE08/FE09/FE10/FE12 authorization | `backend/tests/systemIntegration.test.js` (`SIT-001`) | Shared app rejects missing authentication and enforces Member, Librarian, and Admin boundaries. |
 | FE07 -> FE10 -> FE12 | `backend/tests/systemIntegration.test.js` (`SIT-002`, `SIT-007`, `SIT-009`) | Approval creates safe/idempotent due-date notification data, reports the loan, and notification failure does not roll back FE07. |

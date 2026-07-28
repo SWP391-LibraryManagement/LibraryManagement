@@ -2,7 +2,7 @@
 
 # Phiên bản: 0.5.0
 
-# Trạng thái: V0.5.0 H1 ĐÃ PHÊ DUYỆT - ĐANG CHỜ MERGE KÍCH HOẠT QUẢN TRỊ
+# Trạng thái: V0.5.0 ĐÃ TRIỂN KHAI - ĐANG CHỜ H2 SAU DRIFT, H3 VÀ MERGE
 
 # Chủ sở hữu: Nhat
 
@@ -12,11 +12,16 @@
 
 # Thư mục tính năng: `.sdd/specs/feat-notification-management/`
 
-> Trạng thái bàn giao hiện tại (2026-07-20): `COMPLETE` cho phạm vi Giai đoạn 1 đã được phê duyệt.
-> `TASKS.md` và `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`
-> là nguồn chuẩn cho trạng thái triển khai hiện tại. Các nhãn cũ `Not Started`,
-> `PARTIAL`, `READY FOR REVIEW` hoặc đang chờ rà soát được giữ lại bên dưới chỉ là
-> ảnh chụp nhanh kế hoạch/bằng chứng lịch sử, không phải trạng thái bàn giao hiện tại.
+> Trạng thái bàn giao hiện tại (2026-07-28): phạm vi Giai đoạn 1 và phần mở
+> rộng hộp thư cá nhân v0.5.0 đã được triển khai. PR #75 tại head lịch sử
+> `cf0a236` đã vượt qua CI `30315046007`, Azure staging `30315273298` và H3
+> hai trục không còn finding. Nhánh hiện đã rebase lên H1-approved
+> `main@30f936d`, chỉ nhận bản dịch tài liệu SDD tiếng Việt, nên phải có
+> fingerprint/H2 mới, CI/Azure chính xác theo head mới, H3 lặp lại, phê duyệt
+> H3, merge và kiểm tra sau merge trước khi tuyên bố hoàn tất. `TASKS.md` và
+> `.sdd/reviews/fe10-notification-inbox-staging-h3-closeout-2026-07-27.md` là
+> nguồn chuẩn cho trạng thái giao hàng này. Các nhãn lịch sử `Not Started`,
+> `PARTIAL` hoặc đang chờ review không phải trạng thái hiện tại.
 
 > Nguồn chuẩn cho Quản lý thông báo FE10. Bản sửa đổi ranh giới OTP, thiết lập tài khoản và kết quả thành viên được phê duyệt làm mốc cơ sở 2026-07-17.
 >
@@ -45,11 +50,11 @@
 > Người dùng đã phê duyệt thiết kế và hợp đồng bằng văn bản ngày 2026-07-27.
 >
 > Bản sửa đổi v0.5.0 bổ sung hợp đồng hộp thư thông báo cá nhân. Người dùng đã
-> phê duyệt thiết kế theo từng phần và bản SPEC hợp nhất bằng văn bản vào
-> ngày 2026-07-27. Phê duyệt đó chỉ cho phép chuẩn bị PLAN/TASKS; việc triển khai
-> sản phẩm vẫn ở trạng thái `NOT_STARTED` cho đến khi kích hoạt quản trị tới
-> `main` và mở cổng công việc sản phẩm của repository. Người dùng đã phê duyệt
-> kế hoạch triển khai dưới dạng H1 vào ngày 2026-07-28.
+> phê duyệt thiết kế, SPEC và kế hoạch triển khai/H1. Governance PR #70 đã
+> merge vào `main` dưới commit `25c09ec`; FE10-I01..I08 và remediation H3 vòng
+> một đã được triển khai, kiểm thử và triển khai Azure. Baseline hiện tại là
+> H1-approved `main@30f936d`; các cổng tích hợp cuối của head sau rebase vẫn
+> bắt buộc.
 >
 > Bản sửa đổi v0.5.0 xác định phần mở rộng hộp thư thông báo cá nhân được người
 > dùng phê duyệt và ghi lại trong
@@ -58,8 +63,9 @@
 > không nhạy cảm của chính mình. Trạng thái gửi email vẫn độc lập, các bản ghi
 > xác thực/thiết lập nhạy cảm vẫn bị loại trừ và điều hướng được suy ra từ danh
 > sách cho phép của máy chủ. Thiết kế, SPEC bằng văn bản và kế hoạch triển khai/H1
-> đã được phê duyệt. Việc triển khai sản phẩm chỉ còn bị chặn cho đến khi kích
-> hoạt quản trị này tới `main`.
+> đã được phê duyệt. Phần triển khai sản phẩm đã hoàn thành; trạng thái
+> `COMPLETE` của mục tiêu chỉ được ghi sau H2 mới, CI/Azure chính xác theo
+> head, H3 lặp lại, merge và các cổng sau merge.
 
 ---
 
@@ -694,16 +700,16 @@ Các quyết định ban đầu được phê duyệt trong gói rà soát Giai 
 | AC-FE10-008 | Khóa trùng phát lại cùng một bản ghi xuyên suốt mọi trạng thái bằng DTO `200` tối thiểu | FR-FE10-008 | BR-FE10-006, BR-FE10-013 | FT46 đến FT49 | FE10-H08 | Đã phê duyệt để triển khai |
 | AC-FE10-009 | Lỗi được xử lý an toàn/không chặn; FE02 phát hành lại sự kiện OTP/mã thông báo mới, thao tác thử lại `FAILED` không nhạy cảm dùng lại lịch sử, còn `PROCESSING` không chắc chắn tuyệt đối không được gửi lại | FR-FE10-007 | BR-FE10-004, BR-FE10-008, BR-FE10-012, BR-FE10-013 | Các trường hợp nhà cung cấp/chuyển đổi/thử lại trong `backend/tests/notificationRoutes.test.js` | FE10-H03, FE10-H08, FE10-S04, FE10-S10 | Có bằng chứng tự động; đang chờ rà soát H2 |
 | AC-FE10-010 | Thiết lập tài khoản từ trình yêu cầu ràng buộc với FE11 được gửi đồng bộ bằng siêu dữ liệu nguồn an toàn và không lưu bền thông tin xác thực/nội dung thiết lập | FR-FE10-010 | BR-FE10-002, BR-FE10-004 đến BR-FE10-008, BR-FE10-010 đến BR-FE10-013 | FT52, FT55 | FE10-S06 đến FE10-S08 | Đã phê duyệt để triển khai |
-| AC-FE10-011 | Danh sách cá nhân đã xác thực chỉ trả về DTO an toàn không nhạy cảm đủ điều kiện thuộc sở hữu, với bộ lọc SQL, thứ tự mới nhất trước và phân trang | FR-FE10-011 | BR-FE10-014, BR-FE10-015, BR-FE10-020 | Các kiểm thử migration, repository, tuyến, tích hợp và trình duyệt đã lên kế hoạch | FE10-I01 đến FE10-I03, FE10-I06 đến FE10-I08 | Hợp đồng đã phê duyệt; chưa bắt đầu triển khai |
-| AC-FE10-012 | Số lượng chưa đọc chỉ gồm các bản ghi đủ điều kiện chưa đọc của người dùng đã xác thực | FR-FE10-012 | BR-FE10-014 đến BR-FE10-016, BR-FE10-020 | Các kiểm thử repository, tuyến, frontend, tích hợp và trình duyệt đã lên kế hoạch | FE10-I01 đến FE10-I04, FE10-I07, FE10-I08 | Hợp đồng đã phê duyệt; chưa bắt đầu triển khai |
-| AC-FE10-013 | Đánh dấu một mục chỉ áp dụng cho bản ghi của chính mình, an toàn với dữ liệu nhạy cảm, có tính lũy đẳng và độc lập với việc gửi email | FR-FE10-013 | BR-FE10-014 đến BR-FE10-016 | Các kiểm thử repository, tuyến, frontend, tích hợp và trình duyệt đã lên kế hoạch | FE10-I01 đến FE10-I04, FE10-I06 đến FE10-I08 | Hợp đồng đã phê duyệt; chưa bắt đầu triển khai |
-| AC-FE10-014 | Đánh dấu tất cả chỉ thay đổi các hàng đủ điều kiện chưa đọc của người dùng hiện tại bằng một dấu thời gian và phát lại trả về 0 | FR-FE10-014 | BR-FE10-014 đến BR-FE10-016 | Các kiểm thử migration, repository, tuyến, frontend và trình duyệt đã lên kế hoạch | FE10-I01 đến FE10-I03, FE10-I06 đến FE10-I08 | Hợp đồng đã phê duyệt; chưa bắt đầu triển khai |
-| AC-FE10-015 | Các mục đủ điều kiện chỉ nhận đường dẫn thao tác tương đối chuẩn nằm trong danh sách cho phép của backend | FR-FE10-015 | BR-FE10-017 | Các kiểm thử phép chiếu, tuyến, frontend, tích hợp và trình duyệt đã lên kế hoạch | FE10-I02, FE10-I03, FE10-I05, FE10-I07, FE10-I08 | Hợp đồng đã phê duyệt; chưa bắt đầu triển khai |
-| AC-FE10-016 | Chuông, phần xem trước, bộ lọc/phân trang hộp thư, thao tác đọc, trạng thái an toàn và điều hướng không chặn khớp với hợp đồng API | FR-FE10-016 | BR-FE10-014 đến BR-FE10-018 | Các kiểm thử hợp đồng frontend, shell, trang và trình duyệt đã lên kế hoạch | FE10-I04 đến FE10-I08 | Hợp đồng đã phê duyệt; chưa bắt đầu triển khai |
+| AC-FE10-011 | Danh sách cá nhân đã xác thực chỉ trả về DTO an toàn không nhạy cảm đủ điều kiện thuộc sở hữu, với bộ lọc SQL, thứ tự mới nhất trước và phân trang | FR-FE10-011 | BR-FE10-014, BR-FE10-015, BR-FE10-020 | Migration, repository, tuyến, tích hợp và trình duyệt | FE10-I01 đến FE10-I03, FE10-I06 đến FE10-I08 | Đã triển khai và có bằng chứng tự động/Azure; chờ cổng head sau drift |
+| AC-FE10-012 | Số lượng chưa đọc chỉ gồm các bản ghi đủ điều kiện chưa đọc của người dùng đã xác thực | FR-FE10-012 | BR-FE10-014 đến BR-FE10-016, BR-FE10-020 | Repository, tuyến, frontend, tích hợp và trình duyệt | FE10-I01 đến FE10-I04, FE10-I07, FE10-I08 | Đã triển khai và có bằng chứng tự động/Azure; chờ cổng head sau drift |
+| AC-FE10-013 | Đánh dấu một mục chỉ áp dụng cho bản ghi của chính mình, an toàn với dữ liệu nhạy cảm, có tính lũy đẳng và độc lập với việc gửi email | FR-FE10-013 | BR-FE10-014 đến BR-FE10-016 | Repository, tuyến, frontend, tích hợp và trình duyệt | FE10-I01 đến FE10-I04, FE10-I06 đến FE10-I08 | Đã triển khai và có bằng chứng tự động/Azure; chờ cổng head sau drift |
+| AC-FE10-014 | Đánh dấu tất cả chỉ thay đổi các hàng đủ điều kiện chưa đọc của người dùng hiện tại bằng một dấu thời gian và phát lại trả về 0 | FR-FE10-014 | BR-FE10-014 đến BR-FE10-016 | Migration, repository, tuyến, frontend và trình duyệt | FE10-I01 đến FE10-I03, FE10-I06 đến FE10-I08 | Đã triển khai và có bằng chứng tự động/Azure; chờ cổng head sau drift |
+| AC-FE10-015 | Các mục đủ điều kiện chỉ nhận đường dẫn thao tác tương đối chuẩn nằm trong danh sách cho phép của backend | FR-FE10-015 | BR-FE10-017 | Phép chiếu, tuyến, frontend, tích hợp và trình duyệt | FE10-I02, FE10-I03, FE10-I05, FE10-I07, FE10-I08 | Đã triển khai và có bằng chứng tự động/Azure; chờ cổng head sau drift |
+| AC-FE10-016 | Chuông, phần xem trước, bộ lọc/phân trang hộp thư, thao tác đọc, trạng thái an toàn và điều hướng không chặn khớp với hợp đồng API | FR-FE10-016 | BR-FE10-014 đến BR-FE10-018 | Hợp đồng frontend, shell, trang và trình duyệt | FE10-I04 đến FE10-I08 | Đã triển khai và có bằng chứng tự động/Azure; chờ cổng head sau drift |
 
 ### Tóm tắt độ bao phủ
 
-- Tổng AC: 16 (AC-FE10-001 đến AC-FE10-016) - tất cả đều được ánh xạ; AC-FE10-011 đến AC-FE10-016 có hợp đồng bằng văn bản đã phê duyệt và các lát triển khai FE10-I01..I08 đã lên kế hoạch nhưng vẫn chưa được triển khai.
+- Tổng AC: 16 (AC-FE10-001 đến AC-FE10-016) - tất cả đều được ánh xạ; AC-FE10-011 đến AC-FE10-016 đã được triển khai và có kiểm thử tự động, CI, Azure staging cùng H3 lịch sử; head sau rebase vẫn phải vượt qua các cổng tích hợp mới.
 - Tổng FR: 16 (FR-FE10-001 đến FR-FE10-016) - tất cả đều được ánh xạ.
 - Tổng BR: 20 (BR-FE10-001 đến BR-FE10-020) - tất cả đều được ánh xạ.
 - Các kiểm thử bài tập vẫn là FT46 đến FT49. Phần triển khai tăng cường được truy vết tới FE10-H02 đến FE10-H08 và được FE10-H09 xác nhận.
