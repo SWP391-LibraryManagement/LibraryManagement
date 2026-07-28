@@ -1,8 +1,8 @@
 # SPEC.md - FE12 Báo cáo & Thống kê
 
-# Phiên bản: 0.2.1
+# Phiên bản: 0.3.0
 
-# Trạng thái: H2 ADDENDUM ĐÃ PHÊ DUYỆT - H3 ĐANG KHẮC PHỤC
+# Trạng thái: H1 GOVERNANCE ACTIVATION - ĐÃ PHÊ DUYỆT; CHỜ H3/MERGE
 
 # Chủ sở hữu: Nhat
 
@@ -12,7 +12,9 @@
 
 # Thư mục tính năng: `.sdd/specs/feat-reporting-statistics/`
 
-> Trạng thái phân phối hiện tại (2026-07-29): `COMPLETE` cho phạm vi Giai đoạn 1 và prerequisite ngày nghiệp vụ v0.2.1 đã được phê duyệt H2; H3 vẫn bắt buộc trước merge.
+> Trạng thái phân phối hiện tại (2026-07-29): `COMPLETE` cho phạm vi Giai đoạn
+> 1 và prerequisite ngày nghiệp vụ v0.2.1 đã merge qua PR #81; phạm vi v0.3.0
+> operations summary đã được H1 phê duyệt nhưng vẫn chờ H3/merge activation.
 > `TASKS.md` và `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`
 > là nguồn có thẩm quyền về trạng thái triển khai hiện tại. Các nhãn `Not Started` cũ hơn,
 > `PARTIAL`, `READY FOR REVIEW` hoặc đang chờ đánh giá được giữ lại bên dưới là
@@ -30,6 +32,10 @@
 > Nhat đã phê duyệt bản sửa đổi bằng văn bản này vào 2026-07-27. Phê duyệt chỉ cho phép
 > chuẩn bị PLAN/TASKS; chưa được tuyên bố là đã triển khai cho đến khi
 > hoàn tất bằng chứng RED-GREEN và các cổng nghiệm thu.
+>
+> Bản sửa đổi v0.2.1 triển khai service-owned `businessDate`, fail-fast và
+> SQL/in-memory parity qua PR #81. Bản sửa đổi v0.3.0 tái sử dụng contract đó
+> cho operations summary; không mở lại hoặc nhân đôi prerequisite đã hoàn tất.
 
 ---
 
@@ -444,3 +450,52 @@ Danh sách kiểm tra phê duyệt Giai đoạn 1 (hoàn tất vào 2026-06-10):
 - [x] Xác định `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` an toàn trước khi thực thi service/repository.
 - [x] Duy trì xác thực giá trị đã phê duyệt, báo cáo trống cho ID không xác định, SQL tham số hóa và hành vi chỉ đọc.
 - [x] Nhat đã trực tiếp đánh giá và phê duyệt bản SPEC v0.2.0 bằng văn bản vào 2026-07-27; PLAN/TASKS có thể tiếp tục, còn triển khai vẫn bị chặn trong khi chờ phê duyệt kế hoạch.
+
+## 18. Phụ lục operations summary và clock xác định v0.3.0
+
+Batch: `BATCH-FE07-FE12-CONNECTED-DEMO-2026-07-29`.
+
+### 18.1 Quy tắc kinh doanh
+
+- BR-FE12-017: Operations summary là một snapshot chỉ đọc đã phân quyền, không
+  được ghép từ danh sách phân trang ở frontend.
+- BR-FE12-018: Sáu KPI dùng trạng thái nguồn chính tắc: yêu cầu `PENDING`, chi
+  tiết `BORROWED`, `BORROWED` quá hạn, reservation `ACTIVE|NOTIFIED`, bản sao
+  khả dụng hiệu lực có `Books.Status = 'ACTIVE'` và
+  `BookCopies.Status = 'AVAILABLE'`, cùng sách `ACTIVE` có 0..2 bản sao
+  `AVAILABLE`. Sách không hoạt động bị loại khỏi `availableCopies` và
+  `lowStockBooks`.
+- BR-FE12-019: KPI thiếu hoặc lỗi không được hiển thị thành số `0`.
+- BR-FE12-020: Mọi phép phân loại quá hạn FE12 phải dùng một `businessDate`
+  được service tạo từ clock có kiểm soát theo `Asia/Ho_Chi_Minh` và truyền rõ
+  cho SQL/in-memory repository; repository không được tự gọi `new Date()`.
+
+### 18.2 Yêu cầu chức năng
+
+- FR-FE12-012: Cung cấp `GET /api/reports/operations-summary`.
+- FR-FE12-013: Endpoint chỉ cho `LIBRARIAN|ADMIN`, từ chối Member/Guest và có
+  allowlist query rỗng.
+- FR-FE12-014: Trả sáu KPI cùng `generatedAt`; `generatedAt` và `businessDate`
+  được suy ra từ cùng một lần đọc clock. Service truyền `businessDate` rõ ràng
+  cho cả báo cáo mượn hiện hành và operations summary; SQL repository và
+  in-memory repository phải có cùng chữ ký/ngữ nghĩa.
+- FR-FE12-015: Dashboard dùng fixed drill-down tới FE07/FE08/các báo cáo FE12
+  hiện có và không tự tính KPI.
+
+### 18.3 Tiêu chí chấp nhận và truy vết
+
+- AC-FE12-012: Librarian/Admin nhận đúng sáu KPI snapshot và fixed drill-down,
+  ánh xạ `AT-010`.
+- AC-FE12-013: Member/Guest không nhận dữ liệu operations summary, ánh xạ
+  `AT-011`.
+- AC-FE12-014: KPI lỗi/thiếu hiển thị trạng thái không tải được, không phải
+  `0`.
+- AC-FE12-015: Golden flow desktop 1440x900 phản ánh trạng thái đã commit, ánh
+  xạ `AT-012`.
+- AC-FE12-016: Với clock service cố định trước/sau hạn trả, SQL contract,
+  in-memory projection và HTTP response phân loại quá hạn giống nhau, không phụ
+  thuộc ngày thật của host, ánh xạ `AT-013`.
+
+Triển khai phải đi qua `SL-005` và `SL-006`; finding baseline SIT-002/SIT-008
+chỉ được sửa bằng clock injection theo `BR-FE12-020`, không đổi expected state
+để che drift.

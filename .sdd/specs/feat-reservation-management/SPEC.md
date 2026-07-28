@@ -1,12 +1,12 @@
 # SPEC.md - Quản lý đặt chỗ FE08
 
-# Phiên bản: 0.5.10
+# Phiên bản: 0.6.0
 
-# Trạng thái: APPROVED - MỐC CƠ SỞ 2026-07-17
+# Trạng thái: H1 GOVERNANCE ACTIVATION - ĐÃ PHÊ DUYỆT; CHỜ H3/MERGE
 
 # Chủ sở hữu: Nhat
 
-# Cập nhật lần cuối: 2026-07-27
+# Cập nhật lần cuối: 2026-07-29
 
 # ID tính năng: FE08
 
@@ -597,3 +597,37 @@ Danh sách kiểm tra phê duyệt Giai đoạn 1 (hoàn thành ngày 2026-06-10
 - [x] Các trường phản hồi của ứng viên, trạng thái đủ điều kiện, giới hạn truy vấn, thứ tự và quy tắc lược bỏ dữ liệu đều rõ ràng.
 - [x] Hợp đồng duyệt sách công khai FE01, kho dành cho nhân viên FE06 và `POST { copyId }` không thay đổi.
 - [ ] Phần triển khai ứng viên, bằng chứng dựa trên SQL, chấp nhận trình duyệt và rà soát tích hợp cuối cùng đều đạt.
+
+## 18. Phụ lục luồng demo liên hoàn FE07-FE12 v0.6.0
+
+Batch: `BATCH-FE07-FE12-CONNECTED-DEMO-2026-07-29`.
+
+### 18.1 Quy tắc kinh doanh
+
+- BR-FE08-021: Chỉ chủ sở hữu của reservation `NOTIFIED` mới thấy CTA tạo yêu
+  cầu mượn đúng bản sao đang được giữ.
+- BR-FE08-022: FE10 thất bại sau khi lượt giữ commit không rollback lượt giữ;
+  API và UI phải trình bày cảnh báo trung thực.
+
+### 18.2 Yêu cầu chức năng
+
+- FR-FE08-036: Reservation `NOTIFIED` của đúng owner hiển thị CTA truyền đúng
+  `copyId` sang FE07; mọi rule vẫn được server FE07 đánh giá lại.
+- FR-FE08-037: Màn nhân viên gom bằng chứng hàng đợi và thao tác thủ công “Giữ
+  sách & thông báo”; UI không tự chọn người thắng.
+- FR-FE08-038: Kết quả xử lý có thể trả cảnh báo thông báo dạng enum/safe
+  message, không lộ provider detail.
+- FR-FE08-039: Xung đột trạng thái trả `409`; UI tải lại trạng thái chính tắc
+  trước thao tác tiếp theo.
+
+### 18.3 Tiêu chí chấp nhận và truy vết
+
+- AC-FE08-023: Xử lý hàng đợi chọn người hợp lệ đầu tiên, giữ đúng bản sao và
+  yêu cầu FE10 một lần, ánh xạ `AT-005`.
+- AC-FE08-024: Owner `NOTIFIED` bàn giao đúng `copyId` cho FE07 và reservation
+  hoàn tất khi mượn được phê duyệt, ánh xạ `AT-007`.
+- AC-FE08-025: Race chỉ cho một transaction thắng; lỗi FE10 giữ transaction
+  nguồn và hiển thị cảnh báo, ánh xạ `AT-008`, `AT-009`.
+
+Triển khai phải đi qua `SL-004` và `SL-006`; không tự động xử lý FE08 từ thao
+tác trả FE07.

@@ -1,10 +1,10 @@
 # Feature Integration Map - Library Management System
 
-Version: 1.2.0
+Version: 1.3.0
 
-Status: APPROVED
+Status: H1 GOVERNANCE ACTIVATION - APPROVED; AWAITING H3/MERGE
 
-Last Updated: 2026-07-27
+Last Updated: 2026-07-29
 
 > This is the Layer 1 (system-level) "big picture" that links the 12 separately-owned feature specs. Approved on 2026-06-25 together with the system ERD (Section 4.1).
 
@@ -508,4 +508,37 @@ Update this document when:
 - integration tests are added or removed.
 
 This document should be reviewed during major SDD documentation passes and before final project defense.
+
+## 12. Batch FE07-FE12 Connected Demo 2026-07-29
+
+Batch ID: `BATCH-FE07-FE12-CONNECTED-DEMO-2026-07-29`.
+
+```text
+FE07 transaction source
+  -> FE10 post-commit borrowing-result notification
+  -> FE08 manual queue handoff after return
+  -> FE10 post-commit reservation-ready notification
+  -> FE07 exact-copy borrow request by NOTIFIED owner
+  -> FE12 read-only operations snapshot from committed SQL state
+```
+
+Ownership:
+
+- FE07 owns borrow/return/renew mutations and exposes only a read-only FE08
+  handoff.
+- FE08 owns FIFO/reservation/hold mutations; processing remains manual.
+- FE10 owns notification persistence/delivery/inbox and fixed action mappings;
+  it never changes FE07/FE08 state.
+- FE12 owns no source mutation. Service supplies one business date to SQL and
+  in-memory repositories so overdue state is deterministic.
+- FE12 effective availability includes only active books and available copies;
+  inactive books are excluded from `availableCopies` and `lowStockBooks`.
+
+Allowed action paths are `/borrowing/history`, `/reservations/mine` and
+`/librarian/reservations` at their documented handoff points. No caller-defined
+URL, automatic queue processing, new channel/table, scheduler, SSE or WebSocket
+is part of this batch.
+
+Planned evidence: focused RED/GREEN suites, cross-feature system fixture,
+desktop Chromium `1440x900`, full L1-L4 gates and exact Azure staging verification.
 

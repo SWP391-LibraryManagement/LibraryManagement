@@ -1,8 +1,8 @@
 # Kế hoạch kiểm thử FE07 - Quản lý mượn sách
 
-Phiên bản: 0.2.7
-Trạng thái: ĐÃ HOÀN TẤT - ĐÃ GHI NHẬN BẰNG CHỨNG CHỐT GIAI ĐOẠN 2
-Cập nhật lần cuối: 2026-07-27
+Phiên bản: 0.9.0
+Trạng thái: H1 GOVERNANCE ACTIVATION - ĐÃ PHÊ DUYỆT; CHỜ MERGE ĐỂ THỰC THI
+Cập nhật lần cuối: 2026-07-29
 
 Đặc tả nguồn: `.sdd/specs/feat-borrowing-management/SPEC.md`
 ID tính năng: `BR-FE07-*`, `FR-FE07-*`, `AC-FE07-*`
@@ -89,3 +89,14 @@ npm.cmd run trace:enforce
 - Lượt chạy GitHub Actions CI `29308540692` đạt trên commit merge.
 - Job CI thành công bao phủ thực thi truy vết, kiểm thử backend, lint/kiểm thử/build frontend và kiểm tra import health backend.
 - Bằng chứng chi tiết được ghi tại `.sdd/reviews/fe07-b7-integration-review-closeout-2026-07-14.md`.
+
+## 9. Ma trận kiểm thử batch FE07-FE12
+
+- AC-FE07-033: approve/reject requester lũy đẳng và safe payload.
+- AC-FE07-034: return handoff có/không hàng đợi, không mutation reservation.
+- AC-FE07-035: FE10 failure giữ commit FE07 và trả warning.
+- AC-FE07-036: timeline/state/timestamp/blocker/stale desktop projection.
+- Cross-feature: `AT-001..AT-004`, `AT-009`, `AT-012`.
+
+Yêu cầu RED trước GREEN; focused suites, full backend/frontend, Chromium và
+traceability phải đạt trước H2.

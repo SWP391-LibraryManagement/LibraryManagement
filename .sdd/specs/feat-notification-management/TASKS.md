@@ -1,8 +1,8 @@
 # TASKS.md - FE10 Quản lý thông báo
 
-Trạng thái: V0.5.0 HOÀN TẤT - PR #75 ĐÃ MERGE, CI/AZURE HẬU MERGE ĐẠT
-Implementation State: COMPLETE
-Cổng giao hàng: HOÀN TẤT
+Trạng thái: H1 GOVERNANCE ACTIVATION - ĐÃ PHÊ DUYỆT; CHỜ H3/MERGE
+Implementation State: PARTIAL
+Cổng giao hàng: V0.6.0 CHƯA KÍCH HOẠT
 
 Chi tiết v0.5.0 hiện tại: FE10-I01..I08, biện pháp khắc phục hash migration và
 biện pháp khắc phục H3 vòng một có giới hạn đã hoàn tất. Fingerprint được H2
@@ -843,3 +843,16 @@ Các bước chi tiết, lệnh RED/GREEN và ranh giới commit nằm trong
 | AC-FE10-014 | FE10-I01, FE10-I02, FE10-I03, FE10-I06, FE10-I07, FE10-I08 |
 | AC-FE10-015 | FE10-I02, FE10-I03, FE10-I05, FE10-I07, FE10-I08 |
 | AC-FE10-016 | FE10-I04, FE10-I05, FE10-I06, FE10-I07, FE10-I08 |
+
+## Batch FE07-FE12 v0.6.0
+
+- [ ] **FE10-I09 - Canonical FE07 template/source ownership và RED tests.**
+  - Ánh xạ: BR-FE10-021/023, FR-FE10-017, AC-FE10-017/020.
+- [ ] **FE10-I10 - Idempotent persistence/replay và additive template seed.**
+  - Ánh xạ: FR-FE10-018, AC-FE10-018.
+- [ ] **FE10-I11 - Inbox eligibility và fixed borrowing action path.**
+  - Ánh xạ: BR-FE10-022, FR-FE10-019/020, AC-FE10-019.
+- [ ] **FE10-I12 - Integration, sensitive scan và desktop evidence.**
+  - Ánh xạ: `SL-002`, `SL-006`, `AT-002/003/006/009/012`.
+
+Không thêm bảng/kênh; product diff giữ uncommitted đến H2.

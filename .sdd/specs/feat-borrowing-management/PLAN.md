@@ -1,10 +1,10 @@
 # PLAN.md - FE07 Quản lý mượn sách
 
-Trạng thái: KHẮC PHỤC QUẢN TRỊ H3 - ĐANG CHỜ H2 MỚI
+Trạng thái: H1 GOVERNANCE ACTIVATION - ĐÃ PHÊ DUYỆT; CHỜ H3/MERGE
 
 Chủ sở hữu: Nhat
 
-Cập nhật: 2026-07-27
+Cập nhật: 2026-07-29
 
 Trạng thái quy trình: Mốc cơ sở Giai đoạn 2 vẫn hoàn tất. Nhat đã phê duyệt phụ lục H2
 `8d0059b` vào 2026-07-27; kết quả đã được rà soát được commit là
@@ -252,3 +252,15 @@ Kế hoạch thực thi chi tiết là
 2. Lọc ứng viên ở phạm vi `BookId` và xác thực lại dưới khóa giao dịch theo phạm vi thành viên hiện có trước khi chèn yêu cầu.
 3. Trong khi phê duyệt, từ chối bản sao cũ trùng lặp nếu Thành viên đã có một chi tiết `BORROWED` cho cùng `BookId`; giữ từ chối như một bước dọn dẹp.
 4. Công khai các yếu tố chặn phê duyệt riêng biệt về chủ sở hữu-vai trò/tài khoản/bản sao/cùng tiêu đề cho FE11 mà không chuyển quyền sở hữu lệnh FE07.
+
+## 15. Kế hoạch batch liên hoàn v0.9.0
+
+1. `SL-001`: merge governance activation trước product work.
+2. `SL-002`: chờ FE10 canonical templates/action path.
+3. `SL-003`: RED/GREEN cho post-commit requester, queue handoff, timeline và
+   blocker/stale guidance; FE07 là Core owner duy nhất của slice.
+4. `SL-006`: kiểm thử tích hợp và desktop Chromium 1440x900.
+5. Giữ toàn bộ product diff uncommitted đến H2; H3 bắt buộc trước merge.
+
+Lệnh tập trung: `borrowingRoutes`, `borrowingRepository`, frontend journey/error
+tests; sau đó full backend/frontend, E2E, traceability và `git diff --check`.

@@ -1,5 +1,12 @@
 # CHANGELOG.md - FE10 Quản lý thông báo
 
+## 2026-07-29 - Kích hoạt template kết quả FE07 (v0.6.0)
+
+- Thêm BR-FE10-021..023, FR-FE10-017..020 và AC-FE10-017..020.
+- Chốt bốn template kết quả, per-template ownership, idempotency, inbox
+  eligibility, fixed action path và sensitive exclusions.
+- Chưa thay đổi product code/schema; H1 đã duyệt và activation đang chờ H3/merge.
+
 ## 2026-07-28 - Hoàn tất giao hàng hộp thư thông báo cá nhân FE10
 
 - H2 sau `main@30f936d` đã phê duyệt fingerprint

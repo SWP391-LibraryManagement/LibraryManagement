@@ -1,12 +1,12 @@
 # CONTEXT.md - FE08 Quản lý đặt chỗ
 
-# Phiên bản: 0.2.3
+# Phiên bản: 0.6.0
 
-# Trạng thái: ĐÃ PHÊ DUYỆT - MỐC CƠ SỞ 2026-07-17
+# Trạng thái: H1 GOVERNANCE ACTIVATION - ĐÃ PHÊ DUYỆT; CHỜ H3/MERGE
 
 # Chủ sở hữu: Nhat
 
-# Cập nhật lần cuối: 2026-07-21
+# Cập nhật lần cuối: 2026-07-29
 
 # Thư mục tính năng: `.sdd/specs/feat-reservation-management/`
 
@@ -135,3 +135,11 @@ Vấn đề tiềm năng cần rà soát:
 - `PLAN.md` và `TASKS.md` ghi riêng lát cắt B7 lịch sử với các tác vụ đối soát v0.4.3/v0.4.4.
 - Xử lý hàng đợi nên theo giao dịch.
 - Thành viên không bao giờ được hủy đặt chỗ của thành viên khác.
+
+## 11. Bối cảnh batch FE07-FE12 2026-07-29
+
+- FE08 tiếp tục sở hữu FIFO, lượt giữ, hết hạn và reservation state.
+- FE07 chỉ điều hướng nhân viên tới decision surface; không tự mutation FE08.
+- CTA mượn bản sao giữ dành riêng cho owner `NOTIFIED` và chỉ truyền `copyId`.
+- FE10 chạy sau commit; failure được trả thành safe warning, không rollback hold.
+- Scope thuộc `SL-004`, phụ thuộc `SL-001`, `SL-002` và handoff `SL-003`.

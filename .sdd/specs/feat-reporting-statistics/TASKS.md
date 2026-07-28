@@ -1,7 +1,7 @@
 # TASKS.md - FE12 Báo cáo và thống kê
 
-Trạng thái: H2 ADDENDUM ĐÃ PHÊ DUYỆT - H3 ĐANG KHẮC PHỤC
-Implementation State: COMPLETE
+Trạng thái: H1 GOVERNANCE ACTIVATION - ĐÃ PHÊ DUYỆT; CHỜ H3/MERGE
+Implementation State: PARTIAL
 
 Chủ sở hữu: Nhat
 
@@ -10,15 +10,11 @@ Cập nhật: 2026-07-29
 Trạng thái workflow: baseline Giai đoạn 2 vẫn hoàn tất. Nhat phê duyệt PLAN/
 TASKS FE12-N11 và phụ lục H2 tích hợp `8d0059b` ngày 2026-07-27. Kết quả đã
 review được commit thành `f346ae0`, push lên PR nháp #63 và lượt CI
-`30244750250` đạt. Review H3 đầu tiên không phát hiện lỗi mã FE12 hay quy tắc
-nghiệp vụ, chỉ trả về cách diễn đạt governance cũ. Khắc phục chỉ-tài-liệu vẫn
-chưa commit, chờ H2 mới và H3 lặp lại. Prerequisite v0.2.1 trên PR #81 đã nhận
-H2 addendum fingerprint
-`063323fcbb0171a6628c6f310d55719369d7afa1f78d8c6b83f36bd69dbdd505`
-và H2 remediation fingerprint
-`c4216068a3aafbbfeaddd47ef2398a84555746c35b290e4f1a040d370d9612ed`.
-CI implementation-head `30402908636` tại `65d9198` đạt; commit chỉ-tài-liệu
-chốt bằng chứng phải qua H3 lặp lại và CI exact-head trước merge.
+`30244750250` đạt. Prerequisite v0.2.1 đã hoàn tất H2/H3, merge qua PR #81
+thành `main@0d064b5`; CI exact-head `30403316655` và CI hậu merge
+`30403632044` đều đạt. Azure đã upload backend/frontend nhưng smoke bị chặn bởi
+quota F1 `WP stop requests`, không phải finding code. Phạm vi hiện tại là
+governance activation v0.3.0 đã được H1 phê duyệt và đang chờ H3/merge PR #80.
 
 ---
 
@@ -240,7 +236,7 @@ Bằng chứng tự động chi tiết được ghi trong
     `30244750250` đạt. Khắc phục H3 chỉ-tài-liệu cần H2 mới và H3 lặp lại trước
     merge.
 
-## 12. Prerequisite ngày nghiệp vụ báo cáo mượn v0.2.1
+## 12. Prerequisite ngày nghiệp vụ báo cáo mượn v0.2.1 - Đã hoàn tất
 
 - [x] **FE12-N12 - Sửa clock drift ở service boundary.**
   - Ánh xạ: BR-FE12-004/012, FR-FE12-001, AC-FE12-001,
@@ -259,5 +255,20 @@ Bằng chứng tự động chi tiết được ghi trong
 
 H2 remediation fingerprint
 `c4216068a3aafbbfeaddd47ef2398a84555746c35b290e4f1a040d370d9612ed`
-đã được phê duyệt; H3 lặp lại và CI exact-head bắt buộc trước merge PR
-prerequisite.
+đã được phê duyệt. H3 hai trục và CI exact-head đạt; PR #81 đã merge thành
+`main@0d064b5` và CI hậu merge `30403632044` đạt.
+
+## 13. Operations summary v0.3.0
+
+- [ ] **FE12-N14 - Operations summary endpoint và role/query contract.**
+  - Ánh xạ: BR-FE12-017/018, FR-FE12-012..014, AC-FE12-012/013.
+  - Tái sử dụng service-owned `businessDate` đã hoàn tất ở FE12-N12/N13.
+  - `availableCopies`/`lowStockBooks` chỉ xét sách `ACTIVE`; bản sao khả dụng
+    phải có `BookCopies.Status = 'AVAILABLE'`.
+- [ ] **FE12-N15 - Dashboard snapshot và missing-KPI UX.**
+  - Ánh xạ: BR-FE12-019, FR-FE12-015, AC-FE12-014/015.
+- [ ] **FE12-N16 - Integration/desktop/full-gate evidence.**
+  - Ánh xạ: `SL-005`, `SL-006`, `AT-010..AT-013`.
+
+Không sửa expected `BORROWED` thành `OVERDUE` để che drift. Product work bắt
+đầu sau governance activation merge và giữ uncommitted đến H2.

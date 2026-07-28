@@ -1,6 +1,6 @@
 # PLAN.md - FE12 Báo cáo và thống kê
 
-Trạng thái: H2 ADDENDUM ĐÃ PHÊ DUYỆT - H3 ĐANG KHẮC PHỤC
+Trạng thái: H1 GOVERNANCE ACTIVATION - ĐÃ PHÊ DUYỆT; CHỜ H3/MERGE
 
 Chủ sở hữu: Nhat
 
@@ -9,14 +9,12 @@ Cập nhật: 2026-07-29
 Trạng thái workflow: baseline Giai đoạn 2 vẫn hoàn tất. Nhat phê duyệt PLAN/
 TASKS v0.2.0 và phụ lục H2 tích hợp `8d0059b` ngày 2026-07-27. Kết quả đã review
 được commit thành `f346ae0`, push lên PR nháp #63 và lượt CI `30244750250` đạt.
-Review H3 đầu tiên không phát hiện lỗi mã FE12 hay quy tắc nghiệp vụ, chỉ trả về
-cách diễn đạt governance cũ. Khắc phục chỉ-tài-liệu vẫn chưa commit, chờ H2 mới
-và H3 lặp lại. Prerequisite v0.2.1 trên PR #81 đã nhận H2 addendum fingerprint
-`063323fcbb0171a6628c6f310d55719369d7afa1f78d8c6b83f36bd69dbdd505`
-và H2 remediation fingerprint
-`c4216068a3aafbbfeaddd47ef2398a84555746c35b290e4f1a040d370d9612ed`.
-CI implementation-head `30402908636` tại `65d9198` đạt; commit chỉ-tài-liệu
-chốt bằng chứng phải qua H3 lặp lại và CI exact-head trước merge.
+Review H3 đầu tiên không phát hiện lỗi mã FE12 hay quy tắc nghiệp vụ. Prerequisite
+v0.2.1 đã hoàn tất H2/H3, merge qua PR #81 thành `main@0d064b5`; CI exact-head
+`30403316655` và CI hậu merge `30403632044` đều đạt. Azure đã upload backend/
+frontend nhưng smoke bị chặn bởi quota F1 `WP stop requests`, không phải finding
+code. Phạm vi hiện tại là governance activation v0.3.0 đã được H1 phê duyệt và
+đang chờ H3/merge PR #80.
 
 ---
 
@@ -165,7 +163,7 @@ Kế hoạch thực thi chi tiết:
 5. Chạy kiểm thử FE12 tập trung/đầy đủ, truy vết, vệ sinh diff và một yêu cầu
    HTTP runtime thực trước H2.
 
-## 8. Prerequisite ngày nghiệp vụ báo cáo mượn v0.2.1
+## 8. Prerequisite ngày nghiệp vụ báo cáo mượn v0.2.1 - Đã hoàn tất
 
 1. RED: cố định service clock tại ranh giới ngày `Asia/Ho_Chi_Minh`, tái hiện
    SIT-002/SIT-008 và thêm ca thiếu/sai `businessDate` cho SQL/in-memory.
@@ -178,3 +176,22 @@ Kế hoạch thực thi chi tiết:
    và không đổi expected `BORROWED` thành `OVERDUE` để che drift.
 5. Chạy focused/full backend, coverage, frontend, E2E, deployment, traceability
    và vệ sinh diff trước H2/H3.
+
+Hoàn tất qua PR #81, merge `main@0d064b5`; không lặp lại FE12-N12/N13 trong
+phạm vi operations summary.
+
+## 9. Kế hoạch operations summary v0.3.0
+
+1. `SL-001`: merge governance activation trước product work.
+2. `SL-005` RED: tái sử dụng service clock và `businessDate` đã triển khai để
+   thêm repository/service/route contract cho operations summary.
+3. `SL-005` GREEN: operations summary nhận cùng `businessDate`; SQL repository
+   dùng `@BusinessDate`, in-memory repository nhận cùng argument và không
+   repository nào tự gọi `new Date()` để phân loại quá hạn.
+4. `availableCopies` chỉ đếm cặp sách/bản sao
+   `Books.Status = 'ACTIVE'` và `BookCopies.Status = 'AVAILABLE'`;
+   `lowStockBooks` chỉ xét sách `ACTIVE` có 0..2 bản sao `AVAILABLE`.
+5. Frontend staff dashboard gọi một snapshot FE12 và hiển thị KPI lỗi/thiếu là
+   `Không tải được`, không phải `0`.
+6. `SL-006`: full integration, desktop Chromium, L1-L4; product diff giữ
+   uncommitted đến H2 và H3 bắt buộc trước merge.

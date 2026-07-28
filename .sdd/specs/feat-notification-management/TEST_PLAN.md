@@ -1,8 +1,8 @@
 # Kế hoạch kiểm thử FE10 - Quản lý thông báo
 
-Phiên bản: 0.5.0
-Trạng thái: V0.5.0 HOÀN TẤT - PR #75 ĐÃ MERGE, CI/AZURE HẬU MERGE ĐẠT
-Cập nhật lần cuối: 2026-07-28
+Phiên bản: 0.6.0
+Trạng thái: H1 GOVERNANCE ACTIVATION - ĐÃ PHÊ DUYỆT; CHỜ MERGE ĐỂ THỰC THI
+Cập nhật lần cuối: 2026-07-29
 
 Đặc tả nguồn: `.sdd/specs/feat-notification-management/SPEC.md`
 ID tính năng: `BR-FE10-*`, `FR-FE10-*`, `AC-FE10-*`
@@ -200,3 +200,13 @@ npm.cmd run trace:enforce
   phê duyệt rõ ràng. Nó merge thành
   `b75776b10d6cf4b6868d2ba51eb3268073483b8b`; CI hậu merge `30341279111`
   và Azure staging tự động `30341540847` đã đạt.
+
+## 9. Ma trận kiểm thử template FE07 v0.6.0
+
+- Canonical pair theo template/source, không cho type-only ownership.
+- Bốn template FE07, idempotent replay và duplicate prevention.
+- Personal inbox eligibility và fixed `/borrowing/history`.
+- Sensitive-field scan cho rejection reason/email/token/OTP/stack/provider.
+- FE10 failure isolation trong integration FE07/FE08 và desktop navigation.
+
+Migration contract phải chứng minh seed Azure SQL additive và rerun-safe.

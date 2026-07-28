@@ -1,10 +1,10 @@
 # PLAN.md - FE10 Quản lý thông báo
 
-Trạng thái: V0.5.0 HOÀN TẤT - PR #75 ĐÃ MERGE, CI/AZURE HẬU MERGE ĐẠT
+Trạng thái: H1 GOVERNANCE ACTIVATION - ĐÃ PHÊ DUYỆT; CHỜ H3/MERGE
 
 Chủ sở hữu: Nhat
 
-Cập nhật: 2026-07-28
+Cập nhật: 2026-07-29
 
 Phê duyệt: G1-G7 được phê duyệt 2026-07-13; G8-G10/ADR-004 và G11/ADR-005
 được phê duyệt 2026-07-15; ranh giới FE04 G12 được Nhat phê duyệt
@@ -620,3 +620,14 @@ thử, frontend 259/259 cùng lint/build, triển khai 20/20, hệ thống 10/10
 thái traceability 3/3, traceability FE10 14/16 (88%), Chromium 11/11, kiểm
 toán, chuẩn bị schema Azure và vệ sinh diff. Checkpoint lịch sử đó được thay thế
 bởi chuỗi cuối đã hoàn tất trong Phần 15.4.
+
+## 16. Kế hoạch template kết quả FE07 v0.6.0
+
+1. `SL-001`: merge governance activation.
+2. `SL-002` RED: canonical type/template/source ownership, inbox eligibility,
+   fixed action path, idempotent replay và sensitive-field exclusions.
+3. `SL-002` GREEN: mở rộng bốn `GENERAL_SYSTEM` template FE07 và migration seed
+   additive, không thêm bảng/kênh.
+4. Chạy migration contract, repository/routes/inbox/frontend focused tests rồi
+   `SL-006` integration/E2E.
+5. FE10 không quyết định trạng thái FE07/FE08; product diff uncommitted đến H2.

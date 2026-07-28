@@ -1,12 +1,12 @@
 # CONTEXT.md - FE10 Quản lý thông báo
 
-# Phiên bản: 0.5.0
+# Phiên bản: 0.6.0
 
-# Trạng thái: V0.5.0 HOÀN TẤT - PR #75 ĐÃ MERGE, CI/AZURE HẬU MERGE ĐẠT
+# Trạng thái: H1 GOVERNANCE ACTIVATION - ĐÃ PHÊ DUYỆT; CHỜ H3/MERGE
 
 # Chủ sở hữu: Nhat
 
-# Cập nhật lần cuối: 2026-07-28
+# Cập nhật lần cuối: 2026-07-29
 
 # Thư mục tính năng: `.sdd/specs/feat-notification-management/`
 
@@ -253,3 +253,12 @@ triển khai ở trên; các hạng mục phạm vi tương lai vẫn được t
 - Dùng khóa lũy đẳng hoặc mã định danh sự kiện nguồn để ngăn bản ghi thông báo
   trùng lặp.
 - Giữ việc kết xuất thông điệp tập trung để các mẫu có thể kiểm thử.
+
+## 11. Bối cảnh batch FE07-FE12 2026-07-29
+
+- FE07 sở hữu bốn sự kiện kết quả mượn; FE10 sở hữu persistence/delivery/inbox.
+- `GENERAL_SYSTEM` chỉ hợp lệ khi template key và source entity thuộc canonical
+  pair đã phê duyệt.
+- Action path do backend ánh xạ cố định; caller không truyền URL.
+- Payload kết quả không chứa lý do từ chối hoặc dữ liệu nhạy cảm.
+- Scope thuộc `SL-002`; migration chỉ bổ sung template, không thêm bảng/kênh.
