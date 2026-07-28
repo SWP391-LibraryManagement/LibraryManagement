@@ -1,5 +1,18 @@
 # CHANGELOG.md - FE10 Notification Management
 
+## 2026-07-28 - Complete FE10 personal notification inbox delivery
+
+- Post-`main@30f936d` H2 approved fingerprint
+  `e123345be05b59a9e519d182b301ab5464160e8fc32aed8d17d3c463e28e0a15`.
+- PR #75 head `778e0a470d8a1083bf571a8007b3c058eee4bb22` passed exact-head
+  CI `30317424995` and Azure staging `30317621429`; the H3 Standards and Spec
+  reviews returned no actionable finding and the user explicitly approved H3.
+- PR #75 merged as `b75776b10d6cf4b6868d2ba51eb3268073483b8b`. Exact
+  post-merge CI `30341279111` and automatic Azure staging `30341540847`
+  passed, including migration preflight, backend, frontend, and smoke.
+- This closeout records evidence/status only. It does not alter FE10 business
+  rules, API, schema, UI behavior, Azure configuration, or database data.
+
 ## 2026-07-28 - Reconcile Vietnamese SDD drift through main@30f936d
 
 - The user approved H1 drift reconciliation through `main@30f936d`. The

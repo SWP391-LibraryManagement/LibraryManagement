@@ -1,6 +1,6 @@
 # PLAN.md - FE10 Notification Management
 
-Status: V0.5.0 IMPLEMENTED - POST-DRIFT H2/H3 IN PROGRESS
+Status: V0.5.0 COMPLETE - PR #75 MERGED, POST-MERGE CI/AZURE PASS
 
 Owner: Nhat
 
@@ -10,18 +10,16 @@ Approval: G1-G7 approved 2026-07-13; G8-G10/ADR-004 and G11/ADR-005 approved 202
 
 Workflow State: The approved Phase 2/G1-G12 and v0.4.5 delivery baseline
 remains complete. The user approved the v0.5.0 personal notification inbox
-design and consolidated written SPEC on 2026-07-27. The user approved the new
+design and consolidated written SPEC on 2026-07-27, then approved the
 implementation plan and FE10-I01..I08 task decomposition as H1 on 2026-07-28.
-Governance PR #70 reached `main` as `25c09ec`. FE10-I01 through FE10-I08,
-the migration-hash remediation, and the bounded H3 round-one remediation are
-implemented. PR #75 historical head `cf0a236` passed exact-head CI
-`30315046007`, Azure staging `30315273298`, public transport/protected-route
-checks, Azure SQL schema/index verification, cleanup, and final two-axis H3
-with no actionable finding. The user then approved documentation-only drift
-through `main@30f936d`; the branch rebased without runtime conflict and
-preserved the upstream Vietnamese SDD translation. The earlier H2 authority
-cannot be reused. A fresh fingerprint/H2, exact-head CI/Azure, repeated H3,
-explicit H3 approval, merge, and post-merge CI/deployment remain open.
+Governance PR #70 reached `main` as `25c09ec`. After the documentation-only
+`main@30f936d` drift rebase, H2 approved fingerprint
+`e123345be05b59a9e519d182b301ab5464160e8fc32aed8d17d3c463e28e0a15`.
+PR #75 head `778e0a470d8a1083bf571a8007b3c058eee4bb22` passed exact-head CI
+`30317424995` and Azure staging `30317621429`, received clean two-axis H3 and
+explicit approval, then merged as `b75776b10d6cf4b6868d2ba51eb3268073483b8b`.
+Exact post-merge CI `30341279111` and automatic Azure staging `30341540847`
+passed. FE10-I01 through FE10-I08 and the bounded remediation are complete.
 
 ---
 
@@ -346,20 +344,20 @@ The implementation sequence is additive and backend-first:
   ownership, sensitive exclusion, migration safety, and staging evidence before
   merge.
 
-### 15.4 Current Candidate State
+### 15.4 Final Candidate And Delivery State
 
-- PR #75 head `28c4f80` contains the H2-approved FE10-I01..I08 candidate and
-  cross-platform migration-hash addendum.
-- Exact-head CI `30306805399` and Azure staging deployment `30307855616`
-  passed. Azure SQL retained one nullable `ReadAt` column and one supporting
-  index, protected aggregates were unchanged, and temporary probes/firewall
-  rules were removed.
-- Three-role API/browser checks passed own-record isolation, sensitive
-  exclusion, read replay, filters, navigation, HTTPS, and CORS.
-- H3 round one failed on bounded ADR/documentation and UI-state/stacking
-  findings. The remediation is local and must receive a new H2 fingerprint,
-  exact-head CI/Azure redeployment, and repeated H3 before merge. Post-merge
-  main CI and automatic staging remain unclaimed.
+- PR #75 head `778e0a470d8a1083bf571a8007b3c058eee4bb22` contains the final
+  H2-approved FE10-I01..I08 and bounded H3-remediation package after the
+  documentation-only `main@30f936d` rebase.
+- Exact-head CI `30317424995` and Azure staging deployment `30317621429`
+  passed. H3 reviewed the same head on Standards and Spec axes with no
+  actionable finding, and the user explicitly approved H3.
+- PR #75 merged as `b75776b10d6cf4b6868d2ba51eb3268073483b8b`. Exact
+  post-merge CI `30341279111` and automatic Azure staging `30341540847`
+  passed, including migration preflight, backend, frontend, and smoke.
+- Historical three-role API/browser evidence, Azure SQL `ReadAt`/index proof,
+  sensitive exclusion, read replay, HTTPS/CORS, and temporary-probe/firewall
+  cleanup remain valid evidence for the unchanged contract.
 
 ### 15.5 H1 Deployment Addendum
 
@@ -415,4 +413,5 @@ without conflict, and complete gates plus a new fingerprint/H2 are mandatory.
 Fresh validation on that exact base passed backend 69/69 suites and 1084/1084
 tests, frontend 259/259 plus lint/build, deployment 20/20, system 10/10,
 traceability state 3/3, FE10 traceability 14/16 (88%), Chromium 11/11, audits,
-Azure schema preparation, and diff hygiene. The new fingerprint/H2 remains.
+Azure schema preparation, and diff hygiene. That historical checkpoint was
+superseded by the completed final chain in Section 15.4.

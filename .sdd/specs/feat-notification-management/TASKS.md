@@ -1,16 +1,16 @@
 # TASKS.md - FE10 Notification Management
 
-Status: V0.5.0 IMPLEMENTED - POST-DRIFT H2/H3 IN PROGRESS
+Status: V0.5.0 COMPLETE - PR #75 MERGED, POST-MERGE CI/AZURE PASS
 Implementation State: COMPLETE
-Delivery Gate: POST-DRIFT H2/CI/AZURE/H3/MERGE PENDING
+Delivery Gate: COMPLETE
 
 Current v0.5.0 detail: FE10-I01..I08, the migration-hash remediation, and the
-bounded H3 round-one remediation are implemented. PR #75 historical head
-`cf0a236` passed CI `30315046007`, Azure staging `30315273298`, and clean
-two-axis H3. The branch is rebased locally as `c72bc77` on H1-approved
-`main@30f936d`, which translates SDD documents without runtime overlap. Fresh
-H2, exact-head CI/Azure, repeated H3, explicit H3 approval, merge, and
-post-merge CI/deployment remain pending.
+bounded H3 round-one remediation are complete. Post-`main@30f936d` H2 approved
+fingerprint `e123345be05b59a9e519d182b301ab5464160e8fc32aed8d17d3c463e28e0a15`.
+PR #75 head `778e0a470d8a1083bf571a8007b3c058eee4bb22` passed CI
+`30317424995` and Azure staging `30317621429`, received clean two-axis H3 and
+explicit approval, then merged as `b75776b10d6cf4b6868d2ba51eb3268073483b8b`.
+Post-merge CI `30341279111` and automatic Azure staging `30341540847` passed.
 
 Prior v0.4.5 Implementation State: COMPLETE
 
@@ -22,12 +22,10 @@ Workflow State: The approved Phase 2/G1-G12 and v0.4.5 delivery baseline below
 remains complete. The user approved the v0.5.0 personal inbox design and
 written SPEC on 2026-07-27, then approved FE10-I01..I08 as H1 on 2026-07-28.
 Governance PR #70 reached `main` as `25c09ec`. FE10-I01 through FE10-I08 and
-the round-one remediation are implemented; the pre-translation lineage passed
-H2, exact-head CI/Azure, public transport/protected-route checks, Azure SQL
-schema verification, cleanup, and H3. The approved `main@30f936d` rebase
-invalidates only the prior staging authority, not the implementation evidence;
-the resulting latest PR head must pass fresh H2 and exact-head gates before
-repeated H3.
+the round-one remediation are complete. The approved `main@30f936d` rebase
+preserved the implementation evidence and was followed by fresh H2,
+exact-head CI/Azure, repeated H3, merge, and post-merge CI/Azure evidence
+recorded above.
 
 ---
 
@@ -420,7 +418,7 @@ Detailed steps, RED/GREEN commands, and commit boundaries are in
 
 ### FE10-I01 Add The Additive Read-State Migration
 
-- [x] Status: H2/CI/AZURE STAGING VERIFIED - H3 REMEDIATION IN PROGRESS
+- [x] Status: COMPLETE - H3 APPROVED, PR #75 MERGED, POST-MERGE CI/AZURE PASS
 - Maps to: BR-FE10-016, BR-FE10-019, BR-FE10-020; AC-FE10-011 to AC-FE10-014.
 - Files: canonical SQL, Notification model, new idempotent migration, migration
   contract tests.
@@ -430,7 +428,7 @@ Detailed steps, RED/GREEN commands, and commit boundaries are in
 
 ### FE10-I02 Add Own-Record Repository And Safe Projection
 
-- [x] Status: H2/CI/AZURE STAGING VERIFIED - H3 REMEDIATION IN PROGRESS
+- [x] Status: COMPLETE - H3 APPROVED, PR #75 MERGED, POST-MERGE CI/AZURE PASS
 - Depends on: FE10-I01.
 - Maps to: BR-FE10-014 to BR-FE10-017, BR-FE10-020; AC-FE10-011 to AC-FE10-015.
 - Files: notification repository, inbox projection/action utility, in-memory
@@ -442,7 +440,7 @@ Detailed steps, RED/GREEN commands, and commit boundaries are in
 
 ### FE10-I03 Expose The Authenticated Personal Inbox API
 
-- [x] Status: H2/CI/AZURE STAGING VERIFIED - H3 REMEDIATION IN PROGRESS
+- [x] Status: COMPLETE - H3 APPROVED, PR #75 MERGED, POST-MERGE CI/AZURE PASS
 - Depends on: FE10-I02.
 - Maps to: FR-FE10-011 to FR-FE10-015; AC-FE10-011 to AC-FE10-015.
 - Files: notification validators, service, controller, routes, OpenAPI, route
@@ -453,7 +451,7 @@ Detailed steps, RED/GREEN commands, and commit boundaries are in
 
 ### FE10-I04 Add The Frontend Client And Shared Inbox Context
 
-- [x] Status: H2/CI/AZURE STAGING VERIFIED - H3 REMEDIATION IN PROGRESS
+- [x] Status: COMPLETE - H3 APPROVED, PR #75 MERGED, POST-MERGE CI/AZURE PASS
 - Depends on: FE10-I03.
 - Maps to: FR-FE10-016; AC-FE10-012, AC-FE10-013, AC-FE10-016.
 - Files: shared frontend API, error mapping, notification view model/context,
@@ -464,7 +462,7 @@ Detailed steps, RED/GREEN commands, and commit boundaries are in
 
 ### FE10-I05 Add The Authenticated Shell Bell And Preview
 
-- [x] Status: H2/CI/AZURE STAGING VERIFIED - H3 REMEDIATION IN PROGRESS
+- [x] Status: COMPLETE - H3 APPROVED, PR #75 MERGED, POST-MERGE CI/AZURE PASS
 - Depends on: FE10-I04.
 - Maps to: FR-FE10-015, FR-FE10-016; AC-FE10-015, AC-FE10-016.
 - Files: Header, notification bell component, app-shell styles, frontend tests.
@@ -474,7 +472,7 @@ Detailed steps, RED/GREEN commands, and commit boundaries are in
 
 ### FE10-I06 Add The Personal Notification Page
 
-- [x] Status: H2/CI/AZURE STAGING VERIFIED - H3 REMEDIATION IN PROGRESS
+- [x] Status: COMPLETE - H3 APPROVED, PR #75 MERGED, POST-MERGE CI/AZURE PASS
 - Depends on: FE10-I04.
 - Maps to: FR-FE10-011, FR-FE10-013, FR-FE10-014, FR-FE10-016;
   AC-FE10-011, AC-FE10-013, AC-FE10-014, AC-FE10-016.
@@ -486,7 +484,7 @@ Detailed steps, RED/GREEN commands, and commit boundaries are in
 
 ### FE10-I07 Prove Cross-Feature And Browser Behavior
 
-- [x] Status: H2/CI/AZURE STAGING VERIFIED - H3 REMEDIATION IN PROGRESS
+- [x] Status: COMPLETE - H3 APPROVED, PR #75 MERGED, POST-MERGE CI/AZURE PASS
 - Depends on: FE10-I03, FE10-I05, FE10-I06.
 - Maps to: AC-FE10-011 to AC-FE10-016.
 - Files: FE04/FE07/FE08 integration tests, FE10 Playwright E2E, test support
@@ -497,7 +495,7 @@ Detailed steps, RED/GREEN commands, and commit boundaries are in
 
 ### FE10-I08 Pass H2, Azure Staging, H3, And Merge Gates
 
-- [ ] Status: IN_PROGRESS - AZURE STAGING PASS; H3 REMEDIATION LOCAL
+- [x] Status: COMPLETE - H3 APPROVED, PR #75 MERGED, POST-MERGE CI/AZURE PASS
 - Depends on: FE10-I01..I07.
 - Maps to: all v0.5.0 BR/FR/AC entries.
 - Files: OpenAPI, architecture/integration map, user manual, Azure staging
@@ -559,7 +557,15 @@ Detailed steps, RED/GREEN commands, and commit boundaries are in
   and pushed as PR #75 head `3f9f23a`. Exact-head CI `30313721511`, Azure
   deployment `30313949983`, public transport/protected-route checks, Azure SQL
   schema/index verification, and cleanup passed. Repeated H3, explicit H3
-  approval, merge, and post-merge CI/deployment remain mandatory.
+  approval, merge, and post-merge CI/deployment were mandatory at that
+  historical checkpoint.
+- Final integration: H2 approved fingerprint
+  `e123345be05b59a9e519d182b301ab5464160e8fc32aed8d17d3c463e28e0a15`;
+  PR #75 head `778e0a470d8a1083bf571a8007b3c058eee4bb22` passed CI
+  `30317424995` and Azure staging `30317621429`, then clean two-axis H3 and
+  explicit approval. PR #75 merged as
+  `b75776b10d6cf4b6868d2ba51eb3268073483b8b`; exact post-merge CI
+  `30341279111` and automatic Azure staging `30341540847` passed.
 
 ### V0.5.0 Traceability
 
