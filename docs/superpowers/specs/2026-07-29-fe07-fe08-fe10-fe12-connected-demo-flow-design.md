@@ -42,9 +42,9 @@ Thiết kế giữ nguyên các quyết định baseline đã được phê duy�
 - FE12 chỉ đọc;
 - lỗi gửi thông báo FE10 không hoàn tác nghiệp vụ nguồn đã commit.
 
-Mọi yêu cầu mới trong tài liệu này được phân loại là `proposed-decision` cho đến
-khi file thiết kế được người dùng rà soát và các SPEC liên quan được cập nhật,
-phê duyệt bằng revision ổn định.
+Các yêu cầu mới trong tài liệu này đã hoàn tất review thiết kế, SPEC fan-out và
+H1 nên được phân loại là `approved-decision`. Quyền triển khai product vẫn chỉ
+có hiệu lực sau khi governance activation merge và tuân theo cổng H2/H3.
 
 Tài liệu này không tự cấp quyền sửa product code, schema, API hoặc triển khai.
 
@@ -64,17 +64,18 @@ Tài liệu này không tự cấp quyền sửa product code, schema, API hoặ
 
 | Decision ID | Câu hỏi | Quyết định đề xuất | Lý do | Phân loại |
 | --- | --- | --- | --- | --- |
-| BD-001 | Mở rộng bốn FE theo cách nào? | Tạo một golden flow xuyên FE07 -> FE08 -> FE10 -> FE12 | Dễ trình bày trước hội đồng và chứng minh ranh giới tính năng | `proposed-decision` |
-| BD-002 | Hàng đợi có tự xử lý sau khi trả không? | Không. FE07 chỉ hiển thị handoff; Librarian xác nhận FE08 xử lý | Giữ demo ổn định và đúng baseline xử lý thủ công | `proposed-decision` |
-| BD-003 | Có thêm bảng/kênh thông báo mới không? | Không. Tái sử dụng `Notifications` và hộp thư web v0.5.0 | Tránh dual-write và migration schema không cần thiết | `proposed-decision` |
-| BD-004 | Thông báo kết quả mượn được mô hình hóa thế nào? | Dùng bản ghi không nhạy cảm `GENERAL_SYSTEM` với template key chuẩn do FE07 sở hữu sự kiện nguồn | Không thêm enum/kênh mới nhưng vẫn có action path an toàn | `proposed-decision` |
-| BD-005 | Dashboard có tự đếm dữ liệu trên frontend không? | Không. FE12 cung cấp operations summary chỉ đọc từ database | Số liệu phải tái tạo, phân quyền và kiểm thử được | `proposed-decision` |
-| BD-006 | Ưu tiên responsive nào? | Desktop 1440x900 là acceptance chính; không chủ động mở rộng mobile trong lát cắt | Phù hợp mục tiêu demo website của người dùng | `proposed-decision` |
+| BD-001 | Mở rộng bốn FE theo cách nào? | Tạo một golden flow xuyên FE07 -> FE08 -> FE10 -> FE12 | Dễ trình bày trước hội đồng và chứng minh ranh giới tính năng | `approved-decision` |
+| BD-002 | Hàng đợi có tự xử lý sau khi trả không? | Không. FE07 chỉ hiển thị handoff; Librarian xác nhận FE08 xử lý | Giữ demo ổn định và đúng baseline xử lý thủ công | `approved-decision` |
+| BD-003 | Có thêm bảng/kênh thông báo mới không? | Không. Tái sử dụng `Notifications` và hộp thư web v0.5.0 | Tránh dual-write và migration schema không cần thiết | `approved-decision` |
+| BD-004 | Thông báo kết quả mượn được mô hình hóa thế nào? | Dùng bản ghi không nhạy cảm `GENERAL_SYSTEM` với template key chuẩn do FE07 sở hữu sự kiện nguồn | Không thêm enum/kênh mới nhưng vẫn có action path an toàn | `approved-decision` |
+| BD-005 | Dashboard có tự đếm dữ liệu trên frontend không? | Không. FE12 cung cấp operations summary chỉ đọc từ database | Số liệu phải tái tạo, phân quyền và kiểm thử được | `approved-decision` |
+| BD-006 | Ưu tiên responsive nào? | Desktop 1440x900 là acceptance chính; không chủ động mở rộng mobile trong lát cắt | Phù hợp mục tiêu demo website của người dùng | `approved-decision` |
 | BD-007 | Ngày nghiệp vụ FE12 được lấy ở đâu? | Service tạo một `businessDate` từ clock có kiểm soát rồi truyền rõ ràng cho cả SQL repository và in-memory repository | Ngăn kết quả quá hạn phụ thuộc ngày chạy máy chủ và giữ kiểm thử/runtime cùng một nguồn thời gian | `approved-addendum-2026-07-29` |
 
 ## 4. Ranh Giới Tác Nhân Và Ownership
 
-Mọi ô chưa được trích trực tiếp từ baseline hiện hành là `proposed-decision`.
+Mọi ô không được trích trực tiếp từ baseline hiện hành đã được duyệt trong H1
+và được phân loại là `approved-decision`.
 
 | Actor | Mục tiêu nghiệp vụ | Có thể khởi tạo | Không được thực hiện | Chuyển trạng thái sở hữu | Phạm vi dữ liệu | Handoff | Lỗi chính |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -384,19 +385,20 @@ FE07 PENDING
 
 ## 13. Fan-Out Tài Liệu Bắt Buộc
 
-Sau khi file thiết kế được duyệt, trước implementation phải cập nhật và review:
+Fan-out tài liệu đã được cập nhật, review và đưa vào governance activation:
 
 - FE07 `SPEC.md`, `CONTEXT.md`, `CHANGELOG.md`;
 - FE08 `SPEC.md`, `CONTEXT.md`, `CHANGELOG.md`;
 - FE10 `SPEC.md`, `CONTEXT.md`, `CHANGELOG.md`;
 - FE12 `SPEC.md`, `CONTEXT.md`, `CHANGELOG.md`;
-- feature integration map và API/OpenAPI contract;
-- `PLAN.md`/`TASKS.md` theo một batch H1 mới, sau khi SPEC fan-out được duyệt;
+- feature integration map và API contract; runtime OpenAPI chờ product task có
+  route tương ứng;
+- `PLAN.md`/`TASKS.md` của batch H1 đã duyệt;
 - master test plan, user manual và traceability artifacts trong quá trình giao
   hàng.
 
-Không chỉnh product code trước khi các yêu cầu mới có BR/FR/AC ổn định, actor
-boundary được phê duyệt và implementation plan/H1 được duyệt.
+BR/FR/AC, actor boundary và implementation plan/H1 đã ổn định. Product code
+vẫn bị chặn đến khi governance activation merge và phải giữ uncommitted đến H2.
 
 ## 14. Tự Rà Soát Thiết Kế
 
@@ -407,5 +409,5 @@ boundary được phê duyệt và implementation plan/H1 được duyệt.
   lát cắt tuần tự.
 - Ambiguity: KPI, state transition, action path, error behavior và acceptance
   evidence đã có định nghĩa cụ thể.
-- Authority: thiết kế trong thảo luận và file viết đã được duyệt; SPEC fan-out
-  vẫn cần review riêng trước khi được coi là yêu cầu triển khai.
+- Authority: thiết kế, SPEC fan-out và H1 đã được duyệt; activation vẫn phải qua
+  CI/H3/merge trước khi quyền triển khai product có hiệu lực.
