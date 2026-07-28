@@ -1,78 +1,78 @@
-# FE07 Test Plan - Borrowing Management
+# Kế hoạch kiểm thử FE07 - Quản lý mượn sách
 
-Version: 0.2.7
-Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
-Last Updated: 2026-07-27
+Phiên bản: 0.2.7
+Trạng thái: ĐÃ HOÀN TẤT - ĐÃ GHI NHẬN BẰNG CHỨNG CHỐT GIAI ĐOẠN 2
+Cập nhật lần cuối: 2026-07-27
 
-Source Spec: `.sdd/specs/feat-borrowing-management/SPEC.md`
-Feature IDs: `BR-FE07-*`, `FR-FE07-*`, `AC-FE07-*`
-Authoritative AC↔test mapping: `SPEC.md` §16 Traceability Matrix (this file is the strategy, not the case list).
+Đặc tả nguồn: `.sdd/specs/feat-borrowing-management/SPEC.md`
+ID tính năng: `BR-FE07-*`, `FR-FE07-*`, `AC-FE07-*`
+Ánh xạ AC↔kiểm thử có thẩm quyền: §16 Ma trận truy vết trong `SPEC.md` (tệp này mô tả chiến lược, không phải danh sách ca kiểm thử).
 
 ---
 
-## 1. Test Scope
+## 1. Phạm vi kiểm thử
 
-Borrow request creation, approval/rejection, member borrowing history, return flow, renewal flow, and core circulation business rules.
+Tạo yêu cầu mượn, phê duyệt/từ chối, lịch sử mượn của thành viên, luồng trả, luồng gia hạn và quy tắc nghiệp vụ lưu hành cốt lõi.
 
-History-contract follow-up: validate `status?`, `fromDate?`, `toDate?`, `page?`, `limit?`, `page=1`, `limit=20`, maximum 100, inclusive business dates, pre-query rejection, member scope, and stable `BorrowDate DESC`/`BorrowDetailId DESC` ordering for both member and staff endpoints.
+Theo dõi hợp đồng lịch sử: xác thực `status?`, `fromDate?`, `toDate?`, `page?`, `limit?`, `page=1`, `limit=20`, tối đa 100, ngày nghiệp vụ bao gồm hai đầu, từ chối trước truy vấn, phạm vi thành viên và thứ tự `BorrowDate DESC`/`BorrowDetailId DESC` ổn định cho cả endpoint thành viên và nhân sự.
 
-## 2. Unit / Service Test Targets
+## 2. Mục tiêu kiểm thử đơn vị / service
 
-- Borrow eligibility: approved membership, active account, no blocking overdue/fine state.
-- Borrow limit: maximum 5 active borrowed copies.
-- Copy availability check (at create and re-check at approval).
-- Due date calculation: default 14 calendar days.
-- Approve/reject/return/renew state transitions; renewal boundary and conflict cases.
-- Staff decision UX: complete canonical request/member/all-copy context without a redundant aggregate availability banner, continuous controlled rejection input, accessible help, and responsive dialog layout.
-- Return UX: no redundant affirmative banner for an on-time `NORMAL` return; exceptional overdue/damaged/lost fine-review warnings remain visible.
-- Return due state: canonical borrow/due/renewal fields, `Asia/Ho_Chi_Minh` boundary behavior, and explicit upcoming/due-today/overdue labels.
+- Điều kiện mượn: thành viên đã phê duyệt, tài khoản hoạt động, không có trạng thái quá hạn/phạt chặn.
+- Giới hạn mượn: tối đa 5 bản sao đang mượn.
+- Kiểm tra khả dụng bản sao (lúc tạo và kiểm tra lại khi phê duyệt).
+- Tính hạn trả: mặc định 14 ngày dương lịch.
+- Chuyển đổi trạng thái phê duyệt/từ chối/trả/gia hạn; các ca biên và xung đột gia hạn.
+- UX quyết định nhân sự: ngữ cảnh yêu cầu/thành viên/mọi bản sao chính tắc đầy đủ không có banner khả dụng tổng hợp dư thừa, input từ chối controlled liên tục, trợ giúp có thể tiếp cận và bố cục hộp thoại đáp ứng.
+- UX trả: không có banner khẳng định dư thừa cho lượt trả `NORMAL` đúng hạn; cảnh báo rà soát phạt ngoại lệ quá hạn/hỏng/mất vẫn hiển thị.
+- Trạng thái đến hạn trả: trường mượn/hạn trả/gia hạn chính tắc, hành vi biên `Asia/Ho_Chi_Minh` và nhãn rõ ràng sắp đến hạn/đến hạn hôm nay/quá hạn.
 
-## 3. API / Integration Test Targets
+## 3. Mục tiêu kiểm thử API / tích hợp
 
-- `POST /api/borrow-requests`: happy, duplicate/unavailable copy, over limit, inactive/unapproved member.
-- `GET /api/borrow-requests/me`: own history only.
-- `GET /api/borrow-requests/candidates`, create, and own-history defensively reject invalid stale/legacy compatibility arrays containing `MEMBER + LIBRARIAN` or `MEMBER + ADMIN` with `403 ROLE_REQUIRED`; persisted accounts remain single-role.
-- `GET /api/borrow-requests`: staff list, unauthorized member forbidden.
-- `GET /api/members/:memberId/borrowings`: staff selected-member history, derived overdue/status/date filters, and unknown member IDs returning `404 MEMBER_NOT_FOUND`.
-- `PATCH /api/borrow-requests/:requestId/approve`: happy, unavailable copy, concurrent double-borrow, forbidden.
-- `PATCH /api/borrow-requests/:requestId/reject`: happy, invalid state.
-- `PATCH /api/borrow-details/:borrowDetailId/return`: happy, invalid state/date, already returned.
-- `PATCH /api/borrow-details/:borrowDetailId/renew`: happy, overdue, renewal limit, reservation conflict.
+- `POST /api/borrow-requests`: hợp lệ, bản sao trùng/không khả dụng, vượt giới hạn, thành viên không hoạt động/chưa được phê duyệt.
+- `GET /api/borrow-requests/me`: chỉ lịch sử của chính mình.
+- `GET /api/borrow-requests/candidates`, tạo và lịch sử riêng phòng thủ từ chối mảng tương thích cũ/không hợp lệ chứa `MEMBER + LIBRARIAN` hoặc `MEMBER + ADMIN` với `403 ROLE_REQUIRED`; tài khoản đã lưu vẫn một vai trò.
+- `GET /api/borrow-requests`: danh sách nhân sự, thành viên không được phép bị từ chối.
+- `GET /api/members/:memberId/borrowings`: lịch sử thành viên được chọn của nhân sự, bộ lọc quá hạn/trạng thái/ngày dẫn xuất và ID thành viên không rõ trả về `404 MEMBER_NOT_FOUND`.
+- `PATCH /api/borrow-requests/:requestId/approve`: hợp lệ, bản sao không khả dụng, mượn hai lần đồng thời, bị cấm.
+- `PATCH /api/borrow-requests/:requestId/reject`: hợp lệ, trạng thái không hợp lệ.
+- `PATCH /api/borrow-details/:borrowDetailId/return`: hợp lệ, trạng thái/ngày không hợp lệ, đã trả.
+- `PATCH /api/borrow-details/:borrowDetailId/renew`: hợp lệ, quá hạn, giới hạn gia hạn, xung đột đặt trước.
 
-## 4. E2E / Manual Acceptance Flow
+## 4. Luồng chấp nhận E2E / thủ công
 
-- Member requests borrow → librarian approves → member sees history → librarian records return.
-- An invalid legacy Member/staff compatibility array is redirected away from member routes and retains only the matching staff operational access; persisted accounts remain single-role.
-- FE08 marks the hold `NOTIFIED` -> Member follows the exact `bookId`/`copyId`
-  handoff -> FE07 preselects the held copy -> Member submits a pending request
-  -> Librarian/Admin approves and fulfills the reservation.
-- Overdue/renewal behavior verified with deterministic dates.
+- Thành viên yêu cầu mượn → thủ thư phê duyệt → thành viên thấy lịch sử → thủ thư ghi nhận trả.
+- Một mảng tương thích cũ Thành viên/nhân sự không hợp lệ bị chuyển hướng khỏi route thành viên và chỉ giữ quyền truy cập vận hành nhân sự khớp; tài khoản đã lưu vẫn một vai trò.
+- FE08 đánh dấu lượt giữ chỗ `NOTIFIED` -> Thành viên theo bàn giao chính xác `bookId`/`copyId`
+  -> FE07 chọn trước bản sao được giữ -> Thành viên gửi yêu cầu đang chờ
+  -> Thủ thư/Quản trị viên phê duyệt và hoàn tất lượt đặt trước.
+- Hành vi quá hạn/gia hạn được xác minh với ngày xác định.
 
-## 5. Current Evidence
+## 5. Bằng chứng hiện có
 
-- Focused FE07 route/repository/contract/model gate: 66/66 tests pass, including canonical member/staff history filters, server pagination, inclusive dates, stable ordering, derived `OVERDUE`, and owner scope.
-- `backend/tests/models.test.js` (4 tests; persisted FE07 status and nullable-due-date metadata).
-- `backend/tests/borrowingContract.test.js` (4 tests; FE07 OpenAPI inputs, filters, runtime FineCandidate fields, response payloads, and safe errors).
-- `backend/tests/reportRepository.test.js` (9 tests; includes derived `OVERDUE` SQL filtering).
-- `backend/tests/sql/borrowingConcurrency.sqltest.js` passes in the aggregate 61/61 disposable SQL Server run and covers member-scoped serialization, reservation priority/fulfillment, eligibility outcomes, and audit-failure rollback.
+- Cổng route/repository/contract/model FE07 tập trung: 66/66 kiểm thử đạt, gồm bộ lọc lịch sử thành viên/nhân sự chính tắc, phân trang máy chủ, ngày bao gồm hai đầu, thứ tự ổn định, `OVERDUE` dẫn xuất và phạm vi chủ sở hữu.
+- `backend/tests/models.test.js` (4 kiểm thử; trạng thái FE07 đã lưu và siêu dữ liệu hạn trả nullable).
+- `backend/tests/borrowingContract.test.js` (4 kiểm thử; input OpenAPI FE07, bộ lọc, trường FineCandidate runtime, payload phản hồi và lỗi an toàn).
+- `backend/tests/reportRepository.test.js` (9 kiểm thử; gồm lọc SQL `OVERDUE` dẫn xuất).
+- `backend/tests/sql/borrowingConcurrency.sqltest.js` đạt trong lượt chạy SQL Server dùng một lần tổng hợp 61/61 và bao phủ tuần tự hóa theo phạm vi thành viên, ưu tiên/hoàn tất đặt trước, kết quả điều kiện hợp lệ và hoàn tác audit thất bại.
 - `backend/tests/integration.test.js`.
-- `frontend/test/borrowingFrontend.test.js`: 24/24 focused tests pass, including the canonical detail envelope, server-owned history status/pagination contract, Librarian/Admin decision context, stable rejection-input focus, business-time due-state, and renewal metadata contracts.
-- Full frontend regression passes 201/201; focused Admin Request Management and role/app-shell integration pass 25/25.
-- FE07 backend route/repository/contract verification passes 66/66, preserving the canonical `LIBRARIAN`/`ADMIN` guards and mutation contracts.
-- Frontend lint/build, FE07 traceability 31/31, and `git diff --check` pass for the v0.7.3 correction.
-- Browser acceptance against the real backend: guest/member/staff access, approval, renewal, normal return, network failure, modal visibility, and desktop/mobile overflow checks.
-- System golden path asserts the explicit `Quá hạn 14 ngày` return-due label before processing the overdue return and FE09 fine handoff.
-- Full Chromium E2E regression passes 4/4, including the FE08 reservation flow, FE09 fine management, FE11 admin request management, and the system golden path.
-- Traceability: FR `@spec` coverage **100%** (`npm run trace:enforce`).
+- `frontend/test/borrowingFrontend.test.js`: 24/24 kiểm thử tập trung đạt, gồm envelope chi tiết chính tắc, hợp đồng trạng thái/phân trang lịch sử do máy chủ sở hữu, ngữ cảnh quyết định Thủ thư/Quản trị viên, focus input từ chối ổn định, trạng thái đến hạn theo thời gian nghiệp vụ và hợp đồng siêu dữ liệu gia hạn.
+- Hồi quy frontend đầy đủ đạt 201/201; tích hợp Quản lý yêu cầu Quản trị và vai trò/app-shell tập trung đạt 25/25.
+- Xác minh route/repository/contract backend FE07 đạt 66/66, giữ bảo vệ `LIBRARIAN`/`ADMIN` chính tắc và các hợp đồng thay đổi.
+- Lint/build frontend, truy vết FE07 31/31 và `git diff --check` đạt cho hiệu chỉnh v0.7.3.
+- Chấp nhận trên trình duyệt với backend thực: truy cập khách/thành viên/nhân sự, phê duyệt, gia hạn, trả bình thường, lỗi mạng, hiển thị modal và kiểm tra tràn desktop/di động.
+- Golden path hệ thống xác nhận nhãn đến hạn trả rõ ràng `Quá hạn 14 ngày` trước khi xử lý trả quá hạn và bàn giao phạt FE09.
+- Hồi quy E2E Chromium đầy đủ đạt 4/4, gồm luồng đặt trước FE08, quản lý phạt FE09, quản lý yêu cầu Quản trị FE11 và golden path hệ thống.
+- Truy vết: bao phủ FR `@spec` **100%** (`npm run trace:enforce`).
 
-## 6. Gaps
+## 6. Khoảng trống
 
-- TD-007 resolved: Phase 1 borrow policy is all-or-nothing (spec aligned to code, BR-FE07-022). TD-008 (model `allowedValues` sync) resolved.
-- FR-FE07-022 rollback evidence is real SQL transaction coverage; the in-memory route rollback tests remain supplemental only.
-- The temporary create-request catalog remains until FE01/FE06 expose the production browsing/copy-selection integration required by FE07.
-- Historical browser validation and human review cover the earlier baseline. Final v0.5.1 repository regression and human integration acceptance remain required.
+- TD-007 đã giải quyết: chính sách mượn Giai đoạn 1 là tất cả-hoặc-không (đặc tả căn chỉnh với mã, BR-FE07-022). TD-008 (đồng bộ `allowedValues` mô hình) đã giải quyết.
+- Bằng chứng hoàn tác FR-FE07-022 là bao phủ giao dịch SQL thực; kiểm thử hoàn tác route trong bộ nhớ chỉ là bổ sung.
+- Danh mục tạo yêu cầu tạm thời còn tồn tại cho tới khi FE01/FE06 công khai tích hợp duyệt/chọn bản sao production mà FE07 yêu cầu.
+- Xác thực trình duyệt lịch sử và rà soát của con người bao phủ mốc cơ sở trước đó. Hồi quy kho mã v0.5.1 cuối và chấp nhận tích hợp của con người vẫn bắt buộc.
 
-## 7. Required Commands / Evidence Before Merge
+## 7. Lệnh / bằng chứng bắt buộc trước khi merge
 
 ```powershell
 npm.cmd --prefix backend test
@@ -83,9 +83,9 @@ npm.cmd run test:e2e
 npm.cmd run trace:enforce
 ```
 
-## 8. B7 Integration Evidence
+## 8. Bằng chứng tích hợp B7
 
-- Implementation commit `3a7b0ad1165607b8912c6c0be5f3ef2025c11b55` is contained in `main` through PR #19 and merge commit `aeed0dfecb764e6cbe63d7074727f318700e59ea`.
-- GitHub Actions CI run `29308540692` passed on the merge commit.
-- The successful CI job covered traceability enforcement, backend tests, frontend lint/tests/build, and the backend health import check.
-- Detailed evidence is recorded in `.sdd/reviews/fe07-b7-integration-review-closeout-2026-07-14.md`.
+- Commit triển khai `3a7b0ad1165607b8912c6c0be5f3ef2025c11b55` có trong `main` qua PR #19 và commit merge `aeed0dfecb764e6cbe63d7074727f318700e59ea`.
+- Lượt chạy GitHub Actions CI `29308540692` đạt trên commit merge.
+- Job CI thành công bao phủ thực thi truy vết, kiểm thử backend, lint/kiểm thử/build frontend và kiểm tra import health backend.
+- Bằng chứng chi tiết được ghi tại `.sdd/reviews/fe07-b7-integration-review-closeout-2026-07-14.md`.

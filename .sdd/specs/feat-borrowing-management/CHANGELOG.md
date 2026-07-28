@@ -1,379 +1,379 @@
-# CHANGELOG.md - FE07 Borrowing Management
-
-## 2026-07-28 - Connect overdue returns to fine creation (v0.8.3)
-
-- Added a Librarian/Admin `Tạo phiếu phạt` action for the selected active loan
-  only when its due date is overdue.
-- Passed only the canonical `borrowDetailId` to FE09 and kept dates, amount,
-  duplicate prevention, and fine state server-owned.
-- Preserved FE07 ownership of return processing and FE09 ownership of fine
-  persistence.
-
-## 2026-07-28 - Fit Admin circulation data without horizontal dragging (v0.8.2)
-
-- Removed the separate request-ID and barcode columns from the Admin circulation
-  directory and its DOCX projection while preserving both canonical fields for
-  request decisions, copy tracking, search, and return details.
-- Kept the borrow-detail ID as the visible operational identifier.
-- Rebalanced the nine remaining columns and allowed long member/book values to
-  wrap in their own cells so the supported desktop layout no longer requires
-  horizontal dragging.
-
-## 2026-07-27 - Prevent same-title request spam (v0.8.1)
-
-- Enforced one active `PENDING/REQUESTED` or `BORROWED` workflow per Member and
-  `BookId`, including transaction-authoritative concurrent-create checks.
-- Rejected a single request containing multiple physical copies of one title.
-- Hid every copy of an already-active title from that Member's candidates.
-- Prevented legacy duplicate pending rows from becoming two active same-title
-  loans while retaining the staff rejection path.
-- Split stale-owner approval errors from Member self-service authorization.
-
-## 2026-07-27 - Prevent duplicate pending claims for one copy (v0.8.0)
-
-- Made `PENDING + REQUESTED` the logical exclusive claim for a physical copy
-  without adding a new inventory status or schema column.
-- Hid claimed copies from Member candidates and rejected stale/concurrent
-  creates atomically with `COPY_PENDING_REQUEST_CONFLICT`.
-- Connected FE06 manual mutation protection and FE11 Admin/Librarian canonical
-  decision reloads, including current copy status and clearer rejection help.
-- Preserved legacy conflict safety: an unapprovable pending request remains
-  pending and may still be rejected with the required reason.
-
-## 2026-07-27 - Reconcile FE09 Member fines with rule alignment (v0.7.9)
-
-- Combined the parallel v0.7.8 changes for FE08 same-book eligibility and
-  FE09 positive-`UNPAID` borrow/renew blockers.
-- Preserved the exact held-copy handoff, one-account/one-role contract,
-  transaction-locked return evidence, and timezone-independent renewal.
-- Exposed FE07 due/return dates only through FE09's read-only Member fine view;
-  Librarian/Admin retain collection ownership.
-- Fresh integrated evidence and H2 review remain required before commit/push.
-
-## 2026-07-27 - Integrate same-book reservation eligibility (v0.7.8)
-
-- Integrated the upstream FE07 current-loan signal used by FE08 while
-  preserving the exact held-copy handoff, one-account/one-role contract,
-  transaction-locked return evidence, and timezone-independent renewal.
-- Kept upstream `FE08-T045` authoritative for same-book reservation exclusion
-  and retained `FE07-T049` through `FE07-T052` for this branch's rule-alignment
-  work.
-- Fresh integrated evidence is recorded; an H2 addendum remains required before
-  the open merge may be committed or pushed.
-
-## 2026-07-27 - Reconcile held-copy handoff with rule alignment (v0.7.7)
-
-- Preserved upstream FE08-to-FE07 exact `bookId`/`copyId` handoff and normal
-  pending-request/approval ownership.
-- Preserved the one-account/one-role rule, transaction-locked return evidence,
-  and timezone-independent renewal behavior.
-- Kept upstream `FE07-T048` authoritative and renumbered the rule-alignment
-  tasks to `FE07-T049` through `FE07-T052`.
-
-## 2026-07-27 - Connect unpaid-fine blockers to Member reconciliation (parallel v0.7.8)
-
-- Linked the existing FE07 borrow/renew blocker to FE09's canonical positive `UNPAID` state.
-- Exposed FE07 due and return dates through the read-only Member fine view for reconciliation.
-- Preserved Librarian/Admin collection ownership; Member cannot self-mark a fine paid.
-
-## 2026-07-27 - Expose current loans as FE08 reservation eligibility
-
-- Defined current `BorrowDetails.Status = BORROWED` plus the copy's `BookId` as the authoritative cross-feature signal for FE08 same-book reservation exclusion.
-- Kept returned/lost/damaged details and terminal reservation history outside this blocker.
-- Connected FE07 Member circulation locking to FE08 reservation create/hold revalidation.
-
-## 2026-07-27 - Accept the exact FE08 held-copy handoff
-
-- FE07 now reads both `bookId` and `copyId` from a Member's `NOTIFIED` FE08 reservation action.
-- The request screen preselects that exact copy only when the protected reservation-aware candidate catalog returns it for the current Member.
-- Preserved normal pending-request creation, Librarian/Admin approval, backend revalidation, and atomic FE08 fulfillment.
-
-## 2026-07-27 - Reconcile single-role main with rule alignment (v0.7.6)
-
-- Adopted project-wide `DEC-GEN-005`: every persisted account has exactly one
-  role.
-- Confirmed multi-role accounts are not supported; each account has exactly one
-  role.
-- Kept Member owner-only renewal and Librarian/Admin cross-member renewal as
-  separate single-role actor paths while preserving every loan-owner
-  eligibility check.
-- Renumbered the rule-alignment tasks because `main` assigned `FE07-T047` and
-  `FE07-T048` to single-role member-self-service and the held-copy handoff.
-- Marked the former multi-role renewal scenario as superseded and removed its
-  branch-local test/authorization delta during integration.
+# CHANGELOG.md - FE07 Quản lý mượn sách
+
+## 2026-07-28 - Kết nối lượt trả quá hạn với tạo khoản phạt (v0.8.3)
+
+- Thêm hành động `Tạo phiếu phạt` cho Thủ thư/Quản trị viên đối với khoản mượn đang hoạt động đã chọn
+  chỉ khi hạn trả của nó quá hạn.
+- Chỉ truyền `borrowDetailId` chính tắc cho FE09 và giữ ngày, số tiền,
+  ngăn trùng lặp và trạng thái phạt do máy chủ sở hữu.
+- Giữ quyền sở hữu xử lý trả của FE07 và quyền sở hữu lưu khoản phạt của FE09.
+
+## 2026-07-28 - Hiển thị dữ liệu lưu hành Quản trị vừa khung mà không kéo ngang (v0.8.2)
+
+- Loại các cột ID yêu cầu và mã vạch riêng khỏi danh mục lưu hành Quản trị
+  và projection DOCX của nó, đồng thời giữ cả hai trường chính tắc cho
+  quyết định yêu cầu, theo dõi bản sao, tìm kiếm và chi tiết trả.
+- Giữ ID chi tiết mượn làm mã định danh vận hành hiển thị.
+- Cân bằng lại chín cột còn lại và cho phép giá trị thành viên/sách dài
+  xuống dòng trong ô riêng để bố cục desktop được hỗ trợ không còn cần kéo ngang.
+
+## 2026-07-27 - Ngăn spam yêu cầu cùng tiêu đề (v0.8.1)
+
+- Thực thi một quy trình `PENDING/REQUESTED` hoặc `BORROWED` đang hoạt động cho mỗi Thành viên và
+  `BookId`, gồm kiểm tra tạo đồng thời có thẩm quyền giao dịch.
+- Từ chối một yêu cầu chứa nhiều bản sao vật lý của cùng một tiêu đề.
+- Ẩn mọi bản sao của tiêu đề đã hoạt động khỏi ứng viên của Thành viên đó.
+- Ngăn hàng đang chờ trùng lặp cũ trở thành hai khoản mượn cùng tiêu đề đang hoạt động,
+  đồng thời giữ đường từ chối của nhân sự.
+- Tách lỗi phê duyệt chủ sở hữu cũ khỏi ủy quyền tự phục vụ Thành viên.
+
+## 2026-07-27 - Ngăn yêu cầu đang chờ trùng lặp cho một bản sao (v0.8.0)
+
+- Làm `PENDING + REQUESTED` thành yêu cầu độc quyền logic cho một bản sao vật lý
+  mà không thêm trạng thái tồn kho hoặc cột schema mới.
+- Ẩn bản sao đã được yêu cầu khỏi ứng viên Thành viên và từ chối các lượt tạo cũ/đồng thời
+  một cách nguyên tử với `COPY_PENDING_REQUEST_CONFLICT`.
+- Kết nối bảo vệ thay đổi thủ công FE06 và lượt tải lại quyết định chính tắc Quản trị/Thủ thư FE11,
+  gồm trạng thái bản sao hiện tại và trợ giúp từ chối rõ ràng hơn.
+- Giữ an toàn xung đột cũ: yêu cầu đang chờ không thể phê duyệt vẫn đang
+  chờ và vẫn có thể bị từ chối với lý do bắt buộc.
+
+## 2026-07-27 - Đối soát phạt thành viên FE09 với căn chỉnh quy tắc (v0.7.9)
+
+- Kết hợp các thay đổi song song v0.7.8 cho điều kiện hợp lệ cùng sách FE08 và
+  yếu tố chặn mượn/gia hạn `UNPAID` dương của FE09.
+- Giữ bàn giao bản sao được giữ chính xác, hợp đồng một tài khoản/một vai trò,
+  bằng chứng trả có khóa giao dịch và gia hạn độc lập múi giờ.
+- Chỉ công khai ngày đến hạn/trả FE07 qua giao diện phạt Thành viên chỉ đọc của FE09;
+  Thủ thư/Quản trị viên giữ quyền sở hữu thu tiền.
+- Bằng chứng tích hợp mới và rà soát H2 vẫn bắt buộc trước commit/push.
+
+## 2026-07-27 - Tích hợp điều kiện hợp lệ đặt trước cùng sách (v0.7.8)
+
+- Tích hợp tín hiệu khoản mượn hiện tại FE07 upstream dùng bởi FE08 trong khi
+  giữ bàn giao bản sao được giữ chính xác, hợp đồng một tài khoản/một vai trò,
+  bằng chứng trả có khóa giao dịch và gia hạn độc lập múi giờ.
+- Giữ `FE08-T045` upstream có thẩm quyền cho việc loại trừ đặt trước cùng sách
+  và giữ `FE07-T049` đến `FE07-T052` cho công việc căn chỉnh quy tắc của nhánh này.
+- Bằng chứng tích hợp mới được ghi nhận; phụ lục H2 vẫn bắt buộc trước khi
+  merge đang mở có thể được commit hoặc push.
+
+## 2026-07-27 - Đối soát bàn giao bản sao được giữ với căn chỉnh quy tắc (v0.7.7)
+
+- Giữ bàn giao `bookId`/`copyId` chính xác FE08-sang-FE07 upstream và quyền sở hữu
+  yêu cầu đang chờ/phê duyệt thông thường.
+- Giữ quy tắc một tài khoản/một vai trò, bằng chứng trả có khóa giao dịch
+  và hành vi gia hạn độc lập múi giờ.
+- Giữ `FE07-T048` upstream có thẩm quyền và đánh số lại các tác vụ căn chỉnh quy tắc
+  thành `FE07-T049` đến `FE07-T052`.
+
+## 2026-07-27 - Kết nối yếu tố chặn phạt chưa thanh toán với đối soát Thành viên (song song v0.7.8)
+
+- Liên kết yếu tố chặn mượn/gia hạn FE07 hiện có với trạng thái `UNPAID` dương chính tắc của FE09.
+- Công khai ngày đến hạn và trả FE07 qua giao diện phạt Thành viên chỉ đọc để đối soát.
+- Giữ quyền sở hữu thu tiền của Thủ thư/Quản trị viên; Thành viên không thể tự đánh dấu khoản phạt đã thanh toán.
+
+## 2026-07-27 - Công khai khoản mượn hiện tại làm điều kiện hợp lệ đặt trước FE08
+
+- Xác định `BorrowDetails.Status = BORROWED` hiện tại cùng `BookId` của bản sao là tín hiệu liên tính năng có thẩm quyền cho việc loại trừ đặt trước cùng sách FE08.
+- Giữ chi tiết đã trả/mất/hỏng và lịch sử đặt trước kết thúc ngoài yếu tố chặn này.
+- Kết nối khóa lưu hành Thành viên FE07 với xác thực lại tạo/giữ đặt trước FE08.
+
+## 2026-07-27 - Chấp nhận bàn giao chính xác bản sao được giữ FE08
+
+- FE07 hiện đọc cả `bookId` và `copyId` từ thao tác đặt trước FE08 `NOTIFIED` của Thành viên.
+- Màn hình yêu cầu chỉ chọn trước bản sao chính xác khi danh mục ứng viên có nhận biết đặt trước được bảo vệ trả nó cho Thành viên hiện tại.
+- Giữ tạo yêu cầu đang chờ thông thường, phê duyệt Thủ thư/Quản trị viên, xác thực lại backend và hoàn tất FE08 nguyên tử.
+
+## 2026-07-27 - Đối soát main một vai trò với căn chỉnh quy tắc (v0.7.6)
+
+- Áp dụng `DEC-GEN-005` toàn dự án: mọi tài khoản đã lưu có chính xác một
+  vai trò.
+- Xác nhận tài khoản đa vai trò không được hỗ trợ; mỗi tài khoản chỉ có chính xác một
+  vai trò.
+- Giữ gia hạn chỉ chủ sở hữu Thành viên và gia hạn liên thành viên của Thủ thư/Quản trị viên là
+  các đường actor một vai trò riêng biệt trong khi giữ mọi kiểm tra
+  điều kiện hợp lệ của chủ khoản mượn.
+- Đánh số lại các tác vụ căn chỉnh quy tắc vì `main` đã gán `FE07-T047` và
+  `FE07-T048` cho tự phục vụ thành viên một vai trò và bàn giao bản sao được giữ.
+- Đánh dấu kịch bản gia hạn đa vai trò trước đây là đã bị thay thế và loại bỏ
+  kiểm thử/delta ủy quyền cục bộ nhánh của nó trong quá trình tích hợp.
 
-## 2026-07-27 - Specify renewal authorization and authoritative return data (v0.7.5)
+## 2026-07-27 - Xác định ủy quyền gia hạn và dữ liệu trả có thẩm quyền (v0.7.5)
 
-- Made `LIBRARIAN`/`ADMIN` cross-member renewal permission take precedence for
-  multi-role actors while preserving member-only ownership and loan-owner
-  eligibility checks.
-- Required `fineCandidate` and return audit metadata to use the due date and
-  return values locked by the authoritative return transaction.
-- Required renewal eligibility and due-date extension to use shared
-  `Asia/Ho_Chi_Minh` business-date helpers without host-local `Date` arithmetic.
-- Corrected the stale FE04 edge-case wording: lack of FE04 approval selects the
-  three-copy daily tier and is not itself a borrowing rejection.
-- Nhat approved the written SPEC on 2026-07-27, authorizing PLAN/TASKS
-  preparation only; no code or tests are claimed by this entry.
+- Làm cho quyền gia hạn liên thành viên `LIBRARIAN`/`ADMIN` được ưu tiên đối với
+  actor đa vai trò trong khi vẫn giữ quyền sở hữu chỉ thành viên và các kiểm tra
+  điều kiện hợp lệ chủ khoản mượn.
+- Yêu cầu `fineCandidate` và siêu dữ liệu audit trả dùng hạn trả và giá trị trả
+  đã khóa bởi giao dịch trả có thẩm quyền.
+- Yêu cầu điều kiện hợp lệ gia hạn và kéo dài hạn trả dùng helper ngày nghiệp vụ
+  `Asia/Ho_Chi_Minh` dùng chung mà không dùng phép tính `Date` cục bộ máy chủ.
+- Sửa cách diễn đạt trường hợp biên FE04 cũ: thiếu phê duyệt FE04 chọn tier
+  hằng ngày ba bản sao chứ không phải từ chối mượn.
+- Nhat đã phê duyệt SPEC được viết vào 2026-07-27, chỉ cho phép chuẩn bị PLAN/TASKS;
+  mục này không khẳng định mã hoặc kiểm thử nào.
 
-## 2026-07-27 - Enforce non-staff member self-service
+## 2026-07-27 - Thực thi tự phục vụ thành viên không phải nhân sự
 
-- Added member-only authorization for the exactly-one-role account model; Admin/Librarian cannot use member borrowing self-service.
-- `MEMBER + LIBRARIAN` and `MEMBER + ADMIN` can no longer open or call member borrow candidates, create-request, or own-history flows.
-- Preserved Librarian/Admin approval, rejection, return, selected-member history, and staff renewal operations.
-- Connected frontend direct-route redirects with the same backend authorization boundary.
-- Validation: focused FE07/FE08 backend routes pass 94/94, focused role/navigation frontend passes 61/61, full backend passes 1018/1018, full frontend passes 227/227, and frontend lint/build plus traceability pass.
+- Thêm ủy quyền chỉ thành viên cho mô hình tài khoản chính xác một vai trò; Quản trị/Thủ thư không thể dùng tự phục vụ mượn thành viên.
+- `MEMBER + LIBRARIAN` và `MEMBER + ADMIN` không còn có thể mở hoặc gọi ứng viên mượn thành viên, tạo-yêu-cầu hay luồng lịch sử riêng.
+- Giữ thao tác phê duyệt, từ chối, trả, lịch sử thành viên đã chọn và gia hạn nhân sự của Thủ thư/Quản trị viên.
+- Kết nối chuyển hướng route trực tiếp frontend với cùng ranh giới ủy quyền backend.
+- Xác thực: route backend FE07/FE08 tập trung đạt 94/94, frontend vai trò/điều hướng tập trung đạt 61/61, backend đầy đủ đạt 1018/1018, frontend đầy đủ đạt 227/227 và lint/build frontend cùng truy vết đều đạt.
 
-## 2026-07-23 - Reconcile approval and return transaction invariants
+## 2026-07-23 - Đối soát bất biến giao dịch phê duyệt và trả
 
-- Revalidated the request owner's current `MEMBER` role and FE04-derived 3/5 daily tier inside the approval transaction.
-- Restored the canonical member lock -> copies -> request/details -> reservations order and made return lock copies, details, and reservation claims before mutation.
-- Added focused regressions for removed roles, stale tier reads, return lock order, and safe transaction outcomes.
-- Replaced host-local return/renewal calendar arithmetic with the shared `Asia/Ho_Chi_Minh` business-time helper, including a UTC-host midnight regression.
-- Required the in-memory return path to match SQL by rejecting a non-`BORROWED` physical copy with `BORROW_STATE_CONFLICT` before mutation.
-- Reconciled mutable SQL expectations with role-based eligibility and explicit concurrent return conflict outcomes.
+- Xác thực lại vai trò `MEMBER` hiện tại của chủ yêu cầu và tier hằng ngày 3/5 suy ra FE04 bên trong giao dịch phê duyệt.
+- Khôi phục thứ tự khóa thành viên -> bản sao -> yêu cầu/chi tiết -> đặt trước chính tắc và làm cho trả khóa bản sao, chi tiết và yêu cầu đặt trước trước thay đổi.
+- Thêm hồi quy tập trung cho vai trò bị loại bỏ, lượt đọc tier cũ, thứ tự khóa trả và kết quả giao dịch an toàn.
+- Thay phép tính lịch trả/gia hạn cục bộ máy chủ bằng helper thời gian nghiệp vụ `Asia/Ho_Chi_Minh` dùng chung, gồm hồi quy nửa đêm máy chủ UTC.
+- Yêu cầu đường trả trong bộ nhớ khớp SQL bằng cách từ chối bản sao vật lý không phải `BORROWED` với `BORROW_STATE_CONFLICT` trước thay đổi.
+- Đối soát kỳ vọng SQL thay đổi với điều kiện hợp lệ dựa trên vai trò và kết quả xung đột trả đồng thời rõ ràng.
 
-## 2026-07-22 - Enrich staff borrow decisions and stabilize rejection input
+## 2026-07-22 - Bổ sung quyết định mượn nhân sự và ổn định input từ chối
 
-- Expanded Librarian/Admin approve and reject dialogs with the canonical request ID/date, member identity/contact, and every requested copy's title, author, ID, barcode, location, and current status.
-- Fixed shared modal focus management so a controlled textarea no longer loses focus after each typed character when an inline close callback changes identity.
-- Removed the redundant generic copy-availability banner from approval; each copy's canonical status remains visible and server-side approval revalidation is unchanged.
-- Removed the redundant normal/on-time return banner while preserving exceptional overdue, damaged, or lost fine-review warnings and the canonical return transaction.
-- Replaced the ambiguous `Quá hạn: Đúng hạn` presentation with explicit remaining/today/overdue labels derived from the `Asia/Ho_Chi_Minh` business date, and exposed the canonical renewal count so extended due dates are explainable.
-- Preserved FE07 role guards, canonical mutation endpoints, approval revalidation/transactions, rejection-reason validation, member history, and FE06/FE08/FE09/FE10 ownership boundaries.
-- Added focused frontend regressions; focused FE07 24/24, full frontend 201/201, FE07 backend 66/66, Admin/role integration 25/25, lint/build, traceability, and diff hygiene pass. Human review remains open.
-- Reconciled the system golden-path E2E assertion with the v0.7.3 explicit overdue label (`Quá hạn 14 ngày`) instead of the removed ambiguous `14 ngày` text; the full Chromium E2E suite passes 4/4.
+- Mở rộng hộp thoại phê duyệt và từ chối của Thủ thư/Quản trị viên với ID/ngày yêu cầu chính tắc, danh tính/liên hệ thành viên và tiêu đề, tác giả, ID, mã vạch, vị trí cùng trạng thái hiện tại của mọi bản sao được yêu cầu.
+- Sửa quản lý focus modal dùng chung để textarea controlled không còn mất focus sau mỗi ký tự được gõ khi callback đóng nội tuyến đổi danh tính.
+- Loại bỏ banner khả dụng bản sao tổng hợp dư thừa khỏi phê duyệt; trạng thái chính tắc của mỗi bản sao vẫn hiển thị và xác thực lại phê duyệt phía máy chủ không đổi.
+- Loại bỏ banner trả bình thường/đúng hạn dư thừa trong khi vẫn giữ cảnh báo rà soát phạt quá hạn, hỏng hoặc mất ngoại lệ và giao dịch trả chính tắc.
+- Thay cách trình bày mơ hồ `Quá hạn: Đúng hạn` bằng nhãn còn lại/hôm nay/quá hạn rõ ràng suy ra từ ngày nghiệp vụ `Asia/Ho_Chi_Minh`, đồng thời công khai số lần gia hạn chính tắc để hạn trả kéo dài có thể giải thích.
+- Giữ bảo vệ vai trò FE07, endpoint thay đổi chính tắc, xác thực lại/giao dịch phê duyệt, xác thực lý do từ chối, lịch sử thành viên và ranh giới quyền sở hữu FE06/FE08/FE09/FE10.
+- Thêm hồi quy frontend tập trung; FE07 tập trung 24/24, frontend đầy đủ 201/201, backend FE07 66/66, tích hợp Quản trị/vai trò 25/25, lint/build, truy vết và vệ sinh diff đạt. Rà soát con người vẫn đang mở.
+- Căn chỉnh assertion E2E golden path hệ thống với nhãn quá hạn rõ v0.7.3 (`Quá hạn 14 ngày`) thay vì văn bản `14 ngày` mơ hồ đã loại bỏ; bộ E2E Chromium đầy đủ đạt 4/4.
 
-## 2026-07-22 - Activate the Process Returns row action
+## 2026-07-22 - Kích hoạt hành động hàng Xử lý trả
 
-- Connected each `Xử lý trả` button to the existing return-confirmation target instead of only highlighting its row.
-- Preserved the canonical return API, condition selection, fine integration, and row-selection behavior.
+- Kết nối mỗi nút `Xử lý trả` với mục tiêu xác nhận trả hiện có thay vì chỉ làm nổi bật hàng của nó.
+- Giữ API trả chính tắc, chọn tình trạng, tích hợp phạt và hành vi chọn hàng.
 
-## 2026-07-22 - Correct rejected request status in member history
+## 2026-07-22 - Sửa trạng thái yêu cầu bị từ chối trong lịch sử thành viên
 
-- Exposed the owning borrow-request status in canonical detail history rows.
-- Displayed rejected requests as `Đã từ chối` while preserving persisted detail status `REQUESTED` and existing history filters.
+- Công khai trạng thái yêu cầu mượn sở hữu trong hàng lịch sử chi tiết chính tắc.
+- Hiển thị yêu cầu bị từ chối là `Đã từ chối` trong khi giữ trạng thái chi tiết đã lưu `REQUESTED` và bộ lọc lịch sử hiện có.
 
-## 2026-07-21 - Tier daily borrowing by membership status
+## 2026-07-21 - Phân tier mượn hằng ngày theo trạng thái thành viên
 
-- Added a 5-copy daily limit for FE04-approved members and a 3-copy daily limit for other active `MEMBER` accounts.
-- Enforced the tier during member request creation and Librarian/Admin approval while preserving the five-active-copy ceiling.
-- Kept FE04 non-blocking: membership approval increases the daily allowance instead of being required to borrow.
+- Thêm giới hạn hằng ngày 5 bản sao cho thành viên được FE04 phê duyệt và 3 bản sao cho tài khoản `MEMBER` đang hoạt động khác.
+- Thực thi tier trong lúc thành viên tạo yêu cầu và Thủ thư/Quản trị viên phê duyệt trong khi vẫn giữ trần năm bản sao đang mượn.
+- Giữ FE04 không chặn: phê duyệt thành viên tăng hạn mức hằng ngày thay vì được yêu cầu để mượn.
 
-## 2026-07-21 - Use role-based member eligibility
+## 2026-07-21 - Dùng điều kiện hợp lệ thành viên dựa trên vai trò
 
-- Replaced the FE04 approval prerequisite with active-account plus `MEMBER` role authorization.
-- Kept librarian/admin approval of each borrow request as the FE07 circulation control.
-- Removed book ratings from the member borrow-request candidate response and confirmation UI.
-- Stabilized the member borrowing-history card layout across toolbar, table, and pagination regions.
+- Thay điều kiện tiên quyết phê duyệt FE04 bằng tài khoản hoạt động cùng ủy quyền vai trò `MEMBER`.
+- Giữ việc phê duyệt từng yêu cầu mượn bởi thủ thư/quản trị viên là kiểm soát lưu hành FE07.
+- Loại đánh giá sách khỏi phản hồi ứng viên yêu cầu mượn thành viên và UI xác nhận.
+- Ổn định bố cục thẻ lịch sử mượn thành viên qua vùng thanh công cụ, bảng và phân trang.
 
-## 2026-07-20 - Vietnamese UI localization and typography
+## 2026-07-20 - Bản địa hóa giao diện tiếng Việt và kiểu chữ
 
-- Localized frontend-generated labels, states, accessibility names, and safe error feedback for this feature.
-- Preserved API contracts, raw enum values, permissions, business rules, and user-owned catalog/profile data.
-- Applied the shared `Be Vietnam Pro` body and `Noto Serif` heading typography contract with Unicode-capable fallbacks.
+- Bản địa hóa nhãn, trạng thái, tên trợ năng và phản hồi lỗi an toàn do frontend tạo cho tính năng này.
+- Giữ nguyên hợp đồng API, giá trị enum thô, quyền, quy tắc nghiệp vụ và dữ liệu danh mục/hồ sơ do người dùng sở hữu.
+- Áp dụng hợp đồng kiểu chữ dùng chung `Be Vietnam Pro` cho thân bài và `Noto Serif` cho tiêu đề, kèm font dự phòng hỗ trợ Unicode.
 
-## 2026-07-19 - Phase 2 Exit Closeout
+## 2026-07-19 - Hoàn tất đầu ra giai đoạn 2
 
-- feat-borrowing-management is accepted within the complete Phase 2 FE01-FE12 reconciliation recorded by PR #40/#41; validation and residual boundaries are consolidated in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`.
-- Deferred and future-scope limitations remain explicit and are not widened by this closeout.
+- feat-borrowing-management được chấp nhận trong đợt đối soát hoàn chỉnh Giai đoạn 2 FE01-FE12 ghi nhận bởi PR #40/#41; việc xác thực và các ranh giới còn lại được tổng hợp trong `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`.
+- Các giới hạn đã hoãn và phạm vi tương lai vẫn được nêu rõ, không bị mở rộng bởi đợt hoàn tất này.
 
-## 2026-07-19 - V0.5.1 Reconciliation And History Contract
+## 2026-07-19 - Đối soát v0.5.1 và hợp đồng lịch sử
 
-- Reconciled canonical eligibility, active-parent guards, member-scoped approval serialization, required approval/borrow metadata, Ho Chi Minh business dates, future/pre-borrow return rejection, and mandatory rejection reasons.
-- Changed member history from request-envelope/client pagination to canonical detail rows with detail-status filtering, derived `OVERDUE`, member scope, inclusive dates, stable database ordering, and server pagination.
-- Passed focused FE07 backend 66/66, frontend 18/18, traceability 28/28, and the aggregate disposable SQL Server gate 61/61 with cleanup.
-- Final whole-repository regression, diff review, and human integration acceptance remain open.
+- Đối soát điều kiện hợp lệ chính tắc, bảo vệ sách cha đang hoạt động, tuần tự hóa phê duyệt theo phạm vi thành viên, siêu dữ liệu phê duyệt/mượn bắt buộc, ngày nghiệp vụ Thành phố Hồ Chí Minh, từ chối trả tương lai/trước mượn và lý do từ chối bắt buộc.
+- Thay lịch sử thành viên từ envelope yêu cầu/phân trang client sang hàng chi tiết chính tắc với lọc trạng thái chi tiết, `OVERDUE` dẫn xuất, phạm vi thành viên, ngày bao gồm hai đầu, thứ tự cơ sở dữ liệu ổn định và phân trang máy chủ.
+- Đạt backend FE07 tập trung 66/66, frontend 18/18, truy vết 28/28 và cổng SQL Server dùng một lần tổng hợp 61/61 có dọn dẹp.
+- Hồi quy toàn kho, rà soát diff và chấp nhận tích hợp của con người cuối vẫn đang mở.
 
-## 2026-07-18 - Member Workspace Layout Polish
+## 2026-07-18 - Chỉnh sửa bố cục không gian thành viên
 
-- Clarified the member borrow-selection hierarchy and responsive two-column layout without changing FE07 mutation APIs.
-- Consolidated borrowing history filters, table, and pagination into one responsive operational card.
+- Làm rõ hệ phân cấp chọn mượn của thành viên và bố cục hai cột đáp ứng mà không đổi API thay đổi FE07.
+- Hợp nhất bộ lọc lịch sử mượn, bảng và phân trang vào một thẻ vận hành đáp ứng.
 
-## 2026-07-18 - Admin Circulation Alignment
+## 2026-07-18 - Căn chỉnh lưu hành Quản trị
 
-- Made the admin circulation table read-only and routed approve/return work to canonical FE07 screens.
-- Removed unsafe admin-only direct inserts and updates of borrowing details.
-- Derived `OVERDUE` from `BORROWED` plus due date, and added refresh/loading feedback and canonical database export.
-- Removed demo circulation transactions from the baseline SQL seed.
-- Added a coherent canonical circulation seed with one active loan and one completed return so the admin read model can be verified without frontend fallback data.
+- Làm bảng lưu hành Quản trị chỉ đọc và điều hướng công việc phê duyệt/trả tới màn hình FE07 chính tắc.
+- Loại chèn và cập nhật trực tiếp chi tiết mượn chỉ Quản trị không an toàn.
+- Suy ra `OVERDUE` từ `BORROWED` cộng hạn trả, đồng thời thêm phản hồi tải/làm mới và xuất cơ sở dữ liệu chính tắc.
+- Loại giao dịch lưu hành demo khỏi seed SQL mốc cơ sở.
+- Thêm seed lưu hành chính tắc nhất quán với một khoản mượn đang hoạt động và một lượt trả hoàn tất để mô hình đọc Quản trị có thể được xác minh không cần dữ liệu dự phòng frontend.
 
-## 2026-07-17 - Phase 1 Baseline Approved
+## 2026-07-17 - Phê duyệt mốc cơ sở giai đoạn 1
 
-- Nhật approved the normalized FE07 borrowing, return, renewal, history, and reservation-priority contract as the Phase 1 baseline; reconciliation implementation remains pending.
+- Nhật phê duyệt hợp đồng mượn, trả, gia hạn, lịch sử và ưu tiên đặt trước FE07 đã chuẩn hóa là mốc cơ sở Giai đoạn 1; triển khai đối soát vẫn đang chờ.
 
-## 2026-07-17 - Return And Reservation Priority Contract
+## 2026-07-17 - Hợp đồng ưu tiên trả và đặt trước
 
-- Made normal return atomic with FE08 reservation-claim revalidation and the shared lock order.
-- Clarified that an `AVAILABLE` returned copy remains unavailable to ordinary borrowing while an `ACTIVE` reservation queue claim exists.
+- Làm lượt trả bình thường nguyên tử với xác thực lại yêu cầu đặt trước FE08 và thứ tự khóa dùng chung.
+- Làm rõ rằng bản sao trả về `AVAILABLE` vẫn không khả dụng cho mượn thông thường khi tồn tại yêu cầu hàng đợi đặt trước `ACTIVE`.
 
-## 2026-07-17 - Borrowing History Contract - v0.5.1
+## 2026-07-17 - Hợp đồng lịch sử mượn - v0.5.1
 
-- Changed `SPEC.md` to `READY FOR REVIEW` while preserving the v0.5.0 reconciliation decisions.
-- Defined the shared member/staff history query contract, including status/date filters, page/limit defaults and bounds, inclusive date semantics, validation-before-query, and stable ordering.
-- Added traceability for BR-FE07-028, FR-FE07-028, AC-FE07-022, and the focused implementation task; no code was changed.
+- Đổi `SPEC.md` thành `READY FOR REVIEW` trong khi giữ quyết định đối soát v0.5.0.
+- Xác định hợp đồng truy vấn lịch sử thành viên/nhân sự dùng chung, gồm bộ lọc trạng thái/ngày, mặc định và giới hạn trang/giới hạn, ngữ nghĩa ngày bao gồm hai đầu, xác thực-trước-truy vấn và thứ tự ổn định.
+- Thêm truy vết cho BR-FE07-028, FR-FE07-028, AC-FE07-022 và tác vụ triển khai tập trung; không đổi mã.
 
-## 2026-07-16 - Reconciliation Planning Human Review Approval
+## 2026-07-16 - Phê duyệt rà soát con người cho lập kế hoạch đối soát
 
-- Nhat approved the FE07 v0.5.0 reconciliation plan and FE07-T031 through FE07-T038.
-- Marked the reconciliation `PLAN.md` and `TASKS.md` as `APPROVED`; the new implementation tasks and validation gates remain unchecked.
+- Nhat đã phê duyệt kế hoạch đối soát v0.5.0 FE07 và FE07-T031 đến FE07-T038.
+- Đánh dấu `PLAN.md` và `TASKS.md` đối soát là `APPROVED`; các tác vụ triển khai và cổng xác thực mới vẫn chưa được chọn.
 
-## 2026-07-16 - V0.5.0 Reconciliation Planning
+## 2026-07-16 - Lập kế hoạch đối soát v0.5.0
 
-- Changed `PLAN.md` and `TASKS.md` to `READY FOR REVIEW - v0.5.0 RECONCILIATION` after SPEC approval.
-- Preserved all historical checked tasks and B7 evidence, then added FE07-T031 through FE07-T038 for canonical eligibility, parent-book guards, member-scoped limit locking, approval metadata, Ho Chi Minh business dates, future-return rejection, mandatory rejection reasons, frontend errors, and focused verification.
-- Added exact file paths, RED/GREEN gates, dependency order, SQL concurrency expectations, and supplemental v0.5.0 traceability without claiming the historical implementation already satisfies the revised contract.
+- Đổi `PLAN.md` và `TASKS.md` thành `READY FOR REVIEW - v0.5.0 RECONCILIATION` sau khi SPEC được phê duyệt.
+- Giữ mọi tác vụ đã chọn lịch sử và bằng chứng B7, sau đó thêm FE07-T031 đến FE07-T038 cho điều kiện hợp lệ chính tắc, bảo vệ sách cha, khóa giới hạn theo phạm vi thành viên, siêu dữ liệu phê duyệt, ngày nghiệp vụ Thành phố Hồ Chí Minh, từ chối trả tương lai, lý do từ chối bắt buộc, lỗi frontend và xác minh tập trung.
+- Thêm đường dẫn tệp chính xác, cổng RED/GREEN, thứ tự phụ thuộc, kỳ vọng đồng thời SQL và truy vết v0.5.0 bổ sung mà không khẳng định triển khai lịch sử đã thỏa hợp đồng sửa đổi.
 
-## 2026-07-16 - Human Review Approval
+## 2026-07-16 - Phê duyệt rà soát của con người
 
-- Nhat confirmed human review of revision v0.5.0.
-- Marked `SPEC.md` and `CONTEXT.md` as `APPROVED` and completed the revision review gate.
+- Nhat xác nhận rà soát của con người cho bản sửa đổi v0.5.0.
+- Đánh dấu `SPEC.md` và `CONTEXT.md` là `APPROVED` và hoàn thành cổng rà soát bản sửa đổi.
 
-## 2026-07-15 - Eligibility, Limit, and Date Contract (v0.5.0)
+## 2026-07-15 - Hợp đồng điều kiện hợp lệ, giới hạn và ngày (v0.5.0)
 
-- Required canonical `Members.Status = APPROVED` and parent `Books.Status = ACTIVE` at create/approval.
-- Defined the five-copy formula at create/approval and a member-scoped approval lock that prevents concurrent limit overflow.
-- Required `CreatedBy`, `ApprovedAt`, `ApprovedBy`, and per-detail `BorrowDate`; due date is `BorrowDate + 14 calendar days`.
-- Standardized borrow/return/overdue business dates on `Asia/Ho_Chi_Minh` and rejected future return dates.
-- Made rejection reason mandatory in audit metadata and added traceability for every new BR/FR/AC.
-- Aligned approval locking with FE06 using `member-scoped lock -> BookCopies -> BorrowRequests/BorrowDetails -> Reservations`; active-count and reservation-aware checks run only after relevant rows are locked.
-- Updated `CONTEXT.md` from the superseded Phase 1 draft assumptions to the v0.5.0 review/reconciliation decisions.
+- Yêu cầu `Members.Status = APPROVED` chính tắc và `Books.Status = ACTIVE` cha khi tạo/phê duyệt.
+- Xác định công thức năm bản sao khi tạo/phê duyệt và khóa phê duyệt theo phạm vi thành viên ngăn tràn giới hạn đồng thời.
+- Yêu cầu `CreatedBy`, `ApprovedAt`, `ApprovedBy` và `BorrowDate` từng chi tiết; hạn trả là `BorrowDate + 14 calendar days`.
+- Chuẩn hóa ngày nghiệp vụ mượn/trả/quá hạn theo `Asia/Ho_Chi_Minh` và từ chối ngày trả tương lai.
+- Làm lý do từ chối bắt buộc trong siêu dữ liệu audit và thêm truy vết cho mọi BR/FR/AC mới.
+- Căn chỉnh khóa phê duyệt với FE06 bằng `member-scoped lock -> BookCopies -> BorrowRequests/BorrowDetails -> Reservations`; việc đếm đang hoạt động và kiểm tra có nhận biết đặt trước chỉ chạy sau khi các hàng liên quan bị khóa.
+- Cập nhật `CONTEXT.md` từ giả định dự thảo Giai đoạn 1 đã bị thay thế sang quyết định rà soát/đối soát v0.5.0.
 
-## 2026-07-15 - Reservation-Aware Borrowing Contract (v0.4.0)
+## 2026-07-15 - Hợp đồng mượn có nhận biết đặt trước (v0.4.0)
 
-- Approved FE07 as the owner of borrow request creation and approval for both ordinary copies and requester-owned notified holds.
-- Added reservation-priority rules that block ordinary create/approve actions while an `ACTIVE` queue entry exists.
-- Added atomic approval fulfillment for matching `NOTIFIED` reservations, including reservation audit and rollback requirements.
-- Added FE07-T029 and FE07-T030 with traceability to the new BR/FR/AC identifiers.
-- Preserved the five-copy limit, 14-day duration, one renewal, all-or-nothing policy, manual FE08 queue processing, existing endpoints, and existing schema.
+- Phê duyệt FE07 là chủ sở hữu tạo và phê duyệt yêu cầu mượn cho cả bản sao thông thường và lượt giữ chỗ đã thông báo thuộc người yêu cầu.
+- Thêm quy tắc ưu tiên đặt trước chặn thao tác tạo/phê duyệt thông thường khi tồn tại mục hàng đợi `ACTIVE`.
+- Thêm hoàn tất phê duyệt nguyên tử cho lượt đặt trước `NOTIFIED` khớp, gồm yêu cầu audit và hoàn tác đặt trước.
+- Thêm FE07-T029 và FE07-T030 có truy vết tới định danh BR/FR/AC mới.
+- Giữ giới hạn năm bản sao, thời hạn 14 ngày, một lần gia hạn, chính sách tất cả-hoặc-không, xử lý hàng đợi FE08 thủ công, endpoint hiện có và schema hiện có.
 
-## 2026-07-14 - B7 Integration and Review Closeout
+## 2026-07-14 - Hoàn tất tích hợp và rà soát B7
 
-- Pushed implementation commit `3a7b0ad1165607b8912c6c0be5f3ef2025c11b55` on `feat/fe07-validation` and opened PR #19 against `main`.
-- GitHub Actions passed on the PR, then PR #19 merged as `aeed0dfecb764e6cbe63d7074727f318700e59ea`.
-- GitHub Actions CI run `29308540692` passed for the merge commit on `main`.
-- Recorded the integration evidence in `.sdd/reviews/fe07-b7-integration-review-closeout-2026-07-14.md` and marked FE07 complete through B7.
+- Push commit triển khai `3a7b0ad1165607b8912c6c0be5f3ef2025c11b55` trên `feat/fe07-validation` và mở PR #19 tới `main`.
+- GitHub Actions đạt trên PR, sau đó PR #19 merge thành `aeed0dfecb764e6cbe63d7074727f318700e59ea`.
+- Lượt chạy GitHub Actions CI `29308540692` đạt cho commit merge trên `main`.
+- Ghi bằng chứng tích hợp tại `.sdd/reviews/fe07-b7-integration-review-closeout-2026-07-14.md` và đánh dấu FE07 hoàn tất qua B7.
 
-## 2026-07-14 - B6 L4 Browser Acceptance and Validation Closeout
+## 2026-07-14 - Hoàn tất chấp nhận và xác thực trên trình duyệt B6 L4
 
-- Added member/staff route guards for every FE07 screen and removed fabricated API fallback rows and simulated mutation success from history, approval, return, and member-detail workflows.
-- Namespaced shared FE07 dialog styles as `lib-modal*`, kept wide tables inside `.lib-table-wrap`, and removed page-level overflow at desktop and mobile widths.
-- Kept overdue loans in the active list without duplicating them in returned history, and retained the temporary create-request catalog only as the documented FE01/FE06 dependency boundary.
-- Independent-review remediation restored the specified unknown-member `404`, mapped a lost reject race to `409`, removed client UTC return dates and invented approval notes/eligibility evidence, separated pending requests from active loans, and added modal focus management.
-- Verified guest/member/staff access, request approval, renewal, normal return, truthful network failure states, modal visibility, and responsive layout against the real FE07 backend.
-- Final automated gate passed: frontend 37/37, lint, production build, backend 273/273, live SQL 14/14 with cleanup, FE07 traceability 22/22, and `git diff --check`. No commit, push, or merge was performed.
-- Nhat confirmed the required human review on 2026-07-14; B6 is complete and awaiting the integration decision.
+- Thêm bảo vệ route thành viên/nhân sự cho mọi màn hình FE07 và loại hàng dự phòng API giả cùng thành công thay đổi mô phỏng khỏi lịch sử, phê duyệt, trả và quy trình chi tiết thành viên.
+- Đặt namespace style hộp thoại FE07 dùng chung là `lib-modal*`, giữ bảng rộng trong `.lib-table-wrap` và loại tràn cấp trang tại chiều rộng desktop và di động.
+- Giữ khoản mượn quá hạn trong danh sách đang hoạt động mà không nhân đôi chúng vào lịch sử đã trả, đồng thời giữ danh mục tạo yêu cầu tạm thời chỉ là ranh giới phụ thuộc FE01/FE06 được ghi nhận.
+- Khắc phục rà soát độc lập đã khôi phục `404` thành viên không xác định, ánh xạ race từ chối mất thành `409`, loại ngày trả UTC client và ghi chú/bằng chứng điều kiện hợp lệ phê duyệt do client bịa ra, tách yêu cầu đang chờ khỏi khoản mượn hoạt động và thêm quản lý focus modal.
+- Xác minh truy cập khách/thành viên/nhân sự, phê duyệt yêu cầu, gia hạn, trả bình thường, trạng thái lỗi mạng trung thực, hiển thị modal và bố cục đáp ứng với backend FE07 thực.
+- Cổng tự động cuối đạt: frontend 37/37, lint, build production, backend 273/273, SQL trực tiếp 14/14 có dọn dẹp, truy vết FE07 22/22 và `git diff --check`. Không thực hiện commit, push hoặc merge.
+- Nhat xác nhận rà soát con người bắt buộc vào 2026-07-14; B6 hoàn thành và chờ quyết định tích hợp.
 
-## 2026-07-13 - B6 L3 Constitution Hardening
+## 2026-07-13 - Củng cố hiến pháp B6 L3
 
-- Kept post-commit readback errors outside mutation rollback handling for create, approval, and return transactions.
-- Revalidated active account, approved membership, unpaid positive fine, and overdue active loan under approval transaction locks; mapped each repository outcome to an existing safe API error.
-- Moved reject and renew audit writes into their repository transactions so an audit failure rolls back the state change.
-- Restricted FE07 date filters and return input to real `YYYY-MM-DD` calendar dates.
-- Added in-memory route regressions and real SQL evidence for transaction eligibility outcomes and audit rollback. B6 remains in progress.
+- Giữ lỗi đọc lại sau commit ngoài xử lý hoàn tác thay đổi cho giao dịch tạo, phê duyệt và trả.
+- Xác thực lại tài khoản hoạt động, thành viên đã phê duyệt, phạt dương chưa thanh toán và khoản mượn quá hạn đang hoạt động dưới khóa giao dịch phê duyệt; ánh xạ từng kết quả repository tới lỗi API an toàn hiện có.
+- Di chuyển ghi audit từ chối và gia hạn vào giao dịch repository để audit thất bại hoàn tác thay đổi trạng thái.
+- Hạn chế bộ lọc ngày FE07 và input trả về ngày dương lịch thực `YYYY-MM-DD`.
+- Thêm hồi quy route trong bộ nhớ và bằng chứng SQL thực cho kết quả điều kiện hợp lệ giao dịch và hoàn tác audit. B6 vẫn đang thực hiện.
 
-## 2026-07-13 - B6 L2.3 Contract, Model, and Traceability Alignment
+## 2026-07-13 - Căn chỉnh hợp đồng, mô hình và truy vết B6 L2.3
 
-- Reviewer follow-up: fixed derived `OVERDUE` filtering in FE07/FE12 SQL and in-memory test parity; added direct history isolation, independent selected-member filter, four-blocker renewal, real SQL rollback, and runtime FineCandidate contract evidence.
-- Reviewer follow-up: removed the unapproved selected-member history `404` contract response and remapped FR-FE07-022 to the real SQL transaction tests.
-- Added `COMPLETED` to persisted request model metadata; made requested-detail due dates nullable; removed persisted detail `OVERDUE` from model and SQL status constraints while retaining derived FE09/FE12 reporting semantics.
-- Documented the approved FE07 OpenAPI request validation, filters, success payloads, and safe error responses without changing runtime response shapes.
-- Added direct staff selected-member history/filter acceptance coverage and mapped AC-FE07-001 through AC-FE07-014 plus direct FR-FE07-022 rollback tests in traceability.
-- Clarified return request defaults, audit metadata, and that `CANCELLED` has no approved endpoint/actor/trigger/payload in the current scope.
+- Theo dõi người rà soát: sửa lọc `OVERDUE` dẫn xuất trong SQL FE07/FE12 và tính tương đương kiểm thử trong bộ nhớ; thêm cô lập lịch sử trực tiếp, bộ lọc thành viên được chọn độc lập, gia hạn bốn yếu tố chặn, hoàn tác SQL thực và bằng chứng hợp đồng FineCandidate runtime.
+- Theo dõi người rà soát: loại phản hồi hợp đồng `404` lịch sử thành viên được chọn chưa phê duyệt và ánh xạ lại FR-FE07-022 tới kiểm thử giao dịch SQL thực.
+- Thêm `COMPLETED` vào siêu dữ liệu mô hình yêu cầu đã lưu; làm hạn trả chi tiết được yêu cầu nullable; loại `OVERDUE` chi tiết đã lưu khỏi ràng buộc trạng thái mô hình và SQL trong khi giữ ngữ nghĩa báo cáo FE09/FE12 dẫn xuất.
+- Ghi tài liệu xác thực yêu cầu OpenAPI FE07 đã phê duyệt, bộ lọc, payload thành công và phản hồi lỗi an toàn mà không đổi dạng phản hồi runtime.
+- Thêm bao phủ chấp nhận lịch sử/bộ lọc thành viên được chọn trực tiếp của nhân sự và ánh xạ AC-FE07-001 đến AC-FE07-014 cùng kiểm thử hoàn tác FR-FE07-022 trực tiếp trong truy vết.
+- Làm rõ mặc định yêu cầu trả, siêu dữ liệu audit và việc `CANCELLED` không có endpoint/actor/trigger/payload được phê duyệt trong phạm vi hiện tại.
 
-## 2026-07-12 - Localized Borrowing API Errors
+## 2026-07-12 - Bản địa hóa lỗi API mượn
 
-- Added actionable Vietnamese messages for FE07 role, eligibility, borrowing-limit, copy, fine, overdue, and renewal-conflict errors.
-- Scoped borrowing-specific messages to `borrowingApi` and preserved generic handling for FE06, FE08, FE10, and FE12 API calls.
-- Extracted API error formatting into testable frontend helpers while preserving authentication, validation, network, and backend fallbacks.
-- Added focused Node tests for `NFR-FE07-UX-001` error-message behavior and wired frontend tests into CI.
-- Updated `PLAN.md` to reflect the implemented FE07 frontend screens and error-state scope.
+- Thêm thông báo tiếng Việt có thể hành động cho lỗi vai trò, điều kiện hợp lệ, giới hạn mượn, bản sao, phạt, quá hạn và xung đột gia hạn FE07.
+- Giới hạn thông báo riêng cho mượn trong `borrowingApi` và giữ xử lý chung cho các lời gọi API FE06, FE08, FE10 và FE12.
+- Trích định dạng lỗi API thành helper frontend có thể kiểm thử trong khi giữ dự phòng xác thực, xác thực, mạng và backend.
+- Thêm kiểm thử Node tập trung cho hành vi thông báo lỗi `NFR-FE07-UX-001` và nối kiểm thử frontend vào CI.
+- Cập nhật `PLAN.md` để phản ánh màn hình frontend FE07 đã triển khai và phạm vi trạng thái lỗi.
 
-## 2026-06-25 - All-or-nothing borrow policy (v0.3.2, TD-007)
+## 2026-06-25 - Chính sách mượn tất cả-hoặc-không (v0.3.2, TD-007)
 
-- Resolved TD-007: Phase 1 borrow-request handling is **all-or-nothing**. Aligned the spec to the
-  current code instead of changing core circulation logic (team decision 2026-06-25).
-- Updated FR-FE07-003, FR-FE07-017, FR-FE07-018 and AF-FE07-002 to state that any duplicate /
-  non-existent / unavailable copy rejects the whole request/approval (no partial request).
-- Added BR-FE07-022 documenting the all-or-nothing policy and deferring per-item rejection to a later phase.
+- Giải quyết TD-007: xử lý yêu cầu mượn Giai đoạn 1 là **tất cả-hoặc-không**. Căn chỉnh đặc tả với
+  mã hiện tại thay vì đổi logic lưu hành cốt lõi (quyết định nhóm 2026-06-25).
+- Cập nhật FR-FE07-003, FR-FE07-017, FR-FE07-018 và AF-FE07-002 để nêu rằng bất kỳ bản sao trùng lặp /
+  không tồn tại / không khả dụng nào đều từ chối toàn bộ yêu cầu/phê duyệt (không có yêu cầu một phần).
+- Thêm BR-FE07-022 ghi nhận chính sách tất cả-hoặc-không và hoãn từ chối từng mục sang giai đoạn sau.
 
-## 2026-06-25 - Clarified OVERDUE as a derived state (v0.3.1)
+## 2026-06-25 - Làm rõ OVERDUE là trạng thái dẫn xuất (v0.3.1)
 
-- Documented that `OVERDUE` is a derived state in Phase 1: the system does not persist
-  `BorrowDetails.Status = 'OVERDUE'`; it is computed from a `BORROWED` detail with `dueDate < today`
-  and consumed by FE09. A persisted OVERDUE status + scheduled job is deferred to a later phase.
-- This aligns the spec with the current implementation (Validation Gate finding); no behavior change.
+- Ghi nhận `OVERDUE` là trạng thái dẫn xuất trong Giai đoạn 1: hệ thống không lưu
+  `BorrowDetails.Status = 'OVERDUE'`; nó được tính từ chi tiết `BORROWED` với `dueDate < today`
+  và được FE09 sử dụng. Trạng thái OVERDUE đã lưu + job theo lịch được hoãn sang giai đoạn sau.
+- Điều này căn chỉnh đặc tả với triển khai hiện tại (phát hiện Cổng xác thực); không đổi hành vi.
 
 ## 2026-06-02
 
-- Replaced old Borrow Book draft with FE07 Borrowing Management draft.
-- Expanded scope to include borrow request, approval/rejection, return processing, renewal, and borrowing history.
-- Added stable requirement IDs for business rules, functional requirements, acceptance criteria, edge cases, and open questions.
+- Thay dự thảo Mượn sách cũ bằng dự thảo Quản lý mượn sách FE07.
+- Mở rộng phạm vi gồm yêu cầu mượn, phê duyệt/từ chối, xử lý trả, gia hạn và lịch sử mượn.
+- Thêm ID yêu cầu ổn định cho quy tắc nghiệp vụ, yêu cầu chức năng, tiêu chí chấp nhận, trường hợp biên và câu hỏi mở.
 
 ## 2026-06-10
 
-- Updated API contract policy to allow approval in `SPEC.md` unless the team reintroduces a shared API contract document.
-- Resolved FE07 borrow limit and default loan duration using shared Phase 1 decisions: 5 active borrowed copies and 14 calendar days.
-- Resolved remaining FE07 open questions: 1 renewal, unpaid fines block borrowing/renewal, members create own requests, pending details use `REQUESTED`, requests auto-complete when all details are terminal, and FE09 owns fine creation.
-- Approved FE07 `SPEC.md` for Phase 2 planning after flow review, API approval, FE08/FE09 dependency check, and acceptance-criteria testability review.
+- Cập nhật chính sách hợp đồng API để cho phép phê duyệt trong `SPEC.md` trừ khi nhóm khôi phục tài liệu hợp đồng API dùng chung.
+- Giải quyết giới hạn mượn FE07 và thời hạn mượn mặc định bằng các quyết định chung Giai đoạn 1: 5 bản sao đang mượn và 14 ngày dương lịch.
+- Giải quyết các câu hỏi mở FE07 còn lại: 1 lần gia hạn, phạt chưa thanh toán chặn mượn/gia hạn, thành viên tự tạo yêu cầu, chi tiết đang chờ dùng `REQUESTED`, yêu cầu tự hoàn thành khi mọi chi tiết ở trạng thái kết thúc và FE09 sở hữu tạo khoản phạt.
+- Phê duyệt `SPEC.md` FE07 cho lập kế hoạch Giai đoạn 2 sau rà soát luồng, phê duyệt API, kiểm tra phụ thuộc FE08/FE09 và rà soát khả năng kiểm thử tiêu chí chấp nhận.
 
-## 2026-06-10 - Backend Slice Ready For Review
+## 2026-06-10 - Lát cắt backend sẵn sàng để rà soát
 
-- Added the FE07 backend plan and task checklist for Nhat's borrowing scope.
-- Added borrow request, approval, rejection, return, renewal, history, audit, and notification handoff logic.
-- Aligned the SQL script with approved borrow request/detail statuses.
-- Added backend tests for borrowing rules, return/fine-review data, renewal, and role guards.
+- Thêm kế hoạch backend FE07 và checklist tác vụ cho phạm vi mượn của Nhat.
+- Thêm logic yêu cầu mượn, phê duyệt, từ chối, trả, gia hạn, lịch sử, audit và bàn giao thông báo.
+- Căn chỉnh tập lệnh SQL với trạng thái yêu cầu/chi tiết mượn đã phê duyệt.
+- Thêm kiểm thử backend cho quy tắc mượn, dữ liệu trả/rà soát phạt, gia hạn và bảo vệ vai trò.
 
-## 2026-06-20 - Frontend UI Implemented and Accessibility Validated
+## 2026-06-20 - Triển khai UI frontend và xác thực khả năng tiếp cận
 
-- Implemented member borrow request, borrowing history, librarian borrow request approval/rejection, return processing, and member borrowing details screens.
-- Wired all frontend screens to backend APIs using axios and React hooks.
-- Added table captions, column header scopes, accessible labels for date inputs, selects, pagination buttons, and icon controls.
-- Added keyboard support for selectable table rows (Enter/Space).
-- Added loading, empty, and error states on all reviewed screens.
-- Validated: `npm.cmd --prefix frontend run lint`, `npm.cmd --prefix frontend run build`, `npm.cmd --prefix backend test`.
-- Merged via PR #7 into `feat/fe07-fe08-fe10-fe12-ui-polish`.
+- Triển khai màn hình yêu cầu mượn thành viên, lịch sử mượn, phê duyệt/từ chối yêu cầu mượn thủ thư, xử lý trả và chi tiết mượn thành viên.
+- Nối tất cả màn hình frontend với API backend bằng axios và React hooks.
+- Thêm caption bảng, phạm vi header cột, nhãn có thể tiếp cận cho input ngày, select, nút phân trang và điều khiển icon.
+- Thêm hỗ trợ bàn phím cho hàng bảng có thể chọn (Enter/Space).
+- Thêm trạng thái tải, rỗng và lỗi trên mọi màn hình đã rà soát.
+- Xác thực: `npm.cmd --prefix frontend run lint`, `npm.cmd --prefix frontend run build`, `npm.cmd --prefix backend test`.
+- Merge qua PR #7 vào `feat/fe07-fe08-fe10-fe12-ui-polish`.
 
-## 2026-06-25 - Raised Unwanted (Error-Handling) Requirement Coverage
+## 2026-06-25 - Tăng bao phủ yêu cầu không mong muốn (xử lý lỗi)
 
-- Bumped version to 0.2.0 (MINOR); status unchanged (APPROVED).
-- Added new sub-section "7.1 Unwanted Behaviour Requirements" with 9 EARS unwanted requirements (FR-FE07-014 to FR-FE07-022) covering borrow-limit overrun, ineligible/inactive member, unpaid fine/overdue blocking, invalid/duplicate/empty request items, copy unavailable at approval, concurrent approval race, disallowed renewal, invalid state/date transitions, and transaction rollback.
-- Each new FR is written as `IF`/`WHERE [condition], the system shall ...` and traces to existing EC-*, BR-*, and AF-* sources (no new logic invented).
-- Unwanted FR share raised from ~15% (2/13) to ~50% (11/22), meeting the ≥30% target.
-- Extended Traceability Matrix (Section 16) with rows for FR-FE07-014 to FR-FE07-022 (Test Case = TBD).
+- Tăng phiên bản lên 0.2.0 (MINOR); trạng thái không đổi (APPROVED).
+- Thêm tiểu mục “7.1 Yêu cầu hành vi không mong muốn” với 9 yêu cầu EARS không mong muốn (FR-FE07-014 đến FR-FE07-022) bao phủ vượt giới hạn mượn, thành viên không hợp lệ/không hoạt động, chặn phạt chưa thanh toán/quá hạn, mục yêu cầu không hợp lệ/trùng lặp/rỗng, bản sao không khả dụng khi phê duyệt, race phê duyệt đồng thời, gia hạn không được phép, chuyển trạng thái/ngày không hợp lệ và hoàn tác giao dịch.
+- Mỗi FR mới được viết dạng `IF`/`WHERE [condition], the system shall ...` và truy vết tới các nguồn EC-*, BR-* và AF-* hiện có (không tạo logic mới).
+- Tỷ trọng FR không mong muốn tăng từ ~15% (2/13) lên ~50% (11/22), đạt mục tiêu ≥30%.
+- Mở rộng Ma trận truy vết (Phần 16) với các hàng FR-FE07-014 đến FR-FE07-022 (Ca kiểm thử = TBD).
 
-## 2026-06-25 - Added Formal State Model (State Diagrams) for Both Lifecycles
+## 2026-06-25 - Thêm mô hình trạng thái chính thức (sơ đồ trạng thái) cho cả hai vòng đời
 
-- Bumped version to 0.3.0 (MINOR); status unchanged (APPROVED).
-- Added new sub-section "10.3 State Model & Transition Rules" at the end of Section 10 Data Requirements, modeling FE07's two lifecycles separately.
-- (A) BorrowRequest lifecycle: states PENDING, APPROVED, REJECTED, COMPLETED, CANCELLED — with Mermaid `stateDiagram-v2`, state descriptions, valid transitions (From/To/Trigger/Condition/FR-BR), forbidden transitions, and invariants INV-FE07-A1..A6.
-- (B) BorrowDetail lifecycle: states REQUESTED, BORROWED, RETURNED, LOST, DAMAGED, OVERDUE — with Mermaid `stateDiagram-v2`, descriptions, valid transitions, forbidden transitions, and invariants INV-FE07-B1..B8.
-- All state values reuse the enums declared in Section 10.2 (no new status invented). Transitions trace to existing MF-*, FR-*, BR-*, AF-*, and EC-* sources.
-- Documented enum-declared states without an explicit flow (request `CANCELLED`, detail `OVERDUE`) as modeled per the declared enum with their dependency on FE09 / Phase 2 confirmation noted.
-## 2026-07-18 - Librarian Borrow Request Review Polish
+- Tăng phiên bản lên 0.3.0 (MINOR); trạng thái không đổi (APPROVED).
+- Thêm tiểu mục “10.3 Mô hình trạng thái & quy tắc chuyển đổi” ở cuối Phần 10 Yêu cầu dữ liệu, mô hình hóa riêng hai vòng đời của FE07.
+- (A) Vòng đời BorrowRequest: trạng thái PENDING, APPROVED, REJECTED, COMPLETED, CANCELLED — với Mermaid `stateDiagram-v2`, mô tả trạng thái, chuyển đổi hợp lệ (Từ/Đến/Kích hoạt/Điều kiện/FR-BR), chuyển đổi bị cấm và bất biến INV-FE07-A1..A6.
+- (B) Vòng đời BorrowDetail: trạng thái REQUESTED, BORROWED, RETURNED, LOST, DAMAGED, OVERDUE — với Mermaid `stateDiagram-v2`, mô tả, chuyển đổi hợp lệ, chuyển đổi bị cấm và bất biến INV-FE07-B1..B8.
+- Mọi giá trị trạng thái tái sử dụng enum đã khai báo trong Phần 10.2 (không tạo trạng thái mới). Các chuyển đổi truy vết tới nguồn MF-*, FR-*, BR-*, AF-* và EC-* hiện có.
+- Ghi nhận trạng thái đã khai báo enum không có luồng rõ ràng (yêu cầu `CANCELLED`, chi tiết `OVERDUE`) được mô hình hóa theo enum đã khai báo cùng phụ thuộc vào xác nhận FE09 / Giai đoạn 2.
 
-- Corrected Vietnamese labels and improved the request list/detail layout for the librarian review screen.
-- Added canonical request-status filtering and a visible last-updated indicator.
-- Made manual refresh provide loading/success/error feedback and reload canonical API state after approval or rejection.
-- Exposed the member profile, canonical member ID, phone, barcode, author, location, and every requested copy from the existing database relationships.
-- Sorted librarian request IDs in ascending order, added eight-row pagination, and refined the summary/filter toolbar.
-- Replaced the heading font fallback that rendered some Vietnamese combining marks incorrectly.
-- Added accent-insensitive search across request code, member identity, book, author, and barcode; search results now feed the same pagination used by the canonical status filter.
-- Added an explicit Search submit action with Enter-key support and separated draft input from the applied query so results update only after user confirmation.
-- Rebuilt the librarian return workspace with canonical approved-loan loading, explicit refresh/search feedback, complete member/copy fields, pagination, and canonical reload after return mutations.
-## 2026-07-18 - Librarian row actions made explicit
+## 2026-07-18 - Chỉnh sửa màn hình rà soát yêu cầu mượn của thủ thư
 
-- Added status-aware row actions to borrow requests: pending requests expose approve/reject, while terminal requests expose detail viewing.
-- Added an explicit return-processing action to each active loan row while retaining the condition review and confirmation panel.
-- Kept all mutations connected to the existing FE07 API and canonical server reload flow.
+- Sửa nhãn tiếng Việt và cải thiện bố cục danh sách/chi tiết yêu cầu cho màn hình rà soát thủ thư.
+- Thêm lọc trạng thái yêu cầu chính tắc và chỉ báo cập nhật gần nhất hiển thị.
+- Làm làm mới thủ công cung cấp phản hồi tải/thành công/lỗi và tải lại trạng thái API chính tắc sau phê duyệt hoặc từ chối.
+- Công khai hồ sơ thành viên, ID thành viên chính tắc, điện thoại, mã vạch, tác giả, vị trí và mọi bản sao được yêu cầu từ quan hệ cơ sở dữ liệu hiện có.
+- Sắp xếp ID yêu cầu thủ thư tăng dần, thêm phân trang tám hàng và tinh chỉnh thanh công cụ tóm tắt/lọc.
+- Thay font fallback tiêu đề từng hiển thị sai một số dấu kết hợp tiếng Việt.
+- Thêm tìm kiếm không phân biệt dấu qua mã yêu cầu, danh tính thành viên, sách, tác giả và mã vạch; kết quả tìm kiếm hiện cấp vào cùng phân trang được dùng bởi bộ lọc trạng thái chính tắc.
+- Thêm thao tác gửi Tìm kiếm rõ ràng có hỗ trợ phím Enter và tách input nháp khỏi truy vấn áp dụng để kết quả chỉ cập nhật sau xác nhận người dùng.
+- Xây lại không gian trả của thủ thư với tải khoản mượn đã phê duyệt chính tắc, phản hồi làm mới/tìm kiếm rõ ràng, trường thành viên/bản sao đầy đủ, phân trang và tải lại chính tắc sau thay đổi trả.
 
-## 2026-07-18 - Member borrowing details workspace
+## 2026-07-18 - Làm rõ hành động hàng thủ thư
 
-- Replaced the ambiguous manual user-ID lookup with an API-backed member directory that automatically loads the first available member.
-- Added accent-insensitive member and transaction search, canonical status filtering, eight-row pagination, summary counters, and responsive profile/table layouts.
-- Displayed canonical member, contact, book, copy, barcode, location, loan, due, return, and status fields from the existing FE07 database relationships.
-- Kept the screen restricted to Librarian/Admin and connected it to the shared borrow-request and member-borrowing endpoints without demo fallback data.
+- Thêm hành động hàng có nhận biết trạng thái cho yêu cầu mượn: yêu cầu đang chờ hiển thị phê duyệt/từ chối, còn yêu cầu kết thúc hiển thị xem chi tiết.
+- Thêm hành động xử lý trả rõ ràng cho từng hàng khoản mượn đang hoạt động trong khi giữ panel rà soát tình trạng và xác nhận.
+- Giữ mọi thay đổi kết nối với API FE07 hiện có và luồng tải lại máy chủ chính tắc.
+
+## 2026-07-18 - Không gian chi tiết mượn thành viên
+
+- Thay tra cứu ID người dùng thủ công mơ hồ bằng danh mục thành viên dựa trên API tự động tải thành viên khả dụng đầu tiên.
+- Thêm tìm kiếm thành viên và giao dịch không phân biệt dấu, lọc trạng thái chính tắc, phân trang tám hàng, bộ đếm tóm tắt và bố cục hồ sơ/bảng đáp ứng.
+- Hiển thị trường thành viên, liên hệ, sách, bản sao, mã vạch, vị trí, mượn, hạn trả, trả và trạng thái chính tắc từ quan hệ cơ sở dữ liệu FE07 hiện có.
+- Giữ màn hình chỉ dành cho Thủ thư/Quản trị viên và nối nó với endpoint yêu cầu mượn và mượn thành viên dùng chung mà không có dữ liệu dự phòng demo.
+
 ## 2026-07-22
 
-- Stabilized the Process Returns workspace as a non-colliding single-column layout.
-- Hardened approve/reject target handling and added the deployed BorrowRequests workflow-column migration.
+- Ổn định không gian Xử lý trả thành bố cục một cột không va chạm.
+- Củng cố xử lý mục tiêu phê duyệt/từ chối và thêm migration cột quy trình BorrowRequests đã triển khai.
