@@ -1,12 +1,12 @@
 # CONTEXT.md - FE07 Quản lý mượn sách
 
-# Phiên bản: 0.2.1
+# Phiên bản: 0.9.0
 
-# Trạng thái: ĐÃ PHÊ DUYỆT - MỐC CƠ SỞ 2026-07-17
+# Trạng thái: H1 GOVERNANCE ACTIVATION - CHỜ PHÊ DUYỆT
 
 # Chủ sở hữu: Nhat
 
-# Cập nhật lần cuối: 2026-07-17
+# Cập nhật lần cuối: 2026-07-29
 
 # Thư mục tính năng: `.sdd/specs/feat-borrowing-management/`
 
@@ -158,3 +158,12 @@ Các quyết định này được phản ánh trong `SPEC.md` v0.5.0 và phải
 - `PLAN.md`, `TASKS.md`, mã và kiểm thử hiện có vẫn là bằng chứng lịch sử cho đến khi chúng được mở rộng cho các yêu cầu v0.5.0.
 - Dùng các giao dịch và thứ tự khóa đã phê duyệt cho luồng phê duyệt và trả.
 - Mọi endpoint API phải xác thực vai trò và đầu vào trên máy chủ.
+
+## 11. Bối cảnh batch FE07-FE12 2026-07-29
+
+- FE07 tiếp tục sở hữu transaction mượn/trả/gia hạn và sự kiện nguồn.
+- FE10 chỉ nhận yêu cầu thông báo sau commit; lỗi thông báo không rollback FE07.
+- FE07 chỉ công khai handoff hàng đợi chỉ đọc cho FE08; Librarian vẫn phải xác
+  nhận xử lý thủ công.
+- Timeline và blocker copy chỉ trình bày state/timestamp/error code chính tắc.
+- Scope thuộc `SL-003`, phụ thuộc governance `SL-001` và template FE10 `SL-002`.

@@ -1,11 +1,11 @@
 # TASKS.md - FE08 Quản lý đặt chỗ
 
-Trạng thái: KHẮC PHỤC QUẢN TRỊ H3 - ĐANG CHỜ H2 MỚI
-Implementation State: COMPLETE
+Trạng thái: H1 GOVERNANCE ACTIVATION - CHỜ PHÊ DUYỆT
+Implementation State: PARTIAL
 
 Chủ sở hữu: Nhat
 
-Cập nhật: 2026-07-27
+Cập nhật: 2026-07-29
 
 Trạng thái quy trình: Mốc cơ sở Giai đoạn 2 vẫn hoàn tất. `main` sở hữu
 `FE08-T041` đến `FE08-T046`; tác vụ chỉ hồi quy căn chỉnh quy tắc là
@@ -277,3 +277,16 @@ liệu vẫn chưa được commit, đang chờ H2 mới và H3 lặp lại.
   - Cổng tích hợp: phụ lục H2 sản phẩm phê duyệt commit `f346ae0` và lượt chạy PR
     CI `30244750250` đã đạt. Khắc phục chỉ tài liệu H3 yêu cầu H2 mới và H3 lặp lại trước merge.
   - Quy tắc khi thất bại: dừng và chẩn đoán; mọi quy tắc FE08 mới yêu cầu bản sửa đổi SPEC riêng.
+
+## 2026-07-29 - Batch FE07-FE12 v0.6.0
+
+- [ ] **FE08-T048 - Owner-only held-copy CTA và exact `copyId` handoff.**
+  - Ánh xạ: BR-FE08-021, FR-FE08-036, AC-FE08-024.
+- [ ] **FE08-T049 - Staff queue decision surface, giữ xử lý thủ công.**
+  - Ánh xạ: FR-FE08-037, AC-FE08-023.
+- [ ] **FE08-T050 - Safe notification warning và stale 409 refresh.**
+  - Ánh xạ: BR-FE08-022, FR-FE08-038/039, AC-FE08-025.
+- [ ] **FE08-T051 - Race/integration/desktop evidence.**
+  - Ánh xạ: `SL-004`, `SL-006`, `AT-005`, `AT-007..AT-009`, `AT-012`.
+
+Product work bắt đầu sau governance activation merge và giữ uncommitted đến H2.

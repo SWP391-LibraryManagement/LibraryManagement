@@ -1,8 +1,8 @@
 # Kế hoạch kiểm thử FE12 - Báo cáo và thống kê
 
-Phiên bản: 0.8.0
-Trạng thái: HOÀN TẤT - ĐÃ GHI BẰNG CHỨNG THOÁT GIAI ĐOẠN 2
-Cập nhật lần cuối: 2026-07-19
+Phiên bản: 0.3.0
+Trạng thái: H1 GOVERNANCE ACTIVATION - CHỜ THỰC THI
+Cập nhật lần cuối: 2026-07-29
 
 Đặc tả nguồn: `.sdd/specs/feat-reporting-statistics/SPEC.md`
 ID tính năng: `BR-FE12-*`, `FR-FE12-*`, `AC-FE12-*`
@@ -186,3 +186,17 @@ npm.cmd run trace:enforce
   không-PII và hàng chi tiết dùng `UserId ASC`.
 - Xác minh tải thành công không render thông báo “Đã tải dữ liệu” dư trong khi
   lỗi vẫn hiển thị.
+
+## 11. Ma trận kiểm thử operations summary và clock xác định
+
+- AC-FE12-012/013: exact six-KPI body, staff role matrix và empty query allowlist.
+- AC-FE12-014/015: missing KPI không thành `0`, fixed drill-down và desktop
+  1440x900.
+- AC-FE12-016: frozen-clock boundary trước/sau due date ở service, SQL contract,
+  in-memory parity và system integration.
+- Baseline regression giữ SIT-002/SIT-008 là `BORROWED` khi clock fixture là
+  2026-07-14, bất kể host date.
+- Read-only fixture snapshot phải byte-for-byte không đổi.
+
+Không được sửa expected state để làm test xanh; RED phải chứng minh host-clock
+leak trước GREEN clock injection.

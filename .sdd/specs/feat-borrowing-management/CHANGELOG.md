@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE07 Quản lý mượn sách
 
+## 2026-07-29 - Kích hoạt governance luồng demo liên hoàn (v0.9.0)
+
+- Thêm BR-FE07-035..037, FR-FE07-040..044 và AC-FE07-033..036.
+- Chốt post-commit FE10 non-blocking, handoff FE08 chỉ đọc và timeline chính tắc.
+- Chưa thay đổi product code; chờ H1/activation merge.
+
 ## 2026-07-28 - Kết nối lượt trả quá hạn với tạo khoản phạt (v0.8.3)
 
 - Thêm hành động `Tạo phiếu phạt` cho Thủ thư/Quản trị viên đối với khoản mượn đang hoạt động đã chọn

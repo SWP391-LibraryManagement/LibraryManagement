@@ -1,12 +1,12 @@
 # CONTEXT.md - FE12 Báo cáo và thống kê
 
-# Phiên bản: 0.1.0
+# Phiên bản: 0.3.0
 
-# Trạng thái: ĐÃ PHÊ DUYỆT - BASELINE 2026-07-17
+# Trạng thái: H1 GOVERNANCE ACTIVATION - CHỜ PHÊ DUYỆT
 
 # Chủ sở hữu: Nhat
 
-# Cập nhật lần cuối: 2026-06-10
+# Cập nhật lần cuối: 2026-07-29
 
 # Thư mục tính năng: `.sdd/specs/feat-reporting-statistics/`
 
@@ -159,3 +159,14 @@ Cột chủ sở hữu phản ánh phân công lại đội hiện tại.
 - Xác thực bộ lọc phía máy chủ.
 - Tránh lộ chi tiết cá nhân trừ khi cần thiết và được ủy quyền.
 - Giữ phép tính báo cáo truy vết được tới trạng thái tính năng nguồn.
+
+## 11. Bối cảnh batch FE07-FE12 2026-07-29
+
+- FE12 cung cấp một operations summary chỉ đọc cho Librarian/Admin.
+- Dashboard không tự đếm từ các danh sách FE07/FE08 phân trang.
+- Một lần đọc service clock sinh cả `generatedAt` và `businessDate`.
+- `businessDate` được truyền cho báo cáo mượn và operations summary ở cả SQL
+  Server/Azure SQL lẫn in-memory repository; host clock không được ẩn trong
+  repository.
+- Finding baseline SIT-002/SIT-008 là clock drift xác định, thuộc `SL-005` và
+  phải được sửa test-first sau khi governance activation merge.

@@ -1,11 +1,11 @@
 # TASKS.md - FE12 Báo cáo và thống kê
 
-Trạng thái: KHẮC PHỤC GOVERNANCE H3 - CHỜ H2 MỚI
-Implementation State: COMPLETE
+Trạng thái: H1 GOVERNANCE ACTIVATION - CHỜ PHÊ DUYỆT
+Implementation State: PARTIAL
 
 Chủ sở hữu: Nhat
 
-Cập nhật: 2026-07-27
+Cập nhật: 2026-07-29
 
 Trạng thái workflow: baseline Giai đoạn 2 vẫn hoàn tất. Nhat phê duyệt PLAN/
 TASKS FE12-N11 và phụ lục H2 tích hợp `8d0059b` ngày 2026-07-27. Kết quả đã
@@ -233,3 +233,19 @@ Bằng chứng tự động chi tiết được ghi trong
   - Cổng: phụ lục H2 sản phẩm phê duyệt commit `f346ae0` và CI PR
     `30244750250` đạt. Khắc phục H3 chỉ-tài-liệu cần H2 mới và H3 lặp lại trước
     merge.
+
+## 12. Operations summary và clock xác định v0.3.0
+
+- [ ] **FE12-N12 - RED clock-drift regression cho báo cáo mượn.**
+  - Ánh xạ: BR-FE12-020, FR-FE12-014, AC-FE12-016; tái hiện SIT-002/SIT-008.
+- [ ] **FE12-N13 - SQL/in-memory business-date parity.**
+  - Service đọc clock một lần; repository nhận `businessDate` tường minh.
+- [ ] **FE12-N14 - Operations summary endpoint và role/query contract.**
+  - Ánh xạ: BR-FE12-017/018, FR-FE12-012..014, AC-FE12-012/013.
+- [ ] **FE12-N15 - Dashboard snapshot và missing-KPI UX.**
+  - Ánh xạ: BR-FE12-019, FR-FE12-015, AC-FE12-014/015.
+- [ ] **FE12-N16 - Integration/desktop/full-gate evidence.**
+  - Ánh xạ: `SL-005`, `SL-006`, `AT-010..AT-013`.
+
+Không sửa expected `BORROWED` thành `OVERDUE` để che drift. Product work bắt
+đầu sau governance activation merge và giữ uncommitted đến H2.

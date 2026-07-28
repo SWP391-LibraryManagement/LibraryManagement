@@ -1,10 +1,10 @@
 # PLAN.md - FE12 Báo cáo và thống kê
 
-Trạng thái: KHẮC PHỤC GOVERNANCE H3 - CHỜ H2 MỚI
+Trạng thái: H1 GOVERNANCE ACTIVATION - CHỜ PHÊ DUYỆT
 
 Chủ sở hữu: Nhat
 
-Cập nhật: 2026-07-27
+Cập nhật: 2026-07-29
 
 Trạng thái workflow: baseline Giai đoạn 2 vẫn hoàn tất. Nhat phê duyệt PLAN/
 TASKS v0.2.0 và phụ lục H2 tích hợp `8d0059b` ngày 2026-07-27. Kết quả đã review
@@ -159,3 +159,17 @@ Kế hoạch thực thi chi tiết:
    vi chỉ đọc.
 5. Chạy kiểm thử FE12 tập trung/đầy đủ, truy vết, vệ sinh diff và một yêu cầu
    HTTP runtime thực trước H2.
+
+## 8. Kế hoạch operations summary và clock xác định v0.3.0
+
+1. `SL-001`: merge governance activation trước product work.
+2. `SL-005` RED: tái hiện SIT-002/SIT-008 với service clock cố định và thêm
+   repository/service/route contract cho operations summary.
+3. `SL-005` GREEN: service đọc clock đúng một lần, sinh `businessDate` theo
+   `Asia/Ho_Chi_Minh` và truyền cho báo cáo mượn cùng operations summary.
+4. SQL repository dùng tham số `@BusinessDate`; in-memory repository nhận cùng
+   argument. Không repository nào tự gọi `new Date()` để phân loại quá hạn.
+5. Frontend staff dashboard gọi một snapshot FE12 và hiển thị KPI lỗi/thiếu là
+   `Không tải được`, không phải `0`.
+6. `SL-006`: full integration, desktop Chromium, L1-L4; product diff giữ
+   uncommitted đến H2 và H3 bắt buộc trước merge.

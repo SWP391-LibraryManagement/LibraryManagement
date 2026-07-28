@@ -1,10 +1,10 @@
 # PLAN.md - FE08 Quản lý đặt chỗ
 
-Trạng thái: KHẮC PHỤC QUẢN TRỊ H3 - ĐANG CHỜ H2 MỚI
+Trạng thái: H1 GOVERNANCE ACTIVATION - CHỜ PHÊ DUYỆT
 
 Chủ sở hữu: Nhat
 
-Cập nhật: 2026-07-27
+Cập nhật: 2026-07-29
 
 Trạng thái quy trình: Mốc cơ sở Giai đoạn 2 vẫn hoàn tất. `main` sở hữu
 `FE08-T041` đến `FE08-T046`; ranh giới hồi quy căn chỉnh quy tắc là
@@ -219,3 +219,13 @@ Không bao gồm:
 4. Chạy lại kiểm thử requester đặt chỗ tập trung chứng minh FE08 tạo yêu cầu FE10 `RESERVATION_AVAILABLE -> RESERVATION_READY` chính tắc.
 5. Chạy lại `SIT-003` chứng minh giữ hàng đợi cộng tạo thông báo và `SIT-004` chứng minh ưu tiên FE08 vẫn chặn gia hạn FE07 mà không thay đổi.
 6. Coi mọi lỗi FE08 là blocker cần chẩn đoán/quyết định đặc tả mới; không mở rộng batch này một cách im lặng.
+
+## 13. Kế hoạch batch liên hoàn v0.6.0
+
+1. `SL-001`: merge governance activation.
+2. `SL-004` RED/GREEN: owner-only held-copy CTA, staff decision surface, safe
+   notification warning và stale `409` refresh.
+3. Duy trì xử lý FIFO thủ công dưới transaction; FE07 chỉ handoff/điều hướng.
+4. Chạy reservation service/routes/frontend focused tests, race integration và
+   `SL-006` desktop E2E.
+5. Core builder duy nhất sửa production; product diff uncommitted đến H2.

@@ -1,10 +1,10 @@
 # Kế hoạch kiểm thử FE08 - Quản lý đặt chỗ
 
-Phiên bản: 0.5.7
-Trạng thái: ĐANG THỰC HIỆN - TÍCH HỢP 8D0059B; ĐANG CHỜ PHỤ LỤC H2
-Cập nhật lần cuối: 2026-07-27
+Phiên bản: 0.6.0
+Trạng thái: H1 GOVERNANCE ACTIVATION - CHỜ THỰC THI
+Cập nhật lần cuối: 2026-07-29
 
-Đặc tả nguồn: `.sdd/specs/feat-reservation-management/SPEC.md` v0.5.10
+Đặc tả nguồn: `.sdd/specs/feat-reservation-management/SPEC.md` v0.6.0
 ID tính năng: `BR-FE08-*`, `FR-FE08-*`, `AC-FE08-*`
 Ánh xạ AC-đến-kiểm thử có thẩm quyền: Phần 16 Ma trận truy vết trong `SPEC.md` (tệp này mô tả chiến lược, không phải danh sách ca kiểm thử).
 
@@ -106,3 +106,14 @@ npm.cmd --prefix backend test -- --runInBand --testMatch "**/reservationCandidat
 ```
 
 Các cổng backend/frontend, bao phủ, tích hợp, triển khai, SQL trực tiếp và Playwright toàn kho được ghi trong các rà soát đối soát đầy đủ và xác thực FE08 trước merge.
+
+## 12. Ma trận kiểm thử batch FE07-FE12
+
+- AC-FE08-023: FIFO/decision surface và đúng một post-commit notification request.
+- AC-FE08-024: chỉ owner `NOTIFIED` thấy CTA và FE07 nhận đúng `copyId`.
+- AC-FE08-025: race chỉ một winner, notification warning trung thực, stale
+  `409` tải lại state chuẩn.
+- Cross-feature: `AT-005`, `AT-007..AT-009`, `AT-012`.
+
+Focused service/routes/frontend tests, concurrency integration và desktop
+Chromium phải đạt trước H2.

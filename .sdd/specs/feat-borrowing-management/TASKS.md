@@ -1,6 +1,6 @@
 # TASKS.md - FE07 Quản lý mượn sách
 
-Trạng thái: KHẮC PHỤC QUẢN TRỊ H3 - ĐANG CHỜ H2 MỚI
+Trạng thái: H1 GOVERNANCE ACTIVATION - CHỜ PHÊ DUYỆT
 Implementation State: PARTIAL
 
 Mở rộng hiện tại: triển khai và xác thực tự động v0.8.0 đã hoàn tất;
@@ -8,7 +8,7 @@ rà soát của con người vẫn đang chờ. Mốc cơ sở Giai đoạn 2 tr
 
 Chủ sở hữu: Nhat
 
-Cập nhật: 2026-07-27
+Cập nhật: 2026-07-29
 
 Trạng thái quy trình: Mốc cơ sở Giai đoạn 2 vẫn hoàn tất. Nhat đã phê duyệt phụ lục H2
 `8d0059b` vào 2026-07-27; kết quả đã được rà soát được commit là
@@ -357,3 +357,17 @@ Các tác vụ đã chọn bên dưới mô tả việc triển khai đã hoàn 
   - Chỉ hiển thị `Tạo phiếu phạt` cho khoản mượn đang hoạt động đã chọn có hạn trả chính tắc quá hạn trong `Asia/Ho_Chi_Minh`.
   - Gọi tính toán FE09 chỉ với `borrowDetailId`; giữ ngày, số tiền, ngăn trùng lặp, vai trò và hành vi trạng thái kết thúc do máy chủ sở hữu.
   - Xác minh kiểm thử frontend FE07/FE09 tập trung, kiểm thử frontend đầy đủ, lint/build, truy vết và vệ sinh diff; rà soát của con người vẫn bắt buộc.
+
+## 2026-07-29 - Batch FE07-FE12 v0.9.0
+
+- [ ] **FE07-T057 - Post-commit borrowing-result notifications.**
+  - Ánh xạ: BR-FE07-035, FR-FE07-040/041, AC-FE07-033/035; `SL-003`.
+- [ ] **FE07-T058 - Return queue handoff chỉ đọc.**
+  - Ánh xạ: BR-FE07-036, FR-FE07-042, AC-FE07-034; không mutation FE08.
+- [ ] **FE07-T059 - Timeline và blocker/stale UX.**
+  - Ánh xạ: BR-FE07-037, FR-FE07-043/044, AC-FE07-036.
+- [ ] **FE07-T060 - Integration/E2E và evidence.**
+  - Ánh xạ: `SL-006`, `AT-001..AT-004`, `AT-009`, `AT-012`.
+
+Các task product chỉ được bắt đầu sau governance activation merge và giữ
+uncommitted đến H2.

@@ -1,6 +1,6 @@
 # API Contract - Phase 1 Baseline
 
-Status: PHASE 1 BASELINE; FE11 FINALIZATION GOVERNANCE ACTIVE
+Status: PHASE 1 BASELINE; FE07-FE12 CONNECTED DEMO H1 PENDING
 Date: 2026-06-10
 Last Updated: 2026-07-27
 
@@ -747,3 +747,52 @@ No `/api/admin/requests/{requestId}/approve` or `/reject` aliases exist. Only `P
 - This file is a planning contract, not implementation approval by itself.
 - FE11 Finalization design/plan/tasks are approved for governance; product work remains blocked until the governance PR passes checks, receives H3, and merges.
 - Backend tests must cover validation, authorization, and security-sensitive error behavior.
+
+## FE07-FE12 Connected Demo Batch
+
+Batch: `BATCH-FE07-FE12-CONNECTED-DEMO-2026-07-29`.
+
+### Additive FE07 return member
+
+The canonical return response may include:
+
+```json
+{
+  "reservationQueueAction": {
+    "copyId": 123,
+    "hasActiveQueue": true,
+    "actionPath": "/librarian/reservations"
+  }
+}
+```
+
+This member is read-only. It does not process or mutate an FE08 queue.
+
+### FE10 borrowing-result templates
+
+FE10 accepts canonical FE07 source requests for
+`BORROW_REQUEST_APPROVED`, `BORROW_REQUEST_REJECTED`, `BORROW_RENEWED` and
+`BORROW_RETURNED`. Each source key is idempotent. Personal inbox rows use only
+the fixed action path `/borrowing/history`; callers cannot supply URLs and
+payloads cannot include rejection reason or sensitive/provider data.
+
+### GET `/api/reports/operations-summary`
+
+Roles: `LIBRARIAN`, `ADMIN`. Query allowlist: empty.
+
+```json
+{
+  "pendingBorrowRequests": 1,
+  "activeLoans": 2,
+  "overdueLoans": 1,
+  "openReservations": 2,
+  "availableCopies": 3,
+  "lowStockBooks": 2,
+  "generatedAt": "2026-07-29T03:00:00.000Z"
+}
+```
+
+Unknown query keys return safe `400` before service/repository execution.
+Member returns `403`; missing authentication returns `401`. The service derives
+`businessDate` and `generatedAt` from one controlled clock read and passes the
+date explicitly to both SQL and in-memory report repositories.

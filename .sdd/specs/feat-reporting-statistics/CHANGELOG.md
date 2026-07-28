@@ -1,5 +1,14 @@
 # CHANGELOG.md - FE12 Báo cáo và thống kê
 
+## 2026-07-29 - Kích hoạt operations summary và clock xác định (v0.3.0)
+
+- Thêm BR-FE12-017..020, FR-FE12-012..015 và AC-FE12-012..016.
+- Chốt six-KPI read-only snapshot và fixed dashboard drill-down.
+- Ghi finding baseline SIT-002/SIT-008: repository dùng host clock làm drift
+  phân loại quá hạn; fix bắt buộc là service-owned `businessDate` cho SQL và
+  in-memory parity, không đổi expected state.
+- Chưa thay đổi product code; chờ H1/activation merge.
+
 ## 2026-07-27 - Đặc tả allowlist query báo cáo chính xác (v0.2.0)
 
 - Xác định allowlist khóa query chính xác riêng cho endpoint mượn, kho và thống

@@ -140,7 +140,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   FE12 `0.3.0`; batch contract
   `BATCH-FE07-FE12-CONNECTED-DEMO-2026-07-29`.
 
-- [ ] **Step 1: Allocate stable requirement IDs and write the SPEC fan-out**
+- [x] **Step 1: Allocate stable requirement IDs and write the SPEC fan-out**
 
   Add these exact IDs and definitions:
 
@@ -179,14 +179,15 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   BR-FE12-017 operations summary is one authorized read-only snapshot
   BR-FE12-018 six KPI definitions match canonical source states
   BR-FE12-019 missing/failed KPI is never rendered as zero
+  BR-FE12-020 every overdue projection uses one service-owned business date
   FR-FE12-012 GET /api/reports/operations-summary
   FR-FE12-013 staff role enforcement and empty query allowlist
-  FR-FE12-014 deterministic KPI projection and generatedAt
+  FR-FE12-014 deterministic KPI projection, generatedAt and injected business date
   FR-FE12-015 fixed dashboard drill-down
-  AC-FE12-012..015 map to AT-010, AT-011, AT-012 and KPI failure behavior
+  AC-FE12-012..016 map to AT-010..AT-013 and KPI failure behavior
   ```
 
-- [ ] **Step 2: Synchronize CONTEXT, CHANGELOG, integration map, API contract and OpenAPI**
+- [x] **Step 2: Synchronize CONTEXT, CHANGELOG, integration map, API contract and OpenAPI**
 
   Record the exact endpoint and response:
 
@@ -223,7 +224,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   }
   ```
 
-- [ ] **Step 3: Write PLAN/TASKS boundaries and H1 contract**
+- [x] **Step 3: Write PLAN/TASKS boundaries and H1 contract**
 
   Use these slices and ownership:
 
@@ -239,7 +240,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   Set a single Core builder lane. Other lanes remain read-only unless the user
   explicitly requests delegation.
 
-- [ ] **Step 4: Run governance validation**
+- [x] **Step 4: Run governance validation**
 
   Run:
 
@@ -878,7 +879,10 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
 
   Add role matrix for `LIBRARIAN=200`, `ADMIN=200`, `MEMBER=403`,
   unauthenticated `401`. Add `?bogus=secret` => `400` before repository call and
-  prove source fixtures remain byte-for-byte unchanged.
+  prove source fixtures remain byte-for-byte unchanged. Add the baseline
+  regression first: with the service clock frozen at `2026-07-14`, a due date of
+  `2026-07-28` remains `BORROWED` in both SQL-contract and in-memory report
+  projections even when the host date is later.
 
 - [ ] **Step 2: Run RED FE12 backend tests**
 
@@ -939,6 +943,11 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   }
   ```
 
+  Apply the same one-read clock rule to the existing borrowing report:
+  `getBorrowingReport()` must compute `businessDate` in the service and pass it
+  explicitly to its repository. Repository defaults based on `new Date()` are
+  forbidden for overdue classification.
+
   Route:
 
   ```js
@@ -973,7 +982,9 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
 
   Count from the same `borrowingState` and `reservationState` supplied by
   `systemIntegrationHarness.js`. Do not clone then mutate fixtures; return a new
-  plain object.
+  plain object. Both the existing borrowing report and operations summary must
+  consume the explicit `businessDate` argument so in-memory parity cannot drift
+  with the host clock.
 
 - [ ] **Step 6: Run GREEN FE12 backend tests**
 

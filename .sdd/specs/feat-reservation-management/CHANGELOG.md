@@ -1,5 +1,12 @@
 # CHANGELOG.md - FE08 Quản lý đặt chỗ
 
+## 2026-07-29 - Kích hoạt governance luồng demo liên hoàn (v0.6.0)
+
+- Thêm BR-FE08-021/022, FR-FE08-036..039 và AC-FE08-023..025.
+- Chốt owner-only held-copy CTA, decision surface thủ công, safe warning và
+  stale refresh.
+- Chưa thay đổi product code; chờ H1/activation merge.
+
 ## 2026-07-27 - Đối soát các thay đổi song song v0.5.9 (v0.5.10)
 
 - Kết hợp loại trừ khoản mượn cùng sách hiện tại với trình bày vị trí hàng đợi

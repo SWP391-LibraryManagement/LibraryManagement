@@ -1,8 +1,8 @@
 ﻿# Master Test Plan - Library Management System
 
-Version: 0.2.1
+Version: 0.3.0
 
-Status: DRAFT - pending team review
+Status: H1 GOVERNANCE ACTIVATION - PENDING APPROVAL
 
 Last Updated: 2026-07-28
 
@@ -592,5 +592,23 @@ A feature or PR is test-ready when:
 - remaining test gaps are documented with owner or follow-up task.
 
 A feature is not done just because tests are green. It is done when tests are green and the spec checklist is satisfied.
+
+## 21. FE07-FE12 Connected Demo Gate
+
+Batch: `BATCH-FE07-FE12-CONNECTED-DEMO-2026-07-29`.
+
+- L1: focused FE10, FE07, FE08 and FE12 RED/GREEN suites; full backend/frontend;
+  lint/build; migration/deployment policy; traceability and diff hygiene.
+- L2: BR/FR/AC v0.9.0/v0.6.0/v0.6.0/v0.3.0 map to `AT-001..AT-013`.
+- L3: role/ownership matrix, safe errors, fixed action paths, sensitive-field
+  scan, read-only FE12 and non-blocking post-commit notifications.
+- L4: desktop Chromium `1440x900` golden flow across Member A, Member B and
+  Librarian/Admin with canonical state transitions.
+- Clock regression: freeze the service clock, run before/after due-date
+  boundaries and require SQL-contract/in-memory/system parity independent of
+  host date. SIT-002/SIT-008 expected state must not be rewritten to hide drift.
+- Azure: after H3/merge, apply or verify the reviewed SQL migration against
+  Azure SQL, then verify exact backend App Service and frontend Static Web Apps
+  staging revisions; `/health` alone is insufficient business evidence.
 
 

@@ -1,12 +1,12 @@
 # SPEC.md - Quản lý thông báo FE10
 
-# Phiên bản: 0.5.0
+# Phiên bản: 0.6.0
 
-# Trạng thái: V0.5.0 HOÀN TẤT - PR #75 ĐÃ MERGE, CI/AZURE HẬU MERGE ĐẠT
+# Trạng thái: H1 GOVERNANCE ACTIVATION - CHỜ PHÊ DUYỆT
 
 # Chủ sở hữu: Nhat
 
-# Cập nhật lần cuối: 2026-07-28
+# Cập nhật lần cuối: 2026-07-29
 
 # ID tính năng: FE10
 
@@ -799,3 +799,40 @@ Danh sách kiểm tra hợp đồng tăng cường (được Nhat phê duyệt n
 - [x] Mã sản phẩm hộp thư, lược đồ additive, API công khai, triển khai Azure,
   H2/H3, merge và các cổng hậu merge đã hoàn tất qua PR #75; không có yêu cầu
   hay hành vi mới được thêm bởi closeout tài liệu này.
+
+## 18. Phụ lục thông báo kết quả FE07 v0.6.0
+
+Batch: `BATCH-FE07-FE12-CONNECTED-DEMO-2026-07-29`.
+
+### 18.1 Quy tắc kinh doanh
+
+- BR-FE10-021: Ownership của `GENERAL_SYSTEM` phải được kiểm tra theo từng
+  template key chuẩn, không chỉ theo notification type.
+- BR-FE10-022: Các hàng inbox kết quả mượn chỉ ánh xạ tới fixed relative path
+  `/borrowing/history`.
+- BR-FE10-023: Payload thông báo kết quả mượn không chứa lý do từ chối, email,
+  token, OTP, stack hoặc provider detail.
+
+### 18.2 Yêu cầu chức năng
+
+- FR-FE10-017: Chấp nhận bốn template FE07:
+  `BORROW_REQUEST_APPROVED`, `BORROW_REQUEST_REJECTED`, `BORROW_RENEWED`,
+  `BORROW_RETURNED`.
+- FR-FE10-018: Mỗi source key được persist/replay đúng một notification; retry
+  không tạo bản ghi hoặc lần gửi trùng.
+- FR-FE10-019: Bốn template trên thuộc personal-inbox eligibility của đúng
+  người nhận.
+- FR-FE10-020: Backend trả fixed action path `/borrowing/history`; caller không
+  được cung cấp URL.
+
+### 18.3 Tiêu chí chấp nhận và truy vết
+
+- AC-FE10-017: Phê duyệt/từ chối FE07 tạo đúng một inbox row, ánh xạ `AT-002`,
+  `AT-003`.
+- AC-FE10-018: Replay cùng source key trả bản ghi hiện có, không nhân đôi.
+- AC-FE10-019: Nhấn notification mark-read best-effort rồi mở fixed path, ánh
+  xạ `AT-006`.
+- AC-FE10-020: FE10 thất bại không rollback FE07/FE08 và payload không lộ dữ
+  liệu nhạy cảm, ánh xạ `AT-009`.
+
+Triển khai phải đi qua `SL-002` và `SL-006`; không thêm bảng hoặc kênh thông báo.

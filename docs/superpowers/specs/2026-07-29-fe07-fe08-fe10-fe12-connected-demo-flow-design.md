@@ -70,6 +70,7 @@ Tài liệu này không tự cấp quyền sửa product code, schema, API hoặ
 | BD-004 | Thông báo kết quả mượn được mô hình hóa thế nào? | Dùng bản ghi không nhạy cảm `GENERAL_SYSTEM` với template key chuẩn do FE07 sở hữu sự kiện nguồn | Không thêm enum/kênh mới nhưng vẫn có action path an toàn | `proposed-decision` |
 | BD-005 | Dashboard có tự đếm dữ liệu trên frontend không? | Không. FE12 cung cấp operations summary chỉ đọc từ database | Số liệu phải tái tạo, phân quyền và kiểm thử được | `proposed-decision` |
 | BD-006 | Ưu tiên responsive nào? | Desktop 1440x900 là acceptance chính; không chủ động mở rộng mobile trong lát cắt | Phù hợp mục tiêu demo website của người dùng | `proposed-decision` |
+| BD-007 | Ngày nghiệp vụ FE12 được lấy ở đâu? | Service tạo một `businessDate` từ clock có kiểm soát rồi truyền rõ ràng cho cả SQL repository và in-memory repository | Ngăn kết quả quá hạn phụ thuộc ngày chạy máy chủ và giữ kiểm thử/runtime cùng một nguồn thời gian | `approved-addendum-2026-07-29` |
 
 ## 4. Ranh Giới Tác Nhân Và Ownership
 
@@ -247,6 +248,12 @@ Dashboard desktop hiển thị các KPI và fixed drill-down:
 | Đặt chỗ đang mở | `/librarian/reservations` |
 | Bản sao sẵn có / Sắp hết | `/reports/inventory` |
 
+Mọi phép phân loại quá hạn FE12, gồm báo cáo mượn hiện hành và operations
+summary mới, phải nhận cùng một `businessDate` do service tạo từ clock đã
+inject. Repository SQL và repository in-memory không được tự gọi `new Date()`
+để quyết định trạng thái quá hạn. `generatedAt` và `businessDate` phải được suy
+ra từ cùng một lần đọc clock cho mỗi request.
+
 ## 7. Hợp Đồng Lỗi
 
 | Điều kiện | Kết quả |
@@ -292,6 +299,7 @@ Dashboard desktop hiển thị các KPI và fixed drill-down:
 | AT-010 | Librarian/Admin xem operations summary | KPI khớp nguồn và drill-down đúng route |
 | AT-011 | Member/Guest gọi operations summary | Server từ chối; không trả số liệu |
 | AT-012 | Desktop browser golden flow | Toàn bộ luồng hoạt động ở 1440x900, không tràn ngang và không lỗi console ngoài lỗi được chủ động kiểm thử |
+| AT-013 | Chạy FE12 với clock cố định trước và sau hạn trả | SQL repository, in-memory repository và HTTP projection phân loại quá hạn giống nhau, không phụ thuộc ngày thật của máy chạy test |
 
 ## 10. Chiến Lược Kiểm Thử
 
@@ -341,6 +349,8 @@ FE07 PENDING
 - FIFO và tối đa 3 reservation mở;
 - thời hạn giữ 2 ngày;
 - due date 14 ngày và business date `Asia/Ho_Chi_Minh`;
+- clock cố định được truyền xuyên service/repository cho mọi phép phân loại quá
+  hạn FE12; không dùng ngày máy chủ ẩn trong repository;
 - FE10 sensitive exclusions và inbox ownership;
 - FE12 báo cáo hiện hành, query allowlist và read-only invariant.
 

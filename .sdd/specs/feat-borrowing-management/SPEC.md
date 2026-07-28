@@ -1,12 +1,12 @@
 # SPEC.md - FE07 Quản lý mượn
 
-# Phiên bản: 0.8.3
+# Phiên bản: 0.9.0
 
-# Trạng thái: ĐÃ TRIỂN KHAI BẢN SỬA ĐỔI - ĐANG ĐƯỢC CON NGƯỜI RÀ SOÁT 2026-07-28
+# Trạng thái: H1 GOVERNANCE ACTIVATION - CHỜ PHÊ DUYỆT
 
 # Chủ sở hữu: Nhat
 
-# Cập nhật lần cuối: 2026-07-28
+# Cập nhật lần cuối: 2026-07-29
 
 # ID tính năng: FE07
 
@@ -812,3 +812,45 @@ Danh sách kiểm tra phê duyệt giai đoạn 1 (hoàn thành trên 2026-06-10
 - [x] Duy trì tính năng tự phục vụ dành riêng cho thành viên đối với tài khoản Thành viên trong khi vẫn duy trì việc gia hạn hoạt động Librarian/Admin.
 - [x] Duy trì tính đủ điều kiện của chủ sở hữu khoản vay, tiền phạt, quá hạn, bảo lưu và kiểm tra giới hạn gia hạn.
 - [x] Nhat ủy quyền thực hiện đối chiếu vào 2026-07-27; khác biệt tích hợp vẫn tuân theo phụ lục H2 trước khi commit.
+
+## 18. Phụ lục luồng demo liên hoàn FE07-FE12 v0.9.0
+
+Batch: `BATCH-FE07-FE12-CONNECTED-DEMO-2026-07-29`.
+
+### 18.1 Quy tắc kinh doanh
+
+- BR-FE07-035: Sau khi transaction FE07 commit, yêu cầu thông báo kết quả mượn
+  gửi tới FE10 phải lũy đẳng theo khóa sự kiện nguồn và không được rollback
+  transaction FE07 nếu FE10 thất bại.
+- BR-FE07-036: Phản hồi trả sách chỉ được công khai một handoff FE08 chỉ đọc;
+  handoff không tự xử lý hàng đợi hay đổi trạng thái reservation.
+- BR-FE07-037: Timeline hành trình mượn chỉ được suy ra từ trạng thái và dấu
+  thời gian chính tắc; không tạo trạng thái hoặc thời gian giả.
+
+### 18.2 Yêu cầu chức năng
+
+- FR-FE07-040: Sau phê duyệt hoặc từ chối yêu cầu, FE07 yêu cầu FE10 tạo thông
+  báo kết quả an toàn cho đúng thành viên.
+- FR-FE07-041: Sau gia hạn hoặc trả thành công, FE07 yêu cầu FE10 tạo thông báo
+  kết quả an toàn cho đúng thành viên.
+- FR-FE07-042: Kết quả trả có thể bổ sung
+  `reservationQueueAction = { copyId, hasActiveQueue, actionPath }`; action path
+  cố định là `/librarian/reservations`.
+- FR-FE07-043: Lịch sử thành viên hiển thị timeline từ trạng thái/timestamp
+  chính tắc.
+- FR-FE07-044: UI ánh xạ blocker/stale conflict sang hướng dẫn tải lại hoặc
+  hành động tiếp theo trung thực.
+
+### 18.3 Tiêu chí chấp nhận và truy vết
+
+- AC-FE07-033: Duyệt/từ chối tạo đúng một thông báo kết quả, ánh xạ `AT-002`,
+  `AT-003`.
+- AC-FE07-034: Trả bản sao có hàng đợi commit FE07 nhưng không mutation FE08 và
+  trả handoff chỉ đọc, ánh xạ `AT-004`.
+- AC-FE07-035: FE10 thất bại không rollback FE07 và UI hiện cảnh báo trung thực,
+  ánh xạ `AT-009`.
+- AC-FE07-036: Timeline desktop dùng đúng trạng thái/timestamp chính tắc, không
+  tạo thời gian giả, ánh xạ `AT-001`, `AT-012`.
+
+Triển khai phải đi qua `SL-003` và `SL-006` của kế hoạch batch; product code
+giữ uncommitted đến H2.
