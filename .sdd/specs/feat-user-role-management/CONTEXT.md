@@ -1,198 +1,247 @@
-# CONTEXT.md - FE11 User & Role Management
+# CONTEXT.md - FE11 Quản lý người dùng và vai trò
 
-# Version: 0.3.1
+# Phiên bản: 0.3.1
 
-# Status: APPROVED - ADMIN ACCOUNT-GOVERNANCE BOUNDARY 2026-07-28
+# Trạng thái: ĐÃ PHÊ DUYỆT - RANH GIỚI QUẢN TRỊ TÀI KHOẢN QUẢN TRỊ 2026-07-28
 
-# Owner: Dung
+# Chủ sở hữu: Dung
 
-# Last Updated: 2026-07-28
+# Cập nhật lần cuối: 2026-07-28
 
-# Feature folder: `.sdd/specs/feat-user-role-management/`
-
----
-
-## 1. Feature Purpose
-
-User & Role Management exists to allow administrators to create and view accounts and manage account lifecycle and roles. Existing-user personal/account profile fields are read-only in FE11; authenticated users maintain their own approved profile fields through FE03.
-
-This feature must keep three things consistent:
-
-- The boundary between Admin-visible account information and user-owned personal profile information.
-- User role assignments and permissions.
-- User status lifecycle (`INACTIVE` during admin-created setup, `ACTIVE` after setup, and later deactivation/lock states).
-
-Because user/role data controls access to all other features, this feature is treated as a Full Spec feature.
+# Thư mục tính năng: `.sdd/specs/feat-user-role-management/`
 
 ---
 
-## 2. Real-World Workflow
+## 1. Mục đích tính năng
 
-The typical small/medium library administration workflow:
+Quản lý người dùng và vai trò tồn tại để cho phép quản trị viên tạo và xem tài
+khoản, quản lý vòng đời tài khoản và vai trò. Trường hồ sơ/cá nhân của người
+dùng hiện có chỉ đọc trong FE11; người dùng đã xác thực tự duy trì trường hồ sơ
+đã được phê duyệt của họ qua FE03.
 
-1. An admin needs to add a new member to the system.
-2. The admin accesses the user management interface.
-3. The admin creates a new user account with email and member details, without entering a password.
-4. The system validates the email is unique and assigns the Member role.
-5. The system keeps the account inactive until password setup is completed.
-6. The system sends a one-time password setup link to the user's email; the admin never sees a password or token.
-7. Later, a librarian needs more privileges; admin changes their role from Librarian to Librarian+Admin.
-8. The user updates their own name, phone, or address through FE03; Admin sees the result as read-only.
-9. When a user leaves, the admin deactivates the account (does not delete).
-10. For an existing account, the admin can change only its role or deactivate it; profile correction belongs to the authenticated account owner through FE03.
-11. The admin can view audit logs of all user management actions.
+Tính năng này phải giữ nhất quán ba điều:
 
----
+- Ranh giới giữa thông tin tài khoản Quản trị viên có thể xem và thông tin hồ
+  sơ cá nhân do người dùng sở hữu.
+- Phân công vai trò và quyền người dùng.
+- Vòng đời trạng thái người dùng (`INACTIVE` trong khi thiết lập tài khoản do
+  quản trị tạo, `ACTIVE` sau khi thiết lập, và các trạng thái vô hiệu hóa/khóa
+  sau đó).
 
-## 3. Feature Boundary
-
-FE11 includes:
-
-- View list of all users with filtering, sorting, and search.
-- View safe allowlisted user details without passwords, credential/token hashes, session identifiers, setup/reset links, or secret audit metadata.
-- View detailed user information.
-- Create member accounts.
-- Create librarian accounts.
-- Keep all existing-account personal/profile fields read-only in FE11.
-- Deactivate user accounts.
-- Deactivate librarian accounts.
-- Replace each user's single account role atomically.
-- Initiate password setup emails for newly created users without exposing passwords or tokens to admins.
-- Resend an incomplete admin-created account setup email through an Admin-only action.
-
-FE11 does not include:
-
-- Admin editing of an existing user's name, phone, or address. Authenticated self-service editing belongs to FE03.
-- Existing-account email change. Any future capability requires a verified FE02 flow and is outside Phase 1.
-- User registration/signup by self-service. That belongs to FE02 Authentication.
-- Password reset by users themselves. That belongs to FE02 Authentication.
-- Unlocking accounts after failed login lockout unless explicitly added by FE02/FE11 later.
-- Reactivating deactivated accounts unless explicitly approved as a separate flow later.
-- Admin-initiated password reset for existing users unless explicitly added by FE02/FE11 later.
-- Permanent user deletion. Only deactivation is supported.
-- User import/export or bulk operations.
-- Role-based activity reports or analytics.
-- LDAP/Active Directory user synchronization.
-- OAuth or SSO integration.
+Vì dữ liệu người dùng/vai trò kiểm soát quyền truy cập vào mọi tính năng khác,
+tính năng này được xem là tính năng Đặc tả Đầy đủ.
 
 ---
 
-## 4. Current Data Model Notes
+## 2. Quy trình thực tế
 
-The current SQL script should include:
+Quy trình quản trị thư viện nhỏ/trung bình điển hình:
+
+1. Quản trị viên cần thêm một thành viên mới vào hệ thống.
+2. Quản trị viên truy cập giao diện quản lý người dùng.
+3. Quản trị viên tạo tài khoản người dùng mới có email và chi tiết thành viên,
+   không nhập mật khẩu.
+4. Hệ thống kiểm tra email là duy nhất và gán vai trò Thành viên.
+5. Hệ thống giữ tài khoản không hoạt động cho đến khi hoàn tất thiết lập mật
+   khẩu.
+6. Hệ thống gửi liên kết thiết lập mật khẩu dùng một lần đến email người dùng;
+   Quản trị viên không bao giờ thấy mật khẩu hoặc mã thông báo.
+7. Sau đó, một thủ thư cần thêm đặc quyền; Quản trị viên đổi vai trò từ Thủ thư
+   sang Thủ thư+Quản trị viên.
+8. Người dùng tự cập nhật tên, điện thoại hoặc địa chỉ qua FE03; Quản trị viên
+   thấy kết quả ở chế độ chỉ đọc.
+9. Khi người dùng rời đi, Quản trị viên vô hiệu hóa tài khoản (không xóa).
+10. Với tài khoản hiện có, Quản trị viên chỉ có thể đổi vai trò hoặc vô hiệu hóa;
+    việc sửa hồ sơ thuộc chủ sở hữu tài khoản đã xác thực qua FE03.
+11. Quản trị viên có thể xem nhật ký kiểm toán của mọi thao tác quản lý người
+    dùng.
+
+---
+
+## 3. Ranh giới tính năng
+
+FE11 bao gồm:
+
+- Xem danh sách mọi người dùng cùng lọc, sắp xếp và tìm kiếm.
+- Xem chi tiết người dùng trong danh sách cho phép an toàn, không gồm mật khẩu,
+  hash thông tin xác thực/mã thông báo, mã định danh phiên, liên kết thiết lập/
+  đặt lại hoặc siêu dữ liệu kiểm toán bí mật.
+- Xem thông tin người dùng chi tiết.
+- Tạo tài khoản thành viên.
+- Tạo tài khoản thủ thư.
+- Giữ mọi trường cá nhân/hồ sơ của tài khoản hiện có ở chế độ chỉ đọc trong
+  FE11.
+- Vô hiệu hóa tài khoản người dùng.
+- Vô hiệu hóa tài khoản thủ thư.
+- Thay thế nguyên tử vai trò tài khoản đơn của mỗi người dùng.
+- Khởi tạo email thiết lập mật khẩu cho người dùng mới tạo mà không để lộ mật
+  khẩu hoặc mã thông báo cho Quản trị viên.
+- Gửi lại email thiết lập tài khoản chưa hoàn tất do quản trị tạo qua thao tác
+  chỉ Quản trị viên.
+
+FE11 không bao gồm:
+
+- Quản trị viên chỉnh sửa tên, điện thoại hoặc địa chỉ của người dùng hiện có.
+  Chỉnh sửa tự phục vụ đã xác thực thuộc FE03.
+- Đổi email tài khoản hiện có. Mọi khả năng trong tương lai cần luồng FE02 đã
+  xác minh và nằm ngoài Giai đoạn 1.
+- Người dùng tự đăng ký/đăng ký tài khoản. Việc đó thuộc Xác thực FE02.
+- Người dùng tự đặt lại mật khẩu. Việc đó thuộc Xác thực FE02.
+- Mở khóa tài khoản sau khóa đăng nhập thất bại trừ khi FE02/FE11 bổ sung rõ
+  ràng sau này.
+- Kích hoạt lại tài khoản đã vô hiệu hóa trừ khi được phê duyệt rõ là luồng riêng
+  sau này.
+- Quản trị viên khởi tạo đặt lại mật khẩu cho người dùng hiện có trừ khi
+  FE02/FE11 bổ sung rõ sau này.
+- Xóa vĩnh viễn người dùng. Chỉ hỗ trợ vô hiệu hóa.
+- Nhập/xuất người dùng hoặc thao tác hàng loạt.
+- Báo cáo hoặc phân tích hoạt động theo vai trò.
+- Đồng bộ người dùng LDAP/Active Directory.
+- Tích hợp OAuth hoặc SSO.
+
+---
+
+## 4. Ghi chú về mô hình dữ liệu hiện tại
+
+Script SQL hiện tại cần bao gồm:
 
 - `Users(UserId, Email, Username, PasswordHash, FullName, PhoneNumber, Address, Status, CreatedAt, UpdatedAt, LastLoginAt)`
 - `Roles(RoleId, RoleName, Description)`
-- `UserRoles(UserId, RoleId)` - maps users to roles
+- `UserRoles(UserId, RoleId)` - ánh xạ người dùng tới vai trò
 - `AuditLogs(LogId, UserId, Action, TargetUserId, Details, CreatedAt)`
 
-Potential issues to review:
+Các vấn đề tiềm ẩn cần rà soát:
 
-- Admin-created users start `INACTIVE`; FE02 changes them to `ACTIVE` only after successful setup-token consumption.
-- `Users` table needs `LastLoginAt` for tracking active users.
-- `Users` table needs `FailedLoginCount` and `LockedUntil` fields for account lockout management.
-- Admin-created users must use the FE02 password setup flow. If SQL keeps `PasswordHash NOT NULL`, FE11 stores an unusable bcrypt hash of a discarded random value; fixed literal placeholders are forbidden.
-- FE11 stores only the hash of a 24-hour `ACCOUNT_SETUP` token in `AuthTokens` and uses its token ID for FE10 source traceability/idempotency.
-- `UserRoles` stores exactly one role per account and `UX_UserRoles_UserId` enforces that cardinality. Role changes replace the current mapping atomically; the compatibility `roles` array contains exactly one item.
-- `AuditLogs` must capture what changed and by whom; simple action text is insufficient.
-- Need to prevent removal of Admin role if only one admin remains.
-- Email uniqueness constraint should be case-insensitive.
-- Need `Department` and `Specialization` fields for librarian accounts.
-- FE11 must reject existing-user `fullName`, `phone`, `address`, and `email` mutation attempts server-side; hiding controls in the Admin UI is not sufficient.
-- Shared passwords must not be displayed to admins.
+- Người dùng do quản trị tạo bắt đầu `INACTIVE`; FE02 chỉ chuyển họ thành
+  `ACTIVE` sau khi tiêu thụ thành công mã thông báo thiết lập.
+- Bảng `Users` cần `LastLoginAt` để theo dõi người dùng hoạt động.
+- Bảng `Users` cần trường `FailedLoginCount` và `LockedUntil` để quản lý khóa
+  tài khoản.
+- Người dùng do quản trị tạo phải dùng luồng thiết lập mật khẩu FE02. Nếu SQL
+  giữ `PasswordHash NOT NULL`, FE11 lưu hash bcrypt không thể dùng của giá trị
+  ngẫu nhiên đã bỏ; cấm placeholder literal cố định.
+- FE11 chỉ lưu hash của mã thông báo `ACCOUNT_SETUP` 24 giờ trong `AuthTokens`
+  và dùng ID mã thông báo cho traceability/lũy đẳng nguồn FE10.
+- `UserRoles` lưu đúng một vai trò mỗi tài khoản và `UX_UserRoles_UserId` thực
+  thi lực lượng đó. Việc đổi vai trò thay thế nguyên tử ánh xạ hiện tại; mảng
+  tương thích `roles` chứa đúng một mục.
+- `AuditLogs` phải ghi lại điều gì thay đổi và ai thay đổi; văn bản hành động
+  đơn giản không đủ.
+- Cần ngăn loại vai trò Quản trị viên nếu chỉ còn một quản trị viên.
+- Ràng buộc duy nhất email phải không phân biệt hoa/thường.
+- Cần trường `Department` và `Specialization` cho tài khoản thủ thư.
+- FE11 phải từ chối thay đổi `fullName`, `phone`, `address` và `email` của
+  người dùng hiện có ở phía máy chủ; ẩn điều khiển trong UI Quản trị viên là
+  không đủ.
+- Không được hiển thị mật khẩu dùng chung cho Quản trị viên.
 
-These are not blockers for drafting, but they must be resolved before implementation.
+Đây không phải điểm chặn cho việc soạn thảo, nhưng phải được giải quyết trước
+khi triển khai.
 
 ---
 
-## 5. Main Use Cases From Assignment Sheet
+## 5. Các trường hợp sử dụng chính từ bảng phân công
 
-| Use Case ID | Use Case Name | Owner |
+| ID trường hợp sử dụng | Tên trường hợp sử dụng | Chủ sở hữu |
 | ----------- | ------------- | ----- |
-| UC49 | View User List | Dung |
-| UC50 | View User Information | Dung |
-| UC51 | Create User Account | Dung |
-| UC52 | Update User Information - reallocated to FE03 self-service; FE11 enforces read-only Admin boundary | Dung |
-| UC53 | Deactivate User Account | Dung |
-| UC54 | Create Librarian Account | Dung |
-| UC55 | Update Librarian Work Information - reallocated/out of FE11 existing-account scope by Q-FE11-029 | Dung |
-| UC56 | Deactivate Librarian Account | Dung |
-| UC57 | Manage Roles | Dung |
+| UC49 | Xem danh sách người dùng | Dung |
+| UC50 | Xem thông tin người dùng | Dung |
+| UC51 | Tạo tài khoản người dùng | Dung |
+| UC52 | Cập nhật thông tin người dùng - phân bổ lại cho tự phục vụ FE03; FE11 thực thi ranh giới Quản trị viên chỉ đọc | Dung |
+| UC53 | Vô hiệu hóa tài khoản người dùng | Dung |
+| UC54 | Tạo tài khoản thủ thư | Dung |
+| UC55 | Cập nhật thông tin công việc Thủ thư - phân bổ lại/ngoài phạm vi tài khoản hiện có FE11 bởi Q-FE11-029 | Dung |
+| UC56 | Vô hiệu hóa tài khoản thủ thư | Dung |
+| UC57 | Quản lý vai trò | Dung |
 
 ---
 
-## 6. Feature Tests From Assignment Sheet
+## 6. Kiểm thử tính năng từ bảng phân công
 
-| Test ID | Test Name | Owner |
+| ID kiểm thử | Tên kiểm thử | Chủ sở hữu |
 | ------- | --------- | ----- |
-| FT50 | View user list | Dung |
-| FT51 | View user information | Dung |
-| FT52 | Create user account | Dung |
-| FT53 | Update user information - reallocated to FE03 plus FE11 boundary rejection | Dung |
-| FT54 | Deactivate user account | Dung |
-| FT55 | Create librarian account | Dung |
-| FT56 | Verify Librarian target remains read-only in FE11 | Dung |
-| FT57 | Deactivate librarian account | Dung |
-| FT58 | Manage roles | Dung |
+| FT50 | Xem danh sách người dùng | Dung |
+| FT51 | Xem thông tin người dùng | Dung |
+| FT52 | Tạo tài khoản người dùng | Dung |
+| FT53 | Cập nhật thông tin người dùng - phân bổ lại cho FE03 cộng từ chối ranh giới FE11 | Dung |
+| FT54 | Vô hiệu hóa tài khoản người dùng | Dung |
+| FT55 | Tạo tài khoản thủ thư | Dung |
+| FT56 | Xác minh mục tiêu Thủ thư vẫn chỉ đọc trong FE11 | Dung |
+| FT57 | Vô hiệu hóa tài khoản thủ thư | Dung |
+| FT58 | Quản lý vai trò | Dung |
 
 ---
 
-## 7. Key Risks
+## 7. Rủi ro chính
 
-- User data corruption if account creation is not transactional (user created but role assignment fails).
-- Access control breach if a user is not properly deactivated or role is not properly revoked.
-- Privilege escalation if admin role cannot be revoked from the last admin.
-- Data integrity loss if all admins are accidentally deactivated without recovery path.
-- Email uniqueness not enforced allows duplicate accounts with same email.
-- Concurrent role replacement can create inconsistent state unless the mapping, final-Admin check, and audit are serialized in one transaction.
-- Deactivation without invalidating active sessions allows deactivated user to continue accessing system.
-- Audit logs can be incomplete if user management actions are not fully logged.
-- Password setup without proper validation allows unauthorized account takeover.
-- Unauthorized personal-data mutation can overwrite user-owned information, bypass identity verification, and make audit history misleading.
+- Dữ liệu người dùng bị hỏng nếu tạo tài khoản không có giao dịch (tạo người
+  dùng nhưng gán vai trò thất bại).
+- Vi phạm kiểm soát truy cập nếu người dùng không được vô hiệu hóa hoặc vai trò
+  không bị thu hồi đúng.
+- Leo thang đặc quyền nếu không thể thu hồi vai trò quản trị từ quản trị viên
+  cuối cùng.
+- Mất toàn vẹn dữ liệu nếu vô tình vô hiệu hóa mọi quản trị viên mà không có
+  đường phục hồi.
+- Không thực thi duy nhất email cho phép tài khoản trùng với cùng email.
+- Thay vai trò đồng thời có thể tạo trạng thái không nhất quán nếu ánh xạ, kiểm
+  tra Quản trị viên cuối và kiểm toán không được tuần tự trong một giao dịch.
+- Vô hiệu hóa mà không vô hiệu hóa phiên đang hoạt động cho phép người dùng đã
+  vô hiệu hóa tiếp tục truy cập hệ thống.
+- Nhật ký kiểm toán có thể không đầy đủ nếu thao tác quản lý người dùng không
+  được ghi đầy đủ.
+- Thiết lập mật khẩu không kiểm tra hợp lệ đúng có thể cho phép chiếm đoạt tài
+  khoản trái phép.
+- Thay đổi dữ liệu cá nhân không được ủy quyền có thể ghi đè thông tin do người
+  dùng sở hữu, bỏ qua xác minh danh tính và làm lịch sử kiểm toán sai lệch.
 
 ---
 
-## 8. Dependencies
+## 8. Phụ thuộc
 
-| Dependency | Why It Matters |
+| Phụ thuộc | Lý do quan trọng |
 | ---------- | -------------- |
-| FE02 Authentication | Uses user credentials and enforces login; role assignment determines feature access; owns any future verified existing-account email change. |
-| FE03 User Profile | Owns authenticated self-service updates to name, phone, and address; FE11 reads but does not mutate these fields after creation. |
-| FE07 Borrowing Management | Member user accounts created in FE11 can borrow books in FE07. |
-| FE09 Fine Management | May query user status to determine if user with unpaid fines can be deactivated. |
-| FE10 Notification Management | Renders and delivers `ACCOUNT_SETUP` only for the requester bound to `FE11`; persists no setup token/link. |
+| Xác thực FE02 | Dùng thông tin xác thực người dùng và thực thi đăng nhập; gán vai trò xác định quyền truy cập tính năng; sở hữu mọi thay đổi email tài khoản hiện có đã xác minh trong tương lai. |
+| Hồ sơ người dùng FE03 | Sở hữu cập nhật tự phục vụ đã xác thực cho tên, điện thoại và địa chỉ; FE11 đọc nhưng không thay đổi các trường này sau khi tạo. |
+| Quản lý mượn sách FE07 | Tài khoản thành viên tạo trong FE11 có thể mượn sách trong FE07. |
+| Quản lý tiền phạt FE09 | Có thể truy vấn trạng thái người dùng để xác định người dùng có tiền phạt chưa thanh toán có thể bị vô hiệu hóa hay không. |
+| Quản lý thông báo FE10 | Kết xuất và gửi `ACCOUNT_SETUP` chỉ cho trình yêu cầu ràng buộc với `FE11`; không lưu mã thông báo/liên kết thiết lập. |
 
 ---
 
-## 9. Resolved Questions For Team / Teacher
+## 9. Câu hỏi đã được giải quyết cho nhóm/giảng viên
 
-| ID | Approved Decision | Source | Status |
+| ID | Quyết định đã phê duyệt | Nguồn | Trạng thái |
 | -- | ----------------- | ------ | ------ |
-| Q-FE11-001 | Admins cannot deactivate themselves. | Review packet 2026-06-10 | APPROVED |
-| Q-FE11-002 | Prevent deactivation of users with active borrowings. | Review packet 2026-06-10 | APPROVED |
-| Q-FE11-003 | Password setup uses the same FE02 password complexity rule. | Review packet 2026-06-10 | APPROVED |
-| Q-FE11-004 | Email is case-insensitive for login and uniqueness. | Review packet 2026-06-10 | APPROVED |
-| Q-FE11-005 | FE11 requests one-time setup-link delivery through FE10 after source commit; deployed environments use the configured provider and tests use a mock. | Review packet 2026-06-10; ADR-005 refinement 2026-07-15 | APPROVED |
-| Q-FE11-006 | Do not permanently delete deactivated user data in Phase 1. | Review packet 2026-06-10 | APPROVED |
-| Q-FE11-007 | No role hierarchy in Phase 1; roles are flat. | Review packet 2026-06-10 | APPROVED |
-| Q-FE11-008 | Admin cannot view sensitive account fields such as password hash, reset tokens, refresh tokens. | Review packet 2026-06-10 | APPROVED |
-| Q-FE11-009 | User deactivation notification is optional/future work; no mandatory Phase 1 notification. | Review packet 2026-06-10 | APPROVED |
-| Q-FE11-014 | Admin-created accounts start `INACTIVE` and activate only after FE02 setup completion. | Nhat confirmation 2026-07-15 | APPROVED |
-| Q-FE11-015 | FE11 issues setup tokens, FE10 delivers canonical `ACCOUNT_SETUP`, and FE02 consumes/activates. | Nhat confirmation 2026-07-15; ADR-005 | APPROVED |
-| Q-FE11-016 | Admin-only resend rotates the setup token/event/key and enforces a 60-second cooldown. | Nhat confirmation 2026-07-15; ADR-005 | APPROVED |
-| Q-FE11-027 | Admin may view but cannot edit existing-user name, phone, address, or email; FE03 owns self-service personal updates, FE02 owns any future verified email change, and FE11 owns only current-Librarian department/specialization updates. | User approval 2026-07-22 | APPROVED |
-| Q-FE11-028 | Historical decision that temporarily allowed Admin managed-profile editing; superseded by Q-FE11-029. | User approval 2026-07-25 | SUPERSEDED |
-| Q-FE11-029 | Supersedes Q-FE11-028: for an existing account, FE11 Admin may view safe account/profile data but may mutate only the account's single role or deactivate the account. FE11 exposes no profile Edit action or `PUT /api/users/{userId}` profile-mutation route. Authenticated users correct their own approved fields through FE03; verified email remains under FE02. | User approval 2026-07-28 | APPROVED |
+| Q-FE11-001 | Quản trị viên không thể tự vô hiệu hóa mình. | Gói rà soát 2026-06-10 | APPROVED |
+| Q-FE11-002 | Ngăn vô hiệu hóa người dùng có lượt mượn đang hoạt động. | Gói rà soát 2026-06-10 | APPROVED |
+| Q-FE11-003 | Thiết lập mật khẩu dùng cùng quy tắc độ phức tạp mật khẩu FE02. | Gói rà soát 2026-06-10 | APPROVED |
+| Q-FE11-004 | Email không phân biệt hoa/thường khi đăng nhập và kiểm tra duy nhất. | Gói rà soát 2026-06-10 | APPROVED |
+| Q-FE11-005 | FE11 yêu cầu gửi liên kết thiết lập dùng một lần qua FE10 sau khi commit nguồn; môi trường triển khai dùng nhà cung cấp đã cấu hình và kiểm thử dùng mô phỏng. | Gói rà soát 2026-06-10; tinh chỉnh ADR-005 2026-07-15 | APPROVED |
+| Q-FE11-006 | Không xóa vĩnh viễn dữ liệu người dùng đã vô hiệu hóa trong Giai đoạn 1. | Gói rà soát 2026-06-10 | APPROVED |
+| Q-FE11-007 | Không có phân cấp vai trò trong Giai đoạn 1; vai trò phẳng. | Gói rà soát 2026-06-10 | APPROVED |
+| Q-FE11-008 | Quản trị viên không thể xem trường tài khoản nhạy cảm như hash mật khẩu, mã thông báo đặt lại, mã thông báo làm mới. | Gói rà soát 2026-06-10 | APPROVED |
+| Q-FE11-009 | Thông báo vô hiệu hóa người dùng là công việc tùy chọn/tương lai; không có thông báo Giai đoạn 1 bắt buộc. | Gói rà soát 2026-06-10 | APPROVED |
+| Q-FE11-014 | Tài khoản do quản trị tạo bắt đầu `INACTIVE` và chỉ kích hoạt sau khi FE02 hoàn tất thiết lập. | Nhat xác nhận 2026-07-15 | APPROVED |
+| Q-FE11-015 | FE11 phát hành mã thông báo thiết lập, FE10 gửi `ACCOUNT_SETUP` chuẩn và FE02 tiêu thụ/kích hoạt. | Nhat xác nhận 2026-07-15; ADR-005 | APPROVED |
+| Q-FE11-016 | Gửi lại chỉ Quản trị viên xoay vòng mã thông báo/sự kiện/khóa thiết lập và thực thi thời gian chờ 60 giây. | Nhat xác nhận 2026-07-15; ADR-005 | APPROVED |
+| Q-FE11-027 | Quản trị viên có thể xem nhưng không chỉnh sửa tên, điện thoại, địa chỉ hoặc email của người dùng hiện có; FE03 sở hữu cập nhật cá nhân tự phục vụ, FE02 sở hữu mọi thay đổi email đã xác minh trong tương lai, FE11 chỉ sở hữu cập nhật Department/Specialization Thủ thư hiện tại. | Người dùng phê duyệt 2026-07-22 | APPROVED |
+| Q-FE11-028 | Quyết định lịch sử tạm thời cho phép Quản trị viên chỉnh sửa hồ sơ được quản lý; bị Q-FE11-029 thay thế. | Người dùng phê duyệt 2026-07-25 | SUPERSEDED |
+| Q-FE11-029 | Thay thế Q-FE11-028: với tài khoản hiện có, Quản trị viên FE11 có thể xem dữ liệu tài khoản/hồ sơ an toàn nhưng chỉ thay đổi vai trò đơn của tài khoản hoặc vô hiệu hóa tài khoản. FE11 không có thao tác Chỉnh sửa hồ sơ hay route thay đổi hồ sơ `PUT /api/users/{userId}`. Người dùng đã xác thực tự sửa trường đã phê duyệt qua FE03; email đã xác minh vẫn thuộc FE02. | Người dùng phê duyệt 2026-07-28 | APPROVED |
 
 ---
 
-## 10. Notes For Implementation Later
+## 10. Ghi chú để triển khai sau
 
-- Treat the earlier broad Admin-update implementation as historical evidence only; it does not satisfy the revised personal-data ownership contract.
-- Use database transactions for user creation and role assignment.
-- Invalidate all active sessions when user is deactivated.
-- Enforce email uniqueness with case-insensitive constraint.
-- Every API endpoint must validate role (Admin only) and input on the server.
-- Log successful FE11-owned actions (create, setup resend, deactivate, role change) with admin ID and timestamp; the retired profile route must produce no write or success audit.
-- Do not expose `PUT /api/users/{userId}` for existing-user profile mutation. Keep role replacement and deactivation as separate Admin-only commands.
-- Implement strong password hashing (bcrypt) for user passwords.
+- Xử lý phần triển khai cập nhật Quản trị viên rộng trước đây chỉ là bằng chứng
+  lịch sử; nó không đáp ứng hợp đồng quyền sở hữu dữ liệu cá nhân đã sửa.
+- Dùng giao dịch cơ sở dữ liệu cho tạo người dùng và gán vai trò.
+- Vô hiệu hóa mọi phiên đang hoạt động khi người dùng bị vô hiệu hóa.
+- Thực thi duy nhất email bằng ràng buộc không phân biệt hoa/thường.
+- Mọi endpoint API phải kiểm tra vai trò (chỉ Quản trị viên) và đầu vào ở máy
+  chủ.
+- Ghi log thao tác do FE11 sở hữu thành công (tạo, gửi lại thiết lập, vô hiệu
+  hóa, đổi vai trò) cùng ID Quản trị viên và dấu thời gian; route hồ sơ đã loại
+  không được tạo ghi hoặc audit thành công.
+- Không công khai `PUT /api/users/{userId}` để thay đổi hồ sơ người dùng hiện
+  có. Giữ thay vai trò và vô hiệu hóa là lệnh chỉ Quản trị viên riêng biệt.
+- Triển khai hash mật khẩu mạnh (bcrypt) cho mật khẩu người dùng.
