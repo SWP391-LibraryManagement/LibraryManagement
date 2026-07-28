@@ -1,64 +1,68 @@
-# TASKS.md - FE10 Notification Management
+# TASKS.md - FE10 Quản lý thông báo
 
-Status: V0.5.0 COMPLETE - PR #75 MERGED, POST-MERGE CI/AZURE PASS
+Trạng thái: V0.5.0 HOÀN TẤT - PR #75 ĐÃ MERGE, CI/AZURE HẬU MERGE ĐẠT
 Implementation State: COMPLETE
-Delivery Gate: COMPLETE
+Cổng giao hàng: HOÀN TẤT
 
-Current v0.5.0 detail: FE10-I01..I08, the migration-hash remediation, and the
-bounded H3 round-one remediation are complete. Post-`main@30f936d` H2 approved
-fingerprint `e123345be05b59a9e519d182b301ab5464160e8fc32aed8d17d3c463e28e0a15`.
-PR #75 head `778e0a470d8a1083bf571a8007b3c058eee4bb22` passed CI
-`30317424995` and Azure staging `30317621429`, received clean two-axis H3 and
-explicit approval, then merged as `b75776b10d6cf4b6868d2ba51eb3268073483b8b`.
-Post-merge CI `30341279111` and automatic Azure staging `30341540847` passed.
+Chi tiết v0.5.0 hiện tại: FE10-I01..I08, biện pháp khắc phục hash migration và
+biện pháp khắc phục H3 vòng một có giới hạn đã hoàn tất. Fingerprint được H2
+phê duyệt sau `main@30f936d` là
+`e123345be05b59a9e519d182b301ab5464160e8fc32aed8d17d3c463e28e0a15`.
+Head PR #75 `778e0a470d8a1083bf571a8007b3c058eee4bb22` đạt CI
+`30317424995` và Azure staging `30317621429`, nhận H3 hai trục sạch và phê
+duyệt rõ ràng, rồi merge thành `b75776b10d6cf4b6868d2ba51eb3268073483b8b`.
+CI hậu merge `30341279111` và Azure staging tự động `30341540847` đã đạt.
 
-Prior v0.4.5 Implementation State: COMPLETE
+Trạng thái triển khai v0.4.5 trước đó: HOÀN TẤT
 
-Owner: Nhat
+Chủ sở hữu: Nhat
 
-Updated: 2026-07-28
+Cập nhật: 2026-07-28
 
-Workflow State: The approved Phase 2/G1-G12 and v0.4.5 delivery baseline below
-remains complete. The user approved the v0.5.0 personal inbox design and
-written SPEC on 2026-07-27, then approved FE10-I01..I08 as H1 on 2026-07-28.
-Governance PR #70 reached `main` as `25c09ec`. FE10-I01 through FE10-I08 and
-the round-one remediation are complete. The approved `main@30f936d` rebase
-preserved the implementation evidence and was followed by fresh H2,
-exact-head CI/Azure, repeated H3, merge, and post-merge CI/Azure evidence
-recorded above.
+Trạng thái quy trình: baseline giao hàng Giai đoạn 2/G1-G12 và v0.4.5 đã được
+phê duyệt bên dưới vẫn hoàn tất. Người dùng đã phê duyệt thiết kế hộp thư cá
+nhân v0.5.0 và SPEC bằng văn bản ngày 2026-07-27, sau đó phê duyệt FE10-I01..I08
+theo H1 ngày 2026-07-28. Governance PR #70 đã vào `main` dưới dạng `25c09ec`.
+FE10-I01 đến FE10-I08 và biện pháp khắc phục vòng một đã hoàn tất. Rebase
+`main@30f936d` đã được phê duyệt giữ bằng chứng triển khai và tiếp theo là H2
+mới, CI/Azure exact-head, H3 lặp lại, merge và bằng chứng CI/Azure hậu merge
+đã ghi ở trên.
 
 ---
 
-## 1. Backend Tasks
+## 1. Nhiệm vụ backend
 
-- [x] FE10-T01 Add notification request and process-pending routes.
-- [x] FE10-T02 Add server-side validators for type, channel, recipient, template key, source reference, idempotency, and process limit.
-- [x] FE10-T03 Add notification service request validation.
-- [x] FE10-T04 Add template lookup and variable rendering.
-- [x] FE10-T05 Add sensitive token/link/password payload redaction.
-- [x] FE10-T06 Add idempotency handling for duplicate active notifications.
-- [x] FE10-T07 Add mock-provider pending processing.
-- [x] FE10-T08 Record successful and failed delivery attempts.
-- [x] FE10-T09 Protect notification APIs from public/member callers.
-- [x] FE10-T10 Align SQL script with FE10 fields, statuses, idempotency index, and required templates.
+- [x] FE10-T01 Thêm route yêu cầu thông báo và process-pending.
+- [x] FE10-T02 Thêm validator phía máy chủ cho loại, kênh, người nhận, khóa
+  mẫu, tham chiếu nguồn, tính lũy đẳng và giới hạn xử lý.
+- [x] FE10-T03 Thêm xác thực yêu cầu thông báo ở service.
+- [x] FE10-T04 Thêm tra cứu mẫu và kết xuất biến.
+- [x] FE10-T05 Thêm che dữ liệu payload mã thông báo/liên kết/mật khẩu nhạy cảm.
+- [x] FE10-T06 Thêm xử lý lũy đẳng cho thông báo hoạt động trùng.
+- [x] FE10-T07 Thêm xử lý pending bằng nhà cung cấp mô phỏng.
+- [x] FE10-T08 Ghi lần gửi thành công và thất bại.
+- [x] FE10-T09 Bảo vệ API thông báo khỏi người gọi công khai/thành viên.
+- [x] FE10-T10 Căn chỉnh script SQL với trường, trạng thái, chỉ mục lũy đẳng và
+  mẫu bắt buộc FE10.
 
-## 2. Test Tasks
+## 2. Nhiệm vụ kiểm thử
 
-- [x] FE10-T11 Add in-memory notification repository helper.
-- [x] FE10-T12 Test account verification request creation.
-- [x] FE10-T13 Test duplicate idempotency key handling.
-- [x] FE10-T14 Test missing template variable failure.
-- [x] FE10-T15 Test password reset payload redaction.
-- [x] FE10-T16 Test process-pending success and safe failure attempt logging.
-- [x] FE10-T17 Test protected API access.
+- [x] FE10-T11 Thêm helper repository thông báo trong bộ nhớ.
+- [x] FE10-T12 Kiểm thử tạo yêu cầu xác minh tài khoản.
+- [x] FE10-T13 Kiểm thử xử lý khóa lũy đẳng trùng.
+- [x] FE10-T14 Kiểm thử lỗi thiếu biến mẫu.
+- [x] FE10-T15 Kiểm thử che dữ liệu payload đặt lại mật khẩu.
+- [x] FE10-T16 Kiểm thử thành công process-pending và ghi log lần thử thất bại
+  an toàn.
+- [x] FE10-T17 Kiểm thử truy cập API được bảo vệ.
 
-## 3. Validation
+## 3. Xác thực
 
-- [x] `npm test` in `backend`.
+- [x] `npm test` trong `backend`.
 
 ## 4. Traceability
 
-| Spec ID | Covered by |
+| ID đặc tả | Được bao phủ bởi |
 | --- | --- |
 | AC-FE10-001 | FE10-T03, FE10-T04, FE10-T12 |
 | AC-FE10-002 | FE10-T03, FE10-T05, FE10-T15 |
@@ -70,137 +74,278 @@ recorded above.
 | AC-FE10-008 | FE10-T06, FE10-T13 |
 | AC-FE10-009 | FE10-T07, FE10-T08, FE10-T16 |
 
-## 5. Still Outside The Historical v0.4.5 Slice
+## 5. Vẫn ngoài lát cắt v0.4.5 lịch sử
 
-- Real SMTP/provider integration.
-- In-app notification screens.
-- Retry management UI.
+- Tích hợp SMTP/nhà cung cấp thực.
+- Màn hình thông báo trong ứng dụng.
+- Giao diện quản lý thử lại.
 
-Approved v0.5.0 moves the personal inbox/read-state item into the new
-FE10-I01..I08 slice below. This historical checklist does not claim that the
-new implementation is complete.
+v0.5.0 đã được phê duyệt chuyển hạng mục hộp thư cá nhân/trạng thái đã đọc vào
+lát cắt FE10-I01..I08 mới bên dưới. Danh sách kiểm tra lịch sử này không tuyên
+bố phần triển khai mới đã hoàn tất.
 
-## 6. FE10 Hardening Tasks - B4 Decomposition
+## 6. Nhiệm vụ củng cố FE10 - phân rã B4
 
-B4 status: COMPLETE. B5 implementation status: COMPLETE. B6 validation status: COMPLETE. B7 integration status: COMPLETE.
+Trạng thái B4: HOÀN TẤT. Trạng thái triển khai B5: HOÀN TẤT. Trạng thái xác thực
+B6: HOÀN TẤT. Trạng thái tích hợp B7: HOÀN TẤT.
 
-The completed FE10-T01 to FE10-T17 tasks above remain historical evidence for the initial backend slice. The hardening tasks below implement the approved G1-G7 contract as ordered vertical slices. Every implementation task owns its focused tests in the same slice.
+Các nhiệm vụ FE10-T01 đến FE10-T17 đã hoàn tất ở trên vẫn là bằng chứng lịch sử
+cho lát cắt backend ban đầu. Các nhiệm vụ củng cố bên dưới triển khai hợp đồng
+G1-G7 đã được phê duyệt dưới dạng các lát cắt dọc theo thứ tự. Mọi nhiệm vụ
+triển khai sở hữu kiểm thử tập trung trong cùng lát cắt.
 
-### FE10-H01 Revise The Approved FE10 Contract
+### FE10-H01 Sửa hợp đồng FE10 đã được phê duyệt
 
-- [x] Status: COMPLETE (`105e51c`)
-- Estimate: 2-3h
-- Dependencies: G1-G7 approval recorded in `PLAN.md`; no code task may start first.
-- Maps to: G1-G7; BR-FE10-001 to BR-FE10-013; FR-FE10-001 to FR-FE10-009; AC-FE10-001 to AC-FE10-009; Q-FE10-005 to Q-FE10-007; NFR-FE10-SEC-001, NFR-FE10-SEC-004, NFR-FE10-REL-001 to NFR-FE10-REL-003.
-- Exact files: `.sdd/specs/feat-notification-management/SPEC.md`, `.sdd/specs/feat-notification-management/CHANGELOG.md`.
-- Definition of Done: `SPEC.md` records the canonical type/template map, sensitive synchronous versus non-sensitive queued delivery, recursive normalized sensitive-key rule, minimal DTOs, integer-only `sourceEntityId`, bound requester, protected manual retry, all-status idempotency, FE02 deferral, and FE09 implementation deferral; traceability and review checklist are updated; `CHANGELOG.md` records the approved revision dated 2026-07-13; no implementation file changes.
-- Verification: contradiction scan against G1-G7 and existing BR/FR/AC/API/NFR sections; confirm every later hardening task maps to the revised stable IDs.
+- [x] Trạng thái: HOÀN TẤT (`105e51c`)
+- Ước lượng: 2-3 giờ
+- Phụ thuộc: phê duyệt G1-G7 được ghi trong `PLAN.md`; không nhiệm vụ code nào
+  được bắt đầu trước.
+- Ánh xạ tới: G1-G7; BR-FE10-001 đến BR-FE10-013; FR-FE10-001 đến
+  FR-FE10-009; AC-FE10-001 đến AC-FE10-009; Q-FE10-005 đến Q-FE10-007;
+  NFR-FE10-SEC-001, NFR-FE10-SEC-004, NFR-FE10-REL-001 đến NFR-FE10-REL-003.
+- Tệp chính xác: `.sdd/specs/feat-notification-management/SPEC.md`,
+  `.sdd/specs/feat-notification-management/CHANGELOG.md`.
+- Tiêu chí hoàn thành: `SPEC.md` ghi ánh xạ loại/mẫu chuẩn, gửi đồng bộ nhạy
+  cảm so với gửi xếp hàng không nhạy cảm, quy tắc khóa nhạy cảm đệ quy chuẩn
+  hóa, DTO tối thiểu, `sourceEntityId` chỉ số nguyên, trình yêu cầu ràng buộc,
+  thử lại thủ công được bảo vệ, lũy đẳng mọi trạng thái, trì hoãn FE02 và trì
+  hoãn triển khai FE09; traceability và danh sách kiểm tra review được cập
+  nhật; `CHANGELOG.md` ghi sửa đổi đã phê duyệt ngày 2026-07-13; không có thay
+  đổi tệp triển khai.
+- Xác minh: quét mâu thuẫn với G1-G7 và phần BR/FR/AC/API/NFR hiện có; xác nhận
+  mọi nhiệm vụ củng cố sau này ánh xạ tới ID ổn định đã sửa.
 
-### FE10-H02 Enforce Canonical Templates And Queued-Payload Safety
+### FE10-H02 Thực thi mẫu chuẩn và an toàn payload đã xếp hàng
 
-- [x] Status: COMPLETE (`3e0cae1`, `5686992`)
-- Estimate: 3-4h
-- Dependencies: FE10-H01.
-- Maps to: G1, G4, G7; BR-FE10-002, BR-FE10-004, BR-FE10-007, BR-FE10-010; FR-FE10-005, FR-FE10-009; AC-FE10-006, AC-FE10-007; EC-FE10-004, EC-FE10-006, EC-FE10-007; NFR-FE10-SEC-001, NFR-FE10-SEC-004.
-- Exact files: `backend/src/services/notificationService.js`, `database/Librarymanagement.sql`, `backend/tests/helpers/inMemoryNotificationRepositories.js`, `backend/tests/notificationRoutes.test.js`.
-- Definition of Done: server code enforces all approved type/template pairs and rejects mismatches; SQL and test fixtures use `{{otp}}` and `{{expiresInMinutes}}`; queued non-sensitive `templateData` recursively traverses objects/arrays, normalizes key case and separators, rejects `token`/`otp`/`password`/`verificationlink`/`resetlink`, and applies the same traversal to `safePayload`; integer source references are characterized for the later boundary task; no `EMAIL_VERIFY` or `DUE_OR_FINE_NOTICE` alias is added.
-- Verification: focused route tests cover every canonical pair, mismatch rejection, nested arrays/objects, `OTP`, `reset_token`, and `verification-link`; run `npm test -- notificationRoutes.test.js` in `backend`.
+- [x] Trạng thái: HOÀN TẤT (`3e0cae1`, `5686992`)
+- Ước lượng: 3-4 giờ
+- Phụ thuộc: FE10-H01.
+- Ánh xạ tới: G1, G4, G7; BR-FE10-002, BR-FE10-004, BR-FE10-007, BR-FE10-010;
+  FR-FE10-005, FR-FE10-009; AC-FE10-006, AC-FE10-007; EC-FE10-004,
+  EC-FE10-006, EC-FE10-007; NFR-FE10-SEC-001, NFR-FE10-SEC-004.
+- Tệp chính xác: `backend/src/services/notificationService.js`,
+  `database/Librarymanagement.sql`,
+  `backend/tests/helpers/inMemoryNotificationRepositories.js`,
+  `backend/tests/notificationRoutes.test.js`.
+- Tiêu chí hoàn thành: code máy chủ thực thi mọi cặp loại/mẫu đã phê duyệt và
+  từ chối không khớp; SQL và fixture kiểm thử dùng `{{otp}}` và
+  `{{expiresInMinutes}}`; `templateData` không nhạy cảm đã xếp hàng duyệt đệ
+  quy đối tượng/mảng, chuẩn hóa chữ hoa/thường và dấu phân cách của khóa, từ
+  chối `token`/`otp`/`password`/`verificationlink`/`resetlink`, đồng thời áp
+  dụng cùng phép duyệt với `safePayload`; tham chiếu nguồn số nguyên được đặc
+  tả cho nhiệm vụ ranh giới sau; không thêm bí danh `EMAIL_VERIFY` hoặc
+  `DUE_OR_FINE_NOTICE`.
+- Xác minh: kiểm thử route tập trung bao phủ mọi cặp chuẩn, từ chối không khớp,
+  mảng/đối tượng lồng nhau, `OTP`, `reset_token` và `verification-link`; chạy
+  `npm test -- notificationRoutes.test.js` trong `backend`.
 
-### FE10-H03 Deliver Sensitive Auth Notifications Synchronously
+### FE10-H03 Gửi đồng bộ thông báo xác thực nhạy cảm
 
-- [x] Status: COMPLETE (`6e58c9e` through `5ce05c8`)
-- Estimate: 3-4h
-- Dependencies: FE10-H02.
-- Maps to: G1, G2; BR-FE10-003, BR-FE10-004, BR-FE10-008 to BR-FE10-010, BR-FE10-012, BR-FE10-013; FR-FE10-001, FR-FE10-002, FR-FE10-006, FR-FE10-007; AC-FE10-001, AC-FE10-002, AC-FE10-007, AC-FE10-009; NFR-FE10-REL-001, NFR-FE10-REL-002, NFR-FE10-LOG-001, NFR-FE10-LOG-002.
-- Exact files: `backend/src/services/notificationService.js`, `backend/src/repositories/notificationRepository.js`, `backend/src/models/Notification.js`, `backend/tests/helpers/inMemoryNotificationRepositories.js`, `backend/tests/notificationRoutes.test.js`.
-- Definition of Done: `ACCOUNT_VERIFICATION` and `PASSWORD_RESET` render `otp` and `expiresInMinutes` from raw request data only in memory and send through the configured provider adapter synchronously; success persists `SENT` plus an attempt, failure persists `FAILED` plus a safe reason; persisted notification, attempt, audit, logs, and HTTP data contain no raw OTP or rendered sensitive title/body; non-sensitive records remain queued and `process-pending` excludes sensitive types.
-- Verification: focused tests prove both sensitive success/failure paths, provider-only link rendering, redacted persistence, safe attempts, no API/audit/log leakage, and unchanged non-sensitive queue processing; run the focused FE10 test file.
+- [x] Trạng thái: HOÀN TẤT (`6e58c9e` đến `5ce05c8`)
+- Ước lượng: 3-4 giờ
+- Phụ thuộc: FE10-H02.
+- Ánh xạ tới: G1, G2; BR-FE10-003, BR-FE10-004, BR-FE10-008 đến BR-FE10-010,
+  BR-FE10-012, BR-FE10-013; FR-FE10-001, FR-FE10-002, FR-FE10-006,
+  FR-FE10-007; AC-FE10-001, AC-FE10-002, AC-FE10-007, AC-FE10-009;
+  NFR-FE10-REL-001, NFR-FE10-REL-002, NFR-FE10-LOG-001, NFR-FE10-LOG-002.
+- Tệp chính xác: `backend/src/services/notificationService.js`,
+  `backend/src/repositories/notificationRepository.js`,
+  `backend/src/models/Notification.js`,
+  `backend/tests/helpers/inMemoryNotificationRepositories.js`,
+  `backend/tests/notificationRoutes.test.js`.
+- Tiêu chí hoàn thành: `ACCOUNT_VERIFICATION` và `PASSWORD_RESET` chỉ kết xuất
+  `otp` và `expiresInMinutes` từ dữ liệu yêu cầu thô trong bộ nhớ và gửi đồng
+  bộ qua bộ điều hợp nhà cung cấp đã cấu hình; thành công lưu `SENT` cùng lần
+  thử, thất bại lưu `FAILED` cùng lý do an toàn; thông báo, lần thử, kiểm toán,
+  log và dữ liệu HTTP đã lưu không chứa OTP thô hoặc tiêu đề/nội dung nhạy cảm
+  đã kết xuất; bản ghi không nhạy cảm vẫn được xếp hàng và `process-pending`
+  loại trừ loại nhạy cảm.
+- Xác minh: kiểm thử tập trung chứng minh cả đường thành công/thất bại nhạy
+  cảm, kết xuất liên kết chỉ qua nhà cung cấp, lưu bền đã che dữ liệu, lần thử
+  an toàn, không rò rỉ API/kiểm toán/log và xử lý hàng đợi không nhạy cảm không
+  đổi; chạy tệp kiểm thử FE10 tập trung.
 
-### FE10-H04 Contain HTTP Responses And Align The Contract Surface
+### FE10-H04 Chứa phản hồi HTTP và căn chỉnh bề mặt hợp đồng
 
-- [x] Status: COMPLETE (`498dc67`, `549c6af`)
-- Estimate: 2-3h
-- Dependencies: FE10-H03.
-- Maps to: G2, G4, G5; BR-FE10-002, BR-FE10-004, BR-FE10-011; FR-FE10-005 to FR-FE10-007; AC-FE10-006, AC-FE10-009; NFR-FE10-SEC-001, NFR-FE10-SEC-002, NFR-FE10-UX-002.
-- Exact files: `backend/src/controllers/notificationController.js`, `backend/src/validators/notificationValidators.js`, `backend/tests/notificationRoutes.test.js`, `backend/tests/integration.test.js`, `backend/src/docs/openapi.yaml`.
-- Definition of Done: create returns `201 { notificationId, status }`; any idempotent replay returns `200` with the same shape; process returns `200 { processed, failed }`; no full notification object, array, content, or `safePayload` crosses HTTP; `sourceEntityId` accepts integers only; OpenAPI and integration assertions document the approved create/replay/process response and safe validation error shapes. Retry documentation remains owned by FE10-H08 with its route implementation.
-- Verification: focused route and integration tests cover exact status codes/body keys and reject string source IDs; OpenAPI contains no obsolete full-record response schema.
+- [x] Trạng thái: HOÀN TẤT (`498dc67`, `549c6af`)
+- Ước lượng: 2-3 giờ
+- Phụ thuộc: FE10-H03.
+- Ánh xạ tới: G2, G4, G5; BR-FE10-002, BR-FE10-004, BR-FE10-011;
+  FR-FE10-005 đến FR-FE10-007; AC-FE10-006, AC-FE10-009;
+  NFR-FE10-SEC-001, NFR-FE10-SEC-002, NFR-FE10-UX-002.
+- Tệp chính xác: `backend/src/controllers/notificationController.js`,
+  `backend/src/validators/notificationValidators.js`,
+  `backend/tests/notificationRoutes.test.js`,
+  `backend/tests/integration.test.js`, `backend/src/docs/openapi.yaml`.
+- Tiêu chí hoàn thành: thao tác tạo trả `201 { notificationId, status }`; mọi
+  phát lại lũy đẳng trả `200` cùng hình dạng; xử lý trả
+  `200 { processed, failed }`; không đối tượng thông báo đầy đủ, mảng, nội dung
+  hoặc `safePayload` nào vượt HTTP; `sourceEntityId` chỉ nhận số nguyên; OpenAPI
+  và assertion tích hợp ghi nhận phản hồi tạo/phát lại/xử lý đã phê duyệt cùng
+  hình dạng lỗi xác thực an toàn. Tài liệu thử lại vẫn do FE10-H08 sở hữu cùng
+  triển khai route của nó.
+- Xác minh: kiểm thử route và tích hợp tập trung bao phủ mã trạng thái/khóa thân
+  chính xác và từ chối ID nguồn chuỗi; OpenAPI không chứa schema phản hồi bản
+  ghi đầy đủ lỗi thời.
 
-### FE10-H05 Add The Bound Internal Source Requester
+### FE10-H05 Thêm trình yêu cầu nguồn nội bộ ràng buộc
 
-- [x] Status: COMPLETE (`2ac8533`, `b877188`)
-- Estimate: 3-4h
-- Dependencies: FE10-H04.
-- Maps to: G3; BR-FE10-001, BR-FE10-002, BR-FE10-004, BR-FE10-005, BR-FE10-011 to BR-FE10-013; FR-FE10-003 to FR-FE10-005; AC-FE10-003, AC-FE10-004, AC-FE10-006, AC-FE10-009; NFR-FE10-SEC-001, NFR-FE10-SEC-006, NFR-FE10-REL-002.
-- Exact files: `backend/src/services/notificationService.js`, `backend/tests/notificationRoutes.test.js`.
-- Definition of Done: `createSourceNotificationRequester(sourceFeature)` binds one allowlisted source from `FE02`, `FE07`, `FE08`, `FE09`, `FE11`, `SYSTEM`; callers cannot override it; source/type ownership, sensitive delivery, redaction, idempotency, and validation are shared; source audits use `userId: null`; HTTP stays Librarian/Admin protected for non-sensitive requests.
-- Verification: unit/route-level service tests cover allowlist rejection, source override prevention, shared policy enforcement, null-user audit metadata, and safe errors; FE02 and FE09 callers remain untouched.
+- [x] Trạng thái: HOÀN TẤT (`2ac8533`, `b877188`)
+- Ước lượng: 3-4 giờ
+- Phụ thuộc: FE10-H04.
+- Ánh xạ tới: G3; BR-FE10-001, BR-FE10-002, BR-FE10-004, BR-FE10-005,
+  BR-FE10-011 đến BR-FE10-013; FR-FE10-003 đến FR-FE10-005; AC-FE10-003,
+  AC-FE10-004, AC-FE10-006, AC-FE10-009; NFR-FE10-SEC-001,
+  NFR-FE10-SEC-006, NFR-FE10-REL-002.
+- Tệp chính xác: `backend/src/services/notificationService.js`,
+  `backend/tests/notificationRoutes.test.js`.
+- Tiêu chí hoàn thành: `createSourceNotificationRequester(sourceFeature)`
+  ràng buộc một nguồn trong danh sách cho phép `FE02`, `FE07`, `FE08`, `FE09`,
+  `FE11`, `SYSTEM`; người gọi không thể ghi đè; quyền sở hữu nguồn/loại, gửi
+  nhạy cảm, che dữ liệu, lũy đẳng và xác thực được dùng chung; kiểm toán nguồn
+  dùng `userId: null`; HTTP vẫn được bảo vệ cho Thủ thư/Quản trị viên đối với
+  yêu cầu không nhạy cảm.
+- Xác minh: kiểm thử service cấp đơn vị/route bao phủ từ chối danh sách cho
+  phép, chặn ghi đè nguồn, thực thi chính sách dùng chung, siêu dữ liệu kiểm
+  toán người dùng null và lỗi an toàn; người gọi FE02 và FE09 không bị chạm tới.
 
-### FE10-H06 Migrate FE07 Borrowing Notifications
+### FE10-H06 Di chuyển thông báo mượn sách FE07
 
-- [x] Status: COMPLETE (`c8da11b`)
-- Estimate: 2-3h
-- Dependencies: FE10-H05.
-- Maps to: G3; BR-FE10-001, BR-FE10-005, BR-FE10-012; FR-FE10-004; AC-FE10-004; NFR-FE10-REL-002.
-- Exact files: `backend/src/services/borrowingService.js`, `backend/tests/borrowingRoutes.test.js`.
-- Definition of Done: FE07 stops writing notifications through `notificationRepository.createNotification()` and uses a requester bound to `FE07`; approved due/overdue source metadata and canonical keys are preserved; notification failure is caught safely and never rolls back borrowing/return state; tests and implementation change together.
-- Verification: focused borrowing tests prove requester usage, source binding, canonical request shape, and non-blocking failure behavior; run `npm test -- borrowingRoutes.test.js` in `backend`.
+- [x] Trạng thái: HOÀN TẤT (`c8da11b`)
+- Ước lượng: 2-3 giờ
+- Phụ thuộc: FE10-H05.
+- Ánh xạ tới: G3; BR-FE10-001, BR-FE10-005, BR-FE10-012; FR-FE10-004;
+  AC-FE10-004; NFR-FE10-REL-002.
+- Tệp chính xác: `backend/src/services/borrowingService.js`,
+  `backend/tests/borrowingRoutes.test.js`.
+- Tiêu chí hoàn thành: FE07 ngừng ghi thông báo qua
+  `notificationRepository.createNotification()` và dùng trình yêu cầu ràng
+  buộc với `FE07`; siêu dữ liệu nguồn hạn trả/quá hạn đã phê duyệt và khóa
+  chuẩn được giữ; lỗi thông báo được bắt an toàn và không bao giờ hoàn tác trạng
+  thái mượn/trả; kiểm thử và triển khai thay đổi cùng nhau.
+- Xác minh: kiểm thử mượn sách tập trung chứng minh sử dụng trình yêu cầu, ràng
+  buộc nguồn, hình dạng yêu cầu chuẩn và hành vi thất bại không chặn; chạy
+  `npm test -- borrowingRoutes.test.js` trong `backend`.
 
-### FE10-H07 Migrate FE08 Reservation Notifications
+### FE10-H07 Di chuyển thông báo đặt chỗ FE08
 
-- [x] Status: COMPLETE (`83b645a`)
-- Estimate: 2-3h
-- Dependencies: FE10-H05.
-- Maps to: G3; BR-FE10-001, BR-FE10-005, BR-FE10-012; FR-FE10-003; AC-FE10-003; NFR-FE10-REL-002.
-- Exact files: `backend/src/services/reservationService.js`, `backend/tests/reservationRoutes.test.js`.
-- Definition of Done: FE08 stops writing notifications through `notificationRepository.createNotification()` and uses a requester bound to `FE08`; reservation-ready source metadata and canonical keys are preserved; notification failure remains non-blocking and does not undo the hold; tests and implementation change together.
-- Verification: focused reservation tests prove requester usage, source binding, canonical request shape, and preserved hold on notification failure; run `npm test -- reservationRoutes.test.js` in `backend`.
+- [x] Trạng thái: HOÀN TẤT (`83b645a`)
+- Ước lượng: 2-3 giờ
+- Phụ thuộc: FE10-H05.
+- Ánh xạ tới: G3; BR-FE10-001, BR-FE10-005, BR-FE10-012; FR-FE10-003;
+  AC-FE10-003; NFR-FE10-REL-002.
+- Tệp chính xác: `backend/src/services/reservationService.js`,
+  `backend/tests/reservationRoutes.test.js`.
+- Tiêu chí hoàn thành: FE08 ngừng ghi thông báo qua
+  `notificationRepository.createNotification()` và dùng trình yêu cầu ràng
+  buộc với `FE08`; siêu dữ liệu nguồn đặt chỗ sẵn sàng và khóa chuẩn được giữ;
+  lỗi thông báo vẫn không chặn và không hoàn tác giữ chỗ; kiểm thử và triển khai
+  thay đổi cùng nhau.
+- Xác minh: kiểm thử đặt chỗ tập trung chứng minh sử dụng trình yêu cầu, ràng
+  buộc nguồn, hình dạng yêu cầu chuẩn và giữ chỗ được bảo toàn khi thông báo thất
+  bại; chạy `npm test -- reservationRoutes.test.js` trong `backend`.
 
-### FE10-H08 Enforce All-Status Idempotency And Manual Retry
+### FE10-H08 Thực thi lũy đẳng mọi trạng thái và thử lại thủ công
 
-- [x] Status: COMPLETE (`5c0c0dd`, `cad91ba`, `7c88223`)
-- Estimate: 3-4h
-- Dependencies: FE10-H04, FE10-H05; may start only after FE10-H06 and FE10-H07 integration diffs are stable because shared FE10 tests and service files are reused.
-- Maps to: G5, G6; BR-FE10-006, BR-FE10-008, BR-FE10-011, BR-FE10-013; FR-FE10-007, FR-FE10-008; AC-FE10-008, AC-FE10-009; EC-FE10-008, EC-FE10-009, EC-FE10-011; Q-FE10-005; NFR-FE10-REL-001 to NFR-FE10-REL-003.
-- Exact files: `backend/src/services/notificationService.js`, `backend/src/repositories/notificationRepository.js`, `backend/src/models/Notification.js`, `backend/src/controllers/notificationController.js`, `backend/src/routes/notificationRoutes.js`, `backend/src/validators/notificationValidators.js`, `backend/tests/helpers/inMemoryNotificationRepositories.js`, `backend/tests/notificationRoutes.test.js`, `backend/tests/integration.test.js`, `backend/src/docs/openapi.yaml`.
-- Definition of Done: idempotency lookup replays one record across every status and preserves the all-status unique key; protected `POST /api/notifications/{id}/retry` permits only failed non-sensitive queued notifications to reuse the same record/key/attempt history and return `200 { notificationId, status }`; invalid status returns safe `409`; sensitive auth retry returns safe `409 REISSUE_REQUIRED` with no provider or secret detail; OpenAPI and integration assertions document the implemented retry route and exact `200`/`409` bodies.
-- Verification: focused and integration tests cover replay for `PENDING`, `SENT`, `FAILED`, retry transition/history preservation, unauthorized access, status conflicts, both sensitive reissue cases, and documented response parity; run the focused FE10 and integration test files.
+- [x] Trạng thái: HOÀN TẤT (`5c0c0dd`, `cad91ba`, `7c88223`)
+- Ước lượng: 3-4 giờ
+- Phụ thuộc: FE10-H04, FE10-H05; chỉ có thể bắt đầu sau khi diff tích hợp
+  FE10-H06 và FE10-H07 ổn định vì tệp service và kiểm thử FE10 dùng chung được
+  tái sử dụng.
+- Ánh xạ tới: G5, G6; BR-FE10-006, BR-FE10-008, BR-FE10-011, BR-FE10-013;
+  FR-FE10-007, FR-FE10-008; AC-FE10-008, AC-FE10-009; EC-FE10-008,
+  EC-FE10-009, EC-FE10-011; Q-FE10-005; NFR-FE10-REL-001 đến NFR-FE10-REL-003.
+- Tệp chính xác: `backend/src/services/notificationService.js`,
+  `backend/src/repositories/notificationRepository.js`,
+  `backend/src/models/Notification.js`,
+  `backend/src/controllers/notificationController.js`,
+  `backend/src/routes/notificationRoutes.js`,
+  `backend/src/validators/notificationValidators.js`,
+  `backend/tests/helpers/inMemoryNotificationRepositories.js`,
+  `backend/tests/notificationRoutes.test.js`,
+  `backend/tests/integration.test.js`, `backend/src/docs/openapi.yaml`.
+- Tiêu chí hoàn thành: tra cứu lũy đẳng phát lại một bản ghi xuyên suốt mọi trạng
+  thái và giữ khóa duy nhất mọi trạng thái; `POST /api/notifications/{id}/retry`
+  được bảo vệ chỉ cho phép thông báo đã xếp hàng không nhạy cảm thất bại dùng lại
+  cùng bản ghi/khóa/lịch sử lần thử và trả `200 { notificationId, status }`;
+  trạng thái không hợp lệ trả `409` an toàn; thử lại xác thực nhạy cảm trả
+  `409 REISSUE_REQUIRED` an toàn không có chi tiết nhà cung cấp hay bí mật;
+  OpenAPI và assertion tích hợp ghi nhận route thử lại đã triển khai cùng thân
+  `200`/`409` chính xác.
+- Xác minh: kiểm thử tập trung và tích hợp bao phủ phát lại cho `PENDING`,
+  `SENT`, `FAILED`, chuyển đổi thử lại/bảo toàn lịch sử, truy cập không được
+  ủy quyền, xung đột trạng thái, cả hai ca phát hành lại nhạy cảm và tính đồng
+  nhất phản hồi được ghi; chạy tệp kiểm thử FE10 và tích hợp tập trung.
 
-### FE10-H09 Pass The B6 Validation Gate
+### FE10-H09 Vượt cổng xác thực B6
 
-- [x] Status: COMPLETE
-- Estimate: 2-4h
-- Dependencies: FE10-H01 to FE10-H08 complete and independently reviewed.
-- Maps to: G1-G7 and all revised FE10 BR/FR/AC/API/NFR traceability rows.
-- Exact files: `.sdd/specs/feat-notification-management/TASKS.md`, `.sdd/specs/feat-notification-management/CHANGELOG.md`; no planned implementation files.
-- Definition of Done: targeted FE10, FE07, and FE08 tests pass; the full backend suite passes; SPEC-to-task-to-test traceability is complete; no secret/link/token is exposed by fixtures, logs, persistence assertions, or responses; diff contains no frontend, FE02 implementation, FE09 implementation, real provider, dependency, expiry, or unrelated refactor changes; an independent review reports no blocking findings.
-- Verification: run targeted tests, `npm test` in `backend`, `git diff --check`, placeholder scan, contradiction scan, secret scan, and final changed-file scope review; record exact commands and outcomes before marking complete.
+- [x] Trạng thái: HOÀN TẤT
+- Ước lượng: 2-4 giờ
+- Phụ thuộc: FE10-H01 đến FE10-H08 hoàn tất và được review độc lập.
+- Ánh xạ tới: G1-G7 và toàn bộ hàng traceability BR/FR/AC/API/NFR FE10 đã sửa.
+- Tệp chính xác: `.sdd/specs/feat-notification-management/TASKS.md`,
+  `.sdd/specs/feat-notification-management/CHANGELOG.md`; không có tệp triển
+  khai được lên kế hoạch.
+- Tiêu chí hoàn thành: kiểm thử tập trung FE10, FE07 và FE08 đạt; toàn bộ bộ
+  backend đạt; traceability từ SPEC đến nhiệm vụ đến kiểm thử đầy đủ; không bí
+  mật/liên kết/mã thông báo nào bị lộ qua fixture, log, assertion lưu bền hoặc
+  phản hồi; diff không chứa frontend, triển khai FE02, triển khai FE09, nhà
+  cung cấp thực, dependency, hết hạn hoặc thay đổi tái cấu trúc không liên quan;
+  review độc lập không báo finding chặn.
+- Xác minh: chạy kiểm thử tập trung, `npm test` trong `backend`,
+  `git diff --check`, quét placeholder, quét mâu thuẫn, quét bí mật và review
+  phạm vi tệp đã đổi cuối; ghi lệnh và kết quả chính xác trước khi đánh dấu hoàn
+  tất.
 
-Validation evidence recorded on 2026-07-13:
+Bằng chứng xác thực ghi ngày 2026-07-13:
 
-- `npm.cmd test -- notificationRoutes.test.js borrowingRoutes.test.js reservationRoutes.test.js integration.test.js` in `backend`: PASS, 4 suites and 136 tests after the H09 review fix.
-- `npm.cmd test` in `backend`: PASS, 15 suites and 212 tests after the H09 review fix.
-- `node scripts/check-traceability.js --enforce`: PASS; FE10 covers 9/9 functional requirements (100%), and no implemented feature is below the 70% gate.
-- The first independent scan found unsafe HTTP source metadata and provider-supplied failure text. Commit `a04b64b` added test-first validation and fixed generic failure persistence; its RED run had 6 expected failures, then the focused FE10 suite passed 96/96 tests.
-- `git diff --check a613604..HEAD`: PASS after the review fix.
-- Placeholder scan command: `git diff -U0 a613604..HEAD -- backend/src backend/tests database | Select-String -Pattern '^\+.*\b(TODO|FIXME|TBD|XXX)\b' -CaseSensitive`; PASS with 0 unresolved implementation markers.
-- Contradiction scan commands: `rg -n -i "B5 (implementation )?(remains )?not started|stay .*NOT STARTED.* until approval" .sdd/specs/feat-notification-management/PLAN.md .sdd/specs/feat-notification-management/CONTEXT.md` and `rg -n "DUE_OR_FINE_NOTICE|EMAIL_VERIFY|findActiveByIdempotencyKey" .sdd/specs/feat-notification-management/SPEC.md .sdd/specs/feat-notification-management/PLAN.md .sdd/specs/feat-notification-management/CONTEXT.md backend/src backend/tests database/Librarymanagement.sql`; PASS with 0 stale B5 matches and 0 obsolete active-only lookup matches. All `DUE_OR_FINE_NOTICE` matches are explicit non-canonical statements; `EMAIL_VERIFY` remains only in explicit rejection/deferred FE02 or defensive legacy-sensitive handling.
-- Leakage scan commands inspected added backend lines for sensitive log/response patterns and real credential signatures; PASS with 0 sensitive log additions, 0 sensitive response additions, and 0 real-secret signature matches. Synthetic provider/test sentinels appear only in provider-memory input and negative assertions.
-- Changed-file scope command: `git diff --name-only a613604..HEAD`; PASS with 0 forbidden scope matches: no frontend, FE02 implementation, FE09 implementation, real provider, dependency, expiry, or unrelated refactor file.
-- Focused review of commit `a04b64b`: `Spec compliance: APPROVED`; `Code quality: APPROVED`.
-- Final whole-branch review of `a613604..eb82b1d`: APPROVED with no findings; reviewer independently reran the full backend suite (15 suites, 212 tests), traceability enforcement, and `git diff --check`.
+- `npm.cmd test -- notificationRoutes.test.js borrowingRoutes.test.js reservationRoutes.test.js integration.test.js`
+  trong `backend`: ĐẠT, 4 bộ và 136 kiểm thử sau bản sửa review H09.
+- `npm.cmd test` trong `backend`: ĐẠT, 15 bộ và 212 kiểm thử sau bản sửa review
+  H09.
+- `node scripts/check-traceability.js --enforce`: ĐẠT; FE10 bao phủ 9/9 yêu cầu
+  chức năng (100%), không tính năng triển khai nào dưới cổng 70%.
+- Quét độc lập đầu tiên phát hiện siêu dữ liệu nguồn HTTP không an toàn và văn
+  bản thất bại do nhà cung cấp cung cấp. Commit `a04b64b` thêm xác thực
+  theo kiểm thử trước và sửa lưu bền lỗi chung; lượt RED có 6 lỗi kỳ vọng, sau
+  đó bộ FE10 tập trung đạt 96/96 kiểm thử.
+- `git diff --check a613604..HEAD`: ĐẠT sau bản sửa review.
+- Lệnh quét placeholder:
+  `git diff -U0 a613604..HEAD -- backend/src backend/tests database | Select-String -Pattern '^\+.*\b(TODO|FIXME|TBD|XXX)\b' -CaseSensitive`;
+  ĐẠT với 0 dấu triển khai chưa giải quyết.
+- Lệnh quét mâu thuẫn:
+  `rg -n -i "B5 (implementation )?(remains )?not started|stay .*NOT STARTED.* until approval" .sdd/specs/feat-notification-management/PLAN.md .sdd/specs/feat-notification-management/CONTEXT.md`
+  và
+  `rg -n "DUE_OR_FINE_NOTICE|EMAIL_VERIFY|findActiveByIdempotencyKey" .sdd/specs/feat-notification-management/SPEC.md .sdd/specs/feat-notification-management/PLAN.md .sdd/specs/feat-notification-management/CONTEXT.md backend/src backend/tests database/Librarymanagement.sql`;
+  ĐẠT với 0 kết quả B5 lỗi thời và 0 tra cứu chỉ hoạt động lỗi thời. Mọi kết quả
+  `DUE_OR_FINE_NOTICE` là phát biểu không chuẩn rõ ràng; `EMAIL_VERIFY` chỉ
+  còn trong phần từ chối/trì hoãn FE02 rõ ràng hoặc xử lý cũ phòng vệ.
+- Các lệnh quét rò rỉ kiểm tra dòng backend được thêm cho mẫu log/phản hồi nhạy
+  cảm và chữ ký thông tin xác thực thực; ĐẠT với 0 log nhạy cảm thêm, 0 phản hồi
+  nhạy cảm thêm và 0 chữ ký bí mật thực. Sentinel nhà cung cấp/kiểm thử tổng hợp
+  chỉ xuất hiện trong đầu vào bộ nhớ nhà cung cấp và assertion âm.
+- Lệnh phạm vi tệp thay đổi: `git diff --name-only a613604..HEAD`; ĐẠT với 0
+  trường hợp phạm vi bị cấm: không frontend, triển khai FE02, triển khai FE09,
+  nhà cung cấp thực, dependency, hết hạn hoặc tệp tái cấu trúc không liên quan.
+- Review tập trung commit `a04b64b`: `Spec compliance: APPROVED`; `Code quality: APPROVED`.
+- Review toàn nhánh cuối `a613604..eb82b1d`: APPROVED không finding; người
+  review độc lập chạy lại toàn bộ backend (15 bộ, 212 kiểm thử), thực thi
+  traceability và `git diff --check`.
 
-## 7. B7 Integration And Review Closeout
+## 7. Tích hợp B7 và kết thúc review
 
-- [x] Nhat confirmed the human integration gate and selected local merge.
-- [x] Commit `9185a9a91f41e444e0c4e6bd8c0605a281272ee9` reached `main` and `origin/main`.
-- [x] GitHub Actions CI run `29236572558` passed for the same commit.
-- [x] System fit, architectural integrity, future impact, and documentation were reviewed without widening FE10 scope.
-- [x] Detailed evidence is recorded in `.sdd/reviews/fe10-b7-integration-review-closeout-2026-07-13.md`.
+- [x] Nhat xác nhận cổng tích hợp con người và chọn merge cục bộ.
+- [x] Commit `9185a9a91f41e444e0c4e6bd8c0605a281272ee9` đã vào `main` và
+  `origin/main`.
+- [x] Lượt CI GitHub Actions `29236572558` đạt cho cùng commit.
+- [x] Độ phù hợp hệ thống, tính toàn vẹn kiến trúc, tác động tương lai và tài
+  liệu đã được review mà không mở rộng phạm vi FE10.
+- [x] Bằng chứng chi tiết được ghi trong
+  `.sdd/reviews/fe10-b7-integration-review-closeout-2026-07-13.md`.
 
-## 8. Hardening Traceability And Parallel Work
+## 8. Traceability củng cố và công việc song song
 
-| Approved gate | Hardening tasks |
+| Cổng đã phê duyệt | Nhiệm vụ củng cố |
 | --- | --- |
 | G1 | FE10-H01, FE10-H02, FE10-H03, FE10-H09 |
 | G2 | FE10-H01, FE10-H03, FE10-H04, FE10-H09 |
@@ -210,366 +355,487 @@ Validation evidence recorded on 2026-07-13:
 | G6 | FE10-H01, FE10-H08, FE10-H09 |
 | G7 | FE10-H01, FE10-H02, FE10-H09 |
 
-Conservative parallel opportunity: after FE10-H05 is complete and reviewed, FE10-H06 and FE10-H07 may run in parallel because they own disjoint source-service and test files. All other tasks remain ordered because they share FE10 contracts, service/repository code, route tests, or validation evidence.
+Cơ hội song song thận trọng: sau khi FE10-H05 hoàn tất và được review,
+FE10-H06 và FE10-H07 có thể chạy song song vì chúng sở hữu service nguồn và tệp
+kiểm thử tách biệt. Mọi nhiệm vụ khác vẫn theo thứ tự vì chúng chia sẻ hợp đồng
+FE10, code service/repository, kiểm thử route hoặc bằng chứng xác thực.
 
-For the completed G1-G7 hardening set, FE02 implementation and FE09 caller integration were explicitly out of scope. ADR-004 and FE10-S01 to FE10-S05 now supersede the FE02 deferral; FE09 still has no current caller/integration to migrate.
+Với tập củng cố G1-G7 đã hoàn tất, triển khai FE02 và tích hợp người gọi FE09
+đã nằm ngoài phạm vi rõ ràng. ADR-004 và FE10-S01 đến FE10-S05 hiện thay thế
+việc trì hoãn FE02; FE09 vẫn không có người gọi/tích hợp hiện tại để migration.
 
-## 9. FE10 OTP Security Follow-up Tasks
+## 9. Nhiệm vụ theo dõi bảo mật OTP FE10
 
-The completed FE10-T and FE10-H tasks above remain historical evidence. ADR-004 and G8-G10 supersede only the old link-template and FE02-deferral portions.
+Các nhiệm vụ FE10-T và FE10-H đã hoàn tất ở trên vẫn là bằng chứng lịch sử.
+ADR-004 và G8-G10 chỉ thay thế phần mẫu liên kết và trì hoãn FE02 cũ.
 
-### FE10-S01 Normalize The Cross-Feature Contract
+### FE10-S01 Chuẩn hóa hợp đồng liên tính năng
 
-- [x] Status: DOCUMENTATION COMPLETE - HUMAN REVIEW CONFIRMED BY NHAT 2026-07-17
-- Maps to: G8-G10; ADR-004; BR-FE10-003 to BR-FE10-005, BR-FE10-010 to BR-FE10-013; FR-FE10-001, FR-FE10-002, FR-FE10-005, FR-FE10-009; AC-FE10-001, AC-FE10-002, AC-FE10-006, AC-FE10-007, AC-FE10-009.
-- Files: `.sdd/rfcs/ADR-004-auth-otp-notification-boundary.md`, `.agents/CLAUDE.md`, FE10 and FE02 `CONTEXT.md`, `SPEC.md`, `PLAN.md`, `TASKS.md`, `CHANGELOG.md`.
-- DoD: FE02/FE10 agree on OTP variables, FE02-only sensitive ownership, no HTTP source override, token-ID idempotency, configured-provider abstraction, non-blocking failure, resend semantics, and explicit `CHANGE_PASSWORD_OTP` exclusion; no implementation file changes.
+- [x] Trạng thái: TÀI LIỆU HOÀN TẤT - REVIEW CON NGƯỜI ĐƯỢC NHAT XÁC NHẬN
+  2026-07-17
+- Ánh xạ tới: G8-G10; ADR-004; BR-FE10-003 đến BR-FE10-005, BR-FE10-010 đến
+  BR-FE10-013; FR-FE10-001, FR-FE10-002, FR-FE10-005, FR-FE10-009;
+  AC-FE10-001, AC-FE10-002, AC-FE10-006, AC-FE10-007, AC-FE10-009.
+- Tệp: `.sdd/rfcs/ADR-004-auth-otp-notification-boundary.md`,
+  `.agents/CLAUDE.md`, `CONTEXT.md`, `SPEC.md`, `PLAN.md`, `TASKS.md`,
+  `CHANGELOG.md` của FE10 và FE02.
+- Tiêu chí hoàn thành: FE02/FE10 thống nhất biến OTP, quyền sở hữu nhạy cảm chỉ
+  FE02, không ghi đè nguồn HTTP, lũy đẳng ID mã thông báo, trừu tượng nhà cung
+  cấp đã cấu hình, lỗi không chặn, ngữ nghĩa gửi lại và loại trừ
+  `CHANGE_PASSWORD_OTP` rõ ràng; không thay đổi tệp triển khai.
 
-### FE10-S02 Add RED Boundary And OTP Contract Tests
+### FE10-S02 Thêm kiểm thử RED cho ranh giới và hợp đồng OTP
 
-- [x] Status: RED TESTS COMPLETE
-- Dependencies: FE10-S01 human approval.
-- Maps to: BR-FE10-002 to BR-FE10-005, BR-FE10-010, BR-FE10-011; FR-FE10-001, FR-FE10-002, FR-FE10-005, FR-FE10-009; AC-FE10-001, AC-FE10-002, AC-FE10-006.
-- Files: `backend/tests/notificationRoutes.test.js`, `backend/tests/helpers/inMemoryNotificationRepositories.js`, `backend/tests/integration.test.js`.
-- DoD: focused tests fail for staff HTTP sensitive submission, HTTP `sourceFeature`, non-FE02 sensitive requester use, missing/invalid OTP variables, and old link variables; tests characterize the accepted FE02-bound OTP request and exact safe `403 SENSITIVE_NOTIFICATION_INTERNAL_ONLY` error.
+- [x] Trạng thái: KIỂM THỬ RED HOÀN TẤT
+- Phụ thuộc: phê duyệt con người FE10-S01.
+- Ánh xạ tới: BR-FE10-002 đến BR-FE10-005, BR-FE10-010, BR-FE10-011;
+  FR-FE10-001, FR-FE10-002, FR-FE10-005, FR-FE10-009; AC-FE10-001,
+  AC-FE10-002, AC-FE10-006.
+- Tệp: `backend/tests/notificationRoutes.test.js`,
+  `backend/tests/helpers/inMemoryNotificationRepositories.js`,
+  `backend/tests/integration.test.js`.
+- Tiêu chí hoàn thành: kiểm thử tập trung thất bại cho việc HTTP nhân viên gửi
+  nhạy cảm, HTTP `sourceFeature`, dùng trình yêu cầu nhạy cảm không phải FE02,
+  biến OTP thiếu/không hợp lệ và biến liên kết cũ; kiểm thử đặc tả yêu cầu OTP
+  FE02 ràng buộc được chấp nhận cùng lỗi chính xác
+  `403 SENSITIVE_NOTIFICATION_INTERNAL_ONLY` an toàn.
 
-### FE10-S03 Implement Sensitive Source Ownership And Provider Delivery
+### FE10-S03 Triển khai quyền sở hữu nguồn nhạy cảm và gửi qua nhà cung cấp
 
-- [x] Status: COMPLETE - IMPLEMENTATION, BASELINE SCHEMA, AND AUTOMATED VALIDATION GREEN
-- Dependencies: FE10-S02 RED evidence.
-- Maps to: G8, G9; BR-FE10-003, BR-FE10-004, BR-FE10-010 to BR-FE10-013; FR-FE10-001, FR-FE10-002, FR-FE10-005; AC-FE10-001, AC-FE10-002, AC-FE10-006, AC-FE10-007.
-- Files: `backend/src/services/notificationService.js`, `backend/src/validators/notificationValidators.js`, `backend/src/services/emailService.js`, `backend/src/controllers/notificationController.js`, `database/Librarymanagement.sql`, `backend/src/docs/openapi.yaml`, `backend/tests/helpers/inMemoryNotificationRepositories.js`, `backend/tests/notificationRoutes.test.js`, `backend/tests/integration.test.js`.
-- DoD: only FE02-bound requester accepts sensitive types; HTTP cannot set `sourceFeature`; OTP templates require `otp`/`expiresInMinutes`; configured provider adapter sends rendered content; persistence/audit/log/response contain no OTP or rendered sensitive content; source metadata uses `FE02`/`AuthToken`/token ID.
-- Evidence: service, OpenAPI, canonical baseline, and the idempotent OTP-template migration are synchronized; the migration passed two disposable SQL Server executions and the current FE02/FE10 focused gate passes.
+- [x] Trạng thái: HOÀN TẤT - TRIỂN KHAI, SCHEMA BASELINE VÀ XÁC THỰC TỰ ĐỘNG
+  GREEN
+- Phụ thuộc: bằng chứng RED FE10-S02.
+- Ánh xạ tới: G8, G9; BR-FE10-003, BR-FE10-004, BR-FE10-010 đến BR-FE10-013;
+  FR-FE10-001, FR-FE10-002, FR-FE10-005; AC-FE10-001, AC-FE10-002,
+  AC-FE10-006, AC-FE10-007.
+- Tệp: `backend/src/services/notificationService.js`,
+  `backend/src/validators/notificationValidators.js`,
+  `backend/src/services/emailService.js`,
+  `backend/src/controllers/notificationController.js`,
+  `database/Librarymanagement.sql`, `backend/src/docs/openapi.yaml`,
+  `backend/tests/helpers/inMemoryNotificationRepositories.js`,
+  `backend/tests/notificationRoutes.test.js`,
+  `backend/tests/integration.test.js`.
+- Tiêu chí hoàn thành: chỉ trình yêu cầu ràng buộc FE02 chấp nhận loại nhạy cảm;
+  HTTP không thể đặt `sourceFeature`; mẫu OTP yêu cầu
+  `otp`/`expiresInMinutes`; bộ điều hợp nhà cung cấp đã cấu hình gửi nội dung
+  đã kết xuất; lưu bền/kiểm toán/log/phản hồi không chứa OTP hoặc nội dung nhạy
+  cảm đã kết xuất; siêu dữ liệu nguồn dùng `FE02`/`AuthToken`/ID mã thông báo.
+- Bằng chứng: service, OpenAPI, baseline chuẩn và migration mẫu OTP lũy đẳng đã
+  đồng bộ; migration đạt hai lần thực thi SQL Server dùng một lần và cổng tập
+  trung FE02/FE10 hiện tại đạt.
 
-### FE10-S04 Integrate FE02 Without Duplicate Delivery
+### FE10-S04 Tích hợp FE02 không gửi trùng
 
-- [x] Status: COMPLETE - FE02 REQUESTER FAN-IN GREEN
-- Dependencies: FE10-S03; FE02-T030 RED evidence.
-- Maps to: G10; BR-FE10-005, BR-FE10-006, BR-FE10-012, BR-FE10-013; FR-FE10-001, FR-FE10-002, FR-FE10-008; AC-FE10-001, AC-FE10-002, AC-FE10-008, AC-FE10-009; FE02-T031, FE02-T032.
-- Files: `backend/src/services/authService.js`, `backend/src/repositories/authTokenRepository.js`, `backend/tests/helpers/inMemoryAuthRepositories.js`, `backend/tests/authRoutes.test.js`.
-- DoD: verification/reset create one FE10 request per persisted token ID; direct notification writes, direct verification/reset email calls, and HTTP debug-token fields are removed; tests capture OTPs through injected dependencies; `CHANGE_PASSWORD_OTP` and legacy token acceptance remain; FE10 failure is non-blocking and resend creates a new event/key.
+- [x] Trạng thái: HOÀN TẤT - FE02 REQUESTER FAN-IN GREEN
+- Phụ thuộc: FE10-S03; bằng chứng RED FE02-T030.
+- Ánh xạ tới: G10; BR-FE10-005, BR-FE10-006, BR-FE10-012, BR-FE10-013;
+  FR-FE10-001, FR-FE10-002, FR-FE10-008; AC-FE10-001, AC-FE10-002,
+  AC-FE10-008, AC-FE10-009; FE02-T031, FE02-T032.
+- Tệp: `backend/src/services/authService.js`,
+  `backend/src/repositories/authTokenRepository.js`,
+  `backend/tests/helpers/inMemoryAuthRepositories.js`,
+  `backend/tests/authRoutes.test.js`.
+- Tiêu chí hoàn thành: xác minh/đặt lại tạo một yêu cầu FE10 trên mỗi ID mã
+  thông báo đã lưu; loại bỏ lần ghi thông báo trực tiếp, lần gọi email xác minh/
+  đặt lại trực tiếp và trường mã thông báo debug HTTP; kiểm thử thu OTP qua
+  dependency được chèn; `CHANGE_PASSWORD_OTP` và chấp nhận mã thông báo cũ vẫn
+  giữ; lỗi FE10 không chặn và gửi lại tạo sự kiện/khóa mới.
 
-### FE10-S05 Pass Cross-Feature Validation And Human Review
+### FE10-S05 Vượt xác thực liên tính năng và review con người
 
-- [x] Status: COMPLETE THROUGH B7
-- Dependencies: FE10-S02 to FE10-S04; FE02-T030 to FE02-T032.
-- Maps to: ADR-004 verification contract and all G8-G10 traceability rows.
-- Files: FE10/FE02 `TASKS.md` and `CHANGELOG.md`; implementation files only for approved review fixes.
-- DoD: focused FE10/FE02 and affected integration tests pass; old link/deferred contract scans have no active matches; OTP leakage scan passes; traceability and `git diff --check` pass; diff contains no frontend, FE09 caller, new dependency, schema-table/index migration, or `CHANGE_PASSWORD_OTP` migration; human review is recorded before commit/merge.
-- Evidence: focused FE02/FE10/integration gate passes 170/170; full backend passes 916/916 with configured coverage; traceability is 10/10 for FE10 and 26/26 for FE02; frontend 149/149, system 10/10, deployment 7/7, browser E2E 4/4, OpenAPI/import, leakage, and diff checks pass. Expanded evidence covers the full non-FE02 allowlist, exact HTTP source override errors, and repeated password-reset event/key rotation. No production correction was required. PR #42 merged as `34d9180`; PR CI `29688102867` and exact post-merge `main` CI `29688222757` passed.
+- [x] Trạng thái: HOÀN TẤT QUA B7
+- Phụ thuộc: FE10-S02 đến FE10-S04; FE02-T030 đến FE02-T032.
+- Ánh xạ tới: hợp đồng xác minh ADR-004 và mọi hàng traceability G8-G10.
+- Tệp: `TASKS.md` và `CHANGELOG.md` FE10/FE02; tệp triển khai chỉ cho bản sửa
+  review đã được phê duyệt.
+- Tiêu chí hoàn thành: kiểm thử FE10/FE02 tập trung và tích hợp bị ảnh hưởng đạt;
+  quét hợp đồng liên kết/trì hoãn cũ không có kết quả hoạt động; quét rò rỉ OTP
+  đạt; traceability và `git diff --check` đạt; diff không chứa frontend, người
+  gọi FE09, dependency mới, migration schema bảng/chỉ mục hoặc migration
+  `CHANGE_PASSWORD_OTP`; review con người được ghi trước commit/merge.
+- Bằng chứng: cổng FE02/FE10/tích hợp tập trung đạt 170/170; toàn bộ backend
+  đạt 916/916 với bao phủ đã cấu hình; traceability là 10/10 cho FE10 và 26/26
+  cho FE02; frontend 149/149, hệ thống 10/10, triển khai 7/7, browser E2E 4/4,
+  OpenAPI/import, rò rỉ và kiểm tra diff đạt. Bằng chứng mở rộng bao phủ toàn
+  bộ danh sách cho phép không phải FE02, lỗi ghi đè nguồn HTTP chính xác và xoay
+  vòng sự kiện/khóa đặt lại mật khẩu lặp lại. Không cần sửa production. PR #42
+  đã merge thành `34d9180`; PR CI `29688102867` và CI `main` hậu merge chính
+  xác `29688222757` đã đạt.
 
-## 10. FE11 Account Setup Follow-up Tasks
+## 10. Nhiệm vụ theo dõi thiết lập tài khoản FE11
 
-### FE10-S06 Add RED FE11 Account Setup Boundary Tests
+### FE10-S06 Thêm kiểm thử RED cho ranh giới thiết lập tài khoản FE11
 
-- [x] Status: COMPLETE (`547f986`)
-- Dependencies: ADR-005 and FE11-S01 human approval.
-- Maps to: G11; FR-FE10-005, FR-FE10-009, FR-FE10-010; AC-FE10-006, AC-FE10-010.
-- Files: `backend/tests/notificationRoutes.test.js`, `backend/tests/helpers/inMemoryNotificationRepositories.js`.
-- DoD: tests fail for staff HTTP `ACCOUNT_SETUP`, non-FE11 requester use, missing/invalid `setupLink` or `expiresInHours`, source override, reused wrong canonical pair, and credential persistence/response leakage; accepted FE11 request uses `AuthToken` token ID and exact idempotency key.
+- [x] Trạng thái: HOÀN TẤT (`547f986`)
+- Phụ thuộc: ADR-005 và phê duyệt con người FE11-S01.
+- Ánh xạ tới: G11; FR-FE10-005, FR-FE10-009, FR-FE10-010; AC-FE10-006,
+  AC-FE10-010.
+- Tệp: `backend/tests/notificationRoutes.test.js`,
+  `backend/tests/helpers/inMemoryNotificationRepositories.js`.
+- Tiêu chí hoàn thành: kiểm thử thất bại cho HTTP nhân viên `ACCOUNT_SETUP`,
+  dùng trình yêu cầu không phải FE11, `setupLink` hoặc `expiresInHours` thiếu/
+  không hợp lệ, ghi đè nguồn, cặp chuẩn sai được dùng lại và rò rỉ thông tin xác
+  thực qua lưu bền/phản hồi; yêu cầu FE11 được chấp nhận dùng ID mã thông báo
+  `AuthToken` và khóa lũy đẳng chính xác.
 
-### FE10-S07 Implement FE11-Owned Sensitive Setup Delivery
+### FE10-S07 Triển khai gửi thiết lập nhạy cảm do FE11 sở hữu
 
-- [x] Status: COMPLETE (`547f986`, `3e25875`)
-- Dependencies: FE10-S06 RED evidence and FE10-S03 shared provider boundary.
-- Maps to: G11; BR-FE10-002, BR-FE10-004 to BR-FE10-013; FR-FE10-010; AC-FE10-010.
-- Files: notification service/validators/provider adapter, SQL template/type constraints, OpenAPI, focused tests.
-- DoD: `FE11` is allowlisted without weakening FE02 ownership; only FE11 can send `ACCOUNT_SETUP`; provider receives rendered setup content in memory; persistence/audit/log/response contain no setup token/link/rendered content; result is minimal `SENT`/`FAILED` summary.
+- [x] Trạng thái: HOÀN TẤT (`547f986`, `3e25875`)
+- Phụ thuộc: bằng chứng RED FE10-S06 và ranh giới nhà cung cấp dùng chung
+  FE10-S03.
+- Ánh xạ tới: G11; BR-FE10-002, BR-FE10-004 đến BR-FE10-013; FR-FE10-010;
+  AC-FE10-010.
+- Tệp: service thông báo/validator/bộ điều hợp nhà cung cấp, ràng buộc mẫu/loại
+  SQL, OpenAPI, kiểm thử tập trung.
+- Tiêu chí hoàn thành: `FE11` thuộc danh sách cho phép mà không làm yếu quyền
+  sở hữu FE02; chỉ FE11 gửi `ACCOUNT_SETUP`; nhà cung cấp nhận nội dung thiết
+  lập đã kết xuất trong bộ nhớ; lưu bền/kiểm toán/log/phản hồi không chứa mã
+  thông báo/liên kết/nội dung đã kết xuất; kết quả là bản tóm tắt
+  `SENT`/`FAILED` tối thiểu.
 
-### FE10-S08 Pass FE11 Setup Integration Review
+### FE10-S08 Vượt review tích hợp thiết lập FE11
 
-- [x] Status: COMPLETE - HUMAN REVIEW CONFIRMED
-- Dependencies: FE10-S07, FE11-S04..S06, FE02-T035..T036.
-- Maps to: ADR-005 verification contract.
-- Files: FE10/FE11/FE02 task/changelog files and approved review fixes only.
-- DoD: creation, failure, completion, resend, ownership, idempotency, and leakage tests pass; OTP behavior remains unchanged; traceability, secret scans, and `git diff --check` pass; Nhat records human review before commit/merge.
-- Validation state: PASS on 2026-07-15 with 170/170 affected backend tests, 75/75 frontend tests, traceability enforcement, changed-line credential scan, and diff checks. Nhat confirmed the final Task 7 human review.
+- [x] Trạng thái: HOÀN TẤT - REVIEW CON NGƯỜI ĐÃ XÁC NHẬN
+- Phụ thuộc: FE10-S07, FE11-S04..S06, FE02-T035..T036.
+- Ánh xạ tới: hợp đồng xác minh ADR-005.
+- Tệp: tệp task/changelog FE10/FE11/FE02 và chỉ bản sửa review đã phê duyệt.
+- Tiêu chí hoàn thành: kiểm thử tạo, thất bại, hoàn tất, gửi lại, quyền sở hữu,
+  lũy đẳng và rò rỉ đạt; hành vi OTP không đổi; traceability, quét bí mật và
+  `git diff --check` đạt; Nhat ghi review con người trước commit/merge.
+- Trạng thái xác thực: ĐẠT ngày 2026-07-15 với 170/170 kiểm thử backend bị ảnh
+  hưởng, 75/75 kiểm thử frontend, thực thi traceability, quét thông tin xác thực
+  dòng thay đổi và kiểm tra diff. Nhat xác nhận review con người Nhiệm vụ 7 cuối.
 
-## 11. FE04 Membership Result Follow-up
+## 11. Phần theo dõi kết quả tư cách thành viên FE04
 
-### FE10-S09 Add FE04 Membership-Result Source Boundary
+### FE10-S09 Thêm ranh giới nguồn kết quả tư cách thành viên FE04
 
-- [x] Status: COMPLETE - FE04 SOURCE BOUNDARY AND FAN-IN GREEN
-- Dependency: FE04/FE10 requester contract revision.
-- Maps to: Q-FE10-009, BR-FE10-005, BR-FE10-011, FR-FE10-006, FR-FE10-009.
-- DoD: FE04 is accepted by the construction-bound allowlist, only FE04 may submit `MEMBERSHIP_RESULT`, status/timestamp behavior is tested, and delivery failure remains non-blocking after the membership decision commits.
+- [x] Trạng thái: HOÀN TẤT - RANH GIỚI NGUỒN FE04 VÀ FAN-IN GREEN
+- Phụ thuộc: sửa hợp đồng trình yêu cầu FE04/FE10.
+- Ánh xạ tới: Q-FE10-009, BR-FE10-005, BR-FE10-011, FR-FE10-006, FR-FE10-009.
+- Tiêu chí hoàn thành: FE04 được chấp nhận bởi danh sách cho phép ràng buộc khi
+  khởi tạo, chỉ FE04 có thể gửi `MEMBERSHIP_RESULT`, hành vi trạng thái/dấu thời
+  gian được kiểm thử và lỗi gửi vẫn không chặn sau khi quyết định tư cách thành
+  viên đã commit.
 
-## 12. Delivery Claim Safety Remediation
+## 12. Khắc phục an toàn tuyên bố giao hàng
 
-### FE10-S10 Persist Delivery Ownership Before Provider I/O
+### FE10-S10 Lưu quyền sở hữu giao hàng trước I/O nhà cung cấp
 
-- [~] Status: IMPLEMENTED AND AUTOMATED-VERIFIED; H3 REMEDIATION IN PROGRESS
-- Approved design: `docs/superpowers/specs/2026-07-23-fe07-fe08-fe10-fe12-final-verification-remediation-design.md`.
-- Maps to: BR-FE10-005, BR-FE10-006, BR-FE10-008, BR-FE10-013; FR-FE10-001, FR-FE10-002, FR-FE10-006 to FR-FE10-008, FR-FE10-010; AC-FE10-006, AC-FE10-008 to AC-FE10-010.
-- Files: FE10 spec/ADR/OpenAPI, notification service/repository/model, canonical SQL, `2026-07-23-fe10-processing-status.sql`, in-memory dependencies, and focused tests.
-- RED evidence: missing internal source references, terminal-transition persistence failures, duplicate replay while uncertain, and claim/finalization concurrency failed against the previous `PENDING`-through-provider implementation.
-- GREEN contract: sensitive acceptance and queued claim persist `PROCESSING` before provider I/O; guarded terminal transitions use new short transactions; uncertain rows are not reclaimed or retried; manual retry returns safe `DELIVERY_STATE_UNCERTAIN`.
-- Verification evidence: focused FE10 tests, the migration twice on a named disposable local SQL database, full repository checks, security/diff review, and cleanup are green. The initial H2 and H2 addendum passed; commit `97aca62` and PR CI run `30014066260` passed; the reviewed migration was applied once to staging. Fresh H2 then approved remediation commit `b931e00`, and PR CI run `30019439505` passed. The repeated H3 review returned bounded round-two completeness findings only. Fresh H2 approved the round-two package on 2026-07-23 and authorized its reviewed commit/push; updated PR CI and repeated H3 remain mandatory before merge.
+- [~] Trạng thái: ĐÃ TRIỂN KHAI VÀ XÁC THỰC TỰ ĐỘNG; KHẮC PHỤC H3 ĐANG TIẾN
+  HÀNH
+- Thiết kế đã phê duyệt:
+  `docs/superpowers/specs/2026-07-23-fe07-fe08-fe10-fe12-final-verification-remediation-design.md`.
+- Ánh xạ tới: BR-FE10-005, BR-FE10-006, BR-FE10-008, BR-FE10-013;
+  FR-FE10-001, FR-FE10-002, FR-FE10-006 đến FR-FE10-008, FR-FE10-010;
+  AC-FE10-006, AC-FE10-008 đến AC-FE10-010.
+- Tệp: đặc tả/ADR/OpenAPI FE10, service/repository/model thông báo, SQL chuẩn,
+  `2026-07-23-fe10-processing-status.sql`, dependency trong bộ nhớ và kiểm thử
+  tập trung.
+- Bằng chứng RED: thiếu tham chiếu nguồn nội bộ, lỗi lưu bền chuyển đổi kết
+  thúc, phát lại trùng khi không chắc chắn và đồng thời nhận/hoàn tất đều thất
+  bại với phần triển khai `PENDING`-qua-nhà-cung-cấp trước đó.
+- Hợp đồng GREEN: chấp nhận nhạy cảm và nhận hàng đợi lưu `PROCESSING` trước
+  I/O nhà cung cấp; chuyển đổi kết thúc được bảo vệ dùng giao dịch ngắn mới;
+  hàng không chắc chắn không bị nhận lại hay thử lại; thử lại thủ công trả
+  `DELIVERY_STATE_UNCERTAIN` an toàn.
+- Bằng chứng xác minh: kiểm thử FE10 tập trung, migration hai lần trên cơ sở dữ
+  liệu SQL cục bộ được đặt tên dùng một lần, kiểm tra repository đầy đủ, review
+  bảo mật/diff và dọn dẹp đều xanh. H2 ban đầu và phụ lục H2 đã đạt; commit
+  `97aca62` và lượt PR CI `30014066260` đạt; migration đã review được áp dụng
+  một lần lên staging. H2 mới sau đó phê duyệt commit khắc phục `b931e00` và
+  PR CI `30019439505` đạt. Review H3 lặp lại chỉ trả về finding hoàn tất vòng
+  hai có giới hạn. H2 mới phê duyệt gói vòng hai ngày 2026-07-23 và ủy quyền
+  commit/push đã review; CI PR cập nhật và H3 lặp lại vẫn bắt buộc trước merge.
 
-## 13. Stored Template Definition Safety
+## 13. An toàn định nghĩa mẫu đã lưu
 
-### FE10-S11 Reject Unsafe Stored Template Definitions
+### FE10-S11 Từ chối định nghĩa mẫu đã lưu không an toàn
 
-- [x] Status: IMPLEMENTED AND AUTOMATED-VERIFIED; INTEGRATED H2 AND PR CI PASSED
-- Maps to: BD-004, BR-FE10-010, FR-FE10-005/009, AC-FE10-006, EC-FE10-010, NFR-FE10-SEC-005.
-- RED: unsafe stored subject/body definitions are silently sanitized and accepted.
-- GREEN: `validateStoredTemplateDefinition(template)` rejects raw HTML tags, inline event-handler attributes, and `javascript:` URLs with safe `400 UNSAFE_TEMPLATE_DEFINITION` before render/persist/provider work.
-- Evidence: 3/3 RED cases resolved as `SENT`; focused GREEN passed 4/4 including runtime sanitization, and the full FE10 suite passed 139/139.
-- Preservation: runtime values remain escaped/sanitized; secret-like key rejection, `safePayload` redaction, source ownership, idempotency, DTOs, and durable delivery state remain unchanged.
-- Files: `backend/tests/notificationRoutes.test.js`, `backend/src/services/notificationService.js`.
-- Gate: the product H2 addendum approved commit `f346ae0` and PR CI run
-  `30244750250` passed. The documentation-only H3 remediation requires fresh H2
-  and repeated H3 before merge.
+- [x] Trạng thái: ĐÃ TRIỂN KHAI VÀ XÁC THỰC TỰ ĐỘNG; H2 TÍCH HỢP VÀ PR CI ĐẠT
+- Ánh xạ tới: BD-004, BR-FE10-010, FR-FE10-005/009, AC-FE10-006,
+  EC-FE10-010, NFR-FE10-SEC-005.
+- RED: định nghĩa tiêu đề/nội dung đã lưu không an toàn bị làm sạch ngầm và
+  được chấp nhận.
+- GREEN: `validateStoredTemplateDefinition(template)` từ chối thẻ HTML thô,
+  thuộc tính xử lý sự kiện nội tuyến và URL `javascript:` bằng
+  `400 UNSAFE_TEMPLATE_DEFINITION` an toàn trước khi kết xuất/lưu bền/I/O nhà
+  cung cấp.
+- Bằng chứng: 3/3 ca RED được giải quyết là `SENT`; GREEN tập trung đạt 4/4
+  bao gồm làm sạch khi chạy, toàn bộ bộ FE10 đạt 139/139.
+- Bảo toàn: giá trị khi chạy vẫn được escape/làm sạch; từ chối khóa giống bí
+  mật, che `safePayload`, quyền sở hữu nguồn, lũy đẳng, DTO và trạng thái giao
+  hàng bền vững không đổi.
+- Tệp: `backend/tests/notificationRoutes.test.js`,
+  `backend/src/services/notificationService.js`.
+- Cổng: phụ lục H2 sản phẩm phê duyệt commit `f346ae0` và lượt PR CI
+  `30244750250` đạt. Khắc phục H3 chỉ tài liệu cần H2 mới và H3 lặp lại trước
+  merge.
 
-## 14. Staging Email Delivery Remediation
+## 14. Khắc phục gửi email staging
 
-### FE10-S12 Activate The Approved Remediation Contract
+### FE10-S12 Kích hoạt hợp đồng khắc phục đã phê duyệt
 
-- [x] Status: DESIGN AND WRITTEN CONTRACT APPROVED 2026-07-27
-- Files: approved design and FE10 SPEC/PLAN/TASKS/CHANGELOG.
-- DoD: v0.4.5 records the migration, safe provider-ID evidence, SYSTEM worker,
-  best-effort F1 limitation, unchanged HTTP authorization, and manual retry.
+- [x] Trạng thái: THIẾT KẾ VÀ HỢP ĐỒNG BẰNG VĂN BẢN ĐƯỢC PHÊ DUYỆT 2026-07-27
+- Tệp: thiết kế đã phê duyệt và FE10 SPEC/PLAN/TASKS/CHANGELOG.
+- Tiêu chí hoàn thành: v0.4.5 ghi migration, bằng chứng ID nhà cung cấp an toàn,
+  tiến trình SYSTEM, giới hạn F1 theo khả năng tốt nhất, quyền HTTP không đổi và
+  thử lại thủ công.
 
-### FE10-S13 Restore The Existing-Database Account Setup Template
+### FE10-S13 Khôi phục mẫu thiết lập tài khoản cơ sở dữ liệu hiện có
 
-- [x] Status: H2/CI/STAGING REPEATABILITY PASS
-- Depends on: FE10-S12.
-- Files: `database/migrations/2026-07-27-fe10-account-setup-template.sql`,
+- [x] Trạng thái: H2/CI/STAGING KHẢ NĂNG LẶP LẠI ĐẠT
+- Phụ thuộc: FE10-S12.
+- Tệp: `database/migrations/2026-07-27-fe10-account-setup-template.sql`,
   `backend/tests/notificationRepository.test.js`.
-- DoD: migration is transactional, idempotent, additive, canonical, and passes
-  two executions with exactly one active `ACCOUNT_SETUP` row.
-- Evidence: the migration uses `XACT_ABORT`, one transaction, canonical
-  update-or-insert behavior, rollback/rethrow, and no delete. The static
-  migration contract test is green; two staging executions remain gated by H2.
-- Staging: both executions passed and the final template aggregate was
-  `1|1|1|1|1`; the exact-IP temporary firewall rule was removed.
+- Tiêu chí hoàn thành: migration có giao dịch, lũy đẳng, additive, chuẩn và đạt
+  hai lần thực thi với đúng một hàng `ACCOUNT_SETUP` hoạt động.
+- Bằng chứng: migration dùng `XACT_ABORT`, một giao dịch, hành vi
+  update-or-insert chuẩn, rollback/rethrow và không xóa. Kiểm thử hợp đồng
+  migration tĩnh xanh; hai lần thực thi staging vẫn có cổng H2.
+- Staging: cả hai lần thực thi đạt và tổng hợp mẫu cuối là `1|1|1|1|1`; quy tắc
+  firewall tạm thời IP chính xác đã bị loại.
 
-### FE10-S14 Preserve Sensitive Provider Message IDs
+### FE10-S14 Bảo toàn ID thông điệp nhà cung cấp nhạy cảm
 
-- [x] Status: COMPLETE - H3 APPROVED, PR #65 MERGED, POST-MERGE CI PASS
-- Depends on: FE10-S12.
-- Files: `backend/src/services/notificationService.js`,
+- [x] Trạng thái: HOÀN TẤT - H3 PHÊ DUYỆT, PR #65 ĐÃ MERGE, CI HẬU MERGE ĐẠT
+- Phụ thuộc: FE10-S12.
+- Tệp: `backend/src/services/notificationService.js`,
   `backend/tests/notificationRoutes.test.js`.
-- DoD: FE02 and FE11 sensitive success attempts store only the adapter message
-  ID while persistence, audit, logs, and responses remain credential-free.
-- Evidence: FE02 verification/reset and FE11 setup success assertions preserve
-  the mock provider message ID while existing sensitive-content isolation
-  assertions remain green.
+- Tiêu chí hoàn thành: các lần thử thành công nhạy cảm FE02 và FE11 chỉ lưu ID
+  thông điệp bộ điều hợp trong khi lưu bền, kiểm toán, log và phản hồi vẫn không
+  có thông tin xác thực.
+- Bằng chứng: assertion thành công xác minh/đặt lại FE02 và thiết lập FE11 giữ
+  ID thông điệp nhà cung cấp mô phỏng trong khi assertion cô lập nội dung nhạy
+  cảm hiện có vẫn xanh.
 
-### FE10-S15 Add The Best-Effort SYSTEM Worker
+### FE10-S15 Thêm tiến trình SYSTEM theo khả năng tốt nhất
 
-- [x] Status: COMPLETE - H3 APPROVED, PR #65 MERGED, POST-MERGE CI PASS
-- Depends on: FE10-S12.
-- Files: notification service/worker/runtime/config/index, `.env.example`, and
-  focused service/worker/runtime/config tests.
-- DoD: enabled startup and interval passes are non-overlapping; disabled mode
-  has no timer; safe failures recover; stop clears scheduling; only
-  non-sensitive `PENDING` rows are processed; manual HTTP authorization is
-  unchanged.
-- Evidence: worker/config/runtime tests cover disabled mode, startup and
-  interval work, overlap prevention, safe recovery, shutdown, and import
-  behavior. SYSTEM audits actual work but does not create empty-poll audit
-  rows; existing protected HTTP tests remain green.
-- Staging addendum: the first deployed worker pass exposed SQL Server error 650
-  because `READPAST` was combined with serializable `HOLDLOCK`. The worker was
-  rolled back to disabled. The candidate replaces `HOLDLOCK` with
-  `READCOMMITTEDLOCK`; an Azure SQL rollback probe and local tests pass.
-- Corrected staging: exact-head CI `30274110435` and deploy `30274367534`
-  passed. With the worker re-enabled, the queue reached 0 pending/processing,
-  15 sent, and 0 failed; all 15 attempts retained a provider message ID.
+- [x] Trạng thái: HOÀN TẤT - H3 PHÊ DUYỆT, PR #65 ĐÃ MERGE, CI HẬU MERGE ĐẠT
+- Phụ thuộc: FE10-S12.
+- Tệp: service/worker/runtime/config/index thông báo, `.env.example` và kiểm
+  thử service/worker/runtime/config tập trung.
+- Tiêu chí hoàn thành: lượt chạy khi khởi động và theo khoảng thời gian khi bật
+  không chồng lấp; chế độ tắt không có timer; lỗi an toàn phục hồi; dừng xóa
+  lịch; chỉ hàng `PENDING` không nhạy cảm được xử lý; quyền HTTP thủ công không
+  đổi.
+- Bằng chứng: kiểm thử worker/config/runtime bao phủ chế độ tắt, công việc lúc
+  khởi động và theo khoảng, chặn chồng lấp, phục hồi an toàn, tắt và hành vi
+  import. Kiểm toán SYSTEM ghi công việc thực nhưng không tạo hàng kiểm toán
+  polling rỗng; kiểm thử HTTP được bảo vệ hiện có vẫn xanh.
+- Phụ lục staging: lượt worker triển khai đầu tiên phát hiện lỗi SQL Server 650
+  vì `READPAST` được kết hợp với `HOLDLOCK` serializable. Worker đã rollback về
+  tắt. Candidate thay `HOLDLOCK` bằng `READCOMMITTEDLOCK`; probe rollback Azure
+  SQL và kiểm thử cục bộ đạt.
+- Staging đã sửa: CI exact-head `30274110435` và deploy `30274367534` đạt. Khi
+  bật lại worker, hàng đợi đạt 0 pending/processing, 15 sent và 0 failed; toàn
+  bộ 15 lần thử giữ ID thông điệp nhà cung cấp.
 
-### FE10-S16 Pass Local H2 And Staging Validation
+### FE10-S16 Vượt xác thực H2 cục bộ và staging
 
-- [x] Status: COMPLETE - H3 APPROVED, PR #65 MERGED, POST-MERGE CI PASS
-- Depends on: FE10-S13..S15.
-- Files: FE10 TASKS/CHANGELOG and
+- [x] Trạng thái: HOÀN TẤT - H3 PHÊ DUYỆT, PR #65 ĐÃ MERGE, CI HẬU MERGE ĐẠT
+- Phụ thuộc: FE10-S13..S15.
+- Tệp: FE10 TASKS/CHANGELOG và
   `.sdd/reviews/staging-email-delivery-remediation-validation-2026-07-27.md`.
-- DoD: focused and full test gates pass; migration passes twice; diff/security
-  review passes; H2 approves commits; staging template/worker settings/deploy
-  and safe queue/provider-attempt evidence are recorded without secrets or PII.
-- Evidence: focused 165/165, backend 1079/1079, frontend 232/232, deployment
-  9/9, system integration 10/10, lint/build/trace, diff hygiene, and scoped
-  secret/log review pass on the uncommitted H2 candidate.
-- H2: user approved the complete candidate on 2026-07-27. Product commits are
-  `7920d4b`, `2134d44`, and `ccb590c`; CI and staging evidence remain required.
-- Initial publication: PR #65 head `8f39baa` passed CI run `30272237192`;
-  deploy run `30272792025` passed backend, frontend, and smoke. The migration
-  passed twice and the template aggregate was `1|1|1|1|1`.
-- Staging worker verification found 15 non-sensitive rows still pending and
-  fixed-code worker failures. Error 650 was reproduced without mutation and the
-  worker setting was returned to `false`; this initial failed checkpoint is
-  superseded by the corrected validation below.
-- H2 addendum: user approved the Azure-compatible claim correction on
-  2026-07-27; product commit is `a98f459`.
-- Corrected validation: CI `30274110435` and deploy `30274367534` passed for
-  head `9240525`; API/frontend were 200, anonymous manual processing was 401,
-  queue aggregate was `0|0|15|0`, attempt/provider aggregate was `15|15`,
-  sensitive/unsafe aggregate was `21|0`, SYSTEM/no-op audit aggregate was
-  `1|0`, and task-created firewall rules remaining were zero.
-- Integration: after explicit H3 approval, PR #65 merged as `01807f0`; exact
-  post-merge `main` CI `30275341156` passed. Later FE10 Azure deployment
-  `30307855616` passed with this v0.4.5 baseline still active.
+- Tiêu chí hoàn thành: cổng kiểm thử tập trung và đầy đủ đạt; migration đạt hai
+  lần; review diff/bảo mật đạt; H2 phê duyệt commit; thiết lập/triển khai mẫu/
+  worker staging và bằng chứng hàng đợi/lần thử nhà cung cấp an toàn được ghi
+  không có bí mật hay PII.
+- Bằng chứng: tập trung 165/165, backend 1079/1079, frontend 232/232, triển
+  khai 9/9, tích hợp hệ thống 10/10, lint/build/trace, vệ sinh diff và review
+  bí mật/log theo phạm vi đạt trên candidate H2 chưa commit.
+- H2: người dùng phê duyệt candidate đầy đủ ngày 2026-07-27. Commit sản phẩm là
+  `7920d4b`, `2134d44` và `ccb590c`; CI và bằng chứng staging vẫn bắt buộc.
+- Công bố ban đầu: head PR #65 `8f39baa` đạt lượt CI `30272237192`; lượt deploy
+  `30272792025` đạt backend, frontend và smoke. Migration đạt hai lần, tổng
+  hợp mẫu là `1|1|1|1|1`.
+- Xác minh worker staging phát hiện 15 hàng không nhạy cảm vẫn pending và lỗi
+  worker mã cố định. Lỗi 650 được tái hiện không thay đổi dữ liệu và thiết lập
+  worker trả về `false`; checkpoint thất bại ban đầu này được thay thế bởi xác
+  thực đã sửa bên dưới.
+- Phụ lục H2: người dùng phê duyệt sửa nhận hàng tương thích Azure ngày
+  2026-07-27; commit sản phẩm là `a98f459`.
+- Xác thực đã sửa: CI `30274110435` và deploy `30274367534` đạt cho head
+  `9240525`; API/frontend là 200, xử lý thủ công ẩn danh là 401, tổng hợp hàng
+  đợi là `0|0|15|0`, tổng hợp lần thử/nhà cung cấp là `15|15`, tổng hợp nhạy
+  cảm/không an toàn là `21|0`, tổng hợp kiểm toán SYSTEM/no-op là `1|0` và
+  quy tắc firewall còn lại do nhiệm vụ tạo là 0.
+- Tích hợp: sau phê duyệt H3 rõ ràng, PR #65 merge thành `01807f0`; CI `main`
+  hậu merge chính xác `30275341156` đạt. Triển khai Azure FE10 sau đó
+  `30307855616` đạt với baseline v0.4.5 này vẫn hoạt động.
 
-## 15. V0.5.0 Personal Notification Inbox Tasks
+## 15. Nhiệm vụ hộp thư thông báo cá nhân v0.5.0
 
-Detailed steps, RED/GREEN commands, and commit boundaries are in
+Các bước chi tiết, lệnh RED/GREEN và ranh giới commit nằm trong
 `docs/superpowers/plans/2026-07-27-fe10-personal-notification-inbox.md`.
 
-### FE10-I01 Add The Additive Read-State Migration
+### FE10-I01 Thêm migration trạng thái đọc additive
 
-- [x] Status: COMPLETE - H3 APPROVED, PR #75 MERGED, POST-MERGE CI/AZURE PASS
-- Maps to: BR-FE10-016, BR-FE10-019, BR-FE10-020; AC-FE10-011 to AC-FE10-014.
-- Files: canonical SQL, Notification model, new idempotent migration, migration
-  contract tests.
-- DoD: `ReadAt DATETIME2 NULL`, historical eligible rows backfilled to
-  `CreatedAt`, supporting index present, sensitive/userless rows excluded, and
-  two executions produce the same postcondition.
+- [x] Trạng thái: HOÀN TẤT - H3 PHÊ DUYỆT, PR #75 ĐÃ MERGE, CI/AZURE HẬU MERGE
+  ĐẠT
+- Ánh xạ tới: BR-FE10-016, BR-FE10-019, BR-FE10-020; AC-FE10-011 đến
+  AC-FE10-014.
+- Tệp: SQL chuẩn, model Notification, migration lũy đẳng mới, kiểm thử hợp đồng
+  migration.
+- Tiêu chí hoàn thành: `ReadAt DATETIME2 NULL`, hàng lịch sử đủ điều kiện được
+  điền lùi thành `CreatedAt`, chỉ mục hỗ trợ tồn tại, hàng nhạy cảm/không người
+  dùng bị loại và hai lần thực thi tạo cùng điều kiện hậu.
 
-### FE10-I02 Add Own-Record Repository And Safe Projection
+### FE10-I02 Thêm repository bản ghi của chính mình và phép chiếu an toàn
 
-- [x] Status: COMPLETE - H3 APPROVED, PR #75 MERGED, POST-MERGE CI/AZURE PASS
-- Depends on: FE10-I01.
-- Maps to: BR-FE10-014 to BR-FE10-017, BR-FE10-020; AC-FE10-011 to AC-FE10-015.
-- Files: notification repository, inbox projection/action utility, in-memory
-  repository, focused repository/unit tests.
-- DoD: list/count/read SQL filters by current `UserId` and the exact eligible
-  allowlist before materialization; pagination is SQL-side; read mutations are
-  idempotent and do not alter delivery state; the DTO/action path is fixed and
-  contains no sensitive or delivery metadata.
+- [x] Trạng thái: HOÀN TẤT - H3 PHÊ DUYỆT, PR #75 ĐÃ MERGE, CI/AZURE HẬU MERGE
+  ĐẠT
+- Phụ thuộc: FE10-I01.
+- Ánh xạ tới: BR-FE10-014 đến BR-FE10-017, BR-FE10-020; AC-FE10-011 đến
+  AC-FE10-015.
+- Tệp: repository thông báo, tiện ích phép chiếu/thao tác hộp thư, repository
+  trong bộ nhớ, kiểm thử repository/đơn vị tập trung.
+- Tiêu chí hoàn thành: SQL liệt kê/đếm/đọc lọc theo `UserId` hiện tại và danh
+  sách cho phép đủ điều kiện chính xác trước khi hiện thực hóa; phân trang phía
+  SQL; thay đổi đọc có tính lũy đẳng và không thay đổi trạng thái gửi; DTO/đường
+  dẫn thao tác cố định, không có siêu dữ liệu nhạy cảm hoặc giao hàng.
 
-### FE10-I03 Expose The Authenticated Personal Inbox API
+### FE10-I03 Công khai API hộp thư cá nhân đã xác thực
 
-- [x] Status: COMPLETE - H3 APPROVED, PR #75 MERGED, POST-MERGE CI/AZURE PASS
-- Depends on: FE10-I02.
-- Maps to: FR-FE10-011 to FR-FE10-015; AC-FE10-011 to AC-FE10-015.
-- Files: notification validators, service, controller, routes, OpenAPI, route
-  tests.
-- DoD: list, unread-count, mark-one, and mark-all routes accept all three login
-  roles, reject unauthenticated/unsupported roles, validate filters, return
-  safe DTOs, and make missing/sensitive/other-user IDs indistinguishable `404`.
+- [x] Trạng thái: HOÀN TẤT - H3 PHÊ DUYỆT, PR #75 ĐÃ MERGE, CI/AZURE HẬU MERGE
+  ĐẠT
+- Phụ thuộc: FE10-I02.
+- Ánh xạ tới: FR-FE10-011 đến FR-FE10-015; AC-FE10-011 đến AC-FE10-015.
+- Tệp: validator thông báo, service, controller, route, OpenAPI, kiểm thử route.
+- Tiêu chí hoàn thành: route liệt kê, đếm chưa đọc, đánh dấu một và đánh dấu tất
+  cả chấp nhận cả ba vai trò đăng nhập, từ chối người chưa xác thực/vai trò
+  không hỗ trợ, kiểm tra bộ lọc, trả DTO an toàn và làm ID không tồn tại/nhạy
+  cảm/của người dùng khác thành `404` không thể phân biệt.
 
-### FE10-I04 Add The Frontend Client And Shared Inbox Context
+### FE10-I04 Thêm client frontend và context hộp thư dùng chung
 
-- [x] Status: COMPLETE - H3 APPROVED, PR #75 MERGED, POST-MERGE CI/AZURE PASS
-- Depends on: FE10-I03.
-- Maps to: FR-FE10-016; AC-FE10-012, AC-FE10-013, AC-FE10-016.
-- Files: shared frontend API, error mapping, notification view model/context,
-  App provider wiring, frontend tests.
-- DoD: count loads only for authenticated sessions, refreshes on focus,
-  successful mutations, and a non-overlapping 60-second interval; click-read
-  failure emits a safe warning while allowlisted navigation still proceeds.
+- [x] Trạng thái: HOÀN TẤT - H3 PHÊ DUYỆT, PR #75 ĐÃ MERGE, CI/AZURE HẬU MERGE
+  ĐẠT
+- Phụ thuộc: FE10-I03.
+- Ánh xạ tới: FR-FE10-016; AC-FE10-012, AC-FE10-013, AC-FE10-016.
+- Tệp: API frontend dùng chung, ánh xạ lỗi, view model/context thông báo, nối
+  provider App, kiểm thử frontend.
+- Tiêu chí hoàn thành: số lượng chỉ tải cho phiên đã xác thực, làm mới khi nhận
+  tiêu điểm, thay đổi thành công và khoảng 60 giây không chồng lấp; lỗi đọc khi
+  nhấp phát cảnh báo an toàn trong khi điều hướng trong danh sách cho phép vẫn
+  tiếp tục.
 
-### FE10-I05 Add The Authenticated Shell Bell And Preview
+### FE10-I05 Thêm chuông và xem trước shell đã xác thực
 
-- [x] Status: COMPLETE - H3 APPROVED, PR #75 MERGED, POST-MERGE CI/AZURE PASS
-- Depends on: FE10-I04.
-- Maps to: FR-FE10-015, FR-FE10-016; AC-FE10-015, AC-FE10-016.
-- Files: Header, notification bell component, app-shell styles, frontend tests.
-- DoD: every authenticated role sees the bell, unread badge caps at `99+`, the
-  popover loads at most five newest unread items with explicit loading/empty/
-  error states, and `Xem tất cả` opens `/notifications`.
+- [x] Trạng thái: HOÀN TẤT - H3 PHÊ DUYỆT, PR #75 ĐÃ MERGE, CI/AZURE HẬU MERGE
+  ĐẠT
+- Phụ thuộc: FE10-I04.
+- Ánh xạ tới: FR-FE10-015, FR-FE10-016; AC-FE10-015, AC-FE10-016.
+- Tệp: Header, thành phần chuông thông báo, kiểu app-shell, kiểm thử frontend.
+- Tiêu chí hoàn thành: mọi vai trò đã xác thực thấy chuông, huy hiệu chưa đọc
+  giới hạn `99+`, popover tải tối đa năm mục chưa đọc mới nhất với trạng thái
+  tải/trống/lỗi rõ ràng và `Xem tất cả` mở `/notifications`.
 
-### FE10-I06 Add The Personal Notification Page
+### FE10-I06 Thêm trang thông báo cá nhân
 
-- [x] Status: COMPLETE - H3 APPROVED, PR #75 MERGED, POST-MERGE CI/AZURE PASS
-- Depends on: FE10-I04.
-- Maps to: FR-FE10-011, FR-FE10-013, FR-FE10-014, FR-FE10-016;
+- [x] Trạng thái: HOÀN TẤT - H3 PHÊ DUYỆT, PR #75 ĐÃ MERGE, CI/AZURE HẬU MERGE
+  ĐẠT
+- Phụ thuộc: FE10-I04.
+- Ánh xạ tới: FR-FE10-011, FR-FE10-013, FR-FE10-014, FR-FE10-016;
   AC-FE10-011, AC-FE10-013, AC-FE10-014, AC-FE10-016.
-- Files: authenticated route guard, App route, notification page, app-shell
-  styles, frontend tests.
-- DoD: all/unread/read filters, 20-item pagination, loading/empty/error/read
-  states, mark-all, and item actions match the API; no delete/archive/global-log
-  control exists.
+- Tệp: bảo vệ route đã xác thực, route App, trang thông báo, kiểu app-shell,
+  kiểm thử frontend.
+- Tiêu chí hoàn thành: bộ lọc tất cả/chưa đọc/đã đọc, phân trang 20 mục, trạng
+  thái tải/trống/lỗi/đã đọc, đánh dấu tất cả và thao tác mục khớp API; không có
+  điều khiển xóa/lưu trữ/nhật ký toàn cục.
 
-### FE10-I07 Prove Cross-Feature And Browser Behavior
+### FE10-I07 Chứng minh hành vi liên tính năng và trình duyệt
 
-- [x] Status: COMPLETE - H3 APPROVED, PR #75 MERGED, POST-MERGE CI/AZURE PASS
-- Depends on: FE10-I03, FE10-I05, FE10-I06.
-- Maps to: AC-FE10-011 to AC-FE10-016.
-- Files: FE04/FE07/FE08 integration tests, FE10 Playwright E2E, test support
-  harness, FE10 TEST_PLAN.
-- DoD: one source event produces one email-backed record visible to its owner;
-  sensitive and cross-user rows never appear; MEMBER/LIBRARIAN/ADMIN browser
-  flows pass including non-blocking read failure.
+- [x] Trạng thái: HOÀN TẤT - H3 PHÊ DUYỆT, PR #75 ĐÃ MERGE, CI/AZURE HẬU MERGE
+  ĐẠT
+- Phụ thuộc: FE10-I03, FE10-I05, FE10-I06.
+- Ánh xạ tới: AC-FE10-011 đến AC-FE10-016.
+- Tệp: kiểm thử tích hợp FE04/FE07/FE08, E2E Playwright FE10, harness hỗ trợ
+  kiểm thử, TEST_PLAN FE10.
+- Tiêu chí hoàn thành: một sự kiện nguồn tạo một bản ghi được hỗ trợ bởi email
+  có thể thấy cho chủ sở hữu; hàng nhạy cảm và khác người dùng không bao giờ
+  xuất hiện; luồng trình duyệt MEMBER/LIBRARIAN/ADMIN đạt, gồm lỗi đọc không
+  chặn.
 
-### FE10-I08 Pass H2, Azure Staging, H3, And Merge Gates
+### FE10-I08 Vượt cổng H2, Azure staging, H3 và merge
 
-- [x] Status: COMPLETE - H3 APPROVED, PR #75 MERGED, POST-MERGE CI/AZURE PASS
-- Depends on: FE10-I01..I07.
-- Maps to: all v0.5.0 BR/FR/AC entries.
-- Files: OpenAPI, architecture/integration map, user manual, Azure staging
-  guide/workflow tests, FE10 PLAN/TASKS/CHANGELOG, review evidence.
-- DoD: focused/full backend and frontend gates, lint/build, deployment/system,
-  traceability, security/secret/diff scans, two-run migration, and browser E2E
-  pass; H2 approves the candidate; exact migration-hash preflight, backend,
-  frontend, staging smoke, and browser checks pass; H3 approves exact head
-  before merge; post-merge CI and automatic staging are monitored.
-- Post-drift evidence through `main@f3ebe95`: backend coverage passed 69/69 suites and
-  1114/1114 tests; frontend passed 258/258 plus lint/build; deployment passed
-  15/15; system passed 10/10; traceability state passed 3/3 and FE10 enforced
-  coverage is 14/16 (88%); Chromium passed 11/11; the exact migration passed
-  twice with protected aggregates unchanged and the disposable database
-  removed. Backend audit found zero vulnerabilities; the repository frontend
-  audit gate accepted only the non-applicable unstable-RSC React Router
-  advisory for the declarative `BrowserRouter` build.
-- Final security-review TDD found the unused SQL `listPending` selector did not
-  explicitly exclude sensitive `ACCOUNT_SETUP` even though the active worker
-  and in-memory selector did. A RED repository regression reproduced the
-  mismatch; both SQL pending selectors now share the complete four-type
-  exclusion and focused GREEN passed 161/161 before the full backend rerun.
-- H2 approved fingerprint `2b53d7e`; commit `b11b59e` and its PR CI passed.
-  Azure staging migrated from zero to one `ReadAt` column
-  and supporting index; 17 eligible historical rows were backfilled, 25
-  excluded rows stayed unread, a post-run-one probe stayed unread after run
-  two, protected aggregates were unchanged, and probe/firewall cleanup passed.
-- Manual deploy run `30305596861` failed closed before deployment because
-  Windows applied the CRLF migration bytes (`6e8b6b4...`) while the Linux
-  runner hashed the equivalent LF checkout (`143cd8e...`). RED/GREEN
-  deployment policy coverage now permits only those exact LF/CRLF renderings
-  of unchanged UTF-8 content.
-- The hash addendum was H2-approved as fingerprint `f78e0cc9...` and published
-  on exact PR head `28c4f80`; CI `30306805399` and Azure staging deployment
-  `30307855616` passed all jobs. Live API/browser checks covered all three
-  roles, own-record isolation, sensitive exclusion, read replay, safe
-  navigation, HTTPS/CORS, and Azure probe/firewall cleanup.
-- H3 round one found missing ADR/current-state reconciliation, stale item state
-  after a successful no-navigation read, mark-all incorrectly disabled by the
-  current filtered page, and a browser-reported popover stacking defect. The
-  bounded TDD/documentation fixes close those implementation findings.
-- H1 approved the later non-overlapping drift through `main@12faead`. The
-  incoming commits delete retired `document/` artifacts only; the branch
-  rebased without conflict. Current Azure staging serves that `main`, so the
-  remediation must be published and redeployed at its new exact head.
-- Fresh post-rebase local evidence passed: backend 69/69 suites and 1116/1116
-  tests; frontend 259/259 plus lint/build; deployment 20/20; system 10/10;
-  traceability state 3/3 and FE10 14/16 (88%); Chromium 11/11; audits, Azure
-  schema preparation, diff hygiene, and contradiction scans.
-- H2 round 3 was approved but superseded before use by `main@a240705`. The user
-  approved a fourth H1 drift addendum; upstream FE11 Admin edit removal, exact
-  main CI `30311801599`, Azure deployment `30311973740`, and a conflict-free
-  rebase are preserved. A new full matrix and H2 remain mandatory.
-- Fresh matrix on `main@a240705` passed: backend 69/69 suites and 1084/1084
-  tests; frontend 259/259 plus lint/build; deployment 20/20; system 10/10;
-  traceability state 3/3 and FE10 14/16 (88%); Chromium 11/11; audits, Azure
-  schema preparation, and diff hygiene.
-- H2 round 4 approved fingerprint `f41dbf50...`; the remediation was committed
-  and pushed as PR #75 head `3f9f23a`. Exact-head CI `30313721511`, Azure
-  deployment `30313949983`, public transport/protected-route checks, Azure SQL
-  schema/index verification, and cleanup passed. Repeated H3, explicit H3
-  approval, merge, and post-merge CI/deployment were mandatory at that
-  historical checkpoint.
-- Final integration: H2 approved fingerprint
+- [x] Trạng thái: HOÀN TẤT - H3 PHÊ DUYỆT, PR #75 ĐÃ MERGE, CI/AZURE HẬU MERGE
+  ĐẠT
+- Phụ thuộc: FE10-I01..I07.
+- Ánh xạ tới: toàn bộ mục BR/FR/AC v0.5.0.
+- Tệp: OpenAPI, bản đồ kiến trúc/tích hợp, hướng dẫn người dùng, hướng dẫn/
+  kiểm thử workflow Azure staging, PLAN/TASKS/CHANGELOG FE10, bằng chứng review.
+- Tiêu chí hoàn thành: cổng backend/frontend tập trung/đầy đủ, lint/build,
+  triển khai/hệ thống, traceability, quét bảo mật/bí mật/diff, migration hai
+  lượt và browser E2E đạt; H2 phê duyệt candidate; preflight hash migration
+  chính xác, backend, frontend, staging smoke và kiểm tra trình duyệt đạt; H3
+  phê duyệt head chính xác trước merge; CI hậu merge và staging tự động được
+  theo dõi.
+- Bằng chứng sau chênh lệch qua `main@f3ebe95`: bao phủ backend đạt 69/69 bộ và
+  1114/1114 kiểm thử; frontend đạt 258/258 cùng lint/build; triển khai đạt
+  15/15; hệ thống đạt 10/10; trạng thái traceability đạt 3/3 và bao phủ thực thi
+  FE10 là 14/16 (88%); Chromium đạt 11/11; migration chính xác đạt hai lần với
+  tổng hợp được bảo vệ không đổi và cơ sở dữ liệu dùng một lần đã xóa. Kiểm toán
+  backend không phát hiện lỗ hổng; cổng kiểm toán frontend repository chỉ chấp
+  nhận advisory React Router RSC không ổn định không áp dụng cho bản dựng
+  `BrowserRouter` khai báo.
+- TDD review bảo mật cuối phát hiện bộ chọn SQL `listPending` không dùng không
+  loại trừ rõ `ACCOUNT_SETUP` nhạy cảm dù worker hoạt động và bộ chọn trong bộ
+  nhớ đã làm vậy. Hồi quy repository RED tái hiện không khớp; cả hai bộ chọn
+  pending SQL hiện chia sẻ loại trừ đầy đủ bốn loại, GREEN tập trung đạt 161/161
+  trước khi chạy lại toàn bộ backend.
+- H2 phê duyệt fingerprint `2b53d7e`; commit `b11b59e` và CI PR của nó đạt.
+  Azure staging đã migration từ không có lên một cột `ReadAt` và chỉ mục hỗ trợ;
+  17 hàng lịch sử đủ điều kiện đã điền lùi, 25 hàng bị loại vẫn chưa đọc, một
+  probe sau lượt một vẫn chưa đọc sau lượt hai, tổng hợp được bảo vệ không đổi
+  và dọn dẹp probe/firewall đạt.
+- Lượt deploy thủ công `30305596861` fail-closed trước triển khai vì Windows áp
+  dụng byte migration CRLF (`6e8b6b4...`) trong khi runner Linux băm checkout
+  LF tương đương (`143cd8e...`). Bao phủ chính sách triển khai RED/GREEN hiện
+  chỉ cho phép đúng bản dựng LF/CRLF của nội dung UTF-8 không đổi đó.
+- Phụ lục hash được H2 phê duyệt với fingerprint `f78e0cc9...` và công bố trên
+  head PR chính xác `28c4f80`; CI `30306805399` và Azure staging deployment
+  `30307855616` đạt mọi job. Kiểm tra API/trình duyệt trực tiếp bao phủ cả ba
+  vai trò, cô lập bản ghi của chính mình, loại trừ nhạy cảm, phát lại đọc, điều
+  hướng an toàn, HTTPS/CORS và dọn dẹp probe/firewall Azure.
+- H3 vòng một phát hiện thiếu đối soát ADR/trạng thái hiện tại, trạng thái mục
+  lỗi thời sau một lần đọc thành công không điều hướng, đánh dấu tất cả bị vô
+  hiệu sai bởi trang đã lọc hiện tại và lỗi xếp chồng popover được trình duyệt
+  báo cáo. Các sửa TDD/tài liệu có giới hạn đóng các finding triển khai đó.
+- H1 phê duyệt chênh lệch không chồng lấp sau qua `main@12faead`. Commit đến
+  chỉ xóa artifact `document/` đã ngừng dùng; nhánh rebase không xung đột.
+  Azure staging hiện tại phục vụ `main` đó, vì vậy biện pháp khắc phục phải được
+  công bố và deploy lại tại head chính xác mới.
+- Bằng chứng cục bộ sau rebase mới đạt: backend 69/69 bộ và 1116/1116 kiểm thử;
+  frontend 259/259 cùng lint/build; triển khai 20/20; hệ thống 10/10; trạng thái
+  traceability 3/3 và FE10 14/16 (88%); Chromium 11/11; kiểm toán, chuẩn bị
+  schema Azure, vệ sinh diff và quét mâu thuẫn.
+- H2 vòng 3 đã được phê duyệt nhưng bị thay thế trước khi dùng bởi
+  `main@a240705`. Người dùng phê duyệt phụ lục chênh lệch H1 thứ tư; việc
+  upstream loại chỉnh sửa FE11 Admin, CI main chính xác `30311801599`, triển
+  khai Azure `30311973740` và rebase không xung đột được bảo toàn. Ma trận đầy
+  đủ và H2 mới vẫn bắt buộc.
+- Ma trận mới trên `main@a240705` đạt: backend 69/69 bộ và 1084/1084 kiểm thử;
+  frontend 259/259 cùng lint/build; triển khai 20/20; hệ thống 10/10; trạng thái
+  traceability 3/3 và FE10 14/16 (88%); Chromium 11/11; kiểm toán, chuẩn bị
+  schema Azure và vệ sinh diff.
+- H2 vòng 4 phê duyệt fingerprint `f41dbf50...`; biện pháp khắc phục được commit
+  và push dưới head PR #75 `3f9f23a`. CI exact-head `30313721511`, Azure deploy
+  `30313949983`, kiểm tra transport công khai/route được bảo vệ, xác minh schema/
+  chỉ mục Azure SQL và dọn dẹp đều đạt. H3 lặp lại, phê duyệt H3 rõ ràng, merge
+  và CI/deploy hậu merge là bắt buộc tại checkpoint lịch sử đó.
+- Tích hợp cuối: H2 phê duyệt fingerprint
   `e123345be05b59a9e519d182b301ab5464160e8fc32aed8d17d3c463e28e0a15`;
-  PR #75 head `778e0a470d8a1083bf571a8007b3c058eee4bb22` passed CI
-  `30317424995` and Azure staging `30317621429`, then clean two-axis H3 and
-  explicit approval. PR #75 merged as
-  `b75776b10d6cf4b6868d2ba51eb3268073483b8b`; exact post-merge CI
-  `30341279111` and automatic Azure staging `30341540847` passed.
+  head PR #75 `778e0a470d8a1083bf571a8007b3c058eee4bb22` đạt CI
+  `30317424995` và Azure staging `30317621429`, sau đó H3 hai trục sạch và phê
+  duyệt rõ ràng. PR #75 merge thành
+  `b75776b10d6cf4b6868d2ba51eb3268073483b8b`; CI hậu merge chính xác
+  `30341279111` và Azure staging tự động `30341540847` đã đạt.
 
-### V0.5.0 Traceability
+### Traceability v0.5.0
 
-| Acceptance | Planned slices |
+| Tiêu chí chấp nhận | Lát cắt đã lên kế hoạch |
 | --- | --- |
 | AC-FE10-011 | FE10-I01, FE10-I02, FE10-I03, FE10-I06, FE10-I07, FE10-I08 |
 | AC-FE10-012 | FE10-I01, FE10-I02, FE10-I03, FE10-I04, FE10-I07, FE10-I08 |

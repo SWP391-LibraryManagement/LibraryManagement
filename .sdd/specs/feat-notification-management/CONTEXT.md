@@ -1,225 +1,255 @@
-# CONTEXT.md - FE10 Notification Management
+# CONTEXT.md - FE10 Quản lý thông báo
 
-# Version: 0.5.0
+# Phiên bản: 0.5.0
 
-# Status: V0.5.0 COMPLETE - PR #75 MERGED, POST-MERGE CI/AZURE PASS
+# Trạng thái: V0.5.0 HOÀN TẤT - PR #75 ĐÃ MERGE, CI/AZURE HẬU MERGE ĐẠT
 
-# Owner: Nhat
+# Chủ sở hữu: Nhat
 
-# Last Updated: 2026-07-28
+# Cập nhật lần cuối: 2026-07-28
 
-# Feature folder: `.sdd/specs/feat-notification-management/`
-
----
-
-## 1. Feature Purpose
-
-Notification Management exists to deliver system messages to users at the right time and through approved channels.
-
-This feature must keep these concerns consistent:
-
-- Notification requests created by other features.
-- Notification content rendered from approved templates.
-- Delivery status for email notifications.
-- Own-user personal notification inbox visibility and read state for eligible
-  non-sensitive notification records on the web.
-- Safe delivery records for failed or skipped delivery attempts.
-- Construction-bound ownership for FE02 OTP, FE04 membership-result, and FE11 account-setup delivery.
-
-FE10 historically used a Standard Spec. Revision v0.5.0 is treated as Full Spec
-because it adds schema, authenticated own-record APIs, and server-side
-authorization while preserving the rule that FE10 does not decide when an
-account, reservation, loan, or fine changes state.
+# Thư mục tính năng: `.sdd/specs/feat-notification-management/`
 
 ---
 
-## 2. Real-World Workflow
+## 1. Mục đích tính năng
 
-The typical library notification workflow:
+Quản lý thông báo tồn tại để gửi thông điệp hệ thống cho người dùng đúng thời
+điểm và qua các kênh đã được phê duyệt.
 
-1. A source feature detects that a notification should be sent.
-2. The source feature sends FE10 a notification request with recipient, type, channel, template key, and template data.
-3. FE10 validates the request and checks recipient/channel availability.
-4. FE10 renders the message from an approved template.
-5. FE10 persists accepted sensitive delivery as `PROCESSING` before provider
-   I/O, while queued non-sensitive delivery starts as `PENDING`.
-6. Eligible non-sensitive records are visible in the recipient's personal web
-   inbox without creating a second record or delivery channel.
-7. The worker sends queued email and updates the independent delivery status;
-   personal read state changes only through the authenticated inbox API.
-8. If sending fails, FE10 records a safe failure reason without removing the
-   inbox record or rolling back the source business event.
+Tính năng này phải giữ nhất quán các mối quan tâm sau:
 
----
+- Các yêu cầu thông báo do tính năng khác tạo ra.
+- Nội dung thông báo được kết xuất từ các mẫu đã được phê duyệt.
+- Trạng thái gửi cho các thông báo email.
+- Khả năng hiển thị hộp thư thông báo cá nhân của chính người dùng và trạng
+  thái đã đọc trên web cho các bản ghi thông báo không nhạy cảm đủ điều kiện.
+- Bản ghi gửi an toàn cho các lần gửi thất bại hoặc bị bỏ qua.
+- Quyền sở hữu được ràng buộc khi khởi tạo cho việc gửi OTP FE02, kết quả tư
+  cách thành viên FE04 và thiết lập tài khoản FE11.
 
-## 3. Feature Boundary
-
-FE10 includes:
-
-- Receiving notification requests from approved construction-bound internal features.
-- Sending account verification, password reset, reservation, due date, overdue, and fine notifications.
-- Projecting eligible non-sensitive records into the authenticated recipient's
-  personal web inbox without creating another notification or channel.
-- Tracking nullable `ReadAt` independently from email delivery and deriving
-  safe business navigation from a fixed backend allowlist.
-- Sending email notifications through a configured provider adapter or injected mock provider.
-- Using approved notification templates and required template variables.
-- Tracking notification status and failed delivery reasons.
-
-FE10 does not include:
-
-- Creating authentication tokens. That belongs to FE02 Authentication.
-- Validating password reset tokens. That belongs to FE02 Authentication.
-- Deciding reservation queue eligibility. That belongs to FE08 Reservation Management.
-- Calculating overdue fines. That belongs to FE09 Fine Management.
-- Approving borrow/return workflows. That belongs to FE07 Borrowing Management.
-- SMS, push notification, or marketing campaign delivery.
-- Online payment notifications.
-- A second `IN_APP` delivery channel or duplicate inbox table/record.
-- Global Admin/Librarian notification-log screens.
-- Notification delete, archive, retention-cleanup, or preference management.
-- Manual retry management screens.
-- Template editor UI.
-- Real external email-provider credentials in source code.
+Trước đây FE10 sử dụng Đặc tả Tiêu chuẩn. Bản sửa đổi v0.5.0 được xem là Đặc
+tả Đầy đủ vì bổ sung schema, API bản ghi của chính người dùng đã xác thực và
+phân quyền phía máy chủ, đồng thời giữ quy tắc rằng FE10 không quyết định khi
+tài khoản, đặt chỗ, khoản mượn hoặc tiền phạt thay đổi trạng thái.
 
 ---
 
-## 4. Current Data Model Notes
+## 2. Quy trình thực tế
 
-The existing SQL design is implemented in `database/Librarymanagement.sql`;
-the approved v0.5.0 extension adds the personal read-state contract:
+Quy trình thông báo thư viện điển hình:
 
-- `NotificationTemplates` with canonical template code, subject, body, status, and timestamps.
-- `Notifications` with type/template, recipient, delivery status, safe source
-  metadata, all-status idempotency key, redacted payload, attempt count, safe
-  failure summary, and the v0.5.0 nullable `ReadAt` field.
-- `NotificationAttempts` with attempt timestamp/status, safe error message, and provider message ID.
-- `UserNotificationPreferences` remains future work. The approved personal web
-  inbox reuses `Notifications` and does not require a preference or projection
-  table.
-
-Potential issues to review:
-
-- Email addresses live in `Users.Email`; FE10 must not duplicate user account data unnecessarily.
-- Email provider secrets must come from environment/configuration, not committed files.
-- FE02 owns OTP/token generation and validation; FE10 receives raw OTP template data only through the requester bound to `FE02`, uses it only in provider memory, and persists no OTP or rendered sensitive content.
-- Staff HTTP callers cannot submit sensitive auth notifications; only FE02 may submit verification/reset, only FE04 may submit membership result, and only FE11 may submit account setup through their bound requesters.
-- FE10 should be idempotent enough to avoid duplicate messages for the same source event.
-- Failed sends should not roll back already-completed business transactions in FE02/FE07/FE08/FE09.
-- Personal inbox queries must filter by authenticated `UserId` and the exact
-  eligible non-sensitive allowlist before rows materialize; sensitive and
-  userless rows never enter list, count, or read operations.
-
-The approved SPEC and FE10-H01 through FE10-H09 resolved the implementation blockers above; future-scope items remain explicitly deferred.
+1. Một tính năng nguồn phát hiện rằng cần gửi thông báo.
+2. Tính năng nguồn gửi cho FE10 một yêu cầu thông báo với người nhận, loại,
+   kênh, khóa mẫu và dữ liệu mẫu.
+3. FE10 kiểm tra hợp lệ yêu cầu và kiểm tra khả dụng của người nhận/kênh.
+4. FE10 kết xuất thông điệp từ một mẫu đã được phê duyệt.
+5. FE10 lưu bền yêu cầu gửi nhạy cảm đã được chấp nhận ở trạng thái
+   `PROCESSING` trước I/O nhà cung cấp, trong khi yêu cầu gửi không nhạy cảm
+   đã xếp hàng bắt đầu ở `PENDING`.
+6. Các bản ghi không nhạy cảm đủ điều kiện hiển thị trong hộp thư web cá nhân
+   của người nhận mà không tạo bản ghi thứ hai hoặc kênh gửi thứ hai.
+7. Tiến trình xử lý gửi email đã xếp hàng và cập nhật trạng thái gửi độc lập;
+   trạng thái đã đọc cá nhân chỉ thay đổi qua API hộp thư đã xác thực.
+8. Nếu gửi thất bại, FE10 ghi nhận lý do thất bại an toàn mà không loại bỏ bản
+   ghi hộp thư hoặc hoàn tác sự kiện nghiệp vụ nguồn.
 
 ---
 
-## 5. Main Use Cases From Assignment Sheet
+## 3. Ranh giới tính năng
 
-| Use Case ID | Use Case Name | Owner |
+FE10 bao gồm:
+
+- Nhận yêu cầu thông báo từ các tính năng nội bộ đã được ràng buộc khi khởi tạo
+  và phê duyệt.
+- Gửi thông báo xác minh tài khoản, đặt lại mật khẩu, đặt chỗ, hạn trả, quá hạn
+  và tiền phạt.
+- Chiếu các bản ghi không nhạy cảm đủ điều kiện vào hộp thư web cá nhân của
+  người nhận đã xác thực mà không tạo thông báo hoặc kênh khác.
+- Theo dõi `ReadAt` có thể null độc lập với việc gửi email và suy ra điều hướng
+  nghiệp vụ an toàn từ danh sách cho phép backend cố định.
+- Gửi thông báo email qua bộ điều hợp nhà cung cấp đã cấu hình hoặc nhà cung
+  cấp mô phỏng được chèn.
+- Sử dụng mẫu thông báo đã được phê duyệt và các biến mẫu bắt buộc.
+- Theo dõi trạng thái thông báo và lý do gửi thất bại.
+
+FE10 không bao gồm:
+
+- Tạo mã thông báo xác thực. Việc đó thuộc Xác thực FE02.
+- Xác thực mã thông báo đặt lại mật khẩu. Việc đó thuộc Xác thực FE02.
+- Quyết định điều kiện hợp lệ hàng đợi đặt chỗ. Việc đó thuộc Quản lý đặt chỗ
+  FE08.
+- Tính tiền phạt quá hạn. Việc đó thuộc Quản lý tiền phạt FE09.
+- Phê duyệt quy trình mượn/trả. Việc đó thuộc Quản lý mượn sách FE07.
+- Gửi SMS, thông báo đẩy hoặc chiến dịch tiếp thị.
+- Thông báo thanh toán trực tuyến.
+- Kênh gửi `IN_APP` thứ hai hoặc bảng/bản ghi hộp thư trùng lặp.
+- Màn hình nhật ký thông báo toàn cục cho Quản trị viên/Thủ thư.
+- Xóa, lưu trữ, dọn dẹp theo thời hạn lưu giữ hoặc quản lý tùy chọn thông báo.
+- Màn hình quản lý thử lại thủ công.
+- Giao diện chỉnh sửa mẫu.
+- Thông tin xác thực nhà cung cấp email bên ngoài thực trong mã nguồn.
+
+---
+
+## 4. Ghi chú về mô hình dữ liệu hiện tại
+
+Thiết kế SQL hiện có được triển khai trong `database/Librarymanagement.sql`;
+phần mở rộng v0.5.0 đã được phê duyệt bổ sung hợp đồng trạng thái đọc cá nhân:
+
+- `NotificationTemplates` có mã mẫu chuẩn, tiêu đề, nội dung, trạng thái và
+  dấu thời gian.
+- `Notifications` có loại/mẫu, người nhận, trạng thái gửi, siêu dữ liệu nguồn
+  an toàn, khóa lũy đẳng xuyên suốt mọi trạng thái, payload đã che dữ liệu, số
+  lần thử, bản tóm tắt lỗi an toàn và trường `ReadAt` có thể null của v0.5.0.
+- `NotificationAttempts` có dấu thời gian/trạng thái lần thử, thông báo lỗi an
+  toàn và ID thông điệp nhà cung cấp.
+- `UserNotificationPreferences` vẫn là công việc tương lai. Hộp thư web cá
+  nhân đã được phê duyệt tái sử dụng `Notifications` và không cần bảng tùy chọn
+  hay bảng chiếu.
+
+Các vấn đề tiềm ẩn cần rà soát:
+
+- Địa chỉ email nằm trong `Users.Email`; FE10 không được sao chép dữ liệu tài
+  khoản người dùng một cách không cần thiết.
+- Bí mật của nhà cung cấp email phải đến từ môi trường/cấu hình, không phải tệp
+  được commit.
+- FE02 sở hữu việc tạo và xác thực OTP/mã thông báo; FE10 chỉ nhận dữ liệu mẫu
+  OTP thô qua trình yêu cầu ràng buộc với `FE02`, chỉ dùng trong bộ nhớ nhà cung
+  cấp và không lưu bền OTP hay nội dung nhạy cảm đã kết xuất.
+- Người gọi HTTP là nhân viên không thể gửi thông báo xác thực nhạy cảm; chỉ
+  FE02 có thể gửi xác minh/đặt lại, chỉ FE04 có thể gửi kết quả tư cách thành
+  viên và chỉ FE11 có thể gửi thiết lập tài khoản qua các trình yêu cầu đã được
+  ràng buộc của họ.
+- FE10 phải đủ tính lũy đẳng để tránh thông điệp trùng lặp cho cùng một sự kiện
+  nguồn.
+- Việc gửi thất bại không được hoàn tác giao dịch nghiệp vụ đã hoàn tất trong
+  FE02/FE07/FE08/FE09.
+- Truy vấn hộp thư cá nhân phải lọc theo `UserId` đã xác thực và danh sách cho
+  phép chính xác các loại không nhạy cảm đủ điều kiện trước khi các hàng được
+  hiện thực hóa; hàng nhạy cảm và hàng không có người dùng không bao giờ vào
+  các thao tác liệt kê, đếm hoặc đọc.
+
+SPEC đã được phê duyệt và FE10-H01 đến FE10-H09 đã giải quyết các điểm chặn
+triển khai ở trên; các hạng mục phạm vi tương lai vẫn được trì hoãn rõ ràng.
+
+---
+
+## 5. Các trường hợp sử dụng chính từ bảng phân công
+
+| ID trường hợp sử dụng | Tên trường hợp sử dụng | Chủ sở hữu |
 | ----------- | ------------- | ----- |
-| UC45 | Send Account Verification Notification | Nhat |
-| UC46 | Send Password Reset Notification | Nhat |
-| UC47 | Send Book Reservation Notification | Nhat |
-| UC48 | Send Due Date Or Fine Notification | Nhat |
+| UC45 | Gửi thông báo xác minh tài khoản | Nhat |
+| UC46 | Gửi thông báo đặt lại mật khẩu | Nhat |
+| UC47 | Gửi thông báo đặt chỗ sách | Nhat |
+| UC48 | Gửi thông báo hạn trả hoặc tiền phạt | Nhat |
 
 ---
 
-## 6. Feature Tests From Assignment Sheet
+## 6. Kiểm thử tính năng từ bảng phân công
 
-| Test ID | Test Name | Owner |
+| ID kiểm thử | Tên kiểm thử | Chủ sở hữu |
 | ------- | --------- | ----- |
-| FT46 | Account verification notification sent | Nhat |
-| FT47 | Password reset notification sent | Nhat |
-| FT48 | Book reservation notification sent | Nhat |
-| FT49 | Due date or fine notification sent | Nhat |
+| FT46 | Đã gửi thông báo xác minh tài khoản | Nhat |
+| FT47 | Đã gửi thông báo đặt lại mật khẩu | Nhat |
+| FT48 | Đã gửi thông báo đặt chỗ sách | Nhat |
+| FT49 | Đã gửi thông báo hạn trả hoặc tiền phạt | Nhat |
 
 ---
 
-## 7. Key Risks
+## 7. Rủi ro chính
 
-- Duplicate notifications confuse members and create support work.
-- Failed email delivery may hide important account, reservation, due date, or fine events.
-- Notification content may expose sensitive tokens or internal error details if templates are not controlled.
-- Missing delivery records makes delivery issues hard to troubleshoot.
-- FE10 may accidentally take over business decisions that belong to FE02, FE07, FE08, or FE09.
-- Email provider credentials may be leaked if hardcoded.
+- Thông báo trùng lặp gây nhầm lẫn cho thành viên và tạo thêm công việc hỗ trợ.
+- Gửi email thất bại có thể che khuất sự kiện quan trọng về tài khoản, đặt chỗ,
+  hạn trả hoặc tiền phạt.
+- Nội dung thông báo có thể làm lộ mã thông báo nhạy cảm hoặc chi tiết lỗi nội
+  bộ nếu mẫu không được kiểm soát.
+- Thiếu bản ghi gửi khiến sự cố gửi khó khắc phục.
+- FE10 có thể vô tình tiếp quản các quyết định nghiệp vụ thuộc FE02, FE07, FE08
+  hoặc FE09.
+- Thông tin xác thực của nhà cung cấp email có thể bị lộ nếu bị mã hóa cứng.
 
 ---
 
-## 8. Dependencies
+## 8. Phụ thuộc
 
-| Dependency | Why It Matters |
+| Phụ thuộc | Lý do quan trọng |
 | ---------- | -------------- |
-| FE02 Authentication | Creates verification/reset OTP tokens and requests their delivery through the requester bound to `FE02`. |
-| FE04 Membership Management | Requests `MEMBERSHIP_RESULT` after approval/rejection through the requester bound to `FE04`. |
-| FE07 Borrowing Management | May request due date reminders and borrow/return status notifications. |
-| FE08 Reservation Management | Requests book available and reservation status notifications. |
-| FE09 Fine Management | Requests overdue and fine notifications. |
-| SQL Server database | Stores notification templates, records, and attempts. |
-| Configured email provider adapter or injected mock provider | Delivers email notifications in deployed and test environments. |
+| Xác thực FE02 | Tạo mã OTP xác minh/đặt lại và yêu cầu gửi qua trình yêu cầu ràng buộc với `FE02`. |
+| Quản lý tư cách thành viên FE04 | Yêu cầu `MEMBERSHIP_RESULT` sau khi phê duyệt/từ chối qua trình yêu cầu ràng buộc với `FE04`. |
+| Quản lý mượn sách FE07 | Có thể yêu cầu lời nhắc hạn trả và thông báo trạng thái mượn/trả. |
+| Quản lý đặt chỗ FE08 | Yêu cầu thông báo sách sẵn có và trạng thái đặt chỗ. |
+| Quản lý tiền phạt FE09 | Yêu cầu thông báo quá hạn và tiền phạt. |
+| Cơ sở dữ liệu SQL Server | Lưu mẫu, bản ghi và lần thử thông báo. |
+| Bộ điều hợp nhà cung cấp email đã cấu hình hoặc nhà cung cấp mô phỏng được chèn | Gửi thông báo email trong môi trường triển khai và kiểm thử. |
 
 ---
 
-## 9. Resolved Questions For Team / Teacher
+## 9. Câu hỏi đã được giải quyết cho nhóm/giảng viên
 
-| ID | Approved Decision | Source | Status |
+| ID | Quyết định đã phê duyệt | Nguồn | Trạng thái |
 | -- | ----------------- | ------ | ------ |
-| Q-FE10-001 | Phase 1 required channel is email through a configured provider adapter; tests use an injected mock provider. | Review packet 2026-06-10; ADR-004 approval 2026-07-15 | APPROVED |
-| Q-FE10-002 | A separate `IN_APP` delivery channel remains future work. The v0.5.0 web inbox is an additional presentation of the existing eligible email-backed record, not a new channel. | Review packet 2026-06-10; v0.5.0 design approval 2026-07-27 | APPROVED |
-| Q-FE10-003 | Required canonical templates cover verification, password reset, account setup, reservation ready, due reminder, overdue notice, fine notice, and membership result. | Review packet 2026-06-10; normalization through 2026-07-17 | APPROVED |
-| Q-FE10-004 | Store notification send attempts and status. | Review packet 2026-06-10 | APPROVED |
-| Q-FE10-005 | Retry failed sends manually only in Phase 1. | Review packet 2026-06-10 | APPROVED |
-| Q-FE10-006 | Notification failure must not block source business flow. | Review packet 2026-06-10 | APPROVED |
-| Q-FE10-008 | FE11-owned `ACCOUNT_SETUP` is delivered only through the FE11-bound requester and persists no raw setup token/link. | ADR-005; Nhat approval 2026-07-15 | APPROVED |
-| Q-FE10-007 | System/Scheduler may trigger notifications internally; not a login role. | Review packet 2026-06-10 | APPROVED |
-| Q-FE10-014 | Every authenticated `MEMBER`, `LIBRARIAN`, and `ADMIN` receives an own-record-only personal inbox for eligible non-sensitive notifications; global staff logs remain out of scope. | v0.5.0 design and written SPEC approval 2026-07-27 | APPROVED |
+| Q-FE10-001 | Kênh bắt buộc của Giai đoạn 1 là email qua bộ điều hợp nhà cung cấp đã cấu hình; kiểm thử dùng nhà cung cấp mô phỏng được chèn. | Gói rà soát 2026-06-10; phê duyệt ADR-004 2026-07-15 | APPROVED |
+| Q-FE10-002 | Kênh gửi `IN_APP` riêng vẫn là công việc tương lai. Hộp thư web v0.5.0 là phần trình bày bổ sung của bản ghi đủ điều kiện hiện có được hỗ trợ bởi email, không phải kênh mới. | Gói rà soát 2026-06-10; phê duyệt thiết kế v0.5.0 2026-07-27 | APPROVED |
+| Q-FE10-003 | Các mẫu chuẩn bắt buộc bao gồm xác minh, đặt lại mật khẩu, thiết lập tài khoản, đặt chỗ sẵn sàng, nhắc hạn trả, thông báo quá hạn, thông báo tiền phạt và kết quả tư cách thành viên. | Gói rà soát 2026-06-10; chuẩn hóa đến 2026-07-17 | APPROVED |
+| Q-FE10-004 | Lưu các lần gửi thông báo và trạng thái. | Gói rà soát 2026-06-10 | APPROVED |
+| Q-FE10-005 | Chỉ thử lại thủ công các lần gửi thất bại trong Giai đoạn 1. | Gói rà soát 2026-06-10 | APPROVED |
+| Q-FE10-006 | Lỗi thông báo không được chặn luồng nghiệp vụ nguồn. | Gói rà soát 2026-06-10 | APPROVED |
+| Q-FE10-008 | `ACCOUNT_SETUP` do FE11 sở hữu chỉ được gửi qua trình yêu cầu ràng buộc với FE11 và không lưu bền mã thông báo/liên kết thiết lập thô. | ADR-005; Nhat phê duyệt 2026-07-15 | APPROVED |
+| Q-FE10-007 | Hệ thống/Bộ lập lịch có thể kích hoạt thông báo nội bộ; không phải vai trò đăng nhập. | Gói rà soát 2026-06-10 | APPROVED |
+| Q-FE10-014 | Mọi `MEMBER`, `LIBRARIAN` và `ADMIN` đã xác thực nhận hộp thư cá nhân chỉ chứa bản ghi của chính mình cho thông báo không nhạy cảm đủ điều kiện; nhật ký nhân viên toàn cục vẫn ngoài phạm vi. | Thiết kế v0.5.0 và phê duyệt SPEC bằng văn bản 2026-07-27 | APPROVED |
 
 ---
 
-## 10. Current Hardening Status
+## 10. Trạng thái củng cố hiện tại
 
-- `SPEC.md` v0.5.0, the personal inbox design, and FE10-I01..I08 plan are
-  H1-approved; governance PR #70 is merged as `25c09ec`.
-- FE10-I01 through FE10-I08, the migration-hash remediation, and the bounded
-  H3 round-one remediation were integrated through PR #75. The exact reviewed
-  head `778e0a470d8a1083bf571a8007b3c058eee4bb22` passed CI `30317424995`
-  and Azure staging `30317621429`; two-axis H3 returned no actionable finding
-  and received explicit approval.
-- H3 round one against `main@a5fcbb9...28c4f80` failed on missing ADR-002
-  read-state documentation, stale lifecycle source-of-truth text, two bounded
-  `/notifications` read-state controls, and a browser-reported popover stacking
-  defect. ADR-002, lifecycle documentation, page state, mark-all availability,
-  and open-popover stacking are now remediated with focused tests.
-- Fresh post-`main@a240705` gates passed: backend 69/69 suites and 1084/1084 tests;
-  frontend 259/259 plus lint/build; deployment 20/20; system 10/10;
-  traceability state 3/3 and FE10 14/16 (88%); Chromium 11/11; audits, Azure
-  schema preparation, and diff hygiene.
-- The user-approved documentation-only drift through `main@30f936d` preserved
-  the Vietnamese SDD translation without runtime conflict. Its fresh H2
-  fingerprint `e123345be05b59a9e519d182b301ab5464160e8fc32aed8d17d3c463e28e0a15`,
-  exact-head CI/Azure, and repeated H3 all completed before PR #75 merged.
-- PR #75 merged as `b75776b10d6cf4b6868d2ba51eb3268073483b8b`. Exact
-  post-merge CI `30341279111` and automatic Azure staging `30341540847`
-  passed, including preflight, backend, frontend, and smoke. Azure continues
-  to enforce the migration gate; no additional database mutation is claimed
-  by this documentation closeout.
-- The 2026-07-28 H1 deployment addendum preserves upstream CI-gated automatic
-  staging while requiring exact migration-hash proof for both automatic and
-  manual runs; manual runs retain an additional human confirmation input.
-- The 2026-07-28 H1 Core-drift addendum preserves the upstream packaged
-  `CHANGE_PASSWORD_OTP` startup migration/readiness contract and Vietnamese
-  verification-email seed while retaining the FE10 migration gate.
-- The second 2026-07-28 H1 Core-drift addendum preserves upstream
-  FE07/FE08/FE10/FE12 round-two UI corrections through `main@db97f17`,
-  including the Vietnamese member-cancellation reason and responsive
-  return/reservation controls, while retaining the FE10 inbox API and styles.
-- FE10-H01 through FE10-H09 and FE10-S01 through FE10-S16 remain completed
-  historical delivery work; FE10-I01 through FE10-I08 are the new bounded
-  personal inbox tasks.
-- Use environment variables or deployment configuration for email provider credentials.
-- Do not log raw tokens, full reset links, or provider secrets.
-- Keep FE10 APIs role-protected and server-side validated.
-- Keep verification/reset internal to `FE02`, membership result internal to `FE04`, and account setup internal to `FE11`; HTTP and non-owning sources receive safe `403`.
-- Use idempotency keys or source event identifiers to prevent duplicate notification records.
-- Keep message rendering centralized so templates are testable.
+- `SPEC.md` v0.5.0, thiết kế hộp thư cá nhân và kế hoạch FE10-I01..I08 đã được
+  H1 phê duyệt; governance PR #70 đã merge thành `25c09ec`.
+- FE10-I01 đến FE10-I08, biện pháp khắc phục hash migration và biện pháp khắc
+  phục H3 vòng một có giới hạn đã được tích hợp qua PR #75. Head đã được rà soát
+  chính xác `778e0a470d8a1083bf571a8007b3c058eee4bb22` đã đạt CI
+  `30317424995` và Azure staging `30317621429`; H3 hai trục không có finding
+  có thể hành động và đã nhận phê duyệt rõ ràng.
+- H3 vòng một đối với `main@a5fcbb9...28c4f80` thất bại do thiếu tài liệu trạng
+  thái đọc ADR-002, văn bản nguồn chuẩn vòng đời lỗi thời, hai điều khiển trạng
+  thái đọc `/notifications` có giới hạn và lỗi xếp chồng popover được trình
+  duyệt báo cáo. ADR-002, tài liệu vòng đời, trạng thái trang, khả dụng đánh dấu
+  tất cả và xếp chồng popover đang mở hiện đã được khắc phục bằng kiểm thử tập
+  trung.
+- Các cổng mới sau `main@a240705` đã đạt: backend 69/69 bộ và 1084/1084 kiểm
+  thử; frontend 259/259 cùng lint/build; triển khai 20/20; hệ thống 10/10;
+  trạng thái traceability 3/3 và FE10 14/16 (88%); Chromium 11/11; kiểm toán,
+  chuẩn bị schema Azure và vệ sinh diff.
+- Phần chênh lệch chỉ tài liệu được người dùng phê duyệt qua
+  `main@30f936d` đã giữ bản dịch SDD tiếng Việt mà không xung đột runtime.
+  Fingerprint H2 mới `e123345be05b59a9e519d182b301ab5464160e8fc32aed8d17d3c463e28e0a15`,
+  CI/Azure exact-head và H3 lặp lại đều hoàn tất trước khi PR #75 merge.
+- PR #75 đã merge thành `b75776b10d6cf4b6868d2ba51eb3268073483b8b`. CI hậu
+  merge chính xác `30341279111` và Azure staging tự động `30341540847` đã đạt,
+  bao gồm preflight, backend, frontend và smoke. Azure tiếp tục thực thi cổng
+  migration; không có thay đổi cơ sở dữ liệu bổ sung nào được tuyên bố bởi đợt
+  đóng tài liệu này.
+- Phụ lục triển khai H1 ngày 2026-07-28 giữ staging tự động có cổng CI từ
+  upstream trong khi yêu cầu bằng chứng hash migration chính xác cho cả lượt
+  tự động và thủ công; lượt thủ công giữ thêm đầu vào xác nhận của con người.
+- Phụ lục chênh lệch Core H1 ngày 2026-07-28 giữ hợp đồng migration/khả năng
+  sẵn sàng khởi động `CHANGE_PASSWORD_OTP` đóng gói ở upstream và seed email
+  xác minh tiếng Việt, đồng thời giữ cổng migration FE10.
+- Phụ lục chênh lệch Core H1 thứ hai ngày 2026-07-28 giữ các chỉnh sửa UI vòng
+  hai FE07/FE08/FE10/FE12 ở upstream qua `main@db97f17`, bao gồm lý do hủy của
+  thành viên bằng tiếng Việt và các điều khiển trả/đặt chỗ đáp ứng, đồng thời
+  giữ API và kiểu dáng hộp thư FE10.
+- FE10-H01 đến FE10-H09 và FE10-S01 đến FE10-S16 vẫn là công việc giao hàng
+  lịch sử đã hoàn tất; FE10-I01 đến FE10-I08 là các nhiệm vụ hộp thư cá nhân
+  mới có giới hạn.
+- Dùng biến môi trường hoặc cấu hình triển khai cho thông tin xác thực nhà cung
+  cấp email.
+- Không ghi log mã thông báo thô, liên kết đặt lại đầy đủ hoặc bí mật nhà cung
+  cấp.
+- Giữ các API FE10 được bảo vệ theo vai trò và kiểm tra hợp lệ phía máy chủ.
+- Giữ xác minh/đặt lại nội bộ trong `FE02`, kết quả tư cách thành viên nội bộ
+  trong `FE04` và thiết lập tài khoản nội bộ trong `FE11`; HTTP và nguồn không
+  sở hữu nhận `403` an toàn.
+- Dùng khóa lũy đẳng hoặc mã định danh sự kiện nguồn để ngăn bản ghi thông báo
+  trùng lặp.
+- Giữ việc kết xuất thông điệp tập trung để các mẫu có thể kiểm thử.

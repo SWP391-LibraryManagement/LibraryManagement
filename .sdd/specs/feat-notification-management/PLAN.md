@@ -1,204 +1,393 @@
-# PLAN.md - FE10 Notification Management
+# PLAN.md - FE10 Quản lý thông báo
 
-Status: V0.5.0 COMPLETE - PR #75 MERGED, POST-MERGE CI/AZURE PASS
+Trạng thái: V0.5.0 HOÀN TẤT - PR #75 ĐÃ MERGE, CI/AZURE HẬU MERGE ĐẠT
 
-Owner: Nhat
+Chủ sở hữu: Nhat
 
-Updated: 2026-07-28
+Cập nhật: 2026-07-28
 
-Approval: G1-G7 approved 2026-07-13; G8-G10/ADR-004 and G11/ADR-005 approved 2026-07-15; G12 FE04 boundary approved by Nhat on 2026-07-17
+Phê duyệt: G1-G7 được phê duyệt 2026-07-13; G8-G10/ADR-004 và G11/ADR-005
+được phê duyệt 2026-07-15; ranh giới FE04 G12 được Nhat phê duyệt
+2026-07-17
 
-Workflow State: The approved Phase 2/G1-G12 and v0.4.5 delivery baseline
-remains complete. The user approved the v0.5.0 personal notification inbox
-design and consolidated written SPEC on 2026-07-27, then approved the
-implementation plan and FE10-I01..I08 task decomposition as H1 on 2026-07-28.
-Governance PR #70 reached `main` as `25c09ec`. After the documentation-only
-`main@30f936d` drift rebase, H2 approved fingerprint
+Trạng thái quy trình: baseline giao hàng Giai đoạn 2/G1-G12 và v0.4.5 đã được
+phê duyệt vẫn hoàn tất. Người dùng đã phê duyệt thiết kế hộp thư thông báo cá
+nhân v0.5.0 và SPEC hợp nhất bằng văn bản ngày 2026-07-27, sau đó phê duyệt kế
+hoạch triển khai và phân rã nhiệm vụ FE10-I01..I08 dưới H1 ngày 2026-07-28.
+Governance PR #70 đã vào `main` dưới dạng `25c09ec`. Sau rebase chênh lệch chỉ
+tài liệu `main@30f936d`, H2 đã phê duyệt fingerprint
 `e123345be05b59a9e519d182b301ab5464160e8fc32aed8d17d3c463e28e0a15`.
-PR #75 head `778e0a470d8a1083bf571a8007b3c058eee4bb22` passed exact-head CI
-`30317424995` and Azure staging `30317621429`, received clean two-axis H3 and
-explicit approval, then merged as `b75776b10d6cf4b6868d2ba51eb3268073483b8b`.
-Exact post-merge CI `30341279111` and automatic Azure staging `30341540847`
-passed. FE10-I01 through FE10-I08 and the bounded remediation are complete.
+Head PR #75 `778e0a470d8a1083bf571a8007b3c058eee4bb22` đã đạt CI exact-head
+`30317424995` và Azure staging `30317621429`, nhận H3 hai trục sạch và phê
+duyệt rõ ràng, rồi merge thành
+`b75776b10d6cf4b6868d2ba51eb3268073483b8b`. CI hậu merge chính xác
+`30341279111` và Azure staging tự động `30341540847` đều đạt. FE10-I01 đến
+FE10-I08 cùng biện pháp khắc phục có giới hạn đã hoàn tất.
 
 ---
 
-> Sections 1-8 preserve the completed G1-G7 hardening history. Section 9 supersedes historical verification-link, mock-only provider, and FE02-migration-deferral statements. Section 10 records completed FE11 setup work, and Section 11 is the current FE04 membership-result boundary follow-up.
+> Phần 1-8 giữ lịch sử củng cố G1-G7 đã hoàn tất. Phần 9 thay thế các phát biểu
+> lịch sử về liên kết xác minh, nhà cung cấp chỉ mô phỏng và trì hoãn migration
+> FE02. Phần 10 ghi nhận công việc thiết lập FE11 đã hoàn tất, còn Phần 11 là
+> phần theo dõi ranh giới kết quả tư cách thành viên FE04 hiện tại.
 
-## Historical G1-G7 Plan (Superseded Where Sections 9-11 Differ)
+## Kế hoạch G1-G7 lịch sử (được thay thế khi Phần 9-11 khác biệt)
 
-Nhat approved the binding recommendations G1-G7 on 2026-07-13. That approval first authorized B4 task decomposition. The B4 documentation was reviewed, B5 then proceeded on `feat/fe10-hardening`, and FE10-H01 through FE10-H08 were completed. FE10-H09 passed the B6 validation and independent-review gate. Commit `9185a9a91f41e444e0c4e6bd8c0605a281272ee9` was then merged into `main`, and GitHub Actions CI run `29236572558` passed for the same commit. The B7 evidence is recorded in `.sdd/reviews/fe10-b7-integration-review-closeout-2026-07-13.md`.
+Nhat đã phê duyệt các khuyến nghị ràng buộc G1-G7 ngày 2026-07-13. Phê duyệt
+đó lần đầu cho phép phân rã nhiệm vụ B4. Tài liệu B4 đã được rà soát, B5 sau đó
+tiến hành trên `feat/fe10-hardening` và FE10-H01 đến FE10-H08 hoàn tất.
+FE10-H09 vượt cổng xác thực và review độc lập B6. Commit
+`9185a9a91f41e444e0c4e6bd8c0605a281272ee9` sau đó được merge vào `main`, và
+lượt CI GitHub Actions `29236572558` đạt cho cùng commit. Bằng chứng B7 được
+ghi trong `.sdd/reviews/fe10-b7-integration-review-closeout-2026-07-13.md`.
 
-**Historical G1-G7 goal:** deliver the smallest then-approved FE10 backend hardening pass. Sections 9-11 are authoritative for OTP, account setup, and membership-result ownership.
+**Mục tiêu G1-G7 lịch sử:** cung cấp đợt củng cố backend FE10 nhỏ nhất đã được
+phê duyệt khi đó. Phần 9-11 là nguồn chuẩn về quyền sở hữu OTP, thiết lập tài
+khoản và kết quả tư cách thành viên.
 
-**Historical evidence baseline (2026-07-13):** retained only to explain G1-G7 implementation history. It is not the current OTP contract; Section 9 and `SPEC.md` v0.4.1 supersede link-template and FE02-deferral statements.
+**Baseline bằng chứng lịch sử (2026-07-13):** chỉ được giữ để giải thích lịch
+sử triển khai G1-G7. Đây không phải hợp đồng OTP hiện tại; Phần 9 và
+`SPEC.md` v0.4.1 thay thế các phát biểu về mẫu liên kết và trì hoãn FE02.
 
-## 1. CORE Versus SHELL Classification
+## 1. Phân loại LÕI và VỎ
 
-| Classification | Element | Rationale and approved-for-review approach |
+| Phân loại | Thành phần | Cơ sở lý do và cách tiếp cận đã được phê duyệt để rà soát |
 | --- | --- | --- |
-| CORE | Sensitive authentication delivery boundary | The current FE10 SPEC forbids persisting sensitive OTP content. For `ACCOUNT_VERIFICATION` and `PASSWORD_RESET`, validate raw `templateData`, render and send synchronously through the configured provider adapter inside FE10, and persist only a redacted notification summary/`safePayload`, status, and delivery attempt. Canonical templates require `{{otp}}` and `{{expiresInMinutes}}`. Never persist, log, audit, or return the raw OTP or rendered sensitive title/body. On provider failure, record only a safe failure summary. FE02 remains the sole owner of OTP generation and validation. |
-| CORE | Non-sensitive queued delivery | Reservation, due-date, overdue, fine, and general notifications remain queued. Render and persist their queued title/body at request creation, then deliver through `process-pending`, which selects only non-sensitive `PENDING` records. Traverse `templateData` objects and arrays recursively; normalize each key by lowercasing and removing underscores, hyphens, and whitespace; reject a queued request when any normalized key contains `token`, `otp`, `password`, `verificationlink`, or `resetlink`. This catches `OTP`, `reset_token`, `verification-link`, and nested object/array values before a non-sensitive type can smuggle a secret into persisted `Body`. Apply that same normalized recursive traversal when redacting `safePayload`. |
-| CORE | Type/template contract | Server-side code, not a caller-provided flag, enforces these pairs: `ACCOUNT_VERIFICATION -> ACCOUNT_VERIFICATION`; `PASSWORD_RESET -> PASSWORD_RESET`; `RESERVATION_AVAILABLE -> RESERVATION_READY`; `DUE_DATE_REMINDER -> DUE_DATE_REMINDER`; `OVERDUE_NOTICE -> OVERDUE_NOTICE`; `FINE_NOTICE -> FINE_NOTICE`; `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`. Reject every mismatch. `DUE_OR_FINE_NOTICE` is not canonical unless separately approved. |
-| CORE | Public API response contract | Create/process currently expose full records, including content and safe payload. Validation/template errors retain normal safe 4xx responses. Sensitive provider success persists `SENT` notification/attempt and returns `201 { notificationId, status: "SENT" }`; sensitive provider failure persists `FAILED` notification/attempt with a safe reason and still returns `201 { notificationId, status: "FAILED" }`, because the request was accepted and source flow must not roll back. Non-sensitive creation returns the same minimal DTO with its persisted status. Any idempotent replay returns `200 { notificationId, status }` for the existing status; process returns `200 { processed, failed }`. No full object or array is returned. |
-| CORE | Internal actor and source boundary | `createSourceNotificationRequester(sourceFeature)` binds one source from `FE02`, `FE07`, `FE08`, `FE09`, `FE11`, or `SYSTEM`; the source is construction-bound rather than trusted from input. Source/type ownership is enforced before rendering or persistence. HTTP routes remain `LIBRARIAN`/`ADMIN` for non-sensitive types. |
-| CORE | Retry and idempotency state model | Q-FE10-005 promises manual retry but no transition exists, and the database index is all-status while lookup is active-only. Recommended policy: one record per idempotency key across all statuses; lookup covers all statuses; retain the current all-status unique index; retry reuses the same non-sensitive queued record/key/history. |
-| CORE | Source-reference type and template keys | The data contract says integer/string but every source PK and FE10 execution layer is `INT`; live FE02 uses `EMAIL_VERIFY` while canonical SQL/spec keys include `ACCOUNT_VERIFICATION` and `PASSWORD_RESET`. Recommended Phase 1 decision is integer-only, with a FE10 SPEC correction. Define `ACCOUNT_VERIFICATION` and `PASSWORD_RESET` as canonical keys; do not add an undocumented `EMAIL_VERIFY` alias. |
-| SHELL | HTTP/controller/validator plumbing | These implement the approved response and retry contract but do not decide authorization or business rules. Keep routes thin. |
-| SHELL | In-memory repository and tests | Fixtures and assertions must mirror sensitive synchronous delivery, non-sensitive queueing, idempotency, and retry semantics; they are evidence for CORE behavior. |
-| SHELL | OpenAPI description | It documents the approved route/response contract during B5 after the SPEC revision; it does not make a product decision. |
+| LÕI | Ranh giới gửi xác thực nhạy cảm | SPEC FE10 hiện tại cấm lưu bền nội dung OTP nhạy cảm. Với `ACCOUNT_VERIFICATION` và `PASSWORD_RESET`, kiểm tra hợp lệ `templateData` thô, kết xuất và gửi đồng bộ qua bộ điều hợp nhà cung cấp đã cấu hình trong FE10, chỉ lưu bền bản tóm tắt thông báo/`safePayload` đã che dữ liệu, trạng thái và lần gửi. Mẫu chuẩn yêu cầu `{{otp}}` và `{{expiresInMinutes}}`. Không bao giờ lưu bền, ghi log, ghi kiểm toán hoặc trả về OTP thô hay tiêu đề/nội dung nhạy cảm đã kết xuất. Khi nhà cung cấp thất bại, chỉ ghi bản tóm tắt thất bại an toàn. FE02 vẫn là chủ sở hữu duy nhất của việc tạo và xác thực OTP. |
+| LÕI | Gửi không nhạy cảm đã xếp hàng | Các thông báo đặt chỗ, hạn trả, quá hạn, tiền phạt và chung vẫn được xếp hàng. Kết xuất và lưu bền tiêu đề/nội dung đã xếp hàng của chúng khi tạo yêu cầu, rồi gửi qua `process-pending`, chỉ chọn bản ghi `PENDING` không nhạy cảm. Duyệt đệ quy đối tượng và mảng `templateData`; chuẩn hóa mỗi khóa bằng chữ thường và loại dấu gạch dưới, gạch nối, khoảng trắng; từ chối yêu cầu xếp hàng khi bất kỳ khóa chuẩn hóa nào chứa `token`, `otp`, `password`, `verificationlink` hoặc `resetlink`. Việc này bắt `OTP`, `reset_token`, `verification-link` và các giá trị đối tượng/mảng lồng nhau trước khi một loại không nhạy cảm có thể đưa bí mật vào `Body` đã lưu bền. Áp dụng cùng phép duyệt đệ quy chuẩn hóa đó khi che `safePayload`. |
+| LÕI | Hợp đồng loại/mẫu | Mã phía máy chủ, không phải cờ do người gọi cung cấp, thực thi các cặp: `ACCOUNT_VERIFICATION -> ACCOUNT_VERIFICATION`; `PASSWORD_RESET -> PASSWORD_RESET`; `RESERVATION_AVAILABLE -> RESERVATION_READY`; `DUE_DATE_REMINDER -> DUE_DATE_REMINDER`; `OVERDUE_NOTICE -> OVERDUE_NOTICE`; `FINE_NOTICE -> FINE_NOTICE`; `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`. Từ chối mọi trường hợp không khớp. `DUE_OR_FINE_NOTICE` không phải chuẩn nếu chưa được phê duyệt riêng. |
+| LÕI | Hợp đồng phản hồi API công khai | Thao tác tạo/xử lý hiện làm lộ bản ghi đầy đủ, bao gồm nội dung và payload an toàn. Lỗi xác thực/mẫu vẫn trả phản hồi 4xx an toàn thông thường. Thành công từ nhà cung cấp nhạy cảm lưu thông báo/lần thử `SENT` và trả về `201 { notificationId, status: "SENT" }`; thất bại của nhà cung cấp nhạy cảm lưu thông báo/lần thử `FAILED` với lý do an toàn và vẫn trả về `201 { notificationId, status: "FAILED" }` vì yêu cầu đã được chấp nhận và luồng nguồn không được hoàn tác. Việc tạo không nhạy cảm trả về cùng DTO tối thiểu với trạng thái đã lưu. Mọi phát lại lũy đẳng trả `200 { notificationId, status }` cho trạng thái hiện có; xử lý trả `200 { processed, failed }`. Không trả về đối tượng hoặc mảng đầy đủ. |
+| LÕI | Ranh giới tác nhân và nguồn nội bộ | `createSourceNotificationRequester(sourceFeature)` ràng buộc một nguồn trong `FE02`, `FE07`, `FE08`, `FE09`, `FE11` hoặc `SYSTEM`; nguồn được ràng buộc khi khởi tạo thay vì tin đầu vào. Quyền sở hữu nguồn/loại được thực thi trước khi kết xuất hoặc lưu bền. Các route HTTP vẫn là `LIBRARIAN`/`ADMIN` cho loại không nhạy cảm. |
+| LÕI | Mô hình trạng thái thử lại và lũy đẳng | Q-FE10-005 hứa hẹn thử lại thủ công nhưng không có chuyển đổi, và chỉ mục cơ sở dữ liệu áp dụng mọi trạng thái trong khi tra cứu chỉ trạng thái hoạt động. Chính sách được khuyến nghị: một bản ghi cho mỗi khóa lũy đẳng xuyên suốt mọi trạng thái; tra cứu bao phủ mọi trạng thái; giữ chỉ mục duy nhất mọi trạng thái hiện tại; thử lại dùng lại cùng bản ghi/khóa/lịch sử đã xếp hàng không nhạy cảm. |
+| LÕI | Loại tham chiếu nguồn và khóa mẫu | Hợp đồng dữ liệu ghi số nguyên/chuỗi nhưng mọi PK nguồn và tầng thực thi FE10 là `INT`; FE02 trực tiếp dùng `EMAIL_VERIFY` trong khi khóa SQL/đặc tả chuẩn bao gồm `ACCOUNT_VERIFICATION` và `PASSWORD_RESET`. Quyết định Giai đoạn 1 được khuyến nghị là chỉ số nguyên, kèm sửa SPEC FE10. Xác định `ACCOUNT_VERIFICATION` và `PASSWORD_RESET` là khóa chuẩn; không bổ sung bí danh `EMAIL_VERIFY` không được lập tài liệu. |
+| VỎ | Hệ thống kết nối HTTP/controller/validator | Các thành phần này thực hiện hợp đồng phản hồi và thử lại đã được phê duyệt nhưng không quyết định quyền hoặc quy tắc nghiệp vụ. Giữ route mỏng. |
+| VỎ | Repository trong bộ nhớ và kiểm thử | Fixture và assertion phải phản chiếu việc gửi đồng bộ nhạy cảm, xếp hàng không nhạy cảm, tính lũy đẳng và ngữ nghĩa thử lại; chúng là bằng chứng cho hành vi LÕI. |
+| VỎ | Mô tả OpenAPI | Nó ghi lại hợp đồng route/phản hồi đã được phê duyệt trong B5 sau sửa SPEC; nó không đưa ra quyết định sản phẩm. |
 
-## 2. Concrete Decisions Approved For B4
+## 2. Các quyết định cụ thể được phê duyệt cho B4
 
-| Gate | Proven drift | Binding recommendation for approval | Alternative and consequence |
+| Cổng | Chênh lệch đã chứng minh | Khuyến nghị ràng buộc để phê duyệt | Phương án thay thế và hệ quả |
 | --- | --- | --- | --- |
-| G1: sensitive delivery architecture | Sanitization runs before rendering; the FE10 review checklist forbids storing sensitive OTP content; processing normally needs persisted queued content. | Split by server-enforced type/template pair. SQL/test fixtures require `ACCOUNT_VERIFICATION` and `PASSWORD_RESET` to contain `{{otp}}` and `{{expiresInMinutes}}`; synchronously render/send them and store only redacted summary/`safePayload`, delivery status, and attempt. Do not persist rendered sensitive title/body or raw OTP values. Queue only canonical non-sensitive pairs; recursively traverse objects/arrays, normalize keys by lowercasing and removing `_`, `-`, and whitespace, and reject if a normalized key contains `token`, `otp`, `password`, `verificationlink`, or `resetlink`. Use the same normalized recursive rule to redact `safePayload`. | Plaintext queued sensitive body requires a SPEC revision plus an explicit database access-control standard and named owner. Encrypted short-lived payload is rejected as over-engineered for Phase 1. |
-| G2: minimal responses | Controllers return service results containing full notifications/arrays. | Keep validation/template errors as normal safe 4xx responses. Sensitive provider success persists `SENT` plus an attempt and returns `201 { notificationId, status: "SENT" }`; sensitive provider failure persists `FAILED` plus a safe attempt reason and returns `201 { notificationId, status: "FAILED" }`. Non-sensitive creation returns its minimal persisted status. An idempotent replay returns `200 { notificationId, status }` for any existing status; process returns `200 { processed, failed }`; never return full objects/arrays. | Retaining full objects contradicts the current SPEC and leaves content exposure. |
-| G3: internal requester | Routes/service require `LIBRARIAN`/`ADMIN`; source features need a trusted in-process boundary. | Use `createSourceNotificationRequester(sourceFeature)` with allowlist `FE02`/`FE07`/`FE08`/`FE09`/`FE11`/`SYSTEM`, construction-bound metadata, source/type ownership, `userId: null` source audits, safe errors, and caller-side non-blocking catch. | Authenticated internal HTTP would require service credentials and more boundary work. Do not invent a `SYSTEM` login role. |
-| G4: source entity ID | SPEC allows integer/string; validator/repository/model/SQL are `INT`, and current source primary keys are integers. | Phase 1 is integer-only; revise FE10 SPEC data requirements from integer/string to integer. | String support requires a coordinated schema migration and validator/model/repository updates. Do not silently widen/narrow the contract. |
-| G5: manual retry | No retry route/service/repository behavior exists; `FAILED` is never reselected by pending processing. | Add protected `POST /api/notifications/{id}/retry` for `LIBRARIAN`/`ADMIN`. It permits only a `FAILED` non-sensitive queued notification to transition to `PENDING`, retaining the same record, idempotency key, and attempt history; return `200 { notificationId, status }` and `409` otherwise. Retry of `ACCOUNT_VERIFICATION` or `PASSWORD_RESET` returns the standard safe `409` error body with code `REISSUE_REQUIRED` and a generic message instructing creation of a new source event; include no secret or provider detail. | An operator workflow without an endpoint is possible only if its actor, mechanism, transition, audit, and response contract are added to SPEC. No retry is executable until one option is approved. |
-| G6: terminal-state idempotency | SQL unique index applies to all statuses; service lookup checks only active statuses, so a terminal record can block a new insert unexpectedly. | One record per key across all statuses: change lookup semantics to all statuses, keep the existing all-status unique index, and make non-sensitive retry reuse the record. | A filtered active-only unique index permits a new record after a terminal state, but requires schema/index change and weakens source-event uniqueness. Do not alter lookup alone. |
-| G7: FE02 dependency and template-key alignment | The approved FE02/FE10 specs are OTP-based. Historical FE02 code sent OTP directly and used the legacy `EMAIL_VERIFY` key, while the canonical FE10 contract uses `ACCOUNT_VERIFICATION` and `PASSWORD_RESET`. | FE10 owns the delivery boundary and FE02 owns OTP generation/validation. The FE02 follow-up routes verification/reset through the FE02-bound requester with canonical template keys, without duplicate direct delivery. | Do not introduce an undocumented `EMAIL_VERIFY` notification alias. The former FE02 deferral is superseded by FE10-S04/FE02-T031 through B7. |
+| G1: kiến trúc gửi nhạy cảm | Việc làm sạch chạy trước khi kết xuất; danh sách kiểm tra review FE10 cấm lưu nội dung OTP nhạy cảm; xử lý bình thường cần nội dung xếp hàng đã lưu bền. | Tách theo cặp loại/mẫu do máy chủ thực thi. Fixture SQL/kiểm thử yêu cầu `ACCOUNT_VERIFICATION` và `PASSWORD_RESET` chứa `{{otp}}` và `{{expiresInMinutes}}`; kết xuất/gửi đồng bộ và chỉ lưu bản tóm tắt/`safePayload` đã che dữ liệu, trạng thái gửi và lần thử. Không lưu tiêu đề/nội dung nhạy cảm đã kết xuất hoặc giá trị OTP thô. Chỉ xếp hàng các cặp chuẩn không nhạy cảm; duyệt đệ quy đối tượng/mảng, chuẩn hóa khóa bằng chữ thường và loại `_`, `-`, khoảng trắng, rồi từ chối nếu khóa chuẩn hóa chứa `token`, `otp`, `password`, `verificationlink` hoặc `resetlink`. Dùng cùng quy tắc đệ quy chuẩn hóa để che `safePayload`. | Nội dung nhạy cảm đã xếp hàng dạng văn bản thuần cần sửa SPEC, chuẩn kiểm soát truy cập cơ sở dữ liệu rõ ràng và chủ sở hữu được chỉ định. Payload mã hóa sống ngắn bị từ chối vì quá kỹ thuật cho Giai đoạn 1. |
+| G2: phản hồi tối thiểu | Controller trả kết quả service chứa thông báo/mảng đầy đủ. | Giữ lỗi xác thực/mẫu là phản hồi 4xx an toàn thông thường. Thành công nhà cung cấp nhạy cảm lưu `SENT` cùng lần thử và trả `201 { notificationId, status: "SENT" }`; thất bại nhà cung cấp nhạy cảm lưu `FAILED` cùng lý do lần thử an toàn và trả `201 { notificationId, status: "FAILED" }`. Việc tạo không nhạy cảm trả trạng thái tối thiểu đã lưu. Phát lại lũy đẳng trả `200 { notificationId, status }` cho bất kỳ trạng thái hiện có nào; xử lý trả `200 { processed, failed }`; không bao giờ trả đối tượng/mảng đầy đủ. | Giữ đối tượng đầy đủ mâu thuẫn SPEC hiện tại và để lộ nội dung. |
+| G3: trình yêu cầu nội bộ | Route/service yêu cầu `LIBRARIAN`/`ADMIN`; tính năng nguồn cần ranh giới trong tiến trình đáng tin cậy. | Dùng `createSourceNotificationRequester(sourceFeature)` với danh sách cho phép `FE02`/`FE07`/`FE08`/`FE09`/`FE11`/`SYSTEM`, siêu dữ liệu ràng buộc khi khởi tạo, quyền sở hữu nguồn/loại, kiểm toán nguồn `userId: null`, lỗi an toàn và catch không chặn ở phía người gọi. | HTTP nội bộ đã xác thực sẽ cần thông tin xác thực dịch vụ và nhiều công việc ranh giới hơn. Không tạo vai trò đăng nhập `SYSTEM`. |
+| G4: ID thực thể nguồn | SPEC cho phép số nguyên/chuỗi; validator/repository/model/SQL là `INT`, còn khóa chính nguồn hiện tại là số nguyên. | Giai đoạn 1 chỉ dùng số nguyên; sửa yêu cầu dữ liệu SPEC FE10 từ số nguyên/chuỗi thành số nguyên. | Hỗ trợ chuỗi yêu cầu migration schema phối hợp và cập nhật validator/model/repository. Không âm thầm mở rộng/thu hẹp hợp đồng. |
+| G5: thử lại thủ công | Không có hành vi route/service/repository thử lại; `FAILED` không bao giờ được chọn lại bởi xử lý pending. | Thêm `POST /api/notifications/{id}/retry` được bảo vệ cho `LIBRARIAN`/`ADMIN`. Chỉ cho phép một thông báo đã xếp hàng không nhạy cảm `FAILED` chuyển sang `PENDING`, giữ nguyên bản ghi, khóa lũy đẳng và lịch sử lần thử; trả `200 { notificationId, status }` và `409` trong trường hợp khác. Thử lại `ACCOUNT_VERIFICATION` hoặc `PASSWORD_RESET` trả thân lỗi `409` an toàn chuẩn với mã `REISSUE_REQUIRED` và thông điệp chung hướng dẫn tạo sự kiện nguồn mới; không gồm bí mật hay chi tiết nhà cung cấp. | Quy trình vận hành không có endpoint chỉ có thể thực hiện nếu tác nhân, cơ chế, chuyển đổi, kiểm toán và hợp đồng phản hồi của nó được thêm vào SPEC. Không thể thực thi thử lại cho đến khi một phương án được phê duyệt. |
+| G6: lũy đẳng trạng thái kết thúc | Chỉ mục duy nhất SQL áp dụng mọi trạng thái; service tra cứu chỉ trạng thái hoạt động, vì vậy bản ghi kết thúc có thể chặn chèn mới ngoài dự kiến. | Một bản ghi cho mỗi khóa xuyên suốt mọi trạng thái: đổi ngữ nghĩa tra cứu sang mọi trạng thái, giữ chỉ mục duy nhất mọi trạng thái hiện có và cho thử lại không nhạy cảm dùng lại bản ghi. | Chỉ mục duy nhất đã lọc chỉ trạng thái hoạt động cho phép bản ghi mới sau trạng thái kết thúc nhưng đòi hỏi thay đổi schema/chỉ mục và làm yếu tính duy nhất sự kiện nguồn. Không đổi riêng tra cứu. |
+| G7: phụ thuộc FE02 và căn chỉnh khóa mẫu | Đặc tả FE02/FE10 được phê duyệt dựa trên OTP. Code FE02 lịch sử gửi OTP trực tiếp và dùng khóa cũ `EMAIL_VERIFY`, trong khi hợp đồng FE10 chuẩn dùng `ACCOUNT_VERIFICATION` và `PASSWORD_RESET`. | FE10 sở hữu ranh giới gửi và FE02 sở hữu tạo/xác thực OTP. Phần theo dõi FE02 định tuyến xác minh/đặt lại qua trình yêu cầu ràng buộc FE02 với khóa mẫu chuẩn, không gửi trực tiếp trùng. | Không giới thiệu bí danh thông báo `EMAIL_VERIFY` không được lập tài liệu. Việc trì hoãn FE02 trước đây được thay thế bởi FE10-S04/FE02-T031 qua B7. |
 
-## 3. Recommended Approach And Alternatives
+## 3. Cách tiếp cận được khuyến nghị và các phương án
 
-### Recommended: smallest coherent, current-SPEC-compliant FE10 hardening
+### Khuyến nghị: củng cố FE10 nhỏ nhất, nhất quán, tuân thủ SPEC hiện tại
 
-1. G1-G7 are approved. B5 begins with the feature owner updating FE10 `SPEC.md`/`CHANGELOG.md` for the selected observable contracts; FE02 owner resolves the separate FE02 dependency before any FE02 migration.
-2. Enforce the canonical type/template map before delivery. Require `{{otp}}` and `{{expiresInMinutes}}` in `ACCOUNT_VERIFICATION` and `PASSWORD_RESET` SQL/test fixtures. For sensitive auth types, validate raw template data, render, and synchronously send through the configured provider adapter. On provider success persist `SENT` plus attempt and return `201` minimal DTO; on provider failure persist `FAILED` plus safe reason and still return `201` minimal DTO. Sensitive rendered content and raw values do not cross persistence, logging, audit, or HTTP boundaries.
-3. For non-sensitive types, recursively traverse objects/arrays in `templateData`, normalize keys by lowercasing and removing `_`, `-`, and whitespace, and reject any normalized key containing `token`, `otp`, `password`, `verificationlink`, or `resetlink`; apply the same rule while redacting `safePayload`. Then validate, render, and persist queued content; `process-pending` selects only non-sensitive `PENDING` records. Add minimal controller DTOs, the construction-bound source requester, canonical template-key checks, integer-only source reference validation, and all-status idempotency lookup.
-4. Add protected retry only for failed non-sensitive queued notifications; return safe `409 REISSUE_REQUIRED` for either sensitive auth type. Migrate FE07 and FE08 only after the source requester is implemented and reviewed. FE09's due/fine event is approved in FE10 SPEC but has no current caller/integration, so its implementation is deferred; FE02 remains its owner's deferred dependency.
-5. Keep the mock provider, Express/SQL Server layering, and no-frontend posture.
+1. G1-G7 đã được phê duyệt. B5 bắt đầu với việc chủ sở hữu tính năng cập nhật
+   `SPEC.md`/`CHANGELOG.md` FE10 cho các hợp đồng quan sát được đã chọn; chủ
+   sở hữu FE02 giải quyết phụ thuộc FE02 riêng trước mọi migration FE02.
+2. Thực thi ánh xạ loại/mẫu chuẩn trước khi gửi. Yêu cầu `{{otp}}` và
+   `{{expiresInMinutes}}` trong fixture SQL/kiểm thử `ACCOUNT_VERIFICATION` và
+   `PASSWORD_RESET`. Với loại xác thực nhạy cảm, kiểm tra dữ liệu mẫu thô, kết
+   xuất và gửi đồng bộ qua bộ điều hợp nhà cung cấp đã cấu hình. Khi nhà cung
+   cấp thành công, lưu `SENT` cùng lần thử và trả DTO tối thiểu `201`; khi thất
+   bại, lưu `FAILED` cùng lý do an toàn và vẫn trả DTO tối thiểu `201`. Nội
+   dung nhạy cảm đã kết xuất và giá trị thô không vượt ranh giới lưu bền, ghi
+   log, kiểm toán hoặc HTTP.
+3. Với loại không nhạy cảm, duyệt đệ quy đối tượng/mảng trong `templateData`,
+   chuẩn hóa khóa bằng chữ thường và loại `_`, `-`, khoảng trắng, từ chối mọi
+   khóa chuẩn hóa chứa `token`, `otp`, `password`, `verificationlink` hoặc
+   `resetlink`; áp dụng cùng quy tắc khi che `safePayload`. Sau đó kiểm tra,
+   kết xuất và lưu nội dung đã xếp hàng; `process-pending` chỉ chọn bản ghi
+   `PENDING` không nhạy cảm. Bổ sung DTO controller tối thiểu, trình yêu cầu
+   nguồn ràng buộc khi khởi tạo, kiểm tra khóa mẫu chuẩn, xác thực tham chiếu
+   nguồn chỉ số nguyên và tra cứu lũy đẳng mọi trạng thái.
+4. Chỉ bổ sung thử lại được bảo vệ cho thông báo đã xếp hàng không nhạy cảm thất
+   bại; trả `409 REISSUE_REQUIRED` an toàn cho cả hai loại xác thực nhạy cảm.
+   Chỉ di chuyển FE07 và FE08 sau khi trình yêu cầu nguồn được triển khai và
+   rà soát. Sự kiện hạn trả/tiền phạt của FE09 được phê duyệt trong SPEC FE10
+   nhưng không có người gọi/tích hợp hiện tại, nên triển khai của nó bị hoãn;
+   FE02 vẫn là phụ thuộc hoãn của chủ sở hữu.
+5. Giữ nhà cung cấp mô phỏng, phân tầng Express/SQL Server và phạm vi không
+   frontend.
 
-### Alternative A: plaintext queued sensitive body
+### Phương án A: nội dung nhạy cảm đã xếp hàng dạng văn bản thuần
 
-Queue sensitive auth content and persist its rendered body for later processing. This restores one delivery mode but violates the current FE10 review-checklist rule. It requires a SPEC revision, an explicit database access-control standard, and a named operational owner before implementation.
+Xếp hàng nội dung xác thực nhạy cảm và lưu nội dung đã kết xuất để xử lý sau.
+Điều này khôi phục một chế độ gửi nhưng vi phạm quy tắc danh sách kiểm tra review
+FE10 hiện tại. Nó cần sửa SPEC, chuẩn kiểm soát truy cập cơ sở dữ liệu rõ ràng
+và chủ sở hữu vận hành được chỉ định trước khi triển khai.
 
-### Alternative B: encrypted short-lived queued payload
+### Phương án B: payload đã xếp hàng mã hóa sống ngắn
 
-Encrypt a short-lived payload and decrypt at processing time. This reduces plaintext database exposure but introduces key lifecycle, rotation, failure recovery, and operational complexity beyond the Phase 1 scope. It is rejected for this pass.
+Mã hóa payload sống ngắn và giải mã tại thời điểm xử lý. Điều này giảm phơi lộ
+văn bản thuần trong cơ sở dữ liệu nhưng đưa vào vòng đời khóa, xoay vòng, khôi
+phục lỗi và độ phức tạp vận hành vượt phạm vi Giai đoạn 1. Nó bị từ chối cho đợt
+này.
 
-### Alternative C: authenticated internal HTTP requester
+### Phương án C: trình yêu cầu HTTP nội bộ đã xác thực
 
-Use an internal service credential to call the protected request endpoint. This is valid for future service separation but requires approved secret/configuration handling and broader middleware/test changes. The recommended in-process factory is smaller for the current monolith.
+Dùng thông tin xác thực dịch vụ nội bộ để gọi endpoint yêu cầu được bảo vệ. Điều
+này hợp lệ cho việc tách dịch vụ trong tương lai nhưng cần xử lý bí mật/cấu hình
+được phê duyệt và thay đổi middleware/kiểm thử rộng hơn. Factory trong tiến
+trình được khuyến nghị nhỏ hơn cho monolith hiện tại.
 
-## 4. Bounded Agent Structure
+## 4. Cấu trúc tác nhân có giới hạn
 
-At B5, one implementation agent has exclusive write scope over each approved FE10 hardening task; one independent reviewer verifies each task diff and its test evidence. Do not run parallel edits across the shared FE10 service, repository, route, or notification-test files because sensitive delivery, queueing, retries, idempotency, and source integration share one contract. The only conservative parallel opportunity is the disjoint FE07 and FE08 caller migrations after their common requester dependency is complete.
+Ở B5, một tác nhân triển khai có phạm vi ghi độc quyền trên mỗi nhiệm vụ củng
+cố FE10 đã được phê duyệt; một người review độc lập xác minh diff của mỗi nhiệm
+vụ và bằng chứng kiểm thử. Không chạy chỉnh sửa song song trên các tệp service,
+repository, route hoặc kiểm thử thông báo FE10 dùng chung vì gửi nhạy cảm, xếp
+hàng, thử lại, tính lũy đẳng và tích hợp nguồn cùng chia sẻ một hợp đồng. Cơ
+hội song song thận trọng duy nhất là các migration người gọi FE07 và FE08 tách
+biệt sau khi phụ thuộc trình yêu cầu chung hoàn tất.
 
-## 5. Exact Expected Files
+## 5. Các tệp dự kiến chính xác
 
-### B4 planning record and B5 prerequisite files
+### Bản ghi lập kế hoạch B4 và tệp điều kiện tiên quyết B5
 
-- `.sdd/specs/feat-notification-management/SPEC.md` - first B5 task revises the approved observable contract for G1-G7 before implementation starts.
-- `.sdd/specs/feat-notification-management/CHANGELOG.md` - first B5 task records the approved contract revision.
-- `.sdd/specs/feat-notification-management/TASKS.md` - B4 appends the pending FE10 hardening tasks while preserving all completed initial-slice tasks as historical evidence.
+- `.sdd/specs/feat-notification-management/SPEC.md` - nhiệm vụ B5 đầu tiên
+  sửa hợp đồng quan sát được G1-G7 đã được phê duyệt trước khi triển khai bắt
+  đầu.
+- `.sdd/specs/feat-notification-management/CHANGELOG.md` - nhiệm vụ B5 đầu
+  tiên ghi nhận sửa đổi hợp đồng đã được phê duyệt.
+- `.sdd/specs/feat-notification-management/TASKS.md` - B4 nối thêm các nhiệm
+  vụ củng cố FE10 đang chờ trong khi giữ toàn bộ nhiệm vụ lát cắt ban đầu đã
+  hoàn tất làm bằng chứng lịch sử.
 
-### Default FE10 implementation files
+### Các tệp triển khai FE10 mặc định
 
-- `backend/src/services/notificationService.js` - server-side type/template map, sensitive synchronous versus non-sensitive queued delivery, normalized recursive object/array sensitive-key rejection for queued data, matching normalized recursive `safePayload` redaction, redacted persistence boundary, source requester factory, all-status idempotency, retry transition, and safe audit behavior.
-- `backend/src/controllers/notificationController.js` - exact minimal create/replay/process/retry DTOs.
-- `backend/src/routes/notificationRoutes.js` - protected retry route while preserving protected request/process routes.
-- `backend/src/validators/notificationValidators.js` - integer source ID and boundary validation; service-level code owns canonical type/template and recursive queue-sensitive-data validation.
-- `backend/src/repositories/notificationRepository.js` - sensitive `SENT`/`FAILED` summary-and-attempt persistence without rendered content, non-sensitive queued persistence and filtered pending selection, all-status lookup, failed-to-pending update, and attempt history preservation.
-- `backend/src/models/Notification.js` - status and integer source-ID metadata aligned with approved schema semantics; no expiry metadata is introduced.
-- `database/Librarymanagement.sql` - canonical seed templates containing `{{otp}}` and `{{expiresInMinutes}}` in `ACCOUNT_VERIFICATION` and `PASSWORD_RESET` for synchronous provider-only rendering; retry/idempotency schema alignment; no `EMAIL_VERIFY` or `DUE_OR_FINE_NOTICE` canonical alias and no expiry storage.
-- `backend/tests/helpers/inMemoryNotificationRepositories.js` - sensitive/non-sensitive template fixtures containing the approved OTP variables, filtered pending selection, all-status idempotency, and non-sensitive retry behavior matching the repository.
-- `backend/tests/notificationRoutes.test.js` - canonical type/template mismatch rejection, normalized recursive object/array sensitive-key queue rejection and `safePayload` redaction, provider-only rendering tests for both links with no persistence/API/audit/log leakage, synchronous sensitive success/failure minimal responses, non-sensitive queueing, replay behavior for all statuses, retry/status conflicts, and idempotency tests.
-- `backend/tests/integration.test.js` - update the existing full-notification response assertion to G2 minimal DTO expectations, regardless of whether FE07/FE08 migrations occur.
-- `backend/src/docs/openapi.yaml` - approved request validation, synchronous sensitive `SENT`/`FAILED` 201 responses, non-sensitive process response, replay, and retry error contract.
+- `backend/src/services/notificationService.js` - ánh xạ loại/mẫu phía máy chủ,
+  gửi đồng bộ nhạy cảm so với gửi không nhạy cảm đã xếp hàng, từ chối khóa nhạy
+  cảm đệ quy chuẩn hóa đối tượng/mảng cho dữ liệu xếp hàng, che `safePayload`
+  đệ quy chuẩn hóa tương ứng, ranh giới lưu bền đã che dữ liệu, factory trình
+  yêu cầu nguồn, lũy đẳng mọi trạng thái, chuyển đổi thử lại và hành vi kiểm
+  toán an toàn.
+- `backend/src/controllers/notificationController.js` - DTO tạo/phát lại/xử
+  lý/thử lại tối thiểu chính xác.
+- `backend/src/routes/notificationRoutes.js` - route thử lại được bảo vệ trong
+  khi giữ các route yêu cầu/xử lý được bảo vệ.
+- `backend/src/validators/notificationValidators.js` - ID nguồn số nguyên và
+  kiểm tra ranh giới; mã cấp service sở hữu xác thực loại/mẫu chuẩn và dữ liệu
+  xếp hàng nhạy cảm đệ quy.
+- `backend/src/repositories/notificationRepository.js` - lưu bền bản tóm tắt/
+  lần thử `SENT`/`FAILED` nhạy cảm không có nội dung đã kết xuất, lưu bền xếp
+  hàng không nhạy cảm và chọn pending đã lọc, tra cứu mọi trạng thái, cập nhật
+  thất bại sang pending và bảo toàn lịch sử lần thử.
+- `backend/src/models/Notification.js` - trạng thái và siêu dữ liệu ID nguồn số
+  nguyên khớp ngữ nghĩa schema đã phê duyệt; không bổ sung siêu dữ liệu hết hạn.
+- `database/Librarymanagement.sql` - mẫu seed chuẩn chứa `{{otp}}` và
+  `{{expiresInMinutes}}` trong `ACCOUNT_VERIFICATION` và `PASSWORD_RESET` để
+  kết xuất chỉ ở nhà cung cấp đồng bộ; căn chỉnh schema thử lại/lũy đẳng; không
+  có bí danh chuẩn `EMAIL_VERIFY` hoặc `DUE_OR_FINE_NOTICE` và không lưu trữ
+  hết hạn.
+- `backend/tests/helpers/inMemoryNotificationRepositories.js` - fixture mẫu
+  nhạy cảm/không nhạy cảm chứa biến OTP đã được phê duyệt, chọn pending đã lọc,
+  lũy đẳng mọi trạng thái và hành vi thử lại không nhạy cảm khớp repository.
+- `backend/tests/notificationRoutes.test.js` - từ chối không khớp loại/mẫu
+  chuẩn, từ chối khóa nhạy cảm đệ quy chuẩn hóa đối tượng/mảng trong hàng đợi
+  và che `safePayload`, kiểm thử kết xuất chỉ nhà cung cấp cho cả hai liên kết
+  không rò rỉ qua lưu bền/API/kiểm toán/log, phản hồi tối thiểu thành công/thất
+  bại nhạy cảm đồng bộ, xếp hàng không nhạy cảm, hành vi phát lại mọi trạng
+  thái, xung đột thử lại/trạng thái và kiểm thử lũy đẳng.
+- `backend/tests/integration.test.js` - cập nhật assertion phản hồi thông báo
+  đầy đủ hiện có thành kỳ vọng DTO tối thiểu G2, bất kể migration FE07/FE08 có
+  diễn ra hay không.
+- `backend/src/docs/openapi.yaml` - xác thực yêu cầu đã phê duyệt, phản hồi
+  `SENT`/`FAILED` 201 nhạy cảm đồng bộ, phản hồi xử lý không nhạy cảm, phát lại
+  và hợp đồng lỗi thử lại.
 
-### Approved integrations and deferred dependencies
+### Các tích hợp đã phê duyệt và phụ thuộc bị hoãn
 
-- `backend/src/services/borrowingService.js` and `backend/src/services/reservationService.js` - in-scope migrations from direct repository creation to the approved source requester after the requester task is reviewed. Their affected tests are `backend/tests/borrowingRoutes.test.js` and `backend/tests/reservationRoutes.test.js`; `backend/tests/integration.test.js` is already in default FE10 scope for G2.
-- FE09 integration is deferred: its due/fine event is approved in FE10 SPEC, but no current caller/integration exists. No FE09 service file change is planned in this slice; a future FE09-owned implementation must identify the actual event and integration point first.
-- `backend/src/services/authService.js` - not in the default FE10 implementation scope. It is a deferred FE02-owned migration after the FE02 owner routes OTP delivery through the FE02-bound requester and replaces the legacy `EMAIL_VERIFY` key with the canonical keys in `.sdd/specs/feat-auth/SPEC.md`; update `backend/tests/authRoutes.test.js` only in that FE02-owned work.
+- `backend/src/services/borrowingService.js` và
+  `backend/src/services/reservationService.js` - migration trong phạm vi từ tạo
+  repository trực tiếp sang trình yêu cầu nguồn đã được phê duyệt sau khi nhiệm
+  vụ trình yêu cầu được rà soát. Kiểm thử bị ảnh hưởng là
+  `backend/tests/borrowingRoutes.test.js` và
+  `backend/tests/reservationRoutes.test.js`; `backend/tests/integration.test.js`
+  đã ở phạm vi FE10 mặc định cho G2.
+- Tích hợp FE09 bị hoãn: sự kiện hạn trả/tiền phạt của nó được phê duyệt trong
+  SPEC FE10 nhưng không có người gọi/tích hợp hiện tại. Không có thay đổi tệp
+  service FE09 nào được lên kế hoạch trong lát cắt này; việc triển khai do FE09
+  sở hữu trong tương lai trước tiên phải xác định sự kiện và điểm tích hợp thực.
+- `backend/src/services/authService.js` - không thuộc phạm vi triển khai FE10
+  mặc định. Đây là migration do FE02 sở hữu bị hoãn sau khi chủ sở hữu FE02 định
+  tuyến gửi OTP qua trình yêu cầu ràng buộc FE02 và thay khóa cũ `EMAIL_VERIFY`
+  bằng khóa chuẩn trong `.sdd/specs/feat-auth/SPEC.md`; chỉ cập nhật
+  `backend/tests/authRoutes.test.js` trong công việc do FE02 sở hữu đó.
 
-No frontend files, provider credentials, real SMTP code, new dependencies, retry UI, expiry metadata, database migration framework, or unrelated refactor are expected.
+Không dự kiến tệp frontend, thông tin xác thực nhà cung cấp, mã SMTP thực,
+dependency mới, giao diện thử lại, siêu dữ liệu hết hạn, framework migration
+cơ sở dữ liệu hoặc tái cấu trúc không liên quan.
 
-## 6. Ordered B5 Implementation Slices
+## 6. Các lát cắt triển khai B5 theo thứ tự
 
-`TASKS.md` owns the atomic B4 decomposition. The sequence below is the B5 execution order: each implementation slice begins with focused failing evidence, receives the smallest approved change, reruns the focused test, then runs the affected suite.
+`TASKS.md` sở hữu phân rã B4 nguyên tử. Chuỗi bên dưới là thứ tự thực thi B5:
+mỗi lát cắt triển khai bắt đầu bằng bằng chứng thất bại tập trung, nhận thay đổi
+được phê duyệt nhỏ nhất, chạy lại kiểm thử tập trung, rồi chạy bộ bị ảnh hưởng.
 
-1. **Approved-contract characterization.** After G1-G7 and required SPEC revisions, add failing assertions for every canonical type/template pair and mismatch rejection; normalized recursive object/array queued-data rejection for `OTP`, `reset_token`, `verification-link`, and nested values; matching `safePayload` redaction; provider-only rendering for OTP templates with no persistence/API/audit/log output; synchronous sensitive success/failure; non-sensitive queueing/filtered processing; minimal create/replay/process DTOs; integer source IDs; all-status idempotency; and sensitive/non-sensitive retry outcomes.
-2. **Delivery split and response containment.** Implement server-side type classification and the canonical map. Sensitive auth requests render `{{otp}}` and `{{expiresInMinutes}}` in memory and invoke the configured provider adapter synchronously: success persists `SENT`/attempt and failure persists `FAILED`/safe attempt, while both return `201` DTOs. Non-sensitive requests first pass normalized recursive object/array sensitive-key inspection and matching `safePayload` redaction, then render into the queue; `process-pending` selects only them. Verify raw OTP and rendered sensitive content never reach persistence, API, audit, or logs.
-3. **Schema/template/idempotency alignment.** Apply canonical template seed alignment, integer-only contract revision, all-status duplicate behavior, and non-sensitive pending filtering across SQL, repository, model, and in-memory helper. Do not add `EMAIL_VERIFY` or treat `DUE_OR_FINE_NOTICE` as canonical without approval.
-4. **Source requester and FE07/FE08 migration.** Implement and review the construction-bound allowlisted requester, then migrate only FE07/FE08. Confirm safe caller catches preserve source flow and that source audit records have null user ID plus bound source metadata. Do not migrate FE02; defer FE09 implementation despite its approved event.
-5. **Manual retry.** Add the authorized `FAILED -> PENDING` behavior only for non-sensitive queued notifications. Test `200` summary, `409` for other statuses, preserved record/key/history, audit, and the standard safe `409 REISSUE_REQUIRED` body for either failed sensitive auth type.
-6. **Integration verification.** Run targeted FE10 and affected FE07/FE08 tests, backend suite, traceability check if available, `git diff --check`, placeholder scan, contradiction scan, and final diff scope review.
+1. **Đặc tả hóa hợp đồng đã phê duyệt.** Sau G1-G7 và các sửa SPEC bắt buộc,
+   thêm assertion thất bại cho mọi cặp loại/mẫu chuẩn và từ chối không khớp;
+   từ chối dữ liệu xếp hàng đối tượng/mảng đệ quy chuẩn hóa cho `OTP`,
+   `reset_token`, `verification-link` và giá trị lồng nhau; che `safePayload`
+   tương ứng; kết xuất chỉ nhà cung cấp cho mẫu OTP không có đầu ra lưu bền/API/
+   kiểm toán/log; thành công/thất bại nhạy cảm đồng bộ; xếp hàng/xử lý lọc không
+   nhạy cảm; DTO tạo/phát lại/xử lý tối thiểu; ID nguồn số nguyên; lũy đẳng mọi
+   trạng thái; và kết quả thử lại nhạy cảm/không nhạy cảm.
+2. **Tách gửi và chứa phản hồi.** Triển khai phân loại loại phía máy chủ và ánh
+   xạ chuẩn. Yêu cầu xác thực nhạy cảm kết xuất `{{otp}}` và
+   `{{expiresInMinutes}}` trong bộ nhớ, gọi bộ điều hợp nhà cung cấp đã cấu hình
+   đồng bộ: thành công lưu `SENT`/lần thử và thất bại lưu `FAILED`/lần thử an
+   toàn, trong khi cả hai trả DTO `201`. Yêu cầu không nhạy cảm trước tiên qua
+   kiểm tra khóa nhạy cảm đối tượng/mảng đệ quy chuẩn hóa và che `safePayload`
+   tương ứng, rồi kết xuất vào hàng đợi; `process-pending` chỉ chọn chúng. Xác
+   minh OTP thô và nội dung nhạy cảm đã kết xuất không bao giờ tới lưu bền, API,
+   kiểm toán hoặc log.
+3. **Căn chỉnh schema/mẫu/lũy đẳng.** Áp dụng căn chỉnh seed mẫu chuẩn, sửa hợp
+   đồng chỉ số nguyên, hành vi trùng lặp mọi trạng thái và lọc pending không
+   nhạy cảm trên SQL, repository, model và helper trong bộ nhớ. Không thêm
+   `EMAIL_VERIFY` hoặc coi `DUE_OR_FINE_NOTICE` là chuẩn khi chưa phê duyệt.
+4. **Trình yêu cầu nguồn và migration FE07/FE08.** Triển khai và review trình
+   yêu cầu trong danh sách cho phép ràng buộc khi khởi tạo, sau đó chỉ migration
+   FE07/FE08. Xác nhận catch an toàn của người gọi giữ luồng nguồn và bản ghi
+   kiểm toán nguồn có ID người dùng null cộng siêu dữ liệu nguồn đã ràng buộc.
+   Không migration FE02; hoãn triển khai FE09 mặc dù sự kiện đã được phê duyệt.
+5. **Thử lại thủ công.** Bổ sung hành vi `FAILED -> PENDING` được ủy quyền chỉ
+   cho thông báo đã xếp hàng không nhạy cảm. Kiểm thử bản tóm tắt `200`, `409`
+   cho trạng thái khác, bản ghi/khóa/lịch sử được giữ, kiểm toán và thân
+   `409 REISSUE_REQUIRED` an toàn chuẩn cho cả hai loại xác thực nhạy cảm thất
+   bại.
+6. **Xác minh tích hợp.** Chạy kiểm thử FE10 và FE07/FE08 bị ảnh hưởng, bộ
+   backend, kiểm tra traceability nếu có, `git diff --check`, quét placeholder,
+   quét mâu thuẫn và review phạm vi diff cuối.
 
-## 7. Integration Risks, Assumptions, And Out Of Scope
+## 7. Rủi ro tích hợp, giả định và ngoài phạm vi
 
-### Integration risks
+### Rủi ro tích hợp
 
-- Sensitive auth delivery now depends on immediate mock-provider availability. A provider failure cannot be retried by FE10 because no secret is persisted; the source feature must issue a new event/key.
-- FE02 currently owns direct OTP email while its approved specs describe token links. Migrating FE02 before the owner resolves this would risk duplicate reset/verification messages and wrong template keys.
-- Changing minimal HTTP responses can break undocumented consumers/tests that read full notification fields; the approved SPEC becomes the contract of record.
-- The type/template map and normalized recursive object/array sensitive-key check must be enforced server-side, including from the source requester, not trusted from caller input; otherwise a mismatched or queued non-sensitive request could persist secret content. The same traversal must redact `safePayload`, including keys such as `OTP`, `reset_token`, and `verification-link`.
-- A sensitive provider failure returns `201 FAILED` rather than a delivery-error 5xx because FE10 accepted and recorded the request without rolling back the source flow; consumers must use the returned status, not HTTP status alone, to observe delivery state.
-- Schema/index changes require database-owner review for deployed instances, not just fresh initializer runs.
+- Việc gửi xác thực nhạy cảm hiện phụ thuộc khả dụng ngay lập tức của nhà cung
+  cấp mô phỏng. FE10 không thể thử lại lỗi nhà cung cấp vì không có bí mật được
+  lưu bền; tính năng nguồn phải phát hành sự kiện/khóa mới.
+- FE02 hiện sở hữu email OTP trực tiếp trong khi đặc tả được phê duyệt mô tả
+  liên kết mã thông báo. Migration FE02 trước khi chủ sở hữu giải quyết việc này
+  sẽ có rủi ro thông điệp xác minh/đặt lại trùng và khóa mẫu sai.
+- Thay đổi phản hồi HTTP tối thiểu có thể làm hỏng consumer/kiểm thử không được
+  lập tài liệu đọc trường thông báo đầy đủ; SPEC được phê duyệt trở thành hợp
+  đồng ghi nhận.
+- Ánh xạ loại/mẫu và kiểm tra khóa nhạy cảm đối tượng/mảng đệ quy chuẩn hóa phải
+  được thực thi phía máy chủ, bao gồm từ trình yêu cầu nguồn, không tin đầu vào
+  người gọi; nếu không một yêu cầu không nhạy cảm không khớp hoặc xếp hàng có
+  thể lưu nội dung bí mật. Cùng phép duyệt phải che `safePayload`, bao gồm khóa
+  `OTP`, `reset_token` và `verification-link`.
+- Lỗi nhà cung cấp nhạy cảm trả `201 FAILED` thay vì lỗi gửi 5xx vì FE10 đã
+  chấp nhận và ghi yêu cầu mà không hoàn tác luồng nguồn; consumer phải dùng
+  trạng thái trả về, không chỉ HTTP, để quan sát trạng thái gửi.
+- Thay đổi schema/chỉ mục cần review của chủ sở hữu cơ sở dữ liệu cho instance
+  triển khai, không chỉ lần chạy initializer mới.
 
-### Approved implementation constraints
+### Ràng buộc triển khai đã được phê duyệt
 
-- The FE10 review checklist's sensitive-content prohibition governs the implementation; synchronous provider-adapter delivery is required for the two sensitive auth types.
-- The listed type/template pairs are the approved server-side contract; `ACCOUNT_VERIFICATION` and `PASSWORD_RESET` fixtures use `{{otp}}` and `{{expiresInMinutes}}`; `DUE_OR_FINE_NOTICE` is not canonical unless separately approved.
-- FE02 owns OTP generation/validation and the FE02-bound requester migration; FE10 owns provider-only OTP delivery and canonical-key enforcement.
-- The mock provider remains sufficient for Phase 1 and no real provider credentials are introduced.
-- FE07/FE08 source events are approved for requester migration; FE09's approved event has no current caller/integration and remains deferred.
+- Điều cấm nội dung nhạy cảm trong danh sách kiểm tra review FE10 chi phối triển
+  khai; gửi bộ điều hợp nhà cung cấp đồng bộ là bắt buộc cho hai loại xác thực
+  nhạy cảm.
+- Các cặp loại/mẫu được liệt kê là hợp đồng phía máy chủ đã phê duyệt;
+  fixture `ACCOUNT_VERIFICATION` và `PASSWORD_RESET` dùng `{{otp}}` và
+  `{{expiresInMinutes}}`; `DUE_OR_FINE_NOTICE` không phải chuẩn nếu chưa được
+  phê duyệt riêng.
+- FE02 sở hữu tạo/xác thực OTP và migration trình yêu cầu ràng buộc FE02; FE10
+  sở hữu gửi OTP chỉ qua nhà cung cấp và thực thi khóa chuẩn.
+- Nhà cung cấp mô phỏng vẫn đủ cho Giai đoạn 1 và không đưa vào thông tin xác
+  thực nhà cung cấp thực.
+- Sự kiện nguồn FE07/FE08 được phê duyệt cho migration trình yêu cầu; sự kiện
+  FE09 đã phê duyệt không có người gọi/tích hợp hiện tại và vẫn bị hoãn.
 
-### Out of scope
+### Ngoài phạm vi
 
-- Plaintext or encrypted queued sensitive content, frontend inbox/retry/admin screens, template editor, in-app read state, SMS, push, marketing, real SMTP/provider credentials, token generation or validation, FE02 OTP/link reconciliation, fine calculation, reservation queue decisions, borrowing-state changes, and a new FE09 notification implementation.
+- Nội dung nhạy cảm đã xếp hàng dạng văn bản thuần hoặc mã hóa, màn hình hộp
+  thư/thử lại/quản trị frontend, trình chỉnh sửa mẫu, trạng thái đọc trong ứng
+  dụng, SMS, thông báo đẩy, tiếp thị, thông tin xác thực SMTP/nhà cung cấp thực,
+  tạo hay xác thực mã thông báo, đối soát OTP/liên kết FE02, tính tiền phạt,
+  quyết định hàng đợi đặt chỗ, thay đổi trạng thái mượn, và triển khai thông báo
+  FE09 mới.
 
-## 8. Approved Human Review Checklist
+## 8. Danh sách kiểm tra review con người đã phê duyệt
 
-- [x] G1 accepts the server-enforced canonical type/template map; `{{otp}}` and `{{expiresInMinutes}}` fixtures; synchronous sensitive auth delivery with no sensitive rendered persistence; and queued delivery only for non-sensitive types after normalized recursive object/array key inspection and matching `safePayload` redaction.
-- [x] G2 accepts safe 4xx validation/template errors, `201 SENT` and `201 FAILED` sensitive delivery summaries, any-status `200` replay summary, and no objects or arrays.
-- [x] G3 accepts the bound-source factory, fixed allowlist, null-user audit metadata, the same mapping/normalized recursive queue protections and `safePayload` redaction as HTTP, and FE07/FE08-only scoped migration.
-- [x] G4 accepts integer-only Phase 1 and a FE10 SPEC correction.
-- [x] G5 accepts the protected non-sensitive retry route, state transition, status conflicts, and standard safe `REISSUE_REQUIRED` response for either sensitive auth type.
-- [x] G6 accepts one record per idempotency key across all statuses and non-sensitive retry reuse.
-- [x] G7 accepts canonical `ACCOUNT_VERIFICATION`/`PASSWORD_RESET`, no `EMAIL_VERIFY` alias, and FE02-owner deferral.
-- [x] FE09's approved event is correctly marked implementation-deferred because no current caller/integration exists, with no FE09 service file change planned in this slice.
-- [x] The historical completed `TASKS.md` entries remain intact, with a new pending hardening section only after B3 approval.
-- [x] The no-frontend, mock-provider-only, smallest-coherent-hardening scope is acceptable.
+- [x] G1 chấp nhận ánh xạ loại/mẫu chuẩn do máy chủ thực thi; fixture
+  `{{otp}}` và `{{expiresInMinutes}}`; gửi xác thực nhạy cảm đồng bộ không lưu
+  bền nội dung nhạy cảm đã kết xuất; và chỉ gửi xếp hàng cho loại không nhạy cảm
+  sau khi kiểm tra khóa đối tượng/mảng đệ quy chuẩn hóa cùng che `safePayload`
+  tương ứng.
+- [x] G2 chấp nhận lỗi xác thực/mẫu 4xx an toàn, bản tóm tắt gửi nhạy cảm
+  `201 SENT` và `201 FAILED`, bản tóm tắt phát lại `200` mọi trạng thái và
+  không đối tượng hoặc mảng.
+- [x] G3 chấp nhận factory nguồn ràng buộc, danh sách cho phép cố định, siêu dữ
+  liệu kiểm toán người dùng null, cùng bảo vệ hàng đợi đệ quy chuẩn hóa/ánh xạ
+  và che `safePayload` như HTTP, cùng migration có phạm vi chỉ FE07/FE08.
+- [x] G4 chấp nhận Giai đoạn 1 chỉ số nguyên và sửa SPEC FE10.
+- [x] G5 chấp nhận route thử lại không nhạy cảm được bảo vệ, chuyển đổi trạng
+  thái, xung đột trạng thái và phản hồi `REISSUE_REQUIRED` an toàn chuẩn cho
+  cả hai loại xác thực nhạy cảm.
+- [x] G6 chấp nhận một bản ghi trên mỗi khóa lũy đẳng xuyên suốt mọi trạng thái
+  và thử lại không nhạy cảm dùng lại.
+- [x] G7 chấp nhận `ACCOUNT_VERIFICATION`/`PASSWORD_RESET` chuẩn, không có bí
+  danh `EMAIL_VERIFY` và trì hoãn do chủ sở hữu FE02.
+- [x] Sự kiện đã phê duyệt của FE09 được đánh dấu đúng là bị hoãn triển khai vì
+  không có người gọi/tích hợp hiện tại, không có thay đổi tệp service FE09 nào
+  được lập kế hoạch trong lát cắt này.
+- [x] Các mục `TASKS.md` lịch sử đã hoàn tất được giữ nguyên, với phần củng cố
+  đang chờ mới chỉ sau phê duyệt B3.
+- [x] Phạm vi không frontend, chỉ nhà cung cấp mô phỏng, củng cố nhỏ nhất nhất
+  quán là chấp nhận được.
 
-## B4 Complete; B5 Implemented; B6 And B7 Complete
+## B4 hoàn tất; B5 đã triển khai; B6 và B7 hoàn tất
 
-This section originally stopped work after B4 until the documentation was reviewed and deliberately moved to an implementation branch. That gate was satisfied; FE10-H01 through FE10-H08 were implemented and independently reviewed on `feat/fe10-hardening`, and FE10-H09 passed final validation and whole-branch review. Nhat then approved integration, commit `9185a9a` reached `main`, and same-commit CI passed in run `29236572558`.
+Phần này ban đầu dừng công việc sau B4 cho đến khi tài liệu được review và chủ
+động chuyển sang nhánh triển khai. Cổng đó đã được đáp ứng; FE10-H01 đến
+FE10-H08 đã được triển khai và review độc lập trên `feat/fe10-hardening`, còn
+FE10-H09 vượt xác thực cuối và review toàn nhánh. Nhat sau đó phê duyệt tích
+hợp, commit `9185a9a` đến `main` và CI cùng commit đạt trong lượt
+`29236572558`.
 
-## 9. G8-G10 OTP Security Boundary Follow-up
+## 9. Phần theo dõi ranh giới bảo mật OTP G8-G10
 
-### 9.1 Goal And Scope
+### 9.1 Mục tiêu và phạm vi
 
-Implement ADR-004 as the smallest coherent cross-feature correction:
+Triển khai ADR-004 như bản sửa liên tính năng nhỏ nhất, nhất quán:
 
-- FE02 owns verification/reset OTP credentials.
-- FE10 owns rendering, configured-provider delivery, status, attempts, and safe source metadata.
-- Only the requester bound to `FE02` may submit `ACCOUNT_VERIFICATION` or `PASSWORD_RESET`.
-- Only the requester bound to `FE11` may submit `ACCOUNT_SETUP` with `setupLink`, `expiresInHours`, and `AuthToken` source metadata.
-- HTTP cannot submit sensitive authentication types or caller-controlled `sourceFeature`.
-- Verification/reset direct notification writes and direct email sends are removed from FE02.
-- `CHANGE_PASSWORD_OTP`, legacy token acceptance, FE09 integration, frontend changes, and unrelated refactors remain out of scope.
+- FE02 sở hữu thông tin xác thực OTP xác minh/đặt lại.
+- FE10 sở hữu kết xuất, gửi qua nhà cung cấp đã cấu hình, trạng thái, lần thử
+  và siêu dữ liệu nguồn an toàn.
+- Chỉ trình yêu cầu ràng buộc với `FE02` được gửi `ACCOUNT_VERIFICATION` hoặc
+  `PASSWORD_RESET`.
+- Chỉ trình yêu cầu ràng buộc với `FE11` được gửi `ACCOUNT_SETUP` với
+  `setupLink`, `expiresInHours` và siêu dữ liệu nguồn `AuthToken`.
+- HTTP không thể gửi loại xác thực nhạy cảm hoặc `sourceFeature` do người gọi
+  kiểm soát.
+- Các lần ghi thông báo trực tiếp và gửi email trực tiếp để xác minh/đặt lại
+  bị loại khỏi FE02.
+- `CHANGE_PASSWORD_OTP`, chấp nhận mã thông báo cũ, tích hợp FE09, thay đổi
+  frontend và tái cấu trúc không liên quan vẫn ngoài phạm vi.
 
-### 9.2 Approved Contract
+### 9.2 Hợp đồng đã được phê duyệt
 
-| Gate | Approved decision |
+| Cổng | Quyết định đã phê duyệt |
 | --- | --- |
-| G8 | Replace `verificationLink`/`resetLink` with required `otp` and `expiresInMinutes`. FE10 uses raw OTP only in provider memory and persists no OTP or rendered sensitive content. |
-| G9 | Staff HTTP and non-FE02 requesters are denied FE02 verification/reset; ADR-005 also denies non-FE11 account-setup requesters. HTTP cannot provide `sourceFeature`. |
-| G11 | FE11-bound `ACCOUNT_SETUP` sends synchronously, stores no setup credential/content, and uses token-ID source/idempotency semantics. |
+| G8 | Thay `verificationLink`/`resetLink` bằng `otp` và `expiresInMinutes` bắt buộc. FE10 chỉ dùng OTP thô trong bộ nhớ nhà cung cấp và không lưu bền OTP hay nội dung nhạy cảm đã kết xuất. |
+| G9 | HTTP nhân viên và trình yêu cầu không phải FE02 bị từ chối với xác minh/đặt lại FE02; ADR-005 cũng từ chối trình yêu cầu thiết lập tài khoản không phải FE11. HTTP không thể cung cấp `sourceFeature`. |
+| G11 | `ACCOUNT_SETUP` ràng buộc FE11 gửi đồng bộ, không lưu thông tin xác thực/nội dung thiết lập, dùng ngữ nghĩa nguồn/lũy đẳng ID mã thông báo. |
 
-## FE11 Account Setup Follow-up
+## Phần theo dõi thiết lập tài khoản FE11
 
-1. Add `FE11` to the construction-bound requester allowlist without weakening FE02 ownership.
-2. Add canonical `ACCOUNT_SETUP -> ACCOUNT_SETUP` with required `setupLink` and `expiresInHours`.
-3. Reject staff HTTP and every non-FE11 requester for `ACCOUNT_SETUP`.
-4. Send synchronously through the configured provider and persist only safe `AuthToken` metadata, status, generic failure summary, and attempt.
-5. Require FE11 resend to create a new token ID and `FE11:ACCOUNT_SETUP:<tokenId>` key; manual retry remains `REISSUE_REQUIRED`.
-| G10 | FE02 uses `AuthTokens.TokenId` for source reference and idempotency, makes one FE10 request per OTP token, preserves source state on failure, and creates a new event on resend. |
+1. Thêm `FE11` vào danh sách cho phép trình yêu cầu ràng buộc khi khởi tạo mà
+   không làm suy yếu quyền sở hữu FE02.
+2. Thêm `ACCOUNT_SETUP -> ACCOUNT_SETUP` chuẩn với `setupLink` và
+   `expiresInHours` bắt buộc.
+3. Từ chối HTTP nhân viên và mọi trình yêu cầu không phải FE11 cho
+   `ACCOUNT_SETUP`.
+4. Gửi đồng bộ qua nhà cung cấp đã cấu hình và chỉ lưu siêu dữ liệu `AuthToken`
+   an toàn, trạng thái, bản tóm tắt lỗi chung và lần thử.
+5. Yêu cầu gửi lại FE11 tạo ID mã thông báo mới và khóa
+   `FE11:ACCOUNT_SETUP:<tokenId>`; thử lại thủ công vẫn `REISSUE_REQUIRED`.
+| G10 | FE02 dùng `AuthTokens.TokenId` cho tham chiếu nguồn và lũy đẳng, tạo một yêu cầu FE10 trên mỗi mã OTP, bảo toàn trạng thái nguồn khi thất bại và tạo sự kiện mới khi gửi lại. |
 
-### 9.3 Expected Files
+### 9.3 Các tệp dự kiến
 
 - `.sdd/rfcs/ADR-004-auth-otp-notification-boundary.md`
 - `.agents/CLAUDE.md`
@@ -218,200 +407,216 @@ Implement ADR-004 as the smallest coherent cross-feature correction:
 - `backend/tests/helpers/inMemoryAuthRepositories.js`
 - `backend/tests/integration.test.js`
 
-No frontend file, database table/index migration, new dependency, retry UI, inbox UI, FE09 caller, or `CHANGE_PASSWORD_OTP` migration is planned.
+Không có tệp frontend, migration bảng/chỉ mục cơ sở dữ liệu, dependency mới,
+giao diện thử lại, giao diện hộp thư, người gọi FE09 hoặc migration
+`CHANGE_PASSWORD_OTP` nào được lên kế hoạch.
 
-### 9.4 Ordered TDD Slices
+### 9.4 Các lát cắt TDD theo thứ tự
 
-1. Add RED FE10 tests for HTTP/non-FE02 sensitive rejection, HTTP source override rejection, and FE02-bound OTP acceptance.
-2. Implement source/type ownership and OTP template validation, then wire the configured provider adapter while preserving provider injection in tests.
-3. Prove OTP provider-memory-only delivery and safe source metadata/idempotency persistence.
-4. Add RED FE02 tests for one requester call, token-ID payload/idempotency, absence of direct verification/reset notification/email calls, and absence of HTTP debug-token fields.
-5. Migrate FE02 verification/reset only, capture test OTPs through injected dependencies, and retain legacy token acceptance plus direct `CHANGE_PASSWORD_OTP` delivery.
-6. Lock non-blocking `FAILED`/exception behavior and new-token resend semantics.
-7. Run focused FE10/FE02 tests, affected integration tests, traceability, leakage/contradiction scans, and `git diff --check`; then stop for human review.
+1. Thêm kiểm thử RED FE10 cho việc từ chối nhạy cảm HTTP/không phải FE02, từ
+   chối ghi đè nguồn HTTP và chấp nhận OTP ràng buộc FE02.
+2. Triển khai quyền sở hữu nguồn/loại và xác thực mẫu OTP, sau đó nối bộ điều
+   hợp nhà cung cấp đã cấu hình trong khi giữ việc chèn nhà cung cấp trong kiểm
+   thử.
+3. Chứng minh gửi OTP chỉ trong bộ nhớ nhà cung cấp và lưu bền siêu dữ liệu
+   nguồn/lũy đẳng an toàn.
+4. Thêm kiểm thử RED FE02 cho một lần gọi trình yêu cầu, payload/lũy đẳng ID mã
+   thông báo, không có lời gọi thông báo/email xác minh/đặt lại trực tiếp và
+   không có trường mã thông báo debug HTTP.
+5. Chỉ migration xác minh/đặt lại FE02, thu OTP kiểm thử qua dependency được
+   chèn và giữ chấp nhận mã thông báo cũ cùng gửi `CHANGE_PASSWORD_OTP` trực
+   tiếp.
+6. Khóa hành vi không chặn `FAILED`/ngoại lệ và ngữ nghĩa gửi lại mã thông báo
+   mới.
+7. Chạy kiểm thử FE10/FE02 tập trung, kiểm thử tích hợp bị ảnh hưởng,
+   traceability, quét rò rỉ/mâu thuẫn và `git diff --check`; sau đó dừng để
+   review con người.
 
-## 11. FE04 Membership Result Boundary Follow-up
+## 11. Phần theo dõi ranh giới kết quả tư cách thành viên FE04
 
-1. Treat `FE04` as a construction-bound internal source without changing the protected HTTP actor contract.
-2. Permit only the FE04-bound requester to submit `GENERAL_SYSTEM -> MEMBERSHIP_RESULT` with application source metadata and the approved idempotency key.
-3. Keep membership approval/rejection committed when FE10 returns `FAILED` or throws a safe requester error.
-4. Add focused contract and integration tests before claiming FE04-T006 or FE10-S09 complete.
+1. Xử lý `FE04` là nguồn nội bộ ràng buộc khi khởi tạo mà không đổi hợp đồng tác
+   nhân HTTP được bảo vệ.
+2. Chỉ cho phép trình yêu cầu ràng buộc FE04 gửi
+   `GENERAL_SYSTEM -> MEMBERSHIP_RESULT` với siêu dữ liệu nguồn hồ sơ và khóa
+   lũy đẳng đã phê duyệt.
+3. Giữ phê duyệt/từ chối tư cách thành viên được commit khi FE10 trả `FAILED`
+   hoặc ném lỗi trình yêu cầu an toàn.
+4. Bổ sung kiểm thử hợp đồng và tích hợp tập trung trước khi tuyên bố FE04-T006
+   hoặc FE10-S09 hoàn tất.
 
-## 12. Durable Delivery Claim Remediation
+## 12. Khắc phục tuyên bố gửi bền vững
 
-The user approved the `PROCESSING` design on 2026-07-23. The remediation keeps
-the provider call outside database transactions while making the delivery
-ownership durable before that call.
+Người dùng đã phê duyệt thiết kế `PROCESSING` ngày 2026-07-23. Biện pháp khắc
+phục giữ lời gọi nhà cung cấp ngoài giao dịch cơ sở dữ liệu trong khi làm quyền
+sở hữu gửi bền vững trước lời gọi đó.
 
-1. Require every in-process source request to include a non-blank
-   `sourceEntityType`, a positive integer `sourceEntityId`, and an idempotency
-   key.
-2. Persist sensitive requests directly as `PROCESSING`; atomically claim queued
-   non-sensitive requests with `PENDING -> PROCESSING` and commit before
-   provider I/O.
-3. Open a new short transaction for `PROCESSING -> SENT` or
-   `PROCESSING -> FAILED` and the matching attempt row.
-4. Leave a row `PROCESSING` if terminal persistence fails after provider I/O.
-   Exclude that row from automatic processing and return
-   `409 DELIVERY_STATE_UNCERTAIN` for manual retry.
-5. Synchronize the model, canonical SQL, OpenAPI, ADR, and idempotent migration;
-   then run focused/full tests and two disposable migration executions before
-   H2 review.
+1. Yêu cầu mọi yêu cầu nguồn trong tiến trình gồm `sourceEntityType` không rỗng,
+   `sourceEntityId` số nguyên dương và khóa lũy đẳng.
+2. Lưu trực tiếp yêu cầu nhạy cảm là `PROCESSING`; nhận nguyên tử yêu cầu không
+   nhạy cảm đã xếp hàng bằng `PENDING -> PROCESSING` và commit trước I/O nhà
+   cung cấp.
+3. Mở giao dịch ngắn mới cho `PROCESSING -> SENT` hoặc
+   `PROCESSING -> FAILED` cùng hàng lần thử khớp.
+4. Giữ một hàng `PROCESSING` nếu lưu bền kết thúc thất bại sau I/O nhà cung
+   cấp. Loại hàng đó khỏi xử lý tự động và trả
+   `409 DELIVERY_STATE_UNCERTAIN` cho thử lại thủ công.
+5. Đồng bộ model, SQL chuẩn, OpenAPI, ADR và migration lũy đẳng; sau đó chạy
+   kiểm thử tập trung/đầy đủ và hai lần thực thi migration dùng một lần trước
+   review H2.
 
-## 13. V0.4.4 Fail-Closed Stored Template Validation
+## 13. Xác thực mẫu đã lưu fail-closed v0.4.4
 
-The detailed executable plan is
+Kế hoạch thực thi chi tiết là
 `docs/superpowers/plans/2026-07-27-fe07-fe10-fe12-business-rule-alignment.md`.
 
-1. Add table-driven RED tests for raw HTML tags, inline event-handler
-   attributes, and `javascript:` URLs in stored template subject/body fields.
-2. Require safe `400 UNSAFE_TEMPLATE_DEFINITION` before recipient rendering,
-   notification/attempt persistence, or provider I/O.
-3. Keep `sanitizeString()` and `sanitizePayload()` for runtime values; do not
-   weaken recursive secret-key detection, redaction, ownership, idempotency,
-   minimal DTO, or durable `PROCESSING` rules.
-4. Run the unsafe-definition regressions together with the existing runtime
-   template-data sanitization regression and the full FE10 route suite.
-5. Keep implementation changes uncommitted until the cross-feature L1-L4
-   evidence passes and Nhat grants H2.
+1. Thêm kiểm thử RED theo bảng cho thẻ HTML thô, thuộc tính xử lý sự kiện nội
+   tuyến và URL `javascript:` trong trường tiêu đề/nội dung mẫu đã lưu.
+2. Yêu cầu `400 UNSAFE_TEMPLATE_DEFINITION` an toàn trước khi kết xuất người
+   nhận, lưu bền thông báo/lần thử hoặc I/O nhà cung cấp.
+3. Giữ `sanitizeString()` và `sanitizePayload()` cho giá trị khi chạy; không
+   làm yếu phát hiện khóa bí mật đệ quy, che dữ liệu, quyền sở hữu, lũy đẳng,
+   DTO tối thiểu hoặc quy tắc `PROCESSING` bền vững.
+4. Chạy các hồi quy định nghĩa không an toàn cùng hồi quy làm sạch dữ liệu mẫu
+   khi chạy hiện có và toàn bộ bộ route FE10.
+5. Giữ thay đổi triển khai chưa commit cho đến khi bằng chứng L1-L4 liên tính
+   năng đạt và Nhat cấp H2.
 
-## 14. V0.4.5 Staging Email Delivery Remediation
+## 14. Khắc phục gửi email staging v0.4.5
 
-Approved design:
+Thiết kế đã được phê duyệt:
 `docs/superpowers/specs/2026-07-27-staging-email-delivery-remediation-design.md`.
 
-1. Add and verify an idempotent migration for the canonical active
-   `ACCOUNT_SETUP` template; do not rebuild or delete the existing database.
-2. Capture the sensitive provider result and persist only
-   `providerMessageId` through the existing guarded `markSent` transaction.
-3. Extract the existing queued-delivery loop behind a common private core.
-   Preserve the staff-authorized wrapper and add a construction-bound SYSTEM
-   wrapper with null-user aggregate audit metadata.
-4. Add an opt-in worker with an immediate startup pass, 60-second default
-   interval, batch size 20, overlap guard, safe error code, and stop behavior.
-5. Wire the worker to the backend HTTP lifecycle without changing the direct
-   Express app export or starting timers on module import.
-6. Keep generated implementation uncommitted until focused/full validation,
-   secret scans, staging-safe checks, and H2 review pass.
+1. Thêm và xác minh migration lũy đẳng cho mẫu `ACCOUNT_SETUP` hoạt động chuẩn;
+   không xây lại hoặc xóa cơ sở dữ liệu hiện có.
+2. Thu kết quả nhà cung cấp nhạy cảm và chỉ lưu `providerMessageId` qua giao
+   dịch `markSent` được bảo vệ hiện có.
+3. Tách vòng lặp gửi đã xếp hàng hiện có phía sau lõi riêng dùng chung. Giữ
+   wrapper được nhân viên ủy quyền và thêm wrapper SYSTEM ràng buộc khi khởi tạo
+   với siêu dữ liệu kiểm toán tổng hợp người dùng null.
+4. Thêm tiến trình bật tùy chọn với lượt chạy ngay khi khởi động, khoảng lặp mặc
+   định 60 giây, kích thước lô 20, bảo vệ chồng lấp, mã lỗi an toàn và hành vi
+   dừng.
+5. Nối tiến trình vào vòng đời HTTP backend mà không thay đổi export ứng dụng
+   Express trực tiếp hoặc khởi động timer khi import module.
+6. Giữ phần triển khai sinh ra chưa commit cho đến khi xác thực tập trung/đầy
+   đủ, quét bí mật, kiểm tra an toàn staging và review H2 đạt.
 
-## 15. V0.5.0 Personal Notification Inbox
+## 15. Hộp thư thông báo cá nhân v0.5.0
 
-Detailed executable plan:
+Kế hoạch thực thi chi tiết:
 `docs/superpowers/plans/2026-07-27-fe10-personal-notification-inbox.md`.
 
-### 15.1 Goal And Architecture
+### 15.1 Mục tiêu và kiến trúc
 
-Expose one own-record-only inbox for authenticated `MEMBER`, `LIBRARIAN`, and
-`ADMIN` accounts by adding nullable `Notifications.ReadAt`. Reuse each existing
-eligible non-sensitive notification row for both email processing and inbox
-display; do not create another channel, table, duplicate event, staff-wide log,
-delete operation, or archive state.
+Đưa ra một hộp thư chỉ chứa bản ghi của chính mình cho các tài khoản
+`MEMBER`, `LIBRARIAN` và `ADMIN` đã xác thực bằng cách thêm
+`Notifications.ReadAt` có thể null. Tái sử dụng mỗi hàng thông báo không nhạy
+cảm đủ điều kiện hiện có cho cả xử lý email và hiển thị hộp thư; không tạo kênh,
+bảng, sự kiện trùng, nhật ký toàn nhân viên, thao tác xóa hay trạng thái lưu trữ
+khác.
 
-The implementation sequence is additive and backend-first:
+Chuỗi triển khai là additive và ưu tiên backend:
 
-1. add and verify the repeatable Azure SQL-compatible migration and canonical
-   model/schema;
-2. add SQL-filtered own-user repository operations and a fixed server-side
-   safe projection/action map;
-3. add authenticated list, count, mark-one, and mark-all APIs;
-4. add the shared frontend client/context, unread polling, bell preview, and
-   `/notifications` page;
-5. prove FE04/FE07/FE08 fan-in, three-role browser behavior, migration
-   repeatability, documentation fan-out, and Azure staging rollout.
+1. thêm và xác minh migration có thể lặp lại tương thích Azure SQL và
+   model/schema chuẩn;
+2. thêm thao tác repository của chính người dùng được lọc SQL và ánh xạ phép
+   chiếu/thao tác an toàn phía máy chủ cố định;
+3. thêm API đã xác thực liệt kê, đếm, đánh dấu một và đánh dấu tất cả;
+4. thêm client/context frontend dùng chung, thăm dò chưa đọc, phần xem trước
+   chuông và trang `/notifications`;
+5. chứng minh fan-in FE04/FE07/FE08, hành vi trình duyệt ba vai trò, khả năng
+   lặp lại migration, fan-out tài liệu và rollout Azure staging.
 
-### 15.2 Ordered TDD Slices
+### 15.2 Các lát cắt TDD theo thứ tự
 
-| Slice | Outcome | Primary acceptance |
+| Lát cắt | Kết quả | Chấp nhận chính |
 | --- | --- | --- |
-| FE10-I01 | `ReadAt` migration, backfill, index, canonical schema/model | AC-FE10-011 to AC-FE10-014 |
-| FE10-I02 | SQL-owned list/count/read operations and safe action projection | AC-FE10-011 to AC-FE10-015 |
-| FE10-I03 | Authenticated API, validation, IDOR-safe `404`, OpenAPI | AC-FE10-011 to AC-FE10-015 |
-| FE10-I04 | Frontend API client and shared inbox context | AC-FE10-012, AC-FE10-013, AC-FE10-016 |
-| FE10-I05 | Shell bell, `99+` badge, five-unread preview, safe navigation | AC-FE10-015, AC-FE10-016 |
-| FE10-I06 | `/notifications` filters, pagination, read state, mark-all | AC-FE10-011, AC-FE10-014, AC-FE10-016 |
-| FE10-I07 | FE04/FE07/FE08 fan-in plus MEMBER/LIBRARIAN/ADMIN E2E | AC-FE10-011 to AC-FE10-016 |
-| FE10-I08 | Full gates, docs, migration proof, backend-first Azure staging | AC-FE10-011 to AC-FE10-016 |
+| FE10-I01 | Migration `ReadAt`, điền lùi, chỉ mục, schema/model chuẩn | AC-FE10-011 đến AC-FE10-014 |
+| FE10-I02 | Thao tác liệt kê/đếm/đọc do SQL sở hữu và phép chiếu thao tác an toàn | AC-FE10-011 đến AC-FE10-015 |
+| FE10-I03 | API đã xác thực, kiểm tra hợp lệ, `404` an toàn trước IDOR, OpenAPI | AC-FE10-011 đến AC-FE10-015 |
+| FE10-I04 | Client API frontend và context hộp thư dùng chung | AC-FE10-012, AC-FE10-013, AC-FE10-016 |
+| FE10-I05 | Chuông shell, huy hiệu `99+`, phần xem trước năm mục chưa đọc, điều hướng an toàn | AC-FE10-015, AC-FE10-016 |
+| FE10-I06 | Bộ lọc `/notifications`, phân trang, trạng thái đọc, đánh dấu tất cả | AC-FE10-011, AC-FE10-014, AC-FE10-016 |
+| FE10-I07 | Fan-in FE04/FE07/FE08 cùng E2E MEMBER/LIBRARIAN/ADMIN | AC-FE10-011 đến AC-FE10-016 |
+| FE10-I08 | Cổng đầy đủ, tài liệu, bằng chứng migration, Azure staging ưu tiên backend | AC-FE10-011 đến AC-FE10-016 |
 
-### 15.3 Review And Release Gates
+### 15.3 Cổng review và phát hành
 
-- Plan approval opens implementation only; each slice still follows RED,
-  GREEN, focused verification, review, and a bounded commit.
-- The migration must pass twice against a disposable SQL Server database before
-  H2 and before staging use.
-- Backend API and migration deploy before frontend. The old frontend remains
-  compatible throughout that checkpoint.
-- H2 reviews the complete local candidate. H3 rechecks specification,
-  ownership, sensitive exclusion, migration safety, and staging evidence before
-  merge.
+- Phê duyệt kế hoạch chỉ mở triển khai; mỗi lát cắt vẫn theo RED, GREEN, xác
+  minh tập trung, review và commit có giới hạn.
+- Migration phải đạt hai lần với cơ sở dữ liệu SQL Server dùng một lần trước H2
+  và trước khi dùng staging.
+- API backend và migration triển khai trước frontend. Frontend cũ vẫn tương
+  thích xuyên suốt checkpoint đó.
+- H2 review candidate cục bộ đầy đủ. H3 kiểm tra lại đặc tả, quyền sở hữu, loại
+  trừ dữ liệu nhạy cảm, an toàn migration và bằng chứng staging trước merge.
 
-### 15.4 Final Candidate And Delivery State
+### 15.4 Candidate cuối và trạng thái giao hàng
 
-- PR #75 head `778e0a470d8a1083bf571a8007b3c058eee4bb22` contains the final
-  H2-approved FE10-I01..I08 and bounded H3-remediation package after the
-  documentation-only `main@30f936d` rebase.
-- Exact-head CI `30317424995` and Azure staging deployment `30317621429`
-  passed. H3 reviewed the same head on Standards and Spec axes with no
-  actionable finding, and the user explicitly approved H3.
-- PR #75 merged as `b75776b10d6cf4b6868d2ba51eb3268073483b8b`. Exact
-  post-merge CI `30341279111` and automatic Azure staging `30341540847`
-  passed, including migration preflight, backend, frontend, and smoke.
-- Historical three-role API/browser evidence, Azure SQL `ReadAt`/index proof,
-  sensitive exclusion, read replay, HTTPS/CORS, and temporary-probe/firewall
-  cleanup remain valid evidence for the unchanged contract.
+- Head PR #75 `778e0a470d8a1083bf571a8007b3c058eee4bb22` chứa gói FE10-I01..I08
+  được H2 phê duyệt cuối và biện pháp khắc phục H3 có giới hạn sau rebase chỉ
+  tài liệu `main@30f936d`.
+- CI exact-head `30317424995` và triển khai Azure staging `30317621429` đã
+  đạt. H3 đã review cùng head theo trục Tiêu chuẩn và Đặc tả không có finding
+  có thể hành động, và người dùng phê duyệt H3 rõ ràng.
+- PR #75 đã merge thành `b75776b10d6cf4b6868d2ba51eb3268073483b8b`. CI hậu
+  merge chính xác `30341279111` và Azure staging tự động `30341540847` đã đạt,
+  bao gồm preflight migration, backend, frontend và smoke.
+- Bằng chứng API/trình duyệt ba vai trò lịch sử, bằng chứng Azure SQL
+  `ReadAt`/chỉ mục, loại trừ nhạy cảm, phát lại đọc, HTTPS/CORS và dọn dẹp
+  probe/firewall tạm thời vẫn là bằng chứng hợp lệ cho hợp đồng không đổi.
 
-### 15.5 H1 Deployment Addendum
+### 15.5 Phụ lục triển khai H1
 
-The user approved this addendum on 2026-07-28 after upstream `main@41282b4`
-introduced CI-gated automatic staging deployment:
+Người dùng đã phê duyệt phụ lục này ngày 2026-07-28 sau khi upstream
+`main@41282b4` đưa vào triển khai staging tự động có cổng CI:
 
-- preserve automatic deployment after successful exact-commit `main` CI and
-  preserve `workflow_dispatch` for an operator rerun;
-- require both paths to match the checked-out migration SHA-256 with the
-  non-secret GitHub `staging` Environment variable
-  `FE10_INBOX_MIGRATION_SHA256`;
-- additionally require `fe10_inbox_migration_confirmed=true` for manual runs;
-- keep preflight -> backend -> frontend -> smoke ordering;
-- apply/verify the migration, remove temporary firewall access, store the
-  migration hash, and manually verify the exact PR head before H3/merge;
-- after merge, monitor exact post-merge CI and the resulting automatic staging
-  run for the same migration proof.
+- giữ triển khai tự động sau CI `main` exact-commit thành công và giữ
+  `workflow_dispatch` cho lượt chạy lại của operator;
+- yêu cầu cả hai đường dẫn khớp SHA-256 migration đã checkout với biến Môi
+  trường GitHub `staging` không bí mật `FE10_INBOX_MIGRATION_SHA256`;
+- bổ sung yêu cầu `fe10_inbox_migration_confirmed=true` cho lượt chạy thủ công;
+- giữ thứ tự preflight -> backend -> frontend -> smoke;
+- áp dụng/xác minh migration, loại truy cập firewall tạm thời, lưu hash migration
+  và xác minh thủ công head PR chính xác trước H3/merge;
+- sau merge, theo dõi CI hậu merge chính xác và lượt staging tự động kết quả cho
+  cùng bằng chứng migration.
 
-The user then approved the H1 Core-drift addendum for `main@5a3c84b` on
-2026-07-28. Reconciliation must preserve the upstream packaged
-`add_change_password_otp_token_type.sql` startup migration, its readiness
-documentation/tests, and the Vietnamese account-verification seed while
-retaining the FE10 preflight and ordered deployment. Complete post-drift gates
-and a new fingerprint/H2 are mandatory before publication.
+Sau đó người dùng phê duyệt phụ lục chênh lệch Core H1 cho `main@5a3c84b` ngày
+2026-07-28. Đối soát phải giữ migration khởi động
+`add_change_password_otp_token_type.sql` đóng gói ở upstream, tài liệu/kiểm
+thử readiness của nó và seed xác minh tài khoản tiếng Việt, đồng thời giữ
+preflight FE10 và triển khai có thứ tự. Các cổng đầy đủ sau chênh lệch và
+fingerprint/H2 mới là bắt buộc trước khi công bố.
 
-After that rebase, upstream advanced again by three commits through
-`main@db97f17`. The user approved a second H1 Core-drift addendum on
-2026-07-28. Reconciliation preserves the upstream Vietnamese default
-reservation-cancellation reason and responsive return/reservation tab styles,
-plus every other upstream FE07/FE08/FE10/FE12 round-two correction, while
-retaining the FE10 inbox client and scoped notification styles. Complete
-post-drift gates and a new fingerprint/H2 remain mandatory before publication.
+Sau rebase đó, upstream lại tiến thêm ba commit qua `main@db97f17`. Người dùng
+phê duyệt phụ lục chênh lệch Core H1 thứ hai ngày 2026-07-28. Đối soát giữ lý do
+hủy đặt chỗ mặc định tiếng Việt ở upstream và kiểu tab trả/đặt chỗ đáp ứng, cùng
+mọi chỉnh sửa vòng hai FE07/FE08/FE10/FE12 khác ở upstream, trong khi giữ client
+hộp thư FE10 và kiểu thông báo theo phạm vi. Các cổng đầy đủ sau chênh lệch và
+fingerprint/H2 mới vẫn bắt buộc trước công bố.
 
-Upstream later advanced through `main@12faead` by deleting retired files only
-under `document/`. The user approved a third H1 drift addendum on 2026-07-28.
-There is no path or Core-contract overlap with the FE10 H3 remediation, and the
-rebase completed without conflict. Complete gates and a new H2 fingerprint
-remain mandatory; after publication, the exact head must replace current
-`main` on Azure staging and be verified there before repeated H3.
+Upstream sau đó tiến qua `main@12faead` bằng cách chỉ xóa tệp đã ngừng dùng dưới
+`document/`. Người dùng đã phê duyệt phụ lục chênh lệch H1 thứ ba ngày
+2026-07-28. Không có chồng lấp đường dẫn hoặc hợp đồng LÕI với biện pháp khắc
+phục H3 FE10, và rebase hoàn tất không xung đột. Các cổng đầy đủ và fingerprint
+H2 mới vẫn bắt buộc; sau công bố, head chính xác phải thay `main` hiện tại ở
+Azure staging và được xác minh tại đó trước H3 lặp lại.
 
-The complete local matrix then passed: backend 69/69 suites and 1116/1116
-tests; frontend 259/259 plus lint/build; deployment 20/20; system 10/10;
-traceability state 3/3 and FE10 14/16 (88%); Chromium 11/11; audits, Azure
-schema preparation, diff hygiene, and focused contradiction scans.
+Ma trận cục bộ đầy đủ sau đó đạt: backend 69/69 bộ và 1116/1116 kiểm thử;
+frontend 259/259 cùng lint/build; triển khai 20/20; hệ thống 10/10; trạng thái
+traceability 3/3 và FE10 14/16 (88%); Chromium 11/11; kiểm toán, chuẩn bị schema
+Azure, vệ sinh diff và quét mâu thuẫn tập trung.
 
-Before the approved round-3 H2 could be used, the mandatory pre-stage fetch
-advanced upstream to `main@a240705`. The user approved a fourth H1 drift
-addendum on 2026-07-28. Reconciliation preserves the upstream deletion of the
-FE11 Admin user-edit API/UI/test surface while retaining FE10. Main CI
-`30311801599` and Azure deployment `30311973740` passed, the branch rebased
-without conflict, and complete gates plus a new fingerprint/H2 are mandatory.
+Trước khi H2 vòng 3 đã phê duyệt có thể được dùng, lượt fetch tiền staging bắt
+buộc đã tiến upstream tới `main@a240705`. Người dùng đã phê duyệt phụ lục chênh
+lệch H1 thứ tư ngày 2026-07-28. Đối soát giữ việc upstream loại bỏ bề mặt API/
+UI/kiểm thử chỉnh sửa người dùng Quản trị FE11 trong khi giữ FE10. CI main
+`30311801599` và triển khai Azure `30311973740` đã đạt, nhánh rebase không xung
+đột, và các cổng đầy đủ cùng fingerprint/H2 mới là bắt buộc.
 
-Fresh validation on that exact base passed backend 69/69 suites and 1084/1084
-tests, frontend 259/259 plus lint/build, deployment 20/20, system 10/10,
-traceability state 3/3, FE10 traceability 14/16 (88%), Chromium 11/11, audits,
-Azure schema preparation, and diff hygiene. That historical checkpoint was
-superseded by the completed final chain in Section 15.4.
+Xác thực mới trên baseline chính xác đó đạt backend 69/69 bộ và 1084/1084 kiểm
+thử, frontend 259/259 cùng lint/build, triển khai 20/20, hệ thống 10/10, trạng
+thái traceability 3/3, traceability FE10 14/16 (88%), Chromium 11/11, kiểm
+toán, chuẩn bị schema Azure và vệ sinh diff. Checkpoint lịch sử đó được thay thế
+bởi chuỗi cuối đã hoàn tất trong Phần 15.4.
