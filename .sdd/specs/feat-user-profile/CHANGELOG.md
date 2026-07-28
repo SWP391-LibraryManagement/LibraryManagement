@@ -1,140 +1,140 @@
-# CHANGELOG.md - FE03 User Profile
+# CHANGELOG.md - Hồ sơ người dùng FE03
 
-## 2026-07-28 - Profile Save Avatar Submission Fix
+## 2026-07-28 - Sửa lỗi gửi avatar khi lưu hồ sơ
 
-- Uploaded a valid selected avatar through the existing multipart endpoint when the user submits the profile edit form.
-- Updated the browser regression to verify the save action emits `POST /api/profile/me/avatar` and renders the returned avatar.
+- Tải avatar hợp lệ đã chọn qua endpoint multipart hiện có khi người dùng submit biểu mẫu chỉnh sửa hồ sơ.
+- Cập nhật kiểm thử hồi quy trình duyệt để xác minh thao tác lưu phát `POST /api/profile/me/avatar` và kết xuất avatar được trả về.
 
-## 2026-07-28 - Cross-Origin Avatar Rendering Fix
+## 2026-07-28 - Sửa lỗi kết xuất avatar khác origin
 
-- Allowed managed `/uploads/avatars/` files to render in the separately hosted frontend after upload.
-- Added a static-file regression that verifies the required `Cross-Origin-Resource-Policy: cross-origin` response header.
+- Cho phép tệp `/uploads/avatars/` được quản lý kết xuất trên frontend được host riêng sau khi tải lên.
+- Thêm kiểm thử hồi quy tệp static xác minh header response `Cross-Origin-Resource-Policy: cross-origin` bắt buộc.
 
-## 2026-07-24 - Avatar Browser Verification
+## 2026-07-24 - Xác minh avatar trên trình duyệt
 
-- Added `tests/e2e/fe03-profile-avatar.spec.js` covering valid PNG upload, unsupported file type rejection, and oversized file rejection from the profile screen.
-- Playwright browser checks pass 3/3; the runner timed out only while cleaning up its webserver process after the tests completed.
+- Thêm `tests/e2e/fe03-profile-avatar.spec.js` bao phủ tải PNG hợp lệ, từ chối loại tệp không được hỗ trợ và từ chối tệp vượt kích thước từ màn hình hồ sơ.
+- Kiểm tra trình duyệt Playwright vượt qua 3/3; runner chỉ timeout khi dọn dẹp tiến trình webserver sau khi kiểm thử hoàn tất.
 
-## 2026-07-24 - Convergence hardening
+## 2026-07-24 - Tăng cường hội tụ
 
-- Rejected non-string profile field values before persistence.
-- Prevented no-op date submissions from producing false changed-field audit metadata.
-- Restored readable Vietnamese FE03 API feedback and surfaced field-level/avatar validation errors.
-- Validated profile and avatar requests before missing-profile auto-creation so invalid requests cannot mutate profile state.
-- Removed the out-of-scope FE04 membership badge from the FE03 profile header.
-- Added focused regressions; backend 55/55, frontend profile 6/6, full frontend 219/219, lint, build, and traceability pass.
+- Từ chối giá trị trường hồ sơ không phải chuỗi trước khi lưu.
+- Ngăn submission ngày tháng không thay đổi tạo metadata audit sai về trường đã thay đổi.
+- Khôi phục phản hồi API FE03 tiếng Việt dễ đọc và hiển thị lỗi xác thực dữ liệu ở cấp trường/avatar.
+- Xác thực request hồ sơ và avatar trước khi tự động tạo hồ sơ thiếu, để request không hợp lệ không thể thay đổi trạng thái hồ sơ.
+- Xóa huy hiệu thành viên FE04 ngoài phạm vi khỏi header hồ sơ FE03.
+- Thêm kiểm thử hồi quy tập trung; backend 55/55, frontend hồ sơ 6/6, toàn bộ frontend 219/219, lint, build và traceability đều vượt qua.
 
-## 2026-07-20 - Vietnamese UI localization and typography
+## 2026-07-20 - Bản địa hóa UI tiếng Việt và typography
 
-- Localized frontend-generated labels, states, accessibility names, and safe error feedback for this feature.
-- Preserved API contracts, raw enum values, permissions, business rules, and user-owned catalog/profile data.
-- Applied the shared `Be Vietnam Pro` body and `Noto Serif` heading typography contract with Unicode-capable fallbacks.
+- Bản địa hóa nhãn, trạng thái, tên hỗ trợ khả năng truy cập và phản hồi lỗi an toàn do frontend tạo cho tính năng này.
+- Giữ hợp đồng API, giá trị enum thô, quyền, quy tắc nghiệp vụ và dữ liệu catalog/hồ sơ thuộc người dùng.
+- Áp dụng hợp đồng typography dùng chung với `Be Vietnam Pro` cho phần thân và `Noto Serif` cho heading cùng font fallback hỗ trợ Unicode.
 
-## 2026-07-19 - Phase 2 Exit Closeout
+## 2026-07-19 - Chốt thoát Giai đoạn 2
 
-- feat-user-profile is accepted within the complete Phase 2 FE01-FE12 reconciliation recorded by PR #40/#41; validation and residual boundaries are consolidated in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`.
-- Deferred and future-scope limitations remain explicit and are not widened by this closeout.
+- feat-user-profile được chấp nhận trong đợt đối soát đầy đủ FE01-FE12 của Giai đoạn 2 ghi nhận bởi PR #40/#41; kết quả xác thực và ranh giới còn lại được hợp nhất tại `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`.
+- Các giới hạn hoãn lại và thuộc phạm vi tương lai vẫn được nêu rõ, không bị mở rộng bởi lần chốt này.
 
-## 2026-07-19 - Deterministic Profile Contract Reconciled
+## 2026-07-19 - Đối soát hợp đồng hồ sơ xác định
 
-- Completed T-FE03-016 with an exact PUT allowlist that rejects direct `avatarUrl`, protected, unknown, and empty payloads before writes.
-- Moved profile-field and avatar audits into the same SQL transaction as their database changes; audit failure now rolls back the source update.
-- Serialized missing-profile creation with SQL locks and returned the updated safe DTO before transaction commit completion is reported to the service.
-- Added avatar failure compensation, managed-path-only deletion, post-commit old-file cleanup, and path/PII-free cleanup logging.
-- Removed the read-only Avatar URL input and `avatarUrl` PUT field from the frontend while preserving upload-only avatar changes.
-- Hardened shared 5xx logging so raw error text, stacks, and query-string personal data are not persisted.
-- Added focused route, service, repository, storage, security, and coverage evidence.
-- Added and passed the FE03 SQL suite 6/6 for first-view serialization and profile/avatar audit rollback; manual profile/avatar acceptance remains pending.
-- Reconciled CONTEXT/PLAN/TASKS and the full BR/FR/AC traceability matrix with the approved upload-only avatar contract and current automated evidence; source `@spec` coverage now includes all 10 FE03 functional requirements.
+- Hoàn tất T-FE03-016 với allowlist PUT chính xác, từ chối `avatarUrl` trực tiếp, trường được bảo vệ, trường không xác định và payload trống trước thao tác ghi.
+- Chuyển audit trường hồ sơ và avatar vào cùng transaction SQL với thay đổi cơ sở dữ liệu; lỗi audit hiện rollback cập nhật nguồn.
+- Tuần tự hóa việc tạo hồ sơ thiếu bằng SQL lock và trả về DTO an toàn đã cập nhật trước khi báo cáo hoàn tất commit transaction cho service.
+- Thêm cơ chế bù trừ khi avatar thất bại, chỉ xóa đường dẫn được quản lý, dọn dẹp tệp cũ sau commit và ghi log dọn dẹp không chứa đường dẫn/PII.
+- Xóa input Avatar URL chỉ đọc và trường PUT `avatarUrl` khỏi frontend trong khi vẫn giữ thay đổi avatar chỉ qua tải tệp.
+- Tăng cường ghi log 5xx dùng chung để văn bản lỗi thô, stack và dữ liệu cá nhân trong query string không bị lưu.
+- Thêm bằng chứng route, service, repository, storage, security và coverage tập trung.
+- Thêm và vượt qua suite SQL FE03 6/6 cho việc tuần tự hóa ở lần xem đầu tiên và rollback audit hồ sơ/avatar; nghiệm thu hồ sơ/avatar thủ công vẫn đang chờ.
+- Đối soát CONTEXT/PLAN/TASKS và ma trận traceability BR/FR/AC đầy đủ với hợp đồng avatar chỉ tải lên đã phê duyệt cùng bằng chứng tự động hiện tại; độ bao phủ nguồn `@spec` hiện bao gồm toàn bộ 10 yêu cầu chức năng FE03.
 
-## 2026-07-19 - FE11 Librarian Column Ownership Activated
+## 2026-07-19 - Kích hoạt quyền sở hữu cột Thủ thư FE11
 
-- Bumped `SPEC.md` to 0.3.4 and recorded nullable `UserProfiles.Department` and `UserProfiles.Specialization` at 100 characters as FE11-admin-managed fields.
-- Kept both fields outside FE03 self-profile read/update DTOs and preserved the existing `fullName` maximum of 100 characters.
-- Product schema/model implementation remains pending FE11 Finalization Wave A.
+- Tăng `SPEC.md` lên 0.3.4 và ghi nhận `UserProfiles.Department` cùng `UserProfiles.Specialization` có thể null với tối đa 100 ký tự là trường do quản trị viên FE11 quản lý.
+- Giữ cả hai trường ngoài DTO đọc/cập nhật hồ sơ của chính FE03 và giữ mức tối đa `fullName` hiện có là 100 ký tự.
+- Việc triển khai schema/model sản phẩm vẫn chờ Đợt hoàn tất FE11 A.
 
-## 2026-07-17 - Phase 1 Baseline Approved
+## 2026-07-17 - Phê duyệt baseline Giai đoạn 1
 
-- Nhật approved the normalized FE03 profile, protected-field, avatar cleanup, audit, and failure-compensation contract as the Phase 1 baseline; implementation follow-up remains pending.
+- Nhật phê duyệt hợp đồng hồ sơ FE03 đã chuẩn hóa, trường được bảo vệ, dọn dẹp avatar, audit và bù trừ lỗi làm baseline Giai đoạn 1; công việc tiếp theo về triển khai vẫn đang chờ.
 
-## 2026-07-17 - Avatar Cleanup Failure Contract
+## 2026-07-17 - Hợp đồng lỗi dọn dẹp avatar
 
-- Defined safe logging when post-commit cleanup of a replaced avatar fails.
-- Made profile-read scope and upload-error wording testable.
+- Xác định ghi log an toàn khi dọn dẹp avatar đã thay thế sau commit thất bại.
+- Làm cho phạm vi đọc hồ sơ và cách diễn đạt lỗi tải tệp có thể kiểm thử.
 
-## 2026-07-17 - Avatar Failure Compensation Contract - v0.3.3
+## 2026-07-17 - Hợp đồng bù trừ lỗi avatar - v0.3.3
 
-- Defined deterministic `404 PROFILE_ACCOUNT_NOT_FOUND` behavior.
-- Added compensation for failed avatar database/audit writes and post-commit old-file cleanup rules.
+- Xác định hành vi `404 PROFILE_ACCOUNT_NOT_FOUND` có tính xác định.
+- Thêm cơ chế bù trừ cho thao tác ghi cơ sở dữ liệu/audit avatar thất bại và quy tắc dọn dẹp tệp cũ sau commit.
 
-## 2026-07-17 - Deterministic Profile Contract - v0.3.2
+## 2026-07-17 - Hợp đồng hồ sơ xác định - v0.3.2
 
-- Changed `SPEC.md` to `READY FOR REVIEW` after normalizing missing-profile, protected-field, audit, and status-display behavior.
-- Missing profile rows are now always auto-created; protected, unknown, and read-only fields reject the entire update.
-- Removed direct `avatarUrl` mutation from profile PUT; only the validated upload endpoint owns avatar changes.
-- Made safe audit logging mandatory for successful profile-field and avatar updates.
-- Added explicit traceability and implementation follow-up tasks for the code owner.
+- Chuyển `SPEC.md` sang `READY FOR REVIEW` sau khi chuẩn hóa hành vi hồ sơ thiếu, trường được bảo vệ, audit và hiển thị trạng thái.
+- Hàng hồ sơ thiếu hiện luôn được tự động tạo; trường được bảo vệ, không xác định và chỉ đọc từ chối toàn bộ cập nhật.
+- Loại thay đổi `avatarUrl` trực tiếp khỏi PUT hồ sơ; chỉ endpoint tải tệp đã xác thực sở hữu thay đổi avatar.
+- Làm cho ghi log audit an toàn là bắt buộc với cập nhật trường hồ sơ và avatar thành công.
+- Thêm traceability rõ ràng và nhiệm vụ tiếp theo về triển khai cho code owner.
 
-## 2026-06-25 - Traceability Matrix Completed — v0.3.1
+## 2026-06-25 - Hoàn tất ma trận traceability — v0.3.1
 
-- Completed Traceability Matrix to cover all BR/FR/AC IDs.
-- Bumped Version 0.3.0 -> 0.3.1; Last Updated 2026-06-25; Status remains APPROVED.
+- Hoàn tất Ma trận traceability để bao phủ mọi ID BR/FR/AC.
+- Tăng Phiên bản 0.3.0 -> 0.3.1; Cập nhật lần cuối 2026-06-25; Trạng thái vẫn là APPROVED.
 
-## 2026-06-25 - Spec Locked (Avatar Storage Policy Approved) — v0.3.0
+## 2026-06-25 - Khóa đặc tả (đã phê duyệt chính sách lưu avatar) — v0.3.0
 
-- Approved Q-FE03-004: avatars are stored on the server local filesystem under a public uploads directory (`/uploads/avatars/`) with server-generated filenames; the public path/URL is saved in `UserProfiles.AvatarUrl`. Allowed types JPG/JPEG/PNG/WebP, max 2 MB. Cloud/object storage is out of scope for Phase 1. (Matches the backend implemented on 2026-06-20.)
-- Added BR-FE03-015 documenting the avatar storage location and added it to the Traceability Matrix.
-- Updated PRE-FE03-006 and the `avatarUrl` data-field note to reference the approved storage policy.
-- Ticked the "Avatar upload storage policy" review-checklist item.
-- Changed Status from `DRAFT - AVATAR UPLOAD REVISION` to `APPROVED`; bumped Version 0.2.0 -> 0.3.0; Last Updated 2026-06-25. Phase 1 spec is now locked.
+- Phê duyệt Q-FE03-004: avatar được lưu trên hệ thống tệp cục bộ của server trong thư mục uploads công khai (`/uploads/avatars/`) với tên tệp do server tạo; đường dẫn/URL công khai được lưu trong `UserProfiles.AvatarUrl`. Loại được phép là JPG/JPEG/PNG/WebP, tối đa 2 MB. Cloud/object storage nằm ngoài phạm vi Giai đoạn 1. (Khớp backend đã triển khai ngày 2026-06-20.)
+- Thêm BR-FE03-015 ghi nhận vị trí lưu avatar và thêm vào Ma trận traceability.
+- Cập nhật PRE-FE03-006 và ghi chú trường dữ liệu `avatarUrl` để tham chiếu chính sách lưu trữ đã phê duyệt.
+- Đánh dấu hạng mục checklist rà soát "Chính sách lưu avatar".
+- Đổi Trạng thái từ `DRAFT - AVATAR UPLOAD REVISION` thành `APPROVED`; tăng Phiên bản 0.2.0 -> 0.3.0; Cập nhật lần cuối 2026-06-25. Đặc tả Giai đoạn 1 hiện đã khóa.
 
-## 2026-06-20 - Frontend Avatar Upload UI Implemented
+## 2026-06-20 - Triển khai UI tải avatar ở frontend
 
-- Added frontend API call for `POST /api/profile/me/avatar` using multipart form-data.
-- Added avatar file picker and upload button inside the profile edit dialog.
-- Added client-side validation for JPG/JPEG/PNG/WebP and 2 MB maximum size.
-- Updated profile state from the backend response after successful avatar upload.
-- Ran frontend lint and production build successfully.
+- Thêm lời gọi API frontend cho `POST /api/profile/me/avatar` bằng multipart form-data.
+- Thêm bộ chọn tệp avatar và nút tải lên trong hộp thoại chỉnh sửa hồ sơ.
+- Thêm xác thực dữ liệu phía client cho JPG/JPEG/PNG/WebP và kích thước tối đa 2 MB.
+- Cập nhật trạng thái hồ sơ từ response backend sau khi tải avatar thành công.
+- Chạy lint frontend và production build thành công.
 
-## 2026-06-20 - Backend Avatar Upload Implemented
+## 2026-06-20 - Triển khai tải avatar ở backend
 
-- Implemented `POST /api/profile/me/avatar` behind authentication.
-- Added single-file multipart parsing for the `avatar` field without adding new dependencies.
-- Added server-side avatar validation for JPG/JPEG/PNG/WebP, 2 MB max size, file extension, and image signature.
-- Added backend-controlled avatar storage under `/uploads/avatars` with generated filenames.
-- Added repository/service support to update only `UserProfiles.AvatarUrl` after a successful upload.
-- Added backend tests for route wiring, guest rejection, missing file rejection, valid upload, invalid type rejection, oversized file rejection, unchanged avatar on invalid upload, and no persisted local client path.
+- Triển khai `POST /api/profile/me/avatar` sau xác thực.
+- Thêm phân tích multipart một tệp cho trường `avatar` mà không thêm dependency mới.
+- Thêm xác thực avatar phía server cho JPG/JPEG/PNG/WebP, kích thước tối đa 2 MB, phần mở rộng tệp và signature ảnh.
+- Thêm lưu trữ avatar do backend kiểm soát dưới `/uploads/avatars` với tên tệp được tạo.
+- Thêm hỗ trợ repository/service để chỉ cập nhật `UserProfiles.AvatarUrl` sau khi tải thành công.
+- Thêm kiểm thử backend cho kết nối route, từ chối Khách, từ chối tệp thiếu, tải hợp lệ, từ chối loại không hợp lệ, từ chối tệp vượt kích thước, avatar không đổi khi tải không hợp lệ và không lưu đường dẫn client cục bộ.
 
-## 2026-06-20 - Avatar Upload Spec Revision Drafted
+## 2026-06-20 - Soạn bản sửa đổi đặc tả tải avatar
 
-- Updated FE03 `CONTEXT.md`, `SPEC.md`, `PLAN.md`, and `TASKS.md` to support uploading avatar images from the user's local device.
-- Added proposed endpoint `POST /api/profile/me/avatar` using multipart form-data field `avatar`.
-- Added avatar upload validation rules: JPG/JPEG/PNG/WebP only, 2 MB maximum, server-generated filename, and no persisted local client path.
-- Added traceable business rules, functional requirements, acceptance criteria, edge cases, and tasks for avatar upload.
-- Marked the revised spec/plan/tasks as draft revision pending team review.
+- Cập nhật `CONTEXT.md`, `SPEC.md`, `PLAN.md` và `TASKS.md` FE03 để hỗ trợ tải ảnh avatar từ thiết bị cục bộ của người dùng.
+- Thêm endpoint được đề xuất `POST /api/profile/me/avatar` sử dụng trường multipart form-data `avatar`.
+- Thêm quy tắc xác thực dữ liệu tải avatar: chỉ JPG/JPEG/PNG/WebP, tối đa 2 MB, tên tệp do server tạo và không lưu đường dẫn client cục bộ.
+- Thêm quy tắc nghiệp vụ, yêu cầu chức năng, tiêu chí nghiệm thu, trường hợp biên và nhiệm vụ có traceability cho tải avatar.
+- Đánh dấu bản sửa đổi spec/plan/tasks là bản nháp đang chờ nhóm rà soát.
 
-## 2026-06-20 - Backend Implementation Completed
+## 2026-06-20 - Hoàn tất triển khai backend
 
-- Implemented FE03 backend profile route, controller, service, repository, validation, and safe DTO.
-- Added `GET /api/profile/me` and `PUT /api/profile/me` behind existing authentication middleware.
-- Added backend tests for profile route wiring, safe response DTO, missing profile auto-create, validation, protected-field rejection, atomic no-write validation failures, and audit logging.
-- Marked FE03 backend tasks as completed in `TASKS.md`.
+- Triển khai route, controller, service, repository, xác thực dữ liệu và DTO an toàn cho hồ sơ FE03 ở backend.
+- Thêm `GET /api/profile/me` và `PUT /api/profile/me` sau middleware xác thực hiện có.
+- Thêm kiểm thử backend cho kết nối route hồ sơ, DTO response an toàn, tự động tạo hồ sơ thiếu, xác thực dữ liệu, từ chối trường được bảo vệ, lỗi xác thực dữ liệu không ghi dở dang và audit logging.
+- Đánh dấu nhiệm vụ backend FE03 hoàn tất trong `TASKS.md`.
 
-## 2026-06-20 - Backend Plan And Tasks Approved
+## 2026-06-20 - Phê duyệt kế hoạch và nhiệm vụ backend
 
-- Replaced placeholder `PLAN.md` with an approved backend implementation plan for FE03.
-- Replaced placeholder `TASKS.md` with approved backend tasks mapped to FE03 spec IDs and tests.
-- Kept implementation scope limited to backend profile APIs, validation, DTOs, persistence, and tests.
+- Thay `PLAN.md` placeholder bằng kế hoạch triển khai backend được phê duyệt cho FE03.
+- Thay `TASKS.md` placeholder bằng các nhiệm vụ backend được phê duyệt, ánh xạ tới ID đặc tả và kiểm thử FE03.
+- Giữ phạm vi triển khai giới hạn ở API hồ sơ backend, xác thực dữ liệu, DTO, persistence và kiểm thử.
 
 ## 2026-06-10
 
-- Created FE03 User Profile feature specification structure.
-- Established specification files: CONTEXT.md, SPEC.md, PLAN.md, TASKS.md, and CHANGELOG.md.
-- Aligned owner and assignment scope with the latest assignment sheet: UC11-UC12 and FT12-FT13 owned by Dat.
-- Defined FE03 boundary against FE02 Authentication, FE04 Membership Management, and FE11 User & Role Management.
-- Clarified API contract policy so REST endpoints may stay in SPEC.md unless the team reintroduces a shared API contract file.
+- Tạo cấu trúc đặc tả tính năng Hồ sơ người dùng FE03.
+- Thiết lập các tệp đặc tả: CONTEXT.md, SPEC.md, PLAN.md, TASKS.md và CHANGELOG.md.
+- Đồng bộ chủ sở hữu và phạm vi phân công với bảng phân công mới nhất: UC11-UC12 và FT12-FT13 do Dat sở hữu.
+- Xác định ranh giới FE03 với Xác thực FE02, Quản lý thành viên FE04 và Quản lý người dùng và vai trò FE11.
+- Làm rõ chính sách hợp đồng API để REST endpoint có thể ở trong SPEC.md trừ khi nhóm giới thiệu lại tệp hợp đồng API dùng chung.
 
-## 2026-06-10 - Phase 1 Review Decisions Approved
+## 2026-06-10 - Phê duyệt quyết định rà soát Giai đoạn 1
 
-- Approved FE03 open-question decisions from `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`.
-- Updated `SPEC.md` status to `APPROVED`.
+- Phê duyệt các quyết định câu hỏi mở FE03 từ `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`.
+- Cập nhật trạng thái `SPEC.md` thành `APPROVED`.

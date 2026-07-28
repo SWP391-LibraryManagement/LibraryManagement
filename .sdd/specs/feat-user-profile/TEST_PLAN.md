@@ -1,47 +1,47 @@
-﻿# FE03 Test Plan - User Profile
+# Kế hoạch kiểm thử FE03 - Hồ sơ người dùng
 
-Version: 0.2.4
-Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
-Last Updated: 2026-07-27
+Phiên bản: 0.2.4
+Trạng thái: COMPLETE - ĐÃ GHI NHẬN BẰNG CHỨNG CHỐT GIAI ĐOẠN 2
+Cập nhật lần cuối: 2026-07-27
 
-Source Spec: `.sdd/specs/feat-user-profile/SPEC.md`
-Feature IDs: `BR-FE03-*`, `FR-FE03-*`, `AC-FE03-*`
-Authoritative AC↔test mapping: `SPEC.md` §16 Traceability Matrix (this file is the strategy, not the case list).
+Đặc tả nguồn: `.sdd/specs/feat-user-profile/SPEC.md`
+ID tính năng: `BR-FE03-*`, `FR-FE03-*`, `AC-FE03-*`
+Ánh xạ AC↔kiểm thử có thẩm quyền: Ma trận traceability tại §16 của `SPEC.md` (tệp này mô tả chiến lược, không phải danh sách test case).
 
 ---
 
-## 1. Test Scope
+## 1. Phạm vi kiểm thử
 
-Authenticated user profile viewing, allowed profile updates, and avatar upload behavior.
+Xem hồ sơ người dùng đã xác thực, cập nhật hồ sơ được phép và hành vi tải avatar.
 
-## 2. Unit Test Targets
+## 2. Mục tiêu kiểm thử unit
 
-- Editable field validation.
-- Phone/email/display field normalization if implemented.
-- Avatar file validation: allowed type, size, missing file, storage path safety.
-- Rule that profile update cannot change role, membership status, password, or protected account fields.
-- Member sidebar omits the duplicate profile item/group while the shared avatar/account menu still opens `/profile`.
+- Xác thực dữ liệu trường có thể chỉnh sửa.
+- Chuẩn hóa trường số điện thoại/email/hiển thị nếu được triển khai.
+- Xác thực tệp avatar: loại tệp được phép, kích thước, tệp thiếu, an toàn đường dẫn lưu trữ.
+- Quy tắc cập nhật hồ sơ không thể thay đổi vai trò, trạng thái thành viên, mật khẩu hoặc trường tài khoản được bảo vệ.
+- Sidebar Thành viên bỏ mục/nhóm hồ sơ trùng lặp trong khi menu avatar/tài khoản dùng chung vẫn mở `/profile`.
 
-## 3. API / Integration Test Targets
+## 3. Mục tiêu kiểm thử API/integration
 
-- `GET /profile/me`: authenticated happy path, unauthenticated error.
-- `PUT /profile/me`: happy path with approved fields.
-- `PUT /profile/me`: rejects forbidden fields.
-- `PUT /profile/me`: invalid phone/name, empty body, protected/unknown field, and direct `avatarUrl` rejection.
-- Missing profile: exactly one blank profile row is auto-created and returned through the normal DTO.
-- Successful profile/avatar database update: safe audit entry is mandatory and excludes raw personal values and file/path secrets.
+- `GET /profile/me`: happy path đã xác thực, lỗi chưa xác thực.
+- `PUT /profile/me`: happy path với các trường đã phê duyệt.
+- `PUT /profile/me`: từ chối trường bị cấm.
+- `PUT /profile/me`: từ chối số điện thoại/tên không hợp lệ, body trống, trường được bảo vệ/không xác định và `avatarUrl` trực tiếp.
+- Hồ sơ thiếu: chính xác một hàng hồ sơ trống được tự động tạo và trả về qua DTO thông thường.
+- Cập nhật cơ sở dữ liệu hồ sơ/avatar thành công: bắt buộc có audit entry an toàn và loại trừ giá trị cá nhân thô cùng secret tệp/đường dẫn.
 - `POST /profile/me/avatar`: happy path.
-- `POST /profile/me/avatar`: missing file, invalid type, oversize, unauthenticated.
+- `POST /profile/me/avatar`: tệp thiếu, loại không hợp lệ, vượt kích thước, chưa xác thực.
 
-## 4. E2E / Manual Acceptance Flow
+## 4. Luồng nghiệm thu E2E/thủ công
 
-- User opens profile.
-- User edits allowed fields and sees saved state.
-- User uploads avatar successfully.
-- Avatar error states are visible and understandable.
-- Unauthenticated user is redirected or blocked.
+- Người dùng mở hồ sơ.
+- Người dùng chỉnh sửa trường được phép và thấy trạng thái đã lưu.
+- Người dùng tải avatar thành công.
+- Trạng thái lỗi avatar hiển thị và dễ hiểu.
+- Người dùng chưa xác thực bị chuyển hướng hoặc chặn.
 
-## 5. Current Evidence
+## 5. Bằng chứng hiện tại
 
 - `backend/tests/profileRoutes.test.js`
 - `backend/tests/profileService.test.js`
@@ -50,18 +50,18 @@ Authenticated user profile viewing, allowed profile updates, and avatar upload b
 - `backend/tests/securityRegression.test.js`
 - `frontend/test/profileFrontend.test.js`
 - `.sdd/reviews/fe03-deterministic-profile-validation-2026-07-19.md`
-- Source traceability: FR-FE03 `10/10` tagged after reconciliation.
-- Fresh reconciliation focused gate: backend 5 suites / 48 tests; frontend 3/3.
-- Exact-diff isolated Playwright CLI acceptance on port `4185`: valid upload, invalid type,
-  oversized file, exact PUT allowlist, and 0 console errors/warnings passed. Evidence screenshot:
+- Traceability nguồn: FR-FE03 `10/10` đã gắn tag sau đối soát.
+- Cổng tập trung mới của đợt đối soát: backend 5 suite / 48 kiểm thử; frontend 3/3.
+- Nghiệm thu Playwright CLI cô lập theo exact-diff trên cổng `4185`: tải hợp lệ, loại tệp không hợp lệ,
+  tệp vượt kích thước, allowlist PUT chính xác và 0 lỗi/cảnh báo console đều vượt qua. Ảnh chụp bằng chứng:
   `output/playwright/fe03-exact-profile-updated.png`.
 
-## 6. Gaps
+## 6. Khoảng trống
 
-- Human UI acceptance for profile/avatar remains a release-evidence item; implementation and automated/agent-browser evidence are complete.
-- `backend/tests/sql/profileConcurrency.sqltest.js` passes 6/6 on disposable SQL Server, proving one-row first-view serialization plus profile/avatar audit rollback. Aggregate SQL evidence and cleanup are recorded in `.sdd/reviews/full-reconciliation-live-sql-validation-2026-07-19.md`.
+- Nghiệm thu UI thủ công cho hồ sơ/avatar vẫn là hạng mục bằng chứng phát hành; phần triển khai và bằng chứng tự động/trình duyệt agent đã hoàn tất.
+- `backend/tests/sql/profileConcurrency.sqltest.js` vượt qua 6/6 trên SQL Server disposable, chứng minh việc tuần tự hóa một hàng ở lần xem đầu tiên cùng rollback audit hồ sơ/avatar. Bằng chứng SQL tổng hợp và dọn dẹp được ghi tại `.sdd/reviews/full-reconciliation-live-sql-validation-2026-07-19.md`.
 
-## 7. Required Commands / Evidence Before Merge
+## 7. Lệnh/bằng chứng bắt buộc trước khi merge
 
 ```powershell
 npm.cmd --prefix backend test
