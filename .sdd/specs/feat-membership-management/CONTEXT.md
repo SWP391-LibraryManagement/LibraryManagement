@@ -1,150 +1,150 @@
-# CONTEXT.md - FE04 Membership Management
+# CONTEXT.md - Quản lý thành viên FE04
 
-# Version: 0.2.0
+# Phiên bản: 0.2.0
 
-# Status: APPROVED - BASELINE 2026-07-17
+# Trạng thái: APPROVED - BASELINE 2026-07-17
 
-# Owner: Dat
+# Chủ sở hữu: Dat
 
-# Last Updated: 2026-07-16
+# Cập nhật lần cuối: 2026-07-16
 
-# Feature folder: `.sdd/specs/feat-membership-management/`
-
----
-
-## 1. Feature Purpose
-
-Membership Management exists to record membership applications and review decisions. FE04 approval is not the access gate for borrowing or reservation; those workflows independently require an active account with the `MEMBER` role.
-
-This feature must keep four things clear:
-
-- Account registration belongs to FE02.
-- Membership application and approval belong to FE04.
-- Borrowing eligibility consumes membership status but does not approve membership.
-- User role assignment belongs to FE11.
-
-FE04 is a Standard Spec feature because it controls business eligibility and requires approval/rejection workflow, but it does not implement borrowing itself.
+# Thư mục tính năng: `.sdd/specs/feat-membership-management/`
 
 ---
 
-## 2. Real-World Workflow
+## 1. Mục đích tính năng
 
-The typical membership workflow:
+Quản lý thành viên dùng để ghi nhận đơn đăng ký thành viên và quyết định rà soát. Việc phê duyệt FE04 không phải cổng truy cập cho mượn hoặc đặt chỗ; các quy trình đó độc lập yêu cầu tài khoản đang hoạt động với vai trò `MEMBER`.
 
-1. A registered user applies for membership.
-2. The system creates a membership application with status `PENDING`.
-3. A librarian/admin reviews pending applications.
-4. The librarian/admin approves or rejects the application.
-5. The system atomically updates application history, the canonical `Members` projection, reviewer metadata, and audit data.
-6. After commit, FE04 requests a non-blocking FE10 membership-result notification.
-7. The member can view canonical membership status and current/latest application information.
-8. FE07 and FE08 independently require `Users.Status = ACTIVE` and the `MEMBER` role; FE04 approval is not a prerequisite. `Members.Status = APPROVED` may affect the approved-member daily allowance consumed by FE07.
+Tính năng này phải làm rõ bốn nội dung:
 
----
+- Đăng ký tài khoản thuộc FE02.
+- Đơn đăng ký và phê duyệt thành viên thuộc FE04.
+- Điều kiện mượn sử dụng trạng thái thành viên nhưng không phê duyệt thành viên.
+- Gán vai trò người dùng thuộc FE11.
 
-## 3. Feature Boundary
-
-FE04 includes:
-
-- Apply for membership.
-- Approve membership application.
-- Reject membership application.
-- View membership status.
-- Maintain immutable application history and a canonical current `Members` eligibility projection.
-
-FE04 does not include:
-
-- Account registration, login, logout, password, or email verification. Those belong to FE02.
-- Role assignment or user account activation/deactivation. That belongs to FE11.
-- Profile editing. That belongs to FE03.
-- Borrowing, renewal, return, or reservation execution. Those belong to FE07 and FE08.
-- Fine calculation or payment. That belongs to FE09.
+FE04 là tính năng Đặc tả tiêu chuẩn vì kiểm soát điều kiện nghiệp vụ và yêu cầu quy trình phê duyệt/từ chối, nhưng không tự triển khai nghiệp vụ mượn.
 
 ---
 
-## 4. Current Data Model Notes
+## 2. Quy trình thực tế
 
-The current SQL script includes:
+Quy trình thành viên điển hình:
+
+1. Người dùng đã đăng ký nộp đơn thành viên.
+2. Hệ thống tạo đơn đăng ký thành viên có trạng thái `PENDING`.
+3. Thủ thư/quản trị viên rà soát các đơn đang chờ.
+4. Thủ thư/quản trị viên phê duyệt hoặc từ chối đơn.
+5. Hệ thống cập nhật nguyên tử lịch sử đơn, projection `Members` chuẩn, metadata người rà soát và dữ liệu audit.
+6. Sau commit, FE04 yêu cầu thông báo kết quả thành viên FE10 không chặn luồng.
+7. Thành viên có thể xem trạng thái thành viên chuẩn cùng thông tin đơn hiện tại/gần nhất.
+8. FE07 và FE08 độc lập yêu cầu `Users.Status = ACTIVE` và vai trò `MEMBER`; phê duyệt FE04 không phải điều kiện tiên quyết. `Members.Status = APPROVED` có thể ảnh hưởng đến hạn mức mỗi ngày của thành viên đã được phê duyệt mà FE07 sử dụng.
+
+---
+
+## 3. Ranh giới tính năng
+
+FE04 bao gồm:
+
+- Nộp đơn thành viên.
+- Phê duyệt đơn thành viên.
+- Từ chối đơn thành viên.
+- Xem trạng thái thành viên.
+- Duy trì lịch sử đơn bất biến và projection điều kiện `Members` hiện tại chuẩn.
+
+FE04 không bao gồm:
+
+- Đăng ký tài khoản, đăng nhập, đăng xuất, mật khẩu hoặc xác minh email. Các nội dung đó thuộc FE02.
+- Gán vai trò hoặc kích hoạt/hủy kích hoạt tài khoản người dùng. Nội dung đó thuộc FE11.
+- Chỉnh sửa hồ sơ. Nội dung đó thuộc FE03.
+- Thực hiện mượn, gia hạn, trả hoặc đặt chỗ. Các nội dung đó thuộc FE07 và FE08.
+- Tính tiền phạt hoặc thanh toán. Nội dung đó thuộc FE09.
+
+---
+
+## 4. Ghi chú về mô hình dữ liệu hiện tại
+
+Script SQL hiện tại bao gồm:
 
 - `Users(UserId, Username, Email, PasswordHash, Phone, Status, CreatedAt)`
 - `Members(MemberId, UserId, Status, ApprovedAt, ApprovedBy, CreatedAt, UpdatedAt)`
 - `MembershipApplications(ApplicationId, UserId, Status, AppliedAt, ApprovedAt, ReviewedBy, ReviewNote)`
 - `UserRoles(UserId, RoleId)`
 
-Implementation reconciliation requirements:
+Các yêu cầu đối soát triển khai:
 
-- The current table has no separate `RejectedAt`; Phase 1 uses the required audit timestamp for rejection traceability.
-- The current schema does not separately store membership expiry or membership number.
-- A user may have multiple historical applications but at most one pending application.
-- `Members.Status` is the canonical eligibility source; application history never substitutes for this projection.
-- Rejection uses `MembershipApplications.ReviewNote`; approval/rejection update `ReviewedBy` and write an audit entry.
+- Bảng hiện tại không có `RejectedAt` riêng; Giai đoạn 1 sử dụng timestamp audit bắt buộc để truy vết việc từ chối.
+- Schema hiện tại không lưu riêng ngày hết hạn thành viên hoặc số thành viên.
+- Người dùng có thể có nhiều đơn trong lịch sử nhưng tối đa một đơn đang chờ.
+- `Members.Status` là nguồn điều kiện chuẩn; lịch sử đơn không bao giờ thay thế projection này.
+- Việc từ chối sử dụng `MembershipApplications.ReviewNote`; phê duyệt/từ chối cập nhật `ReviewedBy` và ghi audit entry.
 
-Implementation must preserve these approved decisions when reconciling the current schema and prototype behavior.
+Phần triển khai phải giữ các quyết định đã phê duyệt này khi đối soát schema hiện tại và hành vi prototype.
 
 ---
 
-## 5. Main Use Cases From Assignment Sheet
+## 5. Các use case chính từ bảng phân công
 
-| Use Case ID | Use Case Name | Owner |
+| ID use case | Tên use case | Chủ sở hữu |
 | ----------- | ------------- | ----- |
-| UC13 | Apply for Membership | Dat |
-| UC14 | Approve Membership Application | Dat |
-| UC15 | Reject Membership Application | Dat |
-| UC16 | View Membership Status | Dat |
+| UC13 | Nộp đơn thành viên | Dat |
+| UC14 | Phê duyệt đơn thành viên | Dat |
+| UC15 | Từ chối đơn thành viên | Dat |
+| UC16 | Xem trạng thái thành viên | Dat |
 
 ---
 
-## 6. Feature Tests From Assignment Sheet
+## 6. Các kiểm thử tính năng từ bảng phân công
 
-| Test ID | Test Name | Owner |
+| ID kiểm thử | Tên kiểm thử | Chủ sở hữu |
 | ------- | --------- | ----- |
-| FT14 | Submit membership application | Dat |
-| FT15 | Approve membership | Dat |
-| FT16 | Reject membership | Dat |
-| FT17 | View membership status | Dat |
+| FT14 | Gửi đơn thành viên | Dat |
+| FT15 | Phê duyệt thành viên | Dat |
+| FT16 | Từ chối thành viên | Dat |
+| FT17 | Xem trạng thái thành viên | Dat |
 
 ---
 
-## 7. Key Risks
+## 7. Rủi ro chính
 
-- Duplicate pending applications may create inconsistent approval decisions.
-- FE07/FE08 must consume the active-account and role contract directly; FE04 status is canonical for membership reporting and approved-member allowance decisions.
-- Rejection without reason may confuse applicants and librarians.
-- Approval/rejection actions may be performed by unauthorized users if RBAC is missing.
-- Data model may not support future membership expiry or re-application unless decisions are recorded.
+- Đơn đang chờ trùng lặp có thể tạo ra quyết định phê duyệt không nhất quán.
+- FE07/FE08 phải sử dụng trực tiếp hợp đồng tài khoản đang hoạt động và vai trò; trạng thái FE04 là chuẩn cho báo cáo thành viên và quyết định hạn mức của thành viên đã phê duyệt.
+- Từ chối không có lý do có thể khiến người nộp đơn và Thủ thư bối rối.
+- Hành động phê duyệt/từ chối có thể do người dùng không được phép thực hiện nếu thiếu RBAC.
+- Mô hình dữ liệu có thể không hỗ trợ việc hết hạn thành viên hoặc nộp lại đơn trong tương lai nếu không ghi nhận quyết định.
 
 ---
 
-## 8. Dependencies
+## 8. Phụ thuộc
 
-| Dependency | Why It Matters |
+| Phụ thuộc | Lý do quan trọng |
 | ---------- | -------------- |
-| FE02 Authentication | User must have an account before applying. |
-| FE03 User Profile | Profile data may help review membership applications. |
-| FE07 Borrowing Management | Uses an active account with the `MEMBER` role; `APPROVED` membership may increase the daily allowance. |
-| FE08 Reservation Management | Uses an active account with the `MEMBER` role; FE04 approval does not gate reservation. |
-| FE11 User & Role Management | Provides librarian/admin roles for approval and rejection. |
-| SQL Server database | Stores users and membership applications. |
+| Xác thực FE02 | Người dùng phải có tài khoản trước khi nộp đơn. |
+| Hồ sơ người dùng FE03 | Dữ liệu hồ sơ có thể hỗ trợ việc rà soát đơn thành viên. |
+| Quản lý mượn FE07 | Sử dụng tài khoản đang hoạt động với vai trò `MEMBER`; thành viên `APPROVED` có thể tăng hạn mức mỗi ngày. |
+| Quản lý đặt chỗ FE08 | Sử dụng tài khoản đang hoạt động với vai trò `MEMBER`; phê duyệt FE04 không chặn việc đặt chỗ. |
+| Quản lý người dùng và vai trò FE11 | Cung cấp vai trò Thủ thư/quản trị viên để phê duyệt và từ chối. |
+| Cơ sở dữ liệu SQL Server | Lưu người dùng và đơn thành viên. |
 
 ---
 
-## 9. Resolved Questions For Team / Teacher
+## 9. Câu hỏi đã giải quyết cho nhóm/giảng viên
 
-| ID | Approved Decision | Source | Status |
+| ID | Quyết định đã phê duyệt | Nguồn | Trạng thái |
 | -- | ----------------- | ------ | ------ |
-| Q-FE04-001 | Rejected users can re-apply after correcting information. | Review packet 2026-06-10 | APPROVED |
-| Q-FE04-002 | Rejection reason is required. | Review packet 2026-06-10 | APPROVED |
-| Q-FE04-003 | Membership does not expire in Phase 1. | Review packet 2026-06-10 | APPROVED |
-| Q-FE04-004 | Approved membership changes application/member status only, not user role. | Review packet 2026-06-10 | APPROVED |
-| Q-FE04-005 | Librarian and Admin can approve/reject membership applications. | Review packet 2026-06-10 | APPROVED |
-| Q-FE04-006 | Approval/rejection triggers FE10 notification when notification provider is available; notification failure does not roll back the decision. | Review packet 2026-06-10 | APPROVED |
+| Q-FE04-001 | Người dùng bị từ chối có thể nộp lại đơn sau khi chỉnh sửa thông tin. | Gói rà soát 2026-06-10 | APPROVED |
+| Q-FE04-002 | Bắt buộc có lý do từ chối. | Gói rà soát 2026-06-10 | APPROVED |
+| Q-FE04-003 | Thành viên không hết hạn trong Giai đoạn 1. | Gói rà soát 2026-06-10 | APPROVED |
+| Q-FE04-004 | Phê duyệt thành viên chỉ thay đổi trạng thái đơn/thành viên, không thay đổi vai trò người dùng. | Gói rà soát 2026-06-10 | APPROVED |
+| Q-FE04-005 | Thủ thư và Quản trị viên có thể phê duyệt/từ chối đơn thành viên. | Gói rà soát 2026-06-10 | APPROVED |
+| Q-FE04-006 | Phê duyệt/từ chối kích hoạt thông báo FE10 khi nhà cung cấp thông báo khả dụng; lỗi thông báo không rollback quyết định. | Gói rà soát 2026-06-10 | APPROVED |
 
 ---
 
-## 10. Notes For Implementation Later
+## 10. Ghi chú cho việc triển khai sau này
 
-- Do not implement until `SPEC.md` is reviewed and approved.
-- `PLAN.md` and `TASKS.md` stay `NOT STARTED` until approval.
-- Approval/rejection must be server-side role-protected.
-- Avoid duplicate active/pending applications for the same user.
-- Keep FE04 status rules easy for FE07 and FE08 to consume.
+- Không triển khai cho đến khi `SPEC.md` được rà soát và phê duyệt.
+- `PLAN.md` và `TASKS.md` giữ `NOT STARTED` cho đến khi được phê duyệt.
+- Phê duyệt/từ chối phải được bảo vệ bằng vai trò ở server.
+- Tránh đơn đang hoạt động/đang chờ trùng lặp cho cùng một người dùng.
+- Giữ quy tắc trạng thái FE04 dễ để FE07 và FE08 sử dụng.
