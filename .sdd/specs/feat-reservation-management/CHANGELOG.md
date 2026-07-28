@@ -1,264 +1,258 @@
-# CHANGELOG.md - FE08 Reservation Management
+# CHANGELOG.md - FE08 Quản lý đặt chỗ
 
-## 2026-07-27 - Reconcile parallel v0.5.9 changes (v0.5.10)
+## 2026-07-27 - Đối soát các thay đổi song song v0.5.9 (v0.5.10)
 
-- Combined same-book current-loan exclusion with copy-scoped queue-position
-  presentation from `main@8d0059b`.
-- Kept upstream `FE08-T046` authoritative for queue-position clarity and
-  renumbered this branch's regression-only handoff verification to
+- Kết hợp loại trừ khoản mượn cùng sách hiện tại với trình bày vị trí hàng đợi
+  theo phạm vi bản sao từ `main@8d0059b`.
+- Giữ `FE08-T046` upstream có thẩm quyền cho làm rõ vị trí hàng đợi và
+  đánh số lại xác minh bàn giao chỉ hồi quy của nhánh này thành
   `FE08-T047`.
-- Clarified that a null canonical queue position renders `Chưa xác định`
-  instead of the invalid `#null`/`#undefined` presentation.
-- Fresh integrated evidence and H2 review remain required before commit/push.
+- Làm rõ rằng vị trí hàng đợi chính tắc null hiển thị `Chưa xác định`
+  thay vì cách trình bày không hợp lệ `#null`/`#undefined`.
+- Bằng chứng tích hợp mới và rà soát H2 vẫn bắt buộc trước commit/push.
 
-## 2026-07-27 - Clarify copy-scoped queue positions (parallel v0.5.9)
+## 2026-07-27 - Làm rõ vị trí hàng đợi theo phạm vi bản sao (song song v0.5.9)
 
-- Kept queue position canonical per physical `CopyId`; `#2` for two different books is valid because they are separate queues.
-- Reworded Member and Librarian table labels to identify the position as belonging to that book copy.
-- Removed the frontend fallback that invented `#1` when the server returned no queue position.
+- Giữ vị trí hàng đợi chính tắc theo `CopyId` vật lý; `#2` cho hai sách khác nhau hợp lệ vì chúng là hàng đợi riêng.
+- Đổi cách diễn đạt nhãn bảng Thành viên và Thủ thư để xác định vị trí thuộc bản sao sách đó.
+- Loại dự phòng frontend tạo `#1` khi máy chủ không trả vị trí hàng đợi.
 
-## 2026-07-27 - Integrate same-book exclusion with rule alignment (v0.5.9)
+## 2026-07-27 - Tích hợp loại trừ cùng sách với căn chỉnh quy tắc (v0.5.9)
 
-- Integrated the upstream same-book current-loan exclusion with the existing
-  pickup-window, exact FE07 handoff, and single-role compatibility contracts.
-- Kept upstream `FE08-T045` authoritative and renumbered this branch's
-  regression-only handoff verification to `FE08-T046`.
-- Fresh integrated evidence is recorded; an H2 addendum remains required before
-  the open merge may be committed or pushed.
+- Tích hợp loại trừ khoản mượn cùng sách hiện tại upstream với cửa sổ nhận sách,
+  bàn giao FE07 chính xác và hợp đồng tương thích một vai trò hiện có.
+- Giữ `FE08-T045` upstream có thẩm quyền và đánh số lại xác minh bàn giao
+  chỉ hồi quy của nhánh này thành `FE08-T046`.
+- Bằng chứng tích hợp mới được ghi nhận; phụ lục H2 vẫn bắt buộc trước khi
+  merge đang mở có thể được commit hoặc push.
 
-## 2026-07-27 - Reconcile pickup handoff with rule alignment (v0.5.8)
+## 2026-07-27 - Đối soát bàn giao nhận sách với căn chỉnh quy tắc (v0.5.8)
 
-- Preserved upstream FE08 pickup-window and exact FE07 `bookId`/`copyId`
-  handoff behavior.
-- Preserved the one-account/one-role contract and invalid legacy-array
-  defensive boundary.
-- Kept upstream `FE08-T044` authoritative and renumbered this slice's
-  regression-only task to `FE08-T046`.
+- Giữ hành vi cửa sổ nhận sách FE08 upstream và bàn giao `bookId`/`copyId` FE07 chính xác.
+- Giữ hợp đồng một tài khoản/một vai trò và ranh giới phòng thủ mảng cũ không hợp lệ.
+- Giữ `FE08-T044` upstream có thẩm quyền và đánh số lại tác vụ chỉ hồi quy của lát cắt này thành `FE08-T046`.
 
-## 2026-07-27 - Block same-book reservations during an active loan
+## 2026-07-27 - Chặn đặt chỗ cùng sách trong khoản mượn đang hoạt động
 
-- Connected FE08 eligibility to FE07's canonical `BorrowDetails.Status = BORROWED` state at the `BookId` level.
-- Removed same-book candidates for the current Member and added the stable `409 BOOK_ALREADY_BORROWED` API conflict for direct requests.
-- Revalidated Librarian/Admin queue processing so a stale reservation is skipped without changing its `ACTIVE` state or the available copy.
-- Shared the FE07 Member circulation lock with FE08 create/hold mutations and added backend plus frontend error-message regressions.
+- Kết nối điều kiện hợp lệ FE08 với trạng thái `BorrowDetails.Status = BORROWED` chính tắc FE07 ở cấp `BookId`.
+- Loại ứng viên cùng sách cho Thành viên hiện tại và thêm xung đột API `409 BOOK_ALREADY_BORROWED` ổn định cho yêu cầu trực tiếp.
+- Xác thực lại xử lý hàng đợi Thủ thư/Quản trị viên để đặt chỗ cũ bị bỏ qua không thay đổi trạng thái `ACTIVE` hoặc bản sao khả dụng.
+- Chia sẻ khóa lưu hành Thành viên FE07 với thay đổi tạo/giữ FE08 và thêm hồi quy thông báo lỗi backend lẫn frontend.
 
-## 2026-07-27 - Connect notified pickup window to FE07
+## 2026-07-27 - Kết nối cửa sổ nhận sách đã thông báo với FE07
 
-- Added a Member-facing pickup notice derived from canonical `NotifiedAt` and `ExpiresAt` instead of introducing a separate manual note date.
-- Added `Tạo yêu cầu mượn` for `NOTIFIED` rows and handed the exact held `bookId`/`copyId` to FE07.
-- Preserved FE08 Librarian/Admin queue ownership, FE07 pending-request approval and atomic reservation fulfillment, and FE10's existing reservation-ready request.
-- Updated the Chromium candidate acceptance assertion to the current `Đang đặt chỗ` label.
+- Thêm thông báo nhận sách dành cho Thành viên suy ra từ `NotifiedAt` và `ExpiresAt` chính tắc thay vì thêm ngày ghi chú thủ công riêng.
+- Thêm `Tạo yêu cầu mượn` cho hàng `NOTIFIED` và bàn giao chính xác `bookId`/`copyId` được giữ cho FE07.
+- Giữ quyền sở hữu hàng đợi Thủ thư/Quản trị viên FE08, phê duyệt yêu cầu đang chờ và hoàn tất đặt chỗ nguyên tử FE07, cùng yêu cầu sẵn sàng đặt chỗ hiện có của FE10.
+- Cập nhật assertion chấp nhận ứng viên Chromium thành nhãn `Đang đặt chỗ` hiện tại.
 
-## 2026-07-27 - Reconcile v0.5.7 single-role wording with latest Member flows
+## 2026-07-27 - Đối soát diễn đạt một vai trò v0.5.7 với luồng Thành viên mới nhất
 
-- Preserved the selected-book handoff and current-versus-history presentation
-  introduced by v0.5.6.
-- Clarified that `MEMBER + LIBRARIAN` and `MEMBER + ADMIN` arrays are
-  deliberately corrupted legacy compatibility data, not supported accounts.
-- Renumbered the rule-alignment regression-only task so upstream
-  `FE08-T042` through `FE08-T044` remain authoritative.
-- Aligned NFR-FE08-UX-003 and browser acceptance with the v0.5.6
-  `Đang đặt chỗ`/`Đến lượt bạn` lifecycle labels.
-- Added no FE08 schema, API, lifecycle, queue-policy, or production behavior.
+- Giữ bàn giao sách đã chọn và trình bày hiện tại-so-với-lịch-sử được giới thiệu bởi v0.5.6.
+- Làm rõ mảng `MEMBER + LIBRARIAN` và `MEMBER + ADMIN` là dữ liệu tương thích cũ bị hỏng có chủ ý, không phải tài khoản được hỗ trợ.
+- Đánh số lại tác vụ chỉ hồi quy căn chỉnh quy tắc để `FE08-T042` đến `FE08-T044` upstream vẫn có thẩm quyền.
+- Căn chỉnh NFR-FE08-UX-003 và chấp nhận trình duyệt với nhãn vòng đời `Đang đặt chỗ`/`Đến lượt bạn` của v0.5.6.
+- Không thêm schema, API, vòng đời, chính sách hàng đợi hay hành vi production FE08.
 
-## 2026-07-27 - Clarify current Member reservations versus history
+## 2026-07-27 - Làm rõ lượt đặt chỗ Thành viên hiện tại so với lịch sử
 
-- Separated canonical `ACTIVE`/`NOTIFIED` reservations from terminal reservation history so an older cancelled row cannot be mistaken for a newly created reservation.
-- Rendered every Member lifecycle badge from the raw FE08 status with supported visual tones, including a visible ready-for-pickup state and deadline.
-- Connected each candidate action to the matching current reservation: `Đang đặt chỗ` while waiting and `Đến lượt bạn` while held.
-- Preserved cancelled/fulfilled/expired history, Librarian/Admin queue ordering, and FE07-owned fulfillment transitions.
+- Tách đặt chỗ `ACTIVE`/`NOTIFIED` chính tắc khỏi lịch sử đặt chỗ kết thúc để hàng đã hủy cũ không bị nhầm với đặt chỗ mới tạo.
+- Hiển thị mọi badge vòng đời Thành viên từ trạng thái FE08 thô với sắc độ trực quan được hỗ trợ, gồm trạng thái sẵn sàng nhận sách và hạn chót hiển thị.
+- Kết nối từng thao tác ứng viên với lượt đặt chỗ hiện tại khớp: `Đang đặt chỗ` khi chờ và `Đến lượt bạn` khi được giữ.
+- Giữ lịch sử đã hủy/hoàn tất/hết hạn, thứ tự hàng đợi Thủ thư/Quản trị viên và chuyển đổi hoàn tất do FE07 sở hữu.
 
-## 2026-07-27 - FE01 selected-book handoff
+## 2026-07-27 - Bàn giao sách đã chọn FE01
 
-- Connected the FE01 Member `Đặt chỗ sách này` deep link to FE08 through `bookId`.
-- FE08 resolves the public book title and initializes its protected candidate search while keeping physical `copyId` selection and reservation mutation inside FE08.
-- Added frontend regression coverage without widening the public DTO or exposing copy metadata on HomePage.
+- Kết nối deep link `Đặt chỗ sách này` Thành viên FE01 với FE08 qua `bookId`.
+- FE08 phân giải tiêu đề sách công khai và khởi tạo tìm kiếm ứng viên được bảo vệ trong khi giữ chọn `copyId` vật lý và thay đổi đặt chỗ trong FE08.
+- Thêm bao phủ hồi quy frontend mà không mở rộng DTO công khai hoặc lộ siêu dữ liệu bản sao trên HomePage.
 
-## 2026-07-27 - Enforce non-staff member self-service
+## 2026-07-27 - Thực thi tự phục vụ thành viên không phải nhân sự
 
-- Added member-only authorization for the exactly-one-role account model; Admin/Librarian cannot use reservation self-service.
-- Invalid legacy `MEMBER + LIBRARIAN` and `MEMBER + ADMIN` arrays can no longer open or call member candidate, create, own-list, or cancellation flows.
-- Preserved Librarian/Admin reservation list, queue processing, and hold-expiration operations.
-- Connected frontend direct-route redirects with the same backend authorization boundary.
-- Validation: focused FE07/FE08 backend routes pass 94/94, focused role/navigation frontend passes 61/61, full backend passes 1018/1018, full frontend passes 227/227, and frontend lint/build plus traceability pass.
+- Thêm ủy quyền chỉ thành viên cho mô hình tài khoản chính xác một vai trò; Quản trị/Thủ thư không thể dùng tự phục vụ đặt chỗ.
+- Mảng cũ không hợp lệ `MEMBER + LIBRARIAN` và `MEMBER + ADMIN` không còn có thể mở hoặc gọi luồng ứng viên thành viên, tạo, danh sách riêng hay hủy.
+- Giữ danh sách đặt chỗ, xử lý hàng đợi và thao tác hết hạn giữ chỗ của Thủ thư/Quản trị viên.
+- Kết nối chuyển hướng route trực tiếp frontend với cùng ranh giới ủy quyền backend.
+- Xác thực: route backend FE07/FE08 tập trung đạt 94/94, frontend vai trò/điều hướng tập trung đạt 61/61, backend đầy đủ đạt 1018/1018, frontend đầy đủ đạt 227/227 và lint/build frontend cùng truy vết đều đạt.
 
-## 2026-07-23 - Enforce atomic copy-level queues
+## 2026-07-23 - Thực thi hàng đợi cấp bản sao nguyên tử
 
-- Removed the non-canonical direct reservation-processing endpoint and retained only `POST /api/reservations/process-queue`.
-- Moved member, role, copy, duplicate, and three-open-reservation checks into one locked create transaction.
-- Rechecked the current `MEMBER` role during queue lookup and again inside the hold transaction so role-revoked entries remain `ACTIVE` and the next eligible reservation is selected.
-- Grouped staff queues by physical `copyId` and loaded every server page needed by the member and staff reservation views.
-- Moved create/cancel/hold/expire lifecycle audits into their owning transactions so mutation and audit commit or roll back together.
-- Preserved committed holds when FE10 notification fails and surfaced safe `RESERVATION_NOTIFY_AUDIT_FAILED` warning metadata when the post-commit failure audit is also unavailable.
-- Preserved those warnings across `expire-holds` promotion by returning optional safe top-level `notificationWarnings[]` entries without changing promoted reservation DTOs.
-- Removed the cached member identity from process-queue confirmation because the server revalidates and reselects the first currently eligible queue entry at mutation time.
+- Loại endpoint xử lý đặt chỗ trực tiếp không chính tắc và chỉ giữ `POST /api/reservations/process-queue`.
+- Di chuyển kiểm tra thành viên, vai trò, bản sao, trùng lặp và ba đặt chỗ đang mở vào một giao dịch tạo có khóa.
+- Kiểm tra lại vai trò `MEMBER` hiện tại khi tra cứu hàng đợi và một lần nữa trong giao dịch giữ để mục bị thu hồi vai trò vẫn `ACTIVE` và lượt đặt chỗ hợp lệ tiếp theo được chọn.
+- Nhóm hàng đợi nhân sự theo `copyId` vật lý và tải mọi trang máy chủ cần bởi giao diện đặt chỗ thành viên và nhân sự.
+- Di chuyển audit vòng đời tạo/hủy/giữ/hết hạn vào giao dịch sở hữu để thay đổi và audit cùng commit hoặc hoàn tác.
+- Giữ lượt giữ đã commit khi thông báo FE10 thất bại và công khai metadata cảnh báo `RESERVATION_NOTIFY_AUDIT_FAILED` an toàn khi audit lỗi sau commit cũng không sẵn có.
+- Giữ các cảnh báo đó qua lượt nâng `expire-holds` bằng cách trả các mục `notificationWarnings[]` tùy chọn an toàn cấp cao nhất mà không thay đổi DTO đặt chỗ đã nâng.
+- Loại danh tính thành viên cache khỏi xác nhận process-queue vì máy chủ xác thực lại và chọn lại mục hàng đợi hợp lệ đầu tiên hiện tại tại thời điểm thay đổi.
 
-## 2026-07-21 - Align reservation eligibility with member role
+## 2026-07-21 - Căn chỉnh điều kiện hợp lệ đặt chỗ với vai trò thành viên
 
-- Replaced the FE04 approval prerequisite with active-account plus `MEMBER` role authorization.
-- Queue processing now skips inactive accounts without consulting FE04 application status.
-- Clarified that Librarian/Admin processes the reservation queue when a copy becomes available.
-- Kept borrowed/reserved candidates visible, added member-scoped `hasActiveReservation`, disabled duplicate reservation actions, and removed routine synchronization banners.
+- Thay điều kiện tiên quyết phê duyệt FE04 bằng tài khoản hoạt động cùng ủy quyền vai trò `MEMBER`.
+- Xử lý hàng đợi hiện bỏ qua tài khoản không hoạt động mà không tham khảo trạng thái ứng dụng FE04.
+- Làm rõ Thủ thư/Quản trị viên xử lý hàng đợi đặt chỗ khi một bản sao khả dụng.
+- Giữ ứng viên đã mượn/đặt trước hiển thị, thêm `hasActiveReservation` theo phạm vi thành viên, vô hiệu hóa thao tác đặt chỗ trùng lặp và loại banner đồng bộ thường lệ.
 
-## 2026-07-20 - Vietnamese UI localization and typography
+## 2026-07-20 - Bản địa hóa giao diện tiếng Việt và kiểu chữ
 
-- Localized frontend-generated labels, states, accessibility names, and safe error feedback for this feature.
-- Preserved API contracts, raw enum values, permissions, business rules, and user-owned catalog/profile data.
-- Applied the shared `Be Vietnam Pro` body and `Noto Serif` heading typography contract with Unicode-capable fallbacks.
+- Bản địa hóa nhãn, trạng thái, tên trợ năng và phản hồi lỗi an toàn do frontend tạo cho tính năng này.
+- Giữ nguyên hợp đồng API, giá trị enum thô, quyền, quy tắc nghiệp vụ và dữ liệu danh mục/hồ sơ do người dùng sở hữu.
+- Áp dụng hợp đồng kiểu chữ dùng chung `Be Vietnam Pro` cho thân bài và `Noto Serif` cho tiêu đề, kèm font dự phòng hỗ trợ Unicode.
 
-## 2026-07-19 - Phase 2 Exit Closeout
+## 2026-07-19 - Hoàn tất đầu ra giai đoạn 2
 
-- feat-reservation-management is accepted within the complete Phase 2 FE01-FE12 reconciliation recorded by PR #40/#41; validation and residual boundaries are consolidated in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`.
-- Deferred and future-scope limitations remain explicit and are not widened by this closeout.
+- feat-reservation-management được chấp nhận trong đợt đối soát hoàn chỉnh Giai đoạn 2 FE01-FE12 ghi nhận bởi PR #40/#41; việc xác thực và các ranh giới còn lại được tổng hợp trong `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`.
+- Các giới hạn đã hoãn và phạm vi tương lai vẫn được nêu rõ, không bị mở rộng bởi đợt hoàn tất này.
 
-## 2026-07-19 - Open Reservation Limit Corrected
+## 2026-07-19 - Sửa giới hạn đặt chỗ đang mở
 
-- Counted both `ACTIVE` and `NOTIFIED` rows for the maximum-three-open-reservations rule.
-- Treated an existing `NOTIFIED` row as a duplicate for the same member and physical copy.
-- Added route, SQL-source, and live SQL regression coverage while preserving the existing conflict codes.
+- Đếm cả hàng `ACTIVE` và `NOTIFIED` cho quy tắc tối đa ba lượt đặt chỗ đang mở.
+- Coi hàng `NOTIFIED` hiện có là trùng lặp cho cùng thành viên và bản sao vật lý.
+- Thêm bao phủ hồi quy route, nguồn SQL và SQL trực tiếp trong khi giữ mã xung đột hiện có.
 
-## 2026-07-19 - V0.4.4 Member-Safe Candidate Contract Approved
+## 2026-07-19 - Phê duyệt hợp đồng ứng viên an toàn cho thành viên v0.4.4
 
-- Approved protected member-only `GET /api/reservations/candidates` as the source of physical `CopyId` targets.
-- Locked the safe projection to `copyId`, `bookId`, title, nullable author, `BORROWED`/`RESERVED` status, and active queue count.
-- Preserved FE01 public redaction, FE06 staff inventory access, and `POST /api/reservations { copyId }` mutation semantics.
-- Added server-owned `q`/page/limit behavior, deterministic ordering, implementation tasks FE08-T035 through FE08-T039, and SQL/browser validation gates.
-- User approved Option A and the written design on 2026-07-19; implementation and focused/full automated validation are now complete, while human H3 integration remains open.
+- Phê duyệt `GET /api/reservations/candidates` chỉ thành viên được bảo vệ làm nguồn mục tiêu `CopyId` vật lý.
+- Khóa projection an toàn tới `copyId`, `bookId`, tiêu đề, tác giả nullable, trạng thái `BORROWED`/`RESERVED` và số đếm hàng đợi đang hoạt động.
+- Giữ che bớt công khai FE01, truy cập tồn kho nhân sự FE06 và ngữ nghĩa thay đổi `POST /api/reservations { copyId }`.
+- Thêm hành vi `q`/page/limit do máy chủ sở hữu, thứ tự xác định, tác vụ triển khai FE08-T035 đến FE08-T039 và cổng xác thực SQL/trình duyệt.
+- Người dùng phê duyệt Phương án A và thiết kế viết vào 2026-07-19; triển khai và xác thực tự động tập trung/đầy đủ hiện hoàn tất, trong khi tích hợp H3 con người vẫn mở.
 
-## 2026-07-19 - V0.4.4 Candidate Catalog Validated
+## 2026-07-19 - Xác thực danh mục ứng viên v0.4.4
 
-- Added the member-only SQL-backed candidate catalog and migrated the member page off `DEMO_RESERVABLE`.
-- Validated the redacted six-field projection, eligible statuses, server search/pagination, real `copyId` mutation, and canonical refresh through backend, frontend, SQL, and browser gates.
-- Aggregate disposable SQL validation passes `9/9` suites and `69/69` tests after two migration passes; cleanup leaves no disposable database or login.
-- Closed `TD-028` for agent-side validation; final H3, merge, and post-merge `main` CI remain human gates.
+- Thêm danh mục ứng viên có SQL hỗ trợ chỉ thành viên và chuyển trang thành viên khỏi `DEMO_RESERVABLE`.
+- Xác thực projection sáu trường đã che bớt, trạng thái hợp lệ, tìm kiếm/phân trang máy chủ, thay đổi `copyId` thực và làm mới chính tắc qua cổng backend, frontend, SQL và trình duyệt.
+- Xác thực SQL dùng một lần tổng hợp đạt `9/9` bộ và `69/69` kiểm thử sau hai lượt migration; dọn dẹp không để lại cơ sở dữ liệu hoặc đăng nhập dùng một lần.
+- Đóng `TD-028` cho xác thực phía agent; H3 cuối, merge và CI `main` sau merge vẫn là cổng con người.
 
-## 2026-07-19 - Reservation Candidate Drift Recorded
+## 2026-07-19 - Ghi nhận sai lệch ứng viên đặt chỗ
 
-- The final product-drift scan confirmed that reservation mutations and lifecycle state are server-authoritative, but `MyReservationsPage` still displays hardcoded `DEMO_RESERVABLE` copy candidates.
-- Registered `TD-028` for an approved member-safe FE01/FE06/FE08 copy-selection contract; reconciliation did not invent a new endpoint or expose staff-only copy metadata.
+- Quét sai lệch sản phẩm cuối xác nhận thay đổi đặt chỗ và trạng thái vòng đời do máy chủ sở hữu, nhưng `MyReservationsPage` vẫn hiển thị ứng viên bản sao `DEMO_RESERVABLE` mã cứng.
+- Đăng ký `TD-028` cho hợp đồng chọn bản sao FE01/FE06/FE08 an toàn cho thành viên đã phê duyệt; đối soát không tạo endpoint mới hoặc lộ siêu dữ liệu bản sao chỉ nhân sự.
 
-## 2026-07-19 - V0.4.3 Reservation Reconciliation
+## 2026-07-19 - Đối soát đặt chỗ v0.4.3
 
-- Locked canonical pagination, `copyId` queue processing, stable ordering, deterministic empty/ineligible/notification-failure outcomes, and immutable terminal timestamps.
-- Reconciled FE07 priority and held-owner fulfillment with the shared copy/reservation lock order and transaction rollback boundary.
-- Kept member/staff pages on canonical server lifecycle state with refresh-after-mutation behavior and no local fulfillment/deletion simulation.
-- Passed focused backend/shared tests 77/77, frontend 9/9, traceability 28/28, diff hygiene, and disposable SQL reservation-boundary evidence; final human integration remains open.
+- Khóa phân trang chính tắc, xử lý hàng đợi `copyId`, thứ tự ổn định, kết quả hàng đợi rỗng/không hợp lệ/lỗi thông báo xác định và dấu thời gian kết thúc bất biến.
+- Đối soát ưu tiên FE07 và hoàn tất chủ sở hữu được giữ với thứ tự khóa bản sao/đặt chỗ dùng chung và ranh giới hoàn tác giao dịch.
+- Giữ trang thành viên/nhân sự trên trạng thái vòng đời máy chủ chính tắc với hành vi làm mới sau thay đổi và không mô phỏng hoàn tất/xóa cục bộ.
+- Đạt backend/ranh giới dùng chung tập trung 77/77, frontend 9/9, truy vết 28/28, vệ sinh diff và bằng chứng ranh giới đặt chỗ SQL dùng một lần; tích hợp cuối của con người vẫn mở.
 
-## 2026-07-18 - Truthful Member Reservation State
+## 2026-07-18 - Trạng thái đặt chỗ thành viên trung thực
 
-- Removed member-side demo reservation substitution, simulated create success, and local-only cancellation success when FE08 APIs fail.
-- Kept the member list synchronized with canonical `/api/reservations/me` state and improved the responsive catalog/list card hierarchy.
+- Loại thay thế đặt chỗ demo phía thành viên, thành công tạo mô phỏng và thành công hủy chỉ cục bộ khi API FE08 thất bại.
+- Giữ danh sách thành viên đồng bộ với trạng thái `/api/reservations/me` chính tắc và cải thiện hệ phân cấp thẻ danh mục/danh sách đáp ứng.
 
-## 2026-07-17 - Phase 1 Baseline Approved
+## 2026-07-17 - Phê duyệt mốc cơ sở giai đoạn 1
 
-- Nhật approved the normalized FE08 queue, fulfillment, cancellation, terminal timestamp, and FE07 handoff contract as the Phase 1 baseline; implementation follow-up remains pending.
-- Closed the documentation review gates in `PLAN.md` and `TASKS.md`; normalization implementation tasks remain not started.
+- Nhật phê duyệt hợp đồng hàng đợi, hoàn tất, hủy, dấu thời gian kết thúc và bàn giao FE07 FE08 đã chuẩn hóa làm mốc cơ sở Giai đoạn 1; theo dõi triển khai vẫn đang chờ.
+- Đóng cổng rà soát tài liệu trong `PLAN.md` và `TASKS.md`; tác vụ triển khai chuẩn hóa vẫn chưa bắt đầu.
 
-## 2026-07-17 - Return Handoff Priority Contract
+## 2026-07-17 - Hợp đồng ưu tiên bàn giao trả
 
-- Clarified that an `ACTIVE` queue claim remains enforced when FE07 returns the copy to stored `AVAILABLE`.
-- Preserved manual FE08 queue ownership and deterministic queue-order display requirements.
+- Làm rõ yêu cầu hàng đợi `ACTIVE` vẫn được thực thi khi FE07 trả bản sao về `AVAILABLE` đã lưu.
+- Giữ quyền sở hữu hàng đợi FE08 thủ công và yêu cầu hiển thị thứ tự hàng đợi xác định.
 
-## 2026-07-17 - Open Reservation And Queue Contract Hardening
+## 2026-07-17 - Củng cố hợp đồng đặt chỗ đang mở và hàng đợi
 
-- Counted `ACTIVE` and `NOTIFIED` as open reservations for the limit and duplicate rule.
-- Made `queuePosition` derived and retained only one canonical Phase 1 queue-processing endpoint.
-- Aligned the reservation caller with FE10's `RESERVATION_AVAILABLE -> RESERVATION_READY` contract.
+- Đếm `ACTIVE` và `NOTIFIED` là đặt chỗ đang mở cho quy tắc giới hạn và trùng lặp.
+- Làm `queuePosition` dẫn xuất và chỉ giữ một endpoint xử lý hàng đợi Giai đoạn 1 chính tắc.
+- Căn chỉnh caller đặt chỗ với hợp đồng `RESERVATION_AVAILABLE -> RESERVATION_READY` của FE10.
 
-## 2026-07-17 - Terminal Timestamp History - v0.4.3
+## 2026-07-17 - Lịch sử dấu thời gian kết thúc - v0.4.3
 
-- Preserved `NotifiedAt` and `ExpiresAt` as immutable history after `NOTIFIED -> FULFILLED`, `EXPIRED`, or `CANCELLED`.
-- Defined those fields as null only for reservations that never reached `NOTIFIED` and restricted `CancelledAt` to `CANCELLED` rows.
-- Updated state invariants, traceability, test targets, and FE08-T030 reconciliation scope; no implementation file changed.
+- Giữ `NotifiedAt` và `ExpiresAt` là lịch sử bất biến sau `NOTIFIED -> FULFILLED`, `EXPIRED` hoặc `CANCELLED`.
+- Xác định các trường đó chỉ null cho đặt chỗ chưa từng tới `NOTIFIED` và giới hạn `CancelledAt` cho hàng `CANCELLED`.
+- Cập nhật bất biến trạng thái, truy vết, mục tiêu kiểm thử và phạm vi đối soát FE08-T030; không đổi tệp triển khai.
 
-## 2026-07-17 - Deterministic Contract Normalization (v0.4.2)
+## 2026-07-17 - Chuẩn hóa hợp đồng xác định (v0.4.2)
 
-- Closed the remaining policy alternatives: ineligible reservations are skipped for the current run and remain `ACTIVE`; an empty queue returns no selection and leaves state unchanged; FE10 failure keeps the committed hold and writes a failure audit.
-- Standardized `CopyId`-only queue processing, pagination defaults/bounds, stable ordering, and `QueuePosition`/notification timestamp semantics.
-- Added FE08-T028 through FE08-T033 as unchecked normalization tasks; historical B7 implementation evidence remains separate from this review.
-- Updated `TEST_PLAN.md` with contract-level queue, fulfillment, pagination, failure, and concurrency targets; replaced the last `TBD` traceability entry with FE08-T11.
-- Removed remaining non-contractual date-range/notification wording and made the physical-copy target explicit in the lifecycle and review gate.
-- Locked queue ordering to `ReservedAt ASC, ReservationId ASC` and invalid cancellation to `409 RESERVATION_NOT_ACTIVE` with unchanged state.
-- Added the missing AC-FE08-001 through AC-FE08-010 traceability rows and kept normalized pagination evidence explicitly pending.
-- Added explicit test-plan mappings for all FE08 security, transaction, performance, logging, and usability NFR IDs.
+- Đóng các phương án chính sách còn lại: đặt chỗ không đủ điều kiện bị bỏ qua trong lần chạy hiện tại và vẫn `ACTIVE`; hàng đợi rỗng không chọn gì và giữ trạng thái không đổi; lỗi FE10 giữ lượt giữ đã commit và ghi audit thất bại.
+- Chuẩn hóa xử lý hàng đợi chỉ `CopyId`, mặc định/giới hạn phân trang, thứ tự ổn định và ngữ nghĩa `QueuePosition`/dấu thời gian thông báo.
+- Thêm FE08-T028 đến FE08-T033 làm tác vụ chuẩn hóa chưa chọn; bằng chứng triển khai B7 lịch sử vẫn tách khỏi rà soát này.
+- Cập nhật `TEST_PLAN.md` với mục tiêu hàng đợi, hoàn tất, phân trang, lỗi và đồng thời cấp hợp đồng; thay mục truy vết `TBD` cuối bằng FE08-T11.
+- Loại diễn đạt ngày-phạm-vi/thông báo không theo hợp đồng còn lại và làm mục tiêu bản sao vật lý rõ ràng trong vòng đời và cổng rà soát.
+- Khóa thứ tự hàng đợi thành `ReservedAt ASC, ReservationId ASC` và hủy không hợp lệ thành `409 RESERVATION_NOT_ACTIVE` với trạng thái không đổi.
+- Thêm hàng truy vết AC-FE08-001 đến AC-FE08-010 còn thiếu và giữ bằng chứng phân trang chuẩn hóa đang chờ nêu rõ.
+- Thêm ánh xạ kế hoạch kiểm thử rõ ràng cho mọi ID NFR bảo mật, giao dịch, hiệu năng, ghi log và khả dụng FE08.
 
-## 2026-07-15 - Canonical Membership Dependency (v0.4.1)
+## 2026-07-15 - Phụ thuộc thành viên chính tắc (v0.4.1)
 
-- Replaced optional `MembershipApplications` eligibility reads with canonical `Members.Status = APPROVED` plus active user status from FE04.
-- No reservation lifecycle, queue, API, or implementation behavior changed.
+- Thay lượt đọc điều kiện hợp lệ `MembershipApplications` tùy chọn bằng `Members.Status = APPROVED` chính tắc cùng trạng thái người dùng hoạt động từ FE04.
+- Không đổi hành vi vòng đời đặt chỗ, hàng đợi, API hoặc triển khai.
 
-## 2026-07-15 - FE07 Fulfillment Handoff Contract (v0.4.0)
+## 2026-07-15 - Hợp đồng bàn giao hoàn tất FE07 (v0.4.0)
 
-- Confirmed physical `CopyId` as the required Phase 1 reservation target and removed the remaining book-level ambiguity.
-- Defined FE07 approval for the same notified member and copy as the only `NOTIFIED -> FULFILLED` trigger.
-- Defined `ACTIVE` queue priority as a blocker for ordinary FE07 create/approve actions and allowed owner cancellation from `ACTIVE` or `NOTIFIED`.
-- Added FE08-T025 for shared lock-order alignment and concurrency evidence.
-- Preserved manual queue processing and added no endpoint, table, column, automatic expiration job, or FE10 delivery change.
+- Xác nhận `CopyId` vật lý là mục tiêu đặt chỗ Giai đoạn 1 bắt buộc và loại mơ hồ cấp sách còn lại.
+- Xác định phê duyệt FE07 cho cùng thành viên đã thông báo và bản sao là kích hoạt `NOTIFIED -> FULFILLED` duy nhất.
+- Xác định ưu tiên hàng đợi `ACTIVE` là yếu tố chặn thao tác tạo/phê duyệt FE07 thông thường và cho phép chủ sở hữu hủy từ `ACTIVE` hoặc `NOTIFIED`.
+- Thêm FE08-T025 cho căn chỉnh thứ tự khóa dùng chung và bằng chứng đồng thời.
+- Giữ xử lý hàng đợi thủ công và không thêm endpoint, bảng, cột, job hết hạn tự động hay thay đổi giao FE10.
 
-## 2026-07-13 - Frontend Correctness Aligned With Approved Lifecycle (v0.3.1)
+## 2026-07-13 - Tính đúng đắn frontend căn chỉnh vòng đời đã phê duyệt (v0.3.1)
 
-- Mapped `NOTIFIED` to ready for pickup and `FULFILLED` to completed in the shared frontend view model.
-- Added reservation-specific Vietnamese API errors without changing FE07 or generic API behavior.
-- Connected the librarian UI to the existing `POST /api/reservations/expire-holds` endpoint and reloads canonical server state after success.
-- Removed local-only fulfillment and deletion controls that did not persist backend state.
-- Added focused frontend tests and refreshed FE08 plan/task traceability.
-- Formalized the existing `POST /api/reservations/expire-holds` contract in `SPEC.md`, updating the SPEC version to `0.3.1` and its date to 2026-07-13.
-- No backend implementation, database schema, FE07 fulfillment, FE10 delivery, or pagination changes.
+- Ánh xạ `NOTIFIED` thành sẵn sàng nhận sách và `FULFILLED` thành hoàn thành trong mô hình hiển thị frontend dùng chung.
+- Thêm lỗi API tiếng Việt riêng cho đặt chỗ mà không đổi hành vi API FE07 hoặc chung.
+- Kết nối UI thủ thư với endpoint `POST /api/reservations/expire-holds` hiện có và tải lại trạng thái máy chủ chính tắc sau thành công.
+- Loại điều khiển hoàn tất và xóa chỉ cục bộ không lưu trạng thái backend.
+- Thêm kiểm thử frontend tập trung và làm mới truy vết kế hoạch/tác vụ FE08.
+- Chuẩn hóa hợp đồng `POST /api/reservations/expire-holds` hiện có trong `SPEC.md`, cập nhật phiên bản SPEC thành `0.3.1` và ngày thành 2026-07-13.
+- Không thay đổi triển khai backend, schema cơ sở dữ liệu, hoàn tất FE07, giao FE10 hoặc phân trang.
 
-## 2026-06-25 - Reservation State Model Added (v0.3.0)
+## 2026-06-25 - Thêm mô hình trạng thái đặt chỗ (v0.3.0)
 
-- Bumped `SPEC.md` version `0.2.0` -> `0.3.0`; `Last Updated` 2026-06-25; Status unchanged (APPROVED).
-- Added subsection `10.3 State Model & Transition Rules (Reservation)` at the end of section 10, formalizing the lifecycle of `Reservations.status` per the Formal Spec standard (Spec-Driven Development).
-- State set taken directly from the declared enum in 10.2: `ACTIVE`, `NOTIFIED`, `FULFILLED`, `CANCELLED`, `EXPIRED`. No new states invented.
-- Content: (a) Mermaid `stateDiagram-v2` with start/end nodes; (b) state description table; (c) Valid Transitions table with trigger/guard and FR/BR/AF/Q traces; (d) Invalid Transitions table (terminal states are final; no `ACTIVE`->`FULFILLED` skip; no `NOTIFIED`->`ACTIVE`; no double selection; cancelled/expired excluded from queue); (e) 7 invariants (INV-FE08-001..007).
-- Traced to FR-FE08-001..024, BR-FE08-003/005/006/008/009/010/011/012/013/014, AF-FE08-003/004, EC-FE08-007/010, Q-FE08-001/004, MF-FE08-001/002/004/005, AC-FE08-004/007, and NFR-FE08-TXN-001/002 + LOG-001.
-- No logic changed: the state model only consolidates transitions already implied by existing flows, rules, and resolved questions.
+- Tăng phiên bản `SPEC.md` `0.2.0` -> `0.3.0`; `Last Updated` 2026-06-25; Trạng thái không đổi (APPROVED).
+- Thêm tiểu mục `10.3 State Model & Transition Rules (Reservation)` ở cuối phần 10, chính thức hóa vòng đời `Reservations.status` theo chuẩn Đặc tả chính thức (Phát triển dựa trên đặc tả).
+- Tập trạng thái lấy trực tiếp từ enum khai báo trong 10.2: `ACTIVE`, `NOTIFIED`, `FULFILLED`, `CANCELLED`, `EXPIRED`. Không tạo trạng thái mới.
+- Nội dung: (a) Mermaid `stateDiagram-v2` với nút bắt đầu/kết thúc; (b) bảng mô tả trạng thái; (c) bảng Chuyển đổi hợp lệ với trigger/guard và truy vết FR/BR/AF/Q; (d) bảng Chuyển đổi không hợp lệ (trạng thái kết thúc là cuối; không bỏ qua `ACTIVE`->`FULFILLED`; không `NOTIFIED`->`ACTIVE`; không chọn hai lần; đã hủy/hết hạn bị loại khỏi hàng đợi); (e) 7 bất biến (INV-FE08-001..007).
+- Truy vết tới FR-FE08-001..024, BR-FE08-003/005/006/008/009/010/011/012/013/014, AF-FE08-003/004, EC-FE08-007/010, Q-FE08-001/004, MF-FE08-001/002/004/005, AC-FE08-004/007 và NFR-FE08-TXN-001/002 + LOG-001.
+- Không đổi logic: mô hình trạng thái chỉ hợp nhất chuyển đổi đã được hàm ý bởi luồng, quy tắc và câu hỏi đã giải quyết hiện có.
 
 ## 2026-06-02
 
-- Created initial FE08 Reservation Management draft spec.
-- Added context, open questions, proposed API contract, business rules, acceptance criteria, and traceability matrix.
+- Tạo dự thảo đặc tả Quản lý đặt chỗ FE08 ban đầu.
+- Thêm bối cảnh, câu hỏi mở, hợp đồng API đề xuất, quy tắc nghiệp vụ, tiêu chí chấp nhận và ma trận truy vết.
 
 ## 2026-06-10
 
-- Updated API contract policy to allow approval in `SPEC.md` unless the team reintroduces a shared API contract document.
-- Resolved FE08/FE07 renewal dependency: active reservation or held copy for another member blocks FE07 loan renewal.
+- Cập nhật chính sách hợp đồng API để cho phép phê duyệt trong `SPEC.md` trừ khi nhóm khôi phục tài liệu hợp đồng API dùng chung.
+- Giải quyết phụ thuộc gia hạn FE08/FE07: đặt chỗ đang hoạt động hoặc bản sao được giữ cho thành viên khác chặn gia hạn khoản mượn FE07.
 
-## 2026-06-10 - Phase 1 Review Decisions Approved
+## 2026-06-10 - Phê duyệt quyết định rà soát giai đoạn 1
 
-- Approved open-question decisions from `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`.
-- Updated `SPEC.md` decision status from draft/proposed/open to approved where applicable.
-- Preserved Phase 1 scope controls and deferred future-work items explicitly.
+- Phê duyệt các quyết định câu hỏi mở từ `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`.
+- Cập nhật trạng thái quyết định `SPEC.md` từ draft/proposed/open thành approved ở nơi áp dụng.
+- Giữ các biện pháp kiểm soát phạm vi Giai đoạn 1 và nêu rõ các hạng mục công việc tương lai bị hoãn.
 
-## 2026-06-10 - Backend Slice Ready For Review
+## 2026-06-10 - Lát cắt backend sẵn sàng để rà soát
 
-- Added the FE08 backend plan and task checklist for Nhat's reservation scope.
-- Added member reservation APIs, staff queue processing, audit logging, and FE10 notification request handoff.
-- Added backend tests for reservation rules, cancellation ownership, queue order, notifications, and role guards.
+- Thêm kế hoạch backend FE08 và checklist tác vụ cho phạm vi đặt chỗ của Nhat.
+- Thêm API đặt chỗ thành viên, xử lý hàng đợi nhân sự, ghi audit và bàn giao yêu cầu thông báo FE10.
+- Thêm kiểm thử backend cho quy tắc đặt chỗ, quyền sở hữu hủy, thứ tự hàng đợi, thông báo và bảo vệ vai trò.
 
-## 2026-06-25 - EARS Unwanted Coverage Raised (v0.2.0)
+## 2026-06-25 - Tăng bao phủ hành vi không mong muốn EARS (v0.2.0)
 
-- Bumped `SPEC.md` version `0.1.0` -> `0.2.0`; updated `Last Updated` to 2026-06-25; Status unchanged (APPROVED).
-- Added section `7.1 Unwanted Behaviour Requirements` with 14 new EARS Unwanted functional requirements (FR-FE08-011 .. FR-FE08-024).
-- No new logic introduced: every new FR promotes an existing error/abnormal branch from Edge Cases (EC-*), Business Rules (BR-*), Alternative Flows (AF-*), or approved decisions (Q-*), each carrying a source trace.
-- Covered branches: member not found, inactive account, membership not approved, book/copy not found, reservation limit reached, cancel-not-owner, repeat cancellation, member ineligible at queue time, reservation expiry, empty eligible queue, notification service failure/retry, concurrent queue selection, held-copy borrow block, FE07 renewal block.
-- Raised Unwanted FR ratio from ~30% (3/10) to ~68% (15/22), exceeding the 30% target.
-- Updated `16. Traceability Matrix`: added rows for every new FR (mapping source EC/BR/AF/Q and provisional test references) and backfilled previously missing FR-FE08-001/002/003/006/007/009/010 rows.
+- Tăng phiên bản `SPEC.md` `0.1.0` -> `0.2.0`; cập nhật `Last Updated` thành 2026-06-25; Trạng thái không đổi (APPROVED).
+- Thêm phần `7.1 Unwanted Behaviour Requirements` với 14 yêu cầu chức năng Không mong muốn EARS mới (FR-FE08-011 .. FR-FE08-024).
+- Không thêm logic mới: mỗi FR mới nâng một nhánh lỗi/bất thường hiện có từ Trường hợp biên (EC-*), Quy tắc nghiệp vụ (BR-*), Luồng thay thế (AF-*) hoặc quyết định đã phê duyệt (Q-*), mỗi mục mang truy vết nguồn.
+- Bao phủ nhánh: không tìm thấy thành viên, tài khoản không hoạt động, thành viên chưa phê duyệt, không tìm thấy sách/bản sao, đạt giới hạn đặt chỗ, hủy không phải chủ sở hữu, hủy lặp lại, thành viên không đủ điều kiện lúc xếp hàng, hết hạn đặt chỗ, hàng đợi hợp lệ rỗng, lỗi/thử lại dịch vụ thông báo, chọn hàng đợi đồng thời, chặn mượn bản sao được giữ, chặn gia hạn FE07.
+- Nâng tỷ lệ FR Không mong muốn từ ~30% (3/10) lên ~68% (15/22), vượt mục tiêu 30%.
+- Cập nhật `16. Traceability Matrix`: thêm hàng cho mọi FR mới (ánh xạ nguồn EC/BR/AF/Q và tham chiếu kiểm thử tạm thời) và bổ sung hàng FR-FE08-001/002/003/006/007/009/010 từng thiếu.
 
-## 2026-06-20 - Frontend UI Implemented and Accessibility Validated
+## 2026-06-20 - Triển khai UI frontend và xác thực khả năng tiếp cận
 
-- Implemented member my reservations, librarian reservation management, and librarian reservation queue processing screens.
-- Wired all frontend screens to backend APIs using axios and React hooks.
-- Added table captions, column header scopes, accessible labels for search inputs, selects, pagination buttons, and icon controls.
-- Added loading, empty, and error states on all reviewed screens.
-- Validated: `npm.cmd --prefix frontend run lint`, `npm.cmd --prefix frontend run build`, `npm.cmd --prefix backend test`.
-- Merged via PR #7 into `feat/fe07-fe08-fe10-fe12-ui-polish`.
-## 2026-07-18 - Librarian reservation operations aligned with canonical API data
+- Triển khai màn hình lượt đặt chỗ của tôi thành viên, quản lý đặt chỗ thủ thư và xử lý hàng đợi đặt chỗ thủ thư.
+- Nối mọi màn hình frontend với API backend bằng axios và React hooks.
+- Thêm caption bảng, phạm vi header cột, nhãn có thể tiếp cận cho input tìm kiếm, select, nút phân trang và điều khiển icon.
+- Thêm trạng thái tải, rỗng và lỗi trên mọi màn hình đã rà soát.
+- Xác thực: `npm.cmd --prefix frontend run lint`, `npm.cmd --prefix frontend run build`, `npm.cmd --prefix backend test`.
+- Merge qua PR #7 vào `feat/fe07-fe08-fe10-fe12-ui-polish`.
 
-- Rebuilt the librarian reservation screen with valid Vietnamese copy, clearer list/queue layouts, explicit search, book/status filters, and eight-row pagination.
-- Removed the staff demo-data fallback and the persistent successful-refresh notice; loading, empty, and API-error states now represent canonical server state only.
-- Reloaded reservations after queue processing and hold expiration so UI state remains synchronized with FE07/FE08/FE10 transitions.
-- Enriched reservation list fields with member full name, email, author, barcode, copy status, and location from the existing database relations.
-- Kept manual queue processing in stable reservation-time order and retained the Phase 1 manual expired-hold workflow.
-- Verified focused FE08 backend tests, frontend lint, frontend reservation tests, and production build.
-- Added a visible row action for opening the selected book queue; the hold/notify action is enabled only after the target copy becomes `AVAILABLE`.
+## 2026-07-18 - Thao tác đặt chỗ thủ thư căn chỉnh dữ liệu API chính tắc
+
+- Xây lại màn hình đặt chỗ thủ thư với copy tiếng Việt hợp lệ, bố cục danh sách/hàng đợi rõ ràng hơn, tìm kiếm rõ ràng, bộ lọc sách/trạng thái và phân trang tám hàng.
+- Loại fallback dữ liệu demo nhân sự và thông báo làm mới thành công cố định; trạng thái tải, rỗng và lỗi API giờ chỉ biểu thị trạng thái máy chủ chính tắc.
+- Tải lại đặt chỗ sau xử lý hàng đợi và hết hạn giữ chỗ để trạng thái UI luôn đồng bộ với chuyển đổi FE07/FE08/FE10.
+- Làm phong phú trường danh sách đặt chỗ với họ tên thành viên, email, tác giả, mã vạch, trạng thái bản sao và vị trí từ quan hệ cơ sở dữ liệu hiện có.
+- Giữ xử lý hàng đợi thủ công theo thứ tự thời gian đặt chỗ ổn định và giữ quy trình giữ chỗ hết hạn thủ công Giai đoạn 1.
+- Xác minh kiểm thử backend FE08 tập trung, lint frontend, kiểm thử đặt chỗ frontend và build production.
+- Thêm hành động hàng hiển thị để mở hàng đợi sách đã chọn; thao tác giữ/thông báo chỉ bật sau khi bản sao mục tiêu thành `AVAILABLE`.

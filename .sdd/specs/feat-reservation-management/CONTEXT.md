@@ -1,137 +1,137 @@
-# CONTEXT.md - FE08 Reservation Management
+# CONTEXT.md - FE08 Quản lý đặt chỗ
 
-# Version: 0.2.3
+# Phiên bản: 0.2.3
 
-# Status: APPROVED - BASELINE 2026-07-17
+# Trạng thái: ĐÃ PHÊ DUYỆT - MỐC CƠ SỞ 2026-07-17
 
-# Owner: Nhat
+# Chủ sở hữu: Nhat
 
-# Last Updated: 2026-07-21
+# Cập nhật lần cuối: 2026-07-21
 
-# Feature folder: `.sdd/specs/feat-reservation-management/`
-
----
-
-## 1. Feature Purpose
-
-Reservation Management lets members wait for unavailable books in a fair, traceable order.
-
-The feature prevents ad-hoc manual waiting lists and helps librarians know who should be notified first when a copy becomes available.
+# Thư mục tính năng: `.sdd/specs/feat-reservation-management/`
 
 ---
 
-## 2. Real-World Workflow
+## 1. Mục đích tính năng
 
-1. A member wants a book that is currently unavailable.
-2. The member creates a reservation.
-3. The system places the reservation into a queue.
-4. A copy later becomes available, usually after return.
-5. A librarian/admin manually selects the next eligible reservation for a specific available copy.
-6. The system triggers a book available notification.
-7. The member borrows the book within the allowed time or the reservation expires/cancels.
+Quản lý đặt chỗ cho phép thành viên chờ các sách không khả dụng theo thứ tự công bằng, có thể truy vết.
+
+Tính năng ngăn các danh sách chờ thủ công tùy tiện và giúp thủ thư biết ai cần được thông báo trước khi một bản sao trở nên khả dụng.
 
 ---
 
-## 3. Feature Boundary
+## 2. Quy trình thực tế
 
-FE08 includes:
-
-- Reserve book.
-- Member-safe candidate search and selection for physical copies.
-- Cancel reservation.
-- View reservation list.
-- Process reservation queue.
-- Trigger book available notification requirement.
-
-FE08 does not include:
-
-- Borrow approval/return implementation. That belongs to FE07.
-- Notification delivery implementation. That belongs to FE10.
-- Fine calculation. That belongs to FE09.
-- Study seat reservation. It is out of scope.
+1. Thành viên muốn một sách hiện không khả dụng.
+2. Thành viên tạo một lượt đặt chỗ.
+3. Hệ thống đưa lượt đặt chỗ vào hàng đợi.
+4. Một bản sao sau đó trở nên khả dụng, thường sau khi trả.
+5. Thủ thư/quản trị viên chọn thủ công lượt đặt chỗ hợp lệ tiếp theo cho một bản sao khả dụng cụ thể.
+6. Hệ thống kích hoạt yêu cầu thông báo sách khả dụng.
+7. Thành viên mượn sách trong thời gian cho phép hoặc lượt đặt chỗ hết hạn/hủy.
 
 ---
 
-## 4. Current Data Model Notes
+## 3. Ranh giới tính năng
 
-The current SQL script has:
+FE08 bao gồm:
+
+- Đặt chỗ sách.
+- Tìm kiếm và chọn ứng viên an toàn cho thành viên đối với bản sao vật lý.
+- Hủy đặt chỗ.
+- Xem danh sách đặt chỗ.
+- Xử lý hàng đợi đặt chỗ.
+- Kích hoạt yêu cầu thông báo sách khả dụng.
+
+FE08 không bao gồm:
+
+- Triển khai phê duyệt mượn/trả. Phần này thuộc FE07.
+- Triển khai giao thông báo. Phần này thuộc FE10.
+- Tính tiền phạt. Phần này thuộc FE09.
+- Đặt chỗ ngồi học. Phần này ngoài phạm vi.
+
+---
+
+## 4. Ghi chú về mô hình dữ liệu hiện tại
+
+Tập lệnh SQL hiện tại có:
 
 - `Reservations(ReservationId, UserId, CopyId, ReservedAt, Status)`
 - `BookCopies(CopyId, BookId, Barcode, Status, Location)`
 
-Potential issue to review:
+Vấn đề tiềm năng cần rà soát:
 
-- Phase 1 intentionally reserves by physical `CopyId`; book-level reservation is deferred.
-- Current schema includes `QueuePosition`, `ExpiresAt`, `NotifiedAt`, `CancelledAt`, and `Status`; notification/expiry timestamps remain immutable history after terminal transitions, `CancelledAt` is cancellation-only, and fulfillment uses `Status = FULFILLED` with no separate `FulfilledAt` field.
-- Current schema has no cancellation reason field.
-
----
-
-## 5. Main Use Cases From Assignment Sheet
-
-| Use Case ID | Use Case Name | Owner |
-| ----------- | ------------- | ----- |
-| UC36 | Reserve Book | Nhat |
-| UC37 | Cancel Reservation | Nhat |
-| UC38 | View Reservation List | Nhat |
-| UC39 | Process Reservation Queue | Nhat |
-| UC40 | Trigger Book Available Notification | Nhat |
-
-## 6. Feature Tests From Assignment Sheet
-
-| Test ID | Test Name | Owner |
-| ------- | --------- | ----- |
-| FT37 | Reserve book | Nhat |
-| FT38 | Cancel reservation | Nhat |
-| FT39 | View reservation list | Nhat |
-| FT40 | Process reservation queue | Nhat |
-| FT41 | Trigger book available notification | Nhat |
+- Giai đoạn 1 cố ý đặt chỗ theo `CopyId` vật lý; đặt chỗ ở cấp sách được hoãn lại.
+- Schema hiện tại có `QueuePosition`, `ExpiresAt`, `NotifiedAt`, `CancelledAt` và `Status`; dấu thời gian thông báo/hết hạn vẫn là lịch sử bất biến sau chuyển đổi kết thúc, `CancelledAt` chỉ dành cho hủy và hoàn tất dùng `Status = FULFILLED` không có trường `FulfilledAt` riêng.
+- Schema hiện tại không có trường lý do hủy.
 
 ---
 
-## 7. Key Risks
+## 5. Ca sử dụng chính từ bảng phân công
 
-- Queue order can become unfair if reservation ordering is unclear.
-- Copy-level reservation is a deliberate Phase 1 constraint; reserving any copy of a book is deferred.
-- A held copy is protected by FE07 priority checks and may be borrowed only by the notified reservation owner.
-- Renewal in FE07 can conflict with active reservations if policy is not defined.
-- Notification failure can leave members unaware that the book is available.
+| ID ca sử dụng | Tên ca sử dụng | Chủ sở hữu |
+| ------------- | -------------- | ---------- |
+| UC36 | Đặt chỗ sách | Nhat |
+| UC37 | Hủy đặt chỗ | Nhat |
+| UC38 | Xem danh sách đặt chỗ | Nhat |
+| UC39 | Xử lý hàng đợi đặt chỗ | Nhat |
+| UC40 | Kích hoạt thông báo sách khả dụng | Nhat |
 
----
+## 6. Kiểm thử tính năng từ bảng phân công
 
-## 8. Dependencies
-
-| Dependency | Why It Matters |
-| ---------- | -------------- |
-| FE02 Authentication | Identifies the current actor. |
-| FE04 Membership Management | Confirms whether a member is eligible to reserve. |
-| FE06 Inventory / Book Copy Management | Provides book copy status. |
-| FE07 Borrowing Management | Return flow can release a copy into reservation queue. |
-| FE10 Notification Management | Sends book available notifications. |
-| FE11 User & Role Management | Provides role permissions. |
-
----
-
-## 9. Resolved Questions For Team / Teacher
-
-| ID | Approved Decision | Source | Status |
-| -- | ----------------- | ------ | ------ |
-| Q-FE08-001 | Reservation targets physical copy CopyId in Phase 1. | Review packet 2026-06-10 | APPROVED |
-| Q-FE08-002 | Member cannot reserve when a copy is currently available. | Review packet 2026-06-10 | APPROVED |
-| Q-FE08-003 | Maximum 3 active reservations per member. | Review packet 2026-06-10 | APPROVED |
-| Q-FE08-004 | Notified reservation stays valid for 2 calendar days. | Review packet 2026-06-10 | APPROVED |
-| Q-FE08-005 | Queue processing is manual by librarian in Phase 1; automatic trigger is future work. | Review packet 2026-06-10 | APPROVED |
-| Q-FE08-006 | Ineligible active reservations are skipped for the current run and remain active for a later manual retry. | Nhat normalization review 2026-07-17 | APPROVED |
-| Q-FE08-007 | No eligible queue entry returns no selection and leaves copy/reservation state unchanged. | Nhat normalization review 2026-07-17 | APPROVED |
-| Q-FE08-008 | FE10 notification failure preserves the committed hold and writes a failure audit; no automatic retry worker is in Phase 1. | Nhat normalization review 2026-07-17 | APPROVED |
-| Q-FE08-009 | Notification/expiry timestamps survive terminal transitions; only cancelled rows have `CancelledAt`. | Spec normalization 2026-07-17 | APPROVED |
-| Q-FE08-011 | Option A: a protected member-only candidate API returns a seven-field redacted row per active-book `BORROWED`/`RESERVED` copy, including member-scoped `hasActiveReservation`; search and pagination are server-owned, already-reserved copies remain visible with duplicate action disabled, and `POST /api/reservations { copyId }` remains authoritative. | FE08 design approval 2026-07-19; member UI clarification 2026-07-21 | APPROVED |
+| ID kiểm thử | Tên kiểm thử | Chủ sở hữu |
+| ----------- | ------------ | ---------- |
+| FT37 | Đặt chỗ sách | Nhat |
+| FT38 | Hủy đặt chỗ | Nhat |
+| FT39 | Xem danh sách đặt chỗ | Nhat |
+| FT40 | Xử lý hàng đợi đặt chỗ | Nhat |
+| FT41 | Kích hoạt thông báo sách khả dụng | Nhat |
 
 ---
 
-## 10. Notes For Implementation Later
+## 7. Rủi ro chính
 
-- `SPEC.md` v0.4.4 is baseline-approved; lifecycle normalization and the member-safe candidate slice are automated-validated, with human integration still pending.
-- `PLAN.md` and `TASKS.md` record the historical B7 slice separately from the v0.4.3/v0.4.4 reconciliation tasks.
-- Queue processing should be transactional.
-- Members must never cancel another member's reservation.
+- Thứ tự hàng đợi có thể trở nên không công bằng nếu thứ tự đặt chỗ không rõ ràng.
+- Đặt chỗ ở cấp bản sao là ràng buộc có chủ ý của Giai đoạn 1; đặt bất kỳ bản sao nào của một sách được hoãn lại.
+- Bản sao được giữ được bảo vệ bởi kiểm tra ưu tiên FE07 và chỉ chủ sở hữu đặt chỗ đã thông báo mới có thể mượn.
+- Gia hạn trong FE07 có thể xung đột với đặt chỗ đang hoạt động nếu chính sách không được xác định.
+- Lỗi thông báo có thể khiến thành viên không biết sách đã khả dụng.
+
+---
+
+## 8. Phụ thuộc
+
+| Phụ thuộc | Lý do quan trọng |
+| ---------- | ---------------- |
+| FE02 Xác thực | Xác định actor hiện tại. |
+| FE04 Quản lý thành viên | Xác nhận thành viên có đủ điều kiện đặt chỗ hay không. |
+| FE06 Quản lý tồn kho / bản sao sách | Cung cấp trạng thái bản sao sách. |
+| FE07 Quản lý mượn sách | Luồng trả có thể giải phóng bản sao vào hàng đợi đặt chỗ. |
+| FE10 Quản lý thông báo | Gửi thông báo sách khả dụng. |
+| FE11 Quản lý người dùng & vai trò | Cung cấp quyền theo vai trò. |
+
+---
+
+## 9. Câu hỏi đã được giải quyết cho nhóm / giảng viên
+
+| ID | Quyết định đã phê duyệt | Nguồn | Trạng thái |
+| -- | ----------------------- | ------ | ---------- |
+| Q-FE08-001 | Lượt đặt chỗ nhắm tới CopyId bản sao vật lý trong Giai đoạn 1. | Gói rà soát 2026-06-10 | ĐÃ PHÊ DUYỆT |
+| Q-FE08-002 | Thành viên không thể đặt chỗ khi một bản sao hiện đang khả dụng. | Gói rà soát 2026-06-10 | ĐÃ PHÊ DUYỆT |
+| Q-FE08-003 | Tối đa 3 lượt đặt chỗ đang hoạt động cho mỗi thành viên. | Gói rà soát 2026-06-10 | ĐÃ PHÊ DUYỆT |
+| Q-FE08-004 | Lượt đặt chỗ đã thông báo giữ hiệu lực trong 2 ngày dương lịch. | Gói rà soát 2026-06-10 | ĐÃ PHÊ DUYỆT |
+| Q-FE08-005 | Xử lý hàng đợi do thủ thư thực hiện thủ công trong Giai đoạn 1; kích hoạt tự động là công việc tương lai. | Gói rà soát 2026-06-10 | ĐÃ PHÊ DUYỆT |
+| Q-FE08-006 | Lượt đặt chỗ đang hoạt động không đủ điều kiện bị bỏ qua trong lần chạy hiện tại và vẫn hoạt động để thử lại thủ công sau. | Rà soát chuẩn hóa Nhat 2026-07-17 | ĐÃ PHÊ DUYỆT |
+| Q-FE08-007 | Không có mục hàng đợi hợp lệ thì không chọn gì và giữ trạng thái bản sao/đặt chỗ không đổi. | Rà soát chuẩn hóa Nhat 2026-07-17 | ĐÃ PHÊ DUYỆT |
+| Q-FE08-008 | Lỗi thông báo FE10 giữ lượt giữ chỗ đã commit và ghi audit thất bại; không có worker thử lại tự động trong Giai đoạn 1. | Rà soát chuẩn hóa Nhat 2026-07-17 | ĐÃ PHÊ DUYỆT |
+| Q-FE08-009 | Dấu thời gian thông báo/hết hạn tồn tại qua chuyển đổi kết thúc; chỉ hàng đã hủy có `CancelledAt`. | Chuẩn hóa đặc tả 2026-07-17 | ĐÃ PHÊ DUYỆT |
+| Q-FE08-011 | Phương án A: một API ứng viên chỉ Thành viên được bảo vệ trả về hàng đã che bớt bảy trường cho mỗi bản sao `BORROWED`/`RESERVED` của sách đang hoạt động, gồm `hasActiveReservation` theo phạm vi thành viên; tìm kiếm và phân trang do máy chủ sở hữu, bản sao đã đặt chỗ vẫn hiển thị với thao tác trùng lặp bị vô hiệu hóa và `POST /api/reservations { copyId }` vẫn có thẩm quyền. | Phê duyệt thiết kế FE08 2026-07-19; làm rõ UI thành viên 2026-07-21 | ĐÃ PHÊ DUYỆT |
+
+---
+
+## 10. Ghi chú cho việc triển khai sau này
+
+- `SPEC.md` v0.4.4 đã được phê duyệt làm mốc cơ sở; chuẩn hóa vòng đời và lát cắt ứng viên an toàn cho thành viên đã được xác thực tự động, tích hợp của con người vẫn đang chờ.
+- `PLAN.md` và `TASKS.md` ghi riêng lát cắt B7 lịch sử với các tác vụ đối soát v0.4.3/v0.4.4.
+- Xử lý hàng đợi nên theo giao dịch.
+- Thành viên không bao giờ được hủy đặt chỗ của thành viên khác.

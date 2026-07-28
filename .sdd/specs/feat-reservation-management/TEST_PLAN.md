@@ -1,113 +1,101 @@
-# FE08 Test Plan - Reservation Management
+# Kế hoạch kiểm thử FE08 - Quản lý đặt chỗ
 
-Version: 0.5.7
-Status: IN PROGRESS - 8D0059B INTEGRATION; H2 ADDENDUM PENDING
-Last Updated: 2026-07-27
+Phiên bản: 0.5.7
+Trạng thái: ĐANG THỰC HIỆN - TÍCH HỢP 8D0059B; ĐANG CHỜ PHỤ LỤC H2
+Cập nhật lần cuối: 2026-07-27
 
-Source Spec: `.sdd/specs/feat-reservation-management/SPEC.md` v0.5.10
-Feature IDs: `BR-FE08-*`, `FR-FE08-*`, `AC-FE08-*`
-Authoritative AC-to-test mapping: `SPEC.md` section 16 Traceability Matrix (this file is the strategy, not the case list).
+Đặc tả nguồn: `.sdd/specs/feat-reservation-management/SPEC.md` v0.5.10
+ID tính năng: `BR-FE08-*`, `FR-FE08-*`, `AC-FE08-*`
+Ánh xạ AC-đến-kiểm thử có thẩm quyền: Phần 16 Ma trận truy vết trong `SPEC.md` (tệp này mô tả chiến lược, không phải danh sách ca kiểm thử).
 
 ---
 
-## 1. Test Scope
+## 1. Phạm vi kiểm thử
 
-Reservation creation for physical copies, member and staff visibility, deterministic queue
-processing, cancellation, hold expiration, FE07 fulfillment handoff, FE10 notification failure,
-authorization, pagination, ordering, transaction integrity, and audit traceability.
+Tạo đặt chỗ cho bản sao vật lý, hiển thị thành viên và nhân sự, xử lý hàng đợi xác định, hủy, hết hạn giữ chỗ, bàn giao hoàn tất FE07, lỗi thông báo FE10, ủy quyền, phân trang, thứ tự, toàn vẹn giao dịch và truy vết audit.
 
-The normalized lifecycle and candidate-catalog tasks are agent-side complete. Automated evidence
-proves FE08-T028 through FE08-T039; human integration remains a separate gate.
+Các tác vụ vòng đời đã chuẩn hóa và danh mục ứng viên đã hoàn tất phía agent. Bằng chứng tự động chứng minh FE08-T028 đến FE08-T039; tích hợp của con người vẫn là cổng riêng.
 
-## 2. Unit / Service Test Targets
+## 2. Mục tiêu kiểm thử đơn vị / service
 
-- Eligibility: active user, approved membership, unavailable physical copy, duplicate active reservation, and the maximum of 3 active reservations.
-- Contract validation: `CopyId` is the only reservation target; `bookId` is rejected from `process-queue` and invalid values are rejected before repository access.
-- Queue selection: exact copy scope, `ReservedAt ASC, ReservationId ASC` ordering, cancelled/expired exclusion, and at most one `NOTIFIED` hold per copy.
-- Queue presentation: equal positions on different copies remain valid, labels identify the copy-scoped queue, and null canonical positions render `Chưa xác định` instead of an invented or stringified value.
-- Ineligible queue entry: skip for the current run, preserve `ACTIVE`, and leave the copy unchanged.
-- Current same-book loan: FE07 `BORROWED` state removes all same-`BookId` candidates, direct create returns `BOOK_ALREADY_BORROWED`, terminal loan history does not block, and a stale queue entry is skipped without mutation.
-- Empty queue: return no selection and leave copy and reservation state unchanged.
-- Hold creation: set `RESERVED`, `NotifiedAt`, `ExpiresAt`, and queue metadata atomically; record the notification request and audit event.
-- Terminal timestamp history: fulfillment, expiration, and notified cancellation preserve original `NotifiedAt`/`ExpiresAt`; never-notified terminal rows keep them null; only cancelled rows set `CancelledAt`.
-- Notification failure: preserve the committed `NOTIFIED`/`RESERVED` hold and write `RESERVATION_NOTIFY_FAILED`; do not create an automatic retry.
-- Cancellation: owner-only for `ACTIVE` or `NOTIFIED`; reject terminal or foreign reservations; release a held copy atomically.
-- Expiration: expire overdue `NOTIFIED` holds and promote the next eligible reservation without violating queue order.
-- FE07 handoff: only the same member borrowing the same notified copy may transition the reservation to `FULFILLED`; other-member borrow and renewal remain blocked without exposing the owner.
-- Audit and concurrency: every lifecycle change is traceable and concurrent queue attempts cannot select the same reservation twice.
+- Điều kiện hợp lệ: người dùng hoạt động, thành viên đã phê duyệt, bản sao vật lý không khả dụng, đặt chỗ đang hoạt động trùng lặp và tối đa 3 lượt đặt chỗ đang hoạt động.
+- Xác thực hợp đồng: `CopyId` là mục tiêu đặt chỗ duy nhất; `bookId` bị từ chối từ `process-queue` và giá trị không hợp lệ bị từ chối trước khi truy cập repository.
+- Chọn hàng đợi: phạm vi bản sao chính xác, thứ tự `ReservedAt ASC, ReservationId ASC`, loại trừ đã hủy/hết hạn và nhiều nhất một lượt giữ `NOTIFIED` mỗi bản sao.
+- Trình bày hàng đợi: vị trí bằng nhau trên các bản sao khác nhau vẫn hợp lệ, nhãn xác định hàng đợi theo phạm vi bản sao và vị trí chính tắc null hiển thị `Chưa xác định` thay vì giá trị tự tạo hoặc được chuyển thành chuỗi.
+- Mục hàng đợi không đủ điều kiện: bỏ qua trong lần chạy hiện tại, giữ `ACTIVE` và để bản sao không đổi.
+- Khoản mượn cùng sách hiện tại: trạng thái `BORROWED` FE07 loại mọi ứng viên cùng `BookId`, tạo trực tiếp trả `BOOK_ALREADY_BORROWED`, lịch sử khoản mượn kết thúc không chặn và mục hàng đợi cũ bị bỏ qua mà không thay đổi.
+- Hàng đợi rỗng: không chọn gì và giữ trạng thái bản sao/đặt chỗ không đổi.
+- Tạo giữ chỗ: đặt `RESERVED`, `NotifiedAt`, `ExpiresAt` và siêu dữ liệu hàng đợi một cách nguyên tử; ghi yêu cầu thông báo và sự kiện audit.
+- Lịch sử dấu thời gian kết thúc: hoàn tất, hết hạn và hủy khi đã thông báo giữ `NotifiedAt`/`ExpiresAt` ban đầu; hàng kết thúc chưa từng thông báo giữ chúng null; chỉ hàng đã hủy đặt `CancelledAt`.
+- Lỗi thông báo: giữ lượt giữ `NOTIFIED`/`RESERVED` đã commit và ghi `RESERVATION_NOTIFY_FAILED`; không tạo thử lại tự động.
+- Hủy: chỉ chủ sở hữu đối với `ACTIVE` hoặc `NOTIFIED`; từ chối đặt chỗ kết thúc hoặc của người khác; giải phóng bản sao được giữ nguyên tử.
+- Hết hạn: hết hạn lượt giữ `NOTIFIED` quá hạn và nâng lượt đặt chỗ hợp lệ tiếp theo mà không vi phạm thứ tự hàng đợi.
+- Bàn giao FE07: chỉ cùng thành viên mượn cùng bản sao đã thông báo mới có thể chuyển đặt chỗ sang `FULFILLED`; mượn/gia hạn của thành viên khác vẫn bị chặn mà không lộ chủ sở hữu.
+- Audit và đồng thời: mọi thay đổi vòng đời có thể truy vết và các lần thử hàng đợi đồng thời không thể chọn cùng một lượt đặt chỗ hai lần.
 
-## 3. API / Integration Test Targets
+## 3. Mục tiêu kiểm thử API / tích hợp
 
-- `POST /api/reservations`: successful creation, inactive account, unapproved membership, missing copy, available copy, duplicate, active-limit rejection, and `409 BOOK_ALREADY_BORROWED` for a current same-book loan.
-- `GET /api/reservations/me`: member isolation, default `page = 1` and `limit = 20`, and invalid page/limit rejection without normalization.
-- `GET /api/reservations`: staff-only access, member denial, filters, stable `ReservedAt ASC, ReservationId ASC` order, defaults, and invalid page/limit rejection.
-- `POST /api/reservations/process-queue`: staff-only access, required `copyId`, `bookId` rejection, selected reservation, empty queue, ineligible skip, notification failure, and concurrent selection.
-- `POST /api/reservations/expire-holds`: overdue hold expiration, next eligible promotion, and unchanged state when no hold is overdue.
-- `PATCH /api/reservations/:reservationId/cancel`: owner-only success, foreign-owner denial, terminal-state conflict, and atomic release of a held copy.
-- FE07 integration: matching-owner fulfillment, other-member borrow denial, active-queue priority, renewal denial, and no reservation-owner disclosure.
-- Candidate catalog: member-only `GET /api/reservations/candidates`, active-book `BORROWED`/`RESERVED` filtering, current same-`BookId` loan exclusion, seven-field redaction including member-scoped `hasActiveReservation`, server search/pagination, deterministic order, active counts, disabled duplicate action, and authoritative `POST /api/reservations { copyId }` mutation.
+- `POST /api/reservations`: tạo thành công, tài khoản không hoạt động, thành viên chưa phê duyệt, thiếu bản sao, bản sao khả dụng, trùng lặp, từ chối giới hạn đang hoạt động và `409 BOOK_ALREADY_BORROWED` cho khoản mượn cùng sách hiện tại.
+- `GET /api/reservations/me`: cô lập thành viên, mặc định `page = 1` và `limit = 20`, từ chối page/limit không hợp lệ không chuẩn hóa.
+- `GET /api/reservations`: truy cập chỉ nhân sự, từ chối thành viên, bộ lọc, thứ tự `ReservedAt ASC, ReservationId ASC` ổn định, mặc định và từ chối page/limit không hợp lệ.
+- `POST /api/reservations/process-queue`: truy cập chỉ nhân sự, `copyId` bắt buộc, từ chối `bookId`, đặt chỗ được chọn, hàng đợi rỗng, bỏ qua không đủ điều kiện, lỗi thông báo và chọn đồng thời.
+- `POST /api/reservations/expire-holds`: hết hạn giữ chỗ quá hạn, nâng người hợp lệ tiếp theo và trạng thái không đổi khi không có giữ chỗ quá hạn.
+- `PATCH /api/reservations/:reservationId/cancel`: thành công chỉ chủ sở hữu, từ chối chủ sở hữu khác, xung đột trạng thái kết thúc và giải phóng bản sao được giữ nguyên tử.
+- Tích hợp FE07: hoàn tất chủ sở hữu khớp, từ chối mượn thành viên khác, ưu tiên hàng đợi đang hoạt động, từ chối gia hạn và không tiết lộ chủ sở hữu đặt chỗ.
+- Danh mục ứng viên: `GET /api/reservations/candidates` chỉ Thành viên, lọc `BORROWED`/`RESERVED` của sách đang hoạt động, loại trừ khoản mượn cùng `BookId` hiện tại, che bớt bảy trường gồm `hasActiveReservation` theo phạm vi thành viên, tìm kiếm/phân trang máy chủ, thứ tự xác định, số đếm đang hoạt động, thao tác trùng lặp bị vô hiệu hóa và thay đổi `POST /api/reservations { copyId }` có thẩm quyền.
 
-## 4. E2E / Manual Acceptance Flows
+## 4. Luồng chấp nhận E2E / thủ công
 
-- Eligible member reserves an unavailable copy -> staff processes the queue -> FE10 notification is requested -> the same member borrows the held copy -> reservation becomes `FULFILLED` and copy becomes `BORROWED` atomically.
-- Two members queue for one copy -> the earliest eligible member is held first -> an ineligible entry is skipped without state loss -> an expired hold promotes the next eligible member.
-- Staff lists reservations with omitted pagination -> the first 20 records appear in stable order; invalid bounds return validation errors.
-- Member searches the candidate catalog -> the server returns safe rows, including books already reserved by that member; the member creates a real reservation by numeric `copyId`, duplicate actions become disabled, and the canonical reservation list reloads.
-- Invalid stale/legacy compatibility arrays containing `MEMBER + LIBRARIAN` or `MEMBER + ADMIN` are defensively redirected away from member reservation screens and receive `403 ROLE_REQUIRED` from candidate/create/own-list/cancel endpoints; persisted accounts remain single-role and staff queue operations remain available.
-- Member selects an unavailable book on FE01 -> `/reservations/mine?bookId=...` resolves the public title -> the protected FE08 candidate catalog is initialized to matching physical copies -> Member chooses a real `copyId`.
-- Member has cancelled history plus a new active/notified reservation for the same copy -> current state appears in the active section with a visible label and matching candidate action -> cancelled state remains in the history section only.
-- Librarian/Admin processes a returned copy's queue -> Member sees the
-  canonical `NotifiedAt`/`ExpiresAt` pickup window -> exact held
-  `bookId`/`copyId` opens FE07 -> Member creates a pending request ->
-  Librarian/Admin approval fulfills the reservation.
-- Member currently borrows one physical copy -> all candidates for that `BookId` are absent -> direct create for another copy returns `409 BOOK_ALREADY_BORROWED` -> Librarian/Admin processing skips a stale pre-existing queue row and leaves it `ACTIVE`.
+- Thành viên đủ điều kiện đặt một bản sao không khả dụng -> nhân sự xử lý hàng đợi -> yêu cầu thông báo FE10 được tạo -> cùng thành viên mượn bản sao được giữ -> đặt chỗ thành `FULFILLED` và bản sao thành `BORROWED` nguyên tử.
+- Hai thành viên xếp hàng cho một bản sao -> thành viên hợp lệ sớm nhất được giữ trước -> mục không đủ điều kiện bị bỏ qua không mất trạng thái -> lượt giữ hết hạn nâng thành viên hợp lệ tiếp theo.
+- Nhân sự liệt kê đặt chỗ với phân trang bỏ qua -> 20 bản ghi đầu hiển thị theo thứ tự ổn định; giới hạn không hợp lệ trả lỗi xác thực.
+- Thành viên tìm danh mục ứng viên -> máy chủ trả hàng an toàn, gồm sách đã được chính thành viên đó đặt chỗ; thành viên tạo đặt chỗ thực bằng `copyId` số, thao tác trùng lặp bị vô hiệu hóa và danh sách đặt chỗ chính tắc tải lại.
+- Mảng tương thích cũ/không hợp lệ chứa `MEMBER + LIBRARIAN` hoặc `MEMBER + ADMIN` được phòng thủ chuyển hướng khỏi màn hình đặt chỗ thành viên và nhận `403 ROLE_REQUIRED` từ endpoint ứng viên/tạo/danh sách riêng/hủy; tài khoản đã lưu vẫn một vai trò và thao tác hàng đợi nhân sự vẫn khả dụng.
+- Thành viên chọn một sách không khả dụng trên FE01 -> `/reservations/mine?bookId=...` phân giải tiêu đề công khai -> danh mục ứng viên FE08 được bảo vệ khởi tạo tới bản sao vật lý khớp -> Thành viên chọn `copyId` thực.
+- Thành viên có lịch sử đã hủy cùng một lượt đặt chỗ đang hoạt động/đã thông báo mới cho cùng bản sao -> trạng thái hiện tại xuất hiện ở phần hoạt động với nhãn hiển thị và thao tác ứng viên khớp -> trạng thái đã hủy chỉ còn ở phần lịch sử.
+- Thủ thư/Quản trị viên xử lý hàng đợi của bản sao đã trả -> Thành viên thấy cửa sổ nhận sách `NotifiedAt`/`ExpiresAt` chính tắc -> `bookId`/`copyId` được giữ chính xác mở FE07 -> Thành viên tạo yêu cầu đang chờ -> Thủ thư/Quản trị viên phê duyệt hoàn tất đặt chỗ.
+- Thành viên hiện mượn một bản sao vật lý -> mọi ứng viên cho `BookId` đó vắng mặt -> tạo trực tiếp cho bản sao khác trả `409 BOOK_ALREADY_BORROWED` -> xử lý Thủ thư/Quản trị viên bỏ qua hàng cũ có sẵn và để nó `ACTIVE`.
 
-## 5. Current Evidence
+## 5. Bằng chứng hiện có
 
-- `backend/tests/reservationRoutes.test.js` contains the historical route coverage for creation, cancellation, queue order, notification request, and role guards.
-- `backend/tests/integration.test.js` contains the historical FE07/FE08 borrow, renewal, and hold-expiration integration coverage.
-- `frontend/test/reservationFrontend.test.js` contains lifecycle, error-isolation, server-refresh, and candidate API/page contract coverage.
-- `backend/tests/sql/reservationCandidates.sqltest.js` validates the safe projection, eligible status boundary, active counts, search, stable order, pagination, and cleanup on disposable SQL Server.
-- `.sdd/reviews/fe08-reservation-candidate-catalog-validation-2026-07-19.md` records focused/full FE08 evidence; the aggregate SQL gate passes 9/9 suites and 69/69 tests.
-- Historical CI evidence: commit `236043864304627f3577baafa9b8648c13c7a691` is in `main`; GitHub Actions run `29217437981` completed successfully.
+- `backend/tests/reservationRoutes.test.js` chứa bao phủ route lịch sử cho tạo, hủy, thứ tự hàng đợi, yêu cầu thông báo và bảo vệ vai trò.
+- `backend/tests/integration.test.js` chứa bao phủ tích hợp mượn, gia hạn và hết hạn giữ chỗ FE07/FE08 lịch sử.
+- `frontend/test/reservationFrontend.test.js` chứa bao phủ vòng đời, cô lập lỗi, làm mới máy chủ và hợp đồng API/trang ứng viên.
+- `backend/tests/sql/reservationCandidates.sqltest.js` xác thực projection an toàn, ranh giới trạng thái hợp lệ, số đếm đang hoạt động, tìm kiếm, thứ tự ổn định, phân trang và dọn dẹp trên SQL Server dùng một lần.
+- `.sdd/reviews/fe08-reservation-candidate-catalog-validation-2026-07-19.md` ghi nhận bằng chứng FE08 tập trung/đầy đủ; cổng SQL tổng hợp đạt 9/9 bộ và 69/69 kiểm thử.
+- Bằng chứng CI lịch sử: commit `236043864304627f3577baafa9b8648c13c7a691` nằm trong `main`; GitHub Actions run `29217437981` đã hoàn thành thành công.
 
-## 6. Gaps
+## 6. Khoảng trống
 
-- Historical `FE08-T045` same-book repository/service/route evidence passes
-  `63/63`; frontend error mapping passes `7/7`.
-- Fresh `FE08-T046` queue-position RED failed because the formatter was absent;
-  GREEN passes `1/1`, the FE08/FE09 frontend gate passes `17/17`, and full
-  frontend passes `232/232`.
-- Fresh `FE08-T047` integration evidence against `8d0059b`: the seven-suite
-  cross-feature gate passes `295/295`, full backend and coverage pass
-  `1,052/1,052`, and Chromium acceptance passes `2/2`.
-- The candidate SQL command passes `2/2` source-contract tests and skips `2`
-  mutable SQL cases because no approved disposable database is configured.
-- FE08-T028 through FE08-T034 pass the focused backend/shared-boundary gate at 77/77 and frontend at 9/9; traceability is 29/29.
-- FE08-T035 through FE08-T039 pass: candidate backend contract 23/23, candidate SQL 2/2, current full frontend 149/149 with lint/build, focused browser 1/1, and full Playwright 4/4 on isolated ports.
-- The FE07/FE08 reservation priority, held-owner fulfillment, race, and rollback paths pass in the disposable SQL Server borrowing suite recorded in the full-reconciliation Live SQL review.
-- Final whole-repository and human integration acceptance remain open.
-- `TD-028` is resolved for the agent-side implementation and automated validation slice; the member page now consumes the protected SQL-backed candidate catalog and no longer imports `DEMO_RESERVABLE`.
-- Automatic queue processing, automatic hold-expiration jobs, and FE10 delivery workers remain outside Phase 1.
+- Bằng chứng repository/service/route cùng sách `FE08-T045` lịch sử đạt `63/63`; ánh xạ lỗi frontend đạt `7/7`.
+- RED vị trí hàng đợi `FE08-T046` mới thất bại vì formatter chưa có; GREEN đạt `1/1`, cổng frontend FE08/FE09 đạt `17/17` và frontend đầy đủ đạt `232/232`.
+- Bằng chứng tích hợp `FE08-T047` mới với `8d0059b`: cổng liên tính năng bảy bộ đạt `295/295`, backend đầy đủ và bao phủ đạt `1,052/1,052`, chấp nhận Chromium đạt `2/2`.
+- Lệnh SQL ứng viên đạt `2/2` kiểm thử hợp đồng nguồn và bỏ qua `2` ca SQL thay đổi vì chưa cấu hình cơ sở dữ liệu dùng một lần được phê duyệt.
+- FE08-T028 đến FE08-T034 đạt cổng backend/ranh giới dùng chung tập trung 77/77 và frontend 9/9; truy vết là 29/29.
+- FE08-T035 đến FE08-T039 đạt: hợp đồng backend ứng viên 23/23, SQL ứng viên 2/2, frontend đầy đủ hiện tại 149/149 cùng lint/build, trình duyệt tập trung 1/1 và Playwright đầy đủ 4/4 trên các cổng cô lập.
+- Các đường ưu tiên đặt trước, hoàn tất chủ giữ chỗ, race và hoàn tác FE07/FE08 đạt trong bộ mượn SQL Server dùng một lần được ghi trong rà soát SQL trực tiếp đối soát đầy đủ.
+- Chấp nhận toàn kho cuối và tích hợp của con người vẫn đang mở.
+- `TD-028` đã được giải quyết cho lát cắt triển khai và xác thực tự động phía agent; trang thành viên hiện dùng danh mục ứng viên được bảo vệ có SQL hỗ trợ và không còn import `DEMO_RESERVABLE`.
+- Xử lý hàng đợi tự động, job hết hạn giữ chỗ tự động và worker giao FE10 vẫn ngoài Giai đoạn 1.
 
-## 7. NFR Coverage
+## 7. Bao phủ NFR
 
-| NFR ID | Test target | Evidence state |
-| ------ | ----------- | -------------- |
-| NFR-FE08-SEC-001 | Authentication required on every reservation endpoint. | Focused route matrix and full backend regression pass. |
-| NFR-FE08-SEC-002 | Own-list isolation and foreign reservation view/cancel denial. | Historical route coverage; focused regression remains in FE08-T032. |
-| NFR-FE08-SEC-003 | Librarian/Admin-only staff list, process, and expire actions. | Focused role matrix and full backend regression pass. |
-| NFR-FE08-TXN-001 | Atomic queue hold and FE07 fulfillment with one concurrency winner. | FE07/FE08 integration and disposable SQL borrowing suite pass. |
-| NFR-FE08-TXN-002 | Cancellation/expiration never leaves copy and reservation state inconsistent. | Route/integration rollback and SQL concurrency evidence pass. |
-| NFR-FE08-PERF-001 | Pagination defaults and bounds; invalid values rejected before repository access. | FE08-T028 and candidate API validator/repository tests pass. |
-| NFR-FE08-PERF-002 | Exact `CopyId`/`ACTIVE` lookup and `ReservedAt ASC, ReservationId ASC` order. | FE08-T028/T029 focused and SQL evidence pass. |
-| NFR-FE08-LOG-001 | Audit coverage for create, cancel, process, notify failure, fulfill, and expire. | FE08-T029/T031 lifecycle audit matrix and regression evidence pass. |
-| NFR-FE08-UX-001 | Canonical member labels for every reservation state. | FE08-T032 frontend evidence passes. |
-| NFR-FE08-UX-002 | Librarian queue displays stable order and actionable state clearly. | FE08-T032 deterministic pagination/order evidence passes. |
-| NFR-FE08-SEC-004 | Candidate reads require the single `MEMBER` role, reject Admin/Librarian accounts, and expose no staff-only copy or owner metadata. | FE08-T035/T036 plus FE08-T041 route/frontend role coverage pass. |
-| NFR-FE08-PERF-003 | Candidate reads use bounded server pagination and deterministic title/book/copy ordering. | FE08-T035/T036/T037 SQL, backend, and frontend evidence pass. |
+| ID NFR | Mục tiêu kiểm thử | Trạng thái bằng chứng |
+| ------ | ----------------- | --------------------- |
+| NFR-FE08-SEC-001 | Yêu cầu xác thực trên mọi endpoint đặt chỗ. | Ma trận route tập trung và hồi quy backend đầy đủ đạt. |
+| NFR-FE08-SEC-002 | Cô lập danh sách riêng và từ chối xem/hủy đặt chỗ của người khác. | Bao phủ route lịch sử; hồi quy tập trung còn lại ở FE08-T032. |
+| NFR-FE08-SEC-003 | Danh sách, xử lý và hết hạn chỉ Thủ thư/Quản trị viên. | Ma trận vai trò tập trung và hồi quy backend đầy đủ đạt. |
+| NFR-FE08-TXN-001 | Giữ chỗ hàng đợi nguyên tử và hoàn tất FE07 với một bên thắng đồng thời. | Bộ mượn SQL dùng một lần và tích hợp FE07/FE08 đạt. |
+| NFR-FE08-TXN-002 | Hủy/hết hạn không bao giờ làm trạng thái bản sao và đặt chỗ không nhất quán. | Bằng chứng hoàn tác route/tích hợp và đồng thời SQL đạt. |
+| NFR-FE08-PERF-001 | Mặc định và giới hạn phân trang; giá trị không hợp lệ bị từ chối trước truy cập repository. | Kiểm thử validator/repository API ứng viên và FE08-T028 đạt. |
+| NFR-FE08-PERF-002 | Tra cứu `CopyId`/`ACTIVE` chính xác và thứ tự `ReservedAt ASC, ReservationId ASC`. | Bằng chứng tập trung và SQL FE08-T028/T029 đạt. |
+| NFR-FE08-LOG-001 | Bao phủ audit cho tạo, hủy, xử lý, lỗi thông báo, hoàn tất và hết hạn. | Ma trận audit vòng đời FE08-T029/T031 và bằng chứng hồi quy đạt. |
+| NFR-FE08-UX-001 | Nhãn thành viên chính tắc cho mọi trạng thái đặt chỗ. | Bằng chứng frontend FE08-T032 đạt. |
+| NFR-FE08-UX-002 | Hàng đợi thủ thư hiển thị thứ tự ổn định và trạng thái có thể hành động rõ ràng. | Bằng chứng phân trang/thứ tự xác định FE08-T032 đạt. |
+| NFR-FE08-SEC-004 | Lượt đọc ứng viên yêu cầu đúng vai trò `MEMBER`, từ chối tài khoản Quản trị/Thủ thư và không công khai siêu dữ liệu bản sao hoặc chủ sở hữu chỉ nhân sự. | Bao phủ route/frontend FE08-T035/T036 cùng FE08-T041 đạt. |
+| NFR-FE08-PERF-003 | Lượt đọc ứng viên dùng phân trang máy chủ có giới hạn và thứ tự tiêu đề/sách/bản sao xác định. | Bằng chứng SQL, backend và frontend FE08-T035/T036/T037 đạt. |
 
-## 8. Required Commands / Evidence Before Merge
+## 8. Lệnh / bằng chứng bắt buộc trước khi merge
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/reservationRoutes.test.js tests/integration.test.js
@@ -117,5 +105,4 @@ git diff --check
 npm.cmd --prefix backend test -- --runInBand --testMatch "**/reservationCandidates.sqltest.js"
 ```
 
-The full repository backend/frontend, coverage, integration, deployment, Live SQL, and Playwright
-gates are recorded in the full-reconciliation and FE08 validation reviews before merge.
+Các cổng backend/frontend, bao phủ, tích hợp, triển khai, SQL trực tiếp và Playwright toàn kho được ghi trong các rà soát đối soát đầy đủ và xác thực FE08 trước merge.
