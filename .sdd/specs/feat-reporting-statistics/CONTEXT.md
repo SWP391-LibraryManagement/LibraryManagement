@@ -1,67 +1,71 @@
-# CONTEXT.md - FE12 Reporting & Statistics
+# CONTEXT.md - FE12 Báo cáo và thống kê
 
-# Version: 0.1.0
+# Phiên bản: 0.1.0
 
-# Status: APPROVED - BASELINE 2026-07-17
+# Trạng thái: ĐÃ PHÊ DUYỆT - BASELINE 2026-07-17
 
-# Owner: Nhat
+# Chủ sở hữu: Nhat
 
-# Last Updated: 2026-06-10
+# Cập nhật lần cuối: 2026-06-10
 
-# Feature folder: `.sdd/specs/feat-reporting-statistics/`
-
----
-
-## 1. Feature Purpose
-
-Reporting & Statistics exists to help librarians and administrators understand library operations through read-only summaries.
-
-This feature must keep reports separate from source workflows:
-
-- FE12 reads borrowing, inventory, user, membership, and fine data.
-- FE12 does not approve borrowing, change copy status, manage users, or calculate fines.
-- Source features remain responsible for data correctness.
-
-FE12 is a Standard Spec feature because it aggregates business data and needs role protection, but it is read-only for Phase 1.
+# Thư mục tính năng: `.sdd/specs/feat-reporting-statistics/`
 
 ---
 
-## 2. Real-World Workflow
+## 1. Mục đích tính năng
 
-The typical reporting workflow:
+Báo cáo và thống kê giúp thủ thư và quản trị viên hiểu hoạt động thư viện qua các
+bản tóm tắt chỉ đọc.
 
-1. Librarian/admin opens reports.
-2. The actor chooses report type: borrowing, inventory, or user statistics.
-3. The actor selects filters such as date range, status, category, or role if supported.
-4. The system validates filters.
-5. The system reads source data and calculates aggregate metrics.
-6. The system displays the report without changing source records.
+Tính năng này phải tách báo cáo khỏi workflow nguồn:
 
----
+- FE12 đọc dữ liệu mượn, kho, người dùng, tư cách thành viên và tiền phạt.
+- FE12 không duyệt mượn, thay đổi trạng thái bản sao, quản lý người dùng hay
+  tính tiền phạt.
+- Tính năng nguồn vẫn chịu trách nhiệm về tính đúng đắn của dữ liệu.
 
-## 3. Feature Boundary
-
-FE12 includes:
-
-- View borrowing report.
-- View inventory report.
-- View user statistics.
-- Read-only aggregation and filtering for approved report types.
-
-FE12 does not include:
-
-- Borrowing/return processing. That belongs to FE07.
-- Inventory copy management. That belongs to FE06.
-- User/role management. That belongs to FE11.
-- Fine calculation/payment. That belongs to FE09.
-- Editing source data from a report.
-- Complex BI dashboards or external analytics integration.
+FE12 là tính năng Standard Spec vì tổng hợp dữ liệu nghiệp vụ và cần bảo vệ theo
+vai trò, nhưng chỉ đọc trong Giai đoạn 1.
 
 ---
 
-## 4. Current Data Model Notes
+## 2. Workflow thực tế
 
-The current SQL script includes report source tables:
+Workflow báo cáo điển hình:
+
+1. Thủ thư/quản trị viên mở báo cáo.
+2. Tác nhân chọn loại báo cáo: mượn, kho hoặc thống kê người dùng.
+3. Tác nhân chọn bộ lọc như khoảng ngày, trạng thái, thể loại hoặc vai trò nếu
+   được hỗ trợ.
+4. Hệ thống xác thực bộ lọc.
+5. Hệ thống đọc dữ liệu nguồn và tính metric tổng hợp.
+6. Hệ thống hiển thị báo cáo mà không thay đổi bản ghi nguồn.
+
+---
+
+## 3. Ranh giới tính năng
+
+FE12 bao gồm:
+
+- Xem báo cáo mượn.
+- Xem báo cáo kho.
+- Xem thống kê người dùng.
+- Tổng hợp chỉ đọc và lọc cho loại báo cáo đã phê duyệt.
+
+FE12 không bao gồm:
+
+- Xử lý mượn/trả. Việc đó thuộc FE07.
+- Quản lý bản sao kho. Việc đó thuộc FE06.
+- Quản lý người dùng/vai trò. Việc đó thuộc FE11.
+- Tính toán/thanh toán tiền phạt. Việc đó thuộc FE09.
+- Sửa dữ liệu nguồn từ báo cáo.
+- Dashboard BI phức tạp hoặc tích hợp phân tích bên ngoài.
+
+---
+
+## 4. Ghi chú mô hình dữ liệu hiện tại
+
+SQL hiện tại gồm các bảng nguồn báo cáo:
 
 - `Users`, `UserRoles`, `Roles`, `UserProfiles`
 - `MembershipApplications`
@@ -70,84 +74,88 @@ The current SQL script includes report source tables:
 - `Reservations`
 - `Fines`
 
-Potential issues to review:
+Các vấn đề tiềm năng cần review:
 
-- Some report metrics require consistent status values across features.
-- Date range filtering needs clear date source: request date, due date, return date, paid date, or created date.
-- Current SQL does not store all audit/reporting timestamps for every entity.
-- Report queries should be read-only and should not become business workflow logic.
-- Export formats are not defined.
+- Một số metric báo cáo cần giá trị trạng thái nhất quán giữa các tính năng.
+- Lọc khoảng ngày cần nguồn ngày rõ ràng: ngày yêu cầu, ngày đến hạn, ngày trả,
+  ngày thanh toán hoặc ngày tạo.
+- SQL hiện tại không lưu mọi timestamp audit/báo cáo cho từng thực thể.
+- Query báo cáo phải chỉ đọc và không trở thành logic workflow nghiệp vụ.
+- Định dạng xuất chưa được xác định.
 
-These are not blockers for drafting, but they must be resolved before implementation.
-
----
-
-## 5. Main Use Cases From Assignment Sheet
-
-Owner column reflects the current team redistribution.
-
-| Use Case ID | Use Case Name | Owner |
-| ----------- | ------------- | ----- |
-| UC58 | View Borrowing Report | Nhat |
-| UC59 | View Inventory Report | Nhat |
-| UC60 | View User Statistics | Nhat |
+Đây không phải blocker khi soạn thảo, nhưng phải giải quyết trước triển khai.
 
 ---
 
-## 6. Feature Tests From Assignment Sheet
+## 5. Use case chính từ bảng phân công
 
-Owner column reflects the current team redistribution.
+Cột chủ sở hữu phản ánh phân công lại đội hiện tại.
 
-| Test ID | Test Name | Owner |
-| ------- | --------- | ----- |
-| FT59 | View borrowing report | Nhat |
-| FT60 | View inventory report | Nhat |
-| FT61 | View user statistics | Nhat |
-
----
-
-## 7. Key Risks
-
-- Reports may show incorrect numbers if status definitions differ between features.
-- Expensive report queries may become slow without filters or indexes.
-- Reports may expose personal user data to unauthorized actors.
-- Team may mistake report aggregation for source business logic and duplicate calculations.
-- Missing timestamps may make date-range reports incomplete.
+| ID Use Case | Tên Use Case | Chủ sở hữu |
+| ----------- | ------------ | ---------- |
+| UC58 | Xem báo cáo mượn | Nhat |
+| UC59 | Xem báo cáo kho | Nhat |
+| UC60 | Xem thống kê người dùng | Nhat |
 
 ---
 
-## 8. Dependencies
+## 6. Feature test từ bảng phân công
 
-| Dependency | Why It Matters |
-| ---------- | -------------- |
-| FE06 Inventory / Book Copy Management | Provides copy status and inventory counts. |
-| FE07 Borrowing Management | Provides borrowing and return records. |
-| FE09 Fine Management | Provides fine/payment data if later included in reports. |
-| FE11 User & Role Management | Provides role permissions and user statistics source. |
-| FE04 Membership Management | Provides membership status counts if included. |
-| SQL Server database | Stores all reporting source data. |
+Cột chủ sở hữu phản ánh phân công lại đội hiện tại.
 
----
-
-## 9. Resolved Questions For Team / Teacher
-
-| ID | Approved Decision | Source | Status |
-| -- | ----------------- | ------ | ------ |
-| Q-FE12-001 | Librarian and Admin can view all three reports; Member/Guest cannot view any FE12 report. | Review packet 2026-06-10; normalization 2026-07-17 | APPROVED |
-| Q-FE12-002 | Borrowing metrics: active loans, overdue loans, borrow count by period, top borrowed books. | Review packet 2026-06-10 | APPROVED |
-| Q-FE12-003 | Inventory metrics: total books, total copies, copies by status, low/no availability books. | Review packet 2026-06-10 | APPROVED |
-| Q-FE12-004 | User statistics: total members, active/inactive users, new members by period. | Review packet 2026-06-10 | APPROVED |
-| Q-FE12-005 | All report export is strictly out of scope for Phase 1. | Review packet 2026-06-10; normalization 2026-07-17 | APPROVED |
-| Q-FE12-006 | Report access writes audit logs for Admin/Librarian report views. | Review packet 2026-06-10 | APPROVED |
-| Q-FE12-007 | Unknown well-formed IDs return empty reports, unknown source statuses group as `UNKNOWN`, and detailed rows use deterministic pagination/order. | Spec normalization 2026-07-17 | APPROVED |
+| ID kiểm thử | Tên kiểm thử | Chủ sở hữu |
+| ------- | ------------- | ---------- |
+| FT59 | Xem báo cáo mượn | Nhat |
+| FT60 | Xem báo cáo kho | Nhat |
+| FT61 | Xem thống kê người dùng | Nhat |
 
 ---
 
-## 10. Notes For Implementation Later
+## 7. Rủi ro chính
 
-- Do not implement until `SPEC.md` is reviewed and approved.
-- The completed base slice remains historical evidence; normalization follow-up is planned separately after this revision is approved.
-- Keep reports read-only.
-- Validate filters server-side.
-- Avoid exposing personal details unless necessary and authorized.
-- Keep report calculations traceable to source feature statuses.
+- Báo cáo có thể hiển thị số sai nếu định nghĩa trạng thái khác nhau giữa các
+  tính năng.
+- Query báo cáo tốn kém có thể chậm nếu không có bộ lọc hoặc index.
+- Báo cáo có thể lộ dữ liệu người dùng cá nhân cho tác nhân không được ủy quyền.
+- Đội có thể nhầm tổng hợp báo cáo với logic nghiệp vụ nguồn và nhân bản phép
+  tính.
+- Thiếu timestamp có thể làm báo cáo khoảng ngày không đầy đủ.
+
+---
+
+## 8. Phụ thuộc
+
+| Phụ thuộc | Lý do quan trọng |
+| ---------- | ---------------- |
+| FE06 Quản lý kho / bản sao sách | Cung cấp trạng thái bản sao và số lượng kho. |
+| FE07 Quản lý mượn | Cung cấp bản ghi mượn và trả. |
+| FE09 Quản lý tiền phạt | Cung cấp dữ liệu tiền phạt/thanh toán nếu được đưa vào báo cáo sau này. |
+| FE11 Quản lý người dùng và vai trò | Cung cấp quyền theo vai trò và nguồn thống kê người dùng. |
+| FE04 Quản lý tư cách thành viên | Cung cấp số lượng trạng thái tư cách thành viên nếu được đưa vào. |
+| Cơ sở dữ liệu SQL Server | Lưu mọi dữ liệu nguồn báo cáo. |
+
+---
+
+## 9. Câu hỏi đã giải quyết cho đội / giảng viên
+
+| ID | Quyết định đã phê duyệt | Nguồn | Trạng thái |
+| -- | ----------------------- | ------ | ---------- |
+| Q-FE12-001 | Thủ thư và Quản trị có thể xem cả ba báo cáo; Member/Guest không thể xem báo cáo FE12 nào. | Gói review 2026-06-10; chuẩn hóa 2026-07-17 | APPROVED |
+| Q-FE12-002 | Metric mượn: lượt mượn hoạt động, lượt mượn quá hạn, số mượn theo kỳ, sách được mượn nhiều nhất. | Gói review 2026-06-10 | APPROVED |
+| Q-FE12-003 | Metric kho: tổng sách, tổng bản sao, bản sao theo trạng thái, sách ít/không còn sẵn có. | Gói review 2026-06-10 | APPROVED |
+| Q-FE12-004 | Thống kê người dùng: tổng thành viên, người dùng hoạt động/không hoạt động, thành viên mới theo kỳ. | Gói review 2026-06-10 | APPROVED |
+| Q-FE12-005 | Mọi xuất báo cáo hoàn toàn ngoài phạm vi Giai đoạn 1. | Gói review 2026-06-10; chuẩn hóa 2026-07-17 | APPROVED |
+| Q-FE12-006 | Truy cập báo cáo ghi audit cho lượt xem báo cáo của Quản trị/Thủ thư. | Gói review 2026-06-10 | APPROVED |
+| Q-FE12-007 | ID không rõ có định dạng hợp lệ trả báo cáo rỗng, trạng thái nguồn không rõ nhóm thành `UNKNOWN` và hàng chi tiết dùng phân trang/thứ tự xác định. | Chuẩn hóa spec 2026-07-17 | APPROVED |
+
+---
+
+## 10. Ghi chú triển khai sau này
+
+- Không triển khai cho đến khi `SPEC.md` được review và phê duyệt.
+- Lát cắt base đã hoàn tất vẫn là bằng chứng lịch sử; phần theo dõi chuẩn hóa
+  được lên kế hoạch riêng sau khi bản sửa này được phê duyệt.
+- Giữ báo cáo chỉ đọc.
+- Xác thực bộ lọc phía máy chủ.
+- Tránh lộ chi tiết cá nhân trừ khi cần thiết và được ủy quyền.
+- Giữ phép tính báo cáo truy vết được tới trạng thái tính năng nguồn.

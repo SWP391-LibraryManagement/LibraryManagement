@@ -1,66 +1,70 @@
-# TASKS.md - FE12 Reporting & Statistics
+# TASKS.md - FE12 Báo cáo và thống kê
 
-Status: H3 GOVERNANCE REMEDIATION - FRESH H2 PENDING
+Trạng thái: KHẮC PHỤC GOVERNANCE H3 - CHỜ H2 MỚI
 Implementation State: COMPLETE
 
-Owner: Nhat
+Chủ sở hữu: Nhat
 
-Updated: 2026-07-27
+Cập nhật: 2026-07-27
 
-Workflow State: The Phase 2 baseline remains complete. Nhat approved FE12-N11
-PLAN/TASKS and the integrated `8d0059b` H2 addendum on 2026-07-27. The reviewed
-result was committed as `f346ae0`, pushed to draft PR #63, and CI run
-`30244750250` passed. The first H3 review found no FE12 code or business-rule
-defect and returned only stale governance wording. The documentation-only
-remediation remains uncommitted pending fresh H2 and repeated H3.
+Trạng thái workflow: baseline Giai đoạn 2 vẫn hoàn tất. Nhat phê duyệt PLAN/
+TASKS FE12-N11 và phụ lục H2 tích hợp `8d0059b` ngày 2026-07-27. Kết quả đã
+review được commit thành `f346ae0`, push lên PR nháp #63 và lượt CI
+`30244750250` đạt. Review H3 đầu tiên không phát hiện lỗi mã FE12 hay quy tắc
+nghiệp vụ, chỉ trả về cách diễn đạt governance cũ. Khắc phục chỉ-tài-liệu vẫn
+chưa commit, chờ H2 mới và H3 lặp lại.
 
 ---
 
-## 1. Backend Tasks
+## 1. Nhiệm vụ backend
 
-- [x] FE12-T01 Add borrowing, inventory, and user report routes.
-- [x] FE12-T02 Add validators for report filters and date-range ordering.
-- [x] FE12-T03 Add read-only reporting service with role checks.
-- [x] FE12-T04 Add borrowing aggregate queries and metrics.
-- [x] FE12-T05 Add inventory aggregate queries and metrics.
-- [x] FE12-T06 Add user statistics aggregate queries and metrics.
-- [x] FE12-T07 Add audit logs for successful report access.
-- [x] FE12-T08 Keep report responses aggregate-only and free of unnecessary personal data.
+- [x] FE12-T01 Thêm route báo cáo mượn, kho và người dùng.
+- [x] FE12-T02 Thêm validator cho bộ lọc báo cáo và thứ tự khoảng ngày.
+- [x] FE12-T03 Thêm service báo cáo chỉ đọc với kiểm tra vai trò.
+- [x] FE12-T04 Thêm query và metric tổng hợp mượn.
+- [x] FE12-T05 Thêm query và metric tổng hợp kho.
+- [x] FE12-T06 Thêm query và metric tổng hợp thống kê người dùng.
+- [x] FE12-T07 Thêm audit log cho truy cập báo cáo thành công.
+- [x] FE12-T08 Giữ phản hồi báo cáo chỉ tổng hợp và không có dữ liệu cá nhân
+  không cần thiết.
 
-## 2. Test Tasks
+## 2. Nhiệm vụ kiểm thử
 
-- [x] FE12-T09 Add in-memory report repository helper.
-- [x] FE12-T10 Test borrowing report metrics and zero-result handling.
-- [x] FE12-T11 Test inventory report metrics.
-- [x] FE12-T12 Test user statistics and personal-data suppression.
-- [x] FE12-T13 Test invalid range and role protection.
+- [x] FE12-T09 Thêm helper report repository in-memory.
+- [x] FE12-T10 Kiểm thử metric báo cáo mượn và xử lý kết quả bằng không.
+- [x] FE12-T11 Kiểm thử metric báo cáo kho.
+- [x] FE12-T12 Kiểm thử thống kê người dùng và loại dữ liệu cá nhân.
+- [x] FE12-T13 Kiểm thử khoảng không hợp lệ và bảo vệ vai trò.
 
-## 3. Frontend Tasks
+## 3. Nhiệm vụ frontend
 
-- [x] FE12-T14 Implement borrowing report screen with date filters and charts.
-- [x] FE12-T15 Implement inventory report screen with category filters and charts.
-- [x] FE12-T16 Implement user statistics screen with date filters and charts.
-- [x] FE12-T17 Wire frontend screens to backend APIs.
-- [x] FE12-T18 Add accessibility: table captions, header scopes, form labels, keyboard support.
-- [x] FE12-T19 Add loading, empty, and error states on all screens.
+- [x] FE12-T14 Triển khai màn hình báo cáo mượn với bộ lọc ngày và biểu đồ.
+- [x] FE12-T15 Triển khai màn hình báo cáo kho với bộ lọc thể loại và biểu đồ.
+- [x] FE12-T16 Triển khai màn hình thống kê người dùng với bộ lọc ngày và biểu
+  đồ.
+- [x] FE12-T17 Nối màn hình frontend với API backend.
+- [x] FE12-T18 Thêm accessibility: caption bảng, scope header, nhãn biểu mẫu,
+  hỗ trợ bàn phím.
+- [x] FE12-T19 Thêm trạng thái tải, rỗng và lỗi trên mọi màn hình.
 
-## 4. Historical Base-Slice Validation (2026-07-13)
+## 4. Xác thực lát cắt base lịch sử (2026-07-13)
 
-These results describe the previously integrated base slice and remain historical evidence only;
-the deterministic-wave evidence is recorded in Section 9.1.
+Các kết quả này mô tả lát cắt base đã tích hợp trước đó và chỉ còn là bằng chứng
+lịch sử; bằng chứng wave xác định được ghi ở Phần 9.1.
 
-- [x] `npm.cmd --prefix backend test` passed: 18 suites, 236 tests.
-- [x] `npm.cmd --prefix frontend test` passed: 24 tests.
-- [x] `npm.cmd --prefix frontend run lint` passed.
-- [x] `npm.cmd --prefix frontend run build` passed.
-- [x] `npm.cmd run trace:enforce` passed; FE12 has 8/8 tagged FRs (100%).
-- [x] Fresh browser verification passed at `http://127.0.0.1:5173`: Admin success for
-  borrowing/inventory/users, Guest redirect to `/login`, Member redirect to `/forbidden`,
-  inventory category filtering, truthful error/empty states, and responsive layout checks.
+- [x] `npm.cmd --prefix backend test` đạt: 18 suite, 236 kiểm thử.
+- [x] `npm.cmd --prefix frontend test` đạt: 24 kiểm thử.
+- [x] `npm.cmd --prefix frontend run lint` đạt.
+- [x] `npm.cmd --prefix frontend run build` đạt.
+- [x] `npm.cmd run trace:enforce` đạt; FE12 có 8/8 FR được tag (100%).
+- [x] Xác minh trình duyệt mới đạt tại `http://127.0.0.1:5173`: Quản trị thành
+  công cho mượn/kho/người dùng, Guest chuyển hướng đến `/login`, Member chuyển
+  hướng đến `/forbidden`, lọc thể loại kho, trạng thái lỗi/rỗng trung thực và
+  kiểm tra layout đáp ứng.
 
-## 5. Base Traceability
+## 5. Truy vết base
 
-| Spec ID | Covered by |
+| ID spec | Được bao phủ bởi |
 | --- | --- |
 | BR-FE12-001 | FE12-T03, FE12-T10, FE12-T11, FE12-T12 |
 | BR-FE12-002 | FE12-T13 |
@@ -88,95 +92,144 @@ the deterministic-wave evidence is recorded in Section 9.1.
 | FR-FE12-009 | FE12-N02, FE12-N03 |
 | FR-FE12-010 | FE12-N02, FE12-N03, FE12-N04 |
 
-## 6. Still Outside This Slice
+## 6. Vẫn ngoài lát cắt này
 
-- CSV/PDF export.
-- Dashboards.
-- BI warehouse integration.
+- Xuất CSV/PDF.
+- Dashboard.
+- Tích hợp kho BI.
 
-## 7. FE12 B6 Validation Hardening
+## 7. Củng cố xác thực B6 FE12
 
-B5 implementation status: COMPLETE. The initial B6 automated/manual browser validation
-completed, then independent reviews opened follow-up findings. Remediation and fresh full
-verification pass, the final independent re-review is clean, and Nhat confirmed human review.
+Trạng thái triển khai B5: HOÀN TẤT. Xác thực trình duyệt tự động/thủ công B6 ban
+đầu đã hoàn tất, sau đó review độc lập mở phát hiện theo dõi. Khắc phục và xác
+minh đầy đủ mới đạt, re-review độc lập cuối sạch và Nhat xác nhận review con
+người.
 
-- [x] FE12-H01 Add regression tests for request deduplication, inclusive date-only filters,
-  membership approval periods, inventory category counts, and low-stock copy totals.
-- [x] FE12-H02 Correct repository aggregation and date-boundary behavior.
-- [x] FE12-H03 Add safe audit entries for failed report access and align all OpenAPI filters.
-- [x] FE12-H04 Protect all FE12 frontend routes and remove fabricated demo fallback data.
-- [x] FE12-H05 Restore inventory category options from the authorized metadata payload.
-- [x] FE12-H06 Run focused and full automated validation.
-- [x] FE12-H07 Capture fresh staff/member/guest browser evidence, responsive measurements,
-  inventory filter behavior, and loading/empty/error states.
-- [x] FE12-H08 Remove raw query values from successful report audit metadata.
-- [x] FE12-H09 Apply user date ranges only to `newMembersByPeriod` by `Members.ApprovedAt`.
-- [x] FE12-H10 Add strict date-only validation and complete OpenAPI `400` responses.
-- [x] FE12-H11 Default report date filters to blank and omit empty query parameters.
-- [x] FE12-H12 Align production/test low-stock behavior to `availableCopies <= 2`.
-- [x] FE12-H13 Obtain clean independent re-review after fresh full validation.
-- [x] FE12-H14 Obtain Nhat's human review before commit/push/merge.
+- [x] FE12-H01 Thêm kiểm thử hồi quy cho khử trùng lặp yêu cầu, bộ lọc chỉ-ngày
+  bao hàm, kỳ phê duyệt tư cách thành viên, số thể loại kho và tổng bản sao tồn
+  thấp.
+- [x] FE12-H02 Sửa hành vi tổng hợp repository và ranh giới ngày.
+- [x] FE12-H03 Thêm bản ghi audit an toàn cho truy cập báo cáo thất bại và căn
+  chỉnh mọi bộ lọc OpenAPI.
+- [x] FE12-H04 Bảo vệ mọi route frontend FE12 và loại dữ liệu fallback demo bịa
+  đặt.
+- [x] FE12-H05 Khôi phục tùy chọn thể loại kho từ payload metadata được ủy quyền.
+- [x] FE12-H06 Chạy xác thực tự động tập trung và đầy đủ.
+- [x] FE12-H07 Ghi bằng chứng trình duyệt staff/member/guest mới, đo đáp ứng,
+  hành vi bộ lọc kho và trạng thái tải/rỗng/lỗi.
+- [x] FE12-H08 Loại giá trị query thô khỏi metadata audit báo cáo thành công.
+- [x] FE12-H09 Chỉ áp dụng khoảng ngày người dùng cho `newMembersByPeriod` theo
+  `Members.ApprovedAt`.
+- [x] FE12-H10 Thêm xác thực chỉ-ngày nghiêm ngặt và phản hồi `400` OpenAPI đầy
+  đủ.
+- [x] FE12-H11 Mặc định bộ lọc ngày báo cáo là trống và bỏ tham số query rỗng.
+- [x] FE12-H12 Căn chỉnh hành vi tồn thấp production/kiểm thử thành
+  `availableCopies <= 2`.
+- [x] FE12-H13 Nhận re-review độc lập sạch sau xác thực đầy đủ mới.
+- [x] FE12-H14 Nhận review con người của Nhat trước commit/push/merge.
 
-Detailed evidence is recorded in
+Bằng chứng chi tiết được ghi trong
 `.sdd/reviews/fe12-b6-validation-review-2026-07-13.md`.
 
-## 8. Historical B7 Integration And Review Closeout
+## 8. Tích hợp B7 lịch sử và closeout review
 
-- [x] Nhat confirmed the human review gate and selected local merge.
-- [x] Commit `58747bc10657ed1accb44950ae0c5edbd178a242` reached `main` and `origin/main`.
-- [x] GitHub Actions CI run `29249491818` passed for the same commit.
-- [x] CI covered traceability enforcement, backend tests, frontend lint/tests/build, and the
-  backend health import check.
-- [x] Detailed evidence is recorded in
+- [x] Nhat xác nhận cổng review con người và chọn merge cục bộ.
+- [x] Commit `58747bc10657ed1accb44950ae0c5edbd178a242` tới `main` và
+  `origin/main`.
+- [x] GitHub Actions CI `29249491818` đạt cho cùng commit.
+- [x] CI bao phủ ép truy vết, kiểm thử backend, lint/kiểm thử/build frontend và
+  kiểm tra import health backend.
+- [x] Bằng chứng chi tiết được ghi trong
   `.sdd/reviews/fe12-b7-integration-review-closeout-2026-07-13.md`.
 
-## 9. Deterministic Policy Follow-up
+## 9. Theo dõi policy xác định
 
-- [x] FE12-N01 Normalize all-report access, unknown-ID/status behavior, pagination/order, audit, export scope, and traceability in documentation.
-- [x] FE12-N02 Align access, validation, canonical metrics/rows envelopes, unknown status/ID policy, stable ordering, safe success audit, and date-only row serialization with the approved deterministic contract.
-- [x] FE12-N03 Add focused contract tests for unknown IDs, `UNKNOWN` status grouping, page/limit bounds, stable ordering, successful audit, date-only borrowing rows, and absence of export surfaces.
-- [x] FE12-N04 Align all three frontend report consumers and cross-feature integration assertions to `{ metrics, rows, page, limit, totalRows }` without legacy response fields.
-- [x] FE12-N05 Apply inventory `status` and `location` to the same SQL copy row, retain full-book availability for low-stock calculations, and evaluate user approval-period date bounds in SQL without changing global totals.
-- [x] FE12-N06 Run focused/full automated validation, lint, build, traceability, and diff hygiene; record the deterministic-wave evidence.
-- [x] FE12-N07 Run fresh browser acceptance for canonical borrowing/inventory/user screens, zero-result filtering, mobile layout, and Member/Guest denial.
-- [ ] FE12-N08 Obtain human integration review before commit, push, merge, or deterministic-wave B7 closeout.
-- [x] FE12-N09 Add canonical search and complete report filters, remove successful-load banners, and order user rows by increasing `UserId`.
+- [x] FE12-N01 Chuẩn hóa tài liệu về truy cập mọi báo cáo, hành vi ID/trạng thái
+  không rõ, phân trang/thứ tự, audit, phạm vi xuất và truy vết.
+- [x] FE12-N02 Căn chỉnh truy cập, xác thực, envelope metric/hàng chuẩn, policy
+  ID/trạng thái không rõ, thứ tự ổn định, audit thành công an toàn và tuần tự hóa
+  hàng chỉ-ngày với hợp đồng xác định đã phê duyệt.
+- [x] FE12-N03 Thêm kiểm thử hợp đồng tập trung cho ID không rõ, nhóm trạng thái
+  `UNKNOWN`, giới hạn page/limit, thứ tự ổn định, audit thành công, hàng mượn
+  chỉ-ngày và không có bề mặt xuất.
+- [x] FE12-N04 Căn chỉnh cả ba consumer báo cáo frontend và assertion tích hợp
+  liên tính năng với `{ metrics, rows, page, limit, totalRows }` không có trường
+  phản hồi legacy.
+- [x] FE12-N05 Áp dụng `status` và `location` kho vào cùng hàng bản sao SQL, giữ
+  lượng sẵn có toàn sách cho tính toán tồn thấp và đánh giá ranh giới ngày kỳ
+  phê duyệt người dùng trong SQL mà không đổi tổng toàn cục.
+- [x] FE12-N06 Chạy xác thực tự động tập trung/đầy đủ, lint, build, truy vết và
+  vệ sinh diff; ghi bằng chứng wave xác định.
+- [x] FE12-N07 Chạy chấp nhận trình duyệt mới cho màn hình mượn/kho/người dùng
+  chuẩn, lọc kết quả bằng không, layout mobile và từ chối Member/Guest.
+- [ ] FE12-N08 Nhận review tích hợp con người trước commit, push, merge hoặc
+  closeout B7 wave xác định.
+- [x] FE12-N09 Thêm tìm kiếm chuẩn và bộ lọc báo cáo đầy đủ, loại banner tải
+  thành công và sắp hàng người dùng tăng dần theo `UserId`.
 
-### 9.1 Deterministic-Wave Automated Evidence
+### 9.1 Bằng chứng tự động wave xác định
 
-- [x] Focused FE12 backend gate passed: 6 suites, 46 tests.
-- [x] Full backend suite passed: 39 suites, 615 tests.
-- [x] Backend coverage threshold passed: 92.54% statements, 82.33% branches, 97.14% functions, 92.47% lines.
-- [x] Focused FE12 frontend gate passed: 12 tests; full frontend suite passed: 121 tests.
-- [x] Frontend lint and production build passed.
-- [x] Traceability enforcement passed with FE12 at 10/10 tagged FRs (100%).
-- [x] `git diff --check` passed.
-- [x] Playwright system golden path passed: 1/1 before repository review remediation; exact-diff isolated Playwright CLI acceptance then re-verified all three deterministic report screens, zero-result behavior, mobile overflow, Member 403, and Guest login redirect on port 4184 without reusing the occupied FE03 port 4173.
-- [x] SQL-backed system integration passes in `backend/tests/sql/systemIntegration.sqltest.js` on the disposable reconciliation database with cleanup evidence.
-- [ ] Human B7/L4 acceptance remains pending.
+- [x] Cổng backend FE12 tập trung đạt: 6 suite, 46 kiểm thử.
+- [x] Suite backend đầy đủ đạt: 39 suite, 615 kiểm thử.
+- [x] Ngưỡng coverage backend đạt: 92.54% statement, 82.33% branch, 97.14%
+  function, 92.47% line.
+- [x] Cổng frontend FE12 tập trung đạt: 12 kiểm thử; suite frontend đầy đủ đạt:
+  121 kiểm thử.
+- [x] Lint frontend và production build đạt.
+- [x] Ép truy vết đạt với FE12 có 10/10 FR được tag (100%).
+- [x] `git diff --check` đạt.
+- [x] Golden path hệ thống Playwright đạt: 1/1 trước khắc phục review repository;
+  sau đó chấp nhận Playwright CLI cô lập exact-diff xác minh lại cả ba màn hình
+  báo cáo xác định, hành vi kết quả bằng không, tràn mobile, Member 403 và chuyển
+  hướng đăng nhập Guest trên cổng 4184 mà không dùng lại cổng FE03 4173 đang
+  chiếm.
+- [x] Tích hợp hệ thống SQL-backed đạt trong
+  `backend/tests/sql/systemIntegration.sqltest.js` trên cơ sở dữ liệu
+  reconciliation dùng một lần, có bằng chứng cleanup.
+- [ ] Chấp nhận B7/L4 con người vẫn chờ.
 
-Detailed automated evidence is recorded in
+Bằng chứng tự động chi tiết được ghi trong
 `.sdd/reviews/fe12-deterministic-policy-validation-2026-07-19.md`.
-## 2026-07-22 corrective batch
 
-- [x] Reconfirm borrowing, inventory, and user report filters map to server query parameters.
-- [x] Reconfirm charts consume deterministic backend metrics with no fake fallback.
-- [x] Reduce report-only bottom whitespace and retain responsive layout tests.
-- [~] **FE12-N10 - Restore in-memory report parity and traceability.**
-  - Maps to: BR-FE12-009, BR-FE12-015/016, FR-FE12-003/011, AC-FE12-003/011.
-  - RED: user `q` failed to match ID/status/membership/role and SQL wildcard patterns, inactive historical approvals disappeared from growth metrics, and fixture order leaked into detail rows.
-  - GREEN: the in-memory repository matches production parameterized SQL `LIKE` search including `%`, `_`, bracket ranges, and negated classes over approved fields, plus historical `ApprovedAt` and `UserId ASC` semantics; traceability remains `16/11/11`.
-  - Verification: the initial H2 and H2 addendum passed; commit `97aca62` and PR CI run `30014066260` passed. Fresh H2 then approved remediation commit `b931e00`, and PR CI run `30019439505` passed. The repeated H3 review found the valid SQL `LIKE` closing-bracket parity edge plus bounded cross-feature evidence gaps. Fresh H2 approved the round-two package on 2026-07-23 and authorized its reviewed commit/push; updated PR CI and repeated H3 remain mandatory before merge.
+## 2026-07-22 Batch sửa
 
-## 11. V0.2.0 Query-Allowlist Boundary
+- [x] Xác nhận lại bộ lọc báo cáo mượn, kho và người dùng ánh xạ tới tham số
+  query máy chủ.
+- [x] Xác nhận lại biểu đồ tiêu thụ metric backend xác định không có fallback
+  giả.
+- [x] Giảm khoảng trắng đáy chỉ-báo-cáo và giữ kiểm thử layout đáp ứng.
+- [~] **FE12-N10 - Khôi phục parity report in-memory và truy vết.**
+  - Ánh xạ tới: BR-FE12-009, BR-FE12-015/016, FR-FE12-003/011, AC-FE12-003/011.
+  - RED: `q` người dùng không khớp ID/trạng thái/tư cách thành viên/vai trò và
+    mẫu wildcard SQL, phê duyệt lịch sử không hoạt động biến mất khỏi metric tăng
+    trưởng và thứ tự fixture rò vào hàng chi tiết.
+  - GREEN: repository in-memory khớp tìm kiếm SQL `LIKE` có tham số production,
+    gồm `%`, `_`, khoảng bracket và lớp phủ định trên trường đã phê duyệt, cùng
+    ngữ nghĩa `ApprovedAt` lịch sử và `UserId ASC`; truy vết giữ `16/11/11`.
+  - Xác minh: phụ lục H2 và H2 đầu qua; commit `97aca62` và CI PR
+    `30014066260` đạt. H2 mới sau đó phê duyệt commit khắc phục `b931e00`, CI PR
+    `30019439505` đạt. Review H3 lặp lại phát hiện edge parity dấu đóng-bracket
+    SQL `LIKE` hợp lệ cộng khoảng trống bằng chứng liên tính năng hữu hạn. H2
+    mới phê duyệt gói vòng hai ngày 2026-07-23 và cho phép commit/push đã review;
+    CI PR cập nhật và H3 lặp lại vẫn bắt buộc trước merge.
 
-- [x] **FE12-N11 - Reject unsupported report query keys before execution.**
-  - Maps to: BD-005, BR-FE12-008, FR-FE12-005, AC-FE12-005, EC-FE12-011, NFR-FE12-SEC-004.
-  - RED: `?bogus=runtime-secret-value` returns `200` and reaches the selected report method.
-  - GREEN: endpoint-specific exact-key middleware returns safe `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` before service/repository execution and never echoes the unknown value.
-  - Evidence: all three RED cases returned `200`; focused GREEN passed 3/3, full FE12 passed 14/14, and the local golden path observed safe HTTP `400`.
-  - Files: `backend/tests/reportRoutes.test.js`, `backend/src/validators/reportValidators.js`.
-  - Preservation: existing approved value validators, read-only report behavior, audit privacy, SQL parameterization, empty-ID semantics, pagination, and ordering remain unchanged.
-  - Gate: the product H2 addendum approved commit `f346ae0` and PR CI run
-    `30244750250` passed. The documentation-only H3 remediation requires fresh
-    H2 and repeated H3 before merge.
+## 11. Ranh giới allowlist query V0.2.0
+
+- [x] **FE12-N11 - Từ chối khóa query báo cáo không được hỗ trợ trước thực thi.**
+  - Ánh xạ tới: BD-005, BR-FE12-008, FR-FE12-005, AC-FE12-005, EC-FE12-011,
+    NFR-FE12-SEC-004.
+  - RED: `?bogus=runtime-secret-value` trả `200` và đến phương thức báo cáo đã
+    chọn.
+  - GREEN: middleware khóa chính xác riêng endpoint trả an toàn
+    `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` trước thực thi service/repository
+    và không bao giờ echo giá trị không rõ.
+  - Bằng chứng: cả ba ca RED trả `200`; GREEN tập trung đạt 3/3, FE12 đầy đủ đạt
+    14/14 và golden path cục bộ quan sát HTTP `400` an toàn.
+  - Tệp: `backend/tests/reportRoutes.test.js`,
+    `backend/src/validators/reportValidators.js`.
+  - Bảo toàn: validator giá trị đã phê duyệt hiện có, hành vi báo cáo chỉ đọc,
+    quyền riêng tư audit, SQL có tham số, ngữ nghĩa ID rỗng, phân trang và thứ tự
+    không đổi.
+  - Cổng: phụ lục H2 sản phẩm phê duyệt commit `f346ae0` và CI PR
+    `30244750250` đạt. Khắc phục H3 chỉ-tài-liệu cần H2 mới và H3 lặp lại trước
+    merge.

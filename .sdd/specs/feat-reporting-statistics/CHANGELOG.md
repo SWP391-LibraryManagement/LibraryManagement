@@ -1,173 +1,248 @@
-# CHANGELOG.md - FE12 Reporting & Statistics
+# CHANGELOG.md - FE12 Báo cáo và thống kê
 
-## 2026-07-27 - Specify exact report query allowlists (v0.2.0)
+## 2026-07-27 - Đặc tả allowlist query báo cáo chính xác (v0.2.0)
 
-- Defined exact query-key allowlists separately for borrowing, inventory, and
-  user-statistics endpoints.
-- Required unknown keys to return safe
-  `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` before report service or repository
-  execution.
-- Preserved existing validation for approved values, well-formed unknown-ID
-  empty reports, parameterized SQL, stable pagination/order, and read-only
-  behavior.
-- Added the previously implicit `membershipStatus` and `location` query fields
-  to the data-field contract.
-- Nhat approved the written SPEC on 2026-07-27, authorizing PLAN/TASKS
-  preparation only; no code or tests are claimed by this entry.
+- Xác định allowlist khóa query chính xác riêng cho endpoint mượn, kho và thống
+  kê người dùng.
+- Yêu cầu khóa không rõ trả an toàn
+  `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` trước khi service hoặc repository báo
+  cáo thực thi.
+- Giữ xác thực hiện có cho giá trị đã phê duyệt, báo cáo rỗng ID không rõ có định
+  dạng hợp lệ, SQL có tham số, phân trang/thứ tự ổn định và hành vi chỉ đọc.
+- Thêm trường query `membershipStatus` và `location` trước đó ngầm định vào hợp
+  đồng trường dữ liệu.
+- Nhat phê duyệt SPEC bằng văn bản ngày 2026-07-27, chỉ cho phép chuẩn bị PLAN/
+  TASKS; mục này không khẳng định mã hay kiểm thử.
 
-## 2026-07-23 - Move detail pagination into SQL snapshots
+## 2026-07-23 - Đưa phân trang chi tiết vào ảnh chụp SQL
 
-- Materialized each filtered report source once per request, calculated totals and grouped metrics in SQL, and returned stable detail pages with `OFFSET/FETCH`.
-- Returned only bounded aggregate resultsets plus the requested detail page instead of transferring the complete filtered snapshot to Node.
-- Counted historical non-null membership approval dates in growth metrics even when current membership or account state is inactive.
-- Aligned the in-memory report repository with SQL for user `q` matching across ID/role/account/membership status and stable `UserId ASC` detail ordering.
-- Matched the existing parameterized SQL `LIKE` wildcard semantics in the in-memory user-report test repository without changing the production API or query fields.
-- Added the missing BR-FE12-016, FR-FE12-011, and AC-FE12-011 traceability rows and corrected coverage totals to `16/11/11`.
+- Materialize mỗi nguồn báo cáo đã lọc một lần mỗi yêu cầu, tính tổng và metric
+  nhóm trong SQL, trả trang chi tiết ổn định bằng `OFFSET/FETCH`.
+- Chỉ trả resultset tổng hợp hữu hạn cùng trang chi tiết yêu cầu thay vì chuyển
+  toàn bộ ảnh chụp đã lọc tới Node.
+- Đếm ngày phê duyệt tư cách thành viên lịch sử khác null trong metric tăng
+  trưởng ngay cả khi tư cách thành viên hoặc trạng thái tài khoản hiện tại không
+  hoạt động.
+- Căn chỉnh report repository in-memory với SQL cho đối sánh `q` người dùng
+  trên ID/vai trò/trạng thái tài khoản/tư cách thành viên và thứ tự chi tiết
+  `UserId ASC` ổn định.
+- Khớp ngữ nghĩa wildcard `LIKE` SQL có tham số hiện có trong report repository
+  kiểm thử in-memory người dùng mà không đổi API production hay trường query.
+- Thêm hàng truy vết BR-FE12-016, FR-FE12-011 và AC-FE12-011 còn thiếu, sửa tổng
+  coverage thành `16/11/11`.
 
-## 2026-07-21 - Report Search And Filter Completion
+## 2026-07-21 - Hoàn tất tìm kiếm và bộ lọc báo cáo
 
-- Added server-side `q` search to all three staff reports and exposed the approved filters in the Librarian/Admin UI.
-- Changed user-detail ordering to increasing `UserId` and removed redundant successful-load notices.
-- Added FE12 requirements and tests for combined search/filter behavior and canonical cross-feature reporting data.
+- Thêm tìm kiếm `q` phía máy chủ cho cả ba báo cáo staff và hiển thị bộ lọc đã
+  phê duyệt trong UI Librarian/Admin.
+- Đổi thứ tự chi tiết người dùng thành `UserId` tăng dần, loại thông báo tải
+  thành công dư.
+- Thêm yêu cầu và kiểm thử FE12 cho hành vi tìm kiếm/lọc kết hợp và dữ liệu báo
+  cáo liên tính năng chuẩn.
 
-## 2026-07-20 - Vietnamese UI localization and typography
+## 2026-07-20 - Bản địa hóa UI tiếng Việt và typography
 
-- Localized frontend-generated labels, states, accessibility names, and safe error feedback for this feature.
-- Preserved API contracts, raw enum values, permissions, business rules, and user-owned catalog/profile data.
-- Applied the shared `Be Vietnam Pro` body and `Noto Serif` heading typography contract with Unicode-capable fallbacks.
+- Bản địa hóa nhãn, trạng thái, tên accessibility và phản hồi lỗi an toàn do
+  frontend tạo cho tính năng này.
+- Giữ hợp đồng API, giá trị enum thô, quyền, quy tắc nghiệp vụ và dữ liệu
+  catalog/hồ sơ do người dùng sở hữu.
+- Áp dụng hợp đồng typography body `Be Vietnam Pro` và heading `Noto Serif`
+  dùng chung với fallback hỗ trợ Unicode.
 
-## 2026-07-19 - Phase 2 Exit Closeout
+## 2026-07-19 - Closeout thoát Giai đoạn 2
 
-- feat-reporting-statistics is accepted within the complete Phase 2 FE01-FE12 reconciliation recorded by PR #40/#41; validation and residual boundaries are consolidated in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`.
-- Deferred and future-scope limitations remain explicit and are not widened by this closeout.
+- feat-reporting-statistics được chấp nhận trong đối soát FE01-FE12 Giai đoạn 2
+  hoàn tất do PR #40/#41 ghi; ranh giới xác thực và tồn dư được hợp nhất trong
+  `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`.
+- Giới hạn phạm vi hoãn và tương lai vẫn rõ ràng, không bị closeout này mở rộng.
 
-## 2026-07-19 - Deterministic Policy Implementation Reconciliation
+## 2026-07-19 - Đối soát triển khai policy xác định
 
-- Replaced legacy report payloads with the exact `{ metrics, rows, page, limit, totalRows }` contract across backend, OpenAPI, frontend consumers, and cross-feature tests.
-- Added page/limit validation, stable report-specific ordering, canonical unknown-ID/status behavior, and date-only borrowing row serialization.
-- Allowed both Librarian and Admin to view all three reports and made every successful view write safe metadata without filters or rows.
-- Applied inventory status/location filters to the same copy while preserving full-book effective availability for low-stock calculations.
-- Evaluated user approval-period date bounds in SQL without narrowing global user/status/role metrics.
-- Added deterministic policy, repository, frontend-envelope, and no-export regression coverage; full automated suites, lint, build, traceability, and diff hygiene pass.
-- Bound overdue filtering to the same application-computed `Asia/Ho_Chi_Minh` business date used by report aggregation, removed the invalid `RequestDate` fallback for missing `BorrowDate`, and aligned the in-memory `OVERDUE` filter with production derived-status behavior.
-- Removed the unused legacy `DEMO_REPORTS` fixture so future report work cannot silently reuse the obsolete payload.
-- Fresh Playwright acceptance passed across all three canonical report screens, zero-result filtering, mobile overflow, Member denial, and Guest redirect.
-- SQL-backed system integration now passes on disposable SQL Server with cleanup evidence; human re-review and any commit/push/merge decision remain pending.
+- Thay payload báo cáo legacy bằng hợp đồng `{ metrics, rows, page, limit, totalRows }`
+  chính xác xuyên backend, OpenAPI, consumer frontend và kiểm thử liên tính
+  năng.
+- Thêm xác thực page/limit, thứ tự ổn định riêng báo cáo, hành vi ID/trạng thái
+  không rõ chuẩn và tuần tự hóa hàng mượn chỉ-ngày.
+- Cho phép cả Librarian và Admin xem cả ba báo cáo, làm mọi lượt xem thành công
+  ghi metadata an toàn không có bộ lọc hay hàng.
+- Áp dụng bộ lọc trạng thái/vị trí kho vào cùng bản sao trong khi giữ lượng sẵn
+  có hiệu dụng toàn sách cho tính toán tồn thấp.
+- Đánh giá ranh giới ngày kỳ phê duyệt người dùng trong SQL mà không thu hẹp
+  metric người dùng/trạng thái/vai trò toàn cục.
+- Thêm bao phủ hồi quy policy xác định, repository, frontend-envelope và
+  không-xuất; suite tự động đầy đủ, lint, build, truy vết và vệ sinh diff đạt.
+- Gắn lọc quá hạn vào cùng ngày nghiệp vụ `Asia/Ho_Chi_Minh` do ứng dụng tính,
+  dùng bởi tổng hợp báo cáo, loại fallback `RequestDate` không hợp lệ khi thiếu
+  `BorrowDate` và căn chỉnh bộ lọc `OVERDUE` in-memory với hành vi
+  derived-status production.
+- Loại fixture legacy `DEMO_REPORTS` không dùng để công việc báo cáo tương lai
+  không thể âm thầm dùng lại payload lỗi thời.
+- Chấp nhận Playwright mới đạt trên cả ba màn hình báo cáo chuẩn, lọc kết quả
+  bằng không, tràn mobile, từ chối Member và chuyển hướng Guest.
+- Tích hợp hệ thống SQL-backed hiện đạt trên SQL Server dùng một lần có bằng
+  chứng cleanup; re-review con người và mọi quyết định commit/push/merge vẫn
+  chờ.
 
-## 2026-07-17 - Phase 1 Baseline Approved
+## 2026-07-17 - Baseline Giai đoạn 1 được phê duyệt
 
-- Nhật approved the normalized FE12 report filters, deterministic responses, database-side processing, audit, and out-of-scope export policy as the Phase 1 baseline; implementation follow-up remains pending.
+- Nhật phê duyệt bộ lọc báo cáo FE12, phản hồi xác định, xử lý phía cơ sở dữ liệu,
+  audit và policy xuất ngoài phạm vi đã chuẩn hóa làm baseline Giai đoạn 1; phần
+  theo dõi triển khai vẫn chờ.
 
-## 2026-07-17 - Final Filter And Query Contract Audit
+## 2026-07-17 - Audit hợp đồng bộ lọc và query cuối
 
-- Replaced open-ended filter examples with the exact query fields for each report.
-- Made database-side filtering and safe failure logging explicit performance/logging requirements.
+- Thay ví dụ bộ lọc mở bằng trường query chính xác cho từng báo cáo.
+- Làm rõ lọc phía cơ sở dữ liệu và ghi lỗi an toàn là yêu cầu performance/logging
+  rõ ràng.
 
-## 2026-07-17 - Deterministic Report Response Contract - v0.1.6
+## 2026-07-17 - Hợp đồng phản hồi báo cáo xác định - v0.1.6
 
-- Added exact metrics and detailed-row schemas for borrowing, inventory, and user reports.
-- Defined date semantics, top-book limit/tie-breaking, and report response envelopes.
+- Thêm schema metric chính xác và hàng chi tiết cho báo cáo mượn, kho và người
+  dùng.
+- Xác định ngữ nghĩa ngày, giới hạn/giải hòa sách hàng đầu và envelope phản hồi
+  báo cáo.
 
-## 2026-07-17 - Deterministic Report Policy - v0.1.5
+## 2026-07-17 - Policy báo cáo xác định - v0.1.5
 
-- Changed `SPEC.md` to `READY FOR REVIEW` while preserving the completed base slice as historical evidence.
-- Confirmed both Librarian and Admin can access borrowing, inventory, and user-statistics reports.
-- Standardized well-formed unknown IDs as empty reports and unknown persisted statuses as `UNKNOWN` groups.
-- Added deterministic detail pagination/order and made successful report-view audit mandatory.
-- Locked all report export strictly out of Phase 1 and replaced the `TBD` traceability entry with an out-of-scope contract test.
+- Đổi `SPEC.md` thành `READY FOR REVIEW` trong khi giữ lát cắt base hoàn tất làm
+  bằng chứng lịch sử.
+- Xác nhận cả Librarian và Admin có thể truy cập báo cáo mượn, kho và thống kê
+  người dùng.
+- Chuẩn hóa ID không rõ có định dạng hợp lệ thành báo cáo rỗng và trạng thái đã
+  lưu không rõ thành nhóm `UNKNOWN`.
+- Thêm phân trang/thứ tự chi tiết xác định và làm audit lượt xem báo cáo thành
+  công bắt buộc.
+- Khóa mọi xuất báo cáo hoàn toàn ngoài Giai đoạn 1, thay mục truy vết `TBD` bằng
+  kiểm thử hợp đồng ngoài phạm vi.
 
-## 2026-07-13 - B7 Integration And Review Closeout
+## 2026-07-13 - Tích hợp B7 và closeout review
 
-- Nhat confirmed the human review gate and selected local merge after the clean FE12 re-review.
-- Commit `58747bc10657ed1accb44950ae0c5edbd178a242` reached `main` and was pushed to `origin/main`.
-- GitHub Actions CI run `29249491818` passed for the same commit, including traceability, backend
-  tests, frontend lint/tests/build, and the backend health import check.
-- Added `.sdd/reviews/fe12-b7-integration-review-closeout-2026-07-13.md` with integration,
-  scope-control, documentation, and remaining-follow-up evidence.
-- CSV/PDF export, dashboards, BI integration, and the shared logout-shell issue remain outside FE12.
+- Nhat xác nhận cổng review con người và chọn merge cục bộ sau re-review FE12
+  sạch.
+- Commit `58747bc10657ed1accb44950ae0c5edbd178a242` tới `main` và được push lên
+  `origin/main`.
+- GitHub Actions CI `29249491818` đạt cho cùng commit, gồm truy vết, kiểm thử
+  backend, lint/kiểm thử/build frontend và kiểm tra import health backend.
+- Thêm `.sdd/reviews/fe12-b7-integration-review-closeout-2026-07-13.md` với
+  bằng chứng tích hợp, kiểm soát phạm vi, tài liệu và theo dõi còn lại.
+- Xuất CSV/PDF, dashboard, tích hợp BI và lỗi logout-shell dùng chung vẫn ngoài
+  FE12.
 
-## 2026-07-13 - Final Review Remediation
+## 2026-07-13 - Khắc phục review cuối
 
-- Read inventory categories from the authorized metadata controller envelope.
-- Matched in-memory low-stock rows to the production response with category metadata and copy details.
-- Corrected parity fixtures to use explicit category records and production-valid book-copy statuses.
-- Excluded `REQUESTED` details from borrow-period and top-book activity metrics while counting all actual-loan statuses.
-- Documented `Members` as the runtime source for membership status and `ApprovedAt` user-statistics data.
-- Updated `SPEC.md` to version 0.1.4.
+- Đọc thể loại kho từ envelope controller metadata được ủy quyền.
+- Khớp hàng tồn thấp in-memory với phản hồi production có metadata thể loại và
+  chi tiết bản sao.
+- Sửa fixture parity dùng bản ghi thể loại rõ ràng và trạng thái bản sao sách hợp
+  lệ trong production.
+- Loại chi tiết `REQUESTED` khỏi metric hoạt động kỳ-mượn/sách hàng đầu trong
+  khi đếm mọi trạng thái khoản mượn thực.
+- Tài liệu hóa `Members` là nguồn runtime cho dữ liệu trạng thái tư cách thành
+  viên và thống kê người dùng `ApprovedAt`.
+- Cập nhật `SPEC.md` lên phiên bản 0.1.4.
 
-## 2026-07-13 - Independent Review Remediation
+## 2026-07-13 - Khắc phục review độc lập
 
-- Aligned the in-memory borrowing report helper with production joined-row filtering and aggregation semantics.
-- Aligned selected-user role, status, and membership aggregates with production SQL row semantics.
-- Documented FE12 report success payload schemas and exact runtime filter status enums in OpenAPI.
-- Updated the FE12 specification metadata to version 0.1.3.
+- Căn chỉnh helper báo cáo mượn in-memory với ngữ nghĩa lọc và tổng hợp hàng join
+  production.
+- Căn chỉnh tổng hợp vai trò, trạng thái và tư cách thành viên của người dùng
+  được chọn với ngữ nghĩa hàng SQL production.
+- Tài liệu hóa schema payload thành công báo cáo FE12 và enum trạng thái bộ lọc
+  runtime chính xác trong OpenAPI.
+- Cập nhật metadata đặc tả FE12 lên phiên bản 0.1.3.
 
 ## 2026-06-10
 
-- Created FE12 Reporting & Statistics feature specification structure.
-- Established specification files: CONTEXT.md, SPEC.md, PLAN.md, TASKS.md, and CHANGELOG.md.
-- Updated current owner and assignment scope after team redistribution: UC58-UC60 and FT59-FT61 owned by Nhat.
-- Defined FE12 as a read-only reporting feature for borrowing reports, inventory reports, and user statistics.
-- Clarified API contract policy so REST endpoints may stay in SPEC.md unless the team reintroduces a shared API contract file.
+- Tạo cấu trúc đặc tả tính năng FE12 Báo cáo và thống kê.
+- Thiết lập các tệp đặc tả: CONTEXT.md, SPEC.md, PLAN.md, TASKS.md và
+  CHANGELOG.md.
+- Cập nhật chủ sở hữu và phạm vi phân công hiện tại sau phân công lại đội:
+  UC58-UC60 và FT59-FT61 do Nhat sở hữu.
+- Xác định FE12 là tính năng báo cáo chỉ đọc cho báo cáo mượn, báo cáo kho và
+  thống kê người dùng.
+- Làm rõ policy hợp đồng API để endpoint REST có thể ở lại SPEC.md trừ khi đội
+  đưa lại tệp hợp đồng API dùng chung.
 
-## 2026-06-10 - Phase 1 Review Decisions Approved
+## 2026-06-10 - Quyết định review Giai đoạn 1 được phê duyệt
 
-- Approved open-question decisions from `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`.
-- Updated `SPEC.md` decision status from draft/proposed/open to approved where applicable.
-- Preserved Phase 1 scope controls and deferred future-work items explicitly.
+- Phê duyệt quyết định câu hỏi mở từ
+  `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`.
+- Cập nhật trạng thái quyết định `SPEC.md` từ draft/proposed/open thành approved
+  nơi phù hợp.
+- Giữ kiểm soát phạm vi Giai đoạn 1 và hạng mục công việc tương lai hoãn rõ
+  ràng.
 
-## 2026-06-10 - Backend Slice Ready For Review
+## 2026-06-10 - Lát cắt backend sẵn sàng review
 
-- Added the FE12 plan and task checklist for Nhat's reporting scope.
-- Added read-only borrowing, inventory, and user statistics report endpoints.
-- Added filter validation, zero-result handling, role protection, and audit logs for successful report access.
-- Added backend tests for report metrics, zero-result behavior, personal-data suppression, invalid ranges, and access control.
+- Thêm checklist kế hoạch và nhiệm vụ FE12 cho phạm vi báo cáo Nhat.
+- Thêm endpoint báo cáo mượn, kho và thống kê người dùng chỉ đọc.
+- Thêm xác thực bộ lọc, xử lý kết quả bằng không, bảo vệ vai trò và audit log
+  cho truy cập báo cáo thành công.
+- Thêm kiểm thử backend cho metric báo cáo, hành vi kết quả bằng không, loại dữ
+  liệu cá nhân, khoảng không hợp lệ và kiểm soát truy cập.
 
-## 2026-06-25 - Traceability Matrix Completed
+## 2026-06-25 - Ma trận truy vết hoàn tất
 
-- Completed Traceability Matrix to cover all BR/FR/AC IDs (added AC mapping).
+- Hoàn tất Ma trận truy vết bao phủ mọi ID BR/FR/AC (thêm ánh xạ AC).
 
-## 2026-06-20 - Frontend UI Implemented and Accessibility Validated
+## 2026-06-20 - UI frontend đã triển khai và accessibility đã xác thực
 
-- Implemented borrowing report, inventory report, and user statistics screens with date filters, category filters, and chart components.
-- Wired all frontend screens to backend APIs using axios and React hooks.
-- Added table captions, column header scopes, accessible labels for date inputs, selects, and pagination buttons.
-- Added loading, empty, and error states on all reviewed screens.
-- Validated: `npm.cmd --prefix frontend run lint`, `npm.cmd --prefix frontend run build`, `npm.cmd --prefix backend test`.
-- Merged via PR #7 into `feat/fe07-fe08-fe10-fe12-ui-polish`.
+- Triển khai màn hình báo cáo mượn, kho và thống kê người dùng với bộ lọc ngày,
+  bộ lọc thể loại và component biểu đồ.
+- Nối mọi màn hình frontend với API backend dùng axios và React hook.
+- Thêm caption bảng, scope header cột, nhãn có thể truy cập cho đầu vào ngày,
+  select và nút phân trang.
+- Thêm trạng thái tải, rỗng và lỗi trên mọi màn hình đã review.
+- Xác thực: `npm.cmd --prefix frontend run lint`,
+  `npm.cmd --prefix frontend run build`, `npm.cmd --prefix backend test`.
+- Merge qua PR #7 vào `feat/fe07-fe08-fe10-fe12-ui-polish`.
 
-## 2026-07-10 - Inventory Category Filter Completed
+## 2026-07-10 - Hoàn tất bộ lọc thể loại kho
 
-- Added the missing category selector to the inventory report screen and loaded options from the existing book metadata endpoint.
-- Applied the selected `categoryId` to `GET /api/reports/inventory`, with a reset control to return to all categories.
-- Added focused frontend tests for the inventory report query parameters.
+- Thêm selector thể loại còn thiếu vào màn hình báo cáo kho và tải tùy chọn từ
+  endpoint metadata sách hiện có.
+- Áp dụng `categoryId` đã chọn vào `GET /api/reports/inventory`, có điều khiển
+  đặt lại để trả về mọi thể loại.
+- Thêm kiểm thử frontend tập trung cho tham số query báo cáo kho.
 
-## 2026-07-13 - B6 Validation Hardening
+## 2026-07-13 - Củng cố xác thực B6
 
-- Corrected borrowing request status counts so joined detail rows do not duplicate request totals.
-- Made date-only `toDate` filters include the full selected day through an exclusive next-day boundary.
-- Based new-member periods on `Members.ApprovedAt` instead of account creation time.
-- Counted inventory categories by unique books and exposed total/available copies for low-stock rows.
-- Added safe audit logging for failed FE12 access and aligned OpenAPI with implemented filters.
-- Added frontend report route guards, removed fabricated demo fallback statistics, and restored
-  category options from the authorized metadata payload.
-- Added responsive report layout rules for shrinking flex content, single-column mobile report
-  splits, and mobile-safe date filters.
-- Added FE12-specific API error messages so backend failures never claim demo fallback data.
-- Added focused backend/frontend regression tests and recorded B6 automated validation evidence.
-- Completed fresh browser validation for Admin/Member/Guest access, all three report screens,
-  inventory filtering, loading/empty/error states, and desktop/mobile overflow behavior.
-- Removed raw query/filter values from successful report audit entries.
-- Clarified user report date semantics: global totals remain unchanged while member growth uses
-  `Members.ApprovedAt` within the optional inclusive date range.
-- Enforced exact `YYYY-MM-DD` report dates and documented `400` responses for every FE12 endpoint.
-- Removed fixed sample date defaults and omitted blank date query parameters on report pages.
-- Aligned low-stock behavior across backend, UI, and test doubles at two or fewer available copies.
-- Preserved full-copy availability for low-stock calculations when status/location filters select
-  books, and included books with zero physical copies.
-- Corrected the inventory category chart label to describe unique book counts.
-- Strengthened the borrowing date-range integration test with real source data and matching
-  in-memory filter behavior.
+- Sửa số trạng thái yêu cầu mượn để hàng chi tiết join không nhân bản tổng yêu
+  cầu.
+- Làm bộ lọc `toDate` chỉ-ngày gồm cả ngày đã chọn qua ranh giới ngày kế tiếp
+  loại trừ.
+- Dựa kỳ thành viên mới vào `Members.ApprovedAt` thay vì thời điểm tạo tài
+  khoản.
+- Đếm thể loại kho theo sách duy nhất, hiển thị tổng/bản sao sẵn có cho hàng tồn
+  thấp.
+- Thêm ghi audit an toàn cho truy cập FE12 thất bại và căn chỉnh OpenAPI với bộ
+  lọc đã triển khai.
+- Thêm guard route báo cáo frontend, loại thống kê fallback demo bịa đặt và khôi
+  phục tùy chọn thể loại từ payload metadata được ủy quyền.
+- Thêm quy tắc layout báo cáo đáp ứng cho nội dung flex thu nhỏ, split báo cáo
+  mobile một cột và bộ lọc ngày an toàn trên mobile.
+- Thêm thông báo lỗi API riêng FE12 để lỗi backend không bao giờ khẳng định dữ
+  liệu fallback demo.
+- Thêm kiểm thử hồi quy backend/frontend tập trung và ghi bằng chứng xác thực tự
+  động B6.
+- Hoàn tất xác thực trình duyệt mới cho truy cập Admin/Member/Guest, cả ba màn
+  hình báo cáo, lọc kho, trạng thái tải/rỗng/lỗi và hành vi tràn desktop/mobile.
+- Loại giá trị query/filter thô khỏi mục audit báo cáo thành công.
+- Làm rõ ngữ nghĩa ngày báo cáo người dùng: tổng toàn cục không đổi trong khi
+  tăng trưởng thành viên dùng `Members.ApprovedAt` trong khoảng ngày bao hàm tùy
+  chọn.
+- Ép ngày báo cáo `YYYY-MM-DD` chính xác và tài liệu hóa phản hồi `400` cho mọi
+  endpoint FE12.
+- Loại mặc định ngày mẫu cố định, bỏ tham số query ngày trống trên trang báo cáo.
+- Căn chỉnh hành vi tồn thấp qua backend, UI và test double tại hai hoặc ít hơn
+  bản sao sẵn có.
+- Giữ lượng sẵn có toàn bản sao cho tính toán tồn thấp khi bộ lọc trạng thái/vị
+  trí chọn sách và bao gồm sách không có bản sao vật lý.
+- Sửa nhãn biểu đồ thể loại kho để mô tả số sách duy nhất.
+- Củng cố kiểm thử tích hợp khoảng ngày mượn với dữ liệu nguồn thực và hành vi
+  lọc in-memory khớp.
+
 ## 2026-07-22
 
-- Verified all report filters/charts remain backend-owned and reduced report-only bottom spacing.
+- Xác minh mọi bộ lọc/biểu đồ báo cáo vẫn do backend sở hữu và giảm khoảng cách
+  đáy chỉ-báo-cáo.

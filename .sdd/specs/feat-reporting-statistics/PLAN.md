@@ -1,143 +1,161 @@
-# PLAN.md - FE12 Reporting & Statistics
+# PLAN.md - FE12 Báo cáo và thống kê
 
-Status: H3 GOVERNANCE REMEDIATION - FRESH H2 PENDING
+Trạng thái: KHẮC PHỤC GOVERNANCE H3 - CHỜ H2 MỚI
 
-Owner: Nhat
+Chủ sở hữu: Nhat
 
-Updated: 2026-07-27
+Cập nhật: 2026-07-27
 
-Workflow State: The Phase 2 baseline remains complete. Nhat approved the
-v0.2.0 PLAN/TASKS and integrated `8d0059b` H2 addendum on 2026-07-27. The
-reviewed result was committed as `f346ae0`, pushed to draft PR #63, and CI run
-`30244750250` passed. The first H3 review found no FE12 code or business-rule
-defect and returned only stale governance wording. The documentation-only
-remediation remains uncommitted pending fresh H2 and repeated H3.
-
----
-
-## 1. Scope
-
-Implement the Phase 2 backend slice for FE12 from the approved `SPEC.md`.
-
-Included:
-
-- Borrowing report metrics from FE07 data.
-- Inventory report metrics from FE06 / books and copies data.
-- User statistics from FE11 / user and role data.
-- Role-protected read-only endpoints.
-- Filter validation and zero-result handling.
-- Audit logging for successful report views and safe report-access failures.
-- Frontend route protection and truthful loading, empty, and error states.
-
-Not included:
-
-- Export to CSV/PDF.
-- Dashboards.
-- Editable report screens.
-- Data warehouse / BI integration.
+Trạng thái workflow: baseline Giai đoạn 2 vẫn hoàn tất. Nhat phê duyệt PLAN/
+TASKS v0.2.0 và phụ lục H2 tích hợp `8d0059b` ngày 2026-07-27. Kết quả đã review
+được commit thành `f346ae0`, push lên PR nháp #63 và lượt CI `30244750250` đạt.
+Review H3 đầu tiên không phát hiện lỗi mã FE12 hay quy tắc nghiệp vụ, chỉ trả về
+cách diễn đạt governance cũ. Khắc phục chỉ-tài-liệu vẫn chưa commit, chờ H2 mới
+và H3 lặp lại.
 
 ---
 
-## 2. Approved Decisions Used
+## 1. Phạm vi
 
-| Decision | Plan impact |
+Triển khai lát cắt backend Giai đoạn 2 cho FE12 từ `SPEC.md` đã phê duyệt.
+
+Bao gồm:
+
+- Metric báo cáo mượn từ dữ liệu FE07.
+- Metric báo cáo kho từ dữ liệu FE06 / sách và bản sao.
+- Thống kê người dùng từ dữ liệu FE11 / người dùng và vai trò.
+- Endpoint chỉ đọc được bảo vệ theo vai trò.
+- Xác thực bộ lọc và xử lý kết quả bằng không.
+- Ghi audit cho lượt xem báo cáo thành công và lỗi truy cập báo cáo an toàn.
+- Bảo vệ route frontend và trạng thái tải, rỗng, lỗi trung thực.
+
+Không bao gồm:
+
+- Xuất CSV/PDF.
+- Dashboard.
+- Màn hình báo cáo có thể sửa.
+- Tích hợp kho dữ liệu / BI.
+
+---
+
+## 2. Quyết định đã phê duyệt được dùng
+
+| Quyết định | Tác động kế hoạch |
 | --- | --- |
-| Librarian and Admin can view reports | Report endpoints require staff roles. |
-| Borrowing metrics are active loans, overdue loans, period counts, and top borrowed books | Borrowing aggregate response exposes those counts; period/top-book activity excludes `REQUESTED` and counts only actual-loan detail statuses. |
-| Inventory metrics are total books/copies, status counts, and low/no availability books | Inventory aggregate response exposes those counts and treats 0-2 available copies as low stock. |
-| User statistics are total members, active/inactive users, and new members by period | User stats response stays aggregate; date filters affect `newMembersByPeriod` by `Members.ApprovedAt`, not global totals. |
-| Report dates use the OpenAPI `date` contract | Backend accepts exact `YYYY-MM-DD` values and rejects timestamps or impossible dates. |
-| CSV/PDF export is out of scope | No export route is added. |
-| Report access writes audit logs | Successful views and safe access failures are audited without tokens, query values, or internal errors. |
-| Unknown well-formed IDs | Return zero aggregates and empty rows; malformed IDs remain validation errors. |
-| Unknown source statuses | Group as `UNKNOWN` and retain them in reproducible totals. |
-| Detailed rows | Use page 1, limit 20, limit max 100, and the report-specific stable ordering in `SPEC.md`. |
+| Thủ thư và Quản trị có thể xem báo cáo | Endpoint báo cáo yêu cầu vai trò staff. |
+| Metric mượn là lượt mượn hoạt động, quá hạn, số theo kỳ và sách được mượn nhiều nhất | Phản hồi tổng hợp mượn hiển thị các số đó; hoạt động theo kỳ/sách hàng đầu loại `REQUESTED` và chỉ đếm trạng thái chi tiết khoản mượn thực. |
+| Metric kho là tổng sách/bản sao, số theo trạng thái và sách ít/không còn sẵn có | Phản hồi tổng hợp kho hiển thị các số đó và coi 0-2 bản sao sẵn có là tồn thấp. |
+| Thống kê người dùng là tổng thành viên, người dùng hoạt động/không hoạt động và thành viên mới theo kỳ | Phản hồi thống kê người dùng giữ tổng hợp; bộ lọc ngày tác động `newMembersByPeriod` theo `Members.ApprovedAt`, không tác động tổng toàn cục. |
+| Ngày báo cáo dùng hợp đồng `date` OpenAPI | Backend chấp nhận chính xác `YYYY-MM-DD` và từ chối timestamp hoặc ngày bất khả thi. |
+| Xuất CSV/PDF ngoài phạm vi | Không thêm route xuất. |
+| Truy cập báo cáo ghi audit | Lượt xem thành công và lỗi truy cập an toàn được audit mà không có token, giá trị query hay lỗi nội bộ. |
+| ID không rõ có định dạng hợp lệ | Trả tổng bằng không và hàng rỗng; ID sai định dạng vẫn là lỗi xác thực. |
+| Trạng thái nguồn không rõ | Nhóm là `UNKNOWN` và giữ trong tổng tái lập được. |
+| Hàng chi tiết | Dùng trang 1, giới hạn 20, tối đa 100 và thứ tự ổn định riêng báo cáo trong `SPEC.md`. |
 
 ---
 
-## 3. Implementation Plan
+## 3. Kế hoạch triển khai
 
-### 3.1 Borrowing Report
+### 3.1 Báo cáo mượn
 
-- Validate date range, status, book, and user filters.
-- Return canonical active-loan and overdue-loan metrics plus paginated detailed rows.
-- Group actual-loan counts by period and top borrowed books without counting pending `REQUESTED` details.
-- Serialize borrowing row dates as exact `YYYY-MM-DD` values and apply stable `BorrowDate DESC, BorrowDetailId DESC` ordering.
+- Xác thực bộ lọc khoảng ngày, trạng thái, sách và người dùng.
+- Trả metric lượt mượn hoạt động/quá hạn chuẩn cùng hàng chi tiết có phân trang.
+- Nhóm số khoản mượn thực theo kỳ và sách được mượn nhiều nhất mà không đếm chi
+  tiết `REQUESTED` đang chờ.
+- Tuần tự hóa ngày hàng mượn thành giá trị `YYYY-MM-DD` chính xác và áp dụng thứ
+  tự `BorrowDate DESC, BorrowDetailId DESC` ổn định.
 
-### 3.2 Inventory Report
+### 3.2 Báo cáo kho
 
-- Validate category, book, status, and location filters.
-- Aggregate canonical total-book, total-copy, and copy-status metrics.
-- Flag books with two or fewer available copies as low/no availability, using all copies of
-  books selected by status/location filters so availability is not distorted by the filter.
-- Require combined status/location filters to match the same copy while retaining full-book effective availability.
+- Xác thực bộ lọc thể loại, sách, trạng thái và vị trí.
+- Tổng hợp metric chuẩn tổng sách, tổng bản sao và bản sao theo trạng thái.
+- Đánh dấu sách có hai hoặc ít hơn bản sao sẵn có là ít/không còn sẵn có, dùng
+  mọi bản sao của sách được chọn bởi bộ lọc trạng thái/vị trí để lượng sẵn có
+  không bị méo bởi bộ lọc.
+- Yêu cầu bộ lọc trạng thái/vị trí kết hợp khớp cùng một bản sao trong khi giữ
+  lượng sẵn có hiệu dụng toàn sách.
 
-### 3.3 User Statistics
+### 3.3 Thống kê người dùng
 
-- Validate role, status, membership status, and date filters.
-- Aggregate total members, users by status/role, and membership by status.
-- Group users by status and role.
-- Keep total/status/role counts independent of date filters.
-- Return new members by `Members.ApprovedAt` within the optional inclusive date range without exposing personal fields.
-- Evaluate the approval-period date predicate in SQL while keeping it outside the global user `WHERE` scope.
+- Xác thực bộ lọc vai trò, trạng thái, trạng thái tư cách thành viên và ngày.
+- Tổng hợp tổng thành viên, người dùng theo trạng thái/vai trò và tư cách thành
+  viên theo trạng thái.
+- Nhóm người dùng theo trạng thái và vai trò.
+- Giữ số tổng/trạng thái/vai trò độc lập với bộ lọc ngày.
+- Trả thành viên mới theo `Members.ApprovedAt` trong khoảng ngày bao hàm tùy chọn
+  mà không lộ trường cá nhân.
+- Đánh giá predicate ngày kỳ phê duyệt trong SQL, giữ nó ngoài phạm vi `WHERE`
+  người dùng toàn cục.
 
-### 3.4 Tests
+### 3.4 Kiểm thử
 
-- Add route tests with in-memory report repository.
-- Add focused repository and OpenAPI contract tests for aggregation and filter boundaries.
-- Add frontend tests for report route guards, error-state integrity, and inventory category filters.
-- Cover borrowing metrics, inventory metrics, user statistics, zero-result handling, access control, strict date-only validation, OpenAPI error responses, low-stock thresholds, and audit privacy.
-- Add deterministic envelope, unknown-ID/status, pagination/order, safe success-audit, no-export, same-copy inventory-filter, and date-only row contract tests.
+- Thêm kiểm thử route với report repository in-memory.
+- Thêm kiểm thử repository tập trung và hợp đồng OpenAPI cho ranh giới tổng hợp
+  và bộ lọc.
+- Thêm kiểm thử frontend cho guard route báo cáo, tính toàn vẹn trạng thái lỗi và
+  bộ lọc thể loại kho.
+- Bao phủ metric mượn, metric kho, thống kê người dùng, xử lý kết quả bằng không,
+  kiểm soát truy cập, xác thực nghiêm ngặt chỉ-ngày, phản hồi lỗi OpenAPI, ngưỡng
+  tồn thấp và quyền riêng tư audit.
+- Thêm kiểm thử deterministic envelope, ID/trạng thái không rõ, phân trang/thứ
+  tự, audit thành công an toàn, không xuất, bộ lọc kho cùng-bản-sao và hợp đồng
+  hàng chỉ-ngày.
 
 ---
 
-## 4. Review Notes
+## 4. Ghi chú review
 
-- The slice is read-only and does not modify source data.
-- Export remains strictly outside Phase 1; deterministic policy implementation/verification follows only after v0.1.5 review.
+- Lát cắt chỉ đọc và không thay đổi dữ liệu nguồn.
+- Xuất hoàn toàn ngoài Giai đoạn 1; triển khai/xác minh policy xác định chỉ theo
+  sau review v0.1.5.
 
-## 5. B6 Validation And B7 Integration Status
+## 5. Trạng thái xác thực B6 và tích hợp B7
 
-Automated and browser validation were completed on `feat/fe12-validation`, then independent
-reviews identified follow-up correctness, contract, and test-double parity findings. The findings
-are remediated, fresh full verification is complete, and the final independent re-review is clean.
-Nhat confirmed human review in the Codex task. Commit
-`58747bc10657ed1accb44950ae0c5edbd178a242` was then fast-forward merged into `main`, pushed to
-`origin/main`, and GitHub Actions CI run `29249491818` passed for the same commit. Detailed B7
-evidence is recorded in `.sdd/reviews/fe12-b7-integration-review-closeout-2026-07-13.md`.
+Xác thực tự động và trình duyệt hoàn tất trên `feat/fe12-validation`, sau đó
+review độc lập xác định phát hiện theo dõi về tính đúng đắn, hợp đồng và parity
+test-double. Các phát hiện đã được khắc phục, xác minh đầy đủ mới hoàn tất và
+re-review độc lập cuối sạch. Nhat xác nhận review con người trong task Codex.
+Commit `58747bc10657ed1accb44950ae0c5edbd178a242` sau đó fast-forward merge
+vào `main`, push lên `origin/main`, và GitHub Actions CI `29249491818` đạt cho
+cùng commit. Bằng chứng B7 chi tiết ghi trong
+`.sdd/reviews/fe12-b7-integration-review-closeout-2026-07-13.md`.
 
-## 6. Deterministic Policy Follow-up Status
+## 6. Trạng thái theo dõi policy xác định
 
-The v0.1.6 deterministic contract was reconciled on `feat/fe12-deterministic-policy` using
-Hybrid/Standard depth: the report API, authorization, filters, audit metadata, and source-data
-semantics remained Core; frontend response consumption remained bounded Shell work.
+Hợp đồng xác định v0.1.6 được đối soát trên `feat/fe12-deterministic-policy`
+dùng độ sâu Hybrid/Standard: API báo cáo, phân quyền, bộ lọc, metadata audit và
+ngữ nghĩa dữ liệu nguồn giữ Core; tiêu thụ phản hồi frontend vẫn là công việc
+Shell hữu hạn.
 
-- B5 implementation is complete for FE12-N02 through FE12-N05.
-- Automated B6 is complete: focused FE12 tests, full backend/frontend suites, lint, build,
-  traceability, and diff hygiene pass.
-- SQL-backed system integration passes on the disposable reconciliation SQL Server runtime; baseline/migrations, the shared SQL scenario, and cleanup are recorded in `.sdd/reviews/full-reconciliation-live-sql-validation-2026-07-19.md`.
-- Fresh Playwright acceptance passes for canonical borrowing/inventory/user screens, zero-result
-  filtering, mobile overflow, Member denial, and Guest redirect.
-- Human integration review and any commit/push/merge decision remain pending; the historical
-  2026-07-13 B7 evidence does not close this deterministic follow-up.
+- Triển khai B5 hoàn tất cho FE12-N02 đến FE12-N05.
+- B6 tự động hoàn tất: kiểm thử FE12 tập trung, suite backend/frontend đầy đủ,
+  lint, build, truy vết và vệ sinh diff đạt.
+- Tích hợp hệ thống SQL-backed đạt trên runtime SQL Server reconciliation dùng
+  một lần; baseline/migration, scenario SQL dùng chung và cleanup được ghi trong
+  `.sdd/reviews/full-reconciliation-live-sql-validation-2026-07-19.md`.
+- Chấp nhận Playwright mới đạt cho màn hình mượn/kho/người dùng chuẩn, lọc kết
+  quả bằng không, tràn mobile, từ chối Member và chuyển hướng Guest.
+- Review tích hợp con người và mọi quyết định commit/push/merge vẫn chờ; bằng
+  chứng B7 lịch sử 2026-07-13 không đóng phần theo dõi xác định này.
 
-Current evidence is recorded in
+Bằng chứng hiện tại ghi trong
 `.sdd/reviews/fe12-deterministic-policy-validation-2026-07-19.md`.
 
-## 7. V0.2.0 Exact Query-Allowlist Boundary
+## 7. Ranh giới allowlist query chính xác V0.2.0
 
-The detailed executable plan is
+Kế hoạch thực thi chi tiết:
 `docs/superpowers/plans/2026-07-27-fe07-fe10-fe12-business-rule-alignment.md`.
 
-1. Add a table-driven RED route regression for `?bogus=runtime-secret-value`
-   on borrowing, inventory, and user reports.
-2. Verify safe `400 UNSUPPORTED_REPORT_QUERY_PARAMETER`, no unknown value in
-   the response, and zero report-service/repository calls.
-3. Add one reusable exact-key middleware factory in
-   `backend/src/validators/reportValidators.js` and place the endpoint-specific
-   middleware first in each validator array.
-4. Preserve all approved-key value validation, well-formed unknown-ID empty
-   reports, parameterized SQL, pagination/order, audit privacy, and read-only
-   behavior.
-5. Run focused/full FE12 tests, traceability, diff hygiene, and a real HTTP
-   runtime request before H2.
+1. Thêm hồi quy route RED theo bảng dữ liệu cho `?bogus=runtime-secret-value`
+   trên báo cáo mượn, kho và người dùng.
+2. Xác minh `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` an toàn, không giá trị
+   không rõ trong phản hồi và không gọi report-service/repository.
+3. Thêm factory middleware khóa chính xác dùng lại được trong
+   `backend/src/validators/reportValidators.js` và đặt middleware riêng endpoint
+   đầu tiên trong mỗi mảng validator.
+4. Giữ mọi xác thực giá trị khóa đã phê duyệt, báo cáo rỗng ID không rõ có định
+   dạng hợp lệ, SQL có tham số, phân trang/thứ tự, quyền riêng tư audit và hành
+   vi chỉ đọc.
+5. Chạy kiểm thử FE12 tập trung/đầy đủ, truy vết, vệ sinh diff và một yêu cầu
+   HTTP runtime thực trước H2.
