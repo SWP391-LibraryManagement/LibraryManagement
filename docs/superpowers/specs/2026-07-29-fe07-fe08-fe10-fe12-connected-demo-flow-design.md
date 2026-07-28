@@ -236,8 +236,10 @@ Response tối thiểu:
 - `overdueLoans`: chi tiết `BORROWED` có `DueDate` trước ngày nghiệp vụ
   `Asia/Ho_Chi_Minh`;
 - `openReservations`: reservation `ACTIVE` hoặc `NOTIFIED`;
-- `availableCopies`: bản sao khả dụng hiệu lực theo FE06;
-- `lowStockBooks`: định nghĩa FE12 hiện hành có 0..2 bản sao khả dụng hiệu lực.
+- `availableCopies`: bản sao khả dụng hiệu lực có
+  `Books.Status = 'ACTIVE'` và `BookCopies.Status = 'AVAILABLE'`;
+- `lowStockBooks`: sách `ACTIVE` có 0..2 bản sao
+  `BookCopies.Status = 'AVAILABLE'`; sách không hoạt động bị loại khỏi KPI.
 
 Dashboard desktop hiển thị các KPI và fixed drill-down:
 

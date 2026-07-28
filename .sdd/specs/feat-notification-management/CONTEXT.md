@@ -2,7 +2,7 @@
 
 # Phiên bản: 0.6.0
 
-# Trạng thái: H1 GOVERNANCE ACTIVATION - CHỜ PHÊ DUYỆT
+# Trạng thái: H1 GOVERNANCE ACTIVATION - ĐÃ PHÊ DUYỆT; CHỜ H3/MERGE
 
 # Chủ sở hữu: Nhat
 
@@ -254,7 +254,7 @@ triển khai ở trên; các hạng mục phạm vi tương lai vẫn được t
   trùng lặp.
 - Giữ việc kết xuất thông điệp tập trung để các mẫu có thể kiểm thử.
 
-## 14. Bối cảnh batch FE07-FE12 2026-07-29
+## 11. Bối cảnh batch FE07-FE12 2026-07-29
 
 - FE07 sở hữu bốn sự kiện kết quả mượn; FE10 sở hữu persistence/delivery/inbox.
 - `GENERAL_SYSTEM` chỉ hợp lệ khi template key và source entity thuộc canonical

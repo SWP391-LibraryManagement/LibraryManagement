@@ -1,6 +1,6 @@
 # TASKS.md - FE07 Quản lý mượn sách
 
-Trạng thái: H1 GOVERNANCE ACTIVATION - CHỜ PHÊ DUYỆT
+Trạng thái: H1 GOVERNANCE ACTIVATION - ĐÃ PHÊ DUYỆT; CHỜ H3/MERGE
 Implementation State: PARTIAL
 
 Mở rộng hiện tại: triển khai và xác thực tự động v0.8.0 đã hoàn tất;

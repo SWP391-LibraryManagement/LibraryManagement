@@ -31,6 +31,9 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
 - Không tự động xử lý FE08 khi FE07 trả sách; Librarian phải xác nhận.
 - FE10 failure không rollback transaction FE07/FE08.
 - FE12 chỉ đọc và không hiển thị KPI thiếu/lỗi thành số `0`.
+- FE12 chỉ tính bản sao khả dụng hiệu lực khi `Books.Status = 'ACTIVE'` và
+  `BookCopies.Status = 'AVAILABLE'`; sách không hoạt động không được tính vào
+  `availableCopies` hoặc `lowStockBooks`.
 - Không nhận action URL từ caller; backend chỉ trả fixed relative allowlist.
 - Không đưa lý do từ chối, email, token, OTP, stack hoặc provider detail vào
   notification payload/inbox.
@@ -52,7 +55,6 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
 - Modify: `docs/architecture/feature-integration-map.md`
 - Modify: `docs/api/api-contract.md`
 - Modify: `docs/testing/master-test-plan.md`
-- Modify: `backend/src/docs/openapi.yaml`
 
 ### FE10 notification contract
 
@@ -115,6 +117,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
 
 ### Cross-feature evidence
 
+- Modify serially during product tasks: `backend/src/docs/openapi.yaml`.
 - Modify: `backend/tests/systemIntegration.test.js`
 - Modify: `tests/e2e/support/systemTestServer.js`
 - Create: `tests/e2e/fe07-fe12-connected-demo-flow.spec.js`
@@ -134,8 +137,8 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
 
 **Interfaces:**
 
-- Consumes: approved written design revision on branch
-  `codex/docs-fe07-fe12-connected-demo-flow`.
+- Consumes: approved written design revision published in PR #80 on branch
+  `codex/impl-fe07-fe12-connected-demo-flow`.
 - Produces: approved versions FE07 `0.9.0`, FE08 `0.6.0`, FE10 `0.6.0`,
   FE12 `0.3.0`; batch contract
   `BATCH-FE07-FE12-CONNECTED-DEMO-2026-07-29`.
@@ -187,9 +190,11 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   AC-FE12-012..016 map to AT-010..AT-013 and KPI failure behavior
   ```
 
-- [x] **Step 2: Synchronize CONTEXT, CHANGELOG, integration map, API contract and OpenAPI**
+- [x] **Step 2: Synchronize CONTEXT, CHANGELOG, integration map and API contract**
 
-  Record the exact endpoint and response:
+  Record the exact endpoint and response in SDD and `docs/api/api-contract.md`.
+  Do not publish the new path in runtime OpenAPI until Task 6 implements the
+  matching route; the FE07 return schema is added to OpenAPI with Task 3.
 
   ```yaml
   /api/reports/operations-summary:
@@ -253,24 +258,24 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   Expected: both trace commands exit `0`; diff check is empty; manual document
   review finds no unresolved requirement content.
 
-- [ ] **Step 5: Stop for human H1 review**
+- [x] **Step 5: Stop for human H1 review**
 
-  Present the exact governance diff, file list, batch fingerprint and commands.
-  Do not start RED product tests until the user explicitly approves H1.
+  H1 and its reviewed addendum were approved by Nhat on 2026-07-29. Product
+  work remains blocked until this activation PR merges.
 
-- [ ] **Step 6: Commit and publish only the H1-reviewed governance activation**
+- [x] **Step 6: Commit and publish only the H1-reviewed governance activation**
 
   After H1:
 
   ```powershell
-  git add -- .sdd/specs/feat-borrowing-management .sdd/specs/feat-reservation-management .sdd/specs/feat-notification-management .sdd/specs/feat-reporting-statistics docs/architecture/feature-integration-map.md docs/api/api-contract.md docs/testing/master-test-plan.md backend/src/docs/openapi.yaml docs/superpowers/specs/2026-07-29-fe07-fe08-fe10-fe12-connected-demo-flow-design.md docs/superpowers/plans/2026-07-29-fe07-fe08-fe10-fe12-connected-demo-flow.md
+  git add -- .sdd/specs/feat-borrowing-management .sdd/specs/feat-reservation-management .sdd/specs/feat-notification-management .sdd/specs/feat-reporting-statistics docs/architecture/feature-integration-map.md docs/api/api-contract.md docs/testing/master-test-plan.md docs/superpowers/specs/2026-07-29-fe07-fe08-fe10-fe12-connected-demo-flow-design.md docs/superpowers/plans/2026-07-29-fe07-fe08-fe10-fe12-connected-demo-flow.md
   git diff --cached --check
   git commit -m "docs: activate connected circulation demo batch"
   ```
 
-  Expected: governance-only commit. Push/open PR only after confirming the
-  staged list contains no product implementation file; merge still requires
-  required checks and H3.
+  Governance-only PR #80 was published. H3 remediation removes the unauthorized
+  test-only commit, corrects source-of-truth drift and requires a reviewed H1
+  drift addendum before its replacement commit is pushed.
 
 ---
 
@@ -910,11 +915,15 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
     (SELECT COUNT_BIG(*) FROM Reservations
       WHERE Status IN ('ACTIVE', 'NOTIFIED'))
       AS OpenReservations,
-    (SELECT COUNT_BIG(*) FROM BookCopies WHERE Status = 'AVAILABLE')
+    (SELECT COUNT_BIG(*)
+      FROM BookCopies bc
+      JOIN Books b ON b.BookId = bc.BookId
+      WHERE b.Status = 'ACTIVE' AND bc.Status = 'AVAILABLE')
       AS AvailableCopies,
     (SELECT COUNT_BIG(*)
       FROM Books b
-      WHERE (
+      WHERE b.Status = 'ACTIVE'
+        AND (
         SELECT COUNT_BIG(*)
         FROM BookCopies bc
         WHERE bc.BookId = b.BookId AND bc.Status = 'AVAILABLE'
@@ -1240,7 +1249,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
 
   ```powershell
   git commit -m "feat: connect borrowing reservation notifications and reporting"
-  git push -u origin codex/docs-fe07-fe12-connected-demo-flow
+  git push -u origin codex/impl-fe07-fe12-connected-demo-flow
   ```
 
   Open a draft PR, wait for required CI, then mark ready only when the exact head

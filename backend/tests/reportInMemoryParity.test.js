@@ -8,6 +8,7 @@ const ROLE_IDS = {
   GUEST: 4,
 };
 const VALID_COPY_STATUSES = new Set(['AVAILABLE', 'BORROWED', 'RESERVED', 'DAMAGED', 'LOST', 'INACTIVE']);
+const TEST_BUSINESS_DATE = '2026-07-14';
 
 function makeReportRepository({ borrowDetails, roleOverrides = [] } = {}) {
   const rolesByUserId = new Map([
@@ -81,14 +82,17 @@ describe('in-memory FE12 report repository parity', () => {
     const report = await makeReportRepository().getBorrowingReport({
       fromDate: '2026-01-11',
       toDate: '2026-01-12',
-    });
+    }, TEST_BUSINESS_DATE);
 
     expect(report.totalRows).toBe(5);
     expect(report.rows.map((row) => row.borrowDetailId)).toEqual([204, 203, 202, 201, 102]);
   });
 
   test('borrowing book filters retain only matching joined rows and deduplicate request totals', async () => {
-    const report = await makeReportRepository().getBorrowingReport({ bookId: 1 });
+    const report = await makeReportRepository().getBorrowingReport(
+      { bookId: 1 },
+      TEST_BUSINESS_DATE
+    );
 
     expect(report.totalRows).toBe(2);
     expect(report.metrics.activeLoans).toBe(1);
@@ -96,22 +100,34 @@ describe('in-memory FE12 report repository parity', () => {
 
   test('borrowing request-status and owner filters select matching joined rows', async () => {
     const repository = makeReportRepository();
-    const statusReport = await repository.getBorrowingReport({ status: 'APPROVED' });
-    const ownerReport = await repository.getBorrowingReport({ userId: 1 });
+    const statusReport = await repository.getBorrowingReport(
+      { status: 'APPROVED' },
+      TEST_BUSINESS_DATE
+    );
+    const ownerReport = await repository.getBorrowingReport(
+      { userId: 1 },
+      TEST_BUSINESS_DATE
+    );
 
     expect(statusReport.totalRows).toBe(2);
     expect(ownerReport.totalRows).toBe(2);
   });
 
   test('requested-only details do not create in-memory borrowing activity metrics', async () => {
-    const report = await makeReportRepository().getBorrowingReport({ bookId: 2 });
+    const report = await makeReportRepository().getBorrowingReport(
+      { bookId: 2 },
+      TEST_BUSINESS_DATE
+    );
 
     expect(report.metrics.borrowCountByPeriod).toEqual({});
     expect(report.metrics.topBorrowedBooks).toEqual([]);
   });
 
   test('in-memory borrowing activity metrics include actual-loan statuses and exclude requested details', async () => {
-    const report = await makeReportRepository().getBorrowingReport();
+    const report = await makeReportRepository().getBorrowingReport(
+      {},
+      TEST_BUSINESS_DATE
+    );
 
     expect(report.metrics.borrowCountByPeriod).toEqual({
       '2025-12-31': 1,
@@ -140,7 +156,7 @@ describe('in-memory FE12 report repository parity', () => {
           status: 'RETURNED',
         },
       ],
-    }).getBorrowingReport();
+    }).getBorrowingReport({}, TEST_BUSINESS_DATE);
 
     expect(report.metrics.borrowCountByPeriod).toEqual({});
   });
@@ -157,10 +173,46 @@ describe('in-memory FE12 report repository parity', () => {
           status: 'BORROWED',
         },
       ],
-    }).getBorrowingReport({ status: 'OVERDUE' });
+    }).getBorrowingReport({ status: 'OVERDUE' }, '2026-07-29');
 
     expect(report.totalRows).toBe(1);
     expect(report.rows[0].status).toBe('OVERDUE');
+  });
+
+  test('in-memory borrowing projection uses the caller business date instead of host time', async () => {
+    const repository = makeReportRepository({
+      borrowDetails: [
+        {
+          borrowDetailId: 101,
+          requestId: 10,
+          copyId: 1,
+          borrowDate: new Date('2026-07-14T00:00:00.000Z'),
+          dueDate: new Date('2026-07-28T00:00:00.000Z'),
+          status: 'BORROWED',
+        },
+      ],
+    });
+
+    const beforeDueDate = await repository.getBorrowingReport({}, '2026-07-14');
+    const afterDueDate = await repository.getBorrowingReport({}, '2026-07-29');
+
+    expect(beforeDueDate.rows[0].status).toBe('BORROWED');
+    expect(afterDueDate.rows[0].status).toBe('OVERDUE');
+  });
+
+  // @spec AC-FE12-001
+  test.each([
+    undefined,
+    null,
+    '',
+    '2026-2-03',
+    '0000-01-01',
+    '2026-02-30',
+    'not-a-date',
+  ])('in-memory borrowing reports reject invalid required business dates: %p', async (businessDate) => {
+    await expect(
+      makeReportRepository().getBorrowingReport({}, businessDate)
+    ).rejects.toThrow('businessDate must be a valid YYYY-MM-DD date');
   });
 
   test('in-memory low-stock rows mirror the production category and copy envelope', async () => {

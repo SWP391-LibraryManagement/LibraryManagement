@@ -1,6 +1,6 @@
 # PLAN.md - FE08 Quản lý đặt chỗ
 
-Trạng thái: H1 GOVERNANCE ACTIVATION - CHỜ PHÊ DUYỆT
+Trạng thái: H1 GOVERNANCE ACTIVATION - ĐÃ PHÊ DUYỆT; CHỜ H3/MERGE
 
 Chủ sở hữu: Nhat
 
@@ -220,7 +220,7 @@ Không bao gồm:
 5. Chạy lại `SIT-003` chứng minh giữ hàng đợi cộng tạo thông báo và `SIT-004` chứng minh ưu tiên FE08 vẫn chặn gia hạn FE07 mà không thay đổi.
 6. Coi mọi lỗi FE08 là blocker cần chẩn đoán/quyết định đặc tả mới; không mở rộng batch này một cách im lặng.
 
-## 13. Kế hoạch batch liên hoàn v0.6.0
+## 15. Kế hoạch batch liên hoàn v0.6.0
 
 1. `SL-001`: merge governance activation.
 2. `SL-004` RED/GREEN: owner-only held-copy CTA, staff decision surface, safe

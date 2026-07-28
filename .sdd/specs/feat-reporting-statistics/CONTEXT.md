@@ -2,7 +2,7 @@
 
 # Phiên bản: 0.3.0
 
-# Trạng thái: H1 GOVERNANCE ACTIVATION - CHỜ PHÊ DUYỆT
+# Trạng thái: H1 GOVERNANCE ACTIVATION - ĐÃ PHÊ DUYỆT; CHỜ H3/MERGE
 
 # Chủ sở hữu: Nhat
 
@@ -168,5 +168,7 @@ Cột chủ sở hữu phản ánh phân công lại đội hiện tại.
 - `businessDate` được truyền cho báo cáo mượn và operations summary ở cả SQL
   Server/Azure SQL lẫn in-memory repository; host clock không được ẩn trong
   repository.
-- Finding baseline SIT-002/SIT-008 là clock drift xác định, thuộc `SL-005` và
-  phải được sửa test-first sau khi governance activation merge.
+- Prerequisite clock drift SIT-002/SIT-008, fail-fast và parity FE12-N12/N13
+  đã hoàn tất qua PR #81, merge thành `main@0d064b5`.
+- Operations summary tiếp tục từ FE12-N14; N15/N16 hoàn tất dashboard và bằng
+  chứng tích hợp. Không mở lại hoặc nhân đôi prerequisite đã merge.

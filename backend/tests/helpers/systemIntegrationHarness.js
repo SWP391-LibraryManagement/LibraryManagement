@@ -318,6 +318,7 @@ function makeSystemIntegrationApp({ borrowingNotificationError = null } = {}) {
   const reportService = createReportService({
     reportRepository: reportDependencies.reportRepository,
     auditLogRepository: authDependencies.auditLogRepository,
+    clock: () => FIXED_NOW,
   });
   const profileService = createSystemProfileService(authDependencies.state);
   const adminService = createSystemAdminService(

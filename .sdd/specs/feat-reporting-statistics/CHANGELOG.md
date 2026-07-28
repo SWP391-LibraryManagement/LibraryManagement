@@ -4,10 +4,23 @@
 
 - Thêm BR-FE12-017..020, FR-FE12-012..015 và AC-FE12-012..016.
 - Chốt six-KPI read-only snapshot và fixed dashboard drill-down.
+- Chốt availability hiệu lực: chỉ sách `ACTIVE` và bản sao `AVAILABLE` được
+  tính vào `availableCopies`; `lowStockBooks` chỉ xét sách `ACTIVE`.
 - Ghi finding baseline SIT-002/SIT-008: repository dùng host clock làm drift
   phân loại quá hạn; fix bắt buộc là service-owned `businessDate` cho SQL và
   in-memory parity, không đổi expected state.
-- Chưa thay đổi product code; chờ H1/activation merge.
+- Prerequisite ngày nghiệp vụ đã merge qua PR #81; phần v0.3.0 chỉ còn mở rộng
+  operations summary trên contract đã triển khai.
+- Chưa thay đổi product code/schema cho operations summary; H1 đã duyệt và
+  activation đang chờ H3/merge.
+
+## 2026-07-29 - Prerequisite ngày nghiệp vụ báo cáo mượn (v0.2.1)
+
+- Làm rõ service sở hữu một `businessDate` `Asia/Ho_Chi_Minh` cho mỗi request.
+- Bắt buộc SQL/in-memory repository nhận ngày hợp lệ tường minh và fail-fast
+  trước khi truy vấn nếu thiếu/sai.
+- Loại phụ thuộc host clock/fake global clock khỏi bằng chứng SIT-002/SIT-008.
+- Merge PR #81 thành `main@0d064b5`; CI exact-head và CI hậu merge đều đạt.
 
 ## 2026-07-27 - Đặc tả allowlist query báo cáo chính xác (v0.2.0)
 

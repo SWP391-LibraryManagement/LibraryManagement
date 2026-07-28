@@ -1,7 +1,7 @@
 # Kế hoạch kiểm thử FE10 - Quản lý thông báo
 
 Phiên bản: 0.6.0
-Trạng thái: H1 GOVERNANCE ACTIVATION - CHỜ THỰC THI
+Trạng thái: H1 GOVERNANCE ACTIVATION - ĐÃ PHÊ DUYỆT; CHỜ MERGE ĐỂ THỰC THI
 Cập nhật lần cuối: 2026-07-29
 
 Đặc tả nguồn: `.sdd/specs/feat-notification-management/SPEC.md`

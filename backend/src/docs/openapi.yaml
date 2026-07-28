@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Library Management System API — FE05/FE07/FE08/FE10/FE11/FE12
-  version: 1.1.0
+  version: 1.0.0
   description: >
     API documentation for FE05 Book Management, FE07 Borrowing, FE08 Reservation, FE10 Notification,
     FE11 Admin Audit Logs and Permissions, and FE12 Reporting.
@@ -111,11 +111,6 @@ components:
       content:
         application/json:
           schema: { $ref: '#/components/schemas/UserStatisticsReport' }
-    OperationsSummaryResponse:
-      description: Authorized read-only operations snapshot
-      content:
-        application/json:
-          schema: { $ref: '#/components/schemas/OperationsSummary' }
   schemas:
     NotificationSummary:
       type: object
@@ -575,24 +570,10 @@ components:
         borrowRequest: { $ref: '#/components/schemas/BorrowRequest' }
     BorrowDetailReturnPayload:
       type: object
-      required: [borrowDetail, fineCandidate, reservationQueueAction]
+      required: [borrowDetail, fineCandidate]
       properties:
         borrowDetail: { $ref: '#/components/schemas/BorrowDetail' }
         fineCandidate: { $ref: '#/components/schemas/FineCandidate' }
-        reservationQueueAction:
-          allOf:
-            - { $ref: '#/components/schemas/ReservationQueueAction' }
-          nullable: true
-    ReservationQueueAction:
-      type: object
-      additionalProperties: false
-      required: [copyId, hasActiveQueue, actionPath]
-      properties:
-        copyId: { type: integer, minimum: 1 }
-        hasActiveQueue: { type: boolean }
-        actionPath:
-          type: string
-          enum: [/librarian/reservations]
     BorrowDetailPayload:
       type: object
       required: [borrowDetail]
@@ -726,25 +707,6 @@ components:
         page: { type: integer, minimum: 1 }
         limit: { type: integer, minimum: 1, maximum: 100 }
         totalRows: { type: integer, minimum: 0 }
-    OperationsSummary:
-      type: object
-      additionalProperties: false
-      required:
-        - pendingBorrowRequests
-        - activeLoans
-        - overdueLoans
-        - openReservations
-        - availableCopies
-        - lowStockBooks
-        - generatedAt
-      properties:
-        pendingBorrowRequests: { type: integer, minimum: 0 }
-        activeLoans: { type: integer, minimum: 0 }
-        overdueLoans: { type: integer, minimum: 0 }
-        openReservations: { type: integer, minimum: 0 }
-        availableCopies: { type: integer, minimum: 0 }
-        lowStockBooks: { type: integer, minimum: 0 }
-        generatedAt: { type: string, format: date-time }
     Fine:
       type: object
       additionalProperties: false
@@ -1720,20 +1682,6 @@ paths:
         - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
       responses:
         '200': { $ref: '#/components/responses/BorrowingReportResponse' }
-        '400': { $ref: '#/components/responses/ValidationError' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-  /api/reports/operations-summary:
-    get:
-      tags: [Reporting]
-      summary: Operations summary snapshot (FR-FE12-012/013/014)
-      description: >
-        Librarian/Admin only. Accepts no query parameters. Overdue classification
-        uses the service-owned Asia/Ho_Chi_Minh business date from the same clock
-        read as generatedAt (BR-FE12-017..020).
-      parameters: []
-      responses:
-        '200': { $ref: '#/components/responses/OperationsSummaryResponse' }
         '400': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }

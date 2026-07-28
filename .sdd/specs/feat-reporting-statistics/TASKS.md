@@ -1,6 +1,6 @@
 # TASKS.md - FE12 Báo cáo và thống kê
 
-Trạng thái: H1 GOVERNANCE ACTIVATION - CHỜ PHÊ DUYỆT
+Trạng thái: H1 GOVERNANCE ACTIVATION - ĐÃ PHÊ DUYỆT; CHỜ H3/MERGE
 Implementation State: PARTIAL
 
 Chủ sở hữu: Nhat
@@ -10,9 +10,11 @@ Cập nhật: 2026-07-29
 Trạng thái workflow: baseline Giai đoạn 2 vẫn hoàn tất. Nhat phê duyệt PLAN/
 TASKS FE12-N11 và phụ lục H2 tích hợp `8d0059b` ngày 2026-07-27. Kết quả đã
 review được commit thành `f346ae0`, push lên PR nháp #63 và lượt CI
-`30244750250` đạt. Review H3 đầu tiên không phát hiện lỗi mã FE12 hay quy tắc
-nghiệp vụ, chỉ trả về cách diễn đạt governance cũ. Khắc phục chỉ-tài-liệu vẫn
-chưa commit, chờ H2 mới và H3 lặp lại.
+`30244750250` đạt. Prerequisite v0.2.1 đã hoàn tất H2/H3, merge qua PR #81
+thành `main@0d064b5`; CI exact-head `30403316655` và CI hậu merge
+`30403632044` đều đạt. Azure đã upload backend/frontend nhưng smoke bị chặn bởi
+quota F1 `WP stop requests`, không phải finding code. Phạm vi hiện tại là
+governance activation v0.3.0 đã được H1 phê duyệt và đang chờ H3/merge PR #80.
 
 ---
 
@@ -234,14 +236,35 @@ Bằng chứng tự động chi tiết được ghi trong
     `30244750250` đạt. Khắc phục H3 chỉ-tài-liệu cần H2 mới và H3 lặp lại trước
     merge.
 
-## 12. Operations summary và clock xác định v0.3.0
+## 12. Prerequisite ngày nghiệp vụ báo cáo mượn v0.2.1 - Đã hoàn tất
 
-- [ ] **FE12-N12 - RED clock-drift regression cho báo cáo mượn.**
-  - Ánh xạ: BR-FE12-020, FR-FE12-014, AC-FE12-016; tái hiện SIT-002/SIT-008.
-- [ ] **FE12-N13 - SQL/in-memory business-date parity.**
-  - Service đọc clock một lần; repository nhận `businessDate` tường minh.
+- [x] **FE12-N12 - Sửa clock drift ở service boundary.**
+  - Ánh xạ: BR-FE12-004/012, FR-FE12-001, AC-FE12-001,
+    NFR-FE12-INT-002.
+  - RED: SIT-002/SIT-008 phân loại theo ngày thật của host thay vì clock của
+    harness.
+  - GREEN: service đọc clock một lần, truyền `businessDate` cho SQL/in-memory
+    repository; system integration không dùng fake global clock.
+- [x] **FE12-N13 - Fail-fast và parity cho `businessDate`.**
+  - SQL/in-memory từ chối thiếu, sai `YYYY-MM-DD` hoặc ngày bất khả thi trước
+    khi đọc dữ liệu.
+  - Direct-repository tests dùng ngày cố định; cùng fixture trước/sau hạn trả
+    cho kết quả `BORROWED`/`OVERDUE` giống nhau.
+  - Bằng chứng cục bộ: RED 14 ca lỗi như dự kiến; GREEN tập trung 5 suite,
+    73/73 kiểm thử.
+
+H2 remediation fingerprint
+`c4216068a3aafbbfeaddd47ef2398a84555746c35b290e4f1a040d370d9612ed`
+đã được phê duyệt. H3 hai trục và CI exact-head đạt; PR #81 đã merge thành
+`main@0d064b5` và CI hậu merge `30403632044` đạt.
+
+## 13. Operations summary v0.3.0
+
 - [ ] **FE12-N14 - Operations summary endpoint và role/query contract.**
   - Ánh xạ: BR-FE12-017/018, FR-FE12-012..014, AC-FE12-012/013.
+  - Tái sử dụng service-owned `businessDate` đã hoàn tất ở FE12-N12/N13.
+  - `availableCopies`/`lowStockBooks` chỉ xét sách `ACTIVE`; bản sao khả dụng
+    phải có `BookCopies.Status = 'AVAILABLE'`.
 - [ ] **FE12-N15 - Dashboard snapshot và missing-KPI UX.**
   - Ánh xạ: BR-FE12-019, FR-FE12-015, AC-FE12-014/015.
 - [ ] **FE12-N16 - Integration/desktop/full-gate evidence.**

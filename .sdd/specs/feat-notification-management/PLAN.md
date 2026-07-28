@@ -1,6 +1,6 @@
 # PLAN.md - FE10 Quản lý thông báo
 
-Trạng thái: H1 GOVERNANCE ACTIVATION - CHỜ PHÊ DUYỆT
+Trạng thái: H1 GOVERNANCE ACTIVATION - ĐÃ PHÊ DUYỆT; CHỜ H3/MERGE
 
 Chủ sở hữu: Nhat
 

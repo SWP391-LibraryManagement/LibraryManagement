@@ -2,7 +2,7 @@
 
 # Phiên bản: 0.6.0
 
-# Trạng thái: H1 GOVERNANCE ACTIVATION - CHỜ PHÊ DUYỆT
+# Trạng thái: H1 GOVERNANCE ACTIVATION - ĐÃ PHÊ DUYỆT; CHỜ H3/MERGE
 
 # Chủ sở hữu: Nhat
 

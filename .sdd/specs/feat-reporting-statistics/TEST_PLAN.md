@@ -1,7 +1,7 @@
 # Kế hoạch kiểm thử FE12 - Báo cáo và thống kê
 
 Phiên bản: 0.3.0
-Trạng thái: H1 GOVERNANCE ACTIVATION - CHỜ THỰC THI
+Trạng thái: H1 GOVERNANCE ACTIVATION - ĐÃ PHÊ DUYỆT; CHỜ MERGE ĐỂ THỰC THI
 Cập nhật lần cuối: 2026-07-29
 
 Đặc tả nguồn: `.sdd/specs/feat-reporting-statistics/SPEC.md`

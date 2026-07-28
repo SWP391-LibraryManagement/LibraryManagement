@@ -2,9 +2,9 @@
 
 Version: 1.3.0
 
-Status: H1 GOVERNANCE ACTIVATION - PENDING APPROVAL
+Status: H1 GOVERNANCE ACTIVATION - APPROVED; AWAITING H3/MERGE
 
-Last Updated: 2026-07-27
+Last Updated: 2026-07-29
 
 > This is the Layer 1 (system-level) "big picture" that links the 12 separately-owned feature specs. Approved on 2026-06-25 together with the system ERD (Section 4.1).
 
@@ -531,6 +531,8 @@ Ownership:
   it never changes FE07/FE08 state.
 - FE12 owns no source mutation. Service supplies one business date to SQL and
   in-memory repositories so overdue state is deterministic.
+- FE12 effective availability includes only active books and available copies;
+  inactive books are excluded from `availableCopies` and `lowStockBooks`.
 
 Allowed action paths are `/borrowing/history`, `/reservations/mine` and
 `/librarian/reservations` at their documented handoff points. No caller-defined

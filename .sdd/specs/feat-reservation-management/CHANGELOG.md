@@ -5,7 +5,7 @@
 - Thêm BR-FE08-021/022, FR-FE08-036..039 và AC-FE08-023..025.
 - Chốt owner-only held-copy CTA, decision surface thủ công, safe warning và
   stale refresh.
-- Chưa thay đổi product code; chờ H1/activation merge.
+- Chưa thay đổi product code; H1 đã duyệt và activation đang chờ H3/merge.
 
 ## 2026-07-27 - Đối soát các thay đổi song song v0.5.9 (v0.5.10)
 

@@ -2,9 +2,9 @@
 
 Version: 0.3.0
 
-Status: H1 GOVERNANCE ACTIVATION - PENDING APPROVAL
+Status: H1 GOVERNANCE ACTIVATION - APPROVED; AWAITING H3/MERGE
 
-Last Updated: 2026-07-28
+Last Updated: 2026-07-29
 
 > Canonical policy note: the authoritative test policy for this project now lives in `D:\SWP391\library-management-system\.sdd\test-plan.md`. This document remains an extended testing reference and should not contradict the canonical `.sdd/test-plan.md`.
 ---

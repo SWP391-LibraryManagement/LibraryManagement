@@ -1,8 +1,8 @@
 # API Contract - Phase 1 Baseline
 
-Status: PHASE 1 BASELINE; FE07-FE12 CONNECTED DEMO H1 PENDING
+Status: PHASE 1 BASELINE; FE07-FE12 CONNECTED DEMO H1 APPROVED - AWAITING H3/MERGE
 Date: 2026-06-10
-Last Updated: 2026-07-27
+Last Updated: 2026-07-29
 
 ## Scope
 
@@ -796,3 +796,6 @@ Unknown query keys return safe `400` before service/repository execution.
 Member returns `403`; missing authentication returns `401`. The service derives
 `businessDate` and `generatedAt` from one controlled clock read and passes the
 date explicitly to both SQL and in-memory report repositories.
+`availableCopies` counts only rows where `Books.Status = 'ACTIVE'` and
+`BookCopies.Status = 'AVAILABLE'`; `lowStockBooks` counts only active books with
+0..2 available copies.

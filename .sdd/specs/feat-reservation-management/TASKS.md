@@ -1,6 +1,6 @@
 # TASKS.md - FE08 Quản lý đặt chỗ
 
-Trạng thái: H1 GOVERNANCE ACTIVATION - CHỜ PHÊ DUYỆT
+Trạng thái: H1 GOVERNANCE ACTIVATION - ĐÃ PHÊ DUYỆT; CHỜ H3/MERGE
 Implementation State: PARTIAL
 
 Chủ sở hữu: Nhat

@@ -1,7 +1,7 @@
 # Kế hoạch kiểm thử FE08 - Quản lý đặt chỗ
 
 Phiên bản: 0.6.0
-Trạng thái: H1 GOVERNANCE ACTIVATION - CHỜ THỰC THI
+Trạng thái: H1 GOVERNANCE ACTIVATION - ĐÃ PHÊ DUYỆT; CHỜ MERGE ĐỂ THỰC THI
 Cập nhật lần cuối: 2026-07-29
 
 Đặc tả nguồn: `.sdd/specs/feat-reservation-management/SPEC.md` v0.6.0
@@ -107,7 +107,7 @@ npm.cmd --prefix backend test -- --runInBand --testMatch "**/reservationCandidat
 
 Các cổng backend/frontend, bao phủ, tích hợp, triển khai, SQL trực tiếp và Playwright toàn kho được ghi trong các rà soát đối soát đầy đủ và xác thực FE08 trước merge.
 
-## 12. Ma trận kiểm thử batch FE07-FE12
+## 9. Ma trận kiểm thử batch FE07-FE12
 
 - AC-FE08-023: FIFO/decision surface và đúng một post-commit notification request.
 - AC-FE08-024: chỉ owner `NOTIFIED` thấy CTA và FE07 nhận đúng `copyId`.

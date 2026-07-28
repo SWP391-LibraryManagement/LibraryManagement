@@ -4,7 +4,7 @@
 
 - Thêm BR-FE07-035..037, FR-FE07-040..044 và AC-FE07-033..036.
 - Chốt post-commit FE10 non-blocking, handoff FE08 chỉ đọc và timeline chính tắc.
-- Chưa thay đổi product code; chờ H1/activation merge.
+- Chưa thay đổi product code; H1 đã duyệt và activation đang chờ H3/merge.
 
 ## 2026-07-28 - Kết nối lượt trả quá hạn với tạo khoản phạt (v0.8.3)
 
