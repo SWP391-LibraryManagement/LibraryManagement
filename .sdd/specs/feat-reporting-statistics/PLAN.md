@@ -1,17 +1,20 @@
 # PLAN.md - FE12 Báo cáo và thống kê
 
-Trạng thái: KHẮC PHỤC GOVERNANCE H3 - CHỜ H2 MỚI
+Trạng thái: H2 ADDENDUM ĐÃ PHÊ DUYỆT - H3 ĐANG KHẮC PHỤC
 
 Chủ sở hữu: Nhat
 
-Cập nhật: 2026-07-27
+Cập nhật: 2026-07-29
 
 Trạng thái workflow: baseline Giai đoạn 2 vẫn hoàn tất. Nhat phê duyệt PLAN/
 TASKS v0.2.0 và phụ lục H2 tích hợp `8d0059b` ngày 2026-07-27. Kết quả đã review
 được commit thành `f346ae0`, push lên PR nháp #63 và lượt CI `30244750250` đạt.
 Review H3 đầu tiên không phát hiện lỗi mã FE12 hay quy tắc nghiệp vụ, chỉ trả về
 cách diễn đạt governance cũ. Khắc phục chỉ-tài-liệu vẫn chưa commit, chờ H2 mới
-và H3 lặp lại.
+và H3 lặp lại. Prerequisite v0.2.1 trên PR #81 đã nhận H2 addendum fingerprint
+`063323fcbb0171a6628c6f310d55719369d7afa1f78d8c6b83f36bd69dbdd505`;
+CI exact-head `30402026346` đạt, còn finding H3 về metadata và năm SQL tối thiểu
+đang được khắc phục trước re-review.
 
 ---
 

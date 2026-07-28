@@ -36,7 +36,11 @@ function formatBusinessDate(value) {
 // @spec BR-FE12-004 FR-FE12-001
 function requireBusinessDate(value) {
   const errorMessage = 'businessDate must be a valid YYYY-MM-DD date';
-  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+  if (
+    typeof value !== 'string'
+    || !/^\d{4}-\d{2}-\d{2}$/.test(value)
+    || Number(value.slice(0, 4)) < 1
+  ) {
     throw new TypeError(errorMessage);
   }
 

@@ -206,6 +206,7 @@ describe('in-memory FE12 report repository parity', () => {
     null,
     '',
     '2026-2-03',
+    '0000-01-01',
     '2026-02-30',
     'not-a-date',
   ])('in-memory borrowing reports reject invalid required business dates: %p', async (businessDate) => {

@@ -1,18 +1,18 @@
 # SPEC.md - FE12 Báo cáo & Thống kê
 
-# Phiên bản: 0.2.0
+# Phiên bản: 0.2.1
 
-# Trạng thái: APPROVED - DANH SÁCH CHO PHÉP THAM SỐ TRUY VẤN 2026-07-27
+# Trạng thái: H2 ADDENDUM ĐÃ PHÊ DUYỆT - H3 ĐANG KHẮC PHỤC
 
 # Chủ sở hữu: Nhat
 
-# Cập nhật lần cuối: 2026-07-27
+# Cập nhật lần cuối: 2026-07-29
 
 # ID tính năng: FE12
 
 # Thư mục tính năng: `.sdd/specs/feat-reporting-statistics/`
 
-> Trạng thái phân phối hiện tại (2026-07-20): `COMPLETE` cho phạm vi Giai đoạn 1 đã được phê duyệt.
+> Trạng thái phân phối hiện tại (2026-07-29): `COMPLETE` cho phạm vi Giai đoạn 1 và prerequisite ngày nghiệp vụ v0.2.1 đã được phê duyệt H2; H3 vẫn bắt buộc trước merge.
 > `TASKS.md` và `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`
 > là nguồn có thẩm quyền về trạng thái triển khai hiện tại. Các nhãn `Not Started` cũ hơn,
 > `PARTIAL`, `READY FOR REVIEW` hoặc đang chờ đánh giá được giữ lại bên dưới là
