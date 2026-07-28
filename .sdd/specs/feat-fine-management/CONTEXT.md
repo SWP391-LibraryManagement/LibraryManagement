@@ -1,69 +1,69 @@
-# CONTEXT.md - FE09 Fine Management
+# CONTEXT.md - FE09 Quản lý tiền phạt
 
-# Version: 0.2.0
+# Phiên bản: 0.2.0
 
-# Status: APPROVED - BASELINE 2026-07-17
+# Trạng thái: ĐÃ PHÊ DUYỆT - MỐC CƠ SỞ 2026-07-17
 
-# Owner: Dung
+# Chủ sở hữu: Dung
 
-# Last Updated: 2026-07-17
+# Cập nhật lần cuối: 2026-07-17
 
-# Feature folder: `.sdd/specs/feat-fine-management/`
-
----
-
-## 1. Feature Purpose
-
-Fine Management exists to calculate and track fines for overdue, lost, damaged, or other policy-violating borrowing outcomes.
-
-This feature must keep three things consistent:
-
-- Fine calculation must be traceable and testable.
-- Fine payment/collection status must be recorded clearly.
-- Borrowing and inventory workflows remain owned by FE07 and FE06.
-
-FE09 is a Full Spec feature because wrong fine calculation affects member eligibility, financial records, borrowing restrictions, and reports.
+# Thư mục tính năng: `.sdd/specs/feat-fine-management/`
 
 ---
 
-## 2. Real-World Workflow
+## 1. Mục đích tính năng
 
-The typical fine workflow:
+Quản lý tiền phạt dùng để tính và theo dõi khoản phạt cho các kết quả mượn quá hạn, mất, hỏng hoặc vi phạm chính sách khác.
 
-1. FE07 identifies a returned or active borrowed copy that is overdue, lost, or damaged.
-2. FE09 calculates fine amount using approved policy.
-3. FE09 creates or updates a fine record.
-4. Member or librarian views fine information.
-5. Librarian records fine collection if money is collected offline.
-6. Librarian/admin marks the fine as paid when collection is complete.
-7. FE10 may notify the member about overdue/fine information.
-8. FE07 may read unpaid fine status to decide borrowing eligibility.
+Tính năng này phải giữ nhất quán ba yếu tố:
 
----
+- Việc tính tiền phạt phải có thể truy vết và kiểm thử.
+- Trạng thái thanh toán/thu tiền phạt phải được ghi rõ ràng.
+- Quy trình mượn và tồn kho vẫn do FE07 và FE06 sở hữu.
 
-## 3. Feature Boundary
-
-FE09 includes:
-
-- View fine information.
-- Calculate overdue fine.
-- Record fine collection.
-- Mark fine as paid.
-- Store fine reason, amount, status, and payment timestamp.
-
-FE09 does not include:
-
-- Borrow/return approval and due date assignment. That belongs to FE07.
-- Physical copy status management. That belongs to FE06.
-- Online payment gateway. Out of scope for this project phase.
-- Sending notifications. That belongs to FE10.
-- Reporting dashboards. That belongs to FE12, although FE12 reads fine data.
+FE09 là tính năng Đặc tả đầy đủ vì tính sai tiền phạt ảnh hưởng điều kiện hợp lệ thành viên, hồ sơ tài chính, hạn chế mượn và báo cáo.
 
 ---
 
-## 4. Current Data Model Notes
+## 2. Quy trình thực tế
 
-The current SQL script includes:
+Quy trình phạt điển hình:
+
+1. FE07 xác định bản sao đã trả hoặc đang mượn bị quá hạn, mất hoặc hỏng.
+2. FE09 tính số tiền phạt theo chính sách đã phê duyệt.
+3. FE09 tạo hoặc cập nhật bản ghi phạt.
+4. Thành viên hoặc thủ thư xem thông tin phạt.
+5. Thủ thư ghi nhận thu tiền phạt nếu tiền được thu ngoại tuyến.
+6. Thủ thư/quản trị viên đánh dấu khoản phạt là đã thanh toán khi việc thu hoàn tất.
+7. FE10 có thể thông báo thành viên về thông tin quá hạn/phạt.
+8. FE07 có thể đọc trạng thái phạt chưa thanh toán để quyết định điều kiện mượn.
+
+---
+
+## 3. Ranh giới tính năng
+
+FE09 bao gồm:
+
+- Xem thông tin phạt.
+- Tính phạt quá hạn.
+- Ghi nhận thu tiền phạt.
+- Đánh dấu tiền phạt đã thanh toán.
+- Lưu lý do, số tiền, trạng thái và dấu thời gian thanh toán phạt.
+
+FE09 không bao gồm:
+
+- Phê duyệt mượn/trả và gán hạn trả. Phần này thuộc FE07.
+- Quản lý trạng thái bản sao vật lý. Phần này thuộc FE06.
+- Cổng thanh toán trực tuyến. Ngoài phạm vi giai đoạn dự án này.
+- Gửi thông báo. Phần này thuộc FE10.
+- Dashboard báo cáo. Phần này thuộc FE12, dù FE12 đọc dữ liệu phạt.
+
+---
+
+## 4. Ghi chú về mô hình dữ liệu hiện tại
+
+Tập lệnh SQL hiện tại bao gồm:
 
 - `Fines(FineId, UserId, BorrowDetailId, OverdueDays, RatePerDay, Amount, PaidAmount, Reason, Status, CalculatedAt, PaidAt, CreatedBy, CollectedBy, PaymentMethod, CreatedAt, UpdatedAt)`
 - `BorrowDetails(BorrowDetailId, RequestId, CopyId, DueDate, ReturnDate, Status)`
@@ -71,99 +71,99 @@ The current SQL script includes:
 - `BookCopies(CopyId, BookId, Barcode, Status, Location)`
 - `Users(UserId, Username, Email, Phone, Status, CreatedAt)`
 
-Project baseline decisions include:
+Các quyết định mốc cơ sở dự án gồm:
 
-- Overdue fine is 5,000 VND per overdue day per copy.
-- Fine starts the day after the due date.
-- The default loan duration is 14 calendar days, owned by FE07.
-- A member with any `UNPAID` fine whose amount is greater than 0 is restricted from new borrowing and renewal in FE07.
+- Phạt quá hạn là 5.000 VND cho mỗi ngày quá hạn trên mỗi bản sao.
+- Tiền phạt bắt đầu từ ngày sau hạn trả.
+- Thời hạn mượn mặc định là 14 ngày dương lịch, do FE07 sở hữu.
+- Thành viên có bất kỳ khoản phạt `UNPAID` nào có số tiền lớn hơn 0 bị hạn chế mượn mới và gia hạn trong FE07.
 
-Potential issues to review:
+Các vấn đề tiềm năng cần rà soát:
 
-- Current SQL stores `PaidAmount`, `CollectedBy`, and `PaymentMethod`; it does not have a separate collection-note column.
-- Current SQL does not define damaged/lost fine policy.
-- Current SQL does not prevent duplicate fine records for the same borrow detail.
-- Fine calculation date source is the server business date in `Asia/Ho_Chi_Minh`, not client input.
-- Status values are `UNPAID`, `PAID`, `WAIVED`, and `CANCELLED`; all except `UNPAID` are terminal.
-- Phase 1 has no partial payment: full offline collection sets `PaidAmount = Amount`, `CollectedBy`, `PaymentMethod`, `PaidAt`, and `Status = PAID` atomically.
-- Collection notes are audit metadata because the current schema has no collection-note column.
+- SQL hiện tại lưu `PaidAmount`, `CollectedBy` và `PaymentMethod`; không có cột ghi chú thu tiền riêng.
+- SQL hiện tại không xác định chính sách phạt hỏng/mất.
+- SQL hiện tại không ngăn bản ghi phạt trùng lặp cho cùng chi tiết mượn.
+- Nguồn ngày tính phạt là ngày nghiệp vụ máy chủ trong `Asia/Ho_Chi_Minh`, không phải input client.
+- Giá trị trạng thái là `UNPAID`, `PAID`, `WAIVED` và `CANCELLED`; mọi trạng thái trừ `UNPAID` là kết thúc.
+- Giai đoạn 1 không có thanh toán một phần: thu ngoại tuyến đầy đủ đặt `PaidAmount = Amount`, `CollectedBy`, `PaymentMethod`, `PaidAt` và `Status = PAID` nguyên tử.
+- Ghi chú thu tiền là siêu dữ liệu audit vì schema hiện tại không có cột ghi chú thu tiền.
 
-These decisions are closed in SPEC v0.4.0 and must be reconciled against the existing server-side prototype before implementation is considered complete.
-
----
-
-## 5. Main Use Cases From Assignment Sheet
-
-Owner column reflects the current team redistribution.
-
-| Use Case ID | Use Case Name | Owner |
-| ----------- | ------------- | ----- |
-| UC41 | View Fine Information | Dung |
-| UC42 | Calculate Fine | Dung |
-| UC43 | Record Fine Collection | Dung |
-| UC44 | Mark Fine As Paid | Dung |
+Các quyết định này được chốt trong SPEC v0.4.0 và phải được đối soát với prototype phía máy chủ hiện có trước khi triển khai được xem là hoàn thành.
 
 ---
 
-## 6. Feature Tests From Assignment Sheet
+## 5. Ca sử dụng chính từ bảng phân công
 
-Owner column reflects the current team redistribution.
+Cột chủ sở hữu phản ánh việc phân công lại hiện tại của nhóm.
 
-| Test ID | Test Name | Owner |
-| ------- | --------- | ----- |
-| FT42 | View fine information | Dung |
-| FT43 | Calculate fine | Dung |
-| FT44 | Record fine collection | Dung |
-| FT45 | Mark fine as paid | Dung |
-
----
-
-## 7. Key Risks
-
-- Fine amount may be wrong if overdue days are calculated incorrectly.
-- Duplicate fine records may charge a member twice for the same borrow detail.
-- Payment collection may be recorded without proper authorization.
-- Unpaid/paid status may become inconsistent if collection and paid marking are separate.
-- Client-provided dates or amounts may allow tampering.
-- Missing fine data may cause FE07 to allow borrowing when unpaid fines should block it.
+| ID ca sử dụng | Tên ca sử dụng | Chủ sở hữu |
+| ------------- | -------------- | ---------- |
+| UC41 | Xem thông tin phạt | Dung |
+| UC42 | Tính tiền phạt | Dung |
+| UC43 | Ghi nhận thu tiền phạt | Dung |
+| UC44 | Đánh dấu tiền phạt đã thanh toán | Dung |
 
 ---
 
-## 8. Dependencies
+## 6. Kiểm thử tính năng từ bảng phân công
 
-| Dependency | Why It Matters |
-| ---------- | -------------- |
-| FE07 Borrowing Management | Provides due date, return date, borrow detail status, and member borrowing data. |
-| FE06 Inventory / Book Copy Management | Provides copy condition/status for lost or damaged cases. |
-| FE10 Notification Management | Sends overdue/fine notifications when requested. |
-| FE11 User & Role Management | Provides librarian/admin permissions for collection and paid status. |
-| FE12 Reporting & Statistics | Reads fine data for reports. |
-| SQL Server database | Stores fine and borrowing data. |
+Cột chủ sở hữu phản ánh việc phân công lại hiện tại của nhóm.
 
----
-
-## 9. Resolved Questions For Team / Teacher
-
-| ID | Approved Decision | Source | Status |
-| -- | ----------------- | ------ | ------ |
-| Q-FE09-001 | Phase 1 supports overdue fines only; lost/damaged fines are out of scope. | Review packet 2026-06-10 | APPROVED |
-| Q-FE09-002 | Any UNPAID fine with amount greater than 0 blocks new borrowing and renewal. | Review packet 2026-06-10 | APPROVED |
-| Q-FE09-003 | No partial payments in Phase 1. | Review packet 2026-06-10 | APPROVED |
-| Q-FE09-004 | Store collector ID and note with the fine payment record/table if payment tracking exists; otherwise store on fine record for Phase 1. | Review packet 2026-06-10 | APPROVED |
-| Q-FE09-005 | Admin can waive/cancel fines with required reason and audit log. | Review packet 2026-06-10 | APPROVED |
-| Q-FE09-006 | Fine calculation runs on return and may also run manually by librarian/admin; scheduled daily job is future work. | Review packet 2026-06-10 | APPROVED |
-| Q-FE09-007 | Prototype UI may store fine records locally for demo continuity, but final FE09 behavior must use server-side calculation and persistence. | User correction 2026-06-21 | APPROVED |
-| Q-FE09-008 | Phase 1 librarian collection resolves a full offline-paid overdue fine directly; no partial payment or admin confirmation/refusal step is required. | User correction 2026-06-30 | APPROVED |
-| Q-FE09-009 | Librarian fine list defaults to stable FineId ascending order. | User correction 2026-06-30 | APPROVED |
-| Q-FE09-010 | Overdue-day calculation uses the current server business date in `Asia/Ho_Chi_Minh`. | Nhat normalization review 2026-07-17 | APPROVED |
+| ID kiểm thử | Tên kiểm thử | Chủ sở hữu |
+| ----------- | ------------ | ---------- |
+| FT42 | Xem thông tin phạt | Dung |
+| FT43 | Tính tiền phạt | Dung |
+| FT44 | Ghi nhận thu tiền phạt | Dung |
+| FT45 | Đánh dấu tiền phạt đã thanh toán | Dung |
 
 ---
 
-## 10. Notes For Implementation Later
+## 7. Rủi ro chính
 
-- `SPEC.md` v0.4.0 is baseline-approved; implementation must follow the reconciled plan/tasks and remains pending.
-- Use `Asia/Ho_Chi_Minh` server business dates for calculation.
-- Do not trust client-provided amount or overdue-day values.
-- Avoid duplicate active fines for the same borrow detail and reason under a database lock.
-- Record full offline collection only; partial payment is not a Phase 1 state.
-- Keep online payment out of scope.
+- Số tiền phạt có thể sai nếu số ngày quá hạn được tính không chính xác.
+- Bản ghi phạt trùng lặp có thể khiến thành viên bị tính hai lần cho cùng chi tiết mượn.
+- Thu tiền có thể được ghi mà không có ủy quyền phù hợp.
+- Trạng thái chưa thanh toán/đã thanh toán có thể không nhất quán nếu thu tiền và đánh dấu đã thanh toán tách biệt.
+- Ngày hoặc số tiền do client cung cấp có thể cho phép giả mạo.
+- Thiếu dữ liệu phạt có thể khiến FE07 cho phép mượn khi phạt chưa thanh toán lẽ ra phải chặn.
+
+---
+
+## 8. Phụ thuộc
+
+| Phụ thuộc | Lý do quan trọng |
+| ---------- | ---------------- |
+| FE07 Quản lý mượn sách | Cung cấp hạn trả, ngày trả, trạng thái chi tiết mượn và dữ liệu mượn thành viên. |
+| FE06 Quản lý tồn kho / bản sao sách | Cung cấp tình trạng/trạng thái bản sao cho ca mất hoặc hỏng. |
+| FE10 Quản lý thông báo | Gửi thông báo quá hạn/phạt khi được yêu cầu. |
+| FE11 Quản lý người dùng & vai trò | Cung cấp quyền thủ thư/quản trị viên cho thu tiền và trạng thái đã thanh toán. |
+| FE12 Báo cáo & thống kê | Đọc dữ liệu phạt cho báo cáo. |
+| Cơ sở dữ liệu SQL Server | Lưu dữ liệu phạt và mượn. |
+
+---
+
+## 9. Câu hỏi đã được giải quyết cho nhóm / giảng viên
+
+| ID | Quyết định đã phê duyệt | Nguồn | Trạng thái |
+| -- | ----------------------- | ------ | ---------- |
+| Q-FE09-001 | Giai đoạn 1 chỉ hỗ trợ phạt quá hạn; phạt mất/hỏng ngoài phạm vi. | Gói rà soát 2026-06-10 | ĐÃ PHÊ DUYỆT |
+| Q-FE09-002 | Bất kỳ khoản phạt UNPAID nào có số tiền lớn hơn 0 đều chặn mượn mới và gia hạn. | Gói rà soát 2026-06-10 | ĐÃ PHÊ DUYỆT |
+| Q-FE09-003 | Không có thanh toán một phần trong Giai đoạn 1. | Gói rà soát 2026-06-10 | ĐÃ PHÊ DUYỆT |
+| Q-FE09-004 | Lưu ID người thu và ghi chú cùng bản ghi/bảng thanh toán phạt nếu theo dõi thanh toán tồn tại; nếu không thì lưu trên bản ghi phạt trong Giai đoạn 1. | Gói rà soát 2026-06-10 | ĐÃ PHÊ DUYỆT |
+| Q-FE09-005 | Quản trị viên có thể miễn/hủy phạt với lý do và audit log bắt buộc. | Gói rà soát 2026-06-10 | ĐÃ PHÊ DUYỆT |
+| Q-FE09-006 | Tính phạt chạy khi trả và có thể chạy thủ công bởi thủ thư/quản trị viên; job hằng ngày là công việc tương lai. | Gói rà soát 2026-06-10 | ĐÃ PHÊ DUYỆT |
+| Q-FE09-007 | UI prototype có thể lưu bản ghi phạt cục bộ để liên tục demo, nhưng hành vi FE09 cuối phải dùng tính toán và lưu phía máy chủ. | Sửa đổi người dùng 2026-06-21 | ĐÃ PHÊ DUYỆT |
+| Q-FE09-008 | Thu tiền phạt thủ thư Giai đoạn 1 giải quyết trực tiếp phạt quá hạn đã thanh toán ngoại tuyến đầy đủ; không cần bước thanh toán một phần hoặc xác nhận/từ chối quản trị. | Sửa đổi người dùng 2026-06-30 | ĐÃ PHÊ DUYỆT |
+| Q-FE09-009 | Danh sách phạt thủ thư mặc định theo thứ tự FineId tăng dần ổn định. | Sửa đổi người dùng 2026-06-30 | ĐÃ PHÊ DUYỆT |
+| Q-FE09-010 | Tính ngày quá hạn dùng ngày nghiệp vụ máy chủ hiện tại trong `Asia/Ho_Chi_Minh`. | Rà soát chuẩn hóa Nhat 2026-07-17 | ĐÃ PHÊ DUYỆT |
+
+---
+
+## 10. Ghi chú cho việc triển khai sau này
+
+- `SPEC.md` v0.4.0 được phê duyệt làm mốc cơ sở; triển khai phải theo kế hoạch/tác vụ đã đối soát và vẫn đang chờ.
+- Dùng ngày nghiệp vụ máy chủ `Asia/Ho_Chi_Minh` cho tính toán.
+- Không tin số tiền hoặc giá trị ngày quá hạn do client cung cấp.
+- Tránh phạt đang hoạt động trùng lặp cho cùng chi tiết mượn và lý do dưới khóa cơ sở dữ liệu.
+- Chỉ ghi nhận thu ngoại tuyến đầy đủ; thanh toán một phần không phải trạng thái Giai đoạn 1.
+- Giữ thanh toán trực tuyến ngoài phạm vi.
