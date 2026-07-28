@@ -1,68 +1,67 @@
-# FE07/FE08/FE10/FE12 H3 Remediation Validation
+# Xác thực khắc phục H3 FE07/FE08/FE10/FE12
 
-**Date:** 2026-07-23
-**Status:** IN PROGRESS - REPEATED H3 FINDINGS UNDER REMEDIATION
-**Branch:** `codex/fe07-fe08-fe10-fe12-business-rules`
-**Pull request:** [#62](https://github.com/SWP391-LibraryManagement/LibraryManagement/pull/62)
+**Ngày:** 2026-07-23
+**Trạng thái:** ĐANG TIẾN HÀNH - CÁC PHÁT HIỆN H3 LẶP LẠI ĐANG ĐƯỢC KHẮC PHỤC
+**Nhánh:** `codex/fe07-fe08-fe10-fe12-business-rules`
+**PR:** [#62](https://github.com/SWP391-LibraryManagement/LibraryManagement/pull/62)
 
-## 1. Approved Scope
+## 1. Phạm vi đã phê duyệt
 
-The user approved the H3 remediation addendum in
+Người dùng đã phê duyệt addendum khắc phục H3 trong
 `docs/superpowers/specs/2026-07-23-fe07-fe08-fe10-fe12-final-verification-remediation-design.md`.
-The remediation is limited to:
+Việc khắc phục được giới hạn ở:
 
-1. preserving safe FE08 notification-audit warnings when `expire-holds`
-   promotes reservations;
-2. matching the FE12 in-memory user-report search to existing parameterized SQL
-   `LIKE` semantics;
-3. correcting the Azure migration-verification boundary and stale task-gate
-   evidence;
-4. completing SQL `LIKE` closing-bracket parity, multi-warning regression
-   proof, the singular FE08 warning OpenAPI contract, and post-H2 governance
-   evidence after repeated H3.
+1. giữ các cảnh báo notification-audit FE08 an toàn khi `expire-holds` nâng cấp
+   reservation;
+2. khớp việc tìm kiếm user-report trong bộ nhớ FE12 với ngữ nghĩa SQL `LIKE` có
+   tham số hoá hiện có;
+3. sửa ranh giới xác minh migration Azure và bằng chứng task-gate cũ;
+4. hoàn tất parity dấu ngoặc đóng SQL `LIKE`, bằng chứng regression nhiều cảnh
+   báo, hợp đồng OpenAPI cảnh báo FE08 số ít và bằng chứng quản trị sau H2
+   sau H3 lặp lại.
 
-No new role, permission, database column/table, dependency, notification retry
-worker, report field, or frontend workflow is authorized.
+Không vai trò, quyền, cột/bảng database, dependency, worker retry notification,
+trường báo cáo hay workflow frontend mới nào được cho phép.
 
-## 2. Prior Reviewed Evidence
+## 2. Bằng chứng đã được rà soát trước đó
 
-| Evidence | Result |
+| Bằng chứng | Kết quả |
 | --- | --- |
-| Initial H2 and H2 addendum | Passed |
-| Reviewed branch head before H3 remediation | `97aca62667d676fb74a8833b46c27a8f67fefbad` |
-| PR #62 CI run | `30014066260` - `success` |
-| First H3 review | Returned bounded FE08, FE12, and deployment/governance findings |
-| Fresh H2 for first H3 remediation | Passed |
-| H2-reviewed remediation head | `b931e005e50dc9c0ec9c177f2874f88a1df943b0` |
-| Updated PR #62 CI run | `30019439505` - `success` for `b931e005e50dc9c0ec9c177f2874f88a1df943b0` |
-| PR state after updated CI | Open, Ready; `MERGEABLE` / `CLEAN` |
-| Repeated H3 review | Returned bounded closing-bracket parity, multi-warning regression, singular OpenAPI, and stale-evidence findings |
-| Staging product SHA | `9b02c7eb0078c317c3584472c1666cd01159e2c7` |
-| Staging deployment run | `30012925318` - `success` |
+| H2 ban đầu và addendum H2 | Đạt |
+| Head nhánh đã review trước khắc phục H3 | `97aca62667d676fb74a8833b46c27a8f67fefbad` |
+| Lần chạy CI PR #62 | `30014066260` - `success` |
+| Review H3 đầu tiên | Trả về các phát hiện FE08, FE12 và triển khai/quản trị được khoanh vùng |
+| H2 mới cho đợt khắc phục H3 đầu tiên | Đạt |
+| Head khắc phục đã H2 review | `b931e005e50dc9c0ec9c177f2874f88a1df943b0` |
+| Lần chạy CI PR #62 đã cập nhật | `30019439505` - `success` cho `b931e005e50dc9c0ec9c177f2874f88a1df943b0` |
+| Trạng thái PR sau CI đã cập nhật | Mở, sẵn sàng; `MERGEABLE` / `CLEAN` |
+| Review H3 lặp lại | Trả về các phát hiện parity dấu ngoặc đóng, regression nhiều cảnh báo, OpenAPI số ít và bằng chứng cũ được khoanh vùng |
+| SHA product staging | `9b02c7eb0078c317c3584472c1666cd01159e2c7` |
+| Lần chạy triển khai staging | `30012925318` - `success` |
 
-The FE10 `2026-07-23-fe10-processing-status.sql` migration was proven
-idempotent by running it twice on a named disposable local SQL Server database,
-then applied once to Azure staging under the reviewed operator procedure. This
-remediation does not replay that migration.
+Migration FE10 `2026-07-23-fe10-processing-status.sql` được chứng minh
+idempotent bằng cách chạy hai lần trên database SQL Server cục bộ tạm thời có
+tên, sau đó áp dụng một lần lên Azure staging theo quy trình operator đã review.
+Đợt khắc phục này không chạy lại migration đó.
 
-## 3. Root-Cause Evidence
+## 3. Bằng chứng nguyên nhân gốc
 
-### 3.1 FE08 expiration promotion
+### 3.1 Nâng cấp reservation hết hạn FE08
 
-`holdReservation` attaches `notificationWarning` as a non-enumerable internal
-property. `processQueue` copied that property into its singular top-level
-response, but `expireHolds` pushed only the promoted reservation and returned
-before copying the warning. JSON serialization therefore preserved the
-committed promotion while silently losing the required warning.
+`holdReservation` gắn `notificationWarning` dưới dạng thuộc tính nội bộ không
+enumerable. `processQueue` sao chép thuộc tính đó vào phản hồi top-level số ít,
+nhưng `expireHolds` chỉ push reservation đã nâng cấp và trả về trước khi sao
+chép cảnh báo. Do đó, tuần tự hoá JSON giữ lại việc nâng cấp đã commit nhưng âm
+thầm làm mất cảnh báo bắt buộc.
 
-Baseline before the new regression:
+Mốc cơ sở trước regression mới:
 
 ```text
 Test Suites: 3 passed, 3 total
 Tests:       61 passed, 61 total
 ```
 
-RED after adding service and route coverage:
+RED sau khi thêm coverage service và route:
 
 ```text
 Test Suites: 2 failed, 2 total
@@ -70,33 +69,33 @@ Tests:       2 failed, 48 passed, 50 total
 Expected notificationWarnings; received undefined.
 ```
 
-GREEN after the bounded service correction:
+GREEN sau bản sửa service được khoanh vùng:
 
 ```text
 Test Suites: 2 passed, 2 total
 Tests:       50 passed, 50 total
 ```
 
-Focused FE08 verification:
+Xác minh FE08 tập trung:
 
 ```text
 Backend:  Test Suites 3 passed; Tests 59 passed.
 Frontend: Tests 212 passed; 0 failed.
 ```
 
-The response now adds optional top-level `notificationWarnings[]`; each item is
-exactly `reservationId`, `copyId`, safe `code`, and safe `message`. The existing
-singular `processQueue.notificationWarning` and promoted reservation DTO remain
-unchanged.
+Phản hồi nay thêm `notificationWarnings[]` top-level tuỳ chọn; mỗi mục đúng là
+`reservationId`, `copyId`, `code` an toàn và `message` an toàn.
+`processQueue.notificationWarning` số ít hiện có và DTO reservation đã nâng cấp
+không đổi.
 
-### 3.2 FE12 SQL `LIKE` parity
+### 3.2 Parity SQL `LIKE` FE12
 
-Production already binds `%${filters.q}%` through `sql.NVarChar` and evaluates
-it with SQL `LIKE`. The in-memory user-report repository instead lowercased the
-query and used literal `String.includes`, so wildcard inputs behaved
-differently in tests.
+Production đã bind `%${filters.q}%` qua `sql.NVarChar` và đánh giá bằng SQL
+`LIKE`. Repository user-report trong bộ nhớ thay vào đó chuyển query sang chữ
+thường và dùng `String.includes` literal, vì vậy input wildcard hành xử khác
+trong kiểm thử.
 
-RED after adding wildcard cases:
+RED sau khi thêm các trường hợp wildcard:
 
 ```text
 Test Suites: 1 failed, 1 total
@@ -104,40 +103,40 @@ Tests:       3 failed, 15 passed, 18 total
 Failing cases: %MEMBER%, L_BRARIAN, [1-2].
 ```
 
-GREEN after adding the test-only matcher:
+GREEN sau khi thêm matcher chỉ dùng cho kiểm thử:
 
 ```text
 Test Suites: 1 passed, 1 total
 Tests:       18 passed, 18 total
 ```
 
-Focused FE12 verification:
+Xác minh FE12 tập trung:
 
 ```text
 Test Suites: 3 passed, 3 total
 Tests:       46 passed, 46 total
 ```
 
-Production SQL, query parameters, searchable fields, API payloads, aggregation,
-and pagination are unchanged.
+SQL production, tham số query, trường có thể tìm kiếm, payload API, aggregation
+và pagination không đổi.
 
-### 3.3 Repeated H3 completeness findings
+### 3.3 Phát hiện về tính đầy đủ H3 lặp lại
 
-The repeated Standards/Spec H3 reviewed the exact ready PR after CI run
-`30019439505`. It confirmed the implemented FE08 expiration-warning
-propagation, FE12 baseline wildcard cases, Azure procedure, virtual merge, and
-security boundaries, then found four bounded completeness gaps:
+H3 Standards/Spec lặp lại đã review PR chính xác đang sẵn sàng sau lần chạy CI
+`30019439505`. Nó xác nhận propagation cảnh báo hết hạn FE08 đã triển khai, các
+trường hợp wildcard baseline FE12, quy trình Azure, merge ảo và các ranh giới
+bảo mật, rồi phát hiện bốn khoảng trống về tính đầy đủ được khoanh vùng:
 
-1. the test-only SQL `LIKE` compiler treated the first `]` as a class
-   terminator and therefore diverged for `[]]` and `[^]]`;
-2. the service and route regressions proved only one expiration promotion
-   warning rather than every warning in a multi-copy batch;
-3. OpenAPI described `expire-holds.notificationWarnings[]` but not the existing
-   singular `process-queue.notificationWarning`;
-4. the validation/task evidence still described the branch as uncommitted and
-   awaiting the already completed H2/CI cycle.
+1. compiler SQL `LIKE` chỉ dùng cho kiểm thử coi `]` đầu tiên là ký tự kết thúc
+   class, vì vậy sai khác với `[]]` và `[^]]`;
+2. regression service và route chỉ chứng minh một cảnh báo nâng cấp hết hạn,
+   thay vì mọi cảnh báo trong batch nhiều copy;
+3. OpenAPI mô tả `expire-holds.notificationWarnings[]` nhưng không mô tả
+   `process-queue.notificationWarning` số ít hiện có;
+4. bằng chứng validation/task vẫn mô tả nhánh là chưa commit và đang chờ chu kỳ
+   H2/CI đã hoàn tất.
 
-Round-two SQL parity RED:
+RED parity SQL vòng hai:
 
 ```text
 Test Suites: 1 failed, 1 total
@@ -145,162 +144,161 @@ Tests:       2 failed, 18 passed, 20 total
 Failing cases: [^]] and []].
 ```
 
-Round-two SQL parity GREEN:
+GREEN parity SQL vòng hai:
 
 ```text
 Test Suites: 3 passed, 3 total
 Tests:       48 passed, 48 total
 ```
 
-The multi-warning FE08 service/route regressions pass against the existing
-production loop: 3 suites and 59 tests passed. No FE08 production service
-change was required. The singular warning OpenAPI response also parses
-successfully.
+Các regression service/route FE08 nhiều cảnh báo đạt với vòng lặp production
+hiện có: 3 suite và 59 kiểm thử đạt. Không cần thay đổi service production
+FE08. Phản hồi OpenAPI cảnh báo số ít cũng parse thành công.
 
-## 4. Azure Boundary
+## 4. Ranh giới Azure
 
-The staging guide now requires:
+Hướng dẫn staging nay yêu cầu:
 
-1. two executions of every candidate migration only on a named disposable
-   local database;
-2. one reviewed execution on the intended staging database;
-3. read-only target, schema, and `CK_Notifications_Status` constraint checks;
-4. immediate removal of the exact temporary operator firewall rule.
+1. chỉ chạy hai lần mọi migration ứng viên trên một database cục bộ tạm thời có
+   tên;
+2. chạy một lần đã review trên database staging dự kiến;
+3. kiểm tra chỉ đọc target, schema và constraint `CK_Notifications_Status`;
+4. xoá ngay rule firewall operator tạm thời chính xác.
 
-Post-merge staging acceptance for this remediation is read-only schema plus
-application smoke. It must not rerun the FE10 migration merely to reconfirm
-idempotence.
+Chấp nhận staging sau merge cho đợt khắc phục này là schema chỉ đọc cộng với
+smoke ứng dụng. Không được chạy lại migration FE10 chỉ để xác nhận lại tính
+idempotent.
 
-## 5. Current Integration State
+## 5. Trạng thái tích hợp hiện tại
 
-Read-only refresh on 2026-07-23:
+Làm mới chỉ đọc ngày 2026-07-23:
 
-| Item | Current value |
+| Hạng mục | Giá trị hiện tại |
 | --- | --- |
-| H2-reviewed remediation HEAD | `b931e005e50dc9c0ec9c177f2874f88a1df943b0` |
-| Latest `origin/main` | `cfe8954bc49bbcdd46d8f656f9d0d665cc388dd4` |
-| Virtual committed-head merge tree | `e22a848b1f806a4988092581e78e3e76501805c6` |
-| PR state | Open, Ready |
-| GitHub merge result | `MERGEABLE` / `CLEAN` |
+| HEAD khắc phục đã H2 review | `b931e005e50dc9c0ec9c177f2874f88a1df943b0` |
+| `origin/main` mới nhất | `cfe8954bc49bbcdd46d8f656f9d0d665cc388dd4` |
+| Cây merge head đã commit ảo | `e22a848b1f806a4988092581e78e3e76501805c6` |
+| Trạng thái PR | Mở, sẵn sàng |
+| Kết quả merge GitHub | `MERGEABLE` / `CLEAN` |
 
-The latest `main` includes a later FE11 Admin Console E2E contract commit.
-Repeated H3 must review the exact current merge ref, including independent
-OpenAPI changes, rather than relying on the earlier PR CI result.
+`main` mới nhất bao gồm một commit hợp đồng E2E Admin Console FE11 xuất hiện
+sau. H3 lặp lại phải review merge ref hiện tại chính xác, bao gồm các thay đổi
+OpenAPI độc lập, thay vì dựa vào kết quả CI PR trước đó.
 
-## 6. Security And Scope Review
+## 6. Rà soát bảo mật và phạm vi
 
-- FE08 warning entries contain no member identity, recipient address, provider
-  message, rendered notification content, error stack, credential, or secret.
-- Existing staff-visible promoted reservation DTOs are not widened or
-  narrowed.
-- FE12 production SQL remains parameterized; the new pattern compiler exists
-  only in the in-memory test repository and receives the already validated
-  maximum 200-character query.
-- Azure documentation contains no password, connection string, token, operator
-  IP, or firewall value.
-- The user-owned untracked
-  `output/audit-librarian-2026-07-22/` directory remains out of scope and must
-  not be staged.
+- Các mục cảnh báo FE08 không chứa danh tính member, địa chỉ recipient, message
+  provider, nội dung notification đã render, error stack, credential hay secret.
+- DTO reservation đã nâng cấp hiện có mà nhân viên thấy được không bị mở rộng
+  hoặc thu hẹp.
+- SQL production FE12 vẫn có tham số; compiler pattern mới chỉ tồn tại trong
+  repository kiểm thử trong bộ nhớ và nhận query tối đa 200 ký tự đã được xác
+  thực.
+- Tài liệu Azure không chứa password, connection string, token, IP operator hay
+  giá trị firewall.
+- Thư mục untracked thuộc người dùng
+  `output/audit-librarian-2026-07-22/` vẫn ngoài phạm vi và không được stage.
 
-## 7. Gate Snapshot At H2 Freeze
+## 7. Ảnh chụp cổng tại thời điểm đóng băng H2
 
-This checklist records the frozen pre-commit candidate. Post-H2 commit, push,
-PR-CI, and H3 outcomes are verified from the exact live GitHub head rather than
-being predicted inside the commit that creates that head.
+Checklist này ghi nhận ứng viên trước commit đã đóng băng. Kết quả commit, push,
+PR-CI và H3 sau H2 được xác minh từ head GitHub sống chính xác, thay vì được dự
+đoán bên trong commit tạo head đó.
 
-- [x] Deployment utility, traceability, and diff-hygiene checks pass.
-- [x] Full backend tests, system integration, coverage, audits, frontend
-      lint/tests/build, Chromium E2E, and backend import check pass.
-- [x] Final current-main compatibility and security/diff review pass.
-- [x] Fresh H2 approved the first H3 remediation diff.
-- [x] Only the H2-reviewed files were committed and pushed as `b931e00`.
-- [x] Updated PR checks passed in run `30019439505`.
-- [x] Repeated Standards and Spec H3 completed and returned the bounded
-      round-two findings recorded above.
-- [x] Fresh H2 approves the complete uncommitted round-two remediation diff.
-- [ ] Only the new H2-reviewed round-two files are committed and pushed.
-- [ ] Updated PR checks pass for the new reviewed head.
-- [ ] Repeated Standards and Spec H3 pass before merge.
-- [ ] Exact post-merge `main` CI, automatic staging deployment, and read-only
-      staging verification pass.
+- [x] Kiểm tra tiện ích triển khai, truy vết và diff hygiene đạt.
+- [x] Kiểm thử backend đầy đủ, tích hợp hệ thống, coverage, audit,
+      lint/kiểm thử/build frontend, Chromium E2E và kiểm tra import backend đạt.
+- [x] Rà soát tương thích main hiện tại và bảo mật/diff cuối cùng đạt.
+- [x] H2 mới đã phê duyệt diff khắc phục H3 đầu tiên.
+- [x] Chỉ các tệp đã H2 review được commit và push với `b931e00`.
+- [x] Kiểm tra PR đã cập nhật đạt trong lần chạy `30019439505`.
+- [x] H3 Standards và Spec lặp lại hoàn tất và trả về các phát hiện vòng hai
+      được khoanh vùng ghi ở trên.
+- [x] H2 mới phê duyệt diff khắc phục vòng hai đầy đủ chưa commit.
+- [ ] Chỉ các tệp vòng hai mới đã H2 review được commit và push.
+- [ ] Kiểm tra PR đã cập nhật đạt cho head mới đã review.
+- [ ] H3 Standards và Spec lặp lại đạt trước merge.
+- [ ] CI `main` chính xác sau merge, triển khai staging tự động và xác minh
+      staging chỉ đọc đạt.
 
-## 8. First H3 Remediation Pre-H2 Automated Evidence
+## 8. Bằng chứng tự động trước H2 của đợt khắc phục H3 đầu tiên
 
-All commands below ran on the final uncommitted remediation state unless the
-row is explicitly frontend-only; no frontend source changed after its recorded
-lint/test/build run.
+Mọi lệnh bên dưới chạy trên trạng thái khắc phục cuối cùng chưa commit, trừ khi
+dòng ghi rõ chỉ frontend; không source frontend nào thay đổi sau lần lint/test/
+build đã ghi nhận của nó.
 
-| Check | Result |
+| Kiểm tra | Kết quả |
 | --- | --- |
-| Focused FE08/FE12 backend | 6 suites, 105 tests passed |
-| Full backend | 61 suites, 1,011 tests passed |
-| System integration | 1 suite, 10 tests passed |
-| Backend coverage | 91.95% statements, 81.27% branches, 97.29% functions, 91.86% lines |
-| Frontend | lint passed; 212 tests passed; production build passed |
-| Root/backend/frontend audit | 0 vulnerabilities at `high` threshold |
-| Chromium E2E | 4/4 passed |
-| Deployment utilities | 8/8 passed |
-| Traceability enforcement | passed; FE08 28/29 and FE12 11/11 FR tags |
-| OpenAPI YAML parse | passed |
-| Backend import check | passed |
-| Diff hygiene | `git diff --check` passed |
-| Latest-main patch application | passed against `origin/main` `cfe8954bc49bbcdd46d8f656f9d0d665cc388dd4` |
+| Backend FE08/FE12 tập trung | 6 suite, 105 kiểm thử đạt |
+| Backend đầy đủ | 61 suite, 1,011 kiểm thử đạt |
+| Tích hợp hệ thống | 1 suite, 10 kiểm thử đạt |
+| Độ bao phủ backend | 91.95% câu lệnh, 81.27% nhánh, 97.29% hàm, 91.86% dòng |
+| Frontend | lint đạt; 212 kiểm thử đạt; build production đạt |
+| Audit root/backend/frontend | 0 lỗ hổng tại ngưỡng `high` |
+| Chromium E2E | 4/4 đạt |
+| Tiện ích triển khai | 8/8 đạt |
+| Ép truy vết | đạt; thẻ FR FE08 28/29 và FE12 11/11 |
+| Parse YAML OpenAPI | đạt |
+| Kiểm tra import backend | đạt |
+| Diff hygiene | `git diff --check` đạt |
+| Áp dụng patch main mới nhất | đạt với `origin/main` `cfe8954bc49bbcdd46d8f656f9d0d665cc388dd4` |
 
-The later repeated H3 independently reviewed the ready PR and returned the
-round-two findings in Section 3.3. This was the pre-H2 evidence state before
-the approval recorded in Section 10.
+H3 lặp lại sau đó đã review độc lập PR sẵn sàng và trả về các phát hiện vòng hai
+ở Phần 3.3. Đây là trạng thái bằng chứng trước H2 trước lần phê duyệt được ghi
+ở Phần 10.
 
-## 9. Round-Two Remediation Pre-H2 Automated Evidence
+## 9. Bằng chứng tự động trước H2 của đợt khắc phục vòng hai
 
-All checks below ran against the complete round-two code and contract diff.
-The final governance-only evidence update did not change executable source,
-tests, OpenAPI, dependencies, or deployment utilities.
+Mọi kiểm tra bên dưới chạy với code và contract diff vòng hai đầy đủ. Bản cập
+nhật bằng chứng cuối chỉ về quản trị không thay đổi source thực thi, kiểm thử,
+OpenAPI, dependency hay tiện ích triển khai.
 
-| Check | Result |
+| Kiểm tra | Kết quả |
 | --- | --- |
-| Focused FE08/FE12 backend | 6 suites, 107 tests passed |
-| Full backend | 61 suites, 1,013 tests passed |
-| System integration | 1 suite, 10 tests passed |
-| Backend coverage | 91.95% statements (914/994), 81.27% branches (699/860), 97.29% functions (144/148), 91.86% lines (904/984) |
-| Frontend | lint passed; 212 tests passed; production build passed |
-| Root/backend/frontend audit | 0 vulnerabilities at `high` threshold |
-| Chromium E2E | 4/4 passed |
-| Deployment utilities | 8/8 passed |
-| Traceability enforcement | passed; FE08 28/29 and FE12 11/11 FR tags; no feature below 70% |
-| OpenAPI YAML parse | passed |
-| Backend import check | passed |
-| Diff hygiene | `git diff --check` passed |
-| Production-boundary review | no round-two diff in `reservationService.js` or `reportRepository.js` |
-| Latest-main committed-head merge | clean tree `e22a848b1f806a4988092581e78e3e76501805c6` |
-| Latest-main merge plus pre-final-evidence round-two patch | clean tree `9fecfa6dfd5e99dd7476c731163f3be2a7c38fa2` |
+| Backend FE08/FE12 tập trung | 6 suite, 107 kiểm thử đạt |
+| Backend đầy đủ | 61 suite, 1,013 kiểm thử đạt |
+| Tích hợp hệ thống | 1 suite, 10 kiểm thử đạt |
+| Độ bao phủ backend | 91.95% câu lệnh (914/994), 81.27% nhánh (699/860), 97.29% hàm (144/148), 91.86% dòng (904/984) |
+| Frontend | lint đạt; 212 kiểm thử đạt; build production đạt |
+| Audit root/backend/frontend | 0 lỗ hổng tại ngưỡng `high` |
+| Chromium E2E | 4/4 đạt |
+| Tiện ích triển khai | 8/8 đạt |
+| Ép truy vết | đạt; thẻ FR FE08 28/29 và FE12 11/11; không feature nào dưới 70% |
+| Parse YAML OpenAPI | đạt |
+| Kiểm tra import backend | đạt |
+| Diff hygiene | `git diff --check` đạt |
+| Rà soát ranh giới production | không có diff vòng hai trong `reservationService.js` hoặc `reportRepository.js` |
+| Merge head đã commit của main mới nhất | cây sạch `e22a848b1f806a4988092581e78e3e76501805c6` |
+| Merge main mới nhất cộng patch vòng hai trước bằng chứng cuối | cây sạch `9fecfa6dfd5e99dd7476c731163f3be2a7c38fa2` |
 
-The round-two remediation changes only the approved test helper, regressions,
-OpenAPI contract, and governance evidence. The user-owned untracked audit
-directory remains untouched. This section freezes the complete uncommitted
-candidate that was presented for fresh H2; no Azure SQL mutation or Azure
-staging deployment occurred during validation.
+Đợt khắc phục vòng hai chỉ thay đổi test helper, regression, contract OpenAPI
+và bằng chứng quản trị đã được phê duyệt. Thư mục audit untracked thuộc người
+dùng vẫn không bị chạm. Phần này đóng băng ứng viên đầy đủ chưa commit được trình
+bày để H2 mới review; không mutation Azure SQL hay triển khai Azure staging nào
+xảy ra khi xác thực.
 
-## 10. Round-Two Local H2 Approval Addendum
+## 10. Addendum phê duyệt H2 cục bộ vòng hai
 
-**Date:** 2026-07-23
+**Ngày:** 2026-07-23
 
-**Decision:** PASS - REVIEWED COMMIT SET AND BRANCH PUSH AUTHORIZED
+**Quyết định:** ĐẠT - ĐƯỢC PHÉP COMMIT TẬP ĐÃ REVIEW VÀ PUSH NHÁNH
 
-- L1 automated: focused FE08/FE12, full backend, system integration, coverage,
-  frontend lint/tests/build, audits, Chromium E2E, deployment utilities,
-  traceability, OpenAPI parsing, backend import, and diff hygiene passed with
-  the results recorded in Section 9.
-- L2 spec: the diff is limited to the approved repeated-H3 findings for SQL
-  `LIKE` closing-bracket parity, FE08 multi-warning proof, the singular warning
-  OpenAPI contract, and truthful governance evidence.
-- L3 constitution/safety: production FE08 service and FE12 SQL repository are
-  unchanged; there is no role, permission, schema, dependency, frontend, Azure,
-  secret, credential, or real-PII expansion.
-- L4 acceptance: the service and serialized route regressions prove two ordered
-  safe warnings, and the report parity regressions prove `[]]` and `[^]]`.
+- L1 tự động: FE08/FE12 tập trung, backend đầy đủ, tích hợp hệ thống, coverage,
+  lint/kiểm thử/build frontend, audit, Chromium E2E, tiện ích triển khai,
+  truy vết, parse OpenAPI, import backend và diff hygiene đạt với các kết quả
+  ghi ở Phần 9.
+- L2 spec: diff giới hạn ở các phát hiện H3 lặp lại đã phê duyệt về parity dấu
+  ngoặc đóng SQL `LIKE`, bằng chứng FE08 nhiều cảnh báo, contract OpenAPI cảnh
+  báo số ít và bằng chứng quản trị trung thực.
+- L3 constitution/an toàn: service FE08 production và repository SQL FE12
+  không đổi; không mở rộng vai trò, quyền, schema, dependency, frontend, Azure,
+  secret, credential hay PII thực.
+- L4 chấp nhận: các regression service và route tuần tự hoá chứng minh hai cảnh
+  báo an toàn có thứ tự, còn regression parity report chứng minh `[]]` và
+  `[^]]`.
 
-The user explicitly approved H2 after reviewing the frozen candidate whose
-latest-main combined tree was
-`2bcb4b89f3a445427189caa9526cf5dae5c17126`. This mechanical approval addendum
-does not expand the reviewed behavior or file scope. It authorizes commit and
-push to PR #62; updated PR checks and repeated H3 remain mandatory before merge.
+Người dùng đã phê duyệt H2 rõ ràng sau khi review ứng viên đóng băng có cây kết
+hợp main mới nhất là `2bcb4b89f3a445427189caa9526cf5dae5c17126`. Addendum phê
+duyệt cơ học này không mở rộng hành vi hoặc phạm vi tệp đã review. Nó cho phép
+commit và push lên PR #62; kiểm tra PR đã cập nhật và H3 lặp lại vẫn bắt buộc
+trước merge.
