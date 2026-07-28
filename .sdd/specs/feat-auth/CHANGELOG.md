@@ -1,313 +1,311 @@
-# CHANGELOG.md - FE02 Authentication
+# CHANGELOG.md - Xác thực FE02
 
-## 2026-07-28 - Specify registration identity availability checks
+## 2026-07-28 - Đặc tả kiểm tra khả dụng của định danh đăng ký
 
-- Require both username and email availability before creating verification state or requesting OTP delivery.
-- Keep duplicate feedback on the registration form and retain database uniqueness as the concurrent-registration authority.
-- Reuse the existing registration endpoint; no separate availability endpoint is introduced.
-- Focused backend passes 62/62, frontend passes 242/242, and frontend lint/build plus traceability pass.
+- Yêu cầu cả username và email đều khả dụng trước khi tạo trạng thái xác minh hoặc yêu cầu gửi OTP.
+- Giữ phản hồi trùng lặp trên biểu mẫu đăng ký và duy trì ràng buộc duy nhất của cơ sở dữ liệu làm nguồn có thẩm quyền cho đăng ký đồng thời.
+- Tái sử dụng endpoint đăng ký hiện có; không giới thiệu endpoint kiểm tra khả dụng riêng.
+- Backend tập trung vượt qua 62/62, frontend vượt qua 242/242, đồng thời lint/build frontend và traceability đều vượt qua.
 
-## 2026-07-28 - Disable login submission during timed account lock
+## 2026-07-28 - Vô hiệu hóa submission đăng nhập trong thời gian khóa tài khoản
 
-- Return `ACCOUNT_LOCKED` with `retryAfterSeconds` on the fifth failed password attempt and subsequent attempts during the timed lock.
-- Disable the frontend login button for the server-provided duration and automatically enable it when the lock expires.
-- Added focused backend and frontend regressions; FE02 route/repository tests pass 60/60, frontend tests pass 235/235, and frontend lint/build pass.
+- Trả về `ACCOUNT_LOCKED` cùng `retryAfterSeconds` ở lần nhập sai mật khẩu thứ năm và các lần thử tiếp theo trong thời gian khóa.
+- Vô hiệu hóa nút đăng nhập frontend trong khoảng thời gian server cung cấp và tự động bật lại khi hết thời gian khóa.
+- Đã thêm kiểm thử hồi quy backend và frontend tập trung; kiểm thử route/repository FE02 vượt qua 60/60, kiểm thử frontend vượt qua 235/235 và lint/build frontend vượt qua.
 
-## 2026-07-28 - Reconcile staging change-password OTP token constraint
+## 2026-07-28 - Đối soát ràng buộc token OTP thay đổi mật khẩu trên staging
 
-- Added fail-closed startup readiness for deployed `CK_AuthTokens_TokenType` compatibility with `CHANGE_PASSWORD_OTP`.
-- Packaged and applied the reviewed idempotent constraint migration only when the deployed schema is stale.
-- Aligned SPEC v0.6.17, PLAN, TASKS, TEST_PLAN v0.3.15, deployment guidance, and focused regressions.
+- Đã bổ sung cơ chế sẵn sàng fail closed khi khởi động cho khả năng tương thích của `CK_AuthTokens_TokenType` đã triển khai với `CHANGE_PASSWORD_OTP`.
+- Đóng gói và áp dụng migration ràng buộc idempotent đã rà soát chỉ khi schema đã triển khai bị cũ.
+- Đồng bộ SPEC v0.6.17, PLAN, TASKS, TEST_PLAN v0.3.15, hướng dẫn triển khai và kiểm thử hồi quy tập trung.
 
-## 2026-07-28 - Fail safely when change-password OTP delivery fails
+## 2026-07-28 - Thất bại an toàn khi không gửi được OTP thay đổi mật khẩu
 
-- Stopped `/change-password/request-otp` from claiming success when SMTP is unavailable or the email provider fails.
-- Return the safe `EMAIL_DELIVERY_FAILED` response and write the request audit only after the direct FE02 email adapter confirms delivery.
-- Added a focused regression; auth routes pass 50/50, profile frontend passes 6/6, and FE02 traceability passes 27/27.
+- Ngăn `/change-password/request-otp` tuyên bố thành công khi SMTP không khả dụng hoặc nhà cung cấp email gặp lỗi.
+- Trả về response `EMAIL_DELIVERY_FAILED` an toàn và chỉ ghi audit request sau khi adapter email FE02 trực tiếp xác nhận gửi thành công.
+- Đã thêm một kiểm thử hồi quy tập trung; route xác thực vượt qua 50/50, frontend hồ sơ vượt qua 6/6 và traceability FE02 vượt qua 27/27.
 
-## 2026-07-27 - Align deployed verification OTP guidance
+## 2026-07-27 - Đồng bộ hướng dẫn về OTP xác minh đã triển khai
 
-- Corrected the registration verification screen from the stale 24-hour label to the canonical
-  15-minute verification OTP lifetime.
-- Clarified that staging requires configured App Service SMTP settings; deploying application code
-  does not provision or replace email-provider credentials.
+- Sửa nhãn 24 giờ đã cũ trên màn hình xác minh đăng ký thành thời hạn OTP xác minh chuẩn 15 phút.
+- Làm rõ staging yêu cầu cấu hình SMTP của App Service; triển khai mã ứng dụng không cung cấp hoặc thay thế thông tin xác thực của nhà cung cấp email.
 
-## 2026-07-27 - Link repeatable FE02 performance evidence
+## 2026-07-27 - Liên kết bằng chứng hiệu năng FE02 có thể lặp lại
 
-- Closed FE02-T048 using the existing deterministic performance harness: valid login p95 `61.46 ms` against `< 1,000 ms`, and `/api/auth/me` p95 `1.52 ms` against `< 50 ms`, with bcrypt cost 10.
-- Recorded the 30/50-sample environment, 3/3 harness test result, and explicit SQL/network limitations in SPEC, PLAN, TASKS, TEST_PLAN v0.3.14, and the performance report.
-- FE02 remains `PARTIAL` only for FE02-T049: dedicated FE02-T043 H3 linkage and human reconciliation approval.
+- Đóng FE02-T048 bằng performance harness xác định hiện có: p95 đăng nhập hợp lệ `61.46 ms` so với `< 1,000 ms` và p95 `/api/auth/me` `1.52 ms` so với `< 50 ms`, với chi phí bcrypt 10.
+- Ghi nhận môi trường 30/50 mẫu, kết quả kiểm thử harness 3/3 và các giới hạn SQL/mạng rõ ràng trong SPEC, PLAN, TASKS, TEST_PLAN v0.3.14 và báo cáo hiệu năng.
+- FE02 duy trì `PARTIAL` chỉ do FE02-T049: liên kết H3 riêng cho FE02-T043 và phê duyệt đối soát thủ công.
 
-## 2026-07-27 - Close concurrent registration and login-state races
+## 2026-07-27 - Đóng tranh chấp đăng ký đồng thời và trạng thái đăng nhập
 
-- Mapped concurrent unique-email registration conflicts to the approved `409 EMAIL_ALREADY_REGISTERED` response.
-- Guarded failed-login, successful-login/session, and expired-lock writes against newer persisted account states.
-- Added route/repository regressions and aligned SPEC v0.6.16, PLAN, TASKS, TEST_PLAN v0.3.13, and the shared API contract; focused FE02 tests pass 66/66, traceability passes 27/27, and full backend passes 60/61 suites (1048/1050 tests) with only the known `dbConfig.test.js` DNS/mock-isolation failures.
+- Ánh xạ conflict đăng ký unique-email đồng thời sang response `409 EMAIL_ALREADY_REGISTERED` đã phê duyệt.
+- Bảo vệ các thao tác ghi khi đăng nhập thất bại, đăng nhập/tạo phiên thành công và khóa hết hạn trước trạng thái tài khoản mới hơn đã được lưu.
+- Thêm kiểm thử hồi quy route/repository và đồng bộ SPEC v0.6.16, PLAN, TASKS, TEST_PLAN v0.3.13 cùng hợp đồng API dùng chung; kiểm thử FE02 tập trung vượt qua 66/66, traceability vượt qua 27/27 và toàn bộ backend vượt qua 60/61 suite (1048/1050 kiểm thử), chỉ còn các lỗi tách biệt DNS/mock đã biết trong `dbConfig.test.js`.
 
-## 2026-07-27 - Preserve deactivation during email verification
+## 2026-07-27 - Giữ trạng thái hủy kích hoạt trong quá trình xác minh email
 
-- Prevented OTP and legacy verification credentials from reactivating FE11-deactivated or otherwise ineligible accounts.
-- Guarded the persisted activation update against a concurrent deactivation and made activation, credential consumption, and required verification audit atomic.
-- Added focused route/repository regressions and aligned SPEC v0.6.15, PLAN, TASKS, and TEST_PLAN v0.3.12.
-- Focused FE02 tests pass 61/61 and traceability remains 27/27; the full backend rerun remains blocked only by the two known `dbConfig.test.js` DNS/mock-isolation assertions.
+- Ngăn thông tin xác thực OTP và xác minh cũ kích hoạt lại tài khoản bị FE11 hủy kích hoạt hoặc không đủ điều kiện.
+- Bảo vệ cập nhật kích hoạt đã lưu trước tranh chấp hủy kích hoạt đồng thời và làm cho việc kích hoạt, tiêu thụ thông tin xác thực cùng audit xác minh bắt buộc trở thành nguyên tử.
+- Thêm kiểm thử hồi quy route/repository tập trung và đồng bộ SPEC v0.6.15, PLAN, TASKS và TEST_PLAN v0.3.12.
+- Kiểm thử FE02 tập trung vượt qua 61/61 và traceability duy trì 27/27; lần chạy lại toàn bộ backend vẫn chỉ bị chặn bởi hai assertion tách biệt DNS/mock đã biết trong `dbConfig.test.js`.
 
-## 2026-07-27 - Complete FE02 code/spec convergence pass
+## 2026-07-27 - Hoàn tất lượt hội tụ mã nguồn/đặc tả FE02
 
-- Excluded FE11-deactivated pending self-registration accounts from login/resend verification recovery by mapping and enforcing `DeactivatedAt`.
-- Applied the approved 30-second JWT clock tolerance and completed safe login/lock/token-validation logging without recording credentials or raw tokens.
-- Aligned FE04/FE07/FE08 inactive-account integration expectations with FE02's pre-handler `401 INVALID_TOKEN` contract.
-- Reconciled SPEC v0.6.14, CONTEXT v0.2.6, PLAN, TASKS, TEST_PLAN v0.3.11, and the shared API contract with current code and evidence.
-- Validation passes 58/58 focused FE02 tests, 114/114 affected cross-feature tests, 220/220 frontend tests, frontend lint/build, and FE02 traceability 27/27. Full backend passes 60/61 suites and 1040/1042 tests; only the recorded `dbConfig.test.js` DNS/mock-isolation failure remains.
+- Loại tài khoản tự đăng ký đang chờ đã bị FE11 hủy kích hoạt khỏi cơ chế khôi phục xác minh khi đăng nhập/gửi lại bằng cách ánh xạ và thực thi `DeactivatedAt`.
+- Áp dụng dung sai đồng hồ JWT 30 giây đã phê duyệt và hoàn tất ghi log an toàn cho đăng nhập/khóa/xác thực token mà không ghi thông tin xác thực hoặc token thô.
+- Đồng bộ kỳ vọng integration về tài khoản không hoạt động của FE04/FE07/FE08 với hợp đồng `401 INVALID_TOKEN` trước handler của FE02.
+- Đối soát SPEC v0.6.14, CONTEXT v0.2.6, PLAN, TASKS, TEST_PLAN v0.3.11 và hợp đồng API dùng chung với mã nguồn và bằng chứng hiện tại.
+- Xác thực vượt qua 58/58 kiểm thử FE02 tập trung, 114/114 kiểm thử liên tính năng bị ảnh hưởng, 220/220 kiểm thử frontend, lint/build frontend và traceability FE02 27/27. Toàn bộ backend vượt qua 60/61 suite và 1040/1042 kiểm thử; chỉ còn lỗi tách biệt DNS/mock trong `dbConfig.test.js` đã ghi nhận.
 
-## 2026-07-27 - Recover interrupted registration verification at login
+## 2026-07-27 - Khôi phục xác minh đăng ký bị gián đoạn khi đăng nhập
 
-- Added a password-proven `EMAIL_VERIFICATION_REQUIRED` login response for self-registered accounts that remain unverified and route the frontend to `/verify-email` without issuing a session.
-- Kept unknown identifiers, wrong passwords, deactivated accounts, and admin-created `ACCOUNT_SETUP` accounts out of the recovery branch; verification resend now uses the same eligibility boundary.
-- Added focused backend and frontend regressions and synchronized SPEC v0.6.13, PLAN, TASKS, TEST_PLAN, and the shared API contract.
-- Validation passes 48/48 focused backend tests, 220/220 frontend tests, frontend lint/build, and FE02 traceability 27/27; the full backend result and unrelated remaining failures are recorded in `TEST_PLAN.md`.
+- Thêm response đăng nhập `EMAIL_VERIFICATION_REQUIRED` sau khi chứng minh mật khẩu cho tài khoản tự đăng ký chưa được xác minh và điều hướng frontend đến `/verify-email` mà không cấp phiên.
+- Giữ định danh không xác định, sai mật khẩu, tài khoản đã hủy kích hoạt và tài khoản `ACCOUNT_SETUP` do quản trị viên tạo ngoài nhánh khôi phục; gửi lại xác minh hiện sử dụng cùng ranh giới đủ điều kiện.
+- Thêm kiểm thử hồi quy backend và frontend tập trung, đồng thời đồng bộ SPEC v0.6.13, PLAN, TASKS, TEST_PLAN và hợp đồng API dùng chung.
+- Xác thực vượt qua 48/48 kiểm thử backend tập trung, 220/220 kiểm thử frontend, lint/build frontend và traceability FE02 27/27; kết quả toàn bộ backend và lỗi còn lại không liên quan được ghi trong `TEST_PLAN.md`.
 
-## 2026-07-27 - Converge authentication contract and implementation
+## 2026-07-27 - Hội tụ hợp đồng và phần triển khai xác thực
 
-- Closed CG-FE02-002, CG-FE02-004, CG-FE02-006, and CG-FE02-008 with focused regressions and production enforcement.
-- Enforced current persisted account state and current server-side roles on protected authentication.
-- Added exact rolling 15-minute login-failure tracking with a SQL migration while preserving the approved 30-minute lock.
-- Replaced `Math.random()` OTP generation with `crypto.randomInt()` and preserved six digits including leading zeroes.
-- Made registration token creation, login/session creation, password change/OTP consumption/audit, and password reset/token invalidation atomic.
-- Focused FE02 auth tests pass 47/47; full backend reached 60/61 suites and 1036/1038 tests, with only the pre-existing `dbConfig.test.js` DNS/mock-isolation failure against `sql.example.test`.
-- FE02 remains `PARTIAL`: FE02-T048 performance evidence and FE02-T049 human/H3 closeout are still open.
+- Đóng CG-FE02-002, CG-FE02-004, CG-FE02-006 và CG-FE02-008 bằng kiểm thử hồi quy tập trung và thực thi trên production.
+- Thực thi trạng thái tài khoản đã lưu hiện tại và vai trò hiện tại phía server trong xác thực được bảo vệ.
+- Thêm theo dõi chính xác lỗi đăng nhập trong cửa sổ trượt 15 phút bằng migration SQL, đồng thời giữ thời gian khóa 30 phút đã phê duyệt.
+- Thay bộ tạo OTP `Math.random()` bằng `crypto.randomInt()` và giữ sáu chữ số, bao gồm số 0 ở đầu.
+- Làm cho việc tạo token đăng ký, đăng nhập/tạo phiên, thay đổi mật khẩu/tiêu thụ OTP/audit và đặt lại mật khẩu/vô hiệu hóa token trở thành nguyên tử.
+- Kiểm thử xác thực FE02 tập trung vượt qua 47/47; toàn bộ backend đạt 60/61 suite và 1036/1038 kiểm thử, chỉ có lỗi tách biệt DNS/mock tồn tại từ trước trong `dbConfig.test.js` đối với `sql.example.test`.
+- FE02 duy trì `PARTIAL`: bằng chứng hiệu năng FE02-T048 và phần chốt thủ công/H3 FE02-T049 vẫn đang mở.
 
-## 2026-07-23 - Close CG007 profile session recovery
+## 2026-07-23 - Đóng CG007 về khôi phục phiên hồ sơ
 
-- Added one-refresh recovery, selected-storage token persistence, full auth cleanup, and login redirect to `profileApi` protected requests.
-- Added a frontend regression for the approved `NFR-FE02-UX-009` behavior.
-- Closed CG-FE02-007 and FE02-T051; CG-FE02-001 remains governed by the approved 30-minute contract pending clarification of the new 15-minute request.
+- Bổ sung khôi phục bằng một lần refresh, lưu token trong cơ chế lưu trữ đã chọn, dọn dẹp đầy đủ trạng thái xác thực và chuyển hướng đến trang đăng nhập cho request được bảo vệ của `profileApi`.
+- Thêm một kiểm thử hồi quy frontend cho hành vi `NFR-FE02-UX-009` đã phê duyệt.
+- Đóng CG-FE02-007 và FE02-T051; CG-FE02-001 vẫn tuân theo hợp đồng 30 phút đã phê duyệt trong khi chờ làm rõ yêu cầu 15 phút mới.
 
-## 2026-07-23 - Close CG001 exact lockout duration
+## 2026-07-23 - Đóng CG001 về thời lượng khóa chính xác
 
-- Changed the backend runtime default and deployment example for `LOGIN_LOCKOUT_MINUTES` from 15 to 30.
-- Added configuration and login regressions proving the default and exact `lockedUntil` duration.
-- Closed CG-FE02-001 and FE02-T047; no other reconciliation gap was changed.
+- Thay đổi giá trị mặc định runtime backend và ví dụ triển khai của `LOGIN_LOCKOUT_MINUTES` từ 15 thành 30.
+- Thêm kiểm thử hồi quy cấu hình và đăng nhập chứng minh giá trị mặc định cùng thời lượng `lockedUntil` chính xác.
+- Đóng CG-FE02-001 và FE02-T047; không thay đổi khoảng trống đối soát nào khác.
 
-## 2026-07-23 - Reconcile FE02 artifacts against approved context
+## 2026-07-23 - Đối soát tạo phẩm FE02 với bối cảnh đã phê duyệt
 
-- Aligned SPEC v0.6.9 with both implemented change-password paths: direct current-password update and FE02-owned `CHANGE_PASSWORD_OTP` request/confirm.
-- Corrected the password-policy wording to the approved 8-character, uppercase, number, and special-character rule.
-- Added the missing change-password OTP endpoints to PLAN, corrected known-account lockout terminology, and replaced the nonexistent frontend hook path with current integration files.
-- Changed PLAN/TASKS/TEST_PLAN from unconditional completion wording to baseline-complete/reconciliation-open wording.
-- Added explicit tasks for OTP regression coverage, current-role authorization, exact 30-minute lockout configuration, performance evidence, and final human/H3 closeout.
-- Added MEDIUM+ conformance tasks for current persisted account-state enforcement, FE02 frontend refresh recovery, and authentication transaction/audit atomicity.
-- No production code behavior changed.
+- Đồng bộ SPEC v0.6.9 với cả hai đường thay đổi mật khẩu đã triển khai: cập nhật trực tiếp bằng mật khẩu hiện tại và request/confirm `CHANGE_PASSWORD_OTP` do FE02 sở hữu.
+- Sửa cách diễn đạt chính sách mật khẩu thành quy tắc đã phê duyệt gồm 8 ký tự, chữ hoa, chữ số và ký tự đặc biệt.
+- Thêm các endpoint OTP thay đổi mật khẩu còn thiếu vào PLAN, sửa thuật ngữ khóa tài khoản đã biết và thay đường dẫn hook frontend không tồn tại bằng các tệp tích hợp hiện tại.
+- Thay cách diễn đạt hoàn tất vô điều kiện trong PLAN/TASKS/TEST_PLAN bằng cách diễn đạt baseline đã hoàn tất/đối soát đang mở.
+- Thêm nhiệm vụ rõ ràng cho độ bao phủ hồi quy OTP, phân quyền theo vai trò hiện tại, cấu hình khóa chính xác 30 phút, bằng chứng hiệu năng và phần chốt thủ công/H3 cuối cùng.
+- Thêm nhiệm vụ tuân thủ MEDIUM+ cho việc thực thi trạng thái tài khoản đã lưu hiện tại, khôi phục bằng refresh ở frontend FE02 và tính nguyên tử của giao dịch/audit xác thực.
+- Không thay đổi hành vi mã nguồn production.
 
-## 2026-07-22 - Harden login validation and localized error feedback
+## 2026-07-22 - Tăng cường xác thực dữ liệu đăng nhập và phản hồi lỗi bản địa hóa
 
-- Added field-level Vietnamese validation for blank, whitespace-only, and overlength login values while keeping backend validation authoritative.
-- Mapped stable safe login error codes so invalid credentials remain enumeration-safe and locked accounts receive the approved reset-or-wait guidance without exposing raw backend messages.
-- Replaced the login screen's localhost-specific network failure copy with an environment-neutral message and cleared stale feedback while users edit credentials.
-- Aligned the combined email/username server validator with the approved 255-character email boundary and added a long-email register/verify/login regression.
-- Clarified that password-strength guidance applies when creating a new password, not when entering an existing password at login.
-- Disabled native form validation for login submission so the approved Vietnamese field messages render instead of browser-default English prompts while retaining required-field semantics.
-- Capped the input buffer at 256 characters so the field-level overlength error is observable at the 255-character boundary without allowing unbounded client input.
+- Thêm xác thực dữ liệu tiếng Việt ở cấp trường cho giá trị đăng nhập trống, chỉ có khoảng trắng và quá dài trong khi giữ backend làm nguồn có thẩm quyền về xác thực dữ liệu.
+- Ánh xạ các mã lỗi đăng nhập ổn định, an toàn để thông tin xác thực không hợp lệ vẫn chống dò tìm tài khoản, còn tài khoản bị khóa nhận hướng dẫn đặt lại hoặc chờ đã phê duyệt mà không làm lộ thông báo backend thô.
+- Thay nội dung lỗi mạng phụ thuộc localhost trên màn hình đăng nhập bằng thông báo trung lập với môi trường và xóa phản hồi đã cũ khi người dùng chỉnh sửa thông tin xác thực.
+- Đồng bộ validator email/username kết hợp phía server với ranh giới email 255 ký tự đã phê duyệt và thêm kiểm thử hồi quy đăng ký/xác minh/đăng nhập với email dài.
+- Làm rõ hướng dẫn độ mạnh mật khẩu áp dụng khi tạo mật khẩu mới, không áp dụng khi nhập mật khẩu hiện có để đăng nhập.
+- Vô hiệu hóa xác thực native của biểu mẫu khi gửi đăng nhập để hiển thị thông báo tiếng Việt ở cấp trường đã phê duyệt thay vì prompt tiếng Anh mặc định của trình duyệt, đồng thời giữ ngữ nghĩa trường bắt buộc.
+- Giới hạn buffer đầu vào ở 256 ký tự để lỗi quá dài ở cấp trường có thể quan sát được tại ranh giới 255 ký tự mà không cho phép đầu vào client không giới hạn.
 
-## 2026-07-21 - Reduce email-verification OTP lifetime to 15 minutes
+## 2026-07-21 - Giảm thời hạn OTP xác minh email xuống 15 phút
 
-- Approved a 15-minute lifetime for registration and resend verification OTPs while preserving FE02/FE10 ownership and legacy verification-token compatibility.
-- Added a canonical minute-based environment setting with a temporary legacy-hour fallback and regression coverage for both paths.
-- Aligned Azure staging settings and verified the provider-rendered email reports a 15-minute expiry after a full service restart.
+- Phê duyệt thời hạn 15 phút cho OTP đăng ký và gửi lại xác minh, đồng thời giữ quyền sở hữu FE02/FE10 và khả năng tương thích token xác minh cũ.
+- Thêm cấu hình môi trường chuẩn theo phút cùng cơ chế fallback tạm thời theo số giờ cũ và độ bao phủ hồi quy cho cả hai đường.
+- Đồng bộ cấu hình Azure staging và xác minh email do nhà cung cấp kết xuất hiển thị thời hạn 15 phút sau khi khởi động lại toàn bộ service.
 
-## 2026-07-20 - Reconcile FE02/FE10 OTP source of truth
+## 2026-07-20 - Đối soát nguồn sự thật OTP FE02/FE10
 
-- Updated the FE02 specification to match the approved ADR-004 and merged implementation: FE02 owns OTP credentials, while the FE02-bound FE10 requester owns verification/reset delivery and safe notification outcomes.
-- Preserved legacy token compatibility, non-blocking delivery failure, token-ID idempotency, and the separate direct `CHANGE_PASSWORD_OTP` path.
+- Cập nhật đặc tả FE02 để khớp ADR-004 đã phê duyệt và phần triển khai đã merge: FE02 sở hữu thông tin xác thực OTP, còn bên yêu cầu FE10 gắn với FE02 sở hữu việc gửi xác minh/đặt lại và kết quả thông báo an toàn.
+- Giữ khả năng tương thích token cũ, lỗi gửi không chặn luồng, tính idempotent theo ID token và đường `CHANGE_PASSWORD_OTP` trực tiếp riêng.
 
-## 2026-07-20 - Strict Bearer authorization parsing
+## 2026-07-20 - Phân tích nghiêm ngặt header phân quyền Bearer
 
-- Reject malformed `Authorization` headers with extra segments before token verification.
-- Preserve valid Bearer tokens while preventing ambiguous header parsing from reaching protected services.
-- Added backend regression coverage for the malformed-header boundary.
+- Từ chối header `Authorization` sai định dạng có phân đoạn thừa trước khi xác minh token.
+- Giữ Bearer token hợp lệ trong khi ngăn việc phân tích header không rõ nghĩa đến các service được bảo vệ.
+- Thêm độ bao phủ hồi quy backend cho ranh giới header sai định dạng.
 
-## 2026-07-20 - Standalone email verification recovery
+## 2026-07-20 - Khôi phục xác minh email độc lập
 
-- Added a standalone `/verify-email` route so users can recover registration verification after closing or reloading the registration page.
-- Duplicate-registration handling now routes the user to email verification instead of leaving a dead-end at `EMAIL_ALREADY_REGISTERED`.
-- Password-recovery UI now links users to account verification without changing the backend's inactive-account and anti-enumeration rules.
-- Added frontend regression coverage for the route, duplicate-registration redirect, OTP resend cooldown, and inactive-account recovery path.
+- Thêm route `/verify-email` độc lập để người dùng có thể khôi phục việc xác minh đăng ký sau khi đóng hoặc tải lại trang đăng ký.
+- Việc xử lý đăng ký trùng lặp giờ điều hướng người dùng đến xác minh email thay vì để lại ngõ cụt tại `EMAIL_ALREADY_REGISTERED`.
+- UI khôi phục mật khẩu giờ liên kết đến xác minh tài khoản mà không thay đổi quy tắc backend về tài khoản không hoạt động và chống dò tìm.
+- Thêm độ bao phủ hồi quy frontend cho route, chuyển hướng đăng ký trùng lặp, thời gian chờ gửi lại OTP và đường khôi phục tài khoản không hoạt động.
 
-## 2026-07-20 - Vietnamese UI localization and typography
+## 2026-07-20 - Bản địa hóa UI tiếng Việt và typography
 
-- Localized frontend-generated labels, states, accessibility names, and safe error feedback for this feature.
-- Preserved API contracts, raw enum values, permissions, business rules, and user-owned catalog/profile data.
-- Applied the shared `Be Vietnam Pro` body and `Noto Serif` heading typography contract with Unicode-capable fallbacks.
+- Bản địa hóa nhãn, trạng thái, tên hỗ trợ khả năng truy cập và phản hồi lỗi an toàn do frontend tạo cho tính năng này.
+- Giữ hợp đồng API, giá trị enum thô, quyền, quy tắc nghiệp vụ và dữ liệu catalog/hồ sơ thuộc người dùng.
+- Áp dụng hợp đồng typography dùng chung với `Be Vietnam Pro` cho phần thân và `Noto Serif` cho heading cùng các font fallback hỗ trợ Unicode.
 
-## 2026-07-19 - Phase 2 Exit Closeout
+## 2026-07-19 - Chốt thoát Giai đoạn 2
 
-- feat-auth is accepted within the complete Phase 2 FE01-FE12 reconciliation recorded by PR #40/#41; validation and residual boundaries are consolidated in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`.
-- FE02/FE10 OTP delivery follow-up is additionally closed through PR #42/#43/#44 with exact post-merge `main` CI evidence.
-- Deferred and future-scope limitations remain explicit and are not widened by this closeout.
+- feat-auth được chấp nhận trong đợt đối soát đầy đủ FE01-FE12 của Giai đoạn 2 được ghi nhận bởi PR #40/#41; kết quả xác thực và ranh giới còn lại được hợp nhất trong `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`.
+- Công việc tiếp theo về gửi OTP FE02/FE10 cũng được đóng qua PR #42/#43/#44 với bằng chứng CI `main` chính xác sau merge.
+- Các giới hạn hoãn lại và thuộc phạm vi tương lai vẫn được nêu rõ, không bị mở rộng bởi lần chốt này.
 
-## 2026-07-19 - OTP Delivery B7 Closeout
+## 2026-07-19 - Chốt B7 việc gửi OTP
 
-- FE02-T033 is complete through B7 after PR #42 merged as `34d9180`; PR CI `29688102867` and exact post-merge `main` CI `29688222757` passed.
-- The approved FE02-bound FE10 OTP delivery boundary now has complete ownership, leakage, failure, and token-rotation evidence. Real SMTP and unrelated FE02 follow-up remain out of scope.
+- FE02-T033 hoàn tất đến B7 sau khi PR #42 merge thành `34d9180`; PR CI `29688102867` và CI `main` chính xác sau merge `29688222757` đều vượt qua.
+- Ranh giới gửi OTP FE10 gắn với FE02 đã phê duyệt hiện có bằng chứng đầy đủ về quyền sở hữu, rò rỉ, lỗi và luân chuyển token. SMTP thực và công việc FE02 không liên quan vẫn ngoài phạm vi.
 
-## 2026-07-19 - OTP Delivery Acceptance And Boundary Evidence
+## 2026-07-19 - Bằng chứng nghiệm thu và ranh giới gửi OTP
 
-- Expanded ADR-004 evidence so every allowlisted non-FE02 requester is rejected for both verification and reset types with no persistence, attempt, audit, or provider side effects.
-- Added repeated forgot-password coverage proving a new token ID and idempotency key are created without a direct FE02 email path.
-- Focused FE02/FE10 validation passes 170/170; full backend passes 916/916 with coverage above configured thresholds; traceability remains 26/26.
-- The user approved the FE10 OTP design and granted standing human acceptance for the injected-provider scope. Integration PR and exact post-merge `main` CI remain required before B7 closeout.
+- Mở rộng bằng chứng ADR-004 để mọi bên yêu cầu không phải FE02 trong allowlist đều bị từ chối đối với cả loại xác minh và đặt lại mà không gây tác dụng phụ về lưu trữ, lần thử, audit hoặc nhà cung cấp.
+- Thêm độ bao phủ quên mật khẩu lặp lại để chứng minh ID token và khóa idempotent mới được tạo mà không có đường email FE02 trực tiếp.
+- Xác thực FE02/FE10 tập trung vượt qua 170/170; toàn bộ backend vượt qua 916/916 với độ bao phủ cao hơn ngưỡng đã cấu hình; traceability duy trì 26/26.
+- Người dùng đã phê duyệt thiết kế OTP FE10 và cấp nghiệm thu thủ công thường trực cho phạm vi nhà cung cấp được inject. PR tích hợp và CI `main` chính xác sau merge vẫn là yêu cầu trước khi chốt B7.
 
-## 2026-07-19 - HTTPS transport enforcement
+## 2026-07-19 - Thực thi giao thức HTTPS
 
-- Added a deployment-aware HTTPS middleware before JSON parsing and auth route dispatch.
-- Plain HTTP authentication requests now reject with `400 HTTPS_REQUIRED` by default; optional `HTTPS_REDIRECT=true` redirects only to a validated `HTTPS_CANONICAL_HOST`.
-- Trusted reverse-proxy deployments may pass `X-Forwarded-Proto: https` only when `TRUST_PROXY=true`; focused transport tests pass `3/3`.
+- Thêm middleware HTTPS nhận biết môi trường triển khai trước khi phân tích JSON và phân luồng route xác thực.
+- Request xác thực qua HTTP thuần hiện mặc định bị từ chối với `400 HTTPS_REQUIRED`; tùy chọn `HTTPS_REDIRECT=true` chỉ chuyển hướng đến `HTTPS_CANONICAL_HOST` đã xác thực.
+- Triển khai reverse proxy đáng tin cậy chỉ có thể truyền `X-Forwarded-Proto: https` khi `TRUST_PROXY=true`; kiểm thử giao thức tập trung vượt qua `3/3`.
 
-## 2026-07-19 - API Evidence And Login Enumeration Reconciliation
+## 2026-07-19 - Đối soát bằng chứng API và dò tìm tài khoản khi đăng nhập
 
-- Added API regressions for duplicate registration and weak registration/reset passwords with explicit no-persistence assertions.
-- Added canonical `{ email, otp }` verification and password-reset coverage, including OTP consumption and password-state assertions.
-- Kept the internal `AUTH_LOGIN_INACTIVE` audit event while returning the same public `401 INVALID_CREDENTIALS` envelope for inactive and unknown accounts.
-- Closed the IP-wide rate-limit question as an approved Phase 1 non-goal under `Q-FE02-005`, `BR-FE02-008`, and `NFR-FE02-SEC-005`.
-- Focused `authRoutes.test.js` validation passes 30/30; full backend regression passes 893/893 with coverage, system integration, and traceability green; PR CI run `29680011551` passes on implementation commit `0040e0f`.
+- Thêm kiểm thử hồi quy API cho đăng ký trùng lặp và mật khẩu đăng ký/đặt lại yếu cùng assertion rõ ràng rằng không lưu dữ liệu.
+- Thêm độ bao phủ xác minh và đặt lại mật khẩu chuẩn bằng `{ email, otp }`, bao gồm assertion tiêu thụ OTP và trạng thái mật khẩu.
+- Giữ sự kiện audit nội bộ `AUTH_LOGIN_INACTIVE` trong khi trả về cùng envelope công khai `401 INVALID_CREDENTIALS` cho tài khoản không hoạt động và không xác định.
+- Đóng câu hỏi giới hạn tốc độ trên toàn IP như một nội dung không phải mục tiêu của Giai đoạn 1 đã phê duyệt theo `Q-FE02-005`, `BR-FE02-008` và `NFR-FE02-SEC-005`.
+- Xác thực `authRoutes.test.js` tập trung vượt qua 30/30; kiểm thử hồi quy toàn bộ backend vượt qua 893/893 cùng độ bao phủ, integration hệ thống và traceability xanh; PR CI run `29680011551` vượt qua trên commit triển khai `0040e0f`.
 
-## 2026-07-19 - OTP Requester And Refresh Reconciliation
+## 2026-07-19 - Đối soát bên yêu cầu OTP và refresh
 
-- Fanned the FE02 verification/reset requester into the canonical FE10 sensitive-provider boundary with token-ID idempotency and no duplicate direct delivery path.
-- Preserved non-blocking provider failure, resend token rotation, legacy token acceptance, and direct `CHANGE_PASSWORD_OTP` ownership.
-- Aligned refresh exchange with FR-FE02-026 by returning the submitted refresh token unchanged.
-- The current FE02/FE10 focused cross-feature gate passes 154/154 with FE02 traceability 26/26; final human closeout remains open.
+- Hội tụ bên yêu cầu xác minh/đặt lại FE02 vào ranh giới nhà cung cấp nhạy cảm chuẩn của FE10 cùng tính idempotent theo ID token và không có đường gửi trực tiếp trùng lặp.
+- Giữ lỗi nhà cung cấp không chặn luồng, luân chuyển token khi gửi lại, chấp nhận token cũ và quyền sở hữu trực tiếp `CHANGE_PASSWORD_OTP`.
+- Đồng bộ việc đổi refresh với FR-FE02-026 bằng cách trả về refresh token đã gửi mà không thay đổi.
+- Cổng liên tính năng FE02/FE10 tập trung hiện tại vượt qua 154/154 cùng traceability FE02 26/26; phần chốt thủ công cuối cùng vẫn đang mở.
 
-## 2026-07-19 - FE11 Finalization Schema Contract Activated
+## 2026-07-19 - Kích hoạt hợp đồng schema hoàn tất FE11
 
-- Bumped `SPEC.md` to 0.6.3 and activated the shared FE11 migration dependency without changing FE02 login, registration, OTP, refresh, or setup-consumption behavior.
-- Confirmed `Users.Email` at 255 characters and documented FE11's non-null managed-user concurrency version as `COALESCE(UpdatedAt, CreatedAt)` for nullable legacy rows.
-- The FE11 shared schema migration subsequently passed two disposable SQL Server executions; see the full-reconciliation Live SQL review.
+- Tăng `SPEC.md` lên 0.6.3 và kích hoạt phụ thuộc migration dùng chung của FE11 mà không thay đổi hành vi đăng nhập, đăng ký, OTP, refresh hoặc tiêu thụ thiết lập của FE02.
+- Xác nhận `Users.Email` ở 255 ký tự và ghi nhận phiên bản đồng thời không null cho người dùng được FE11 quản lý là `COALESCE(UpdatedAt, CreatedAt)` đối với hàng cũ có thể null.
+- Migration schema dùng chung FE11 sau đó vượt qua hai lần chạy SQL Server dùng một lần; xem phần rà soát Live SQL của đợt đối soát đầy đủ.
 
-## 2026-07-17 - Phase 1 Baseline Approved
+## 2026-07-17 - Phê duyệt baseline Giai đoạn 1
 
-- Nhật approved the normalized FE02 specification and implementation contract as the Phase 1 baseline; at that historical checkpoint, OTP delivery follow-up remained implementation-pending and was later superseded by the FE02/FE10 implementation recorded on 2026-07-19.
-- Clarified that the baseline review is complete while implementation changes still require focused validation and human review before merge.
+- Nhật phê duyệt đặc tả FE02 đã chuẩn hóa và hợp đồng triển khai làm baseline Giai đoạn 1; tại mốc lịch sử đó, công việc tiếp theo về gửi OTP vẫn đang chờ triển khai và sau đó được thay thế bằng phần triển khai FE02/FE10 ghi nhận ngày 2026-07-19.
+- Làm rõ rà soát baseline đã hoàn tất, trong khi thay đổi triển khai vẫn yêu cầu xác thực tập trung và rà soát thủ công trước khi merge.
 
-## 2026-07-17 - Final Lifecycle And Contract Audit
+## 2026-07-17 - Audit vòng đời và hợp đồng cuối cùng
 
-- Restricted lock recovery to successful password reset or automatic expiry; Phase 1 has no admin-unlock action.
-- Defined password-reset eligibility for `ACTIVE`/`LOCKED` accounts and documented compatibility-only `CHANGE_PASSWORD_OTP` behavior.
-- Replaced non-deterministic performance and resend wording with explicit Phase 1 contract rules.
+- Giới hạn khôi phục trạng thái khóa ở đặt lại mật khẩu thành công hoặc tự động hết hạn; Giai đoạn 1 không có hành động mở khóa của quản trị viên.
+- Xác định điều kiện đặt lại mật khẩu cho tài khoản `ACTIVE`/`LOCKED` và ghi nhận hành vi `CHANGE_PASSWORD_OTP` chỉ nhằm tương thích.
+- Thay cách diễn đạt không xác định về hiệu năng và gửi lại bằng quy tắc hợp đồng Giai đoạn 1 rõ ràng.
 
-## 2026-07-17 - Auth Policy And Account Lifecycle Hardening
+## 2026-07-17 - Tăng cường chính sách xác thực và vòng đời tài khoản
 
-- Bumped `SPEC.md` to 0.6.2.
-- Fixed lockout to 5 consecutive failures in 15 minutes, 10 login requests per IP in 15 minutes, and 30-minute automatic unlock.
-- Defined refresh-token rotation, logout revocation, and password-change revocation of other sessions.
-- Aligned persisted account statuses with SQL and introduced nullable `Users.DeactivatedAt` as a required migration for FE11 deactivation semantics.
+- Tăng `SPEC.md` lên 0.6.2.
+- Cố định việc khóa ở 5 lần thất bại liên tiếp trong 15 phút, 10 request đăng nhập trên mỗi IP trong 15 phút và tự động mở khóa sau 30 phút.
+- Xác định việc luân chuyển refresh token, thu hồi khi đăng xuất và thu hồi các phiên khác khi thay đổi mật khẩu.
+- Đồng bộ trạng thái tài khoản đã lưu với SQL và giới thiệu `Users.DeactivatedAt` có thể null làm migration bắt buộc cho ngữ nghĩa hủy kích hoạt FE11.
 
-## 2026-07-17 - Deterministic Registration, Setup, And Refresh Contract
+## 2026-07-17 - Hợp đồng đăng ký, thiết lập và refresh có tính xác định
 
-- Bumped `SPEC.md` to 0.6.1 and kept the revision `READY FOR REVIEW`.
-- Made self-registration assign exactly the `Member` role; FE11 exclusively owns Librarian/Admin account creation.
-- Fixed `ACCOUNT_SETUP` expiry at exactly 24 hours and removed the stale password-reset activation transition.
-- Clarified that refresh-token exchange validates the refresh token itself and does not require an access token.
-- Added deterministic acceptance and traceability coverage for role assignment, server-side role checks, and HTTPS enforcement.
+- Tăng `SPEC.md` lên 0.6.1 và giữ bản sửa đổi ở trạng thái `READY FOR REVIEW`.
+- Làm cho tự đăng ký gán đúng vai trò `Member`; FE11 độc quyền tạo tài khoản Librarian/Admin.
+- Cố định thời hạn `ACCOUNT_SETUP` chính xác 24 giờ và loại bỏ chuyển đổi kích hoạt đặt lại mật khẩu đã cũ.
+- Làm rõ việc đổi refresh token xác thực chính refresh token đó và không yêu cầu access token.
+- Thêm độ bao phủ nghiệm thu và traceability có tính xác định cho việc gán vai trò, kiểm tra vai trò phía server và thực thi HTTPS.
 
-## 2026-07-15 - Account Setup Implementation And Validation
+## 2026-07-15 - Triển khai và xác thực thiết lập tài khoản
 
-- Added atomic FE11 `ACCOUNT_SETUP` consumption for eligible inactive admin-created accounts.
-- Setup completion now stores the chosen password, verifies/activates the account, resets lock fields, consumes one token, revokes siblings, and writes the auth audit in one transaction.
-- Added the `/forgot-password?token=...` frontend mode with password-only setup, safe invalid-link feedback, and no token rendering, logging, or storage.
-- Password-reset credentials remain unable to activate inactive accounts.
-- Task 7 automated evidence passed: 170/170 affected backend tests, 75/75 frontend tests, touched-file lint, production build, traceability, credential scan, and diff checks.
-- Nhat confirmed the final cross-feature validation packet; `FE02-T037` is complete.
+- Thêm cơ chế tiêu thụ `ACCOUNT_SETUP` FE11 nguyên tử cho tài khoản không hoạt động đủ điều kiện do quản trị viên tạo.
+- Hoàn tất thiết lập giờ lưu mật khẩu được chọn, xác minh/kích hoạt tài khoản, đặt lại trường khóa, tiêu thụ một token, thu hồi token cùng nhóm và ghi audit xác thực trong một transaction.
+- Thêm chế độ frontend `/forgot-password?token=...` chỉ thiết lập mật khẩu, phản hồi liên kết không hợp lệ an toàn và không kết xuất, ghi log hoặc lưu token.
+- Thông tin xác thực đặt lại mật khẩu vẫn không thể kích hoạt tài khoản không hoạt động.
+- Bằng chứng tự động của Nhiệm vụ 7 vượt qua: 170/170 kiểm thử backend bị ảnh hưởng, 75/75 kiểm thử frontend, lint tệp đã sửa, production build, traceability, quét thông tin xác thực và kiểm tra diff.
+- Nhat xác nhận gói xác thực liên tính năng cuối cùng; `FE02-T037` đã hoàn tất.
 
-## 2026-07-15 - FE11 Account Setup Consumption Revision
+## 2026-07-15 - Sửa đổi cơ chế tiêu thụ thiết lập tài khoản FE11
 
-- Bumped `SPEC.md` to 0.6.0 and marked the combined OTP/account-setup revision ready for review.
-- Separated password reset from canonical FE11 account setup while preserving the existing token request shape.
-- Defined FE02 as the setup-token consumer and atomic activation owner; FE11 remains issuer/resend owner and FE10 remains delivery owner.
-- Added BR-FE02-023..025, FR-FE02-024..025, AC-FE02-020..021, EC-FE02-016..017, Q-FE02-013, and NFR-FE02-TXN-005.
-- Added FE02-T034..T037 for RED tests, atomic implementation, and cross-feature validation.
+- Tăng `SPEC.md` lên 0.6.0 và đánh dấu bản sửa đổi OTP/thiết lập tài khoản kết hợp là sẵn sàng rà soát.
+- Tách đặt lại mật khẩu khỏi thiết lập tài khoản FE11 chuẩn trong khi giữ cấu trúc request token hiện có.
+- Xác định FE02 là bên tiêu thụ token thiết lập và sở hữu kích hoạt nguyên tử; FE11 vẫn sở hữu việc cấp/gửi lại, còn FE10 vẫn sở hữu việc gửi.
+- Thêm BR-FE02-023..025, FR-FE02-024..025, AC-FE02-020..021, EC-FE02-016..017, Q-FE02-013 và NFR-FE02-TXN-005.
+- Thêm FE02-T034..T037 cho kiểm thử RED, triển khai nguyên tử và xác thực liên tính năng.
 
-## 2026-07-15 - FE10 OTP Delivery Ownership Alignment
+## 2026-07-15 - Đồng bộ quyền sở hữu gửi OTP FE10
 
-- Bumped `SPEC.md` from version `0.4.0` to `0.5.0` and aligned `CONTEXT.md` with ADR-004.
-- Kept FE02 as the owner of verification/reset OTP generation, hashing, expiry, revocation, validation, and legacy-token compatibility.
-- Made the FE10 requester bound to `FE02` the single delivery boundary for account-verification and password-reset OTP email.
-- Defined `AuthTokens.TokenId` source traceability and idempotency; resend creates a new token ID and notification key.
-- Prohibited duplicate direct email sends and direct notification-record writes for verification/reset while retaining direct FE02 email for `CHANGE_PASSWORD_OTP`.
-- Prohibited `debugOtp`, `debugVerificationToken`, and `debugResetToken` HTTP response fields; implementation tests must capture deterministic OTPs through injected dependencies.
-- Defined non-blocking FE10 failure semantics: user/token state and generic public responses remain valid, no OTP is exposed, and resend remains available.
-- Replaced conceptual token tables/fields in the data section with the actual shared `AuthTokens` contract.
+- Tăng `SPEC.md` từ phiên bản `0.4.0` lên `0.5.0` và đồng bộ `CONTEXT.md` với ADR-004.
+- Giữ FE02 làm chủ sở hữu việc tạo, hash, hết hạn, thu hồi, xác thực OTP dùng cho xác minh/đặt lại và khả năng tương thích token cũ.
+- Đặt bên yêu cầu FE10 gắn với `FE02` làm ranh giới gửi duy nhất cho email OTP xác minh tài khoản và đặt lại mật khẩu.
+- Xác định khả năng truy vết nguồn và tính idempotent của `AuthTokens.TokenId`; gửi lại tạo ID token và khóa thông báo mới.
+- Cấm gửi email trực tiếp trùng lặp và ghi trực tiếp bản ghi thông báo cho xác minh/đặt lại, đồng thời giữ email FE02 trực tiếp cho `CHANGE_PASSWORD_OTP`.
+- Cấm các trường response HTTP `debugOtp`, `debugVerificationToken` và `debugResetToken`; kiểm thử triển khai phải thu OTP xác định thông qua dependency được inject.
+- Xác định ngữ nghĩa lỗi FE10 không chặn luồng: trạng thái người dùng/token và response công khai chung vẫn hợp lệ, OTP không bị lộ và gửi lại vẫn khả dụng.
+- Thay các bảng/trường token khái niệm trong phần dữ liệu bằng hợp đồng `AuthTokens` dùng chung thực tế.
 
-## 2026-07-15 - Authentication/OTP UX B7 Closeout
+## 2026-07-15 - Chốt B7 UX Xác thực/OTP
 
-- Recorded human acceptance and merge evidence for `FE02-T024` through `FE02-T028`.
-- Remediated the system golden path to use the accessible password textbox, the approved `/home` login destination, and the deterministic integration clock.
-- GitHub Actions CI run `29358045198` passed on final `main` commit `6eee459`; detailed evidence is in `.sdd/reviews/library-ux-b7-integration-closeout-2026-07-15.md`.
+- Ghi nhận nghiệm thu thủ công và bằng chứng merge cho `FE02-T024` đến `FE02-T028`.
+- Khắc phục golden path hệ thống để sử dụng textbox mật khẩu có khả năng truy cập, đích đăng nhập `/home` đã phê duyệt và đồng hồ integration xác định.
+- GitHub Actions CI run `29358045198` vượt qua trên commit `main` cuối cùng `6eee459`; bằng chứng chi tiết nằm trong `.sdd/reviews/library-ux-b7-integration-closeout-2026-07-15.md`.
 
-## 2026-07-14 - OTP UX Contract Alignment
+## 2026-07-14 - Đồng bộ hợp đồng UX OTP
 
-- Bumped `SPEC.md` version 0.3.0 -> 0.4.0 to document the implemented six-digit email OTP flow for registration verification and password reset.
-- Preserved legacy verification/reset token payloads for compatibility and FE11 account setup.
-- Approved a 60-second client resend cooldown and recorded the Authentication/OTP UX hardening plan in `docs/superpowers/plans/2026-07-14-auth-otp-ux.md`.
+- Tăng phiên bản `SPEC.md` từ 0.3.0 -> 0.4.0 để ghi nhận luồng OTP email sáu chữ số đã triển khai cho xác minh đăng ký và đặt lại mật khẩu.
+- Giữ payload token xác minh/đặt lại cũ để tương thích và thiết lập tài khoản FE11.
+- Phê duyệt thời gian chờ gửi lại 60 giây ở client và ghi nhận kế hoạch tăng cường UX Xác thực/OTP trong `docs/superpowers/plans/2026-07-14-auth-otp-ux.md`.
 
-## 2026-06-25 - FE02 Formal State Model
+## 2026-06-25 - Mô hình trạng thái chính thức FE02
 
-- Bumped SPEC.md version 0.2.0 -> 0.3.0 (MINOR); status unchanged (APPROVED).
-- Added formal State Model & Transition Rules (state diagram + valid/invalid transitions + invariants) for User account lifecycle.
+- Tăng phiên bản SPEC.md từ 0.2.0 -> 0.3.0 (MINOR); trạng thái không đổi (APPROVED).
+- Thêm Mô hình trạng thái và Quy tắc chuyển đổi chính thức (sơ đồ trạng thái + chuyển đổi hợp lệ/không hợp lệ + invariant) cho vòng đời tài khoản Người dùng.
 
 ## 2026-06-03
 
-- Created FE02 Authentication feature specification structure.
-- Established specification files: CONTEXT.md, SPEC.md, PLAN.md, TASKS.md, and CHANGELOG.md.
-- Prepared for detailed authentication requirements including login, logout, session management, and role-based access control.
-- Ready to add stable requirement IDs for business rules, functional requirements, acceptance criteria, edge cases, and open questions.
-- Clarified password setup support for FE11 admin-created inactive accounts.
+- Tạo cấu trúc đặc tả tính năng Xác thực FE02.
+- Thiết lập các tệp đặc tả: CONTEXT.md, SPEC.md, PLAN.md, TASKS.md và CHANGELOG.md.
+- Chuẩn bị cho yêu cầu xác thực chi tiết, bao gồm đăng nhập, đăng xuất, quản lý phiên và kiểm soát truy cập dựa trên vai trò.
+- Sẵn sàng thêm ID yêu cầu ổn định cho quy tắc nghiệp vụ, yêu cầu chức năng, tiêu chí nghiệm thu, trường hợp biên và câu hỏi mở.
+- Làm rõ hỗ trợ thiết lập mật khẩu cho tài khoản không hoạt động do quản trị viên FE11 tạo.
 
 ## 2026-06-10
 
-- Updated FE02 assignment mapping to match the latest Excel sheet: UC05-UC10 and FT05-FT11.
-- Replaced placeholder owner in CONTEXT.md with Dat.
-- Updated traceability matrix test mappings from the old FT01-FT08 range to the current FT05-FT11 range.
-- Updated API contract policy to allow approval in `SPEC.md` unless the team reintroduces a shared API contract document.
-- Adjusted current data model notes to match the SQL script more closely.
+- Cập nhật ánh xạ phân công FE02 để khớp bảng Excel mới nhất: UC05-UC10 và FT05-FT11.
+- Thay chủ sở hữu placeholder trong CONTEXT.md bằng Dat.
+- Cập nhật ánh xạ kiểm thử trong ma trận truy vết từ khoảng FT01-FT08 cũ sang khoảng FT05-FT11 hiện tại.
+- Cập nhật chính sách hợp đồng API để cho phép phê duyệt trong `SPEC.md`, trừ khi nhóm giới thiệu lại tài liệu hợp đồng API dùng chung.
+- Điều chỉnh ghi chú mô hình dữ liệu hiện tại để khớp script SQL hơn.
 
-## 2026-06-10 - Phase 1 Review Decisions Approved
+## 2026-06-10 - Phê duyệt quyết định rà soát Giai đoạn 1
 
-- Approved open-question decisions from `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`.
-- Updated `SPEC.md` decision status from draft/proposed/open to approved where applicable.
-- Preserved Phase 1 scope controls and deferred future-work items explicitly.
+- Phê duyệt các quyết định cho câu hỏi mở từ `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`.
+- Cập nhật trạng thái quyết định trong `SPEC.md` từ draft/proposed/open thành approved khi phù hợp.
+- Giữ rõ các biện pháp kiểm soát phạm vi Giai đoạn 1 và hạng mục công việc tương lai được hoãn.
 
-## 2026-06-10 - FE02 Foundation Slice Implemented
+## 2026-06-10 - Triển khai lát cắt nền tảng FE02
 
-- Added backend foundation folders for config, routes, controllers, services, repositories, middleware, validators, and utils.
-- Replaced the backend placeholder test script with Jest and added baseline health tests.
-- Implemented FE02 vertical-slice routes for `register`, `verify-email`, `login`, and protected `/me`.
-- Added server-side password policy, token helpers, safe error handling, and auth middleware.
-- Added SQL Server repository scaffolding with parameterized queries for users, auth tokens, audit logs, and notifications.
-- Added in-memory test repositories so the FE02 slice can run in CI without a live database.
-- Updated CI to run backend tests and frontend lint before build.
+- Thêm các thư mục nền tảng backend cho config, route, controller, service, repository, middleware, validator và utils.
+- Thay script kiểm thử placeholder ở backend bằng Jest và thêm kiểm thử health baseline.
+- Triển khai route lát cắt dọc FE02 cho `register`, `verify-email`, `login` và `/me` được bảo vệ.
+- Thêm chính sách mật khẩu phía server, hàm hỗ trợ token, xử lý lỗi an toàn và middleware xác thực.
+- Thêm khung repository SQL Server với truy vấn có tham số cho người dùng, auth token, audit log và thông báo.
+- Thêm repository kiểm thử in-memory để lát cắt FE02 có thể chạy trong CI mà không cần cơ sở dữ liệu thực.
+- Cập nhật CI để chạy kiểm thử backend và lint frontend trước build.
 
-## 2026-06-10 - FE02 Ready For Review
+## 2026-06-10 - FE02 sẵn sàng rà soát
 
-- Finished the remaining auth endpoints: resend verification, refresh token, logout, change password, forgot password, and reset password.
-- Added tests for the FE02 cases from FT05 to FT11.
-- Connected the current login, register, and forgot-password screens to the auth API.
-- Marked FE02 `PLAN.md`, `TASKS.md`, and traceability as ready for review.
+- Hoàn tất các endpoint xác thực còn lại: gửi lại xác minh, refresh token, đăng xuất, thay đổi mật khẩu, quên mật khẩu và đặt lại mật khẩu.
+- Thêm kiểm thử cho các trường hợp FE02 từ FT05 đến FT11.
+- Kết nối các màn hình đăng nhập, đăng ký và quên mật khẩu hiện tại với API xác thực.
+- Đánh dấu `PLAN.md`, `TASKS.md` và traceability của FE02 là sẵn sàng rà soát.
 
-## 2026-06-25 - FE02 EARS Unwanted Requirements Hardening
+## 2026-06-25 - Tăng cường yêu cầu EARS cho hành vi không mong muốn của FE02
 
-- Bumped SPEC.md version 0.1.0 -> 0.2.0 (MINOR); status unchanged (APPROVED).
-- Promoted error-handling branches to formal Unwanted FRs (FR-FE02-015..FR-FE02-021) to meet the EARS â‰¥30% Unwanted standard from Spec-Driven Development. No new logic introduced; each FR traces to an existing AF/EC/BR.
-  - FR-FE02-015: Reject registration with already-registered email; no new user created. (AF-FE02-001, EC-FE02-003, BR-FE02-001)
-  - FR-FE02-016: Reject expired/malformed verification token; keep account INACTIVE, offer resend. (AF-FE02-002, BR-FE02-004)
-  - FR-FE02-017: Reject login to LOCKED account with lock message. (AF-FE02-003, BR-FE02-009)
-  - FR-FE02-018: Reject already-used/expired reset token; no password change. (AF-FE02-005, BR-FE02-014)
-  - FR-FE02-019: Reject password not meeting complexity policy; do not persist. (AF-FE02-007, BR-FE02-005, Q-FE02-001)
-  - FR-FE02-020: Reject password change reusing current password. (AF-FE02-006)
-  - FR-FE02-021: Reject protected request with malformed/invalid/expired token (401). (AF-FE02-004, EC-FE02-014, BR-FE02-012)
-- Added a "7.1 Unwanted Behavior Requirements (EARS)" subsection and an Unwanted-FR traceability table in Section 16; updated Coverage Summary (Total FR 14 -> 21, Unwanted FR 7 = 33.3%).
+- Tăng phiên bản SPEC.md từ 0.1.0 -> 0.2.0 (MINOR); trạng thái không đổi (APPROVED).
+- Nâng các nhánh xử lý lỗi thành FR hành vi không mong muốn chính thức (FR-FE02-015..FR-FE02-021) để đáp ứng tiêu chuẩn EARS ≥30% yêu cầu không mong muốn từ Phát triển dựa trên đặc tả. Không giới thiệu logic mới; mỗi FR truy vết đến AF/EC/BR hiện có.
+  - FR-FE02-015: Từ chối đăng ký bằng email đã đăng ký; không tạo người dùng mới. (AF-FE02-001, EC-FE02-003, BR-FE02-001)
+  - FR-FE02-016: Từ chối token xác minh hết hạn/sai định dạng; giữ tài khoản ở trạng thái INACTIVE, cho phép gửi lại. (AF-FE02-002, BR-FE02-004)
+  - FR-FE02-017: Từ chối đăng nhập tài khoản LOCKED cùng thông báo khóa. (AF-FE02-003, BR-FE02-009)
+  - FR-FE02-018: Từ chối token đặt lại đã dùng/hết hạn; không thay đổi mật khẩu. (AF-FE02-005, BR-FE02-014)
+  - FR-FE02-019: Từ chối mật khẩu không đáp ứng chính sách độ phức tạp; không lưu. (AF-FE02-007, BR-FE02-005, Q-FE02-001)
+  - FR-FE02-020: Từ chối thay đổi mật khẩu nếu tái sử dụng mật khẩu hiện tại. (AF-FE02-006)
+  - FR-FE02-021: Từ chối request được bảo vệ có token sai định dạng/không hợp lệ/hết hạn (401). (AF-FE02-004, EC-FE02-014, BR-FE02-012)
+- Thêm tiểu mục "7.1 Yêu cầu về hành vi không mong muốn (EARS)" và bảng traceability FR không mong muốn trong Mục 16; cập nhật Tóm tắt độ bao phủ (Tổng FR 14 -> 21, FR không mong muốn 7 = 33.3%).
 
-## 2026-06-19 - FE02 Auth Fix Review
+## 2026-06-19 - Rà soát sửa lỗi xác thực FE02
 
-- Fixed failed-login lock handling so accounts are marked `LOCKED` when the configured threshold is reached.
-- Adjusted logout so a valid refresh token can be revoked without requiring a still-valid access token.
-- Updated auth route tests and in-memory repository behavior for the lock/logout fixes.
+- Sửa xử lý khóa khi đăng nhập thất bại để tài khoản được đánh dấu `LOCKED` khi đạt ngưỡng đã cấu hình.
+- Điều chỉnh đăng xuất để có thể thu hồi refresh token hợp lệ mà không yêu cầu access token vẫn còn hiệu lực.
+- Cập nhật kiểm thử auth route và hành vi repository in-memory cho các sửa lỗi khóa/đăng xuất.
