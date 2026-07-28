@@ -1,7 +1,7 @@
 # FE10 Test Plan - Notification Management
 
 Version: 0.5.0
-Status: V0.5.0 IMPLEMENTED - POST-DRIFT H2/H3 IN PROGRESS
+Status: V0.5.0 COMPLETE - PR #75 MERGED, POST-MERGE CI/AZURE PASS
 Last Updated: 2026-07-28
 
 Source Spec: `.sdd/specs/feat-notification-management/SPEC.md`
@@ -166,10 +166,11 @@ npm.cmd run trace:enforce
   `28c4f80`; exact-head CI `30306805399`, backend-first Azure deployment
   `30307855616`, and three-role live verification passed.
 - H3 round one failed on ADR/current-state and bounded UI-state/stacking
-  findings. The focused remediation passed its complete matrix. Later PR #75
-  head `cf0a236` passed exact-head CI `30315046007`, Azure deployment
-  `30315273298`, public transport/protected-route checks, Azure SQL
-  schema/index verification, cleanup, and final two-axis H3 with no actionable
-  finding. The user then approved documentation-only `main@30f936d`; the
-  conflict-free rebase preserves runtime behavior but requires fresh H2,
-  exact-head CI/Azure, repeated H3, merge, and post-merge gates.
+  findings; the focused remediation passed its complete matrix. After the
+  documentation-only `main@30f936d` rebase, H2 approved fingerprint
+  `e123345be05b59a9e519d182b301ab5464160e8fc32aed8d17d3c463e28e0a15`.
+  PR #75 head `778e0a470d8a1083bf571a8007b3c058eee4bb22` passed exact-head
+  CI `30317424995` and Azure staging `30317621429`, then clean two-axis H3
+  and explicit approval. It merged as
+  `b75776b10d6cf4b6868d2ba51eb3268073483b8b`; post-merge CI `30341279111`
+  and automatic Azure staging `30341540847` passed.

@@ -7,12 +7,14 @@
 - Current H1-approved base: `main@30f936d644c2034bbbf9cb4e01ba25feab31595c`
 - Rebased local committed head: `c72bc77f996a160333c2cb7ee4399f3d591fe17c`
 - Last fully deployed/reviewed head: `cf0a2364b9f526dae4f4e873f261764ea43da777`
-- Status: **POST-DRIFT H2/EXACT-HEAD GATES PENDING**
+- Final H2/H3-reviewed head: `778e0a470d8a1083bf571a8007b3c058eee4bb22`
+- PR #75 merge commit: `b75776b10d6cf4b6868d2ba51eb3268073483b8b`
+- Status: **COMPLETE — PR #75 MERGED; POST-MERGE CI/AZURE PASS**
 
-This record closes no gate early. It reconciles the exact Azure evidence and
-the first H3 outcome required by the approved FE10-I08 plan. Section 5 records
-the remediation head, CI, Azure deployment, and bounded live verification.
-Repeated H3, merge, and post-merge runs are recorded only after they occur.
+This record now closes the approved FE10-I08 chain with immutable evidence.
+The historical sections retain the first H3 outcome and remediation path;
+Sections 2 and 6 record the final head, H3 approval, merge, and post-merge
+CI/Azure results without adding a new behavior claim.
 
 ## 1. Reviewed Candidate And Approval Chain
 
@@ -42,14 +44,22 @@ Repeated H3, merge, and post-merge runs are recorded only after they occur.
 - `main@30f936d` translates SDD documentation to Vietnamese and has no runtime,
   API, migration, UI, or test overlap with FE10. Exact upstream CI
   `30315665010` and automatic Azure staging `30315842152` passed. The branch
-  rebased without runtime conflict and preserved the translated FE10 SPEC;
-  fresh H2 is mandatory.
-- PR #75 remained open, ready, clean, and mergeable at the reviewed head.
+  rebased without runtime conflict and preserved the translated FE10 SPEC.
+- H2 round 8 approved fingerprint
+  `e123345be05b59a9e519d182b301ab5464160e8fc32aed8d17d3c463e28e0a15`.
+  PR #75 then published final head `778e0a470d8a1083bf571a8007b3c058eee4bb22`.
+- Separate Standards and Spec H3 reviews on that exact head returned no
+  actionable finding; the user explicitly approved H3. PR #75 merged as
+  `b75776b10d6cf4b6868d2ba51eb3268073483b8b`.
 
 ## 2. Exact-Head CI And Azure Staging Evidence
 
 | Gate | Exact evidence | Result |
 | --- | --- | --- |
+| Final PR CI | Run `30317424995`, head `778e0a470d8a1083bf571a8007b3c058eee4bb22` | PASS |
+| Final manual Azure staging | Run `30317621429`, head `778e0a470d8a1083bf571a8007b3c058eee4bb22` | PASS |
+| Post-merge CI | Run `30341279111`, merge `b75776b10d6cf4b6868d2ba51eb3268073483b8b` | PASS |
+| Post-merge automatic Azure staging | Run `30341540847`, merge `b75776b10d6cf4b6868d2ba51eb3268073483b8b` | PASS |
 | PR CI | Run `30306805399`, head `28c4f80ca6e249b7802caf854f9fa42cb4840158` | PASS |
 | Manual Azure staging | Run `30307855616`, head `28c4f80ca6e249b7802caf854f9fa42cb4840158` | PASS |
 | Deployment jobs | Preflight, migration/backend, frontend, smoke | PASS |
@@ -162,11 +172,16 @@ removing obsolete FE11 edit-action tests, not a skipped FE10 test.
   behavior; the deployed frontend was additionally observed on the Azure
   domain rather than localhost.
 
-## 6. Remaining Mandatory Gates
+## 6. Completed Mandatory Gates
 
-1. Obtain fresh H2 approval for the complete post-`main@30f936d` candidate,
-   publish it, and make the resulting latest PR head pass exact-head CI/Azure.
-2. Repeat separate Standards and Spec H3 review on that exact latest head.
-3. Obtain explicit H3 approval before merge.
-4. Merge PR #75, then verify exact post-merge `main` CI and automatic Azure
-   staging deployment before claiming completion.
+| Gate | Immutable evidence | Result |
+| --- | --- | --- |
+| Post-drift H2 | Fingerprint `e123345be05b59a9e519d182b301ab5464160e8fc32aed8d17d3c463e28e0a15` | APPROVED |
+| Exact-head quality/deployment | CI `30317424995`; Azure staging `30317621429`; head `778e0a470d8a1083bf571a8007b3c058eee4bb22` | PASS |
+| H3 | Separate Standards and Spec reviews: no actionable finding; user explicitly approved the exact head | APPROVED |
+| Integration | PR #75 merged as `b75776b10d6cf4b6868d2ba51eb3268073483b8b` | PASS |
+| Post-merge runtime | CI `30341279111`; automatic Azure staging `30341540847` | PASS |
+
+The closeout changes only evidence/status fields and approved task transitions.
+No business rule, schema, API, UI behavior, Azure configuration, or database
+data is changed by this record.

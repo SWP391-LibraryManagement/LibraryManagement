@@ -1,6 +1,6 @@
 # FE10 Notification Inbox Expansion Design
 
-**Status:** IMPLEMENTED - POST-DRIFT H2/EXACT-HEAD GATES PENDING
+**Status:** COMPLETE - PR #75 MERGED, POST-MERGE CI/AZURE PASS
 
 **Design approved:** 2026-07-27
 
@@ -17,13 +17,14 @@ shell.
 **Implementation baseline:** governance PR #70 merged to `main` as
 `25c09ec5f90d21e4ab0228cccd838b3548d4d90d`. FE10-I01 through FE10-I08,
 the migration-hash remediation, and the bounded H3 round-one remediation are
-implemented. PR #75 historical head `cf0a236` passed exact-head CI
-`30315046007`, Azure staging `30315273298`, public HTTPS/CORS,
-protected-route, Azure SQL schema/index, cleanup, and final two-axis H3 with no
-actionable finding. Historical three-role API/browser evidence remains
-recorded for `28c4f80`. The approved documentation-only rebase to
-`main@30f936d` preserves runtime behavior but requires fresh H2, exact-head
-CI/Azure, repeated H3, merge, and post-merge gates.
+complete. After the documentation-only rebase to `main@30f936d`, H2 approved
+fingerprint `e123345be05b59a9e519d182b301ab5464160e8fc32aed8d17d3c463e28e0a15`.
+PR #75 head `778e0a470d8a1083bf571a8007b3c058eee4bb22` passed exact-head CI
+`30317424995` and Azure staging `30317621429`, received clean two-axis H3 and
+explicit approval, then merged as `b75776b10d6cf4b6868d2ba51eb3268073483b8b`.
+Exact post-merge CI `30341279111` and automatic Azure staging `30341540847`
+passed. Historical three-role API/browser evidence remains recorded for
+`28c4f80`.
 
 **H1 deployment addendum approved 2026-07-28:** preserve upstream CI-gated
 automatic staging deployment plus manual reruns. Both paths fail closed unless
@@ -67,7 +68,8 @@ runtime, API, migration, UI, or test changes. Exact upstream CI `30315665010`
 and automatic Azure staging `30315842152` passed. Preserve the Vietnamese
 translation and implemented v0.5.0 contract, invalidate the earlier H2
 authority, and require a fresh fingerprint/H2 plus exact-head CI/Azure and
-repeated H3 before merge.
+repeated H3 before merge. Those gates later completed through PR #75 as
+recorded in the implementation baseline above.
 
 ## 1. Outcome And Scope
 

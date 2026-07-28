@@ -2,7 +2,7 @@
 
 # Phiên bản: 0.5.0
 
-# Trạng thái: V0.5.0 ĐÃ TRIỂN KHAI - ĐANG CHỜ H2 SAU DRIFT, H3 VÀ MERGE
+# Trạng thái: V0.5.0 HOÀN TẤT - PR #75 ĐÃ MERGE, CI/AZURE HẬU MERGE ĐẠT
 
 # Chủ sở hữu: Nhat
 
@@ -13,12 +13,14 @@
 # Thư mục tính năng: `.sdd/specs/feat-notification-management/`
 
 > Trạng thái bàn giao hiện tại (2026-07-28): phạm vi Giai đoạn 1 và phần mở
-> rộng hộp thư cá nhân v0.5.0 đã được triển khai. PR #75 tại head lịch sử
-> `cf0a236` đã vượt qua CI `30315046007`, Azure staging `30315273298` và H3
-> hai trục không còn finding. Nhánh hiện đã rebase lên H1-approved
-> `main@30f936d`, chỉ nhận bản dịch tài liệu SDD tiếng Việt, nên phải có
-> fingerprint/H2 mới, CI/Azure chính xác theo head mới, H3 lặp lại, phê duyệt
-> H3, merge và kiểm tra sau merge trước khi tuyên bố hoàn tất. `TASKS.md` và
+> rộng hộp thư cá nhân v0.5.0 đã hoàn tất. Sau rebase tài liệu lên
+> `main@30f936d`, H2 phê duyệt fingerprint
+> `e123345be05b59a9e519d182b301ab5464160e8fc32aed8d17d3c463e28e0a15`.
+> PR #75 tại head `778e0a470d8a1083bf571a8007b3c058eee4bb22` vượt CI
+> `30317424995`, Azure staging `30317621429`, H3 hai trục không có finding có
+> thể hành động và được phê duyệt, rồi merge thành
+> `b75776b10d6cf4b6868d2ba51eb3268073483b8b`. CI hậu merge `30341279111` và
+> Azure staging tự động `30341540847` đều đạt. `TASKS.md` và
 > `.sdd/reviews/fe10-notification-inbox-staging-h3-closeout-2026-07-27.md` là
 > nguồn chuẩn cho trạng thái giao hàng này. Các nhãn lịch sử `Not Started`,
 > `PARTIAL` hoặc đang chờ review không phải trạng thái hiện tại.
@@ -52,9 +54,9 @@
 > Bản sửa đổi v0.5.0 bổ sung hợp đồng hộp thư thông báo cá nhân. Người dùng đã
 > phê duyệt thiết kế, SPEC và kế hoạch triển khai/H1. Governance PR #70 đã
 > merge vào `main` dưới commit `25c09ec`; FE10-I01..I08 và remediation H3 vòng
-> một đã được triển khai, kiểm thử và triển khai Azure. Baseline hiện tại là
-> H1-approved `main@30f936d`; các cổng tích hợp cuối của head sau rebase vẫn
-> bắt buộc.
+> một đã được triển khai, kiểm thử và triển khai Azure. Sau rebase
+> `main@30f936d`, các cổng tích hợp cuối đã hoàn tất qua PR #75 và bằng chứng
+> exact-head/hậu merge được ghi ở trạng thái bàn giao phía trên.
 >
 > Bản sửa đổi v0.5.0 xác định phần mở rộng hộp thư thông báo cá nhân được người
 > dùng phê duyệt và ghi lại trong
@@ -63,9 +65,8 @@
 > không nhạy cảm của chính mình. Trạng thái gửi email vẫn độc lập, các bản ghi
 > xác thực/thiết lập nhạy cảm vẫn bị loại trừ và điều hướng được suy ra từ danh
 > sách cho phép của máy chủ. Thiết kế, SPEC bằng văn bản và kế hoạch triển khai/H1
-> đã được phê duyệt. Phần triển khai sản phẩm đã hoàn thành; trạng thái
-> `COMPLETE` của mục tiêu chỉ được ghi sau H2 mới, CI/Azure chính xác theo
-> head, H3 lặp lại, merge và các cổng sau merge.
+> đã được phê duyệt. Phần triển khai sản phẩm và các cổng H2, CI/Azure
+> exact-head, H3, merge và CI/Azure sau merge đã hoàn thành qua PR #75.
 
 ---
 
@@ -700,16 +701,16 @@ Các quyết định ban đầu được phê duyệt trong gói rà soát Giai 
 | AC-FE10-008 | Khóa trùng phát lại cùng một bản ghi xuyên suốt mọi trạng thái bằng DTO `200` tối thiểu | FR-FE10-008 | BR-FE10-006, BR-FE10-013 | FT46 đến FT49 | FE10-H08 | Đã phê duyệt để triển khai |
 | AC-FE10-009 | Lỗi được xử lý an toàn/không chặn; FE02 phát hành lại sự kiện OTP/mã thông báo mới, thao tác thử lại `FAILED` không nhạy cảm dùng lại lịch sử, còn `PROCESSING` không chắc chắn tuyệt đối không được gửi lại | FR-FE10-007 | BR-FE10-004, BR-FE10-008, BR-FE10-012, BR-FE10-013 | Các trường hợp nhà cung cấp/chuyển đổi/thử lại trong `backend/tests/notificationRoutes.test.js` | FE10-H03, FE10-H08, FE10-S04, FE10-S10 | Có bằng chứng tự động; đang chờ rà soát H2 |
 | AC-FE10-010 | Thiết lập tài khoản từ trình yêu cầu ràng buộc với FE11 được gửi đồng bộ bằng siêu dữ liệu nguồn an toàn và không lưu bền thông tin xác thực/nội dung thiết lập | FR-FE10-010 | BR-FE10-002, BR-FE10-004 đến BR-FE10-008, BR-FE10-010 đến BR-FE10-013 | FT52, FT55 | FE10-S06 đến FE10-S08 | Đã phê duyệt để triển khai |
-| AC-FE10-011 | Danh sách cá nhân đã xác thực chỉ trả về DTO an toàn không nhạy cảm đủ điều kiện thuộc sở hữu, với bộ lọc SQL, thứ tự mới nhất trước và phân trang | FR-FE10-011 | BR-FE10-014, BR-FE10-015, BR-FE10-020 | Migration, repository, tuyến, tích hợp và trình duyệt | FE10-I01 đến FE10-I03, FE10-I06 đến FE10-I08 | Đã triển khai và có bằng chứng tự động/Azure; chờ cổng head sau drift |
-| AC-FE10-012 | Số lượng chưa đọc chỉ gồm các bản ghi đủ điều kiện chưa đọc của người dùng đã xác thực | FR-FE10-012 | BR-FE10-014 đến BR-FE10-016, BR-FE10-020 | Repository, tuyến, frontend, tích hợp và trình duyệt | FE10-I01 đến FE10-I04, FE10-I07, FE10-I08 | Đã triển khai và có bằng chứng tự động/Azure; chờ cổng head sau drift |
-| AC-FE10-013 | Đánh dấu một mục chỉ áp dụng cho bản ghi của chính mình, an toàn với dữ liệu nhạy cảm, có tính lũy đẳng và độc lập với việc gửi email | FR-FE10-013 | BR-FE10-014 đến BR-FE10-016 | Repository, tuyến, frontend, tích hợp và trình duyệt | FE10-I01 đến FE10-I04, FE10-I06 đến FE10-I08 | Đã triển khai và có bằng chứng tự động/Azure; chờ cổng head sau drift |
-| AC-FE10-014 | Đánh dấu tất cả chỉ thay đổi các hàng đủ điều kiện chưa đọc của người dùng hiện tại bằng một dấu thời gian và phát lại trả về 0 | FR-FE10-014 | BR-FE10-014 đến BR-FE10-016 | Migration, repository, tuyến, frontend và trình duyệt | FE10-I01 đến FE10-I03, FE10-I06 đến FE10-I08 | Đã triển khai và có bằng chứng tự động/Azure; chờ cổng head sau drift |
-| AC-FE10-015 | Các mục đủ điều kiện chỉ nhận đường dẫn thao tác tương đối chuẩn nằm trong danh sách cho phép của backend | FR-FE10-015 | BR-FE10-017 | Phép chiếu, tuyến, frontend, tích hợp và trình duyệt | FE10-I02, FE10-I03, FE10-I05, FE10-I07, FE10-I08 | Đã triển khai và có bằng chứng tự động/Azure; chờ cổng head sau drift |
-| AC-FE10-016 | Chuông, phần xem trước, bộ lọc/phân trang hộp thư, thao tác đọc, trạng thái an toàn và điều hướng không chặn khớp với hợp đồng API | FR-FE10-016 | BR-FE10-014 đến BR-FE10-018 | Hợp đồng frontend, shell, trang và trình duyệt | FE10-I04 đến FE10-I08 | Đã triển khai và có bằng chứng tự động/Azure; chờ cổng head sau drift |
+| AC-FE10-011 | Danh sách cá nhân đã xác thực chỉ trả về DTO an toàn không nhạy cảm đủ điều kiện thuộc sở hữu, với bộ lọc SQL, thứ tự mới nhất trước và phân trang | FR-FE10-011 | BR-FE10-014, BR-FE10-015, BR-FE10-020 | Migration, repository, tuyến, tích hợp và trình duyệt | FE10-I01 đến FE10-I03, FE10-I06 đến FE10-I08 | Hoàn tất qua PR #75; CI/Azure exact-head và hậu merge đều đạt |
+| AC-FE10-012 | Số lượng chưa đọc chỉ gồm các bản ghi đủ điều kiện chưa đọc của người dùng đã xác thực | FR-FE10-012 | BR-FE10-014 đến BR-FE10-016, BR-FE10-020 | Repository, tuyến, frontend, tích hợp và trình duyệt | FE10-I01 đến FE10-I04, FE10-I07, FE10-I08 | Hoàn tất qua PR #75; CI/Azure exact-head và hậu merge đều đạt |
+| AC-FE10-013 | Đánh dấu một mục chỉ áp dụng cho bản ghi của chính mình, an toàn với dữ liệu nhạy cảm, có tính lũy đẳng và độc lập với việc gửi email | FR-FE10-013 | BR-FE10-014 đến BR-FE10-016 | Repository, tuyến, frontend, tích hợp và trình duyệt | FE10-I01 đến FE10-I04, FE10-I06 đến FE10-I08 | Hoàn tất qua PR #75; CI/Azure exact-head và hậu merge đều đạt |
+| AC-FE10-014 | Đánh dấu tất cả chỉ thay đổi các hàng đủ điều kiện chưa đọc của người dùng hiện tại bằng một dấu thời gian và phát lại trả về 0 | FR-FE10-014 | BR-FE10-014 đến BR-FE10-016 | Migration, repository, tuyến, frontend và trình duyệt | FE10-I01 đến FE10-I03, FE10-I06 đến FE10-I08 | Hoàn tất qua PR #75; CI/Azure exact-head và hậu merge đều đạt |
+| AC-FE10-015 | Các mục đủ điều kiện chỉ nhận đường dẫn thao tác tương đối chuẩn nằm trong danh sách cho phép của backend | FR-FE10-015 | BR-FE10-017 | Phép chiếu, tuyến, frontend, tích hợp và trình duyệt | FE10-I02, FE10-I03, FE10-I05, FE10-I07, FE10-I08 | Hoàn tất qua PR #75; CI/Azure exact-head và hậu merge đều đạt |
+| AC-FE10-016 | Chuông, phần xem trước, bộ lọc/phân trang hộp thư, thao tác đọc, trạng thái an toàn và điều hướng không chặn khớp với hợp đồng API | FR-FE10-016 | BR-FE10-014 đến BR-FE10-018 | Hợp đồng frontend, shell, trang và trình duyệt | FE10-I04 đến FE10-I08 | Hoàn tất qua PR #75; CI/Azure exact-head và hậu merge đều đạt |
 
 ### Tóm tắt độ bao phủ
 
-- Tổng AC: 16 (AC-FE10-001 đến AC-FE10-016) - tất cả đều được ánh xạ; AC-FE10-011 đến AC-FE10-016 đã được triển khai và có kiểm thử tự động, CI, Azure staging cùng H3 lịch sử; head sau rebase vẫn phải vượt qua các cổng tích hợp mới.
+- Tổng AC: 16 (AC-FE10-001 đến AC-FE10-016) - tất cả đều được ánh xạ; AC-FE10-011 đến AC-FE10-016 đã được triển khai, kiểm thử, H2/H3, CI/Azure exact-head, merge và CI/Azure hậu merge xác nhận qua PR #75.
 - Tổng FR: 16 (FR-FE10-001 đến FR-FE10-016) - tất cả đều được ánh xạ.
 - Tổng BR: 20 (BR-FE10-001 đến BR-FE10-020) - tất cả đều được ánh xạ.
 - Các kiểm thử bài tập vẫn là FT46 đến FT49. Phần triển khai tăng cường được truy vết tới FE10-H02 đến FE10-H08 và được FE10-H09 xác nhận.
@@ -723,7 +724,7 @@ Các quyết định ban đầu được phê duyệt trong gói rà soát Giai 
 | FR-FE10-006 | Việc nhà cung cấp chấp nhận đặt `SENT`, `sentAt` và một lần thử thành công | Đã lên kế hoạch |
 | BR-FE10-011 / Q-FE10-009 | Quyền sở hữu kết quả thành viên được ràng buộc bởi FE04 và ranh giới HTTP được bảo vệ | Đã lên kế hoạch |
 | BR-FE10-010 / FR-FE10-005 / FR-FE10-009 | `notificationRoutes.test.js` từ chối ba lớp định nghĩa đã lưu không an toàn mà không gọi kết xuất/lưu bền/nhà cung cấp, đồng thời vẫn làm sạch giá trị khi chạy | Hoàn thành |
-| BR-FE10-014 đến BR-FE10-020 / FR-FE10-011 đến FR-FE10-016 | Quyền sở hữu hộp thư cá nhân, loại trừ dữ liệu nhạy cảm, phép chiếu an toàn, trạng thái đọc, danh sách thao tác cho phép, migration/điền lùi và chấp nhận giao diện | Đã phê duyệt và lên kế hoạch; chỉ bắt đầu triển khai sau khi kích hoạt quản trị tới `main` |
+| BR-FE10-014 đến BR-FE10-020 / FR-FE10-011 đến FR-FE10-016 | Quyền sở hữu hộp thư cá nhân, loại trừ dữ liệu nhạy cảm, phép chiếu an toàn, trạng thái đọc, danh sách thao tác cho phép, migration/điền lùi và chấp nhận giao diện | Hoàn tất qua FE10-I01..I08 và PR #75; bằng chứng H2/H3, CI/Azure exact-head và hậu merge đã ghi nhận |
 
 
 ### Truy vết bài tập bên ngoài (ID UC trong Excel)
@@ -795,5 +796,6 @@ Danh sách kiểm tra hợp đồng tăng cường (được Nhat phê duyệt n
   kế vào ngày 2026-07-27.
 - [x] PLAN.md và TASKS.md đã được sửa đổi từ hợp đồng bằng văn bản được phê duyệt,
   và kế hoạch triển khai/H1 được phê duyệt ngày 2026-07-28.
-- [x] Bản sửa đổi tài liệu này không tuyên bố đã hoàn tất mã sản phẩm hộp thư,
-  lược đồ, API công khai hoặc triển khai.
+- [x] Mã sản phẩm hộp thư, lược đồ additive, API công khai, triển khai Azure,
+  H2/H3, merge và các cổng hậu merge đã hoàn tất qua PR #75; không có yêu cầu
+  hay hành vi mới được thêm bởi closeout tài liệu này.

@@ -2,7 +2,7 @@
 
 # Version: 0.5.0
 
-# Status: V0.5.0 AZURE STAGING VERIFIED - H3 REMEDIATION IN PROGRESS
+# Status: V0.5.0 COMPLETE - PR #75 MERGED, POST-MERGE CI/AZURE PASS
 
 # Owner: Nhat
 
@@ -182,9 +182,10 @@ The approved SPEC and FE10-H01 through FE10-H09 resolved the implementation bloc
 - `SPEC.md` v0.5.0, the personal inbox design, and FE10-I01..I08 plan are
   H1-approved; governance PR #70 is merged as `25c09ec`.
 - FE10-I01 through FE10-I08, the migration-hash remediation, and the bounded
-  H3 round-one remediation are implemented. PR #75 historical head `cf0a236`
-  passed exact-head CI `30315046007`, Azure staging `30315273298`, and
-  two-axis H3 with no actionable finding.
+  H3 round-one remediation were integrated through PR #75. The exact reviewed
+  head `778e0a470d8a1083bf571a8007b3c058eee4bb22` passed CI `30317424995`
+  and Azure staging `30317621429`; two-axis H3 returned no actionable finding
+  and received explicit approval.
 - H3 round one against `main@a5fcbb9...28c4f80` failed on missing ADR-002
   read-state documentation, stale lifecycle source-of-truth text, two bounded
   `/notifications` read-state controls, and a browser-reported popover stacking
@@ -194,20 +195,15 @@ The approved SPEC and FE10-H01 through FE10-H09 resolved the implementation bloc
   frontend 259/259 plus lint/build; deployment 20/20; system 10/10;
   traceability state 3/3 and FE10 14/16 (88%); Chromium 11/11; audits, Azure
   schema preparation, and diff hygiene.
-- The user approved documentation-only drift through `main@30f936d`; upstream
-  CI `30315665010` and automatic Azure staging `30315842152` passed. The branch
-  rebased without runtime conflict and preserved the Vietnamese SDD
-  translation. Fresh H2/exact-head gates and repeated H3 are mandatory because
-  the earlier H2 authority cannot be reused after rebase.
-- Exact-head public HTTPS/CORS and protected inbox routing passed on Azure.
-  Azure SQL retained exactly one nullable `ReadAt` column and one supporting
-  index; temporary probe and firewall state was removed. Historical three-role
-  own-record verification remains recorded for unchanged backend head
-  `28c4f80`. Repeated H3, explicit H3 approval, merge, and exact post-merge
-  CI/deployment remain pending.
-- The complete post-`main@30f936d` reconciliation must be fingerprinted and
-  H2-approved; the resulting latest PR head must then pass exact-head gates
-  before repeated H3.
+- The user-approved documentation-only drift through `main@30f936d` preserved
+  the Vietnamese SDD translation without runtime conflict. Its fresh H2
+  fingerprint `e123345be05b59a9e519d182b301ab5464160e8fc32aed8d17d3c463e28e0a15`,
+  exact-head CI/Azure, and repeated H3 all completed before PR #75 merged.
+- PR #75 merged as `b75776b10d6cf4b6868d2ba51eb3268073483b8b`. Exact
+  post-merge CI `30341279111` and automatic Azure staging `30341540847`
+  passed, including preflight, backend, frontend, and smoke. Azure continues
+  to enforce the migration gate; no additional database mutation is claimed
+  by this documentation closeout.
 - The 2026-07-28 H1 deployment addendum preserves upstream CI-gated automatic
   staging while requiring exact migration-hash proof for both automatic and
   manual runs; manual runs retain an additional human confirmation input.
