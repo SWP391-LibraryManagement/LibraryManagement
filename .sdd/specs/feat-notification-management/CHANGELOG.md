@@ -336,11 +336,11 @@
   dùng cấp chấp nhận con người thường trực; PR tích hợp và CI `main` hậu merge
   chính xác vẫn bắt buộc.
 
-## 2026-07-19 - Fan-in OTP, FE02, FE04 và schema
+## 2026-07-19 - Hội tụ luồng OTP, FE02, FE04 và schema
 
 - Đồng bộ baseline chuẩn và mẫu OTP FE10 với độ rộng schema dùng chung do FE11
   sở hữu; migration đạt hai lần thực thi SQL Server dùng một lần.
-- Fan-in gửi xác minh/đặt lại FE02 vào trình yêu cầu nhạy cảm ràng buộc FE02
+- Hội tụ luồng gửi xác minh/đặt lại FE02 vào trình yêu cầu nhạy cảm ràng buộc FE02
   không gửi trùng hoặc lưu nội dung OTP.
 - Bổ sung ranh giới nguồn `MEMBERSHIP_RESULT` chỉ FE04 với ngữ nghĩa gửi không
   chặn sau commit.
