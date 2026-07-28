@@ -1,17 +1,22 @@
 # PLAN.md - FE12 Báo cáo và thống kê
 
-Trạng thái: KHẮC PHỤC GOVERNANCE H3 - CHỜ H2 MỚI
+Trạng thái: H2 ADDENDUM ĐÃ PHÊ DUYỆT - H3 ĐANG KHẮC PHỤC
 
 Chủ sở hữu: Nhat
 
-Cập nhật: 2026-07-27
+Cập nhật: 2026-07-29
 
 Trạng thái workflow: baseline Giai đoạn 2 vẫn hoàn tất. Nhat phê duyệt PLAN/
 TASKS v0.2.0 và phụ lục H2 tích hợp `8d0059b` ngày 2026-07-27. Kết quả đã review
 được commit thành `f346ae0`, push lên PR nháp #63 và lượt CI `30244750250` đạt.
 Review H3 đầu tiên không phát hiện lỗi mã FE12 hay quy tắc nghiệp vụ, chỉ trả về
 cách diễn đạt governance cũ. Khắc phục chỉ-tài-liệu vẫn chưa commit, chờ H2 mới
-và H3 lặp lại.
+và H3 lặp lại. Prerequisite v0.2.1 trên PR #81 đã nhận H2 addendum fingerprint
+`063323fcbb0171a6628c6f310d55719369d7afa1f78d8c6b83f36bd69dbdd505`
+và H2 remediation fingerprint
+`c4216068a3aafbbfeaddd47ef2398a84555746c35b290e4f1a040d370d9612ed`.
+CI implementation-head `30402908636` tại `65d9198` đạt; commit chỉ-tài-liệu
+chốt bằng chứng phải qua H3 lặp lại và CI exact-head trước merge.
 
 ---
 
@@ -159,3 +164,17 @@ Kế hoạch thực thi chi tiết:
    vi chỉ đọc.
 5. Chạy kiểm thử FE12 tập trung/đầy đủ, truy vết, vệ sinh diff và một yêu cầu
    HTTP runtime thực trước H2.
+
+## 8. Prerequisite ngày nghiệp vụ báo cáo mượn v0.2.1
+
+1. RED: cố định service clock tại ranh giới ngày `Asia/Ho_Chi_Minh`, tái hiện
+   SIT-002/SIT-008 và thêm ca thiếu/sai `businessDate` cho SQL/in-memory.
+2. GREEN: service đọc clock đúng một lần, tạo `businessDate` bằng
+   `formatBusinessDate` và truyền tường minh cho repository.
+3. SQL và in-memory repository bắt buộc `businessDate` hợp lệ chính xác
+   `YYYY-MM-DD`; thiếu, sai định dạng hoặc ngày bất khả thi phải fail-fast trước
+   khi SQL/fixture được đọc.
+4. Mọi direct-repository test truyền ngày cố định; không dùng fake global clock
+   và không đổi expected `BORROWED` thành `OVERDUE` để che drift.
+5. Chạy focused/full backend, coverage, frontend, E2E, deployment, traceability
+   và vệ sinh diff trước H2/H3.

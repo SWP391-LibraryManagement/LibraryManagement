@@ -1,5 +1,12 @@
 # CHANGELOG.md - FE12 Báo cáo và thống kê
 
+## 2026-07-29 - Prerequisite ngày nghiệp vụ báo cáo mượn (v0.2.1)
+
+- Làm rõ service sở hữu một `businessDate` `Asia/Ho_Chi_Minh` cho mỗi request.
+- Bắt buộc SQL/in-memory repository nhận ngày hợp lệ tường minh và fail-fast
+  trước khi truy vấn nếu thiếu/sai.
+- Loại phụ thuộc host clock/fake global clock khỏi bằng chứng SIT-002/SIT-008.
+
 ## 2026-07-27 - Đặc tả allowlist query báo cáo chính xác (v0.2.0)
 
 - Xác định allowlist khóa query chính xác riêng cho endpoint mượn, kho và thống

@@ -1,18 +1,24 @@
 # TASKS.md - FE12 Báo cáo và thống kê
 
-Trạng thái: KHẮC PHỤC GOVERNANCE H3 - CHỜ H2 MỚI
+Trạng thái: H2 ADDENDUM ĐÃ PHÊ DUYỆT - H3 ĐANG KHẮC PHỤC
 Implementation State: COMPLETE
 
 Chủ sở hữu: Nhat
 
-Cập nhật: 2026-07-27
+Cập nhật: 2026-07-29
 
 Trạng thái workflow: baseline Giai đoạn 2 vẫn hoàn tất. Nhat phê duyệt PLAN/
 TASKS FE12-N11 và phụ lục H2 tích hợp `8d0059b` ngày 2026-07-27. Kết quả đã
 review được commit thành `f346ae0`, push lên PR nháp #63 và lượt CI
 `30244750250` đạt. Review H3 đầu tiên không phát hiện lỗi mã FE12 hay quy tắc
 nghiệp vụ, chỉ trả về cách diễn đạt governance cũ. Khắc phục chỉ-tài-liệu vẫn
-chưa commit, chờ H2 mới và H3 lặp lại.
+chưa commit, chờ H2 mới và H3 lặp lại. Prerequisite v0.2.1 trên PR #81 đã nhận
+H2 addendum fingerprint
+`063323fcbb0171a6628c6f310d55719369d7afa1f78d8c6b83f36bd69dbdd505`
+và H2 remediation fingerprint
+`c4216068a3aafbbfeaddd47ef2398a84555746c35b290e4f1a040d370d9612ed`.
+CI implementation-head `30402908636` tại `65d9198` đạt; commit chỉ-tài-liệu
+chốt bằng chứng phải qua H3 lặp lại và CI exact-head trước merge.
 
 ---
 
@@ -233,3 +239,25 @@ Bằng chứng tự động chi tiết được ghi trong
   - Cổng: phụ lục H2 sản phẩm phê duyệt commit `f346ae0` và CI PR
     `30244750250` đạt. Khắc phục H3 chỉ-tài-liệu cần H2 mới và H3 lặp lại trước
     merge.
+
+## 12. Prerequisite ngày nghiệp vụ báo cáo mượn v0.2.1
+
+- [x] **FE12-N12 - Sửa clock drift ở service boundary.**
+  - Ánh xạ: BR-FE12-004/012, FR-FE12-001, AC-FE12-001,
+    NFR-FE12-INT-002.
+  - RED: SIT-002/SIT-008 phân loại theo ngày thật của host thay vì clock của
+    harness.
+  - GREEN: service đọc clock một lần, truyền `businessDate` cho SQL/in-memory
+    repository; system integration không dùng fake global clock.
+- [x] **FE12-N13 - Fail-fast và parity cho `businessDate`.**
+  - SQL/in-memory từ chối thiếu, sai `YYYY-MM-DD` hoặc ngày bất khả thi trước
+    khi đọc dữ liệu.
+  - Direct-repository tests dùng ngày cố định; cùng fixture trước/sau hạn trả
+    cho kết quả `BORROWED`/`OVERDUE` giống nhau.
+  - Bằng chứng cục bộ: RED 14 ca lỗi như dự kiến; GREEN tập trung 5 suite,
+    73/73 kiểm thử.
+
+H2 remediation fingerprint
+`c4216068a3aafbbfeaddd47ef2398a84555746c35b290e4f1a040d370d9612ed`
+đã được phê duyệt; H3 lặp lại và CI exact-head bắt buộc trước merge PR
+prerequisite.

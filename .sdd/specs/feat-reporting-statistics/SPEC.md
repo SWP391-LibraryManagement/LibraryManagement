@@ -1,18 +1,18 @@
 # SPEC.md - FE12 Báo cáo & Thống kê
 
-# Phiên bản: 0.2.0
+# Phiên bản: 0.2.1
 
-# Trạng thái: APPROVED - DANH SÁCH CHO PHÉP THAM SỐ TRUY VẤN 2026-07-27
+# Trạng thái: H2 ADDENDUM ĐÃ PHÊ DUYỆT - H3 ĐANG KHẮC PHỤC
 
 # Chủ sở hữu: Nhat
 
-# Cập nhật lần cuối: 2026-07-27
+# Cập nhật lần cuối: 2026-07-29
 
 # ID tính năng: FE12
 
 # Thư mục tính năng: `.sdd/specs/feat-reporting-statistics/`
 
-> Trạng thái phân phối hiện tại (2026-07-20): `COMPLETE` cho phạm vi Giai đoạn 1 đã được phê duyệt.
+> Trạng thái phân phối hiện tại (2026-07-29): `COMPLETE` cho phạm vi Giai đoạn 1 và prerequisite ngày nghiệp vụ v0.2.1 đã được phê duyệt H2; H3 vẫn bắt buộc trước merge.
 > `TASKS.md` và `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`
 > là nguồn có thẩm quyền về trạng thái triển khai hiện tại. Các nhãn `Not Started` cũ hơn,
 > `PARTIAL`, `READY FOR REVIEW` hoặc đang chờ đánh giá được giữ lại bên dưới là
@@ -154,7 +154,7 @@ Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
 - BR-FE12-001: Báo cáo ở dạng chỉ đọc và không được sửa đổi dữ liệu nguồn.
 - BR-FE12-002: Khách và thành viên không thể truy cập báo cáo của nhân viên.
 - BR-FE12-003: Quyền truy cập báo cáo phải được bảo vệ theo vai trò trên máy chủ; cả Thủ thư và Quản trị viên đều có thể truy cập báo cáo mượn, tồn kho và thống kê người dùng, còn Thành viên và Khách không được truy cập.
-- BR-FE12-004: Báo cáo mượn phải dùng bản ghi mượn FE07 làm nguồn chuẩn. Các chỉ số theo kỳ mượn và sách được mượn nhiều nhất chỉ tính `BorrowDetails` ở trạng thái `BORROWED`, `RETURNED`, `LOST`, `DAMAGED` hoặc `OVERDUE`; `REQUESTED` chưa phải lượt mượn đã bàn giao nên không được tính.
+- BR-FE12-004: Báo cáo mượn phải dùng bản ghi mượn FE07 làm nguồn chuẩn. Các chỉ số theo kỳ mượn và sách được mượn nhiều nhất chỉ tính `BorrowDetails` ở trạng thái `BORROWED`, `RETURNED`, `LOST`, `DAMAGED` hoặc `OVERDUE`; `REQUESTED` chưa phải lượt mượn đã bàn giao nên không được tính. Mọi phép suy ra quá hạn phải dùng một ngày nghiệp vụ `Asia/Ho_Chi_Minh` do service tạo từ clock có kiểm soát và truyền tường minh xuống repository; repository không được tự đọc ngày hiện tại của host.
 - BR-FE12-005: Báo cáo tồn kho phải dùng trạng thái FE06/BookCopies làm nguồn chuẩn.
 - BR-FE12-006: Thống kê người dùng phải dùng dữ liệu FE11/Users/Roles làm nguồn chuẩn.
 - BR-FE12-007: Thống kê tư cách thành viên, nếu hiển thị, phải dùng dữ liệu thành viên FE04 làm nguồn chuẩn.
@@ -172,7 +172,7 @@ Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
 
 ## 7. Yêu cầu chức năng
 
-- FR-FE12-001: Khi tác nhân được ủy quyền xem báo cáo mượn, hệ thống phải trả về chính xác các chỉ số mượn và trường dữ liệu hàng được định nghĩa trong Phần 10.3.
+- FR-FE12-001: Khi tác nhân được ủy quyền xem báo cáo mượn, hệ thống phải trả về chính xác các chỉ số mượn và trường dữ liệu hàng được định nghĩa trong Phần 10.3. Service phải đọc clock đúng một lần cho request, tạo `businessDate` dạng `YYYY-MM-DD` và truyền giá trị hợp lệ bắt buộc này cho cả SQL repository và repository in-memory.
 - FR-FE12-002: Khi tác nhân được ủy quyền xem báo cáo tồn kho, hệ thống phải trả về chính xác các chỉ số tồn kho và trường dữ liệu hàng được định nghĩa trong Phần 10.3, đồng thời xác định sách sắp hết hàng có từ hai bản sao sẵn có hiệu lực trở xuống.
 - FR-FE12-003: Khi tác nhân được ủy quyền xem thống kê người dùng, hệ thống phải trả về chính xác các chỉ số và trường dữ liệu hàng của người dùng/thành viên được định nghĩa trong Phần 10.3, với bộ lọc ngày chỉ áp dụng cho mức tăng trưởng trong kỳ phê duyệt.
 - FR-FE12-004: Nếu tác nhân không được ủy quyền thì hệ thống sẽ từ chối quyền truy cập báo cáo.
@@ -188,7 +188,7 @@ Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
 
 ## 8. Tiêu chí chấp nhận
 
-- AC-FE12-001: Với Thủ thư hoặc Quản trị viên, khi xem báo cáo mượn, hệ thống hiển thị tổng số lượt mượn và số lượng theo trạng thái.
+- AC-FE12-001: Với Thủ thư hoặc Quản trị viên, khi xem báo cáo mượn, hệ thống hiển thị tổng số lượt mượn và số lượng theo trạng thái. Với cùng dữ liệu và `businessDate` cố định trước/sau hạn trả, SQL và in-memory phải phân loại `BORROWED`/`OVERDUE` giống nhau; thiếu, sai định dạng hoặc ngày bất khả thi phải fail-fast trước khi truy vấn.
 - AC-FE12-002: Với Thủ thư hoặc Quản trị viên, khi xem báo cáo tồn kho, hệ thống hiển thị số bản sao theo trạng thái và sách/danh mục tương ứng với bộ lọc, đồng thời các sách có 0-2 bản sao sẵn có xuất hiện trong danh sách sắp hết hàng. Bộ lọc trạng thái/vị trí chọn các sách và tổng số bản sao đã lọc tương ứng nhưng không che mất toàn bộ mức sẵn có của các sách đó khỏi phép tính sắp hết hàng.
 - AC-FE12-003: Với Thủ thư hoặc Quản trị viên, khi xem thống kê người dùng trong một phạm vi ngày, số lượng tổng/trạng thái/vai trò vẫn là toàn cục và `newMembersByPeriod` chỉ gồm các lần phê duyệt trong phạm vi đó.
 - AC-FE12-004: Với Khách hoặc Thành viên, khi yêu cầu báo cáo dành cho nhân viên, quyền truy cập bị từ chối.
@@ -262,7 +262,7 @@ Cả ba endpoint báo cáo đều trả về `{ metrics, rows, page, limit, tota
 
 | Báo cáo | Hợp đồng số liệu | Hợp đồng hàng chi tiết |
 | ------ | ---------------- | --------------------- |
-| Mượn | `activeLoans` đếm các chi tiết `BORROWED`; `overdueLoans` đếm các chi tiết `BORROWED` có hạn trả trước ngày nghiệp vụ `Asia/Ho_Chi_Minh` hiện tại; `borrowCountByPeriod` nhóm các chi tiết lượt mượn thực tế đủ điều kiện theo `BorrowDate` (`YYYY-MM-DD`); `topBorrowedBooks` trả về tối đa 10 sách, sắp xếp theo số lượt mượn giảm dần, tiêu đề tăng dần, rồi `BookId` tăng dần. | `borrowDetailId`, `requestId`, `userId`, `bookId`, `copyId`, `status`, `borrowDate`, `dueDate`, `returnDate`. `OVERDUE` là trạng thái hiển thị suy ra cho một chi tiết `BORROWED` đã quá hạn. |
+| Mượn | `activeLoans` đếm các chi tiết `BORROWED`; `overdueLoans` đếm các chi tiết `BORROWED` có hạn trả trước ngày nghiệp vụ `Asia/Ho_Chi_Minh` do service truyền xuống; `borrowCountByPeriod` nhóm các chi tiết lượt mượn thực tế đủ điều kiện theo `BorrowDate` (`YYYY-MM-DD`); `topBorrowedBooks` trả về tối đa 10 sách, sắp xếp theo số lượt mượn giảm dần, tiêu đề tăng dần, rồi `BookId` tăng dần. | `borrowDetailId`, `requestId`, `userId`, `bookId`, `copyId`, `status`, `borrowDate`, `dueDate`, `returnDate`. `OVERDUE` là trạng thái hiển thị suy ra cho một chi tiết `BORROWED` đã quá hạn. |
 | Tồn kho | `totalBooks` đếm các sách riêng biệt trong phạm vi sách đã lọc; `totalCopies` đếm các bản sao đã lọc; `copiesByStatus` nhóm các bản sao đã lọc theo trạng thái FE06 được phê duyệt; `lowStockBooks` liệt kê các sách riêng biệt có 0..2 bản sao `AVAILABLE` hiệu lực, dùng toàn bộ mức sẵn có của từng sách đã chọn ngay cả khi bộ lọc trạng thái/vị trí thu hẹp các hàng. | `bookId`, `title`, `copyId`, `barcode`, `location`, `status`, `effectiveAvailability`. |
 | Người dùng | `totalMembers` đếm người dùng có vai trò `Member`; `usersByStatus` nhóm người dùng theo trạng thái FE02 đã phê duyệt; `usersByRole` nhóm người dùng theo vai trò FE11; `membershipByStatus` nhóm trạng thái thành viên FE04 chuẩn; `newMembersByPeriod` nhóm mọi `Members.ApprovedAt` lịch sử khác null theo `YYYY-MM-DD` trong phạm vi yêu cầu, bất kể trạng thái tư cách thành viên/tài khoản hiện tại. | `userId`, `status`, `roles`, `membershipStatus`, `createdAt`, `approvedAt`; không có địa chỉ hồ sơ, số điện thoại, mật khẩu, token hoặc trường cá nhân không cần thiết. |
 

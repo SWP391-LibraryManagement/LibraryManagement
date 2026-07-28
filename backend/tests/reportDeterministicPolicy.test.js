@@ -89,6 +89,8 @@ function makeRepository() {
   return makeInMemoryReportDependencies(authState, borrowingState).reportRepository;
 }
 
+const TEST_BUSINESS_DATE = '2026-07-14';
+
 // @spec AC-FE12-005 AC-FE12-010 FR-FE12-005
 test('all report endpoints reject invalid page and limit before calling the service', async () => {
   const cases = [
@@ -112,7 +114,7 @@ test('all report endpoints reject invalid page and limit before calling the serv
 test('unknown IDs return canonical empty reports with default pagination', async () => {
   const repository = makeRepository();
   const reports = await Promise.all([
-    repository.getBorrowingReport({ userId: 999999 }),
+    repository.getBorrowingReport({ userId: 999999 }, TEST_BUSINESS_DATE),
     repository.getInventoryReport({ bookId: 999999 }),
     repository.getUserStatistics({ roleId: 999999 }),
   ]);
@@ -128,8 +130,14 @@ test('unknown IDs return canonical empty reports with default pagination', async
 // @spec AC-FE12-010 BR-FE12-010 BR-FE12-015
 test('detailed rows normalize unknown statuses and use report-specific stable ordering', async () => {
   const repository = makeRepository();
-  const borrowing = await repository.getBorrowingReport({ page: 1, limit: 2 });
-  const borrowingAll = await repository.getBorrowingReport({ page: 1, limit: 20 });
+  const borrowing = await repository.getBorrowingReport(
+    { page: 1, limit: 2 },
+    TEST_BUSINESS_DATE
+  );
+  const borrowingAll = await repository.getBorrowingReport(
+    { page: 1, limit: 20 },
+    TEST_BUSINESS_DATE
+  );
   const inventory = await repository.getInventoryReport({ page: 1, limit: 20 });
   const users = await repository.getUserStatistics({ page: 1, limit: 20 });
 

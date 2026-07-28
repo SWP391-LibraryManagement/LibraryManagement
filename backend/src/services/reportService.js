@@ -1,4 +1,5 @@
 const errors = require('../utils/safeErrors');
+const { formatBusinessDate } = require('../utils/libraryBusinessTime');
 
 function normalizeRole(role) {
   return String(role || '').toUpperCase();
@@ -47,21 +48,25 @@ function createReportService({ reportRepository, auditLogRepository, clock = () 
   }
 
   // @spec FR-FE12-009
-  function successMetadata(reportType) {
+  function successMetadata(reportType, timestamp = clock()) {
     return {
       reportType,
       result: 'SUCCESS',
-      timestamp: clock().toISOString(),
+      timestamp: timestamp.toISOString(),
     };
   }
 
   async function getBorrowingReport(filters, actor, context = {}) {
     requireStaff(actor);
-    const report = await reportRepository.getBorrowingReport(filters);
+    const generatedAt = clock();
+    const report = await reportRepository.getBorrowingReport(
+      filters,
+      formatBusinessDate(generatedAt)
+    );
 
     await writeAudit(context, 'REPORT_BORROWING_VIEW', {
       userId: actor.userId,
-      metadata: successMetadata('BORROWING'),
+      metadata: successMetadata('BORROWING', generatedAt),
     });
 
     return report;
