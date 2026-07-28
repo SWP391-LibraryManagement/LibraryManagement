@@ -29,6 +29,17 @@ async function createBorrowAndApprove({ setup, member, librarian, copyId }) {
 }
 
 describe('System integration', () => {
+  beforeAll(() => {
+    jest.useFakeTimers({
+      doNotFake: ['nextTick', 'setImmediate', 'setTimeout', 'clearTimeout'],
+      now: new Date('2026-07-14T00:00:00.000Z'),
+    });
+  });
+
+  afterAll(() => {
+    jest.useRealTimers();
+  });
+
   test('SIT-000 wires every completed service into one Express app', () => {
     const setup = makeSystemIntegrationApp();
 

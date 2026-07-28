@@ -161,6 +161,7 @@ test('report routes, OpenAPI, and report pages expose no export surface', () => 
   const document = YAML.load(path.resolve(__dirname, '../src/docs/openapi.yaml'));
   expect(Object.keys(document.paths).filter((route) => route.startsWith('/api/reports/'))).toEqual([
     '/api/reports/borrowing',
+    '/api/reports/operations-summary',
     '/api/reports/inventory',
     '/api/reports/users',
   ]);
