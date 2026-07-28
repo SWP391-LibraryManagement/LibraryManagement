@@ -1,6 +1,6 @@
 # Thiết Kế Luồng Demo Liên Hoàn FE07/FE08/FE10/FE12
 
-**Trạng thái:** THIẾT KẾ ĐÃ ĐƯỢC DUYỆT TRONG THẢO LUẬN - ĐANG CHỜ RÀ SOÁT FILE
+**Trạng thái:** WRITTEN DESIGN APPROVED 2026-07-29
 
 **Ngày duyệt thiết kế trong thảo luận:** 2026-07-29
 
@@ -52,7 +52,7 @@ Tài liệu này không tự cấp quyền sửa product code, schema, API hoặ
 
 | Source ID | Nguồn | Revision/ngày | Có thể chứng minh | Mức thẩm quyền | Chủ sở hữu | Xung đột |
 | --- | --- | --- | --- | --- | --- | --- |
-| S-001 | Quyết định người dùng trong tác vụ hiện tại | 2026-07-29 | Chọn hướng demo-safe, chọn luồng liên hoàn và duyệt ba phần thiết kế | Cao nhất cho lát cắt đề xuất | Người dùng | Chờ rà soát file viết |
+| S-001 | Quyết định người dùng trong tác vụ hiện tại | 2026-07-29 | Chọn hướng demo-safe, chọn luồng liên hoàn, duyệt ba phần thiết kế và duyệt file viết | Cao nhất cho lát cắt đề xuất | Người dùng | Không |
 | S-002 | `.sdd/constitution.md`, `.sdd/shared_context.md`, `.sdd/constraints/*.md` | Baseline hiện hành khi đọc ngày 2026-07-29 | Quy tắc dự án, vai trò, giới hạn mượn, bảo mật và ownership | Baseline dự án đã phê duyệt | Nhóm | Không |
 | S-003 | FE07 `SPEC.md` v0.8.3 | 2026-07-28 | Trạng thái mượn, trả, gia hạn, hàng đợi và hoàn tất lượt giữ | SPEC tính năng | Nhat | Đang trong vòng rà soát con người của revision hiện tại |
 | S-004 | FE08 `SPEC.md` v0.5.10 | 2026-07-27 | FIFO, vị trí hàng đợi, xử lý thủ công, `NOTIFIED` và `FULFILLED` | SPEC tính năng đã phê duyệt | Nhat | Không |
@@ -395,5 +395,5 @@ boundary được phê duyệt và implementation plan/H1 được duyệt.
   lát cắt tuần tự.
 - Ambiguity: KPI, state transition, action path, error behavior và acceptance
   evidence đã có định nghĩa cụ thể.
-- Authority: thiết kế trong thảo luận đã được duyệt; file viết và SPEC fan-out
+- Authority: thiết kế trong thảo luận và file viết đã được duyệt; SPEC fan-out
   vẫn cần review riêng trước khi được coi là yêu cầu triển khai.
