@@ -1,143 +1,137 @@
-# FE10 Personal Notification Inbox H2 Validation - Round 2
+# Xác thực H2 Hộp thư thông báo cá nhân FE10 - Vòng 2
 
-- Date: 2026-07-28
-- Branch: `codex/feat-fe10-personal-notification-inbox`
+- Ngày: 2026-07-28
+- Nhánh: `codex/feat-fe10-personal-notification-inbox`
 - Baseline: `main@f3ebe95ed00cef5119d2b6788ebccd72c5cda190`
-- Status: **H2 APPROVED**
+- Trạng thái: **H2 ĐÃ PHÊ DUYỆT**
 
-This record supersedes the first H2 validation after the candidate was rebased
-onto the two approved Core-drift baselines and then mechanically synchronized
-with the later non-overlapping test-only upstream commit. No reviewed file is
-staged or committed, and nothing has been pushed under this fingerprint.
+Bản ghi này thay thế xác thực H2 đầu sau khi candidate được rebase lên hai
+baseline Core-drift đã phê duyệt rồi được đồng bộ cơ học với commit upstream
+chỉ-kiểm-thử không chồng lấp sau đó. Không tệp đã review nào được stage hay
+commit, và chưa có gì được push dưới fingerprint này.
 
-## 1. Candidate Identity
+## 1. Danh tính candidate
 
-- Candidate entries: **49** modified or new files.
-- Candidate fingerprint:
+- Mục candidate: **49** tệp đã sửa hoặc mới.
+- Fingerprint candidate:
   `2b53d7ecd2247aa72e7ae3c43bab5bd00ab48f0e5a97662455fa8d3db736b40c`.
-- Migration SHA-256:
+- SHA-256 migration:
   `6e8b6b4d857170be215ef721d9c3d3d25ff16bbaf7d006821fbba33110d2d114`.
-- Candidate baseline and `origin/main`:
+- Baseline candidate và `origin/main`:
   `f3ebe95ed00cef5119d2b6788ebccd72c5cda190`.
-- Ahead/behind candidate baseline: **0/0**.
-- Cached/staged files at fingerprint time: **0**.
-- Unmerged paths and conflict markers: **0**.
-- This round-2 validation record is deliberately excluded from the candidate
-  fingerprint so the human decision can be recorded without changing the
-  reviewed product/spec candidate.
+- Ahead/behind baseline candidate: **0/0**.
+- Tệp cached/staged tại thời điểm fingerprint: **0**.
+- Đường dẫn chưa merge và conflict marker: **0**.
+- Bản ghi xác thực vòng 2 này bị loại có chủ ý khỏi fingerprint candidate để
+  quyết định con người có thể được ghi mà không đổi candidate sản phẩm/spec đã
+  review.
 
-Fingerprint algorithm:
+Thuật toán fingerprint:
 
-1. Read `git status --porcelain=v1 -z --untracked-files=all`.
-2. Exclude only
+1. Đọc `git status --porcelain=v1 -z --untracked-files=all`.
+2. Chỉ loại
    `.sdd/reviews/fe10-notification-inbox-h2-validation-2026-07-28-round-2.md`.
-3. For every remaining file, create
+3. Với mỗi tệp còn lại, tạo
    `<two-character-status>|<lowercase-file-sha256>|<normalized-path>`.
-4. Sort entries by case-sensitive path.
-5. Join entries with LF, include one final LF, encode as UTF-8 without BOM,
-   and calculate SHA-256.
+4. Sắp mục theo đường dẫn phân biệt hoa/thường.
+5. Ghép mục bằng LF, gồm một LF cuối, mã hóa UTF-8 không BOM và tính SHA-256.
 
-## 2. H1 And Scope Reconciliation
+## 2. Đối soát H1 và phạm vi
 
-- The user approved the FE10 v0.5.0 design, written SPEC, and FE10-I01..I08
-  implementation plan.
-- Governance PR #70 merged as `25c09ec`.
-- The candidate was first reconciled with approved H1 drift addendum
-  `main@5a3c84b`, then with approved H1 drift addendum `main@db97f17`.
-- The later `main@f3ebe95` synchronization changed only three upstream
-  frontend test files outside the candidate paths and applied without
-  conflict.
-- Both upstream and FE10 contracts remain present in the shared frontend API
-  and shell stylesheet.
-- No delete, archive, retention cleanup, global notification log, arbitrary
-  action URL, sensitive authentication/setup inbox item, or FE09 fine
-  calculation was added.
+- Người dùng phê duyệt thiết kế FE10 v0.5.0, SPEC bằng văn bản và kế hoạch triển
+  khai FE10-I01..I08.
+- Governance PR #70 merge là `25c09ec`.
+- Candidate lần đầu đối soát với phụ lục trôi H1 đã phê duyệt
+  `main@5a3c84b`, rồi với phụ lục trôi H1 đã phê duyệt `main@db97f17`.
+- Đồng bộ `main@f3ebe95` sau đó chỉ đổi ba tệp kiểm thử frontend upstream ngoài
+  đường dẫn candidate và áp dụng không xung đột.
+- Cả hợp đồng upstream và FE10 vẫn hiện diện trong API frontend dùng chung và
+  stylesheet shell.
+- Không thêm xóa, archive, dọn dẹp retention, notification log toàn cục, URL
+  action tùy ý, mục inbox authentication/setup nhạy cảm hay tính tiền phạt FE09.
 
-## 3. Four-Layer Review
+## 3. Review bốn tầng
 
-### L1 - Contract And Traceability
+### L1 - Hợp đồng và truy vết
 
-**PASS**
+**ĐẠT**
 
-- SPEC v0.5.0, PLAN, TASKS, CONTEXT, TEST_PLAN, CHANGELOG, architecture,
-  OpenAPI, deployment guide, user manual, and implementation state agree.
-- FE10-I01..I08 local scope is implemented and validated; H2, Azure staging,
-  H3, merge, and post-merge evidence remain explicitly unclaimed.
-- Enforced traceability passed with FE10 at **14/16 FR tags = 88%**, above the
-  repository's 70% gate. Traceability state tests passed **3/3**.
+- SPEC v0.5.0, PLAN, TASKS, CONTEXT, TEST_PLAN, CHANGELOG, kiến trúc, OpenAPI,
+  hướng dẫn triển khai, hướng dẫn người dùng và trạng thái triển khai thống nhất.
+- Phạm vi cục bộ FE10-I01..I08 được triển khai và xác thực; H2, Azure staging,
+  H3, merge và bằng chứng hậu merge được giữ không khẳng định rõ ràng.
+- Truy vết được ép đạt FE10 **14/16 FR tag = 88%**, trên cổng 70% repository.
+  Kiểm thử trạng thái truy vết đạt **3/3**.
 
-### L2 - Automated Quality
+### L2 - Chất lượng tự động
 
-**PASS**
+**ĐẠT**
 
-| Gate | Observed result |
+| Cổng | Kết quả quan sát |
 | --- | --- |
-| Backend coverage | 69/69 suites, 1114/1114 tests |
-| Coverage | 91.84% statements, 80.70% branches, 97.59% functions, 91.76% lines |
-| Frontend | 258/258 tests; ESLint pass; Vite production build pass |
-| Focused backend inbox and fan-in | 8/8 suites, 300/300 tests before the final security consistency fix |
-| Focused frontend inbox and shell | 39/39 tests |
-| Deployment policy | 15/15 tests |
-| System integration | 10/10 tests |
-| Chromium E2E | 11/11; FE10-specific 3/3 |
-| Git whitespace | Product/spec candidate check passes; see the governance-record note below |
-| Backend dependency audit | 0 vulnerabilities |
-| High-confidence secret scan | 0 real findings across 49 candidate files |
+| Coverage backend | 69/69 suite, 1114/1114 kiểm thử |
+| Coverage | 91.84% statement, 80.70% branch, 97.59% function, 91.76% line |
+| Frontend | 258/258 kiểm thử; ESLint đạt; Vite production build đạt |
+| Backend inbox và fan-in tập trung | 8/8 suite, 300/300 kiểm thử trước sửa nhất quán bảo mật cuối |
+| Frontend inbox và shell tập trung | 39/39 kiểm thử |
+| Policy triển khai | 15/15 kiểm thử |
+| Tích hợp hệ thống | 10/10 kiểm thử |
+| Chromium E2E | 11/11; riêng FE10 3/3 |
+| Git whitespace | Kiểm tra candidate sản phẩm/spec đạt; xem ghi chú bản ghi governance bên dưới |
+| Audit phụ thuộc backend | 0 lỗ hổng |
+| Quét secret thêm có độ tin cậy cao | 0 phát hiện thật trên 49 tệp candidate |
 
-The three secret-scan text matches are synthetic `Password1!` test fixtures;
-none is an added secret. The frontend audit reports
-`GHSA-qwww-vcr4-c8h2` for the pinned React Router version, but the official
-advisory limits the issue to unstable RSC APIs. This application uses
-Declarative Mode only (`BrowserRouter`, `Routes`, and `Route`), and the
-repository's fail-closed `audit:high` policy passed while also asserting that
-no RSC API is introduced.
+Ba khớp văn bản secret-scan là fixture kiểm thử `Password1!` tổng hợp; không cái
+nào là secret được thêm. Audit frontend báo `GHSA-qwww-vcr4-c8h2` cho phiên bản
+React Router đã pin, nhưng advisory chính thức giới hạn vấn đề ở API RSC không ổn
+định. Ứng dụng này chỉ dùng Declarative Mode (`BrowserRouter`, `Routes` và
+`Route`), và policy `audit:high` fail-closed của repository đạt trong khi cũng
+assert không API RSC nào được đưa vào.
 
-After staging, the complete `git diff --cached --check` reports only three
-intentional GFM hard-breaks in the superseded 2026-07-27 H2 evidence record.
-That immutable record is part of the approved fingerprint. The same check
-excluding the two H2 governance records passes with exit code `0`; no
-product, test, workflow, SPEC, or operator-guide line has a whitespace error.
+Sau stage, `git diff --cached --check` đầy đủ chỉ báo ba GFM hard-break có chủ ý
+trong bản ghi H2 ngày 2026-07-27 đã bị thay thế. Bản ghi bất biến đó là một phần
+fingerprint đã phê duyệt. Cùng kiểm tra loại hai bản ghi governance H2 đạt với
+exit code `0`; không dòng sản phẩm, kiểm thử, workflow, SPEC hay hướng dẫn vận
+hành nào có lỗi whitespace.
 
-### L3 - Business And Security
+### L3 - Nghiệp vụ và bảo mật
 
-**PASS**
+**ĐẠT**
 
-- List, count, mark-one, and mark-all bind the authenticated `UserId` and use
-  the exact positive inbox type/template allowlist in SQL.
-- `ACCOUNT_VERIFICATION`, `PASSWORD_RESET`, `EMAIL_VERIFY`,
-  `ACCOUNT_SETUP`, userless rows, other-user rows, and mismatched
-  type/template rows remain outside the inbox.
-- Missing, sensitive, and cross-user mark-one IDs share the same safe `404`.
-- The response DTO has exactly seven safe fields and exposes no recipient,
-  payload, idempotency, provider, attempt, delivery-error, or source metadata.
-- Backend-derived `actionPath` uses a fixed relative allowlist; the frontend
-  checks the same allowlist before navigation.
-- SQL inputs are parameterized, ownership filters are applied in SQL, and the
-  maximum-contract offset is bound as SQL `BIGINT`.
-- `ReadAt` is orthogonal to delivery status, sent time, attempts, source
-  outcome, and idempotency. Mark-one and mark-all replay are idempotent.
-- The shared count request is non-overlapping and refreshes after route/auth
-  transition, focus, storage change, read mutations, and every 60 seconds.
-- A read mutation failure shows safe feedback but does not block an already
-  allowlisted business route.
+- Liệt kê, đếm, đánh dấu một và đánh dấu tất cả gắn `UserId` đã xác thực và dùng
+  allowlist inbox type/template dương chính xác trong SQL.
+- `ACCOUNT_VERIFICATION`, `PASSWORD_RESET`, `EMAIL_VERIFY`, `ACCOUNT_SETUP`,
+  hàng không người dùng, hàng người dùng khác và hàng type/template không khớp
+  vẫn ngoài inbox.
+- ID đánh dấu một thiếu, nhạy cảm và khác người dùng dùng cùng `404` an toàn.
+- DTO phản hồi có đúng bảy trường an toàn và không lộ recipient, payload,
+  idempotency, provider, attempt, delivery-error hay metadata nguồn.
+- `actionPath` do backend suy ra dùng allowlist relative cố định; frontend kiểm
+  tra cùng allowlist trước điều hướng.
+- Đầu vào SQL có tham số, bộ lọc ownership áp dụng trong SQL và offset
+  maximum-contract được gắn SQL `BIGINT`.
+- `ReadAt` trực giao trạng thái gửi, thời điểm gửi, lần thử, kết quả nguồn và
+  idempotency. Replay đánh dấu một và đánh dấu tất cả là lũy đẳng.
+- Yêu cầu đếm dùng chung không chồng lấp, làm mới sau chuyển route/auth, focus,
+  thay đổi storage, thay đổi đọc và mỗi 60 giây.
+- Lỗi thay đổi đọc hiển thị phản hồi an toàn nhưng không chặn business route đã
+  allowlist.
 
-The final security review found that the legacy SQL `listPending` helper
-omitted `ACCOUNT_SETUP` from its negative sensitive-type filter, while the
-active `claimNextPending` path and in-memory implementation already excluded
-it. A RED test reproduced the inconsistency. The minimal production fix added
-`ACCOUNT_SETUP` to both the type and template exclusions; the focused result
-was **3/3 suites, 161/161 tests**, followed by the full backend result of
-**69/69 suites, 1114/1114 tests**. No blocking security finding remains.
+Review bảo mật cuối phát hiện helper SQL `listPending` legacy bỏ `ACCOUNT_SETUP`
+khỏi bộ lọc type nhạy cảm phủ định, trong khi đường `claimNextPending` hoạt động
+và triển khai in-memory đã loại nó. Kiểm thử RED tái hiện sự không nhất quán.
+Sửa production nhỏ nhất thêm `ACCOUNT_SETUP` vào loại trừ cả type và template;
+kết quả tập trung là **3/3 suite, 161/161 kiểm thử**, sau đó backend đầy đủ
+**69/69 suite, 1114/1114 kiểm thử**. Không còn phát hiện bảo mật chặn.
 
-### L4 - Migration And Release Safety
+### L4 - An toàn migration và phát hành
 
-**LOCAL PASS; EXTERNAL GATES PENDING BY DESIGN**
+**CỤC BỘ ĐẠT; CỔNG BÊN NGOÀI CHỜ THEO THIẾT KẾ**
 
-- The migration uses required SQL Server SET options, a transaction,
-  `XACT_ABORT`, dynamic compilation after adding `ReadAt`, exact first-run
-  backfill, and idempotent index creation.
-- A disposable SQL Server database executed the exact migration twice and
-  returned:
+- Migration dùng SQL Server SET option bắt buộc, giao dịch, `XACT_ABORT`, compile
+  động sau thêm `ReadAt`, backfill lượt đầu chính xác và tạo index lũy đẳng.
+- Cơ sở dữ liệu SQL Server dùng một lần thực thi migration chính xác hai lần và
+  trả:
 
 ```text
 ReadAtColumns=1
@@ -152,36 +146,36 @@ ProtectedAggregatesUnchanged=1
 DisposableDatabasesRemaining=0
 ```
 
-- Automatic and manual staging paths fail closed unless the checked-out
-  migration SHA-256 equals `FE10_INBOX_MIGRATION_SHA256`.
-- Manual deployment additionally requires
+- Đường staging tự động và thủ công fail-closed trừ khi SHA-256 migration
+  checkout bằng `FE10_INBOX_MIGRATION_SHA256`.
+- Triển khai thủ công bổ sung yêu cầu
   `fe10_inbox_migration_confirmed=true`.
-- Deployment order is preflight, backend, frontend, then smoke.
-- Real Azure migration, exact-branch staging deployment, live three-role
-  verification, H3, merge, post-merge CI, and automatic main deployment are
-  intentionally pending until H2 approval and publication.
+- Thứ tự triển khai là preflight, backend, frontend rồi smoke.
+- Azure migration thực, staging deployment exact-branch, xác minh trực tiếp ba
+  vai trò, H3, merge, CI hậu merge và triển khai main tự động cố ý chờ đến sau
+  phê duyệt H2 và công bố.
 
-## 4. Findings Closed Before Round-2 H2
+## 4. Phát hiện đã đóng trước H2 vòng 2
 
-| ID | Severity | Finding | Resolution |
+| ID | Mức độ | Phát hiện | Cách giải quyết |
 | --- | --- | --- | --- |
-| H2-FE10-001 | High | SQL Server compiled the historical `ReadAt` update in the same batch before the new column existed. | Added RED coverage and moved update/index compilation behind `sys.sp_executesql`; strict two-run rehearsal passed. |
-| H2-FE10-002 | Medium | The FE09 synthetic token received 401 from the new background count request and redirected its E2E route to login. | Mocked only the new background endpoint in the FE09 fixture; full Chromium passed without weakening real 401 handling. |
-| H2-FE10-003 | Medium | A contract-valid maximum page could produce an offset larger than SQL `INT`. | Added a RED repository assertion, bound only `@Offset` as SQL `BIGINT`, and verified the maximum offset on SQL Server. |
-| H2-FE10-004 | Low | Current status text still said I01..I07 or implementation not started. | Synchronized traceability and current-state documentation without changing behavior. |
-| H2-FE10-005 | Medium | Legacy `listPending` did not exclude `ACCOUNT_SETUP` consistently with the active selector. | Added a RED security consistency test and excluded `ACCOUNT_SETUP` by both type and template; full backend passed. |
+| H2-FE10-001 | High | SQL Server compile cập nhật `ReadAt` lịch sử trong cùng batch trước khi cột mới tồn tại. | Thêm bao phủ RED, chuyển compile cập nhật/index sau `sys.sp_executesql`; rehearsal hai lượt nghiêm ngặt đạt. |
+| H2-FE10-002 | Medium | Token tổng hợp FE09 nhận 401 từ yêu cầu đếm nền mới và chuyển route E2E sang login. | Chỉ mock endpoint nền mới trong fixture FE09; Chromium đầy đủ đạt mà không làm yếu xử lý 401 thực. |
+| H2-FE10-003 | Medium | Trang tối đa hợp đồng hợp lệ có thể tạo offset lớn hơn SQL `INT`. | Thêm assertion repository RED, chỉ gắn `@Offset` là SQL `BIGINT` và xác minh offset tối đa trên SQL Server. |
+| H2-FE10-004 | Low | Nội dung trạng thái hiện tại vẫn nói I01..I07 hoặc triển khai chưa bắt đầu. | Đồng bộ truy vết và tài liệu trạng thái hiện tại không đổi hành vi. |
+| H2-FE10-005 | Medium | `listPending` legacy không loại `ACCOUNT_SETUP` nhất quán với selector hoạt động. | Thêm kiểm thử nhất quán bảo mật RED và loại `ACCOUNT_SETUP` theo cả type lẫn template; backend đầy đủ đạt. |
 
-No open Critical, High, Medium, or Low finding remains in the reviewed local
-candidate.
+Không phát hiện Critical, High, Medium hay Low mở nào còn trong candidate cục bộ
+đã review.
 
-Known release limitations are explicit rather than treated as completed:
+Giới hạn phát hành đã biết được nêu rõ thay vì coi là hoàn tất:
 
-- Azure staging has not run for this uncommitted candidate.
-- The F1 producer worker remains best-effort by design.
-- The pinned frontend router advisory is accepted only under the enforced
-  Declarative-Mode/no-RSC constraint described above.
+- Azure staging chưa chạy cho candidate chưa commit này.
+- F1 producer worker vẫn best-effort theo thiết kế.
+- Advisory router frontend đã pin chỉ được chấp nhận dưới ràng buộc
+  Declarative-Mode/no-RSC được ép bên trên.
 
-## 5. Candidate Manifest
+## 5. Manifest candidate
 
 ```text
  M|5155db679c33485fb377ce9c42bd6f395b87d8ae8232ec6945acccfe8361f0db|.agents/CLAUDE.md
@@ -218,7 +212,7 @@ Known release limitations are explicit rather than treated as completed:
  M|b5dc1404258a486dfe465497f8e8e36b6024257c4bc254eaf30bff3fbd02025d|docs/testing/master-test-plan.md
  M|18493952907f00d2cc4a72acbf1088c063b6ed103f6482504a1bb600479e0837|docs/user-manual.md
  M|4b6a961dd83521d3edcbb6499fb0b08bc4c6b679b8a26c0e7aa06c1061234a35|frontend/src/api/apiErrorMessages.js
- M|8f89b50ad97c8d24bad40bd6db089f4ca5151eadd6cc11a3586cbfc701fb1b2b|frontend/src/api/libraryFeatureApi.js
+ M|8f89b50ad97c8d24bad40bd6db089f4ca5151eadd6cc11a3586cbfc701fb1b2f|frontend/src/api/libraryFeatureApi.js
  M|005be9c2d1b9279562f06ecea93ca7e0efb8222be404cb31f496e7fc86550241|frontend/src/App.jsx
 ??|ef7c2ac784a8bf0f48cdd3ff8593af6891b45a1733d06214d2f4494eac4b52e2|frontend/src/component/auth/AuthenticatedRouteGuard.jsx
  M|d9323f38beda03679ef97d1dda24dcacbc4012bee8cf465a02d5ffe042a481f4|frontend/src/component/layout/Header.jsx
@@ -235,17 +229,18 @@ Known release limitations are explicit rather than treated as completed:
  M|7d71c0c33860b7a1bb5f9ca5889e6c0525444f581b0e2338e0ff9ae511ad2600|tests/e2e/support/systemTestServer.js
 ```
 
-## 6. Human H2 Decision
+## 6. Quyết định H2 của con người
 
-The user approved this exact candidate in the active task on 2026-07-28:
+Người dùng đã phê duyệt candidate chính xác này trong task đang hoạt động ngày
+2026-07-28:
 
 ```text
 duyệt H2 fingerprint 2b53d7ecd2247aa72e7ae3c43bab5bd00ab48f0e5a97662455fa8d3db736b40c
 ```
 
-Decision: **APPROVED**.
+Quyết định: **ĐÃ PHÊ DUYỆT**.
 
-This exact approval authorizes staging the reviewed candidate plus this
-excluded decision record, committing, pushing the branch, and publishing the
-pull request. Any candidate-content change after this approval invalidates the
-authority and requires a new H2 decision.
+Phê duyệt chính xác này cho phép stage candidate đã review cùng bản ghi quyết
+định bị loại này, commit, push nhánh và công bố pull request. Mọi thay đổi nội
+dung candidate sau phê duyệt làm mất hiệu lực thẩm quyền và cần quyết định H2
+mới.

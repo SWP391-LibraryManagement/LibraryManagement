@@ -1,53 +1,54 @@
-# FE10 Personal Notification Inbox H2 Validation - Round 7
+# Xác thực H2 Hộp thư thông báo cá nhân FE10 - Vòng 7
 
-- Date: 2026-07-28
-- Branch: `codex/feat-fe10-personal-notification-inbox`
+- Ngày: 2026-07-28
+- Nhánh: `codex/feat-fe10-personal-notification-inbox`
 - Baseline: `cf0a2364b9f526dae4f4e873f261764ea43da777`
-- Status: **H2 APPROVED, THEN SUPERSEDED BEFORE USE**
+- Trạng thái: **H2 ĐÃ PHÊ DUYỆT, SAU ĐÓ BỊ THAY THẾ TRƯỚC KHI DÙNG**
 
-Final H3 found no Standards or Spec behavior defect. A separate whole-branch
-diff-hygiene check found three trailing spaces in the historical round-one H2
-record. This candidate removes only those three spaces.
+H3 cuối không phát hiện lỗi hành vi Standards hoặc Spec. Kiểm tra vệ sinh diff
+toàn nhánh riêng phát hiện ba khoảng trắng cuối dòng trong bản ghi H2 vòng một
+lịch sử. Candidate này chỉ loại ba khoảng trắng đó.
 
-The mandatory pre-stage fetch then found `main@30f936d`. The user approved the
-required H1 drift addendum, and the branch rebased before any file was staged,
-committed, or pushed under this H2 authority. Therefore this approval cannot
-authorize the post-rebase candidate; a fresh fingerprint/H2 is mandatory.
+Fetch bắt buộc trước stage sau đó phát hiện `main@30f936d`. Người dùng phê duyệt
+phụ lục trôi H1 bắt buộc và nhánh rebase trước khi bất kỳ tệp nào được stage,
+commit hay push dưới thẩm quyền H2 này. Vì vậy phê duyệt này không thể cho phép
+candidate hậu rebase; fingerprint/H2 mới là bắt buộc.
 
-## Candidate Identity
+## Danh tính candidate
 
-- Candidate entries: **1** modified historical review file.
-- Candidate fingerprint:
+- Mục candidate: **1** tệp review lịch sử đã sửa.
+- Fingerprint candidate:
   `fd8a33e859a8705ec561304e72c305b06b82201ec271a17d4e6da417af6eb506`.
-- Cached/staged files at fingerprint time: **0**.
-- This round-7 decision record is excluded from the candidate fingerprint.
+- Tệp cached/staged tại thời điểm fingerprint: **0**.
+- Bản ghi quyết định vòng 7 này bị loại khỏi fingerprint candidate.
 
 ```text
  M|ed6c5b67a3105d2df9bec780558db936bad85176b70b38a6287e743507270650|.sdd/reviews/fe10-notification-inbox-h2-validation-2026-07-27.md
 ```
 
-## Verification
+## Xác minh
 
-- Prospective whole-branch `git diff --check main@a240705`: PASS.
-- Working-tree `git diff --check`: PASS.
-- No runtime, API, database, migration, UI, test, or lifecycle status changes.
+- Prospective toàn nhánh `git diff --check main@a240705`: ĐẠT.
+- Working-tree `git diff --check`: ĐẠT.
+- Không thay đổi runtime, API, cơ sở dữ liệu, migration, UI, kiểm thử hay trạng
+  thái vòng đời.
 
-## Human H2 Decision
+## Quyết định H2 của con người
 
-Required exact approval was:
-
-```text
-duyệt H2 fingerprint fd8a33e859a8705ec561304e72c305b06b82201ec271a17d4e6da417af6eb506
-```
-
-The user approved the exact candidate in the active task:
+Phê duyệt chính xác bắt buộc là:
 
 ```text
 duyệt H2 fingerprint fd8a33e859a8705ec561304e72c305b06b82201ec271a17d4e6da417af6eb506
 ```
 
-Decision: **APPROVED**.
+Người dùng đã phê duyệt candidate chính xác trong task đang hoạt động:
 
-This exact approval was not used. The whitespace correction and this historical
-decision record may appear only inside a newly fingerprinted candidate that
-receives fresh H2 after reconciliation with `main@30f936d`.
+```text
+duyệt H2 fingerprint fd8a33e859a8705ec561304e72c305b06b82201ec271a17d4e6da417af6eb506
+```
+
+Quyết định: **ĐÃ PHÊ DUYỆT**.
+
+Phê duyệt chính xác này không được dùng. Sửa whitespace và bản ghi quyết định
+lịch sử này chỉ có thể xuất hiện trong candidate mới được fingerprint nhận H2
+mới sau đối soát với `main@30f936d`.

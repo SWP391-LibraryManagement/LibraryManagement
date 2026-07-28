@@ -1,147 +1,173 @@
-# FE10 Test Plan - Notification Management
+# Kế hoạch kiểm thử FE10 - Quản lý thông báo
 
-Version: 0.5.0
-Status: V0.5.0 COMPLETE - PR #75 MERGED, POST-MERGE CI/AZURE PASS
-Last Updated: 2026-07-28
+Phiên bản: 0.5.0
+Trạng thái: V0.5.0 HOÀN TẤT - PR #75 ĐÃ MERGE, CI/AZURE HẬU MERGE ĐẠT
+Cập nhật lần cuối: 2026-07-28
 
-Source Spec: `.sdd/specs/feat-notification-management/SPEC.md`
-Feature IDs: `BR-FE10-*`, `FR-FE10-*`, `AC-FE10-*`
-Authoritative AC↔test mapping: `SPEC.md` §16 Traceability Matrix (this file is the strategy, not the case list).
+Đặc tả nguồn: `.sdd/specs/feat-notification-management/SPEC.md`
+ID tính năng: `BR-FE10-*`, `FR-FE10-*`, `AC-FE10-*`
+Ánh xạ AC↔kiểm thử chuẩn: `SPEC.md` §16 Ma trận truy vết (tệp này là chiến
+lược, không phải danh sách ca).
 
 ---
 
-## 1. Test Scope
+## 1. Phạm vi kiểm thử
 
-Notification requests, source/type ownership, sensitive in-memory delivery,
-template validation, safe persistence, idempotency, queued processing, retry,
-and the approved personal notification inbox/read-state behavior.
+Yêu cầu thông báo, quyền sở hữu nguồn/loại, gửi nhạy cảm trong bộ nhớ, xác thực
+mẫu, lưu bền an toàn, tính lũy đẳng, xử lý xếp hàng, thử lại và hành vi hộp thư
+thông báo cá nhân/trạng thái đã đọc đã được phê duyệt.
 
-## 2. Unit Test Targets
+## 2. Mục tiêu kiểm thử đơn vị
 
-- Notification request validation.
-- Template variable validation.
-- Safe payload/redaction rules.
-- Recipient ownership and role visibility.
-- Retry/status transition rules for pending/processed/failed notifications.
-- FE02-only verification/reset and FE11-only account-setup ownership.
-- No OTP/setup-link/rendered-sensitive-content persistence, logs, audits, or responses.
+- Kiểm tra hợp lệ yêu cầu thông báo.
+- Kiểm tra hợp lệ biến mẫu.
+- Quy tắc payload an toàn/che dữ liệu.
+- Quyền sở hữu người nhận và khả năng hiển thị theo vai trò.
+- Quy tắc chuyển đổi thử lại/trạng thái cho thông báo đang chờ/đã xử lý/thất bại.
+- Quyền sở hữu chỉ FE02 cho xác minh/đặt lại và chỉ FE11 cho thiết lập tài khoản.
+- Không lưu bền, ghi log, ghi kiểm toán hoặc phản hồi OTP/liên kết thiết lập/
+  nội dung nhạy cảm đã kết xuất.
 
-## 3. API / Integration Test Targets
+## 3. Mục tiêu kiểm thử API / tích hợp
 
-- `POST /notifications/requests`: happy path, invalid template, missing recipient, forbidden.
-- In-process FE02 requester: verification/reset OTP success/failure, variables, idempotency, and no duplicate delivery.
-- In-process FE11 requester: account-setup success/failure, variables, source ownership, and new-token resend semantics.
-- `POST /notifications/process-pending`: happy path, no pending, failed send handling, unauthorized.
-- `GET /notifications/mine`: authentication, three allowed roles, SQL-side
-  filters/pagination/order, safe projection, own-record boundary, and empty page.
-- `GET /notifications/mine/unread-count`: own eligible unread rows only.
-- `PATCH /notifications/{id}/read`: idempotence plus indistinguishable `404`
-  for missing, sensitive, and other-user rows.
-- `PATCH /notifications/mine/read-all`: one server timestamp, own eligible rows
-  only, and replay count zero.
-- FE04/FE07/FE08 fan-in proves one persisted email record is also the inbox row.
+- `POST /notifications/requests`: luồng thành công, mẫu không hợp lệ, thiếu
+  người nhận, bị cấm.
+- Trình yêu cầu FE02 trong tiến trình: thành công/thất bại OTP xác minh/đặt lại,
+  biến, tính lũy đẳng và không gửi trùng.
+- Trình yêu cầu FE11 trong tiến trình: thành công/thất bại thiết lập tài khoản,
+  biến, quyền sở hữu nguồn và ngữ nghĩa gửi lại bằng mã thông báo mới.
+- `POST /notifications/process-pending`: luồng thành công, không có bản ghi
+  chờ, xử lý gửi thất bại, không được ủy quyền.
+- `GET /notifications/mine`: xác thực, ba vai trò được cho phép, bộ lọc/phân
+  trang/thứ tự phía SQL, phép chiếu an toàn, ranh giới bản ghi của chính mình
+  và trang trống.
+- `GET /notifications/mine/unread-count`: chỉ các hàng chưa đọc đủ điều kiện
+  của chính mình.
+- `PATCH /notifications/{id}/read`: tính lũy đẳng cùng `404` không thể phân
+  biệt cho hàng không tồn tại, nhạy cảm và của người dùng khác.
+- `PATCH /notifications/mine/read-all`: một dấu thời gian máy chủ, chỉ hàng đủ
+  điều kiện của chính mình và số lượng phát lại bằng không.
+- Fan-in FE04/FE07/FE08 chứng minh một bản ghi email đã lưu bền cũng chính là
+  hàng hộp thư.
 
-## 4. E2E / Manual Acceptance Flow
+## 4. Luồng chấp nhận E2E / thủ công
 
-- Registration/reset/account-setup messages reach the configured test mailbox/provider mock.
-- Sensitive credentials and rendered sensitive content never appear in API/audit/admin surfaces.
-- Provider failure leaves source flow completed with safe status.
-- MEMBER, LIBRARIAN, and ADMIN each see the shared bell and only their own inbox.
-- Badge cap, five-unread preview, filters, 20-item pagination, mark-all, and
-  backend-derived navigation behave as specified.
-- A failed read mutation leaves the row unread, shows safe feedback, and does
-  not block an already allowlisted business route.
+- Thông điệp đăng ký/đặt lại/thiết lập tài khoản đến hộp thư kiểm thử/nhà cung
+  cấp mô phỏng đã cấu hình.
+- Thông tin xác thực nhạy cảm và nội dung nhạy cảm đã kết xuất không bao giờ
+  xuất hiện trên bề mặt API/kiểm toán/quản trị.
+- Lỗi nhà cung cấp giữ luồng nguồn ở trạng thái hoàn tất với trạng thái an toàn.
+- Mỗi MEMBER, LIBRARIAN và ADMIN đều thấy chuông dùng chung và chỉ hộp
+  thư của chính họ.
+- Giới hạn huy hiệu, phần xem trước năm mục chưa đọc, bộ lọc, phân trang 20 mục,
+  đánh dấu tất cả và điều hướng do backend suy ra hoạt động như đặc tả.
+- Một thay đổi trạng thái đọc thất bại giữ hàng ở trạng thái chưa đọc, hiển thị
+  phản hồi an toàn và không chặn một tuyến nghiệp vụ đã có trong danh sách cho
+  phép.
 
-## 5. Current Evidence
+## 5. Bằng chứng hiện tại
 
-- `backend/tests/notificationInboxMigration.test.js` covers nullable `ReadAt`,
-  first-run-only eligible backfill, exact type/template eligibility, repeatable
-  index creation, and the Azure SQL transaction/error contract.
-- FE10-I01 focused evidence: 4 migration-contract tests passed; the migration,
-  existing repository regression, and OTP migration matrix passed 11/11; Azure
-  schema preparation completed without create/switch-database statements.
-- The named disposable SQL Server rehearsal first exposed same-batch `ReadAt`
-  compilation failure. A RED regression test was added, the update/index were
-  moved behind `sys.sp_executesql`, and the strict two-run rehearsal then passed:
-  1 nullable column, 1 index, 5 historical eligible rows backfilled, 6 excluded
-  rows still unread, the post-first-run row still unread, protected aggregates
-  unchanged, and the disposable database removed.
-- `backend/tests/notificationInboxRepository.test.js` and the expanded route
-  suite cover exact safe projection, action allowlist, SQL ownership/filtering,
-  all three login roles, validation, IDOR-safe `404`, idempotent mark-one and
-  mark-all, and delivery-state neutrality. Focused evidence passed 154/154.
-- Full backend coverage gate after the approved `main@12faead` rebase passed 69/69
-  suites and 1116/1116
-  tests at 91.84% statements, 80.70% branches, 97.59% functions, and 91.76% lines.
-- FE10-I04..I06 frontend evidence passed 259/259 Node tests, ESLint, and the
-  Vite production build. It covers the four authorized client methods,
-  non-overlapping 60-second/focus count refresh, exact action allowlist,
-  accessible five-item preview, guarded page, filters, and server pagination.
-- The final H2 boundary audit changed the SQL `@Offset` binding from `INT` to
-  `BIGINT`; its repository regression test passed 5/5 and SQL Server accepted
-  the maximum-contract offset probe (`214748364600`) without overflow.
-- FE10-I07 source-fan-in regression passed 5/5 suites and 285/285 tests across
-  FE04, FE07, FE08, FE10, and system integration. The integration assertion
-  proves exactly one eligible email row per source outcome, own-user listing,
-  indistinguishable cross-user `404`, read replay, and unchanged delivery state.
-- `tests/e2e/fe10-notification-inbox.spec.js` passed 3/3 focused Chromium cases for
-  MEMBER/LIBRARIAN/ADMIN, `99+`, sensitive/userless/cross-user exclusion,
-  mark-one/mark-all replay, non-blocking read failure, and 390x844 no-overflow.
-- The complete Chromium suite passed 11/11 after the FE09 synthetic-auth fixture
-  was updated to isolate the new background unread-count request. Deployment policy passed 20/20,
-  system integration passed 10/10, traceability state passed 3/3, and enforced
-  traceability passed with FE10 at 14/16 FR tags (88%, above the 70% gate).
-- Exact PR head `28c4f80` passed CI `30306805399` and Azure staging deployment
-  `30307855616`. Live Azure verification covered MEMBER/LIBRARIAN/ADMIN
-  ownership, sensitive exclusion, mark-one/mark-all replay, filters, safe
-  navigation, HTTPS/CORS, migration postconditions, protected aggregates, and
-  probe/firewall cleanup.
-- H3 round-one UI findings now have focused RED/GREEN coverage for refreshing
-  a successfully read no-navigation item, keeping mark-all independent from
-  the current filtered page, and elevating the unchanged-size popover above
-  every current layout layer only while it is open.
-- Fresh security checks after `main@12faead` found zero backend dependency
-  vulnerabilities, no added high-confidence secret, conflict marker, stale
-  inbox-deferred contradiction, or unsafe response field. The repository
-  frontend audit gate accepted only GHSA-qwww-vcr4-c8h2 because the application
-  uses declarative `BrowserRouter` and none of the advisory's unstable RSC APIs.
-- Final fail-closed review added a RED/GREEN repository regression requiring
-  both SQL pending selectors to exclude `ACCOUNT_SETUP` together with the
-  other sensitive types. RED failed only for the legacy `listPending` helper;
-  focused GREEN passed 3 suites/161 tests and full backend coverage then passed
-  69 suites/1114 tests.
-- Upstream `main@f3ebe95` then added only three non-overlapping FE07/FE08
-  regression-test files; the candidate synchronized them without conflict and
-  reran the full frontend suite at 258/258 before fingerprinting.
-- The approved `main@a240705` rebase preserves the independent upstream FE11
-  edit-action removal. Fresh gates passed backend 69/69 suites and 1084/1084
-  tests, frontend 259/259 plus lint/build, deployment 20/20, system 10/10,
-  traceability state 3/3, FE10 traceability 14/16 (88%), Chromium 11/11,
-  dependency audits, Azure schema preparation, and diff hygiene. The backend
-  count decreased only because upstream removed obsolete FE11 edit tests.
-- Pre-implementation baseline on `main@25c09ec`: backend 67 suites / 1091 tests
-  passed and frontend 234/234 tests passed.
+- `backend/tests/notificationInboxMigration.test.js` bao phủ `ReadAt` có thể
+  null, điền lùi bản ghi đủ điều kiện chỉ ở lần chạy đầu, điều kiện loại/mẫu
+  chính xác, tạo chỉ mục có thể lặp lại và hợp đồng giao dịch/lỗi Azure SQL.
+- Bằng chứng tập trung FE10-I01: 4 kiểm thử hợp đồng migration đạt; migration,
+  hồi quy repository hiện có và ma trận migration OTP đạt 11/11; chuẩn bị schema
+  Azure hoàn tất mà không có câu lệnh tạo/chuyển cơ sở dữ liệu.
+- Lần diễn tập SQL Server dùng một lần được chỉ định lần đầu phát hiện lỗi biên
+  dịch `ReadAt` trong cùng một lô. Một kiểm thử hồi quy RED đã được thêm, cập
+  nhật/chỉ mục được chuyển phía sau `sys.sp_executesql`, và lần diễn tập nghiêm
+  ngặt hai lượt sau đó đã đạt: 1 cột có thể null, 1 chỉ mục, 5 hàng lịch sử đủ
+  điều kiện đã điền lùi, 6 hàng bị loại vẫn chưa đọc, hàng sau lượt chạy đầu vẫn
+  chưa đọc, các tổng hợp được bảo vệ không đổi và cơ sở dữ liệu dùng một lần đã
+  bị xóa.
+- `backend/tests/notificationInboxRepository.test.js` và bộ kiểm thử route mở
+  rộng bao phủ phép chiếu an toàn chính xác, danh sách cho phép thao tác, quyền
+  sở hữu/bộ lọc SQL, cả ba vai trò đăng nhập, xác thực, `404` an toàn trước IDOR,
+  đánh dấu một/đánh dấu tất cả có tính lũy đẳng và trung lập với trạng thái gửi.
+  Bằng chứng tập trung đạt 154/154.
+- Cổng bao phủ backend đầy đủ sau rebase `main@12faead` đã được phê duyệt đạt
+  69/69 bộ và 1116/1116 kiểm thử với 91.84% câu lệnh, 80.70% nhánh, 97.59% hàm
+  và 91.76% dòng.
+- Bằng chứng frontend FE10-I04..I06 đạt 259/259 kiểm thử Node, ESLint và bản
+  dựng production Vite. Nó bao phủ bốn phương thức client được ủy quyền, làm mới
+  số lượng theo tiêu điểm/60 giây không chồng lấp, danh sách cho phép thao tác
+  chính xác, phần xem trước năm mục dễ tiếp cận, trang được bảo vệ, bộ lọc và
+  phân trang máy chủ.
+- Kiểm toán ranh giới H2 cuối thay đổi liên kết SQL `@Offset` từ `INT` thành
+  `BIGINT`; kiểm thử hồi quy repository đạt 5/5 và SQL Server chấp nhận probe
+  offset hợp đồng tối đa (`214748364600`) mà không tràn.
+- Hồi quy fan-in nguồn FE10-I07 đạt 5/5 bộ và 285/285 kiểm thử trên FE04, FE07,
+  FE08, FE10 và tích hợp hệ thống. Khẳng định tích hợp chứng minh đúng một hàng
+  email đủ điều kiện cho mỗi kết quả nguồn, liệt kê của chính người dùng, `404`
+  không thể phân biệt giữa người dùng, phát lại thao tác đọc và trạng thái gửi
+  không đổi.
+- `tests/e2e/fe10-notification-inbox.spec.js` đạt 3/3 ca Chromium tập trung
+  cho MEMBER/LIBRARIAN/ADMIN, `99+`, loại trừ nhạy cảm/không người dùng/khác
+  người dùng, phát lại đánh dấu một/đánh dấu tất cả, lỗi đọc không chặn và không
+  tràn tại 390x844.
+- Toàn bộ bộ Chromium đạt 11/11 sau khi fixture xác thực tổng hợp FE09 được
+  cập nhật để cô lập yêu cầu đếm chưa đọc nền mới. Chính sách triển khai đạt
+  20/20, tích hợp hệ thống đạt 10/10, trạng thái traceability đạt 3/3 và
+  traceability thực thi đạt với FE10 có 14/16 thẻ FR (88%, trên cổng 70%).
+- Head PR chính xác `28c4f80` đạt CI `30306805399` và triển khai Azure staging
+  `30307855616`. Xác minh Azure trực tiếp bao phủ quyền sở hữu
+  MEMBER/LIBRARIAN/ADMIN, loại trừ nhạy cảm, phát lại đánh dấu một/đánh dấu tất
+  cả, bộ lọc, điều hướng an toàn, HTTPS/CORS, điều kiện hậu migration, tổng hợp
+  được bảo vệ và dọn dẹp probe/firewall.
+- Các phát hiện giao diện H3 vòng một hiện có phạm vi RED/GREEN tập trung cho
+  việc làm mới một mục đã đọc thành công không điều hướng, giữ đánh dấu tất cả
+  độc lập với trang đang được lọc và nâng popover không đổi kích thước lên trên
+  mọi tầng bố cục hiện tại chỉ khi mở.
+- Kiểm tra bảo mật mới sau `main@12faead` phát hiện không có lỗ hổng dependency
+  backend, bí mật độ tin cậy cao được thêm, conflict marker, mâu thuẫn hộp thư
+  bị trì hoãn lỗi thời hoặc trường phản hồi không an toàn. Cổng kiểm toán
+  frontend repository chỉ chấp nhận GHSA-qwww-vcr4-c8h2 vì ứng dụng dùng
+  `BrowserRouter` khai báo và không dùng API RSC không ổn định được advisory đề
+  cập.
+- Bài đánh giá fail-closed cuối bổ sung hồi quy repository RED/GREEN yêu cầu cả
+  hai bộ chọn SQL pending loại trừ `ACCOUNT_SETUP` cùng các loại nhạy cảm khác.
+  RED chỉ thất bại với helper `listPending` cũ; GREEN tập trung đạt 3 bộ/161
+  kiểm thử và bao phủ backend đầy đủ sau đó đạt 69 bộ/1114 kiểm thử.
+- Upstream `main@f3ebe95` sau đó chỉ bổ sung ba tệp kiểm thử hồi quy FE07/FE08
+  không chồng lấp; candidate đã đồng bộ chúng không xung đột và chạy lại toàn bộ
+  frontend đạt 258/258 trước khi tạo fingerprint.
+- Rebase `main@a240705` đã được phê duyệt giữ nguyên việc loại bỏ thao tác chỉnh
+  sửa FE11 độc lập ở upstream. Các cổng mới đạt backend 69/69 bộ và 1084/1084
+  kiểm thử, frontend 259/259 cùng lint/build, triển khai 20/20, hệ thống 10/10,
+  trạng thái traceability 3/3, traceability FE10 14/16 (88%), Chromium 11/11,
+  kiểm toán dependency, chuẩn bị schema Azure và vệ sinh diff. Số lượng backend
+  giảm chỉ vì upstream đã loại bỏ các kiểm thử chỉnh sửa FE11 lỗi thời.
+- Baseline trước triển khai trên `main@25c09ec`: backend 67 bộ / 1091 kiểm thử
+  đạt và frontend 234/234 kiểm thử đạt.
 
-Historical v0.4.x delivery evidence retained below:
+Bằng chứng giao hàng v0.4.x lịch sử được giữ bên dưới:
 
-- `backend/tests/notificationRoutes.test.js` covers canonical ownership, OTP/account-setup
-  provider-memory delivery, safe persistence/audit/response boundaries, idempotency, queueing,
-  processing, retry, and validation failures.
-- `backend/tests/integration.test.js` includes the FE04/FE07/FE08 personal-inbox fan-in proof.
+- `backend/tests/notificationRoutes.test.js` bao phủ quyền sở hữu chuẩn, gửi
+  OTP/thiết lập tài khoản trong bộ nhớ nhà cung cấp, ranh giới lưu bền/kiểm toán/
+  phản hồi an toàn, tính lũy đẳng, xếp hàng, xử lý, thử lại và lỗi xác thực.
+- `backend/tests/integration.test.js` bao gồm bằng chứng fan-in hộp thư cá nhân
+  FE04/FE07/FE08.
 - `backend/tests/fe10OtpTemplateMigration.test.js`
-- Traceability: FR `@spec` coverage **100%** (`npm run trace:enforce`).
-- Fresh OTP boundary gate: 4 suites / 170 tests passed.
-- Full backend regression gate: 53 suites / 916 tests passed.
-- Coverage: 92.68% statements, 81.66% branches, 96.59% functions, 92.61% lines.
-- Expanded ownership evidence covers both FE02-sensitive types against every other allowlisted requester, exact HTTP source-override errors, and repeated reset-token event rotation.
+- Traceability: bao phủ `@spec` FR **100%** (`npm run trace:enforce`).
+- Cổng ranh giới OTP mới: 4 bộ / 170 kiểm thử đạt.
+- Cổng hồi quy backend đầy đủ: 53 bộ / 916 kiểm thử đạt.
+- Bao phủ: 92.68% câu lệnh, 81.66% nhánh, 96.59% hàm, 92.61% dòng.
+- Bằng chứng quyền sở hữu mở rộng bao phủ cả hai loại nhạy cảm FE02 đối với mọi
+  trình yêu cầu trong danh sách cho phép khác, lỗi ghi đè nguồn HTTP chính xác
+  và xoay vòng sự kiện mã thông báo đặt lại lặp lại.
 
-## 6. Gaps
+## 6. Khoảng trống
 
-- `database/Librarymanagement.sql`, FE11-owned shared widths, and the FE10 OTP migration are synchronized; the migration passed two disposable SQL Server executions.
-- FE10-S04 FE02 requester integration and FE10-S09 FE04 membership-result integration are fanned into this worktree.
-- Focused FE02/FE10/integration validation passes 170/170. Human acceptance, PR integration, and exact post-merge `main` CI pass for the injected-provider scope; real provider delivery remains out of scope.
+- `database/Librarymanagement.sql`, các độ rộng dùng chung do FE11 sở hữu và
+  migration OTP FE10 đã được đồng bộ; migration đã qua hai lần thực thi SQL
+  Server dùng một lần.
+- Tích hợp trình yêu cầu FE02 FE10-S04 và tích hợp kết quả tư cách thành viên
+  FE04 FE10-S09 đã được fan-in vào worktree này.
+- Xác thực tập trung FE02/FE10/tích hợp đạt 170/170. Chấp nhận của con người,
+  tích hợp PR và CI `main` hậu merge chính xác đạt cho phạm vi nhà cung cấp
+  được chèn; việc gửi qua nhà cung cấp thực vẫn ngoài phạm vi.
 
-## 7. Required Commands / Evidence Before Merge
+## 7. Lệnh / bằng chứng bắt buộc trước khi merge
 
 ```powershell
 npm.cmd --prefix backend test
@@ -150,27 +176,27 @@ npm.cmd --prefix frontend run build
 npm.cmd run trace:enforce
 ```
 
-## 8. V0.5.0 Current Evidence State
+## 8. Trạng thái bằng chứng hiện tại v0.5.0
 
-- Local migration, focused API/repository/frontend, fan-in, privacy, full
-  backend/frontend, deployment, system, traceability, diff/security scans, and
-  complete Chromium E2E evidence are complete.
-- H2 approved commit `b11b59e`; its PR CI and the exact
-  two-run Azure migration passed. Manual deploy `30305596861` failed closed at
-  preflight because Windows CRLF and Linux LF produced different raw hashes.
-- A RED deployment-policy test reproduced the missing cross-platform boundary.
-  GREEN now derives exact LF and CRLF byte hashes from unchanged UTF-8 content,
-  accepts the stored operator hash only when it equals one, and rejects a
-  content mutation. Deployment policy passes 16/16.
-- The staging-hash addendum was H2-approved and published on PR #75 head
-  `28c4f80`; exact-head CI `30306805399`, backend-first Azure deployment
-  `30307855616`, and three-role live verification passed.
-- H3 round one failed on ADR/current-state and bounded UI-state/stacking
-  findings; the focused remediation passed its complete matrix. After the
-  documentation-only `main@30f936d` rebase, H2 approved fingerprint
+- Migration cục bộ, API/repository/frontend tập trung, fan-in, quyền riêng tư,
+  backend/frontend đầy đủ, triển khai, hệ thống, traceability, quét diff/bảo
+  mật và bằng chứng E2E Chromium đầy đủ đều hoàn tất.
+- H2 đã phê duyệt commit `b11b59e`; CI PR của commit này và migration Azure hai
+  lượt chính xác đã đạt. Lượt triển khai thủ công `30305596861` đã fail-closed
+  ở preflight vì Windows CRLF và Linux LF tạo hash thô khác nhau.
+- Một kiểm thử chính sách triển khai RED tái hiện ranh giới đa nền tảng còn
+  thiếu. GREEN hiện suy ra hash byte LF và CRLF chính xác từ nội dung UTF-8
+  không thay đổi, chỉ chấp nhận hash do operator lưu khi khớp một trong hai và
+  từ chối thay đổi nội dung. Chính sách triển khai đạt 16/16.
+- Phụ lục hash staging đã được H2 phê duyệt và công bố trên head PR #75
+  `28c4f80`; CI exact-head `30306805399`, triển khai Azure ưu tiên backend
+  `30307855616` và xác minh trực tiếp ba vai trò đã đạt.
+- H3 vòng một thất bại do phát hiện ADR/trạng thái hiện tại và trạng thái giao
+  diện/xếp chồng có giới hạn; biện pháp khắc phục tập trung đã đạt toàn bộ ma
+  trận. Sau rebase chỉ tài liệu `main@30f936d`, H2 đã phê duyệt fingerprint
   `e123345be05b59a9e519d182b301ab5464160e8fc32aed8d17d3c463e28e0a15`.
-  PR #75 head `778e0a470d8a1083bf571a8007b3c058eee4bb22` passed exact-head
-  CI `30317424995` and Azure staging `30317621429`, then clean two-axis H3
-  and explicit approval. It merged as
-  `b75776b10d6cf4b6868d2ba51eb3268073483b8b`; post-merge CI `30341279111`
-  and automatic Azure staging `30341540847` passed.
+  Head PR #75 `778e0a470d8a1083bf571a8007b3c058eee4bb22` đạt CI exact-head
+  `30317424995` và Azure staging `30317621429`, sau đó H3 hai trục sạch và
+  phê duyệt rõ ràng. Nó merge thành
+  `b75776b10d6cf4b6868d2ba51eb3268073483b8b`; CI hậu merge `30341279111`
+  và Azure staging tự động `30341540847` đã đạt.

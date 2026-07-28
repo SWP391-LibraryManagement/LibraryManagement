@@ -1,187 +1,186 @@
-# FE10 Personal Notification Inbox Staging And H3 Closeout
+# Đóng hồ sơ staging và H3 của hộp thư thông báo cá nhân FE10
 
-- Updated: 2026-07-28
-- Pull request: #75
-- H3 round-one base: `main@a5fcbb989d730923548a67a789a1447b180de2a9`
-- H3 round-one head: `28c4f80ca6e249b7802caf854f9fa42cb4840158`
-- Current H1-approved base: `main@30f936d644c2034bbbf9cb4e01ba25feab31595c`
-- Rebased local committed head: `c72bc77f996a160333c2cb7ee4399f3d591fe17c`
-- Last fully deployed/reviewed head: `cf0a2364b9f526dae4f4e873f261764ea43da777`
-- Final H2/H3-reviewed head: `778e0a470d8a1083bf571a8007b3c058eee4bb22`
-- PR #75 merge commit: `b75776b10d6cf4b6868d2ba51eb3268073483b8b`
-- Status: **COMPLETE — PR #75 MERGED; POST-MERGE CI/AZURE PASS**
+- Cập nhật: 2026-07-28
+- PR: #75
+- Mốc cơ sở vòng H3 đầu tiên: `main@a5fcbb989d730923548a67a789a1447b180de2a9`
+- Head vòng H3 đầu tiên: `28c4f80ca6e249b7802caf854f9fa42cb4840158`
+- Mốc cơ sở hiện tại đã được H1 phê duyệt: `main@30f936d644c2034bbbf9cb4e01ba25feab31595c`
+- Head cục bộ đã commit sau rebase: `c72bc77f996a160333c2cb7ee4399f3d591fe17c`
+- Head được triển khai/review đầy đủ gần nhất: `cf0a2364b9f526dae4f4e873f261764ea43da777`
+- Head cuối cùng đã được H2/H3 review: `778e0a470d8a1083bf571a8007b3c058eee4bb22`
+- Commit merge PR #75: `b75776b10d6cf4b6868d2ba51eb3268073483b8b`
+- Trạng thái: **HOÀN TẤT — PR #75 ĐÃ MERGE; CI/AZURE SAU MERGE ĐẠT**
 
-This record now closes the approved FE10-I08 chain with immutable evidence.
-The historical sections retain the first H3 outcome and remediation path;
-Sections 2 and 6 record the final head, H3 approval, merge, and post-merge
-CI/Azure results without adding a new behavior claim.
+Biên bản này khép lại chuỗi FE10-I08 đã được phê duyệt bằng bằng chứng bất
+biến. Các phần lịch sử giữ nguyên kết quả H3 đầu tiên và đường khắc phục;
+phần 2 và 6 ghi nhận head cuối cùng, phê duyệt H3, merge và kết quả CI/Azure
+sau merge mà không đưa ra tuyên bố hành vi mới.
 
-## 1. Reviewed Candidate And Approval Chain
+## 1. Ứng viên đã được rà soát và chuỗi phê duyệt
 
-- Governance PR #70 merged as `25c09ec`.
-- H2 round-two candidate fingerprint:
+- PR quản trị #70 đã merge với commit `25c09ec`.
+- Fingerprint ứng viên vòng H2 thứ hai:
   `2b53d7ecd2247aa72e7ae3c43bab5bd00ab48f0e5a97662455fa8d3db736b40c`.
-- Cross-platform migration-hash H2 addendum fingerprint:
+- Fingerprint addendum H2 hash migration đa nền tảng:
   `f78e0cc9ac7ca5f2f89cb2fe50fe6224c4f02f96fd0492d4674b2e713927f541`.
-- The user approved H1 drift reconciliation through
+- Người dùng đã phê duyệt đối soát sai lệch H1 đến
   `main@a5fcbb989d730923548a67a789a1447b180de2a9`.
-- The user later approved the non-overlapping H1 drift addendum through
-  `main@12faeadb9a92fa30cc8dc16aa01467577374c8b0`. The rebase completed without
-  conflict; the incoming drift deletes only retired `document/` artifacts and
-  does not overlap this remediation's files.
-- H2 round 3 was approved but stopped before use when the mandatory pre-stage
-  fetch found `main@a240705fbd486304464b073cbd3caec77a1fa135`. The user approved
-  that H1 drift addendum; the upstream FE11 Admin edit-action removal passed CI
-  `30311801599` and Azure deployment `30311973740`, and the FE10 branch rebased
-  without conflict.
-- Historical head `cf0a2364b9f526dae4f4e873f261764ea43da777`
-  subsequently passed CI `30315046007`, Azure staging `30315273298`, and final
-  separate Standards/Spec H3 reviews with no actionable finding.
-- H2 round 7 approved a three-line whitespace-only correction, but the
-  mandatory pre-stage fetch found `main@30f936d644c2034bbbf9cb4e01ba25feab31595c`.
-  The user approved that H1 drift addendum. No file was staged, committed, or
-  pushed under round-7 authority.
-- `main@30f936d` translates SDD documentation to Vietnamese and has no runtime,
-  API, migration, UI, or test overlap with FE10. Exact upstream CI
-  `30315665010` and automatic Azure staging `30315842152` passed. The branch
-  rebased without runtime conflict and preserved the translated FE10 SPEC.
-- H2 round 8 approved fingerprint
+- Người dùng sau đó phê duyệt addendum sai lệch H1 không chồng lấn đến
+  `main@12faeadb9a92fa30cc8dc16aa01467577374c8b0`. Rebase hoàn tất không xung
+  đột; sai lệch đi vào chỉ xoá artifact `document/` đã ngừng dùng và không
+  chồng lấn các tệp của đợt khắc phục này.
+- Vòng H2 thứ 3 đã được phê duyệt nhưng dừng trước khi dùng khi fetch bắt buộc
+  trước stage phát hiện `main@a240705fbd486304464b073cbd3caec77a1fa135`. Người
+  dùng đã phê duyệt addendum sai lệch H1 đó; việc loại bỏ edit-action Admin
+  FE11 ở upstream đã đạt CI `30311801599` và triển khai Azure `30311973740`,
+  còn nhánh FE10 rebase không xung đột.
+- Head lịch sử `cf0a2364b9f526dae4f4e873f261764ea43da777` sau đó đạt CI
+  `30315046007`, Azure staging `30315273298` và các review H3 Standards/Spec
+  riêng biệt cuối cùng mà không có phát hiện cần xử lý.
+- Vòng H2 thứ 7 đã phê duyệt một chỉnh sửa ba dòng chỉ về khoảng trắng, nhưng
+  fetch bắt buộc trước stage phát hiện
+  `main@30f936d644c2034bbbf9cb4e01ba25feab31595c`. Người dùng đã phê duyệt
+  addendum sai lệch H1 đó. Không tệp nào được stage, commit hay push theo thẩm
+  quyền của vòng 7.
+- `main@30f936d` dịch tài liệu SDD sang tiếng Việt và không chồng lấn runtime,
+  API, migration, UI hoặc kiểm thử với FE10. CI upstream chính xác
+  `30315665010` và Azure staging tự động `30315842152` đạt. Nhánh rebase không
+  xung đột runtime và giữ nguyên SPEC FE10 đã dịch.
+- Vòng H2 thứ 8 đã phê duyệt fingerprint
   `e123345be05b59a9e519d182b301ab5464160e8fc32aed8d17d3c463e28e0a15`.
-  PR #75 then published final head `778e0a470d8a1083bf571a8007b3c058eee4bb22`.
-- Separate Standards and Spec H3 reviews on that exact head returned no
-  actionable finding; the user explicitly approved H3. PR #75 merged as
-  `b75776b10d6cf4b6868d2ba51eb3268073483b8b`.
+  PR #75 sau đó publish head cuối `778e0a470d8a1083bf571a8007b3c058eee4bb22`.
+- Các review H3 Standards và Spec riêng biệt trên chính xác head đó không trả
+  về phát hiện cần xử lý; người dùng đã phê duyệt H3 rõ ràng. PR #75 được merge
+  với commit `b75776b10d6cf4b6868d2ba51eb3268073483b8b`.
 
-## 2. Exact-Head CI And Azure Staging Evidence
+## 2. Bằng chứng CI và Azure staging tại exact head
 
-| Gate | Exact evidence | Result |
+| Cổng | Bằng chứng chính xác | Kết quả |
 | --- | --- | --- |
-| Final PR CI | Run `30317424995`, head `778e0a470d8a1083bf571a8007b3c058eee4bb22` | PASS |
-| Final manual Azure staging | Run `30317621429`, head `778e0a470d8a1083bf571a8007b3c058eee4bb22` | PASS |
-| Post-merge CI | Run `30341279111`, merge `b75776b10d6cf4b6868d2ba51eb3268073483b8b` | PASS |
-| Post-merge automatic Azure staging | Run `30341540847`, merge `b75776b10d6cf4b6868d2ba51eb3268073483b8b` | PASS |
-| PR CI | Run `30306805399`, head `28c4f80ca6e249b7802caf854f9fa42cb4840158` | PASS |
-| Manual Azure staging | Run `30307855616`, head `28c4f80ca6e249b7802caf854f9fa42cb4840158` | PASS |
-| Deployment jobs | Preflight, migration/backend, frontend, smoke | PASS |
-| Public transport | HTTPS frontend/API, HTTP redirect, approved CORS allowed, malicious origin omitted | PASS |
-| Live roles | MEMBER, LIBRARIAN, ADMIN own-inbox flows | PASS |
+| CI PR cuối cùng | Lần chạy `30317424995`, head `778e0a470d8a1083bf571a8007b3c058eee4bb22` | ĐẠT |
+| Azure staging thủ công cuối cùng | Lần chạy `30317621429`, head `778e0a470d8a1083bf571a8007b3c058eee4bb22` | ĐẠT |
+| CI sau merge | Lần chạy `30341279111`, merge `b75776b10d6cf4b6868d2ba51eb3268073483b8b` | ĐẠT |
+| Azure staging tự động sau merge | Lần chạy `30341540847`, merge `b75776b10d6cf4b6868d2ba51eb3268073483b8b` | ĐẠT |
+| CI PR | Lần chạy `30306805399`, head `28c4f80ca6e249b7802caf854f9fa42cb4840158` | ĐẠT |
+| Azure staging thủ công | Lần chạy `30307855616`, head `28c4f80ca6e249b7802caf854f9fa42cb4840158` | ĐẠT |
+| Job triển khai | Preflight, migration/backend, frontend, smoke | ĐẠT |
+| Truy cập công khai | HTTPS frontend/API, chuyển hướng HTTP, CORS đã phê duyệt được cho phép, loại bỏ origin độc hại | ĐẠT |
+| Vai trò thực | Luồng hộp thư riêng của MEMBER, LIBRARIAN, ADMIN | ĐẠT |
 
-Azure SQL verification established:
+Xác minh Azure SQL đã xác lập:
 
-- one nullable `Notifications.ReadAt` column and one
-  `IX_Notifications_User_ReadAt_CreatedAt` index after repeated migration;
-- historical eligible rows backfilled while the post-run-one probe stayed
-  unread;
-- sensitive, userless, and cross-user rows excluded from personal operations;
-- mark-one replay preserved the first read timestamp and mark-all replay
-  returned `updated: 0`;
-- protected notification/delivery/attempt aggregates returned to their
-  pre-probe values;
-- all synthetic users, notifications, tokens, audits, and temporary Azure SQL
-  firewall rules created by the task were removed.
+- một cột `Notifications.ReadAt` nullable và một index
+  `IX_Notifications_User_ReadAt_CreatedAt` sau migration lặp lại;
+- các dòng lịch sử đủ điều kiện đã được backfill, trong khi probe sau lần chạy
+  đầu vẫn chưa đọc;
+- các dòng nhạy cảm, không có người dùng và khác người dùng bị loại trừ khỏi
+  thao tác cá nhân;
+- phát lại mark-one giữ timestamp đọc đầu tiên và phát lại mark-all trả về
+  `updated: 0`;
+- các aggregate notification/delivery/attempt được bảo vệ đã trở về giá trị
+  trước probe;
+- mọi người dùng tổng hợp, notification, token, audit và rule firewall Azure
+  SQL tạm thời do task tạo ra đều đã bị xoá.
 
-## 3. H3 Round-One Result
+## 3. Kết quả vòng H3 đầu tiên
 
-H3 round one reviewed `main@a5fcbb9...28c4f80` on separate Standards and Spec
-axes and returned **FAIL**.
+Vòng H3 đầu tiên review `main@a5fcbb9...28c4f80` theo các trục Standards và
+Spec riêng biệt và trả về **KHÔNG ĐẠT**.
 
-### Standards findings
+### Phát hiện Standards
 
-1. `ADR-002-database-design.md` did not record the approved `ReadAt` column,
-   supporting index, migration, or Azure deployment boundary.
-2. FE10 source-of-truth files still reported H2/redeploy pending and referenced
-   old baselines after the addendum, CI, Azure deployment, and live checks had
-   passed.
+1. `ADR-002-database-design.md` không ghi nhận cột `ReadAt` đã được phê duyệt,
+   index hỗ trợ, migration hay ranh giới triển khai Azure.
+2. Các tệp nguồn sự thật FE10 vẫn báo H2/redeploy đang chờ và tham chiếu các
+   baseline cũ sau khi addendum, CI, triển khai Azure và kiểm tra môi trường
+   sống đã đạt.
 
-### Spec findings
+### Phát hiện Spec
 
-1. This required current-state closeout record was absent.
-2. A successfully read item with `actionPath: null` or another non-navigated
-   result stayed visually unread because `/notifications` did not reload its
-   list after the successful mutation.
-3. `Đánh dấu tất cả đã đọc` was disabled when the current filtered page was
-   empty, even though unread rows could exist in another filter.
+1. Chưa có biên bản closeout trạng thái hiện tại bắt buộc này.
+2. Một mục được đọc thành công có `actionPath: null` hoặc kết quả không điều
+   hướng khác vẫn hiển thị chưa đọc vì `/notifications` không reload danh sách
+   sau mutation thành công.
+3. `Đánh dấu tất cả đã đọc` bị vô hiệu hoá khi trang đã lọc hiện tại trống, dù
+   các dòng chưa đọc có thể tồn tại ở bộ lọc khác.
 
-### User-reported visual finding
+### Phát hiện giao diện do người dùng báo cáo
 
-A staging screenshot showed page content painted over the open notification
-popover. Root cause was the blurred `.app-topbar` creating a stacking context
-without an explicit sibling stack level; the later `.app-content` could paint
-above the popover even though the popover itself had `z-index: 90`.
+Ảnh chụp staging cho thấy nội dung trang được vẽ đè lên popover thông báo đang
+mở. Nguyên nhân gốc là `.app-topbar` mờ tạo một stacking context mà không có
+mức stack sibling tường minh; `.app-content` đến sau có thể được vẽ phía trên
+popover dù bản thân popover có `z-index: 90`.
 
-## 4. Local Remediation State
+## 4. Trạng thái khắc phục cục bộ
 
-The bounded remediation:
+Đợt khắc phục được khoanh vùng:
 
-- records the personal read-state schema decision in ADR-002;
-- reconciles current lifecycle status across FE10 SPEC/PLAN/TASKS/CONTEXT,
-  test/developer/design documentation, this closeout, and the changelog;
-- reloads the current notification page after a successful read that does not
-  navigate away;
-- disables mark-all only while loading or while the mutation is pending;
-- assigns `.app-topbar` a normal `position: relative; z-index: 40` and elevates
-  it to `z-index: 100` only while it contains the open notification popover.
-  The popover keeps its approved dimensions while the open state sits above
-  every current layout layer, including modal (`50`), mobile navigation
-  (`60`/`70`), and toast (`80`).
+- ghi nhận quyết định schema trạng thái đã đọc cá nhân trong ADR-002;
+- đối soát trạng thái vòng đời hiện tại giữa FE10 SPEC/PLAN/TASKS/CONTEXT, tài
+  liệu kiểm thử/phát triển/thiết kế, biên bản closeout này và changelog;
+- reload trang thông báo hiện tại sau một lần đọc thành công mà không điều
+  hướng đi nơi khác;
+- chỉ vô hiệu hoá mark-all khi đang tải hoặc mutation đang chờ;
+- gán cho `.app-topbar` một `position: relative; z-index: 40` thông thường và
+  chỉ nâng lên `z-index: 100` khi nó chứa popover thông báo đang mở. Popover giữ
+  kích thước đã được phê duyệt trong khi trạng thái mở nằm trên mọi lớp layout
+  hiện tại, gồm modal (`50`), điều hướng di động (`60`/`70`) và toast (`80`).
 
-Focused frontend RED reproduced the page-state and stacking contracts. Focused
-GREEN then passed 16/16 tests. This is local evidence only; it does not replace
-the complete remediation gates.
+RED frontend tập trung tái hiện các hợp đồng trạng thái trang và stacking.
+GREEN tập trung sau đó đạt 16/16 kiểm thử. Đây chỉ là bằng chứng cục bộ; nó
+không thay thế các cổng khắc phục đầy đủ.
 
-Fresh complete local gates on the H1-approved `main@12faead` base passed:
-backend 69/69 suites and 1116/1116 tests with configured coverage; frontend
-259/259 plus lint/build; deployment 20/20; system 10/10; traceability state
-3/3 and FE10 enforced coverage 14/16 (88%); Chromium 11/11; dependency audits,
-Azure schema preparation, diff hygiene, and contradiction, unfinished-marker,
-and conflict scans. These results authorize only preparation of the new H2
-candidate.
+Các cổng cục bộ đầy đủ mới trên mốc cơ sở `main@12faead` đã H1 phê duyệt đã
+đạt: backend 69/69 suite và 1116/1116 kiểm thử với độ bao phủ được cấu hình;
+frontend 259/259 cùng lint/build; deployment 20/20; system 10/10; trạng thái
+truy vết 3/3 và độ bao phủ FE10 bị ép 14/16 (88%); Chromium 11/11; audit
+dependency, chuẩn bị schema Azure, diff hygiene và quét mâu thuẫn, unfinished
+marker và conflict. Các kết quả này chỉ cho phép chuẩn bị ứng viên H2 mới.
 
-The later automatic deployment of `main@a240705` temporarily meant Azure
-staging no longer served the unmerged PR #75 candidate. Historical run
-`30307855616` remains valid for head `28c4f80`; that condition was subsequently
-closed by H2 round 4, publication of `3f9f23a`, and exact-head Azure deployment
-`30313949983`.
+Việc triển khai tự động sau đó của `main@a240705` tạm thời khiến Azure staging
+không còn phục vụ ứng viên PR #75 chưa merge. Lần chạy lịch sử `30307855616`
+vẫn hợp lệ cho head `28c4f80`; tình trạng đó sau này được khép lại bằng vòng H2
+thứ 4, publish `3f9f23a` và triển khai Azure tại exact head `30313949983`.
 
-Fresh complete local gates after the approved `main@a240705` rebase passed:
-backend 69/69 suites and 1084/1084 tests with configured coverage; frontend
-259/259 plus lint/build; deployment 20/20; system 10/10; traceability state
-3/3 and FE10 14/16 (88%); Chromium 11/11; audits, Azure schema preparation,
-and diff hygiene. The lower backend count is the expected result of upstream
-removing obsolete FE11 edit-action tests, not a skipped FE10 test.
+Các cổng cục bộ đầy đủ mới sau rebase `main@a240705` đã được phê duyệt đã đạt:
+backend 69/69 suite và 1084/1084 kiểm thử với độ bao phủ được cấu hình;
+frontend 259/259 cùng lint/build; deployment 20/20; system 10/10; trạng thái
+truy vết 3/3 và FE10 14/16 (88%); Chromium 11/11; audit, chuẩn bị schema Azure
+và diff hygiene. Số lượng backend thấp hơn là kết quả dự kiến khi upstream xoá
+các kiểm thử edit-action FE11 đã lỗi thời, không phải do bỏ qua kiểm thử FE10.
 
-## 5. Runtime Exact-Head Evidence
+## 5. Bằng chứng runtime tại exact head
 
-- H2 round 4 fingerprint
+- Fingerprint vòng H2 thứ 4
   `f41dbf50680d9c5601ae00d3c53651a7bb782ff81724ca641ef49b7cd88844e4`
-  was explicitly approved.
-- The approved remediation was committed and pushed as PR #75 head
+  đã được phê duyệt rõ ràng.
+- Đợt khắc phục đã phê duyệt được commit và push với head PR #75
   `3f9f23a0bc8705590a977e31b03b05a6d2845628`.
-- Exact-head CI `30313721511` passed.
-- Manual Azure staging deployment `30313949983` passed preflight, backend,
-  frontend, and smoke jobs.
-- `https://www.thuvienhub.io.vn` returned `200`; backend health and readiness
-  returned `ok`; anonymous `GET /api/notifications/mine` returned protected
-  `401` with the exact approved CORS origin.
-- Direct read-only Azure SQL verification found exactly one nullable `ReadAt`
-  column and exactly one `IX_Notifications_User_ReadAt_CreatedAt` index.
-  Temporary probe rows and temporary exact-IP firewall rules were removed.
-- Historical three-role own-record/sensitive-exclusion/read-replay evidence on
-  `28c4f80` remains applicable to the unchanged FE10 backend contract. Exact
-  remediation-head local Chromium covers the changed page-state and stacking
-  behavior; the deployed frontend was additionally observed on the Azure
-  domain rather than localhost.
+- CI tại exact head `30313721511` đã đạt.
+- Triển khai Azure staging thủ công `30313949983` đã đạt các job preflight,
+  backend, frontend và smoke.
+- `https://www.thuvienhub.io.vn` trả về `200`; health và readiness backend trả
+  về `ok`; `GET /api/notifications/mine` ẩn danh trả về `401` được bảo vệ với
+  CORS origin chính xác đã phê duyệt.
+- Xác minh Azure SQL chỉ đọc trực tiếp tìm thấy chính xác một cột `ReadAt`
+  nullable và chính xác một index `IX_Notifications_User_ReadAt_CreatedAt`.
+  Các dòng probe tạm thời và rule firewall IP chính xác tạm thời đã bị xoá.
+- Bằng chứng lịch sử ba vai trò về bản ghi riêng/loại trừ nhạy cảm/phát lại đọc
+  trên `28c4f80` vẫn áp dụng cho hợp đồng backend FE10 không thay đổi. Chromium
+  cục bộ tại remediation head chính xác bao phủ hành vi trạng thái trang và
+  stacking đã đổi; frontend đã triển khai cũng được quan sát thêm trên domain
+  Azure thay vì localhost.
 
-## 6. Completed Mandatory Gates
+## 6. Các cổng bắt buộc đã hoàn tất
 
-| Gate | Immutable evidence | Result |
+| Cổng | Bằng chứng bất biến | Kết quả |
 | --- | --- | --- |
-| Post-drift H2 | Fingerprint `e123345be05b59a9e519d182b301ab5464160e8fc32aed8d17d3c463e28e0a15` | APPROVED |
-| Exact-head quality/deployment | CI `30317424995`; Azure staging `30317621429`; head `778e0a470d8a1083bf571a8007b3c058eee4bb22` | PASS |
-| H3 | Separate Standards and Spec reviews: no actionable finding; user explicitly approved the exact head | APPROVED |
-| Integration | PR #75 merged as `b75776b10d6cf4b6868d2ba51eb3268073483b8b` | PASS |
-| Post-merge runtime | CI `30341279111`; automatic Azure staging `30341540847` | PASS |
+| H2 sau sai lệch | Fingerprint `e123345be05b59a9e519d182b301ab5464160e8fc32aed8d17d3c463e28e0a15` | ĐÃ PHÊ DUYỆT |
+| Chất lượng/triển khai tại exact head | CI `30317424995`; Azure staging `30317621429`; head `778e0a470d8a1083bf571a8007b3c058eee4bb22` | ĐẠT |
+| H3 | Review Standards và Spec riêng biệt: không có phát hiện cần xử lý; người dùng đã phê duyệt rõ ràng exact head | ĐÃ PHÊ DUYỆT |
+| Tích hợp | PR #75 được merge với commit `b75776b10d6cf4b6868d2ba51eb3268073483b8b` | ĐẠT |
+| Runtime sau merge | CI `30341279111`; Azure staging tự động `30341540847` | ĐẠT |
 
-The closeout changes only evidence/status fields and approved task transitions.
-No business rule, schema, API, UI behavior, Azure configuration, or database
-data is changed by this record.
+Closeout chỉ thay đổi các trường bằng chứng/trạng thái và chuyển tiếp task đã
+được phê duyệt. Biên bản này không thay đổi business rule, schema, API, hành
+vi UI, cấu hình Azure hay dữ liệu database.

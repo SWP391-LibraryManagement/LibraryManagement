@@ -1,33 +1,34 @@
-# FE07/FE08/FE10/FE12 Business-Rule Alignment Validation
+# Xác thực đồng bộ business rule FE07/FE08/FE10/FE12
 
-Date: 2026-07-27
+Ngày: 2026-07-27
 
-## 1. Review State
+## 1. Trạng thái review
 
-- Branch: `codex/fe07-fe10-fe12-rule-alignment`
-- Published branch head:
+- Nhánh: `codex/fe07-fe10-fe12-rule-alignment`
+- Head nhánh đã publish:
   `f346ae07d5d2885c0d5b8131479dee764edd97ec`
-- Integrated `origin/main`: `8d0059bd28b6a7fc8e4ccbdf767ce4120a86aee7`
-- Approved delivery order: SPEC -> PLAN/TASKS -> RED -> minimal code -> GREEN -> L1-L4/runtime evidence
-- Approved account model: every persisted account has exactly one mutually
-  exclusive role under `DEC-GEN-005`; Member and staff renewal use separate
-  single-role accounts.
-- Reconciliation state: Nhat approved the latest `8d0059b` H2 addendum on
-  2026-07-27. The reviewed merge was committed as `f346ae0` and pushed to
-  draft PR #63.
-- Required PR checks: CI run `30244750250` passed for exact head `f346ae0`.
-- First H3 result: no product-code or business-spec defect; one valid P2
-  finding identified stale current-state H2 wording in governance documents.
-- Frozen Task 12 H2 boundary: at package freeze, the documentation-only H3
-  remediation was uncommitted and required fresh H2 before publication. Nhat
-  later approved that H2; post-publication facts are recorded in PR #63.
+- `origin/main` đã tích hợp: `8d0059bd28b6a7fc8e4ccbdf767ce4120a86aee7`
+- Trình tự bàn giao đã phê duyệt: SPEC -> PLAN/TASKS -> RED -> code tối thiểu -> GREEN -> bằng chứng L1-L4/runtime
+- Mô hình tài khoản đã phê duyệt: mỗi tài khoản được persist có đúng một vai trò
+  loại trừ lẫn nhau theo `DEC-GEN-005`; việc gia hạn của Member và nhân viên
+  dùng các tài khoản đơn vai trò riêng biệt.
+- Trạng thái đối soát: Nhat đã phê duyệt addendum H2 `8d0059b` mới nhất ngày
+  2026-07-27. Merge đã review được commit với `f346ae0` và push lên PR #63
+  nháp.
+- Kiểm tra PR bắt buộc: lần chạy CI `30244750250` đạt cho exact head `f346ae0`.
+- Kết quả H3 đầu tiên: không có lỗi product-code hoặc business-spec; một phát
+  hiện P2 hợp lệ chỉ ra câu chữ H2 trạng thái hiện tại đã cũ trong tài liệu quản
+  trị.
+- Ranh giới H2 Task 12 đóng băng: tại lúc đóng băng package, đợt khắc phục H3
+  chỉ về tài liệu chưa commit và cần H2 mới trước khi publish. Nhat sau đó đã
+  phê duyệt H2 đó; sự kiện sau publish được ghi trong PR #63.
 
-Sections 3-9 retain the prior `e99daf5` evidence as historical baseline.
-Section 11 is the authoritative product addendum for `8d0059b`; Section 12 is
-the frozen Task 12 H2 package. Post-publication current state belongs to PR #63
-and the final post-merge closeout, not to a self-referential checked-in field.
+Phần 3-9 giữ bằng chứng `e99daf5` trước đó làm baseline lịch sử. Phần 11 là
+addendum product có thẩm quyền cho `8d0059b`; Phần 12 là package H2 Task 12 đã
+đóng băng. Trạng thái hiện tại sau publish thuộc về PR #63 và closeout cuối sau
+merge, không thuộc một trường đã commit tự tham chiếu.
 
-## 2. Changed Files
+## 2. Tệp đã thay đổi
 
 - `.sdd/reviews/fe07-fe10-fe12-business-rule-alignment-validation-2026-07-27.md`
 - `.sdd/specs/feat-borrowing-management/CHANGELOG.md`
@@ -70,281 +71,276 @@ and the final post-merge closeout, not to a self-referential checked-in field.
 - `frontend/src/utils/libraryFeatureViewModels.js`
 - `frontend/test/reservationFrontend.test.js`
 
-The integrated working tree contains 40 changed files against `origin/main`.
-The only additional FE08 production delta against `origin/main` is the bounded
-null-safe queue-position presentation in the two reservation pages and shared
-view-model formatter. No schema, public route, dependency, role, lifecycle,
-queue algorithm, or architecture changed in this branch.
+Cây làm việc đã tích hợp chứa 40 tệp thay đổi so với `origin/main`. Delta
+production FE08 bổ sung duy nhất so với `origin/main` là phần hiển thị vị trí
+queue null-safe được khoanh vùng trong hai trang reservation và formatter
+view-model dùng chung. Không schema, route công khai, dependency, vai trò, vòng
+đời, thuật toán queue hay kiến trúc nào thay đổi trên nhánh này.
 
-## 3. RED Evidence
+## 3. Bằng chứng RED
 
-| Acceptance | Command | Observed failure before production change |
+| Chấp nhận | Lệnh | Lỗi quan sát được trước thay đổi production |
 | --- | --- | --- |
-| AT-001 / FE07-T052 | Historical only: the original branch test used a multi-role actor. | `DEC-GEN-005` and Nhat's single-role confirmation superseded that actor premise. The obsolete test and authorization delta were removed; reconciliation uses the existing single-role contract as a GREEN baseline, not a new RED behavior claim. |
-| AT-002 / FE07-T049 | `npm.cmd --prefix backend test -- --runTestsByPath tests/borrowingRoutes.test.js tests/borrowingRepository.test.js --testNamePattern "due date locked|return serializes"` | Route returned stale `overdueDays = 12` instead of `2`; repository source contract did not contain the locked due date/user, committed return date, or evidence callback. |
-| AT-003 / FE07-T050 | Run the business-date test once with `TZ=UTC` and once with `TZ=America/New_York`. | UTC passed; New York returned `2026-03-21` instead of `2026-03-22`. |
-| AT-004 / FE10-S11 | `npm.cmd --prefix backend test -- --runTestsByPath tests/notificationRoutes.test.js --testNamePattern "unsafe stored template"` | All three unsafe stored definitions resolved as `{ notificationId: 1, status: "SENT" }` instead of rejecting. |
-| AT-005 / FE12-N11 | `npm.cmd --prefix backend test -- --runTestsByPath tests/reportRoutes.test.js --testNamePattern "unsupported query keys"` | Borrowing, inventory, and users endpoints each returned `200` instead of safe `400`. |
-| Prior-main FE08 integration / FE08-T047 | First Chromium run against the historical intermediate `8f231d7` merge. | Reservation creation succeeded, but the branch E2E looked for obsolete `Đã đặt chỗ`; runtime correctly rendered `Đang đặt chỗ`. Upstream `e20fdc3` independently contained the correction and held-copy handoff, so the branch retained that behavior without a duplicate FE08 production change. |
-| Latest-main FE08 same-book rule / FE08-T045 | No new branch RED claim. | `e99daf5` already contains the approved SPEC, implementation, and tests. This integration preserves that upstream change exactly and reruns its focused, cross-feature, and runtime gates. |
+| AT-001 / FE07-T052 | Chỉ lịch sử: kiểm thử nhánh gốc dùng một actor đa vai trò. | `DEC-GEN-005` và xác nhận đơn vai trò của Nhat đã thay thế tiền đề actor đó. Kiểm thử lỗi thời và delta phân quyền bị loại bỏ; đối soát dùng hợp đồng đơn vai trò hiện có làm baseline GREEN, không phải tuyên bố hành vi RED mới. |
+| AT-002 / FE07-T049 | `npm.cmd --prefix backend test -- --runTestsByPath tests/borrowingRoutes.test.js tests/borrowingRepository.test.js --testNamePattern "due date locked|return serializes"` | Route trả về `overdueDays = 12` đã cũ thay vì `2`; hợp đồng source repository không có ngày đến hạn/user đã khoá, ngày trả đã commit hay callback bằng chứng. |
+| AT-003 / FE07-T050 | Chạy kiểm thử business-date một lần với `TZ=UTC` và một lần với `TZ=America/New_York`. | UTC đạt; New York trả về `2026-03-21` thay vì `2026-03-22`. |
+| AT-004 / FE10-S11 | `npm.cmd --prefix backend test -- --runTestsByPath tests/notificationRoutes.test.js --testNamePattern "unsafe stored template"` | Cả ba definition lưu trữ không an toàn đều resolve thành `{ notificationId: 1, status: "SENT" }` thay vì bị từ chối. |
+| AT-005 / FE12-N11 | `npm.cmd --prefix backend test -- --runTestsByPath tests/reportRoutes.test.js --testNamePattern "unsupported query keys"` | Mỗi endpoint borrowing, inventory và users đều trả `200` thay vì `400` an toàn. |
+| Tích hợp FE08 main trước đó / FE08-T047 | Lần chạy Chromium đầu tiên với merge trung gian lịch sử `8f231d7`. | Tạo reservation thành công, nhưng E2E nhánh tìm `Đã đặt chỗ` lỗi thời; runtime hiển thị đúng `Đang đặt chỗ`. Upstream `e20fdc3` độc lập chứa bản sửa và handoff held-copy, nên nhánh giữ hành vi đó mà không có thay đổi production FE08 trùng lặp. |
+| Quy tắc FE08 cùng sách trên main mới nhất / FE08-T045 | Không có tuyên bố RED mới của nhánh. | `e99daf5` đã chứa SPEC, triển khai và kiểm thử được phê duyệt. Tích hợp này giữ chính xác thay đổi upstream đó và chạy lại các cổng tập trung, cross-feature và runtime của nó. |
 
-## 4. GREEN And L1 Evidence
+## 4. Bằng chứng GREEN và L1
 
-| Scope | Observed result |
+| Phạm vi | Kết quả quan sát được |
 | --- | --- |
-| FE07-T052 single-role reconciliation | 3/3 passed before cleanup and 3/3 passed after cleanup. A single-role Librarian may renew another member's eligible loan; a separate Member remains owner-scoped; FE11 database repair/invariant cases remain green. |
-| FE07-T049 focused | 2/2 passed. Response and audit use the locked due date and the public DTO excludes `authoritativeReturn`. |
-| FE07-T050 timezone matrix | UTC 3/3 and America/New_York 3/3 passed with identical business dates and role outcomes. |
-| FE07 full route/repository | 79/79 passed. |
-| FE10 focused | 4/4 passed, including preservation of runtime template-data sanitization. |
-| FE10 full | 139/139 passed. |
-| FE12 focused | 3/3 passed with zero selected repository calls and no unknown value in the response. |
-| FE12 full | 14/14 passed. |
-| FE08 requester | 1/1 passed. |
-| FE08 SIT-003/SIT-004 | 2/2 passed using equivalent Windows-safe pattern `SIT-00[34]`. The original pipe pattern was interpreted by the Windows command shell before Jest and did not run the suite. |
-| FE08 same-book repository/service/route | 3 suites, 63/63 passed, covering candidate exclusion, direct-create conflict, terminal-loan allowance, stale-queue skip, source lock/order checks, and service error mapping. |
-| FE08 frontend error mapping | 7/7 passed, including `BOOK_ALREADY_BORROWED`. |
-| FE08 candidate SQL command | 2/2 source-contract tests passed; 2 mutable SQL cases skipped because no approved disposable database was configured. |
-| Cross-feature L1 | Fresh final run against the open `e99daf5` merge: 7 suites, 284/284 tests passed after single-role, held-copy, and same-book integration. |
+| Đối soát đơn vai trò FE07-T052 | 3/3 đạt trước dọn dẹp và 3/3 đạt sau dọn dẹp. Librarian đơn vai trò có thể gia hạn khoản mượn đủ điều kiện của member khác; Member riêng vẫn bị giới hạn theo owner; các trường hợp sửa/invariant database FE11 vẫn xanh. |
+| FE07-T049 tập trung | 2/2 đạt. Response và audit dùng ngày đến hạn đã khoá, DTO công khai loại trừ `authoritativeReturn`. |
+| Ma trận timezone FE07-T050 | UTC 3/3 và America/New_York 3/3 đạt với business date và kết quả vai trò giống hệt. |
+| Route/repository FE07 đầy đủ | 79/79 đạt. |
+| FE10 tập trung | 4/4 đạt, gồm giữ nguyên sanitization template-data runtime. |
+| FE10 đầy đủ | 139/139 đạt. |
+| FE12 tập trung | 3/3 đạt với không lần gọi repository được chọn nào và không giá trị unknown trong response. |
+| FE12 đầy đủ | 14/14 đạt. |
+| Requester FE08 | 1/1 đạt. |
+| FE08 SIT-003/SIT-004 | 2/2 đạt bằng pattern tương đương an toàn trên Windows `SIT-00[34]`. Pattern pipe gốc bị command shell Windows diễn giải trước Jest nên không chạy suite. |
+| Repository/service/route FE08 cùng sách | 3 suite, 63/63 đạt, bao phủ loại trừ candidate, xung đột direct-create, cho phép terminal-loan, bỏ qua queue cũ, kiểm tra source lock/order và ánh xạ lỗi service. |
+| Ánh xạ lỗi frontend FE08 | 7/7 đạt, gồm `BOOK_ALREADY_BORROWED`. |
+| Lệnh SQL candidate FE08 | 2/2 kiểm thử source-contract đạt; 2 trường hợp SQL mutable bị bỏ qua vì chưa cấu hình database tạm thời đã phê duyệt. |
+| L1 cross-feature | Lần chạy cuối mới với merge `e99daf5` đang mở: 7 suite, 284/284 kiểm thử đạt sau tích hợp đơn vai trò, held-copy và cùng sách. |
 
-## 5. Full Automated Evidence
+## 5. Bằng chứng tự động đầy đủ
 
-| Command | Observed result |
+| Lệnh | Kết quả quan sát được |
 | --- | --- |
-| `npm.cmd --prefix backend test` | Fresh final integrated run: 61 suites, 1,051/1,051 tests passed. |
-| `npm.cmd --prefix backend run test:coverage:ci` | Fresh final integrated run: 61 suites, 1,051/1,051 tests passed. Statements 92.08%, branches 81.46%, functions 97.38%, lines 92.00%. |
-| `npm.cmd --prefix frontend test` | Fresh final integrated run: 231/231 tests passed. |
-| `npm.cmd --prefix frontend run lint` | Passed with exit code 0. |
-| `npm.cmd --prefix frontend run build` | Vite production build passed. |
-| `npm.cmd run test:traceability-state` | 3/3 passed. |
-| `npm.cmd run trace:enforce` | Passed; all active features remain above 70%, with FE07/FE10/FE12 at 100% and FE08 at 97%. |
-| `git diff --check`, `git diff --cached --check`, `git diff HEAD --check`, `git diff origin/main --check` | Passed with exit code 0. Only normal LF-to-CRLF working-copy warnings were reported. Conflict-marker scan found 0 markers; the branch diff contains exactly 36 files against `origin/main`; upstream FE08 production/test files have 0 diff lines against `origin/main`. |
+| `npm.cmd --prefix backend test` | Lần chạy tích hợp cuối mới: 61 suite, 1,051/1,051 kiểm thử đạt. |
+| `npm.cmd --prefix backend run test:coverage:ci` | Lần chạy tích hợp cuối mới: 61 suite, 1,051/1,051 kiểm thử đạt. Câu lệnh 92.08%, nhánh 81.46%, hàm 97.38%, dòng 92.00%. |
+| `npm.cmd --prefix frontend test` | Lần chạy tích hợp cuối mới: 231/231 kiểm thử đạt. |
+| `npm.cmd --prefix frontend run lint` | Đạt với mã thoát 0. |
+| `npm.cmd --prefix frontend run build` | Build production Vite đạt. |
+| `npm.cmd run test:traceability-state` | 3/3 đạt. |
+| `npm.cmd run trace:enforce` | Đạt; mọi feature active vẫn trên 70%, với FE07/FE10/FE12 tại 100% và FE08 tại 97%. |
+| `git diff --check`, `git diff --cached --check`, `git diff HEAD --check`, `git diff origin/main --check` | Đạt với mã thoát 0. Chỉ có cảnh báo working-copy LF sang CRLF thông thường. Quét conflict-marker tìm thấy 0 marker; diff nhánh chứa chính xác 36 tệp so với `origin/main`; tệp production/kiểm thử FE08 upstream có 0 dòng diff so với `origin/main`. |
 
-Generated `backend/coverage`, `frontend/dist`, Playwright report/output, and test
-result directories remain ignored and are not part of the H2 diff.
+Các thư mục `backend/coverage`, `frontend/dist`, report/output Playwright và kết
+quả kiểm thử được ignore vẫn không thuộc diff H2.
 
-## 6. SQL And Runtime Evidence
+## 6. Bằng chứng SQL và runtime
 
-### Optional mutable SQL
+### SQL mutable tuỳ chọn
 
-- `DB_NAME` was unset.
-- `FE07_SQL_TEST_ALLOW_MUTATION` was unset.
-- The mutable FE07 SQL suite was not run, and this review makes no real-SQL
-  mutation claim.
-- The FE08 candidate SQL command ran `2/2` source-contract tests and skipped
-  `2` mutable database cases under the same environment boundary.
+- `DB_NAME` chưa được đặt.
+- `FE07_SQL_TEST_ALLOW_MUTATION` chưa được đặt.
+- Suite SQL mutable FE07 không được chạy và review này không đưa ra tuyên bố
+  mutation SQL thực.
+- Lệnh SQL candidate FE08 chạy `2/2` kiểm thử source-contract và bỏ qua `2`
+  trường hợp database mutable theo cùng ranh giới environment.
 
-### Local HTTP/browser runtime
+### Runtime HTTP/trình duyệt cục bộ
 
-Command:
+Lệnh:
 
 `npx.cmd playwright test tests/e2e/system-golden-path.spec.js tests/e2e/fe08-reservation-candidate-catalog.spec.js --project=chromium`
 
-Observed:
+Quan sát:
 
-- The historical first FE08 run against the prior merge failed only on the
-  stale `Đã đặt chỗ` locator after the
-  successful create response; the runtime snapshot showed the upstream
-  `Đang đặt chỗ` label required by FE08 v0.5.6.
-- The final combined Chromium run against the open `e99daf5` integration
-  passed 2/2 against the local HTTP servers.
-- `E2E-SYS-001` passed login -> borrow -> approve -> return -> fine -> report.
-- The same golden path observed
-  `/api/reports/borrowing?bogus=runtime-secret-value` return
-  `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` without echoing the value.
-- `E2E-FE08-ACC01` passed candidate search and real reservation creation.
-- No staging mutation or staging acceptance run was performed.
+- Lần FE08 đầu tiên lịch sử với merge trước chỉ lỗi ở locator `Đã đặt chỗ` đã
+  cũ sau response tạo thành công; snapshot runtime cho thấy nhãn upstream
+  `Đang đặt chỗ` do FE08 v0.5.6 yêu cầu.
+- Lần chạy Chromium kết hợp cuối với tích hợp `e99daf5` đang mở đạt 2/2 trên
+  các HTTP server cục bộ.
+- `E2E-SYS-001` đạt login -> borrow -> approve -> return -> fine -> report.
+- Cùng golden path quan sát
+  `/api/reports/borrowing?bogus=runtime-secret-value` trả về
+  `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` mà không echo giá trị.
+- `E2E-FE08-ACC01` đạt tìm kiếm candidate và tạo reservation thực.
+- Không mutation staging hoặc lần chạy chấp nhận staging nào được thực hiện.
 
-## 7. L2 Spec Traceability Review
+## 7. Rà soát truy vết spec L2
 
-| Decision | Task | Test/evidence | Implementation |
+| Quyết định | Task | Kiểm thử/bằng chứng | Triển khai |
 | --- | --- | --- | --- |
-| BD-007 / AT-001 | FE07-T052 | Single-role reconciliation baseline before/after cleanup plus FE11 one-role invariant/legacy-repair coverage | Existing one-role renewal guard: Member owner-only; Librarian/Admin cross-member; all blockers remain loan-owner scoped |
-| BD-002 / AT-002 | FE07-T049 | Stale-preflight route RED/GREEN plus repository source contract | Locked due/user/return snapshot builds one audit/fine evidence object inside the return transaction |
-| BD-003 / AT-003 | FE07-T050 | UTC/New York RED/GREEN matrix | Renewal extension and authoritative comparisons use `libraryBusinessTime` |
-| BD-004 / AT-004 | FE10-S11 | Three unsafe-definition cases plus runtime-value preservation | Stored definitions fail closed before recipient lookup, render, persistence, or provider I/O |
-| BD-005 / AT-005 | FE12-N11 | Three endpoint allowlist cases plus local HTTP acceptance | Exact-key middleware is first in each endpoint validator array |
-| BD-006 / AT-006 | FE08-T047 | Requester 1/1, SIT-003/SIT-004 2/2, and browser acceptance 2/2 | No additional FE08 production or contract change from the rule-alignment slice |
-| BR-FE08-019 / FR-FE08-034 / AC-FE08-021 | FE08-T045 | Repository/service/route 63/63, frontend error mapping 7/7, cross-feature 284/284 | Upstream `e99daf5` candidate exclusion, transactional `BOOK_ALREADY_BORROWED`, stale-queue skip, and shared FE07 Member circulation lock preserved exactly |
+| BD-007 / AT-001 | FE07-T052 | Baseline đối soát đơn vai trò trước/sau dọn dẹp cùng coverage invariant một vai trò/sửa legacy FE11 | Guard gia hạn một vai trò hiện có: Member chỉ owner; Librarian/Admin cross-member; mọi blocker vẫn theo loan-owner |
+| BD-002 / AT-002 | FE07-T049 | Route RED/GREEN preflight cũ cùng hợp đồng source repository | Snapshot due/user/return đã khoá xây một object bằng chứng audit/fine bên trong transaction return |
+| BD-003 / AT-003 | FE07-T050 | Ma trận RED/GREEN UTC/New York | Mở rộng gia hạn và so sánh authoritative dùng `libraryBusinessTime` |
+| BD-004 / AT-004 | FE10-S11 | Ba trường hợp definition không an toàn cùng giữ giá trị runtime | Definition đã lưu từ chối an toàn trước lookup recipient, render, persistence hoặc provider I/O |
+| BD-005 / AT-005 | FE12-N11 | Ba trường hợp allowlist endpoint cùng chấp nhận HTTP cục bộ | Middleware exact-key là phần tử đầu tiên trong mỗi mảng validator endpoint |
+| BD-006 / AT-006 | FE08-T047 | Requester 1/1, SIT-003/SIT-004 2/2 và chấp nhận trình duyệt 2/2 | Không thay đổi production hoặc contract FE08 bổ sung từ lát cắt rule-alignment |
+| BR-FE08-019 / FR-FE08-034 / AC-FE08-021 | FE08-T045 | Repository/service/route 63/63, ánh xạ lỗi frontend 7/7, cross-feature 284/284 | Loại trừ candidate `e99daf5` upstream, `BOOK_ALREADY_BORROWED` transactional, bỏ qua queue cũ và lock circulation Member FE07 dùng chung được giữ nguyên chính xác |
 
-L2 result: PASS. No behavior outside the approved rule-alignment scope and the
-upstream FE08 v0.5.9 integrated contracts was identified.
+Kết quả L2: ĐẠT. Không xác định hành vi nào ngoài phạm vi rule-alignment đã
+phê duyệt và các contract tích hợp FE08 v0.5.9 upstream.
 
-## 8. L3 Constitution And Safety Review
+## 8. Rà soát constitution và an toàn L3
 
-- Every persisted account has exactly one role under `DEC-GEN-005`,
-  `BR-G-009`, and the FE11 database invariant. Member and staff renewal tests
-  use separate accounts.
-- Existing stale/legacy role-array fixtures are defense-in-depth checks for
-  invalid data; they are not supported multi-role business actors.
-- FE08 candidate/create routes remain Member-only; same-book SQL uses typed
-  parameters, direct creation revalidates inside the transaction, and queue
-  holding revalidates after acquiring the shared FE07 Member circulation lock.
-- Server authorization does not let a Member renew another member's loan, and
-  staff scope does not bypass loan-owner blockers.
-- Return audit remains inside the SQL/in-memory transaction and uses the same
-  authoritative snapshot as `fineCandidate`.
-- Unsafe stored definitions return a generic code/message and create no
-  notification, attempt, or provider call.
-- Runtime template values retain the existing sanitization and secret-like key
-  redaction paths.
-- Unsupported report query values are neither forwarded nor echoed.
-- Report behavior remains read-only and existing approved value validators
-  remain in place.
-- No secret, real PII, schema, dependency, public route, role, frontend
-  workflow, or architecture expansion was found.
+- Mỗi tài khoản được persist có đúng một vai trò theo `DEC-GEN-005`,
+  `BR-G-009` và invariant database FE11. Kiểm thử gia hạn Member và nhân viên
+  dùng tài khoản riêng.
+- Fixture role-array cũ/legacy hiện có là kiểm tra defense-in-depth cho dữ liệu
+  không hợp lệ; chúng không phải actor nghiệp vụ đa vai trò được hỗ trợ.
+- Route candidate/create FE08 vẫn chỉ Member; SQL cùng sách dùng tham số có
+  kiểu, tạo trực tiếp xác thực lại trong transaction, và queue holding xác thực
+  lại sau khi lấy lock circulation Member FE07 dùng chung.
+- Phân quyền server không cho Member gia hạn khoản mượn của member khác, và
+  phạm vi nhân viên không vượt qua blocker loan-owner.
+- Audit return vẫn trong transaction SQL/trong bộ nhớ và dùng cùng snapshot
+  authoritative với `fineCandidate`.
+- Definition đã lưu không an toàn trả về code/message chung và không tạo
+  notification, attempt hay gọi provider.
+- Giá trị template runtime giữ các đường sanitization và che key giống secret
+  hiện có.
+- Giá trị query report không được hỗ trợ không bị chuyển tiếp hoặc echo.
+- Hành vi report vẫn chỉ đọc và validator giá trị đã phê duyệt hiện có vẫn giữ.
+- Không phát hiện mở rộng secret, PII thực, schema, dependency, route công khai,
+  vai trò, workflow frontend hay kiến trúc.
 
-L3 result: PASS.
+Kết quả L3: ĐẠT.
 
-## 9. Residual Risks
+## 9. Rủi ro còn lại
 
-- The SQL repository contract is covered by source-contract tests, in-memory
-  parity, and full regression, but no named disposable SQL Server was
-  configured for a mutable transaction run.
-- Local browser/runtime acceptance passed; staging was not exercised in this
-  batch.
-- Normal LF-to-CRLF working-copy warnings remain; `git diff --check` passed.
+- Hợp đồng repository SQL được bao phủ bởi kiểm thử source-contract, parity
+  trong bộ nhớ và regression đầy đủ, nhưng chưa có SQL Server tạm thời có tên
+  nào được cấu hình để chạy transaction mutable.
+- Chấp nhận trình duyệt/runtime cục bộ đạt; staging không được thực hiện trong
+  batch này.
+- Cảnh báo working-copy LF sang CRLF thông thường còn lại; `git diff --check`
+  đạt.
 
-## 10. Prior H2 Gate
+## 10. Cổng H2 trước đó
 
-The `e99daf5` integration received H2 approval and was committed/pushed as
-`2a478ba1ac025d319c6e09ef0eff73ae650a09d3`. That approval does not cover the
-new merge with `origin/main` at `8d0059b`.
+Tích hợp `e99daf5` đã được H2 phê duyệt và commit/push với
+`2a478ba1ac025d319c6e09ef0eff73ae650a09d3`. Phê duyệt đó không bao phủ merge
+mới với `origin/main` tại `8d0059b`.
 
-## 11. H2 Addendum - `main@8d0059b`
+## 11. Addendum H2 - `main@8d0059b`
 
-### 11.1 Incoming scope and reconciliation
+### 11.1 Phạm vi đi vào và đối soát
 
-- Incoming commit: `8d0059b fix: sync reservation queue and fine permissions`.
-- FE07: combined the parallel v0.7.8 branches as v0.7.9; positive FE09
-  `UNPAID` fines remain the canonical borrow/renew blocker and Member
-  reconciliation stays read-only.
-- FE08: combined the parallel v0.5.9 branches as v0.5.10. Upstream
-  `FE08-T046` owns copy-scoped queue positions; the branch regression task is
-  now `FE08-T047`.
-- FE09: upstream `FE09-T024` makes `/api/fines/me` single-role Member-only,
-  adds FE07 due/return/borrow context, and leaves Member presentation
-  read-only.
-- FE11: `BR-FE11-028` now explicitly includes FE09 own-fine access while
-  preserving exactly one mutually exclusive account role.
+- Commit đi vào: `8d0059b fix: sync reservation queue and fine permissions`.
+- FE07: kết hợp các nhánh v0.7.8 song song thành v0.7.9; tiền phạt FE09
+  `UNPAID` dương vẫn là blocker borrow/renew chuẩn và đối soát Member vẫn chỉ
+  đọc.
+- FE08: kết hợp các nhánh v0.5.9 song song thành v0.5.10. `FE08-T046` upstream
+  sở hữu vị trí queue theo phạm vi copy; task regression của nhánh nay là
+  `FE08-T047`.
+- FE09: `FE09-T024` upstream làm `/api/fines/me` chỉ dành cho Member đơn vai
+  trò, thêm context due/return/borrow FE07 và giữ phần hiển thị Member chỉ đọc.
+- FE11: `BR-FE11-028` nay nêu rõ bao gồm quyền truy cập own-fine FE09, đồng
+  thời giữ đúng một vai trò tài khoản loại trừ lẫn nhau.
 
-### 11.2 RED-GREEN evidence
+### 11.2 Bằng chứng RED-GREEN
 
-| Scope | Observed result |
+| Phạm vi | Kết quả quan sát được |
 | --- | --- |
-| FE08-T046 RED | Focused frontend test failed because `formatReservationQueuePosition` was `undefined`; the mapper returned null while the incoming pages still interpolated `#${item.queue}`. |
-| FE08-T046 GREEN | Shared formatter returns `Chưa xác định` for null/undefined and preserves `#2 trong hàng đợi cuốn này`; Member/staff source contracts use it and direct `#${...queue}` interpolation is absent. Focused result: 1/1 passed. |
-| FE09 focused backend | 1 suite, 22/22 passed, including Guest 401, Librarian/Admin 403, Member-only own rows, and FE07 borrowing context. |
-| FE08/FE09 focused frontend | 17/17 passed; Member fine UI remains read-only and queue-position presentation is null-safe. |
-| Cross-feature | 7 suites, 295/295 passed across borrowing, reservation, fine, notification, reporting, and system integration. |
-| One-role invariant | 2 suites, 3/3 selected cases passed for single-role renewal, exactly-one-role enforcement, and legacy multiple-mapping repair. |
-| Timezone matrix | UTC 3/3 and America/New_York 3/3 passed with identical outcomes. |
+| FE08-T046 RED | Kiểm thử frontend tập trung lỗi vì `formatReservationQueuePosition` là `undefined`; mapper trả null trong khi trang đi vào vẫn interpolate `#${item.queue}`. |
+| FE08-T046 GREEN | Formatter dùng chung trả về `Chưa xác định` cho null/undefined và giữ `#2 trong hàng đợi cuốn này`; các hợp đồng source Member/nhân viên dùng nó và không có interpolate `#${...queue}` trực tiếp. Kết quả tập trung: 1/1 đạt. |
+| Backend FE09 tập trung | 1 suite, 22/22 đạt, gồm Guest 401, Librarian/Admin 403, dòng riêng chỉ Member và context borrowing FE07. |
+| Frontend FE08/FE09 tập trung | 17/17 đạt; UI fine Member vẫn chỉ đọc và hiển thị vị trí queue null-safe. |
+| Cross-feature | 7 suite, 295/295 đạt trên borrowing, reservation, fine, notification, reporting và tích hợp hệ thống. |
+| Invariant một vai trò | 2 suite, 3/3 trường hợp chọn đạt cho gia hạn đơn vai trò, ép đúng một vai trò và sửa nhiều mapping legacy. |
+| Ma trận timezone | UTC 3/3 và America/New_York 3/3 đạt với kết quả giống hệt. |
 
-### 11.3 Fresh full L1 evidence
+### 11.3 Bằng chứng L1 đầy đủ mới
 
-| Command | Observed result |
+| Lệnh | Kết quả quan sát được |
 | --- | --- |
-| `npm.cmd --prefix backend test` | 61 suites, 1,052/1,052 passed. |
-| `npm.cmd --prefix backend run test:coverage:ci` | 61 suites, 1,052/1,052 passed; statements 92.08%, branches 81.46%, functions 97.38%, lines 92.00%. |
-| `npm.cmd --prefix frontend test` | 232/232 passed. |
-| `npm.cmd --prefix frontend run lint` | Exit 0. |
-| `npm.cmd --prefix frontend run build` | Vite production build passed. |
-| `npm.cmd run test:traceability-state` | 3/3 passed. |
-| `npm.cmd run trace:enforce` | PASS; FE07/FE09/FE10/FE12 remain 100%, FE08 remains 97%, and all active features exceed 70%. |
+| `npm.cmd --prefix backend test` | 61 suite, 1,052/1,052 đạt. |
+| `npm.cmd --prefix backend run test:coverage:ci` | 61 suite, 1,052/1,052 đạt; câu lệnh 92.08%, nhánh 81.46%, hàm 97.38%, dòng 92.00%. |
+| `npm.cmd --prefix frontend test` | 232/232 đạt. |
+| `npm.cmd --prefix frontend run lint` | Thoát 0. |
+| `npm.cmd --prefix frontend run build` | Build production Vite đạt. |
+| `npm.cmd run test:traceability-state` | 3/3 đạt. |
+| `npm.cmd run trace:enforce` | ĐẠT; FE07/FE09/FE10/FE12 giữ 100%, FE08 giữ 97% và mọi feature active vượt 70%. |
 
-Generated coverage, build, Playwright report/output, and test-result folders
-remain ignored and are not part of the H2 diff.
+Các thư mục coverage, build, report/output Playwright và kết quả kiểm thử được
+ignore vẫn không thuộc diff H2.
 
-### 11.4 L2 spec traceability
+### 11.4 Truy vết spec L2
 
-| Requirement | Task | Code/test evidence |
+| Yêu cầu | Task | Bằng chứng code/kiểm thử |
 | --- | --- | --- |
-| BR-FE08-020, FR-FE08-035, AC-FE08-022 | FE08-T046 | `mapReservation` preserves null; shared formatter and both pages render null as `Chưa xác định`; focused/frontend/full/browser gates pass. |
-| BR-FE09-020, FR-FE09-019, AC-FE09-017 | FE09-T024 | Route and service enforce Member-only access; repository/OpenAPI expose FE07 context; backend 22/22 and frontend read-only checks pass. |
-| BD-006, SL-006, AT-006 | FE08-T047 | Requester/SIT coverage is included in cross-feature 295/295; full and Chromium gates pass. |
-| DEC-GEN-005, BR-G-009, BR-FE11-028 | Existing FE11 one-role invariant | Exactly-one-role and repair cases pass; FE09 Member/staff tests use separate single-role accounts. |
+| BR-FE08-020, FR-FE08-035, AC-FE08-022 | FE08-T046 | `mapReservation` giữ null; formatter dùng chung và cả hai trang render null là `Chưa xác định`; cổng tập trung/frontend/đầy đủ/trình duyệt đạt. |
+| BR-FE09-020, FR-FE09-019, AC-FE09-017 | FE09-T024 | Route và service ép truy cập chỉ Member; repository/OpenAPI phơi bày context FE07; backend 22/22 và kiểm tra frontend chỉ đọc đạt. |
+| BD-006, SL-006, AT-006 | FE08-T047 | Coverage Requester/SIT thuộc cross-feature 295/295; cổng đầy đủ và Chromium đạt. |
+| DEC-GEN-005, BR-G-009, BR-FE11-028 | Invariant một vai trò FE11 hiện có | Các trường hợp đúng một vai trò và sửa đạt; kiểm thử Member/nhân viên FE09 dùng tài khoản đơn vai trò riêng. |
 
-L2 result: PASS. No task ID collision, duplicate feature version, or
-untraced business behavior remains in the current merge result.
+Kết quả L2: ĐẠT. Không còn va chạm ID task, phiên bản feature trùng hay hành vi
+nghiệp vụ không truy vết trong kết quả merge hiện tại.
 
-### 11.5 L3 Constitution and security
+### 11.5 Constitution và bảo mật L3
 
-- `/api/fines/me` authenticates and applies `requireMemberOnly` before the
-  controller; the service repeats the Member/non-staff check.
-- Member scope is forced from authenticated `actor.userId`; query input cannot
-  select another user.
-- Librarian/Admin mutation ownership and Admin-only waive/cancel remain
-  unchanged.
-- Fine-list search, user, status, offset, and limit values use typed SQL
-  parameters. Dynamic `WHERE` fragments come only from fixed allowlisted
-  clauses.
-- React renders text normally; no new raw HTML path exists.
-- Diff secret scan found no credential/private-key pattern. Safe error tests
-  and existing redaction behavior remain green.
-- No dependency, schema, public route, role, state-machine, or architecture
-  expansion was introduced.
+- `/api/fines/me` xác thực và áp dụng `requireMemberOnly` trước controller;
+  service lặp lại kiểm tra Member/không phải nhân viên.
+- Phạm vi Member bị ép từ `actor.userId` đã xác thực; input query không thể chọn
+  user khác.
+- Quyền sở hữu mutation Librarian/Admin và waive/cancel chỉ Admin không đổi.
+- Giá trị tìm kiếm, user, status, offset và limit danh sách fine dùng tham số
+  SQL có kiểu. Mảnh `WHERE` động chỉ đến từ clause allowlist cố định.
+- React render văn bản bình thường; không có đường raw HTML mới.
+- Quét secret diff không tìm thấy pattern credential/private-key. Kiểm thử lỗi
+  an toàn và hành vi redaction hiện có vẫn xanh.
+- Không đưa vào mở rộng dependency, schema, route công khai, vai trò,
+  state-machine hay kiến trúc.
 
-L3 result: PASS.
+Kết quả L3: ĐẠT.
 
-### 11.6 L4 runtime acceptance
+### 11.6 Chấp nhận runtime L4
 
-Command:
+Lệnh:
 
 `npx.cmd playwright test tests/e2e/system-golden-path.spec.js tests/e2e/fe08-reservation-candidate-catalog.spec.js --project=chromium`
 
-Observed: Chromium 2/2 passed. `E2E-FE08-ACC01` completed real candidate search
-and reservation creation; `E2E-SYS-001` completed login -> borrow -> approve ->
-return -> fine -> report and retained the safe unknown-report-query rejection.
+Quan sát: Chromium 2/2 đạt. `E2E-FE08-ACC01` hoàn tất tìm kiếm candidate thực
+và tạo reservation; `E2E-SYS-001` hoàn tất login -> borrow -> approve -> return
+-> fine -> report và giữ việc từ chối query report unknown an toàn.
 
-### 11.7 Diff hygiene and residual risks
+### 11.7 Diff hygiene và rủi ro còn lại
 
-- Working-tree diff against `origin/main`: 40 files; only the four FE08
-  presentation/test files are new branch deltas from this integration.
-- `git diff --check`, cached/HEAD/origin variants: exit 0.
-- Conflict-marker scan: 0.
-- `DB_NAME` and `FE07_SQL_TEST_ALLOW_MUTATION` are unset; mutable SQL was not
-  run and no new real-SQL mutation claim is made.
-- Local browser acceptance passed; staging was not exercised.
-- Normal LF-to-CRLF warnings remain non-blocking.
+- Diff cây làm việc so với `origin/main`: 40 tệp; chỉ bốn tệp hiển thị/kiểm thử
+  FE08 là delta nhánh mới từ tích hợp này.
+- `git diff --check`, các biến thể cached/HEAD/origin: thoát 0.
+- Quét conflict-marker: 0.
+- `DB_NAME` và `FE07_SQL_TEST_ALLOW_MUTATION` chưa đặt; SQL mutable không chạy
+  và không có tuyên bố mutation SQL thực mới.
+- Chấp nhận trình duyệt cục bộ đạt; staging không được thực hiện.
+- Cảnh báo LF sang CRLF thông thường vẫn không chặn.
 
-### 11.8 Published Product H2 Evidence
+### 11.8 Bằng chứng product H2 đã publish
 
-Nhat approved the complete `8d0059b` merge, reconciliation, bounded FE08
-remediation, and fresh L1-L4 evidence at H2 on 2026-07-27. The reviewed merge
-was committed as `f346ae0`, pushed to draft PR #63, and CI run `30244750250`
-passed. The first H3 review found one documentation-only current-state defect;
-Section 12 supersedes this gate for the remediation.
+Nhat đã phê duyệt merge `8d0059b` đầy đủ, đối soát, khắc phục FE08 được khoanh
+vùng và bằng chứng L1-L4 mới tại H2 ngày 2026-07-27. Merge đã review được
+commit với `f346ae0`, push lên PR #63 nháp và lần chạy CI `30244750250` đạt.
+Review H3 đầu tiên tìm thấy một lỗi trạng thái hiện tại chỉ về tài liệu; Phần 12
+thay thế cổng này cho việc khắc phục.
 
-## 12. H3 Governance-Evidence Remediation
+## 12. Khắc phục bằng chứng quản trị H3
 
-### 12.1 First H3 review
+### 12.1 Review H3 đầu tiên
 
-Fixed point and published evidence:
+Điểm cố định và bằng chứng đã publish:
 
 - Base: `origin/main@8d0059bd28b6a7fc8e4ccbdf767ce4120a86aee7`
 - Head: `f346ae07d5d2885c0d5b8131479dee764edd97ec`
-- Draft PR: #63, merge state `CLEAN`
-- Required CI: run `30244750250`, `foundation-checks` success
-- Diff parity: local and PR both contained 40 files with no name mismatch,
-  unmerged entry, whitespace error, or conflict marker.
+- PR nháp: #63, trạng thái merge `CLEAN`
+- CI bắt buộc: lần chạy `30244750250`, `foundation-checks` success
+- Parity diff: cục bộ và PR cùng chứa 40 tệp, không sai tên, mục chưa merge,
+  lỗi khoảng trắng hay conflict marker.
 
-Review conclusions:
+Kết luận review:
 
-- Standards review found no unauthorized commit after confirming Nhat's H2
-  approval preceded commit and push.
-- Spec review found no missing requirement, scope creep, or incorrect product
-  behavior.
-- The initial FE10 idempotent-replay concern was withdrawn:
-  `AC-FE10-008`/`EC-FE10-008` require duplicate keys to return the existing
-  `200` record, and the replay path performs no render, new persistence, or
-  provider I/O.
-- One valid P2 remained: current-state validation, PLAN, TASKS, and one FE10
-  traceability row still described the integrated result as uncommitted, H2
-  pending, or awaiting PLAN/TASKS approval.
+- Review Standards không phát hiện commit trái phép sau khi xác nhận phê duyệt
+  H2 của Nhat có trước commit và push.
+- Review Spec không phát hiện yêu cầu thiếu, scope creep hay hành vi product
+  không đúng.
+- Lo ngại replay idempotent FE10 ban đầu đã được rút lại:
+  `AC-FE10-008`/`EC-FE10-008` yêu cầu key trùng trả về bản ghi `200` hiện có,
+  và đường replay không render, persist mới hay provider I/O.
+- Còn một P2 hợp lệ: validation trạng thái hiện tại, PLAN, TASKS và một dòng
+  truy vết FE10 vẫn mô tả kết quả tích hợp là chưa commit, H2 đang chờ hoặc chờ
+  phê duyệt PLAN/TASKS.
 
-### 12.2 Remediation scope
+### 12.2 Phạm vi khắc phục
 
-The uncommitted remediation updates only these 12 Markdown files:
+Đợt khắc phục chưa commit chỉ cập nhật 12 tệp Markdown sau:
 
 - `.sdd/reviews/fe07-fe10-fe12-business-rule-alignment-validation-2026-07-27.md`
 - `.sdd/specs/feat-borrowing-management/PLAN.md`
@@ -359,57 +355,57 @@ The uncommitted remediation updates only these 12 Markdown files:
 - `docs/superpowers/specs/2026-07-27-fe07-fe10-fe12-business-rule-alignment-design.md`
 - `docs/superpowers/plans/2026-07-27-fe07-fe10-fe12-business-rule-alignment.md`
 
-No production code, test, schema, dependency, API, business rule, or historical
-pre-H2 process instruction changes in this remediation.
+Đợt khắc phục này không thay đổi code production, kiểm thử, schema, dependency,
+API, business rule hay hướng dẫn quy trình lịch sử trước H2 nào.
 
-### 12.3 Bounded validation
+### 12.3 Xác thực được khoanh vùng
 
-| Command | Observed result |
+| Lệnh | Kết quả quan sát được |
 | --- | --- |
-| `npm.cmd run test:traceability-state` | 3/3 passed. |
-| `npm.cmd run trace:enforce` | PASS; FE07/FE10/FE12 remain 100%, FE08 remains 97%, and all active features exceed 70%. |
-| `npm.cmd run test:deployment` | 9/9 passed. |
-| Documentation-only scope check | 12 changed Markdown files, 0 non-Markdown files, and 0 staged files. |
-| Current-state stale wording scan | 0 stale original-H2 matches; fresh-H2 wording refers only to this uncommitted documentation remediation. |
-| `git diff --check`; `git diff --cached --check` | Both passed with zero error lines; only normal LF-to-CRLF working-copy warnings were emitted. |
+| `npm.cmd run test:traceability-state` | 3/3 đạt. |
+| `npm.cmd run trace:enforce` | ĐẠT; FE07/FE10/FE12 giữ 100%, FE08 giữ 97% và mọi feature active vượt 70%. |
+| `npm.cmd run test:deployment` | 9/9 đạt. |
+| Kiểm tra phạm vi chỉ tài liệu | 12 tệp Markdown thay đổi, 0 tệp không phải Markdown và 0 tệp đã stage. |
+| Quét câu chữ cũ trạng thái hiện tại | 0 khớp H2 gốc đã cũ; câu chữ H2 mới chỉ nói đến đợt khắc phục tài liệu chưa commit này. |
+| `git diff --check`; `git diff --cached --check` | Cả hai đạt với không dòng lỗi; chỉ phát cảnh báo working-copy LF sang CRLF thông thường. |
 
-### 12.4 Frozen H2 Package Boundary
+### 12.4 Ranh giới package H2 đóng băng
 
-At the moment this Task 12 package was frozen for H2, the documentation-only
-remediation was uncommitted and unpushed. Fresh H2 was required before commit
-or push. This subsection intentionally preserves that review-time fact and
-does not claim to describe branch state after publication. Nhat's later H2
-approval, commit `2d0ef78`, CI run `30246892241`, and subsequent H3 state are
-recorded in PR #63 until the final post-merge closeout.
+Tại thời điểm package Task 12 này được đóng băng cho H2, đợt khắc phục chỉ về
+tài liệu chưa commit và chưa push. Cần H2 mới trước commit hoặc push. Tiểu mục
+này cố ý giữ sự thật tại thời điểm review đó và không khẳng định mô tả trạng
+thái nhánh sau publish. Phê duyệt H2 sau đó của Nhat, commit `2d0ef78`, lần
+chạy CI `30246892241` và trạng thái H3 tiếp theo được ghi trong PR #63 cho đến
+closeout cuối sau merge.
 
-## 13. Repeated H3 Frozen-Evidence Remediation
+## 13. Khắc phục bằng chứng đóng băng H3 lặp lại
 
-The repeated H3 review used exact head
-`2d0ef78bc71f9b2f941ac8965e589606cad5f060` after CI run `30246892241`
-completed successfully.
+Review H3 lặp lại dùng exact head
+`2d0ef78bc71f9b2f941ac8965e589606cad5f060` sau khi lần chạy CI `30246892241`
+hoàn tất thành công.
 
-- Spec/business review: PASS with no findings.
-- Standards review: one P2 finding. Task 12 corrected the stale `f346ae0`
-  wording, but labels such as "current gate" made the newly committed Task 12
-  snapshot appear stale immediately after publication.
-- Root cause: a checked-in file cannot truthfully contain its own future commit
-  SHA or remain a live current-state ledger without creating an infinite
-  evidence-only commit loop.
-- Remediation: relabel checked-in H2 evidence as an immutable package snapshot;
-  record H2 approval, commit SHA, updated CI, repeated H3, merge SHA, and
-  post-merge CI in PR #63 and the final closeout record.
+- Review Spec/nghiệp vụ: ĐẠT, không phát hiện.
+- Review Standards: một phát hiện P2. Task 12 đã sửa câu chữ `f346ae0` cũ,
+  nhưng các nhãn như "current gate" khiến snapshot Task 12 vừa commit trông cũ
+  ngay sau publish.
+- Nguyên nhân gốc: tệp đã commit không thể trung thực chứa SHA commit tương
+  lai của chính nó hoặc vẫn là sổ cái trạng thái hiện tại sống mà không tạo vòng
+  lặp commit chỉ bằng chứng vô hạn.
+- Khắc phục: đổi nhãn bằng chứng H2 đã commit thành snapshot package bất biến;
+  ghi phê duyệt H2, SHA commit, CI đã cập nhật, H3 lặp lại, SHA merge và CI sau
+  merge trong PR #63 cùng biên bản closeout cuối.
 
-This three-file Task 13 package changes only this validation record, the
-rule-alignment design, and the implementation plan. At package freeze it is
-uncommitted and unpushed pending H2. That sentence is explicitly a frozen
-pre-publication fact, not a claim about state after later publication.
+Package Task 13 gồm ba tệp này chỉ thay đổi biên bản validation này, thiết kế
+rule-alignment và kế hoạch triển khai. Tại lúc đóng băng package, nó chưa commit
+và chưa push, đang chờ H2. Câu đó rõ ràng là sự thật đóng băng trước publish,
+không phải tuyên bố về trạng thái sau publish về sau.
 
-Bounded Task 13 validation:
+Xác thực Task 13 được khoanh vùng:
 
-| Command/check | Observed result |
+| Lệnh/kiểm tra | Kết quả quan sát được |
 | --- | --- |
-| `npm.cmd run test:traceability-state` | 3/3 passed. |
-| `npm.cmd run trace:enforce` | PASS; FE07/FE10/FE12 remain 100%, FE08 remains 97%, and every active feature exceeds 70%. |
-| `npm.cmd run test:deployment` | 9/9 passed. |
-| Scope and live-state scan | 3 changed Markdown files, 0 non-Markdown files, 0 staged files, and 0 self-referential live-state labels. |
-| `git diff --check` | Passed with zero error lines; only normal LF-to-CRLF working-copy warnings were emitted. |
+| `npm.cmd run test:traceability-state` | 3/3 đạt. |
+| `npm.cmd run trace:enforce` | ĐẠT; FE07/FE10/FE12 giữ 100%, FE08 giữ 97% và mọi feature active vượt 70%. |
+| `npm.cmd run test:deployment` | 9/9 đạt. |
+| Quét phạm vi và trạng thái sống | 3 tệp Markdown thay đổi, 0 tệp không phải Markdown, 0 tệp đã stage và 0 nhãn trạng thái sống tự tham chiếu. |
+| `git diff --check` | Đạt với không dòng lỗi; chỉ phát cảnh báo working-copy LF sang CRLF thông thường. |

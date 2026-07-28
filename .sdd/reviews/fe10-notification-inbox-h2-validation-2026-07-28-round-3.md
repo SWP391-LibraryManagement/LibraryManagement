@@ -1,149 +1,144 @@
-# FE10 Personal Notification Inbox H2 Validation - Round 3
+# Xác thực H2 Hộp thư thông báo cá nhân FE10 - Vòng 3
 
-- Date: 2026-07-28
-- Branch: `codex/feat-fe10-personal-notification-inbox`
+- Ngày: 2026-07-28
+- Nhánh: `codex/feat-fe10-personal-notification-inbox`
 - Baseline: `main@12faeadb9a92fa30cc8dc16aa01467577374c8b0`
-- Rebased committed head: `2dab81c588c3796447d84443a9c3a53aa9516dc1`
-- Status: **H2 APPROVED, THEN SUPERSEDED BEFORE USE BY UPSTREAM DRIFT**
+- Head đã commit sau rebase: `2dab81c588c3796447d84443a9c3a53aa9516dc1`
+- Trạng thái: **H2 ĐÃ PHÊ DUYỆT, SAU ĐÓ BỊ THAY THẾ TRƯỚC KHI DÙNG BỞI DRIFT UPSTREAM**
 
-This record covers the bounded remediation after H3 round one. It also records
-the later H1-approved non-overlapping drift that deletes retired `document/`
-artifacts only. The branch rebased without conflict. No candidate file is
-staged or committed. At this fingerprint checkpoint, Azure staging served
-`main@12faead`, not this uncommitted remediation.
+Bản ghi này bao phủ khắc phục hữu hạn sau H3 vòng một. Nó cũng ghi drift không
+chồng lấp được H1 phê duyệt sau đó, chỉ xóa artifact `document/` đã ngừng. Nhánh
+rebase không xung đột. Không tệp candidate nào được stage hay commit. Tại
+checkpoint fingerprint này, Azure staging phục vụ `main@12faead`, không phải
+khắc phục chưa commit này.
 
-The user approved this exact round-3 fingerprint. The mandatory fetch performed
-immediately before staging found one newer upstream commit,
-`main@a240705fbd486304464b073cbd3caec77a1fa135`, so the H2 authority stopped
-before use. No reviewed file was staged, committed, or pushed.
+Người dùng đã phê duyệt fingerprint vòng 3 chính xác này. Fetch bắt buộc ngay
+trước stage phát hiện một commit upstream mới hơn,
+`main@a240705fbd486304464b073cbd3caec77a1fa135`, nên thẩm quyền H2 dừng trước
+khi dùng. Không tệp đã review nào được stage, commit hay push.
 
-## 1. Candidate Identity
+## 1. Danh tính candidate
 
-- Candidate entries: **16** modified or new files.
-- Candidate fingerprint:
+- Mục candidate: **16** tệp đã sửa hoặc mới.
+- Fingerprint candidate:
   `e1143e6ae35d80bbf5ae45f49ab312f84b37fc98615ea877ab39d4699658bb4c`.
-- Candidate baseline and `origin/main`:
+- Baseline candidate và `origin/main`:
   `12faeadb9a92fa30cc8dc16aa01467577374c8b0`.
-- Committed branch ahead/behind `origin/main`: **2/0**.
-- Cached/staged files at fingerprint time: **0**.
-- Unmerged paths and conflict markers: **0**.
-- This round-3 validation record is deliberately excluded from the candidate
-  fingerprint so the human decision can be recorded without changing the
-  reviewed remediation.
+- Nhánh đã commit ahead/behind `origin/main`: **2/0**.
+- Tệp cached/staged tại thời điểm fingerprint: **0**.
+- Đường dẫn chưa merge và conflict marker: **0**.
+- Bản ghi xác thực vòng 3 này bị loại có chủ ý khỏi fingerprint candidate để
+  quyết định con người có thể được ghi mà không đổi khắc phục đã review.
 
-Fingerprint algorithm:
+Thuật toán fingerprint:
 
-1. Read `git status --porcelain=v1 --untracked-files=all`.
-2. Exclude only
+1. Đọc `git status --porcelain=v1 --untracked-files=all`.
+2. Chỉ loại
    `.sdd/reviews/fe10-notification-inbox-h2-validation-2026-07-28-round-3.md`.
-3. For every remaining file, create
+3. Với mỗi tệp còn lại, tạo
    `<two-character-status>|<lowercase-file-sha256>|<normalized-path>`.
-4. Sort entries by case-sensitive normalized path.
-5. Join entries with LF, include one final LF, encode as UTF-8 without BOM,
-   and calculate SHA-256.
+4. Sắp mục theo đường dẫn chuẩn hóa phân biệt hoa/thường.
+5. Ghép mục bằng LF, gồm một LF cuối, mã hóa UTF-8 không BOM và tính SHA-256.
 
-## 2. H1 And Scope Reconciliation
+## 2. Đối soát H1 và phạm vi
 
-- The user approved the FE10 v0.5.0 design, written SPEC, and FE10-I01..I08
-  implementation plan; governance PR #70 merged as `25c09ec`.
-- Earlier H2 candidate head `28c4f80` passed CI `30306805399`, Azure deployment
-  `30307855616`, and live Azure SQL/API/browser verification.
-- H3 round one returned bounded ADR/current-state, notification-page state,
-  and popover-stacking findings.
-- The user approved `H1 drift addendum main@12faead` on 2026-07-28. Incoming
-  changes remove retired `document/` artifacts and have no file or Core
-  contract overlap with this 16-entry remediation.
-- This candidate changes no backend, API, SQL migration, database schema,
-  authorization rule, sensitive-record boundary, or notification delivery
-  behavior.
+- Người dùng phê duyệt thiết kế FE10 v0.5.0, SPEC bằng văn bản và kế hoạch triển
+  khai FE10-I01..I08; governance PR #70 merge là `25c09ec`.
+- Candidate H2 trước `28c4f80` đạt CI `30306805399`, Azure deployment
+  `30307855616` và xác minh Azure SQL/API/trình duyệt trực tiếp.
+- H3 vòng một trả phát hiện hữu hạn về ADR/trạng thái hiện tại, trạng thái trang
+  thông báo và popover-stacking.
+- Người dùng phê duyệt `H1 drift addendum main@12faead` ngày 2026-07-28. Thay
+  đổi vào xóa artifact `document/` đã ngừng, không chồng tệp hay hợp đồng Core
+  với khắc phục 16 mục này.
+- Candidate này không thay backend, API, SQL migration, schema cơ sở dữ liệu,
+  quy tắc phân quyền, ranh giới bản ghi nhạy cảm hay hành vi gửi thông báo.
 
-## 3. Four-Layer Review
+## 3. Review bốn tầng
 
-### L1 - Contract And Traceability
+### L1 - Hợp đồng và truy vết
 
-**PASS**
+**ĐẠT**
 
-- ADR-002 now records the nullable `ReadAt` decision, exact eligible scope,
-  supporting index, repeatability boundary, Azure hash gate, and rollback.
-- FE10 SPEC/PLAN/TASKS/CONTEXT/TEST_PLAN/CHANGELOG, project memory, master test
-  plan, approved design, prior v0.4.5 closeout, and the new H3 closeout agree.
-- Enforced traceability passed with FE10 at **14/16 FR tags = 88%**, above the
-  repository's 70% gate. Traceability-state tests passed **3/3**.
+- ADR-002 hiện ghi quyết định nullable `ReadAt`, phạm vi hợp lệ chính xác, index
+  hỗ trợ, ranh giới lặp, cổng hash Azure và rollback.
+- FE10 SPEC/PLAN/TASKS/CONTEXT/TEST_PLAN/CHANGELOG, bộ nhớ dự án, master test
+  plan, thiết kế đã phê duyệt, closeout v0.4.5 trước đó và closeout H3 mới thống
+  nhất.
+- Truy vết được ép đạt FE10 **14/16 FR tag = 88%**, trên cổng 70% repository.
+  Kiểm thử trạng thái truy vết đạt **3/3**.
 
-### L2 - Automated Quality
+### L2 - Chất lượng tự động
 
-**PASS**
+**ĐẠT**
 
-| Gate | Fresh result on `main@12faead` |
+| Cổng | Kết quả mới trên `main@12faead` |
 | --- | --- |
-| Backend coverage | 69/69 suites, 1116/1116 tests |
-| Coverage | 91.84% statements, 80.70% branches, 97.59% functions, 91.76% lines |
-| Frontend | 259/259 tests; ESLint pass; Vite production build pass |
-| Deployment policy | 20/20 tests |
-| System integration | 10/10 tests |
-| Traceability state | 3/3 tests |
-| Chromium E2E | 11/11; FE10-specific 3/3 |
-| Azure schema preparation | PASS |
+| Coverage backend | 69/69 suite, 1116/1116 kiểm thử |
+| Coverage | 91.84% statement, 80.70% branch, 97.59% function, 91.76% line |
+| Frontend | 259/259 kiểm thử; ESLint đạt; Vite production build đạt |
+| Policy triển khai | 20/20 kiểm thử |
+| Tích hợp hệ thống | 10/10 kiểm thử |
+| Trạng thái truy vết | 3/3 kiểm thử |
+| Chromium E2E | 11/11; riêng FE10 3/3 |
+| Chuẩn bị schema Azure | PASS |
 | Git whitespace | `git diff --check` PASS |
-| Backend dependency audit | 0 vulnerabilities |
-| Frontend high audit gate | PASS with only the enforced non-applicable unstable-RSC advisory |
-| High-confidence added-secret scan | 0 findings |
-| Stale contradiction, unfinished-marker, and conflict scans | 0 findings |
+| Audit phụ thuộc backend | 0 lỗ hổng |
+| Cổng high audit frontend | PASS chỉ với advisory unstable-RSC không áp dụng đã được ép |
+| Quét secret thêm có độ tin cậy cao | 0 phát hiện |
+| Quét mâu thuẫn cũ, marker chưa hoàn tất và xung đột | 0 phát hiện |
 
-### L3 - Business, UI, And Security
+### L3 - Nghiệp vụ, UI và bảo mật
 
-**PASS**
+**ĐẠT**
 
-- After a successful mark-read with no navigation, `/notifications` reloads
-  the current page so the item no longer remains visually unread.
-- Mark-all is disabled only while the page or mutation is loading, so an empty
-  filtered page cannot block reading notifications that exist under another
-  filter.
-- The topbar keeps its normal stack level and rises to `z-index: 100` only
-  while it contains the open notification popover. The popover remains
-  `380px` wide at the tested desktop viewport and its sampled point is the
-  browser's top painted element, above modal, navigation, content, and toast
-  layout layers.
-- The safe inbox OpenAPI schema remains closed to additional properties.
-  Forbidden response metadata is absent from frontend and controller code;
-  historical request-only OpenAPI schemas still legitimately document
-  recipient/source/idempotency fields for the separate delivery API.
-- Sensitive identifiers appear in inbox repository code only as explicit
-  exclusions and in tests as negative-boundary fixtures.
+- Sau đánh dấu đã đọc thành công không điều hướng, `/notifications` tải lại trang
+  hiện tại để mục không còn hiển thị chưa đọc.
+- Đánh dấu tất cả chỉ bị vô hiệu khi trang hoặc thay đổi đang tải, vì vậy trang
+  đã lọc rỗng không thể chặn đọc thông báo tồn tại dưới bộ lọc khác.
+- Topbar giữ stack level bình thường, tăng tới `z-index: 100` chỉ khi nó chứa
+  popover thông báo mở. Popover giữ rộng `380px` tại viewport desktop đã kiểm
+  thử, điểm lấy mẫu của nó là phần tử được vẽ trên cùng trên lớp modal, điều
+  hướng, nội dung và toast.
+- Schema OpenAPI hộp thư an toàn giữ đóng với thuộc tính bổ sung. Metadata phản
+  hồi bị cấm vắng trong mã frontend và controller; schema OpenAPI chỉ-yêu-cầu
+  lịch sử vẫn hợp lệ tài liệu hóa trường recipient/source/idempotency cho API
+  gửi riêng.
+- Identifier nhạy cảm trong mã repository hộp thư chỉ xuất hiện dưới dạng loại
+  trừ rõ ràng và trong fixture ranh giới phủ định.
 
-### L4 - Migration And Release Safety
+### L4 - An toàn migration và phát hành
 
-**LOCAL REMEDIATION PASS; EXTERNAL GATES PENDING BY DESIGN**
+**KHẮC PHỤC CỤC BỘ ĐẠT; CỔNG BÊN NGOÀI CHỜ THEO THIẾT KẾ**
 
-- This remediation does not modify the already reviewed migration, canonical
-  schema, backend repository/service/routes, deployment workflow, or Azure
-  configuration.
-- Azure-compatible schema preparation passes from the rebased checkout.
-- Historical exact-head Azure migration and live verification remain valid
-  evidence for head `28c4f80`, but do not prove this remediation.
-- A fresh pre-H2 Azure check returned frontend `200`, backend health `ok`, and
-  readiness `ok`. `GET /api/notifications/mine` returned `404` with the
-  approved `Access-Control-Allow-Origin: https://www.thuvienhub.io.vn`, which
-  confirmed that checkpoint's staging was healthy but served `main@12faead`
-  without the unmerged FE10 inbox route. It is not candidate-pass evidence.
-- After H2, the new exact head must pass PR CI, be deployed to Azure staging,
-  and repeat Azure SQL/API/browser verification before H3 round two.
+- Khắc phục này không sửa migration đã review, schema chuẩn, repository/service/
+  route backend, workflow triển khai hay cấu hình Azure.
+- Chuẩn bị schema tương thích Azure đạt từ checkout đã rebase.
+- Azure migration và xác minh live exact-head lịch sử vẫn là bằng chứng hợp lệ
+  cho head `28c4f80`, nhưng không chứng minh khắc phục này.
+- Kiểm tra Azure trước H2 mới trả frontend `200`, health backend `ok` và
+  readiness `ok`. `GET /api/notifications/mine` trả `404` với
+  `Access-Control-Allow-Origin: https://www.thuvienhub.io.vn` đã phê duyệt, xác
+  nhận staging checkpoint khỏe nhưng phục vụ `main@12faead` không có route inbox
+  FE10 chưa merge. Đó không phải bằng chứng candidate đạt.
+- Sau H2, exact head mới phải qua CI PR, deploy Azure staging và lặp xác minh
+  Azure SQL/API/trình duyệt trước H3 vòng hai.
 
-## 4. H3 Round-One Findings Closed Locally
+## 4. Phát hiện H3 vòng một đã đóng cục bộ
 
-| ID | Finding | Resolution |
+| ID | Phát hiện | Cách giải quyết |
 | --- | --- | --- |
-| H3-FE10-001 | ADR-002 omitted the `ReadAt` schema/index/migration decision. | Added the approved schema and Azure rollout/rollback contract. |
-| H3-FE10-002 | Current-state documents contradicted completed H2/CI/Azure evidence. | Reconciled all active source-of-truth and closeout records. |
-| H3-FE10-003 | Successful no-navigation read left stale unread UI state. | Reload current page after successful non-navigated read; regression test passes. |
-| H3-FE10-004 | Mark-all depended on current filtered-page item count. | Disabled only for active loading/mutation; regression test passes. |
-| H3-FE10-005 | Page content could paint over the open popover. | Elevate only the open topbar to `z-index: 100`; width and browser top-layer assertions pass. |
+| H3-FE10-001 | ADR-002 bỏ quyết định schema/index/migration `ReadAt`. | Thêm hợp đồng schema và rollout/rollback Azure đã phê duyệt. |
+| H3-FE10-002 | Tài liệu trạng thái hiện tại mâu thuẫn bằng chứng H2/CI/Azure đã hoàn tất. | Đối soát mọi bản ghi nguồn-sự-thật và closeout đang hoạt động. |
+| H3-FE10-003 | Đọc thành công không điều hướng để lại UI chưa đọc cũ. | Tải lại trang hiện tại sau đọc không điều hướng thành công; kiểm thử hồi quy đạt. |
+| H3-FE10-004 | Đánh dấu tất cả phụ thuộc số mục trang đã lọc hiện tại. | Chỉ vô hiệu cho tải/thay đổi hoạt động; kiểm thử hồi quy đạt. |
+| H3-FE10-005 | Nội dung trang có thể vẽ lên popover mở. | Nâng topbar mở thành `z-index: 100`; assertion độ rộng và lớp trên cùng trình duyệt đạt. |
 
-No open local Critical, High, Medium, or Low finding remains in this H2
-candidate. Azure exact-head and repeated H3 findings remain intentionally
-unclaimed.
+Không còn phát hiện Critical, High, Medium hay Low cục bộ mở trong candidate H2
+này. Azure exact-head và phát hiện H3 lặp lại vẫn không được khẳng định có chủ
+ý.
 
-## 5. Candidate Manifest
+## 5. Manifest candidate
 
 ```text
  M|eb01d2c8d495534a8141398d1b4e2a9a9282b47341e4d2cbd8fa0365d6a627b7|.agents/CLAUDE.md
@@ -164,25 +159,23 @@ unclaimed.
  M|229763feda67501cfa27cdad3385e7805e9a27a1d9419ef1a7573577eac89c15|tests/e2e/fe10-notification-inbox.spec.js
 ```
 
-## 6. Human H2 Decision
+## 6. Quyết định H2 của con người
 
-The user approved the exact candidate with:
+Người dùng đã phê duyệt candidate chính xác bằng:
 
 ```text
 duyệt H2 fingerprint e1143e6ae35d80bbf5ae45f49ab312f84b37fc98615ea877ab39d4699658bb4c
 ```
 
-Decision: **APPROVED, THEN SUPERSEDED BEFORE USE**.
+Quyết định: **ĐÃ PHÊ DUYỆT, SAU ĐÓ BỊ THAY THẾ TRƯỚC KHI DÙNG**.
 
-The pre-stage fetch advanced `origin/main` from `12faead` to `a240705`. That
-single upstream commit removes the FE11 Admin user-edit action across 24 files.
-It has zero path overlap with the 16-entry H3 remediation, the committed
-merge-tree is clean, and exact `main` CI run `30311801599` passed. Nevertheless,
-the base changed after fingerprinting, so a new H1 drift addendum, rebase,
-complete validation, fingerprint, and H2 decision are required. Cached/staged
-files remained zero.
+Fetch trước stage nâng `origin/main` từ `12faead` lên `a240705`. Commit upstream
+đơn đó loại thao tác sửa người dùng Quản trị FE11 qua 24 tệp. Nó không chồng
+đường dẫn với khắc phục H3 16 mục, merge-tree đã commit sạch và CI `main` chính
+xác `30311801599` đạt. Tuy vậy, base đổi sau fingerprint nên cần phụ lục trôi H1
+mới, rebase, xác thực đầy đủ, fingerprint và quyết định H2.
 
-The user subsequently approved `H1 drift addendum main@a240705`. Upstream
-Azure deployment `30311973740` passed, and the branch rebased without conflict
-to committed head `8831571`. This round-3 H2 remains historical and cannot be
-reused; a new complete matrix and H2 decision are still required.
+Người dùng sau đó phê duyệt `H1 drift addendum main@a240705`. Azure deployment
+upstream `30311973740` đạt và nhánh rebase không xung đột tới head đã commit
+`8831571`. H2 vòng 3 này vẫn là lịch sử, không thể dùng lại; một matrix đầy đủ
+và quyết định H2 mới vẫn bắt buộc.

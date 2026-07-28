@@ -1,68 +1,68 @@
-﻿# FE05 Test Plan - Book Management
+# Kế hoạch kiểm thử FE05 - Quản lý sách
 
-Version: 0.4.3
-Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
-Last Updated: 2026-07-27
+Phiên bản: 0.4.3
+Trạng thái: HOÀN TẤT - ĐÃ GHI NHẬN BẰNG CHỨNG KẾT THÚC GIAI ĐOẠN 2
+Cập nhật gần nhất: 2026-07-27
 
-Source Spec: `.sdd/specs/feat-book-management/SPEC.md`
-Feature IDs: `BR-FE05-*`, `FR-FE05-*`, `AC-FE05-*`
-Authoritative AC↔test mapping: `SPEC.md` §16 Traceability Matrix (this file is the strategy, not the case list).
+Đặc tả nguồn: `.sdd/specs/feat-book-management/SPEC.md`
+ID tính năng: `BR-FE05-*`, `FR-FE05-*`, `AC-FE05-*`
+Ánh xạ AC↔kiểm thử có thẩm quyền: §16 Ma trận truy vết trong `SPEC.md` (tệp này mô tả chiến lược, không phải danh sách ca kiểm thử).
 
 ---
 
-## 1. Test Scope
+## 1. Phạm vi kiểm thử
 
-Book catalog management for authorized staff, including create, update, metadata, management listing, and deactivation.
+Quản lý danh mục sách cho nhân sự được phân quyền, gồm tạo, cập nhật, quản lý siêu dữ liệu, danh sách quản lý và ngừng kích hoạt.
 
-## 2. Unit Test Targets
+## 2. Mục tiêu kiểm thử đơn vị
 
-- Required field validation.
-- ISBN/identifier uniqueness rule.
-- Category/author/publisher metadata validation.
-- Deactivate rule versus hard delete.
-- Search/filter/sort rules for management view.
-- Guest/Member public q matches title/author only and public DTOs exclude ISBN.
-- Librarian/Admin management list/detail/search retains ISBN.
-- Managed cover validation: JPG/PNG/WebP extension, MIME, byte signature, 2 MB limit, generated name, and safe cleanup.
+- Kiểm tra các trường bắt buộc.
+- Quy tắc duy nhất của ISBN/mã định danh.
+- Kiểm tra siêu dữ liệu danh mục/tác giả/nhà xuất bản.
+- Quy tắc ngừng kích hoạt thay cho xóa cứng.
+- Quy tắc tìm kiếm/lọc/sắp xếp của giao diện quản lý.
+- Truy vấn q công khai của Khách/Thành viên chỉ khớp tiêu đề/tác giả và DTO công khai không chứa ISBN.
+- Danh sách/chi tiết/tìm kiếm quản lý của Thủ thư/Quản trị viên vẫn giữ ISBN.
+- Kiểm tra ảnh bìa do hệ thống quản lý: phần mở rộng JPG/PNG/WebP, MIME, chữ ký byte, giới hạn 2 MB, tên được tạo và dọn dẹp an toàn.
 
-## 3. API / Integration Test Targets
+## 3. Mục tiêu kiểm thử API / tích hợp
 
-- `GET /books/metadata`: authorized manager happy path.
-- `GET /books/metadata`: Guest/Member forbidden; Librarian/Admin receive only active reference choices.
-- `GET /admin/books`: manager list with deterministic filters, pagination, sort, and order.
-- `GET /books` and `/books/:bookId`: Guest/Member receive no ISBN; ISBN-only public q returns no match.
-- `POST /books`: create happy path.
-- `POST /books`: missing fields, duplicate ISBN/identifier, invalid metadata.
-- `PUT /books/:bookId`: update happy path, not found, invalid fields.
-- `PATCH /books/:bookId/deactivate`: reason, matching `If-Match`, not found, conflict.
-- `PATCH /books/:bookId/reactivate`: reason, matching `If-Match`, invalid transition, conflict.
-- Role check: non-manager cannot create/update/deactivate.
-- Multipart create/update: serialized `metadata`, optional `cover`, stale/failure compensation, and JSON compatibility.
+- `GET /books/metadata`: luồng hợp lệ của người quản lý được phân quyền.
+- `GET /books/metadata`: Khách/Thành viên bị từ chối; Thủ thư/Quản trị viên chỉ nhận các lựa chọn tham chiếu đang hoạt động.
+- `GET /admin/books`: danh sách người quản lý với bộ lọc, phân trang, sắp xếp và thứ tự xác định.
+- `GET /books` và `/books/:bookId`: Khách/Thành viên không nhận ISBN; q công khai chỉ có ISBN không trả về kết quả khớp.
+- `POST /books`: luồng tạo hợp lệ.
+- `POST /books`: thiếu trường, ISBN/mã định danh trùng lặp, siêu dữ liệu không hợp lệ.
+- `PUT /books/:bookId`: luồng cập nhật hợp lệ, không tìm thấy, trường không hợp lệ.
+- `PATCH /books/:bookId/deactivate`: lý do, `If-Match` khớp, không tìm thấy, xung đột.
+- `PATCH /books/:bookId/reactivate`: lý do, `If-Match` khớp, chuyển trạng thái không hợp lệ, xung đột.
+- Kiểm tra vai trò: người không phải quản lý không thể tạo/cập nhật/ngừng kích hoạt.
+- Tạo/cập nhật multipart: `metadata` được tuần tự hóa, `cover` tùy chọn, bù trừ khi dữ liệu cũ/lỗi, và tương thích JSON.
 
-## 4. E2E / Manual Acceptance Flow
+## 4. Luồng chấp nhận E2E / thủ công
 
-- Librarian/admin creates a book.
-- Librarian/admin edits a book.
-- Librarian/admin deactivates and reactivates a book with confirmation and reason.
-- Public browse reflects active catalog data only.
-- Staff selects and previews a local cover in create/update; the committed managed image renders in staff and public views.
-- Staff changes catalog status in the update form; the list switches to the new status and reloads instead of hiding the updated record under the old filter.
+- Thủ thư/quản trị viên tạo một sách.
+- Thủ thư/quản trị viên chỉnh sửa một sách.
+- Thủ thư/quản trị viên ngừng kích hoạt và kích hoạt lại một sách, có xác nhận và lý do.
+- Duyệt công khai chỉ phản ánh dữ liệu danh mục đang hoạt động.
+- Nhân sự chọn và xem trước ảnh bìa cục bộ khi tạo/cập nhật; ảnh do hệ thống quản lý đã lưu hiển thị trên giao diện nhân sự và công khai.
+- Nhân sự thay đổi trạng thái danh mục trong biểu mẫu cập nhật; danh sách chuyển sang trạng thái mới và tải lại thay vì ẩn bản ghi vừa cập nhật theo bộ lọc cũ.
 
-## 5. Current Evidence
+## 5. Bằng chứng hiện có
 
-- Focused FE05 route/repository/cover-storage/OpenAPI tests: `58/58` pass, including role-guarded active-only metadata choices.
-- FE05 frontend contract tests: `10/10` pass; full frontend regression passes `215/215`.
-- FE11 Admin Console boundary tests: read-only Library book view and no duplicate book mutation adapter pass.
-- FE05 SQL suite: `7/7` pass, including stale rowversion, atomic audit rollback, and status/copy/workflow preservation on disposable SQL Server.
-- Frontend lint/build, FE05 traceability `30/30` (100%), and `git diff --check` pass for v0.6.2.
+- Các kiểm thử tập trung FE05 cho route/repository/lưu trữ ảnh bìa/OpenAPI: `58/58` đạt, bao gồm các lựa chọn siêu dữ liệu đang hoạt động được bảo vệ theo vai trò.
+- Kiểm thử hợp đồng frontend FE05: `10/10` đạt; hồi quy frontend đầy đủ đạt `215/215`.
+- Kiểm thử ranh giới Bảng điều khiển Quản trị FE11: giao diện sách Thư viện chỉ đọc và không có adapter thay đổi sách trùng lặp đều đạt.
+- Bộ SQL FE05: `7/7` đạt, gồm rowversion cũ, hoàn tác audit nguyên tử, và bảo toàn trạng thái sách/bản sao/quy trình trên SQL Server dùng một lần.
+- Lint/build frontend, truy vết FE05 `30/30` (100%), và `git diff --check` đều đạt cho v0.6.2.
 
-## 6. Gaps
+## 6. Khoảng trống
 
-- Live SQL exposed and fixed a driver-boundary rowversion comparison bug; two-pass migration, 7/7 FE05 SQL results, and cleanup are recorded in `.sdd/reviews/full-reconciliation-live-sql-validation-2026-07-19.md`.
-- Browser acceptance and FE06 owner confirmation remain human/L4 gates.
-- Full repository merge-gate suites remain pending and must not reuse focused evidence.
+- SQL trực tiếp đã phát hiện và sửa lỗi so sánh rowversion ở ranh giới driver; migration hai lượt, kết quả SQL FE05 7/7 và dọn dẹp được ghi trong `.sdd/reviews/full-reconciliation-live-sql-validation-2026-07-19.md`.
+- Chấp nhận trên trình duyệt và xác nhận của chủ sở hữu FE06 vẫn là các cổng thủ công/L4.
+- Các bộ kiểm thử cổng merge toàn kho vẫn đang chờ và không được tái sử dụng bằng chứng tập trung.
 
-## 7. Required Commands / Evidence Before Merge
+## 7. Lệnh / bằng chứng bắt buộc trước khi merge
 
 ```powershell
 npm.cmd --prefix backend test

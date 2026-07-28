@@ -1,123 +1,121 @@
-# FE10 Personal Notification Inbox H2 Validation - Round 4
+# Xác thực H2 Hộp thư thông báo cá nhân FE10 - Vòng 4
 
-- Date: 2026-07-28
-- Branch: `codex/feat-fe10-personal-notification-inbox`
+- Ngày: 2026-07-28
+- Nhánh: `codex/feat-fe10-personal-notification-inbox`
 - Baseline: `main@a240705fbd486304464b073cbd3caec77a1fa135`
-- Rebased committed head: `883157124edf295f12683548754a881383431664`
-- Status: **H2 APPROVED**
+- Head đã commit sau rebase: `883157124edf295f12683548754a881383431664`
+- Trạng thái: **H2 ĐÃ PHÊ DUYỆT**
 
-This record supersedes round 3 after the mandatory pre-stage fetch discovered
-the newer upstream FE11 contract. The user approved
-`H1 drift addendum main@a240705`; upstream CI `30311801599` and Azure staging
-run `30311973740` passed, the rebase completed without conflict, and no
-candidate file is staged or committed.
+Bản ghi này thay thế vòng 3 sau khi fetch bắt buộc trước stage phát hiện hợp đồng
+FE11 upstream mới hơn. Người dùng phê duyệt
+`H1 drift addendum main@a240705`; CI upstream `30311801599` và lượt Azure
+staging `30311973740` đạt, rebase hoàn tất không xung đột và không tệp candidate
+nào được stage hoặc commit.
 
-## 1. Candidate Identity
+## 1. Danh tính candidate
 
-- Candidate entries: **17** modified or new files.
-- Candidate fingerprint:
+- Mục candidate: **17** tệp đã sửa hoặc mới.
+- Fingerprint candidate:
   `f41dbf50680d9c5601ae00d3c53651a7bb782ff81724ca641ef49b7cd88844e4`.
-- Candidate baseline and `origin/main`:
+- Baseline candidate và `origin/main`:
   `a240705fbd486304464b073cbd3caec77a1fa135`.
-- Committed branch ahead/behind `origin/main`: **2/0**.
-- Cached/staged files at fingerprint time: **0**.
-- Unmerged paths and conflict markers: **0**.
-- This round-4 validation record is deliberately excluded from the candidate
-  fingerprint so the human decision can be recorded without changing the
-  reviewed remediation.
+- Nhánh đã commit ahead/behind `origin/main`: **2/0**.
+- Tệp cached/staged tại thời điểm fingerprint: **0**.
+- Đường dẫn chưa merge và conflict marker: **0**.
+- Bản ghi xác thực vòng 4 này bị loại có chủ ý khỏi fingerprint candidate để
+  quyết định con người có thể được ghi mà không đổi khắc phục đã review.
 
-Fingerprint algorithm:
+Thuật toán fingerprint:
 
-1. Read `git status --porcelain=v1 --untracked-files=all`.
-2. Exclude only
+1. Đọc `git status --porcelain=v1 --untracked-files=all`.
+2. Chỉ loại
    `.sdd/reviews/fe10-notification-inbox-h2-validation-2026-07-28-round-4.md`.
-3. For every remaining file, create
+3. Với mỗi tệp còn lại, tạo
    `<two-character-status>|<lowercase-file-sha256>|<normalized-path>`.
-4. Sort entries by case-sensitive normalized path.
-5. Join entries with LF, include one final LF, encode as UTF-8 without BOM,
-   and calculate SHA-256.
+4. Sắp mục theo đường dẫn chuẩn hóa phân biệt hoa/thường.
+5. Ghép mục bằng LF, gồm một LF cuối, mã hóa UTF-8 không BOM và tính SHA-256.
 
-## 2. H1 And Scope Reconciliation
+## 2. Đối soát H1 và phạm vi
 
-- FE10 v0.5.0 design, SPEC, and FE10-I01..I08 remain the approved contract;
-  governance PR #70 is merged as `25c09ec`.
-- Earlier PR head `28c4f80` retains historical exact-head CI/Azure/live
-  evidence, but does not prove this H3 remediation.
-- `main@a240705` removes the FE11 Admin user-edit API, UI, tests, and contract.
-  It has no path overlap with the 17-entry FE10 remediation. Rebase and
-  committed merge-tree checks are conflict-free.
-- The rebased tree preserves both independent contracts: FE11 exposes only its
-  approved create/role/deactivate user actions, while FE10 keeps the personal
-  inbox, read-state migration, ownership filters, and sensitive exclusion.
-- No backend, database, migration, deployment workflow, API, authorization,
-  delivery-state, or sensitive-record behavior is changed by this remediation.
+- Thiết kế FE10 v0.5.0, SPEC và FE10-I01..I08 vẫn là hợp đồng đã phê duyệt;
+  governance PR #70 merge là `25c09ec`.
+- PR head trước `28c4f80` giữ bằng chứng CI/Azure/live exact-head lịch sử,
+  nhưng không chứng minh khắc phục H3 này.
+- `main@a240705` loại API, UI, kiểm thử và hợp đồng sửa người dùng Quản trị
+  FE11. Nó không chồng đường dẫn với khắc phục FE10 17 mục. Rebase và kiểm tra
+  merge-tree đã commit không xung đột.
+- Tree đã rebase giữ cả hai hợp đồng độc lập: FE11 chỉ hiển thị thao tác người
+  dùng tạo/vai trò/vô hiệu hóa đã phê duyệt, trong khi FE10 giữ hộp thư cá nhân,
+  migration trạng thái đọc, bộ lọc ownership và loại trừ nhạy cảm.
+- Khắc phục này không đổi backend, cơ sở dữ liệu, migration, workflow triển
+  khai, API, phân quyền, trạng thái gửi hay hành vi bản ghi nhạy cảm.
 
-## 3. Four-Layer Review
+## 3. Review bốn tầng
 
-### L1 - Contract And Traceability
+### L1 - Hợp đồng và truy vết
 
-**PASS**
+**ĐẠT**
 
-- ADR-002 records `ReadAt`, eligibility, index, migration repeatability,
-  deployment hash, and rollback.
-- FE10 SPEC/PLAN/TASKS/CONTEXT/TEST_PLAN/CHANGELOG, agent context, master test
-  plan, design, H2 history, v0.4.5 history, and H3 closeout agree.
-- Traceability-state tests pass 3/3. Enforced FE10 coverage is 14/16 (88%),
-  above the 70% repository threshold; FE11 remains above threshold at 35/43
-  (81%) after its approved edit-action removal.
+- ADR-002 ghi `ReadAt`, điều kiện hợp lệ, index, tính lặp migration, hash triển
+  khai và rollback.
+- FE10 SPEC/PLAN/TASKS/CONTEXT/TEST_PLAN/CHANGELOG, ngữ cảnh agent, master test
+  plan, design, lịch sử H2, lịch sử v0.4.5 và closeout H3 thống nhất.
+- Kiểm thử trạng thái truy vết qua 3/3. Bao phủ FE10 được ép là 14/16 (88%),
+  trên ngưỡng repository 70%; FE11 vẫn trên ngưỡng 35/43 (81%) sau loại thao tác
+  sửa đã phê duyệt.
 
-### L2 - Automated Quality
+### L2 - Chất lượng tự động
 
-**PASS**
+**ĐẠT**
 
-| Gate | Fresh result on `main@a240705` |
+| Cổng | Kết quả mới trên `main@a240705` |
 | --- | --- |
-| Backend coverage | 69/69 suites, 1084/1084 tests |
-| Coverage | 91.84% statements, 80.70% branches, 97.59% functions, 91.76% lines |
-| Frontend | 259/259 tests; ESLint pass; Vite production build pass |
-| Deployment policy | 20/20 tests |
-| System integration | 10/10 tests |
-| Traceability state | 3/3 tests |
-| Chromium E2E | 11/11; FE10-specific 3/3 |
-| Azure schema preparation | PASS |
+| Coverage backend | 69/69 suite, 1084/1084 kiểm thử |
+| Coverage | 91.84% statement, 80.70% branch, 97.59% function, 91.76% line |
+| Frontend | 259/259 kiểm thử; ESLint đạt; Vite production build đạt |
+| Policy triển khai | 20/20 kiểm thử |
+| Tích hợp hệ thống | 10/10 kiểm thử |
+| Trạng thái truy vết | 3/3 kiểm thử |
+| Chromium E2E | 11/11; riêng FE10 3/3 |
+| Chuẩn bị schema Azure | PASS |
 | Git whitespace | `git diff --check` PASS |
-| Backend dependency audit | 0 vulnerabilities |
-| Frontend high audit gate | PASS with only the enforced non-applicable unstable-RSC advisory |
-| High-confidence added-secret scan | 0 findings |
-| Stale contradiction, unfinished-marker, and conflict scans | 0 findings |
+| Audit phụ thuộc backend | 0 lỗ hổng |
+| Cổng high audit frontend | PASS chỉ có advisory unstable-RSC không áp dụng đã được ép |
+| Quét secret thêm có độ tin cậy cao | 0 phát hiện |
+| Quét mâu thuẫn cũ, marker chưa hoàn tất và xung đột | 0 phát hiện |
 
-The backend test count decreased from 1116 to 1084 because the approved
-upstream commit deleted obsolete FE11 user-edit tests. All 69 suites still run,
-and FE10 focused/full/browser coverage remains present.
+Số kiểm thử backend giảm từ 1116 xuống 1084 vì commit upstream đã phê duyệt xóa
+kiểm thử sửa người dùng FE11 lỗi thời. Cả 69 suite vẫn chạy và bao phủ
+FE10 tập trung/đầy đủ/trình duyệt vẫn tồn tại.
 
-### L3 - Business, UI, And Security
+### L3 - Nghiệp vụ, UI và bảo mật
 
-**PASS**
+**ĐẠT**
 
-- Successful no-navigation reads reload the current `/notifications` page.
-- Mark-all remains available on an empty filtered page and is disabled only
-  while loading or mutating.
-- The popover keeps its approved desktop width (`380px`) while the containing
-  topbar rises to `z-index: 100` only in the open state. Chromium verifies a
-  sampled popover point is the top painted element.
-- Ownership, positive eligibility, IDOR-safe `404`, seven-field safe DTO,
-  backend/frontend action allowlists, and sensitive exclusions remain
-  unchanged from the already deployed FE10 implementation.
-- Added-line secret scan returns zero. Historical sensitive identifiers appear
-  only in explicit repository exclusions and negative tests.
+- Lượt đọc thành công không điều hướng tải lại trang `/notifications` hiện tại.
+- Đánh dấu tất cả vẫn khả dụng trên trang đã lọc rỗng và chỉ bị vô hiệu khi đang
+  tải hoặc thay đổi.
+- Popover giữ độ rộng desktop đã phê duyệt (`380px`) trong khi topbar chứa nó
+  tăng lên `z-index: 100` chỉ ở trạng thái mở. Chromium xác minh điểm popover
+  lấy mẫu là phần tử được vẽ trên cùng.
+- Ownership, điều kiện hợp lệ dương, `404` an toàn IDOR, DTO an toàn bảy trường,
+  allowlist action backend/frontend và loại trừ nhạy cảm không đổi so với triển
+  khai FE10 đã deploy.
+- Quét secret dòng thêm trả về không. Identifier nhạy cảm lịch sử chỉ xuất hiện
+  trong loại trừ repository rõ ràng và kiểm thử phủ định.
 
-### L4 - Migration And Release Safety
+### L4 - An toàn migration và phát hành
 
-**LOCAL REMEDIATION PASS; EXTERNAL GATES PENDING BY DESIGN**
+**KHẮC PHỤC CỤC BỘ ĐẠT; CỔNG BÊN NGOÀI CHỜ THEO THIẾT KẾ**
 
-- The reviewed FE10 migration and Azure hash gate are byte-for-byte unchanged.
-- Azure-compatible schema preparation passes from the rebased checkout.
-- Current Azure staging serves `main@a240705`, whose CI and deployment passed,
-  but not this uncommitted FE10 remediation.
-- After H2, the new exact head must pass PR CI, deploy to Azure, and repeat
-  Azure SQL/API/browser verification before H3 round two.
+- Migration FE10 đã review và cổng hash Azure không đổi từng byte.
+- Chuẩn bị schema tương thích Azure đạt từ checkout đã rebase.
+- Azure staging hiện tại phục vụ `main@a240705`, CI và triển khai của nó đạt,
+  nhưng không phục vụ khắc phục FE10 chưa commit này.
+- Sau H2, exact head mới phải qua CI PR, deploy Azure và lặp xác minh Azure SQL/
+  API/trình duyệt trước H3 vòng hai.
 
-## 4. Candidate Manifest
+## 4. Manifest candidate
 
 ```text
  M|39effb912a54f6ca1783bd8252aa3ebf2cf4477628884770fcca72ae026c3061|.agents/CLAUDE.md
@@ -139,17 +137,17 @@ and FE10 focused/full/browser coverage remains present.
  M|229763feda67501cfa27cdad3385e7805e9a27a1d9419ef1a7573577eac89c15|tests/e2e/fe10-notification-inbox.spec.js
 ```
 
-## 5. Human H2 Decision
+## 5. Quyết định H2 của con người
 
-The user approved the exact candidate in the active task:
+Người dùng đã phê duyệt candidate chính xác trong task đang hoạt động:
 
 ```text
 duyệt H2 fingerprint f41dbf50680d9c5601ae00d3c53651a7bb782ff81724ca641ef49b7cd88844e4
 ```
 
-Decision: **APPROVED**.
+Quyết định: **ĐÃ PHÊ DUYỆT**.
 
-This decision authorizes staging this exact 17-entry candidate together with
-this excluded decision record, committing, force-pushing with lease protection,
-and starting exact-head CI/Azure verification. Any candidate-content change
-after approval invalidates the authority.
+Quyết định này cho phép stage candidate 17 mục chính xác này cùng bản ghi quyết
+định bị loại, commit, force-push with lease protection và bắt đầu xác minh
+CI/Azure exact-head. Mọi thay đổi nội dung candidate sau phê duyệt làm mất hiệu
+lực thẩm quyền.

@@ -1,165 +1,165 @@
-# PLAN.md - FE05 Book Management
+# PLAN.md - Quản lý sách FE05
 
-Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
+Trạng thái: ĐÃ HOÀN TẤT - ĐÃ GHI NHẬN BẰNG CHỨNG CHỐT GIAI ĐOẠN 2
 
-Owner: Dung
+Chủ sở hữu: Dung
 
-Updated: 2026-07-28
+Cập nhật: 2026-07-28
 
-Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact post-merge `main` CI are recorded in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. Pending/open gate statements retained below are historical execution snapshots superseded by that evidence.
+Trạng thái quy trình: đã hoàn tất cho phạm vi Giai đoạn 2 đã phê duyệt; H3, merge và CI `main` chính xác sau merge được ghi tại `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. Các phát biểu cổng đang chờ/mở bên dưới là snapshot thực thi lịch sử đã được bằng chứng đó thay thế.
 
-> **For implementation agents:** Execute `TASKS.md` in order. Preserve FE05 catalog ownership, begin each behavior task with focused failing tests, and do not mutate FE06 copy lifecycle state from FE05.
+> **Dành cho agent triển khai:** Thực hiện `TASKS.md` theo thứ tự. Giữ quyền sở hữu catalog FE05, bắt đầu mỗi nhiệm vụ hành vi bằng kiểm thử tập trung thất bại và không thay đổi trạng thái vòng đời bản sao FE06 từ FE05.
 
 ---
 
-## 1. Goal
+## 1. Mục tiêu
 
-Maintain the reconciled FE05 catalog against the approved v0.6.10 contract: deterministic public/staff queries, active reference-data reads, a pre-listen startup gate for reviewed packaged compatibility migrations, schema-aware deployment readiness, CI-gated continuous staging deployment, validated managed covers, atomic audited mutations, optimistic concurrency, explicit deactivate/reactivate commands, context-preserving post-mutation list reconciliation, canonical catalog-status rendering, and read-only derived availability from FE06 copy state.
+Duy trì catalog FE05 đã đối soát theo hợp đồng v0.6.10 đã phê duyệt: truy vấn công khai/nhân viên xác định, đọc dữ liệu tham chiếu đang hoạt động, cổng khởi động trước khi lắng nghe cho compatibility migration đã đóng gói và rà soát, mức sẵn sàng triển khai nhận biết schema, triển khai staging liên tục có cổng CI, ảnh bìa được quản lý và xác thực, mutation có audit nguyên tử, đồng thời lạc quan, lệnh hủy kích hoạt/kích hoạt lại rõ ràng, đối soát danh sách sau mutation giữ ngữ cảnh, kết xuất trạng thái catalog chuẩn và khả dụng suy ra chỉ đọc từ trạng thái bản sao FE06.
 
-## 2. Source Documents
+## 2. Tài liệu nguồn
 
 - `.sdd/specs/feat-book-management/SPEC.md` v0.6.9.
 - `.sdd/specs/feat-book-management/CONTEXT.md` v0.2.0.
 - `.sdd/specs/feat-book-management/TEST_PLAN.md`.
 - `.sdd/rfcs/ADR-002-database-design.md`.
-- `.sdd/specs/feat-inventory-book-copy/SPEC.md` for copy ownership and availability.
+- `.sdd/specs/feat-inventory-book-copy/SPEC.md` về quyền sở hữu bản sao và khả dụng.
 - `database/Librarymanagement.sql`.
 - `.sdd/constraints/safety.md`.
 
-## 3. Reconciled Baseline Drift
+## 3. Sai lệch mốc cơ sở đã đối soát
 
-| Approved contract | Reconciled implementation |
+| Hợp đồng đã phê duyệt | Phần triển khai đã đối soát |
 | --- | --- |
-| FE05 never mutates `BookCopies.Status` | Legacy `/availability` route, repository mutation, and BookManagement copy-state controls are removed; tests enforce read-only derived availability. |
-| Existing-book mutations require `If-Match`/SQL `rowversion` | `Books.RowVersion` and version-aware metadata/status commands are implemented. |
-| Status changes use dedicated deactivate/reactivate commands with reason | Both commands require matching version and a trimmed reason; metadata PUT cannot change status. |
-| Public and staff lists use deterministic pagination/sort policy | Approved filters, endpoint shapes, and validation are implemented and tested. |
-| Create/update/deactivate/reactivate plus audit are atomic | Repository transaction and rollback coverage prove mutation/audit atomicity. |
-| Public availability is read-only `AVAILABLE`/`UNAVAILABLE` | Frontend renders derived availability without classifying all unavailable rows as borrowed. |
-| Public and staff endpoints have distinct visibility | Guest/Member search is title/author-only and public DTOs exclude ISBN; staff list/detail retains searchable ISBN after Librarian/Admin authorization. |
-| FE11 Admin Console must not duplicate FE05 mutations | `UserManagement` keeps the Library table read-only; canonical `BookManagement` owns create/update/deactivate/reactivate. |
+| FE05 không bao giờ thay đổi `BookCopies.Status` | Route `/availability` cũ, mutation repository và các control trạng thái bản sao BookManagement đã bị loại; kiểm thử thực thi khả dụng suy ra chỉ đọc. |
+| Mutation sách hiện có yêu cầu `If-Match`/SQL `rowversion` | `Books.RowVersion` và lệnh metadata/trạng thái nhận biết phiên bản đã được triển khai. |
+| Thay đổi trạng thái dùng lệnh hủy kích hoạt/kích hoạt lại riêng với lý do | Cả hai lệnh yêu cầu phiên bản khớp và lý do đã trim; PUT metadata không thể thay đổi trạng thái. |
+| Danh sách công khai và nhân viên sử dụng chính sách phân trang/sắp xếp xác định | Các filter, cấu trúc endpoint và xác thực đã phê duyệt được triển khai và kiểm thử. |
+| Create/update/deactivate/reactivate cùng audit là nguyên tử | Transaction repository và độ bao phủ rollback chứng minh tính nguyên tử mutation/audit. |
+| Khả dụng công khai chỉ đọc `AVAILABLE`/`UNAVAILABLE` | Frontend kết xuất khả dụng suy ra mà không phân loại mọi hàng không khả dụng là đã mượn. |
+| Endpoint công khai và nhân viên có mức hiển thị khác nhau | Tìm kiếm Khách/Thành viên chỉ theo tiêu đề/tác giả và DTO công khai loại ISBN; danh sách/chi tiết nhân viên vẫn giữ ISBN có thể tìm kiếm sau phân quyền Thủ thư/Quản trị viên. |
+| Admin Console FE11 không được sao chép mutation FE05 | `UserManagement` giữ bảng Thư viện chỉ đọc; `BookManagement` chuẩn sở hữu create/update/deactivate/reactivate. |
 
-## 4. Scope
+## 4. Phạm vi
 
-### In Scope
+### Trong phạm vi
 
-- Public search/detail and protected management list from `SPEC.md` section 11.
-- Create and metadata-only update with required field/reference/ISBN/year/pages/rating validation.
-- Protected active category/author/publisher choices for Librarian/Admin book forms.
-- Managed JPG/PNG/WebP cover upload with validation and failure compensation.
-- `ACTIVE`/`INACTIVE` deactivation and reactivation without changing copies or history.
-- SQL `rowversion`, `If-Match`, `409 STALE_BOOK_STATE`, and new version responses.
-- Atomic audit logging for every catalog mutation.
-- Read-only availability derived from parent status and latest committed FE06 copy states.
-- Backend route/repository/SQL tests, frontend regression tests, API documentation, and traceability.
+- Tìm kiếm/chi tiết công khai và danh sách quản lý được bảo vệ từ Mục 11 của `SPEC.md`.
+- Create và cập nhật chỉ metadata cùng xác thực trường/tham chiếu/ISBN/năm/số trang/đánh giá bắt buộc.
+- Lựa chọn thể loại/tác giả/nhà xuất bản đang hoạt động được bảo vệ cho biểu mẫu sách Thủ thư/Quản trị viên.
+- Tải ảnh bìa JPG/PNG/WebP được quản lý, có xác thực và bù trừ lỗi.
+- Hủy kích hoạt và kích hoạt lại `ACTIVE`/`INACTIVE` mà không thay đổi bản sao hoặc lịch sử.
+- SQL `rowversion`, `If-Match`, `409 STALE_BOOK_STATE` và response phiên bản mới.
+- Audit log nguyên tử cho mọi mutation catalog.
+- Khả dụng chỉ đọc suy ra từ trạng thái cha và trạng thái bản sao FE06 đã commit gần nhất.
+- Kiểm thử route/repository/SQL backend, kiểm thử hồi quy frontend, tài liệu API và traceability.
 
-### Out Of Scope
+### Ngoài phạm vi
 
-- Physical copy creation or status transitions.
-- Multiple authors or many-to-many categories.
-- Cover bytes in SQL Server, arbitrary unmanaged file paths, recommendations, reviews, or ratings workflow.
-- Borrowing, reservation, fine, or reporting implementation.
-- Physical deletion of books.
+- Tạo bản sao vật lý hoặc chuyển đổi trạng thái bản sao.
+- Nhiều tác giả hoặc thể loại nhiều-nhiều.
+- Byte ảnh bìa trong SQL Server, đường dẫn tệp không được quản lý tùy ý, quy trình đề xuất, rà soát hoặc đánh giá.
+- Triển khai mượn, đặt chỗ, tiền phạt hoặc báo cáo.
+- Xóa vật lý sách.
 
-## 5. File And Interface Map
+## 5. Bản đồ tệp và interface
 
-| Area | Files | Responsibility |
+| Khu vực | Tệp | Trách nhiệm |
 | --- | --- | --- |
-| SQL contract | `database/Librarymanagement.sql`, `.sdd/rfcs/ADR-002-database-design.md` | Add `Books` rowversion, retain filtered unique ISBN, document catalog/copy ownership. |
-| HTTP boundary | `backend/src/app.js`, `backend/src/routes/bookRoutes.js`, `backend/src/controllers/bookController.js`, create `backend/src/validators/bookValidators.js` | Public/protected routes, `If-Match`, query/body validation, and safe errors. |
-| Business rules | `backend/src/services/bookService.js` | Deterministic filters, metadata validation, status commands, and derived availability contract. |
-| Persistence | `backend/src/repositories/bookRepository.js`, `backend/src/repositories/auditLogRepository.js` | Parameterized queries, copy-state aggregation, rowversion comparison, and atomic audited writes. |
-| Deployment compatibility | `backend/src/services/schemaReadinessService.js`, `backend/src/startApplication.js`, `.github/workflows/deploy-staging.yml`, approved `database/migrations/*.sql` files | Package and apply only reviewed compatibility migrations before listen, verify their postconditions, and keep readiness read-only. |
-| Models/docs | `backend/src/models/Book.js`, `backend/src/docs/openapi.yaml` | Rowversion metadata and approved API request/response/error schemas. |
-| Backend tests | create `backend/tests/bookRoutes.test.js`, `backend/tests/bookAvailabilityRepository.test.js`, create `backend/tests/sql/bookConcurrency.sqltest.js`, create `backend/tests/helpers/inMemoryBookRepositories.js` | Public/staff behavior, validation, ownership, rollback, and stale-write evidence. |
-| Frontend | `frontend/src/page/BookManagement.jsx`, `frontend/src/api/libraryFeatureApi.js` | Approved endpoint shapes, version propagation, confirmation reasons, unfiltered canonical reload after a one-book status mutation, canonical status-column rendering, and read-only availability in the detail projection. |
-| Frontend tests | `frontend/test/bookManagementFrontend.test.js` | Remove prototype expectations and lock the v0.5.0 UI/API contract. |
+| Hợp đồng SQL | `database/Librarymanagement.sql`, `.sdd/rfcs/ADR-002-database-design.md` | Thêm rowversion `Books`, giữ unique ISBN đã lọc, ghi nhận quyền sở hữu catalog/bản sao. |
+| Ranh giới HTTP | `backend/src/app.js`, `backend/src/routes/bookRoutes.js`, `backend/src/controllers/bookController.js`, tạo `backend/src/validators/bookValidators.js` | Route công khai/được bảo vệ, `If-Match`, xác thực query/body và lỗi an toàn. |
+| Quy tắc nghiệp vụ | `backend/src/services/bookService.js` | Filter xác định, xác thực metadata, lệnh trạng thái và hợp đồng khả dụng suy ra. |
+| Persistence | `backend/src/repositories/bookRepository.js`, `backend/src/repositories/auditLogRepository.js` | Truy vấn có tham số, tổng hợp trạng thái bản sao, so sánh rowversion và ghi có audit nguyên tử. |
+| Tương thích triển khai | `backend/src/services/schemaReadinessService.js`, `backend/src/startApplication.js`, `.github/workflows/deploy-staging.yml`, các tệp `database/migrations/*.sql` đã phê duyệt | Đóng gói và chỉ áp dụng compatibility migration đã rà soát trước khi lắng nghe, xác minh postcondition và giữ readiness chỉ đọc. |
+| Model/tài liệu | `backend/src/models/Book.js`, `backend/src/docs/openapi.yaml` | Metadata rowversion và schema request/response/lỗi API đã phê duyệt. |
+| Kiểm thử backend | tạo `backend/tests/bookRoutes.test.js`, `backend/tests/bookAvailabilityRepository.test.js`, tạo `backend/tests/sql/bookConcurrency.sqltest.js`, tạo `backend/tests/helpers/inMemoryBookRepositories.js` | Hành vi công khai/nhân viên, xác thực, quyền sở hữu, rollback và bằng chứng ghi cũ. |
+| Frontend | `frontend/src/page/BookManagement.jsx`, `frontend/src/api/libraryFeatureApi.js` | Cấu trúc endpoint đã phê duyệt, truyền phiên bản, lý do xác nhận, tải lại danh sách chuẩn không lọc sau mutation trạng thái một sách, kết xuất cột trạng thái chuẩn và khả dụng chỉ đọc trong projection chi tiết. |
+| Kiểm thử frontend | `frontend/test/bookManagementFrontend.test.js` | Loại kỳ vọng prototype và khóa hợp đồng UI/API v0.5.0. |
 
-## 6. Approved Interfaces
+## 6. Interface đã phê duyệt
 
-| Method | Endpoint | Required behavior |
+| Phương thức | Endpoint | Hành vi bắt buộc |
 | --- | --- | --- |
-| `GET` | `/api/books` | Public-safe active books without ISBN; q matches title/author only; deterministic filters, pagination, sort, and derived availability. |
-| `GET` | `/api/books/{bookId}` | Guest/Member receive active detail without ISBN or `404`; authorized staff may receive `ACTIVE` or `INACTIVE` detail including ISBN and other management fields. |
-| `GET` | `/api/admin/books` | Librarian/Admin paginated management list including active/inactive records and ISBN search/display. |
-| `GET` | `/api/books/metadata` | Librarian/Admin active category/author/publisher choices; read-only for Librarians. |
-| `POST` | `/api/books` | Librarian/Admin creates an `ACTIVE` book and receives its version. |
-| `PUT` | `/api/books/{bookId}` | Librarian/Admin metadata-only update with `If-Match`; never changes status or copies. |
-| `PATCH` | `/api/books/{bookId}/deactivate` | Matching `If-Match` plus `{ reason }`; changes only `Books.Status` to `INACTIVE`. |
-| `PATCH` | `/api/books/{bookId}/reactivate` | Matching `If-Match` plus `{ reason }`; changes only `Books.Status` to `ACTIVE`. |
+| `GET` | `/api/books` | Sách đang hoạt động an toàn cho công khai không có ISBN; q chỉ khớp tiêu đề/tác giả; filter, phân trang, sắp xếp và khả dụng suy ra có tính xác định. |
+| `GET` | `/api/books/{bookId}` | Khách/Thành viên nhận chi tiết đang hoạt động không có ISBN hoặc `404`; nhân viên được cấp quyền có thể nhận chi tiết `ACTIVE` hoặc `INACTIVE` gồm ISBN và trường quản lý khác. |
+| `GET` | `/api/admin/books` | Danh sách quản lý phân trang của Thủ thư/Quản trị viên, gồm bản ghi hoạt động/không hoạt động và tìm kiếm/hiển thị ISBN. |
+| `GET` | `/api/books/metadata` | Lựa chọn thể loại/tác giả/nhà xuất bản đang hoạt động của Thủ thư/Quản trị viên; chỉ đọc cho Thủ thư. |
+| `POST` | `/api/books` | Thủ thư/Quản trị viên tạo sách `ACTIVE` và nhận phiên bản. |
+| `PUT` | `/api/books/{bookId}` | Thủ thư/Quản trị viên cập nhật chỉ metadata bằng `If-Match`; không bao giờ thay đổi trạng thái hoặc bản sao. |
+| `PATCH` | `/api/books/{bookId}/deactivate` | `If-Match` khớp cùng `{ reason }`; chỉ thay `Books.Status` thành `INACTIVE`. |
+| `PATCH` | `/api/books/{bookId}/reactivate` | `If-Match` khớp cùng `{ reason }`; chỉ thay `Books.Status` thành `ACTIVE`. |
 
-The legacy `/api/books/{bookId}/availability` route and its controller/service/repository mutation methods must be removed. Calls to that unregistered route return the standard safe `404` response and never write `Books` or `BookCopies`.
+Route `/api/books/{bookId}/availability` cũ và các phương thức mutation controller/service/repository của nó phải bị loại. Lời gọi đến route chưa đăng ký đó trả về response `404` an toàn tiêu chuẩn và không bao giờ ghi `Books` hoặc `BookCopies`.
 
-## 7. Ordered Implementation Strategy
+## 7. Chiến lược triển khai theo thứ tự
 
-### 7.1 Lock V0.5.0 With RED Tests
+### 7.1 Khóa V0.5.0 bằng kiểm thử RED
 
-- Add route tests for public visibility, staff list, RBAC, deterministic query rejection, field/reference/ISBN validation, `If-Match`, reasons, status commands, and copy-mutation rejection.
-- Add repository tests for derived availability and SQL tests for stale competing mutations plus audit rollback.
-- Replace frontend tests that currently assert the prohibited availability mutation.
+- Thêm kiểm thử route cho khả năng hiển thị công khai, danh sách nhân viên, RBAC, từ chối query xác định, xác thực trường/tham chiếu/ISBN, `If-Match`, lý do, lệnh trạng thái và từ chối mutation bản sao.
+- Thêm kiểm thử repository cho khả dụng suy ra và kiểm thử SQL cho mutation cạnh tranh cũ cùng rollback audit.
+- Thay kiểm thử frontend hiện assert mutation khả dụng bị cấm.
 
-### 7.2 Reconcile Schema And Concurrency
+### 7.2 Đối soát schema và đồng thời
 
-- Add SQL `rowversion` to `Books` and expose an opaque API version.
-- Update ADR/model metadata before repository mutation logic.
-- Compare the caller's version in the same transaction that updates the book and writes audit data.
+- Thêm SQL `rowversion` vào `Books` và hiển thị phiên bản API opaque.
+- Cập nhật metadata ADR/model trước logic mutation repository.
+- So sánh phiên bản của bên gọi trong cùng transaction cập nhật sách và ghi audit.
 
-### 7.3 Reconcile Public And Staff Reads
+### 7.3 Đối soát thao tác đọc công khai và nhân viên
 
-- Public queries include only `ACTIVE` books and public-safe fields.
-- Staff management queries may include both states.
-- Apply exact keyword/page/limit/sort/order rules and stable tie-breaking by `BookId`.
-- Derive availability from `Books.Status` plus `BookCopies.Status = AVAILABLE`; never persist an FE05 availability column.
+- Truy vấn công khai chỉ bao gồm sách `ACTIVE` và trường an toàn công khai.
+- Truy vấn quản lý nhân viên có thể bao gồm cả hai trạng thái.
+- Áp dụng chính xác quy tắc keyword/page/limit/sort/order và tie-breaking ổn định theo `BookId`.
+- Suy ra khả dụng từ `Books.Status` cùng `BookCopies.Status = AVAILABLE`; không bao giờ lưu cột khả dụng FE05.
 
-### 7.4 Reconcile Catalog Mutations
+### 7.4 Đối soát mutation catalog
 
-- Create validates title, optional unique ISBN, category/author/publisher references, year, pages, rating, description, and cover URL.
-- Metadata update cannot accept status/copy fields.
-- Deactivate/reactivate require current version and reason; only `Books.Status` changes.
-- Every successful mutation and audit entry commits together or rolls back together.
+- Create xác thực tiêu đề, ISBN duy nhất tùy chọn, tham chiếu thể loại/tác giả/nhà xuất bản, năm, số trang, đánh giá, mô tả và URL ảnh bìa.
+- Cập nhật metadata không thể chấp nhận trường trạng thái/bản sao.
+- Hủy kích hoạt/kích hoạt lại yêu cầu phiên bản hiện tại và lý do; chỉ `Books.Status` thay đổi.
+- Mọi mutation và audit entry thành công cùng commit hoặc cùng rollback.
 
-### 7.5 Reconcile Frontend And Evidence
+### 7.5 Đối soát frontend và bằng chứng
 
-- Use approved public/admin endpoints and propagate last-seen version through `If-Match`.
-- Replace “borrowed” fallback with the exact unavailable label `Không khả dụng`.
-- Require explicit confirmation/reason for deactivate/reactivate and refresh canonical server state after each mutation.
-- Add `@spec` tags and focused evidence before the full merge gate.
+- Sử dụng endpoint công khai/quản trị đã phê duyệt và truyền phiên bản được thấy gần nhất qua `If-Match`.
+- Thay fallback “borrowed” bằng nhãn không khả dụng chính xác `Không khả dụng`.
+- Yêu cầu xác nhận/lý do rõ ràng khi hủy kích hoạt/kích hoạt lại và làm mới trạng thái server chuẩn sau mỗi mutation.
+- Thêm tag `@spec` và bằng chứng tập trung trước cổng merge toàn bộ.
 
-## 8. Dependency Order
+## 8. Thứ tự phụ thuộc
 
-1. RED route/repository/SQL/frontend contract tests.
-2. SQL rowversion, ADR/model, and OpenAPI contract.
-3. Validators and read-query reconciliation.
-4. Atomic create/update/deactivate/reactivate implementation.
-5. Frontend reconciliation.
-6. Traceability, focused verification, then human review.
+1. Kiểm thử hợp đồng route/repository/SQL/frontend RED.
+2. Hợp đồng SQL rowversion, ADR/model và OpenAPI.
+3. Validator và đối soát truy vấn đọc.
+4. Triển khai create/update/deactivate/reactivate nguyên tử.
+5. Đối soát frontend.
+6. Traceability, xác thực tập trung, sau đó rà soát thủ công.
 
-FE05 read contracts must be stable before FE06/FE07 consume parent-book status and catalog summaries.
+Hợp đồng đọc FE05 phải ổn định trước khi FE06/FE07 sử dụng trạng thái sách cha và bản tóm tắt catalog.
 
-## 9. Verification Gates
+## 9. Cổng xác thực
 
-| Gate | Command | Expected result |
+| Cổng | Lệnh | Kết quả mong đợi |
 | --- | --- | --- |
-| FE05 backend | `npm.cmd --prefix backend test -- --runTestsByPath tests/bookRoutes.test.js tests/bookAvailabilityRepository.test.js` | Public/staff, validation, ownership, and derived-availability tests pass. |
-| FE05 SQL concurrency | `npm.cmd --prefix backend test -- --runTestsByPath tests/sql/bookConcurrency.sqltest.js` | Stale mutation and audit rollback cases pass when SQL test configuration is available. |
-| FE05 frontend | `node --test frontend/test/bookManagementFrontend.test.js` | No copy mutation, correct unavailable label, version, and status-command checks pass. |
-| Deployment readiness | `node --test tests/deployment/smokeStaging.test.js tests/deployment/stagingWorkflowPolicy.test.js` plus focused backend startup tests | The backend applies the packaged reviewed metadata migration before listening, verifies its postcondition, and smoke rejects any remaining schema drift; staging deploy follows only a successful `main` CI run for the exact commit. |
-| Traceability | `npm.cmd run trace:enforce` | FE05 changed implementation files satisfy the repository threshold. |
-| Diff hygiene | `git diff --check` | No whitespace errors. |
+| Backend FE05 | `npm.cmd --prefix backend test -- --runTestsByPath tests/bookRoutes.test.js tests/bookAvailabilityRepository.test.js` | Kiểm thử công khai/nhân viên, xác thực, quyền sở hữu và khả dụng suy ra vượt qua. |
+| SQL đồng thời FE05 | `npm.cmd --prefix backend test -- --runTestsByPath tests/sql/bookConcurrency.sqltest.js` | Các trường hợp mutation cũ và rollback audit vượt qua khi có cấu hình kiểm thử SQL. |
+| Frontend FE05 | `node --test frontend/test/bookManagementFrontend.test.js` | Không mutation bản sao, nhãn không khả dụng chính xác, kiểm tra phiên bản và lệnh trạng thái vượt qua. |
+| Readiness triển khai | `node --test tests/deployment/smokeStaging.test.js tests/deployment/stagingWorkflowPolicy.test.js` cùng kiểm thử khởi động backend tập trung | Backend áp dụng metadata migration đã đóng gói và rà soát trước khi lắng nghe, xác minh postcondition và smoke từ chối mọi schema drift còn lại; triển khai staging chỉ theo một lần chạy CI `main` thành công của commit chính xác. |
+| Traceability | `npm.cmd run trace:enforce` | Các tệp triển khai FE05 đã thay đổi đáp ứng ngưỡng kho mã nguồn. |
+| Vệ sinh diff | `git diff --check` | Không có lỗi khoảng trắng. |
 
-## 10. Human Review Gate
+## 10. Cổng rà soát thủ công
 
-- [x] Confirm the `/api/admin/books` migration/compatibility approach.
-- [x] Confirm `If-Match` encoding and version response shape.
-- [x] Confirm the legacy availability mutation is removed without moving copy ownership into FE05.
-- [x] Confirm deactivate/reactivate change only `Books.Status` and preserve all workflow records.
-- [x] Approve `TASKS.md` ordering and mappings before implementation starts.
+- [x] Xác nhận phương án migration/compatibility `/api/admin/books`.
+- [x] Xác nhận encoding `If-Match` và cấu trúc response phiên bản.
+- [x] Xác nhận mutation khả dụng cũ bị loại mà không chuyển quyền sở hữu bản sao vào FE05.
+- [x] Xác nhận hủy kích hoạt/kích hoạt lại chỉ thay `Books.Status` và giữ mọi bản ghi quy trình.
+- [x] Phê duyệt thứ tự và ánh xạ `TASKS.md` trước khi triển khai bắt đầu.
 
-## 11. V0.6.0 Managed Cover Upload
+## 11. Tải ảnh bìa được quản lý V0.6.0
 
-1. Lock multipart create/update behavior with route, storage-safety, and frontend contract tests.
-2. Accept JSON compatibility requests or multipart requests containing serialized `metadata` and one optional `cover` file.
-3. Validate a 2 MB maximum, JPG/PNG/WebP extension/MIME/signature agreement, and server-generated storage paths.
-4. Compensate filesystem writes when create/update, optimistic concurrency, database, or audit processing fails.
-5. Replace both editable cover-URL fields with local file pickers, previews, filename/type/size guidance, and backend-origin asset resolution.
-6. Verify focused backend/frontend suites, OpenAPI parsing, lint/build, traceability, and diff hygiene before human review.
+1. Khóa hành vi create/update multipart bằng kiểm thử hợp đồng route, an toàn storage và frontend.
+2. Chấp nhận request tương thích JSON hoặc request multipart chứa `metadata` đã tuần tự hóa và một tệp `cover` tùy chọn.
+3. Xác thực kích thước tối đa 2 MB, sự khớp giữa phần mở rộng/MIME/signature JPG/PNG/WebP và đường dẫn lưu trữ do server tạo.
+4. Bù trừ thao tác ghi filesystem khi create/update, đồng thời lạc quan, database hoặc audit xử lý thất bại.
+5. Thay cả hai trường URL ảnh bìa có thể chỉnh sửa bằng bộ chọn tệp cục bộ, preview, hướng dẫn tên tệp/loại/kích thước và phân giải asset theo backend origin.
+6. Xác thực suite backend/frontend tập trung, phân tích OpenAPI, lint/build, traceability và vệ sinh diff trước khi rà soát thủ công.

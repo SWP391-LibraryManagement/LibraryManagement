@@ -1,27 +1,31 @@
-# PLAN.md - FE11 User & Role Management
+# PLAN.md - FE11 Quản lý người dùng và vai trò
 
-Status: IMPLEMENTED - LOCAL AUTOMATED VALIDATION COMPLETE
+Trạng thái: ĐÃ TRIỂN KHAI - XÁC THỰC TỰ ĐỘNG CỤC BỘ HOÀN TẤT
 
-Date: 2026-07-28
+Ngày: 2026-07-28
 
-Current Extension: Q-FE11-029 removes existing-user profile editing from FE11; Admin retains role replacement and eligible deactivation. Local automated validation and browser/human acceptance are tracked below.
+Phần mở rộng hiện tại: Q-FE11-029 loại bỏ việc sửa hồ sơ người dùng hiện có khỏi
+FE11; Quản trị vẫn thay vai trò và vô hiệu hóa khi đủ điều kiện. Xác thực tự
+động cục bộ và chấp nhận trên trình duyệt/con người được theo dõi bên dưới.
 
-Concurrent Extension: Admin Console Membership Review is implemented with canonical FE04 ownership and locally regression-tested; responsive browser, Azure Staging, and human acceptance remain open.
+Phần mở rộng đồng thời: Rà soát tư cách thành viên trong Admin Console đã triển
+khai theo quyền sở hữu FE04 chuẩn và đã kiểm thử hồi quy cục bộ; trình duyệt đáp
+ứng, Azure Staging và chấp nhận con người vẫn mở.
 
-Owner: Dung
+Chủ sở hữu: Dung
 
-## 1. Purpose
+## 1. Mục đích
 
-Preserve completed FE11 slice evidence while correcting personal-data ownership.
-Sections 3-20 retain historical planning and integration snapshots; Section 21
-is the current personal-data ownership implementation boundary.
+Giữ bằng chứng lát cắt FE11 đã hoàn tất trong khi sửa quyền sở hữu dữ liệu cá
+nhân. Phần 3-20 giữ các ảnh chụp kế hoạch và tích hợp lịch sử; Phần 21 là ranh
+giới triển khai quyền sở hữu dữ liệu cá nhân hiện tại.
 
-The previously approved Phase 1 FE11 baseline is complete through B7. The later
-2026-07-22 ownership decision supersedes only the broad existing-user update
-contract and must be implemented before the revised FE11 scope can be called
-complete. Historical completion evidence does not prove Section 21.
+Baseline FE11 Giai đoạn 1 đã được phê duyệt trước đó hoàn tất qua B7. Quyết định
+quyền sở hữu sau ngày 2026-07-22 chỉ thay thế hợp đồng cập nhật người dùng hiện
+có rộng và phải được triển khai trước khi phạm vi FE11 đã sửa có thể được gọi là
+hoàn tất. Bằng chứng hoàn tất lịch sử không chứng minh Phần 21.
 
-## 2. Source Documents
+## 2. Tài liệu nguồn
 
 - `.sdd/specs/feat-user-role-management/SPEC.md`
 - `.sdd/specs/feat-auth/SPEC.md`
@@ -35,59 +39,65 @@ complete. Historical completion evidence does not prove Section 21.
 - `docs/superpowers/specs/2026-07-19-fe11-finalization-batch-design.md`
 - `docs/superpowers/plans/2026-07-19-fe11-finalization-batch.md`
 
-## 3. Slice Scope
+## 3. Phạm vi lát cắt
 
-### In Scope
+### Trong phạm vi
 
-- Create Member/Librarian accounts as `INACTIVE`.
-- Store an unusable bcrypt hash of a discarded random value while setup is incomplete.
-- Atomically create user, profile, initial role, hashed `ACCOUNT_SETUP` token, and FE11 audit event.
-- Deliver canonical `ACCOUNT_SETUP` through the FE10 requester bound to `FE11`.
-- Return safe `SENT`/`FAILED` setup-delivery status.
-- Add Admin-only setup resend with token rotation and 60-second cooldown.
-- Complete setup through the existing FE02 token endpoint, atomically activating the account.
-- Add focused service, route, repository, and integration tests.
+- Tạo tài khoản Thành viên/Thủ thư là `INACTIVE`.
+- Lưu hash bcrypt không thể dùng của giá trị ngẫu nhiên đã loại bỏ khi thiết lập
+  chưa hoàn tất.
+- Tạo nguyên tử người dùng, hồ sơ, vai trò ban đầu, mã thông báo `ACCOUNT_SETUP`
+  đã hash và sự kiện kiểm toán FE11.
+- Gửi `ACCOUNT_SETUP` chuẩn qua requester FE10 gắn với `FE11`.
+- Trả trạng thái gửi thiết lập an toàn `SENT`/`FAILED`.
+- Thêm gửi lại thiết lập chỉ Quản trị với xoay vòng mã thông báo và cooldown 60
+  giây.
+- Hoàn tất thiết lập qua endpoint mã thông báo FE02 hiện có, kích hoạt tài khoản
+  một cách nguyên tử.
+- Thêm kiểm thử service, route, repository và tích hợp tập trung.
 
-### Out Of Scope
+### Ngoài phạm vi
 
-- Remaining FE11 CRUD/admin-console debt unrelated to account setup.
-- Public setup resend.
-- Admin password reset for active accounts.
-- Deactivated-account reactivation.
-- Changing FE02 verification/reset OTP ownership from ADR-004.
+- Nợ CRUD/Admin Console FE11 còn lại không liên quan đến thiết lập tài khoản.
+- Gửi lại thiết lập công khai.
+- Quản trị đặt lại mật khẩu cho tài khoản hoạt động.
+- Kích hoạt lại tài khoản đã vô hiệu hóa.
+- Thay đổi quyền sở hữu OTP xác minh/đặt lại FE02 từ ADR-004.
 
-## 4. Approved Contract
+## 4. Hợp đồng đã phê duyệt
 
-| Area | Decision |
+| Khu vực | Quyết định |
 | --- | --- |
-| Initial state | `INACTIVE` |
-| Setup token owner | FE11 |
-| Setup completion owner | FE02 |
-| Delivery owner | FE10 requester bound to `FE11` |
-| Notification pair | `ACCOUNT_SETUP -> ACCOUNT_SETUP` |
-| Template variables | `setupLink`, `expiresInHours` |
-| Token storage | SHA-256 hash in `AuthTokens`, 24-hour expiry |
-| Source reference | `AuthToken` plus persisted token ID |
-| Idempotency | `FE11:ACCOUNT_SETUP:<tokenId>` |
-| Delivery failure | Non-blocking; account remains `INACTIVE` |
-| Resend | Admin-only; revoke old active token, create new event, 60-second cooldown |
+| Trạng thái ban đầu | `INACTIVE` |
+| Chủ sở hữu mã thông báo thiết lập | FE11 |
+| Chủ sở hữu hoàn tất thiết lập | FE02 |
+| Chủ sở hữu gửi | requester FE10 gắn với `FE11` |
+| Cặp thông báo | `ACCOUNT_SETUP -> ACCOUNT_SETUP` |
+| Biến mẫu | `setupLink`, `expiresInHours` |
+| Lưu mã thông báo | Hash SHA-256 trong `AuthTokens`, hết hạn 24 giờ |
+| Tham chiếu nguồn | `AuthToken` cùng ID mã thông báo đã lưu |
+| Tính lũy đẳng | `FE11:ACCOUNT_SETUP:<tokenId>` |
+| Lỗi gửi | Không chặn; tài khoản giữ `INACTIVE` |
+| Gửi lại | Chỉ Quản trị; thu hồi mã thông báo cũ đang hoạt động, tạo sự kiện mới, cooldown 60 giây |
 
-## 5. Transaction Boundaries
+## 5. Ranh giới giao dịch
 
-- FE11 source transaction: `Users` + `UserProfiles` + `UserRoles` + `AuthTokens` + `AuditLogs`.
-- FE10 provider delivery starts only after source commit and uses its own delivery transaction.
-- FE02 completion transaction: password hash + `EmailVerifiedAt` + `Status=ACTIVE` + setup token `UsedAt` + auth audit.
-- No distributed transaction spans FE11 and FE10.
+- Giao dịch nguồn FE11: `Users` + `UserProfiles` + `UserRoles` + `AuthTokens` +
+  `AuditLogs`.
+- Gửi nhà cung cấp FE10 chỉ bắt đầu sau commit nguồn và dùng giao dịch gửi riêng.
+- Giao dịch hoàn tất FE02: hash mật khẩu + `EmailVerifiedAt` + `Status=ACTIVE` +
+  mã thông báo thiết lập `UsedAt` + kiểm toán xác thực.
+- Không có giao dịch phân tán nào trải qua FE11 và FE10.
 
-## 6. API Changes
+## 6. Thay đổi API
 
-| Method | Endpoint | Behavior |
+| Phương thức | Endpoint | Hành vi |
 | --- | --- | --- |
-| POST | `/api/users` | Creates `INACTIVE` account and returns safe setup-delivery status. |
-| POST | `/api/users/{userId}/resend-setup` | Rotates setup token for an eligible incomplete account and requests new delivery. |
-| POST | `/api/auth/reset-password` | Existing token shape consumes canonical FE11 `ACCOUNT_SETUP` and activates atomically. |
+| POST | `/api/users` | Tạo tài khoản `INACTIVE` và trả trạng thái gửi thiết lập an toàn. |
+| POST | `/api/users/{userId}/resend-setup` | Xoay mã thông báo thiết lập cho tài khoản chưa hoàn tất đủ điều kiện và yêu cầu gửi mới. |
+| POST | `/api/auth/reset-password` | Hình dạng mã thông báo hiện có tiêu thụ `ACCOUNT_SETUP` FE11 chuẩn và kích hoạt nguyên tử. |
 
-## 7. Expected Implementation Files
+## 7. Tệp triển khai dự kiến
 
 ```text
 backend/src/services/userManagementService.js
@@ -107,203 +117,258 @@ backend/tests/helpers/inMemoryNotificationRepositories.js
 database/Librarymanagement.sql
 ```
 
-## 8. Test-First Order
+## 8. Thứ tự kiểm thử trước
 
-1. Add RED tests for inactive creation, valid bcrypt placeholder, full source rollback, and no credential response.
-2. Add RED FE10 tests for FE11-only `ACCOUNT_SETUP`, template variables, safe persistence, and provider results.
-3. Add RED FE02 tests for atomic setup completion and single-use token behavior.
-4. Add RED resend tests for eligibility, cooldown, token rotation, safe failure, and idempotency.
-5. Implement the smallest changes needed to pass each focused group.
-6. Run affected integration tests, traceability, secret scans, and human review.
+1. Thêm kiểm thử RED cho tạo không hoạt động, placeholder bcrypt hợp lệ, rollback
+   nguồn đầy đủ và không có phản hồi thông tin xác thực.
+2. Thêm kiểm thử RED FE10 cho `ACCOUNT_SETUP` chỉ FE11, biến mẫu, lưu an toàn và
+   kết quả nhà cung cấp.
+3. Thêm kiểm thử RED FE02 cho hoàn tất thiết lập nguyên tử và hành vi mã thông
+   báo dùng một lần.
+4. Thêm kiểm thử RED gửi lại cho điều kiện hợp lệ, cooldown, xoay mã thông báo,
+   lỗi an toàn và tính lũy đẳng.
+5. Triển khai thay đổi nhỏ nhất cần thiết để qua từng nhóm tập trung.
+6. Chạy kiểm thử tích hợp bị ảnh hưởng, truy vết, quét bí mật và review con
+   người.
 
-## 9. Validation Gate
+## 9. Cổng xác thực
 
-- No account is `ACTIVE` before setup completion.
-- No literal placeholder password hash remains.
-- No raw setup token/link appears in DB, audit, logs, HTTP, snapshots, or debug fields.
-- FE10 rejects HTTP/non-FE11 `ACCOUNT_SETUP` requests.
-- Creation and setup completion pass rollback tests.
-- Resend proves cooldown and new token/event/idempotency semantics.
-- FE02 verification/reset OTP behavior from ADR-004 remains unchanged.
-- Nhat completes human review before commit/merge.
+- Không tài khoản nào `ACTIVE` trước khi hoàn tất thiết lập.
+- Không còn hash mật khẩu placeholder theo nghĩa đen.
+- Không mã thông báo/liên kết thiết lập thô nào xuất hiện trong DB, audit, log,
+  HTTP, snapshot hoặc trường debug.
+- FE10 từ chối yêu cầu `ACCOUNT_SETUP` HTTP/không-phải-FE11.
+- Tạo và hoàn tất thiết lập qua kiểm thử rollback.
+- Gửi lại chứng minh ngữ nghĩa cooldown và mã thông báo/sự kiện/idempotency mới.
+- Hành vi OTP xác minh/đặt lại FE02 từ ADR-004 không thay đổi.
+- Nhat hoàn tất review con người trước commit/merge.
 
-## 10. Transactional Role Management Slice
+## 10. Lát cắt quản lý vai trò có giao dịch
 
-### In Scope
+### Trong phạm vi
 
-- Validate positive-integer target and role IDs.
-- Revalidate the acting active Admin under the SQL transaction.
-- Replace all current mappings with exactly one selected role.
-- Protect the last active Admin under `UPDLOCK, HOLDLOCK`.
-- Commit delete/insert and audit together; current-role selection is a no-op.
-- Add route, service, and repository tests.
+- Xác thực ID mục tiêu và vai trò là số nguyên dương.
+- Kiểm tra lại Quản trị hoạt động thực hiện thao tác trong giao dịch SQL.
+- Thay mọi ánh xạ hiện tại bằng đúng một vai trò được chọn.
+- Bảo vệ Quản trị hoạt động cuối dưới `UPDLOCK, HOLDLOCK`.
+- Commit xóa/chèn và audit cùng nhau; chọn vai trò hiện tại là no-op.
+- Thêm kiểm thử route, service và repository.
 
-### Out Of Scope
+### Ngoài phạm vi
 
-- User update/deactivation, librarian fields, safe detail DTO reconciliation, and Admin UI.
-- Role creation/editing, permission editing, and role hierarchy.
+- Cập nhật/vô hiệu hóa người dùng, trường Thủ thư, đối soát DTO chi tiết an toàn
+  và UI Quản trị.
+- Tạo/sửa vai trò, sửa quyền và phân cấp vai trò.
 
-### Validation Gate
+### Cổng xác thực
 
-- Focused RED-GREEN tests prove each repository outcome and API mapping.
-- Full backend tests and `trace:enforce` pass.
-- Remaining FE11 work stays deferred; completed role-slice evidence is recorded separately.
+- Kiểm thử RED-GREEN tập trung chứng minh từng kết quả repository và ánh xạ API.
+- Kiểm thử backend đầy đủ và `trace:enforce` đạt.
+- Công việc FE11 còn lại vẫn hoãn; bằng chứng lát cắt vai trò hoàn tất được ghi
+  riêng.
 
-## 11. Safe User List And Detail Slice
+## 11. Lát cắt danh sách và chi tiết người dùng an toàn
 
-### In Scope
+### Trong phạm vi
 
-- Validate list pagination, status, role, search, and detail user ID.
-- Return only the explicit `UserManagementView` allowlist with `phoneNumber`.
-- Restrict search to email, full name, and user ID with stable ordering.
-- Return detail-only borrowing, unpaid-fine, and open-reservation summaries.
-- Return `404 USER_NOT_FOUND` for a missing detail user.
-- Make the Admin UI fetch and render the real detail response.
-- Add route, service, repository, and frontend RED-GREEN tests.
+- Xác thực phân trang danh sách, trạng thái, vai trò, tìm kiếm và ID người dùng
+  chi tiết.
+- Chỉ trả danh sách cho phép `UserManagementView` rõ ràng với `phoneNumber`.
+- Hạn chế tìm kiếm vào email, họ tên và ID người dùng với thứ tự ổn định.
+- Trả bản tóm tắt chỉ-chi-tiết về lượt mượn, tiền phạt chưa trả và đặt chỗ mở.
+- Trả `404 USER_NOT_FOUND` khi không có người dùng chi tiết.
+- Làm UI Quản trị tìm nạp và render phản hồi chi tiết thực.
+- Thêm kiểm thử RED-GREEN route, service, repository và frontend.
 
-### Out Of Scope
+### Ngoài phạm vi
 
-- Schema changes and librarian `department`/`specialization` persistence.
-- Update/deactivation, account setup, role mutation, audit-log, dashboard, and request-management behavior.
-- Feature-wide traceability-checker policy changes.
+- Thay đổi schema và lưu `department`/`specialization` của Thủ thư.
+- Cập nhật/vô hiệu hóa, thiết lập tài khoản, thay vai trò, nhật ký kiểm toán,
+  dashboard và hành vi quản lý yêu cầu.
+- Thay đổi chính sách trình kiểm tra truy vết toàn tính năng.
 
-### Validation Gate
+### Cổng xác thực
 
-- Invalid supplied list/detail values are rejected instead of clamped.
-- Hostile extra database columns never appear in the safe DTO.
-- List items have no `relatedSummary`; detail has exactly three deterministic numeric summary fields.
-- Focused/full backend and frontend checks plus `trace:enforce` pass.
-- Remaining FE11 work stays deferred and is not reported as complete.
+- Giá trị danh sách/chi tiết được cung cấp không hợp lệ bị từ chối thay vì bị
+  ép vào ngưỡng.
+- Cột cơ sở dữ liệu bổ sung thù địch không bao giờ xuất hiện trong DTO an toàn.
+- Mục danh sách không có `relatedSummary`; chi tiết có chính xác ba trường tóm
+  tắt số xác định.
+- Kiểm tra backend/frontend tập trung/đầy đủ cùng `trace:enforce` đạt.
+- Công việc FE11 còn lại vẫn hoãn và không được báo cáo là hoàn tất.
 
-## 12. Admin Role UI Contract Slice
+## 12. Lát cắt hợp đồng UI vai trò Quản trị
 
-### In Scope
+### Trong phạm vi
 
-- Load `{ roleId, roleName }` from the authenticated FE11 role catalog.
-- Keep one radio selection by role name while mapping the replacement to a positive numeric role ID.
-- Send one canonical `PUT /users/{userId}/role` request.
-- Block invalid catalogs before mutation and reconcile authoritative user state after failure.
-- Add focused frontend RED-GREEN tests and affected regression checks.
+- Tải `{ roleId, roleName }` từ danh mục vai trò FE11 đã xác thực.
+- Giữ một lựa chọn radio theo tên vai trò trong khi ánh xạ thay thế tới ID vai
+  trò số dương.
+- Gửi một yêu cầu `PUT /users/{userId}/role` chuẩn.
+- Chặn danh mục không hợp lệ trước thay đổi và đối soát trạng thái người dùng
+  chuẩn sau lỗi.
+- Thêm kiểm thử RED-GREEN frontend tập trung và các kiểm tra hồi quy bị ảnh
+  hưởng.
 
-### Out Of Scope
+### Ngoài phạm vi
 
-- Role creation/editing and permission editing.
-- Navigation, Permissions, Audit Logs, Request Management, update, deactivation, and all other FE11 debt.
+- Tạo/sửa vai trò và sửa quyền.
+- Điều hướng, Permissions, Audit Logs, Request Management, cập nhật, vô hiệu
+  hóa và mọi nợ FE11 khác.
 
-### Validation Gate
+### Cổng xác thực
 
-- API adapter tests prove no role name enters a mutation request.
-- UI contract tests prove catalog validation, one-request replacement, no-op behavior, and failure reconciliation.
-- Full frontend tests/lint/build, focused backend role regression, traceability, and diff hygiene pass.
-- Human review, PR #30, and post-merge CI `29644292781` passed; remaining FE11 work stays deferred.
+- Kiểm thử adapter API chứng minh không tên vai trò nào đi vào yêu cầu thay đổi.
+- Kiểm thử hợp đồng UI chứng minh kiểm tra danh mục, thay thế một yêu cầu, hành
+  vi no-op và đối soát lỗi.
+- Kiểm thử frontend đầy đủ/lint/build, hồi quy vai trò backend tập trung, truy
+  vết và vệ sinh diff đạt.
+- Review con người, PR #30 và CI hậu merge `29644292781` đã đạt; công việc FE11
+  còn lại vẫn hoãn.
 
 ## 13. Fast-Track Batch 1
 
-Integration State: COMPLETE THROUGH B7
+Trạng thái tích hợp: HOÀN TẤT QUA B7
 
-### Scope And Order
+### Phạm vi và thứ tự
 
-1. `TD-024` / `FE11-AUD01`: canonical Admin Audit Logs read boundary.
-2. `TD-026` / `FE11-ENV01`: restore `{ data, pagination }` and reuse FE12 `/api/reports/users` for counters.
-3. `TD-027` / `FE11-META01`: apply the approved evidence matrix after TD-026 merges.
+1. `TD-024` / `FE11-AUD01`: ranh giới đọc Nhật ký kiểm toán Quản trị chuẩn.
+2. `TD-026` / `FE11-ENV01`: khôi phục `{ data, pagination }` và dùng lại
+   `/api/reports/users` FE12 cho bộ đếm.
+3. `TD-027` / `FE11-META01`: áp dụng ma trận bằng chứng đã phê duyệt sau khi
+   TD-026 merge.
 
-At Batch 1 close, `TD-023` and `TD-025` remained outside that batch. Section 14 later completed `TD-023`; Section 15 now activates `TD-025` and the remaining FE11 finalization scope.
+Khi Batch 1 đóng, `TD-023` và `TD-025` ngoài batch đó. Phần 14 sau đó hoàn tất
+`TD-023`; Phần 15 hiện kích hoạt `TD-025` và phạm vi hoàn tất FE11 còn lại.
 
-### Gates
+### Cổng
 
-- H1 locks Batch 1 and the exact governance activation diff.
-- H2 is required before each generated implementation or SPEC-evidence diff is committed and pushed.
-- H3 is required after checks and before every PR merge.
-- TD-027 analysis may run in parallel, but its `SPEC.md` edit is serialized after TD-026.
+- H1 khóa Batch 1 và diff kích hoạt governance chính xác.
+- H2 bắt buộc trước khi mọi diff triển khai hoặc bằng chứng SPEC được tạo được
+  commit và push.
+- H3 bắt buộc sau kiểm tra và trước mọi merge PR.
+- Phân tích TD-027 có thể chạy song song, nhưng sửa `SPEC.md` được tuần tự hóa
+  sau TD-026.
 
-### Integration Evidence
+### Bằng chứng tích hợp
 
-- `TD-024` / `FE11-AUD01`: PR #33, merge `3c88e432`, post-merge CI `29651173195`.
-- `TD-026` / `FE11-ENV01`: PR #34, merge `411fa25a`, post-merge CI `29652243809`.
-- `TD-027` / `FE11-META01`: PR #35, merge `c286cd9b`, post-merge CI `29652617587`.
-- Batch 1 did not authorize `TD-023` or `TD-025`; Section 14 separately completed `TD-023`, and Section 15 now governs `TD-025` plus the remaining finalization work.
+- `TD-024` / `FE11-AUD01`: PR #33, merge `3c88e432`, CI hậu merge
+  `29651173195`.
+- `TD-026` / `FE11-ENV01`: PR #34, merge `411fa25a`, CI hậu merge
+  `29652243809`.
+- `TD-027` / `FE11-META01`: PR #35, merge `c286cd9b`, CI hậu merge
+  `29652617587`.
+- Batch 1 không cho phép `TD-023` hoặc `TD-025`; Phần 14 hoàn tất riêng
+  `TD-023` và Phần 15 hiện quản trị `TD-025` cùng công việc hoàn tất còn lại.
 
-## 14. Admin Navigation And Permissions Slice
+## 14. Lát cắt điều hướng và quyền Quản trị
 
-Integration State: COMPLETE THROUGH B7
+Trạng thái tích hợp: HOÀN TẤT QUA B7
 
-### In Scope
+### Trong phạm vi
 
-- Align the Admin Console sidebar to the approved eight entries.
-- Add Admin-only `GET /api/admin/permissions` with the canonical 15-row Phase 1 policy.
-- Compose FE11 permission data with independent FE12 `usersByRole` counts in the frontend.
-- Derive module coverage and matrix cells from `allowedRoles`; keep the view read-only.
+- Căn chỉnh sidebar Admin Console thành tám mục đã phê duyệt.
+- Thêm `GET /api/admin/permissions` chỉ Quản trị với chính sách Giai đoạn 1
+  chuẩn 15 hàng.
+- Kết hợp dữ liệu quyền FE11 với số lượng `usersByRole` FE12 độc lập ở
+  frontend.
+- Suy ra bao phủ module và ô ma trận từ `allowedRoles`; giữ chế độ xem chỉ đọc.
 
-### Out Of Scope
+### Ngoài phạm vi
 
-- Permission editing, role hierarchy/CRUD, schema changes, FE04 removal, FE12 production changes, and TD-025.
+- Sửa quyền, phân cấp/CRUD vai trò, thay đổi schema, loại bỏ FE04, thay đổi FE12
+  production và TD-025.
 
-### Validation Gate
+### Cổng xác thực
 
-- Backend policy/service/route tests prove exact DTOs, fresh objects, and Admin-first authorization.
-- Frontend tests prove exact sidebar order, canonical API usage, no hardcoded matrix fallback, FE12 counts, derived coverage, and isolated retries/errors.
-- Full tests, coverage, lint, build, browser E2E, OpenAPI parse, health import, traceability, diff hygiene, scope scan, and secret scan pass.
-- H2 precedes commit/push; H3 precedes merge; TD-023 closes only after post-merge main CI and closeout evidence.
+- Kiểm thử policy/service/route backend chứng minh DTO chính xác, đối tượng mới
+  và phân quyền ưu tiên Quản trị.
+- Kiểm thử frontend chứng minh thứ tự sidebar chính xác, dùng API chuẩn, không
+  fallback ma trận mã hóa cứng, số lượng FE12, bao phủ suy ra và retry/lỗi cô lập.
+- Kiểm thử đầy đủ, coverage, lint, build, E2E trình duyệt, parse OpenAPI, import
+  health, truy vết, vệ sinh diff, quét phạm vi và quét bí mật đạt.
+- H2 trước commit/push; H3 trước merge; TD-023 chỉ đóng sau CI main hậu merge và
+  bằng chứng closeout.
 
-### Integration Evidence
+### Bằng chứng tích hợp
 
-- H2 approved the unchanged implementation diff on 2026-07-19; H3 approved PR #37 for merge on 2026-07-19.
-- PR #37 passed `foundation-checks` in run `29654621448` and merged into `main` as `356130e4905a59d219bae8e9b369f7690348cba2`.
-- Exact post-merge `main` CI run `29655548150` passed all `foundation-checks`.
-- At this bounded slice close, `TD-023` was resolved while `TD-025` and whole FE11 remained deferred; Section 15 now supersedes that deferred state with governance-only activation.
+- H2 phê duyệt diff triển khai không đổi ngày 2026-07-19; H3 phê duyệt PR #37
+  để merge ngày 2026-07-19.
+- PR #37 đã qua `foundation-checks` trong lượt `29654621448` và merge vào
+  `main` là `356130e4905a59d219bae8e9b369f7690348cba2`.
+- CI `main` hậu merge chính xác `29655548150` qua mọi `foundation-checks`.
+- Khi lát cắt hữu hạn này đóng, `TD-023` được giải quyết còn `TD-025` và toàn
+  bộ FE11 vẫn hoãn; Phần 15 hiện thay trạng thái hoãn đó bằng kích hoạt chỉ
+  governance.
 
-## 15. FE11 Finalization Batch
+## 15. Batch hoàn tất FE11
 
-Implementation State: WAVE A AND WAVE B INTEGRATED; HISTORICAL BATCH RECORD
+Trạng thái triển khai: WAVE A VÀ WAVE B ĐÃ TÍCH HỢP; BẢN GHI BATCH LỊCH SỬ
 
-### Approved Sources
+### Nguồn đã phê duyệt
 
 - `docs/superpowers/specs/2026-07-19-fe11-finalization-batch-design.md`
 - `docs/superpowers/plans/2026-07-19-fe11-finalization-batch.md`
 - `.sdd/rfcs/ADR-002-database-design.md`
-- FE02/FE03/FE10/FE11 synchronized contracts and `docs/api/api-contract.md`
+- Hợp đồng đồng bộ FE02/FE03/FE10/FE11 và `docs/api/api-contract.md`
 
-### Delivery Shape
+### Hình dạng bàn giao
 
-1. Governance activation PR: contracts, tasks, validation commands, and debt state only.
-2. Wave A: schema/email synchronization, Librarian fields, transactional create/resend hardening, optimistic/no-op updates, atomic deactivation, FE07 serialization dependency, and Admin access hardening.
-3. Wave B: canonical Admin request list/detail reads, server pagination, FE07-owned terminal actions, DOCX export, Dashboard evidence, and FE11 browser acceptance.
-4. Documentation closeout: exact PR/merge/main-CI evidence and whole-feature B7 state.
+1. PR kích hoạt governance: chỉ hợp đồng, nhiệm vụ, lệnh xác thực và trạng thái
+   nợ.
+2. Wave A: đồng bộ schema/email, trường Thủ thư, củng cố tạo/gửi lại có giao
+   dịch, cập nhật optimistic/no-op, vô hiệu hóa nguyên tử, phụ thuộc tuần tự FE07
+   và củng cố quyền truy cập Quản trị.
+3. Wave B: đọc danh sách/chi tiết yêu cầu Quản trị chuẩn, phân trang máy chủ,
+   thao tác kết thúc do FE07 sở hữu, xuất DOCX, bằng chứng Dashboard và chấp nhận
+   FE11 trên trình duyệt.
+4. Closeout tài liệu: bằng chứng PR/merge/CI main chính xác và trạng thái B7
+   toàn tính năng.
 
-### Core Contracts
+### Hợp đồng cốt lõi
 
-- `Users.Email` and `Notifications.RecipientEmail` are `NVARCHAR(255)`.
-- `UserProfiles.Department` and `UserProfiles.Specialization` are nullable `NVARCHAR(100)` and FE11-admin-managed only.
-- `fullName` remains maximum 100 characters.
-- `UserManagementView.updatedAt` is `COALESCE(Users.UpdatedAt, Users.CreatedAt)` and the same value is compared by update/deactivation.
-- FE11 create and setup resend revalidate the active acting Admin inside their source transactions; duplicate email is transaction-authoritative and safe.
-- `INACTIVE` plus null `DeactivatedAt` is pending activation and returns `409 ACCOUNT_PENDING_ACTIVATION` from deactivation.
-- FE07 remains the sole approve/reject mutation owner; FE11 owns only the Admin request read DTOs and presentation.
-- Admin request queries are `page`, `limit`, `q`, `status`, `from`, and `to`; list responses contain exactly `data` and `pagination`.
+- `Users.Email` và `Notifications.RecipientEmail` là `NVARCHAR(255)`.
+- `UserProfiles.Department` và `UserProfiles.Specialization` là
+  `NVARCHAR(100)` có thể null và chỉ FE11-admin quản lý.
+- `fullName` giữ tối đa 100 ký tự.
+- `UserManagementView.updatedAt` là `COALESCE(Users.UpdatedAt, Users.CreatedAt)`
+  và cùng giá trị được so sánh khi cập nhật/vô hiệu hóa.
+- Tạo FE11 và gửi lại thiết lập kiểm tra lại Quản trị đang hoạt động trong giao
+  dịch nguồn; email trùng do giao dịch quyết định và an toàn.
+- `INACTIVE` cùng `DeactivatedAt` null là đang chờ kích hoạt và trả
+  `409 ACCOUNT_PENDING_ACTIVATION` từ vô hiệu hóa.
+- FE07 vẫn là chủ sở hữu thay đổi duyệt/từ chối duy nhất; FE11 chỉ sở hữu DTO
+  đọc và trình bày yêu cầu Quản trị.
+- Truy vấn yêu cầu Quản trị là `page`, `limit`, `q`, `status`, `from` và `to`;
+  phản hồi danh sách chứa đúng `data` và `pagination`.
 
-### Gates
+### Cổng
 
-- Historical gate: product work was blocked until the governance PR passed checks, received H3, and merged into `main`.
-- Historical gate: Wave A and Wave B generated changes remained uncommitted until their H2 reviews.
-- Historical gate: every PR required H3 after checks and before merge.
-- PR #54 superseded the activation snapshot and transitioned the approved FE11 scope through integration; current evidence is recorded in `.sdd/reviews/final-governance-closeout-validation-2026-07-20.md`.
+- Cổng lịch sử: công việc sản phẩm bị chặn cho đến khi PR governance qua kiểm
+  tra, nhận H3 và merge vào `main`.
+- Cổng lịch sử: thay đổi tạo Wave A và Wave B chưa commit cho đến review H2.
+- Cổng lịch sử: mỗi PR yêu cầu H3 sau kiểm tra và trước merge.
+- PR #54 thay ảnh chụp kích hoạt và chuyển phạm vi FE11 đã phê duyệt qua tích
+  hợp; bằng chứng hiện tại được ghi trong
+  `.sdd/reviews/final-governance-closeout-validation-2026-07-20.md`.
 
-## 16. Final Governance Closeout
+## 16. Closeout governance cuối
 
-Implementation State: COMPLETE - PR #54 INTEGRATED; PR #59 H2/H3-APPROVED AND MERGED AS `eed2688`
+Trạng thái triển khai: HOÀN TẤT - PR #54 ĐÃ TÍCH HỢP; PR #59 ĐƯỢC H2/H3 PHÊ
+DUYỆT VÀ MERGE DƯỚI DẠNG `eed2688`
 
-### Scope
+### Phạm vi
 
-- Restore the FE11 Admin Audit Log `action` and numeric `actorId` controls that
-  feed the already-approved canonical query builder.
-- Add a focused frontend regression mapped to `BR-FE11-018`, `BR-FE11-026`,
-  `FR-FE11-033`, and `AC-FE11-018`.
-- Reconcile current traceability metadata while preserving historical planning
-  snapshots.
-- Change no API, schema, role permission, authorization, pagination, redaction,
-  or backend behavior.
+- Khôi phục điều khiển `action` và `actorId` số của Nhật ký kiểm toán Quản trị
+  FE11, vốn nuôi query builder chuẩn đã phê duyệt.
+- Thêm hồi quy frontend tập trung ánh xạ tới `BR-FE11-018`, `BR-FE11-026`,
+  `FR-FE11-033` và `AC-FE11-018`.
+- Đối soát siêu dữ liệu truy vết hiện tại trong khi giữ các ảnh chụp kế hoạch
+  lịch sử.
+- Không đổi API, schema, quyền vai trò, phân quyền, phân trang, che dữ liệu hay
+  hành vi backend.
 
-### Validation Commands
+### Lệnh xác thực
 
 ```powershell
 npm.cmd run trace:enforce
@@ -318,73 +383,96 @@ npm.cmd run phase3:performance
 npm.cmd run smoke:staging
 ```
 
-### Review Boundary
+### Ranh giới review
 
-- Human H2 approved the published reconciliation and responsive HomePage
-  correction commits `962ceb1` and `daaeea6` with their L1-L4 evidence on
-  2026-07-20.
-- H3 remains mandatory before merge.
-- H3, merge, and exact post-merge `main` CI are tracked by PR #59; `v1.0.2` is
-  already published at `c988af1`. Any future `v1.0.3` must use a later reviewed
-  `main` SHA after its own release gates.
+- H2 con người phê duyệt commit đối soát đã công bố và sửa HomePage đáp ứng
+  `962ceb1` và `daaeea6` với bằng chứng L1-L4 ngày 2026-07-20.
+- H3 vẫn bắt buộc trước merge.
+- H3, merge và CI `main` hậu merge chính xác được theo dõi bởi PR #59; `v1.0.2`
+  đã phát hành tại `c988af1`. Mọi `v1.0.3` tương lai phải dùng SHA `main` đã
+  review muộn hơn sau các cổng phát hành riêng.
 
-## 18. Admin Console Full Frontend Refactor Slice
+## 18. Lát cắt tái cấu trúc frontend toàn bộ Admin Console
 
-Decision: APPROVED BY HUMAN - 2026-07-22.
+Quyết định: ĐƯỢC CON NGƯỜI PHÊ DUYỆT - 2026-07-22.
 
-This Shell-only refactor preserves `/admin/users`, all FE11/FE07/FE12 API and ownership contracts, server authorization, safe DTOs, and database state. It splits the Admin Console into a guarded shell, shared presentation primitives, and independent Dashboard, Library, Circulation, Requests, Users, Permissions, and Audit modules.
+Tái cấu trúc chỉ Shell này giữ `/admin/users`, mọi hợp đồng API và quyền sở hữu
+FE11/FE07/FE12, phân quyền máy chủ, DTO an toàn và trạng thái cơ sở dữ liệu. Nó
+tách Admin Console thành shell được bảo vệ, các primitive trình bày dùng chung,
+và các module Dashboard, Library, Circulation, Requests, Users, Permissions và
+Audit độc lập.
 
-Implementation order: governance -> pure presentation RED/GREEN -> shared shell -> Dashboard -> Users -> Requests -> Permissions -> Audit -> Library/Circulation -> legacy removal -> full validation and Azure Staging acceptance.
+Thứ tự triển khai: governance -> RED/GREEN trình bày thuần -> shell dùng chung
+-> Dashboard -> Users -> Requests -> Permissions -> Audit -> Library/Circulation
+-> loại bỏ legacy -> xác thực đầy đủ và chấp nhận Azure Staging.
 
-## 19. Authenticated Admin UX Correction Slice
+## 19. Lát cắt sửa UX Quản trị đã xác thực
 
-Decision: APPROVED BY HUMAN - 2026-07-22.
+Quyết định: ĐƯỢC CON NGƯỜI PHÊ DUYỆT - 2026-07-22.
 
-This bounded Hybrid correction updates the FE11 sidebar contract from eight to seven visible entries while preserving Manage Roles in User Management and leaving the permission API/policy unchanged. Shell work switches the user directory to its existing card view before its 1040px table overflows, keeps all canonical Audit filters, presents mapped actions accessibly, and moves safe detail metadata behind a per-row disclosure.
+Sửa Hybrid hữu hạn này cập nhật hợp đồng sidebar FE11 từ tám xuống bảy mục hiển
+thị trong khi vẫn giữ Manage Roles ở User Management và không đổi API/policy
+quyền. Công việc Shell chuyển danh mục người dùng sang chế độ xem thẻ hiện có
+trước khi bảng 1040px bị tràn, giữ mọi bộ lọc Audit chuẩn, trình bày thao tác đã
+ánh xạ có thể truy cập và di chuyển siêu dữ liệu chi tiết an toàn sau disclosure
+từng hàng.
 
-Implementation order: spec/design reconciliation -> focused RED tests -> navigation correction -> responsive user breakpoint -> Audit filter/detail correction -> full frontend validation -> responsive browser acceptance -> Azure Staging review.
+Thứ tự triển khai: đối soát spec/design -> kiểm thử RED tập trung -> sửa điều
+hướng -> breakpoint người dùng đáp ứng -> sửa bộ lọc/chi tiết Audit -> xác thực
+frontend đầy đủ -> chấp nhận trình duyệt đáp ứng -> review Azure Staging.
 
-## 20. Admin Console Membership Review Integration
+## 20. Tích hợp rà soát tư cách thành viên Admin Console
 
-Decision: APPROVED BY HUMAN - 2026-07-22.
+Quyết định: ĐƯỢC CON NGƯỜI PHÊ DUYỆT - 2026-07-22.
 
-The later approved integration supersedes only the seven-entry navigation count and FE04-outside-Admin boundary above. FE11 adds the eighth `Duyệt hội viên` shell entry after All Users; FE04 owns the embedded list/review data and mutations. The executable plan is `docs/superpowers/plans/2026-07-22-admin-membership-review-integration.md`; Permissions remains absent and no backend production/API/schema change is allowed.
+Tích hợp được phê duyệt sau thay thế duy nhất số mục điều hướng bảy và ranh giới
+FE04-bên-ngoài-Admin ở trên. FE11 thêm mục shell thứ tám `Duyệt hội viên` sau
+All Users; FE04 sở hữu dữ liệu và thay đổi danh sách/rà soát nhúng. Kế hoạch thực
+thi là
+`docs/superpowers/plans/2026-07-22-admin-membership-review-integration.md`;
+Permissions vẫn vắng mặt và không cho phép thay đổi production backend/API/schema.
 
-## 21. Personal Data Ownership Correction
+## 21. Sửa quyền sở hữu dữ liệu cá nhân
 
-Decision: APPROVED BY USER - 2026-07-22.
+Quyết định: ĐƯỢC NGƯỜI DÙNG PHÊ DUYỆT - 2026-07-22.
 
-Implementation State: PRODUCT AND CONTRACT IMPLEMENTED; LOCAL AUTOMATED VALIDATION COMPLETE; BROWSER/HUMAN ACCEPTANCE PENDING.
+Trạng thái triển khai: SẢN PHẨM VÀ HỢP ĐỒNG ĐÃ TRIỂN KHAI; XÁC THỰC TỰ ĐỘNG CỤC
+BỘ HOÀN TẤT; CHỜ CHẤP NHẬN TRÌNH DUYỆT/CON NGƯỜI.
 
-### Goal And Ownership
+### Mục tiêu và quyền sở hữu
 
-- FE03 remains the sole Phase 1 owner of authenticated self-service changes to `fullName`, `phone`, and `address`.
-- Existing-account email remains read-only in Phase 1; any future change must use an explicitly approved FE02 verification flow.
-- FE11 Admin may view personal fields but must not edit them after account creation.
-- FE11 Admin may update only `department` and `specialization` for a target that currently has the Librarian role.
-- Create-account inputs remain unchanged because Admin must supply initial identity/contact data before the new user can complete setup.
+- FE03 vẫn là chủ sở hữu Giai đoạn 1 duy nhất cho thay đổi tự phục vụ đã xác
+  thực đối với `fullName`, `phone` và `address`.
+- Email tài khoản hiện có vẫn chỉ đọc trong Giai đoạn 1; mọi thay đổi tương lai
+  phải dùng luồng xác minh FE02 được phê duyệt rõ ràng.
+- Quản trị FE11 có thể xem trường cá nhân nhưng không được sửa sau khi tạo tài
+  khoản.
+- Quản trị FE11 chỉ có thể cập nhật `department` và `specialization` cho mục
+  tiêu hiện có vai trò Thủ thư.
+- Đầu vào tạo tài khoản không đổi vì Quản trị phải cung cấp danh tính/thông tin
+  liên hệ ban đầu trước khi người dùng mới có thể hoàn tất thiết lập.
 
-### Files And Responsibilities
+### Tệp và trách nhiệm
 
-| File | Responsibility in this correction |
+| Tệp | Trách nhiệm trong sửa này |
 | --- | --- |
-| `backend/tests/userManagementRoutes.test.js` | Prove the HTTP boundary rejects personal/unknown fields and preserves Admin-first authorization. |
-| `backend/tests/userManagementService.test.js` | Prove only current-Librarian work fields reach the repository and map forbidden attempts to `403 PERSONAL_PROFILE_ADMIN_FORBIDDEN`. |
-| `backend/tests/userRepository.test.js` | Prove allowed work-field updates keep optimistic concurrency/no-op/audit semantics and cannot write personal columns. |
-| `backend/src/validators/userManagementValidators.js` | Replace the broad update allowlist with `expectedUpdatedAt`, `department`, and `specialization`; reject personal/unknown fields deterministically. |
-| `backend/src/services/userManagementService.js` | Enforce target-role ownership and map personal-field attempts without calling the update repository. |
-| `backend/src/repositories/userRepository.js` | Narrow update SQL and audit metadata to Librarian work fields only. |
-| `frontend/test/userManagementApi.test.js` | Prove the Admin adapter sends only the revised work-field request shape. |
-| `frontend/test/userManagementFrontend.test.js` | Prove existing personal values are read-only and only current Librarians expose work-field editing. |
-| `frontend/src/page/admin/users/AdminUsersSection.jsx` | Separate create payloads from existing-Librarian work updates. |
-| `frontend/src/page/admin/users/UserEditorModal.jsx` | Render personal fields read-only in edit mode and expose editable work fields only for current Librarians. |
-| `frontend/src/page/admin/users/userPresentation.js` | Validate creation fields separately from Librarian work-field updates. |
-| `frontend/src/api/userManagementApi.js` | Send the canonical `PUT` body without personal fields. |
-| `backend/src/docs/openapi.yaml`, `docs/api/api-contract.md` | Publish the same narrowed request/error contract after implementation. |
+| `backend/tests/userManagementRoutes.test.js` | Chứng minh ranh giới HTTP từ chối trường cá nhân/không rõ và giữ phân quyền ưu tiên Quản trị. |
+| `backend/tests/userManagementService.test.js` | Chứng minh chỉ trường công việc của Thủ thư hiện tại đến repository và ánh xạ thử cá nhân bị cấm thành `403 PERSONAL_PROFILE_ADMIN_FORBIDDEN`. |
+| `backend/tests/userRepository.test.js` | Chứng minh cập nhật trường công việc được phép giữ ngữ nghĩa optimistic concurrency/no-op/audit và không thể ghi cột cá nhân. |
+| `backend/src/validators/userManagementValidators.js` | Thay allowlist cập nhật rộng bằng `expectedUpdatedAt`, `department` và `specialization`; từ chối trường cá nhân/không rõ một cách xác định. |
+| `backend/src/services/userManagementService.js` | Ép quyền sở hữu vai trò mục tiêu và ánh xạ thử trường cá nhân mà không gọi repository cập nhật. |
+| `backend/src/repositories/userRepository.js` | Thu hẹp SQL cập nhật và siêu dữ liệu audit chỉ còn trường công việc Thủ thư. |
+| `frontend/test/userManagementApi.test.js` | Chứng minh adapter Quản trị chỉ gửi hình dạng yêu cầu trường công việc đã sửa. |
+| `frontend/test/userManagementFrontend.test.js` | Chứng minh giá trị cá nhân hiện có chỉ đọc và chỉ Thủ thư hiện tại hiển thị sửa trường công việc. |
+| `frontend/src/page/admin/users/AdminUsersSection.jsx` | Tách payload tạo khỏi cập nhật công việc Thủ thư hiện có. |
+| `frontend/src/page/admin/users/UserEditorModal.jsx` | Render trường cá nhân chỉ đọc ở chế độ sửa và chỉ hiển thị trường công việc có thể sửa cho Thủ thư hiện tại. |
+| `frontend/src/page/admin/users/userPresentation.js` | Xác thực trường tạo riêng với cập nhật trường công việc Thủ thư. |
+| `frontend/src/api/userManagementApi.js` | Gửi thân `PUT` chuẩn không có trường cá nhân. |
+| `backend/src/docs/openapi.yaml`, `docs/api/api-contract.md` | Công bố cùng hợp đồng yêu cầu/lỗi đã thu hẹp sau triển khai. |
 
-### Canonical API Change
+### Thay đổi API chuẩn
 
-`PUT /api/users/{userId}` accepts exactly:
+`PUT /api/users/{userId}` chấp nhận chính xác:
 
 ```json
 {
@@ -394,89 +482,113 @@ Implementation State: PRODUCT AND CONTRACT IMPLEMENTED; LOCAL AUTOMATED VALIDATI
 }
 ```
 
-Both work fields are optional nullable strings with maximum length 100. The target must currently be a Librarian. Any `fullName`, `phone`, `address`, `email`, or unknown field makes the whole request fail with HTTP `403` and code `PERSONAL_PROFILE_ADMIN_FORBIDDEN`; no field, effective version, or success audit may change.
+Cả hai trường công việc là chuỗi nullable tùy chọn có độ dài tối đa 100. Mục
+tiêu phải hiện có vai trò Thủ thư. Bất kỳ `fullName`, `phone`, `address`,
+`email` hoặc trường không rõ nào đều làm toàn bộ yêu cầu thất bại với HTTP
+`403` và mã `PERSONAL_PROFILE_ADMIN_FORBIDDEN`; không trường, phiên bản hiệu
+dụng hay audit thành công nào được đổi.
 
-### Test-First Implementation Order
+### Thứ tự triển khai kiểm thử trước
 
-1. Add route RED cases for each forbidden personal field, mixed allowed/forbidden payloads, unknown fields, non-Librarian targets, and the allowed Librarian work-only shape. Expected initial result: the current broad validator/service accepts at least the personal-field cases.
-2. Add service/repository RED cases proving forbidden input causes no repository call, work fields are the only update keys, stale/no-op behavior remains unchanged, and audit details contain no personal field.
-3. Narrow validator, service, and repository behavior until the focused backend tests pass.
-4. Add frontend RED cases proving personal controls are read-only in existing-user mode, Member/Admin targets have no work-field Save action, and current Librarians submit only `expectedUpdatedAt`, `department`, and `specialization`.
-5. Split create/edit validation and payload construction, then make the focused frontend tests pass.
-6. Synchronize OpenAPI/shared API documentation and run full backend, frontend, E2E, traceability, security, and diff checks.
+1. Thêm ca RED route cho từng trường cá nhân bị cấm, payload trộn được phép/bị
+   cấm, trường không rõ, mục tiêu không phải Thủ thư và hình dạng chỉ-công-việc
+   Thủ thư được phép. Kết quả ban đầu kỳ vọng: validator/service rộng hiện tại
+   chấp nhận ít nhất các ca trường cá nhân.
+2. Thêm ca RED service/repository chứng minh đầu vào bị cấm không gọi
+   repository, trường công việc là khóa cập nhật duy nhất, hành vi stale/no-op
+   không đổi và chi tiết audit không chứa trường cá nhân.
+3. Thu hẹp hành vi validator, service và repository đến khi kiểm thử backend
+   tập trung đạt.
+4. Thêm ca RED frontend chứng minh điều khiển cá nhân chỉ đọc ở chế độ người
+   dùng hiện có, mục tiêu Member/Admin không có thao tác Lưu trường công việc và
+   Thủ thư hiện tại chỉ gửi `expectedUpdatedAt`, `department` và
+   `specialization`.
+5. Tách xác thực/dựng payload tạo-sửa, sau đó làm kiểm thử frontend tập trung
+   đạt.
+6. Đồng bộ OpenAPI/tài liệu API dùng chung và chạy kiểm tra backend, frontend,
+   E2E, truy vết, bảo mật và diff đầy đủ.
 
-### Completion Gate
+### Cổng hoàn tất
 
-- Every existing-user personal-field attempt is rejected server-side, including direct and mixed HTTP payloads.
-- The Admin UI contains no editable existing-user name, phone, address, or email control.
-- Only current Librarian department/specialization changes can advance `UpdatedAt` or write an update-success audit.
-- FE03 self-service profile behavior and FE02 account setup/authentication regressions remain green.
-- `FE11-PDO02..PDO04` are complete with fresh automated evidence; historical FE11-LIFE03 evidence alone is not accepted.
+- Mọi lần thử trường cá nhân người dùng hiện có bị từ chối phía máy chủ, gồm
+  payload HTTP trực tiếp và trộn.
+- UI Quản trị không chứa điều khiển tên, điện thoại, địa chỉ hoặc email người
+  dùng hiện có có thể sửa.
+- Chỉ thay đổi department/specialization của Thủ thư hiện tại có thể tăng
+  `UpdatedAt` hoặc ghi audit cập nhật thành công.
+- Hành vi hồ sơ tự phục vụ FE03 và hồi quy thiết lập tài khoản/xác thực FE02 vẫn
+  xanh.
+- `FE11-PDO02..PDO04` hoàn tất với bằng chứng tự động mới; chỉ bằng chứng
+  FE11-LIFE03 lịch sử không được chấp nhận.
 
-## 2026-07-25 Managed Profile Editing Revision
+## 2026-07-25 Sửa chỉnh sửa hồ sơ được quản lý
 
-This revision supersedes the work-field-only correction above for current
-behavior while retaining it as historical evidence.
+Bản sửa này thay thế việc sửa chỉ-trường-công-việc ở trên cho hành vi hiện tại
+nhưng giữ nó là bằng chứng lịch sử.
 
-- Expose one Edit action for every managed Member, Librarian, and Admin account.
-- Edit `fullName`, `phone`, and `address`; keep email read-only.
-- Remove department/specialization and the obsolete ownership notice from the Admin UI.
-- Persist through the canonical `Users` and `UserProfiles` records used by FE03.
-- Use the latest timestamp across `Users` and `UserProfiles` as the shared
-  optimistic-concurrency version so a self-service edit makes a stale Admin form fail.
-- Reject email, department, specialization, mixed, and unknown fields atomically
-  with `MANAGED_USER_UPDATE_FORBIDDEN`.
-- Preserve no-op, rollback, authoritative readback, and `USER_UPDATE` audit behavior.
+- Hiển thị một thao tác Sửa cho mọi tài khoản Member, Librarian và Admin được
+  quản lý.
+- Sửa `fullName`, `phone` và `address`; giữ email chỉ đọc.
+- Loại department/specialization và thông báo quyền sở hữu lỗi thời khỏi UI
+  Quản trị.
+- Lưu qua bản ghi `Users` và `UserProfiles` chuẩn do FE03 dùng.
+- Dùng timestamp mới nhất trên `Users` và `UserProfiles` làm phiên bản
+  optimistic-concurrency dùng chung để một lần sửa tự phục vụ làm form Quản trị
+  cũ thất bại.
+- Từ chối email, department, specialization, trường trộn và trường không rõ một
+  cách nguyên tử bằng `MANAGED_USER_UPDATE_FORBIDDEN`.
+- Giữ hành vi no-op, rollback, đọc lại chuẩn và audit `USER_UPDATE`.
 
-Validation order: focused frontend/backend contracts, full backend tests and
-coverage, full frontend tests/lint/build, OpenAPI parsing, traceability, and diff hygiene.
+Thứ tự xác thực: hợp đồng frontend/backend tập trung, kiểm thử backend đầy đủ
+và coverage, kiểm thử frontend đầy đủ/lint/build, parse OpenAPI, truy vết và vệ
+sinh diff.
 
-## 2026-07-27 Admin Request State Revision
+## 2026-07-27 Sửa trạng thái yêu cầu Quản trị
 
-- Keep FE11 as the Admin composition/read owner and FE07 as the only
-  approve/reject business owner.
-- Add current physical copy status to the safe Admin request-detail projection.
-- Reload list/detail after successful or conflicting decisions so Admin never
-  acts on fabricated or stale state.
-- Keep rejection available for a legacy unapprovable pending request and make
-  its required reason/claim-release behavior explicit.
-- Validate focused Admin/FE07/FE06 tests, full regression, lint/build,
-  traceability, and human review.
+- Giữ FE11 là chủ sở hữu kết hợp/đọc Quản trị và FE07 là chủ sở hữu nghiệp vụ
+  duyệt/từ chối duy nhất.
+- Thêm trạng thái bản sao vật lý hiện tại vào phép chiếu chi tiết yêu cầu Quản
+  trị an toàn.
+- Tải lại danh sách/chi tiết sau quyết định thành công hoặc xung đột để Quản trị
+  không bao giờ thao tác trên trạng thái bịa đặt hoặc cũ.
+- Giữ từ chối khả dụng cho yêu cầu đang chờ cũ không thể duyệt và làm rõ hành vi
+  lý do bắt buộc/giải phóng claim của nó.
+- Xác thực kiểm thử Admin/FE07/FE06 tập trung, hồi quy đầy đủ, lint/build, truy
+  vết và review con người.
 
-## 2026-07-27 FE07 Lifecycle Guard Revision
+## 2026-07-27 Sửa bảo vệ vòng đời FE07
 
-- Serialize deactivation and Member-role replacement with FE07's member lock.
-- Reject those lifecycle mutations while pending requests or active loans exist.
-- Project known approval blockers in Admin detail, disable approval only, and
-  preserve FE07 rejection for legacy cleanup.
+- Tuần tự vô hiệu hóa và thay vai trò Member với khóa thành viên của FE07.
+- Từ chối các thay đổi vòng đời đó khi có yêu cầu đang chờ hoặc khoản mượn hoạt
+  động.
+- Chiếu blocker phê duyệt đã biết trong chi tiết Quản trị, chỉ vô hiệu hóa phê
+  duyệt và giữ từ chối FE07 để dọn legacy.
 
-## 2026-07-27 Admin Dashboard Connection Revision
+## 2026-07-27 Sửa kết nối Dashboard Quản trị
 
-1. Add RED repository coverage for active-account counts from the canonical
-   `Users -> UserRoles -> Roles` mapping and separate pending FE04/FE07 counts.
-2. Correct return-today aggregation to include timestamped returns across the
-   complete current calendar day.
-3. Replace static summary tiles with accessible module links.
-4. Carry role/status context into Users, Circulation, and Requests; keep FE04
-   membership review on its canonical pending view.
-5. Run focused backend/frontend tests, full regression, lint/build,
-   traceability, diff hygiene, and human review.
-6. Reconcile FE07 activity charts so historical borrowing requires a committed
-   `BorrowDate`, bind the return-today query to the shared Vietnam business
-   date instead of the SQL Server host date, and preserve the approved
-   five-card/three-chart presentation.
+1. Thêm bao phủ repository RED cho số lượng tài khoản hoạt động từ ánh xạ
+   `Users -> UserRoles -> Roles` chuẩn và số lượng đang chờ FE04/FE07 riêng.
+2. Sửa tổng hợp trả-hôm-nay để gồm lượt trả có timestamp xuyên suốt ngày lịch
+   hiện tại đầy đủ.
+3. Thay ô tóm tắt tĩnh bằng liên kết module có thể truy cập.
+4. Mang ngữ cảnh vai trò/trạng thái vào Users, Circulation và Requests; giữ rà
+   soát tư cách thành viên FE04 trên chế độ xem đang chờ chuẩn.
+5. Chạy kiểm thử backend/frontend tập trung, hồi quy đầy đủ, lint/build, truy
+   vết, vệ sinh diff và review con người.
+6. Đối soát biểu đồ hoạt động FE07 để việc mượn lịch sử yêu cầu `BorrowDate`
+   đã commit, gắn truy vấn trả-hôm-nay vào ngày nghiệp vụ Việt Nam dùng chung
+   thay vì ngày host SQL Server và giữ trình bày năm thẻ/ba biểu đồ đã phê duyệt.
 
-## 2026-07-28 Admin Account-Governance Boundary Revision
+## 2026-07-28 Sửa ranh giới quản trị tài khoản Quản trị
 
-1. Remove the existing-user `Chỉnh sửa` action from desktop rows, mobile cards,
-   and the detail drawer while preserving `Phân quyền` and eligible
-   `Vô hiệu hóa`.
-2. Keep account creation as a separate onboarding flow and FE03 as the owner of
-   authenticated self-service profile correction.
-3. Retire `PUT /api/users/{userId}` and remove its route, controller, validator,
-   service, repository, client adapter, and OpenAPI contract.
-4. Preserve the independent atomic role-replacement and deactivation contracts.
-5. Add regression tests proving the UI has no Edit path and the retired direct
-   profile request returns `404` without reaching a write service.
-6. Run focused FE11 backend/frontend tests, OpenAPI parsing, lint/build, and
-   traceability; complete authenticated browser/human review separately.
+1. Loại thao tác `Chỉnh sửa` người dùng hiện có khỏi hàng desktop, thẻ di động
+   và ngăn kéo chi tiết trong khi giữ `Phân quyền` và `Vô hiệu hóa` đủ điều kiện.
+2. Giữ tạo tài khoản là luồng onboarding riêng và FE03 là chủ sở hữu sửa hồ sơ
+   tự phục vụ đã xác thực.
+3. Ngừng `PUT /api/users/{userId}` và loại route, controller, validator, service,
+   repository, client adapter và hợp đồng OpenAPI của nó.
+4. Giữ hợp đồng thay vai trò nguyên tử và vô hiệu hóa độc lập.
+5. Thêm kiểm thử hồi quy chứng minh UI không có đường Sửa và yêu cầu hồ sơ trực
+   tiếp đã ngừng trả `404` mà không tới service ghi.
+6. Chạy kiểm thử backend/frontend FE11 tập trung, parse OpenAPI, lint/build và
+   truy vết; hoàn tất review trình duyệt/con người đã xác thực riêng.

@@ -1,16 +1,16 @@
-﻿# PLAN.md - FE02 Authentication
+# PLAN.md - Xác thực FE02
 
-Status: RECONCILIATION IN PROGRESS - CONTEXT ALIGNED; HUMAN REVIEW PENDING
-Date: 2026-07-28
-Owner: Dat
+Trạng thái: ĐANG ĐỐI SOÁT - ĐÃ ĐỒNG BỘ CONTEXT; ĐANG CHỜ RÀ SOÁT THỦ CÔNG
+Ngày: 2026-07-28
+Chủ sở hữu: Dat
 
-## 1. Purpose
+## 1. Mục đích
 
-Implement and reconcile FE02 Authentication according to the approved `CONTEXT.md`, `SPEC.md`, ADR-003 Authentication Approach, the revised SQL Server schema, and the Phase 1 API contract.
+Triển khai và đối soát Xác thực FE02 theo `CONTEXT.md`, `SPEC.md`, ADR-003 Phương án xác thực đã được phê duyệt, schema SQL Server đã sửa đổi và hợp đồng API Giai đoạn 1.
 
-FE02 is a Core feature. Implementation must be small, testable, and reviewed before merge.
+FE02 là tính năng Cốt lõi. Phần triển khai phải nhỏ gọn, có thể kiểm thử và được rà soát trước khi merge.
 
-## 2. Source Documents
+## 2. Tài liệu nguồn
 
 - `.sdd/specs/feat-auth/CONTEXT.md`
 - `.sdd/specs/feat-auth/SPEC.md`
@@ -21,85 +21,85 @@ FE02 is a Core feature. Implementation must be small, testable, and reviewed bef
 - `database/Librarymanagement.sql`
 - `.sdd/constraints/safety.md`
 
-## 3. Scope
+## 3. Phạm vi
 
-### In Scope
+### Trong phạm vi
 
-- Register account.
-- Verify email.
-- Resend verification email.
-- Login with JWT access token and refresh token.
-- Refresh access token.
-- Logout and revoke refresh token.
-- Change password through the direct current-password path or FE02-owned OTP-confirmation path.
-- Forgot password.
-- Reset password.
-- Current user/session endpoint.
-- Server-side validation.
-- Password hashing with bcrypt.
-- Hashed token storage through `AuthTokens`.
-- Safe generic error handling.
-- Audit logging for auth events.
-- Backend unit/integration tests for core auth rules.
+- Đăng ký tài khoản.
+- Xác minh email.
+- Gửi lại email xác minh.
+- Đăng nhập bằng JWT access token và refresh token.
+- Làm mới access token.
+- Đăng xuất và thu hồi refresh token.
+- Thay đổi mật khẩu qua đường dẫn dùng mật khẩu hiện tại trực tiếp hoặc đường dẫn xác nhận OTP do FE02 sở hữu.
+- Quên mật khẩu.
+- Đặt lại mật khẩu.
+- Endpoint người dùng/phiên hiện tại.
+- Xác thực dữ liệu phía server.
+- Hash mật khẩu bằng bcrypt.
+- Lưu token đã hash thông qua `AuthTokens`.
+- Xử lý lỗi chung an toàn.
+- Ghi log audit cho các sự kiện xác thực.
+- Kiểm thử unit/integration ở backend cho các quy tắc xác thực cốt lõi.
 
-### Out Of Scope
+### Ngoài phạm vi
 
 - OAuth/OpenID Connect.
-- Real production email provider setup.
+- Thiết lập nhà cung cấp email production thực.
 - MFA/2FA.
-- Social login.
-- Full FE11 admin user management.
-- Unrelated frontend redesign outside the approved Authentication/OTP UX slice.
-- Migrating `CHANGE_PASSWORD_OTP` into FE10 without a separately approved notification type/use case.
+- Đăng nhập qua mạng xã hội.
+- Quản lý người dùng quản trị viên FE11 đầy đủ.
+- Thiết kế lại frontend không liên quan ngoài phạm vi UX Xác thực/OTP đã phê duyệt.
+- Chuyển `CHANGE_PASSWORD_OTP` sang FE10 khi chưa có loại thông báo/use case riêng được phê duyệt.
 
-## 4. Approved Technical Decisions
+## 4. Các quyết định kỹ thuật đã phê duyệt
 
-| Area | Decision |
+| Lĩnh vực | Quyết định |
 | --- | --- |
-| Password hashing | `bcrypt`; cost factor 10 for Phase 1 unless performance review changes it. |
-| Access token | JWT, 15-minute expiry. |
-| Refresh token | Random token, stored as hash in `AuthTokens`, 7-day expiry. |
-| Email verification credential | Primary flow is a random six-digit OTP, stored as a hash in `AuthTokens`, 15-minute expiry; legacy token links remain accepted. |
-| Password reset credential | Primary flow is a random six-digit OTP, stored as a hash in `AuthTokens`, 15-minute expiry; legacy password-reset tokens remain accepted. |
-| Account setup token | FE11 issues/rotates it with an exact 24-hour expiry; FE10 delivers it through the FE11-bound requester; FE02 consumes it and atomically activates the account. |
-| Roles | Flat roles from `Roles`/`UserRoles`. |
-| Verification/reset email delivery | FE02 creates/validates OTPs and calls the FE10 requester bound to `FE02`; FE10 exclusively renders, sends, and records status/attempts. |
-| Change-password OTP delivery | Remains a direct FE02 email flow until a separate FE10 notification type/use case is approved. |
-| Account lockout | Timestamped known-account failures in `LoginFailureAttempts` drive the rolling 15-minute count; `Users.FailedLoginCount` and `Users.LockedUntil` retain current lock state. No IP-wide limiting is claimed. |
+| Hash mật khẩu | `bcrypt`; hệ số chi phí 10 cho Giai đoạn 1, trừ khi rà soát hiệu năng thay đổi giá trị này. |
+| Access token | JWT, hết hạn sau 15 phút. |
+| Refresh token | Token ngẫu nhiên, được lưu dưới dạng hash trong `AuthTokens`, hết hạn sau 7 ngày. |
+| Thông tin xác thực để xác minh email | Luồng chính là OTP ngẫu nhiên gồm sáu chữ số, được lưu dưới dạng hash trong `AuthTokens`, hết hạn sau 15 phút; liên kết token cũ vẫn được chấp nhận. |
+| Thông tin xác thực để đặt lại mật khẩu | Luồng chính là OTP ngẫu nhiên gồm sáu chữ số, được lưu dưới dạng hash trong `AuthTokens`, hết hạn sau 15 phút; token đặt lại mật khẩu cũ vẫn được chấp nhận. |
+| Token thiết lập tài khoản | FE11 cấp/luân chuyển token với thời hạn chính xác 24 giờ; FE10 gửi token thông qua bên yêu cầu gắn với FE11; FE02 tiêu thụ token và kích hoạt tài khoản theo cách nguyên tử. |
+| Vai trò | Vai trò phẳng từ `Roles`/`UserRoles`. |
+| Gửi email xác minh/đặt lại | FE02 tạo/xác thực OTP và gọi bên yêu cầu FE10 gắn với `FE02`; FE10 độc quyền kết xuất, gửi và ghi nhận trạng thái/lần thử. |
+| Gửi OTP thay đổi mật khẩu | Tiếp tục là luồng email trực tiếp của FE02 cho đến khi loại thông báo/use case FE10 riêng được phê duyệt. |
+| Khóa tài khoản | Các lần thất bại của tài khoản đã biết có timestamp trong `LoginFailureAttempts` quyết định số lượng trong cửa sổ trượt 15 phút; `Users.FailedLoginCount` và `Users.LockedUntil` giữ trạng thái khóa hiện tại. Không tuyên bố có giới hạn trên toàn IP. |
 
-## 5. Database Dependencies
+## 5. Phụ thuộc cơ sở dữ liệu
 
-Required tables/fields exist in `database/Librarymanagement.sql` and passed local SQL Server smoke test:
+Các bảng/trường bắt buộc tồn tại trong `database/Librarymanagement.sql` và đã vượt qua kiểm thử nhanh SQL Server cục bộ:
 
 - `Users`: `PasswordHash`, `Status`, `EmailVerifiedAt`, `FailedLoginCount`, `LockedUntil`, `LastLoginAt`.
 - `Roles`, `UserRoles`.
-- `AuthTokens`: `TokenType`, `TokenHash`, `ExpiresAt`, `UsedAt`, `RevokedAt`; staging startup verifies that `CK_AuthTokens_TokenType` permits `CHANGE_PASSWORD_OTP` and applies the reviewed compatibility migration when stale.
-- `LoginFailureAttempts`: timestamped known-account failures for the rolling 15-minute window.
+- `AuthTokens`: `TokenType`, `TokenHash`, `ExpiresAt`, `UsedAt`, `RevokedAt`; quá trình khởi động staging xác minh `CK_AuthTokens_TokenType` cho phép `CHANGE_PASSWORD_OTP` và áp dụng migration tương thích đã rà soát khi dữ liệu cũ.
+- `LoginFailureAttempts`: các lần thất bại của tài khoản đã biết có timestamp phục vụ cửa sổ trượt 15 phút.
 - `AuditLogs`.
-- `NotificationTemplates`, `Notifications`, `NotificationAttempts` are FE10-owned delivery records; FE02 references its persisted `AuthTokens.TokenId` but does not write notification records directly.
+- `NotificationTemplates`, `Notifications`, `NotificationAttempts` là các bản ghi gửi thuộc quyền sở hữu của FE10; FE02 tham chiếu `AuthTokens.TokenId` đã lưu nhưng không ghi trực tiếp bản ghi thông báo.
 
-## 6. API Endpoints
+## 6. Endpoint API
 
-Implement the canonical FE02 endpoints from `SPEC.md` Section 11:
+Triển khai các endpoint FE02 chuẩn trong Mục 11 của `SPEC.md`:
 
-| Method | Endpoint | Purpose |
+| Phương thức | Endpoint | Mục đích |
 | --- | --- | --- |
-| POST | `/api/auth/register` | Register account and create verification OTP. |
-| POST | `/api/auth/verify-email` | Verify email with OTP/email or legacy token. |
-| POST | `/api/auth/resend-verification` | Resend verification OTP safely. |
-| POST | `/api/auth/login` | Return access/refresh tokens for active users or the password-proven pending-verification recovery signal. |
-| POST | `/api/auth/refresh-token` | Exchange a valid refresh token for a new access token without requiring a valid access token. |
-| POST | `/api/auth/logout` | Revoke refresh token. |
-| POST | `/api/auth/change-password` | Change password for authenticated user. |
-| POST | `/api/auth/change-password/request-otp` | Verify current password and issue a purpose-bound `CHANGE_PASSWORD_OTP` directly through FE02. |
-| POST | `/api/auth/change-password/confirm` | Confirm the authenticated user's valid change-password OTP and update the password. |
-| POST | `/api/auth/forgot-password` | Request reset OTP without email enumeration. |
-| POST | `/api/auth/reset-password` | Reset password with valid OTP/email or legacy token. |
-| GET | `/api/auth/me` | Return safe current user context. |
+| POST | `/api/auth/register` | Đăng ký tài khoản và tạo OTP xác minh. |
+| POST | `/api/auth/verify-email` | Xác minh email bằng OTP/email hoặc token cũ. |
+| POST | `/api/auth/resend-verification` | Gửi lại OTP xác minh một cách an toàn. |
+| POST | `/api/auth/login` | Trả về access/refresh token cho người dùng đang hoạt động hoặc tín hiệu khôi phục chờ xác minh sau khi đã chứng minh mật khẩu. |
+| POST | `/api/auth/refresh-token` | Đổi refresh token hợp lệ lấy access token mới mà không yêu cầu access token hợp lệ. |
+| POST | `/api/auth/logout` | Thu hồi refresh token. |
+| POST | `/api/auth/change-password` | Thay đổi mật khẩu cho người dùng đã xác thực. |
+| POST | `/api/auth/change-password/request-otp` | Xác minh mật khẩu hiện tại và cấp trực tiếp `CHANGE_PASSWORD_OTP` gắn với mục đích thông qua FE02. |
+| POST | `/api/auth/change-password/confirm` | Xác nhận OTP thay đổi mật khẩu hợp lệ của người dùng đã xác thực và cập nhật mật khẩu. |
+| POST | `/api/auth/forgot-password` | Yêu cầu OTP đặt lại mà không cho phép dò tìm email. |
+| POST | `/api/auth/reset-password` | Đặt lại mật khẩu bằng OTP/email hợp lệ hoặc token cũ. |
+| GET | `/api/auth/me` | Trả về ngữ cảnh người dùng hiện tại an toàn. |
 
-## 7. Backend File Plan
+## 7. Kế hoạch tệp backend
 
-Expected backend files:
+Các tệp backend dự kiến:
 
 ```text
 backend/src/config/env.js
@@ -120,11 +120,11 @@ backend/src/utils/tokenUtils.js
 backend/src/utils/safeErrors.js
 ```
 
-Do not add new implementation under legacy placeholder paths such as `backend/src/Controller/Authentication` or `backend/src/Service/...`; leave existing placeholders untouched until a separately approved cleanup task, and place all new work in the ADR-001 architecture.
+Không thêm phần triển khai mới vào các đường dẫn placeholder cũ như `backend/src/Controller/Authentication` hoặc `backend/src/Service/...`; giữ nguyên các placeholder hiện có cho đến khi có nhiệm vụ dọn dẹp riêng được phê duyệt và đặt toàn bộ công việc mới trong kiến trúc ADR-001.
 
-## 8. Frontend File Plan
+## 8. Kế hoạch tệp frontend
 
-Expected frontend integration files:
+Các tệp tích hợp frontend dự kiến:
 
 ```text
 frontend/src/api/authApi.js
@@ -134,108 +134,108 @@ frontend/src/page/LoginPage.jsx
 frontend/src/page/VerifyEmailPage.jsx
 ```
 
-Existing login/register/forgot-password pages may be connected after backend endpoints are implemented. UI behavior must not be trusted as security enforcement.
+Các trang đăng nhập/đăng ký/quên mật khẩu hiện có có thể được kết nối sau khi các endpoint backend được triển khai. Không được coi hành vi UI là cơ chế thực thi bảo mật đáng tin cậy.
 
-The approved Authentication/OTP UX hardening is implemented through `docs/superpowers/plans/2026-07-14-auth-otp-ux.md`. It adds presentation validation, two-step registration, six-digit OTP focus and masking, a 60-second resend cooldown, and responsive/accessibility checks without moving security enforcement out of the backend.
+Phần tăng cường UX Xác thực/OTP đã phê duyệt được triển khai theo `docs/superpowers/plans/2026-07-14-auth-otp-ux.md`. Phần này bổ sung xác thực dữ liệu ở lớp trình bày, đăng ký hai bước, focus và che OTP sáu chữ số, thời gian chờ gửi lại 60 giây cùng kiểm tra responsive/khả năng truy cập mà không chuyển cơ chế thực thi bảo mật ra khỏi backend.
 
-## 9. Test Strategy
+## 9. Chiến lược kiểm thử
 
-### Unit Tests
+### Kiểm thử unit
 
-- Password policy validation.
-- Token generation/hash/expiry helpers.
-- Auth service register/login/reset/change password paths using mocked repositories.
-- Safe error behavior for invalid login and forgot password.
+- Xác thực chính sách mật khẩu.
+- Các hàm hỗ trợ tạo/hash/hết hạn token.
+- Các đường dẫn đăng ký/đăng nhập/đặt lại/thay đổi mật khẩu của auth service bằng repository mock.
+- Hành vi lỗi an toàn khi đăng nhập không hợp lệ và quên mật khẩu.
 
-### Integration Tests
+### Kiểm thử integration
 
-- Register -> verify -> login.
-- Login fail for wrong password.
-- Login fail for inactive/unverified account.
-- Refresh token success/failure.
-- Logout invalidates refresh token.
-- Forgot/reset password success.
-- Expired/used reset token fails.
-- Direct and OTP-confirmed change-password success/failure, including expired, used, and wrong-user OTP rejection.
-- Protected `/api/auth/me` requires valid token.
-- Protected authorization uses current server-side `UserRoles`, not client role claims.
-- Protected requests reject a current user whose persisted status is no longer `ACTIVE`, even when the access token and linked session have not expired.
-- FE02 protected frontend requests retry once after 401 and clear invalid session state when refresh recovery fails.
-- State-changing authentication flows prove the required user/token/audit transaction boundary and explicit audit-failure behavior.
-- Exact 30-minute account-lock duration and approved performance targets are measured.
+- Đăng ký -> xác minh -> đăng nhập.
+- Đăng nhập thất bại do sai mật khẩu.
+- Đăng nhập thất bại với tài khoản không hoạt động/chưa xác minh.
+- Làm mới token thành công/thất bại.
+- Đăng xuất làm mất hiệu lực refresh token.
+- Quên/đặt lại mật khẩu thành công.
+- Token đặt lại đã hết hạn/đã dùng phải thất bại.
+- Thay đổi mật khẩu trực tiếp và xác nhận bằng OTP thành công/thất bại, bao gồm việc từ chối OTP hết hạn, đã dùng và sai người dùng.
+- `/api/auth/me` được bảo vệ yêu cầu token hợp lệ.
+- Phân quyền được bảo vệ sử dụng `UserRoles` hiện tại ở server, không dùng khai báo vai trò từ client.
+- Request được bảo vệ phải từ chối người dùng hiện tại có trạng thái đã lưu không còn là `ACTIVE`, ngay cả khi access token và phiên được liên kết chưa hết hạn.
+- Request frontend được bảo vệ của FE02 thử lại một lần sau lỗi 401 và xóa trạng thái phiên không hợp lệ khi khôi phục bằng refresh thất bại.
+- Luồng xác thực làm thay đổi trạng thái chứng minh ranh giới giao dịch người dùng/token/audit bắt buộc và hành vi rõ ràng khi audit thất bại.
+- Đo thời lượng khóa tài khoản chính xác 30 phút và các mục tiêu hiệu năng đã phê duyệt.
 
-## 10. Risks And Mitigations
+## 10. Rủi ro và biện pháp giảm thiểu
 
-| Risk | Mitigation |
+| Rủi ro | Biện pháp giảm thiểu |
 | --- | --- |
-| Token leakage in logs | Store hashes only; never log raw token values. |
-| Email enumeration | Generic forgot-password and resend responses. |
-| Weak password handling | Enforce policy server-side and hash with bcrypt. |
-| SQL injection | Use `mssql` parameterized queries only. |
-| Overly broad CORS | Keep production CORS configurable; do not hardcode permissive production policy. |
-| Frontend-only auth checks | Enforce all protected actions server-side. |
+| Token bị lộ trong log | Chỉ lưu hash; không bao giờ ghi log giá trị token thô. |
+| Dò tìm email | Response chung cho quên mật khẩu và gửi lại. |
+| Xử lý mật khẩu yếu | Thực thi chính sách phía server và hash bằng bcrypt. |
+| SQL injection | Chỉ sử dụng truy vấn có tham số của `mssql`. |
+| CORS quá rộng | Giữ CORS production có thể cấu hình; không hardcode chính sách production cho phép quá rộng. |
+| Chỉ kiểm tra xác thực ở frontend | Thực thi mọi hành động được bảo vệ ở server. |
 
-## 11. Validation Gate
+## 11. Cổng xác thực
 
-Before FE02 is considered complete:
+Trước khi FE02 được xem là hoàn tất:
 
-- All TASKS.md items are complete.
-- Backend tests pass.
-- Frontend build passes if frontend integration is included.
-- No raw passwords/tokens/secrets are committed.
-- API responses match the canonical FE02 contract in `SPEC.md` Section 11.
-- `SPEC.md` traceability matrix AC-FE02-001 to AC-FE02-026 remains satisfied, with every documented conformance gap explicitly closed or approved for deferral.
-- Reviewer signoff completed for security-sensitive auth code.
+- Tất cả hạng mục trong TASKS.md đều hoàn tất.
+- Kiểm thử backend vượt qua.
+- Build frontend vượt qua nếu có tích hợp frontend.
+- Không commit mật khẩu/token/secret thô.
+- Response API khớp với hợp đồng FE02 chuẩn trong Mục 11 của `SPEC.md`.
+- Ma trận truy vết từ AC-FE02-001 đến AC-FE02-026 trong `SPEC.md` vẫn được đáp ứng, với mọi khoảng trống tuân thủ đã ghi nhận được đóng rõ ràng hoặc được phê duyệt để hoãn.
+- Hoàn tất phê duyệt của người rà soát đối với mã xác thực nhạy cảm về bảo mật.
 
-## 12. Authentication/OTP UX B7 Status
+## 12. Trạng thái B7 của UX Xác thực/OTP
 
-The frontend hardening slice `FE02-T024` through `FE02-T028` completed automated validation and Nhat's human review before merge. Merge commit `01c66ef` integrated the App Shell and Authentication/OTP UX into `main`.
+Phần tăng cường frontend từ `FE02-T024` đến `FE02-T028` đã hoàn tất xác thực tự động và rà soát thủ công của Nhat trước khi merge. Merge commit `01c66ef` đã tích hợp App Shell và UX Xác thực/OTP vào `main`.
 
-The first same-commit CI run exposed stale golden-path assumptions. Commit `232ee4c` aligned the E2E password locator, `/home` login destination, and browser clock with the approved UX/runtime contracts. Final `main` commit `6eee459` passed GitHub Actions CI run `29358045198`.
+Lần chạy CI đầu tiên trên cùng commit làm lộ các giả định golden path đã cũ. Commit `232ee4c` đã đồng bộ locator mật khẩu E2E, đích đăng nhập `/home` và đồng hồ trình duyệt với hợp đồng UX/runtime đã phê duyệt. Commit `main` cuối cùng `6eee459` đã vượt qua GitHub Actions CI run `29358045198`.
 
-Detailed evidence is recorded in `.sdd/reviews/library-ux-b7-integration-closeout-2026-07-15.md`. This closes the approved Authentication/OTP UX hardening slice. The separate FE02/FE10 delivery implementation, human acceptance, PR #42-#44 integration, and exact post-merge `main` CI are complete and recorded in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`.
+Bằng chứng chi tiết được ghi tại `.sdd/reviews/library-ux-b7-integration-closeout-2026-07-15.md`. Nội dung này đóng phần tăng cường UX Xác thực/OTP đã phê duyệt. Phần triển khai gửi FE02/FE10 riêng, nghiệm thu thủ công, tích hợp PR #42-#44 và CI chính xác sau merge trên `main` đã hoàn tất và được ghi tại `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`.
 
-## 13. FE02/FE10 OTP Delivery Follow-up
+## 13. Công việc tiếp theo về gửi OTP FE02/FE10
 
-ADR-004 and Nhat's 2026-07-15 approval authorize the following ordered implementation slice:
+ADR-004 và phê duyệt ngày 2026-07-15 của Nhat cho phép phần triển khai theo thứ tự sau:
 
-1. Add failing FE10 boundary tests proving staff HTTP and non-FE02 requesters cannot submit `ACCOUNT_VERIFICATION` or `PASSWORD_RESET`.
-2. Add failing FE10 OTP tests proving the FE02-bound requester accepts `otp`, `expiresInMinutes`, and `AuthToken` source metadata while no OTP crosses persistence/log/audit/response boundaries.
-3. Update FE10 templates/provider wiring and source/type policy with the smallest implementation that passes the focused tests.
-4. Add failing FE02 tests proving verification/reset sends use one FE10 requester call, token-ID idempotency, no direct notification write, and no direct duplicate email.
-5. Migrate only verification/reset delivery in `authService`; retain direct `CHANGE_PASSWORD_OTP` email and legacy token acceptance.
-6. Verify non-blocking FE10 failure, new-token resend semantics, focused FE02/FE10 tests, affected integration tests, traceability, and `git diff --check`.
+1. Thêm kiểm thử FE10 đang thất bại để chứng minh HTTP dành cho nhân viên và bên yêu cầu không phải FE02 không thể gửi `ACCOUNT_VERIFICATION` hoặc `PASSWORD_RESET`.
+2. Thêm kiểm thử OTP FE10 đang thất bại để chứng minh bên yêu cầu gắn với FE02 chấp nhận `otp`, `expiresInMinutes` và metadata nguồn `AuthToken`, đồng thời không có OTP nào vượt qua ranh giới lưu trữ/log/audit/response.
+3. Cập nhật template FE10, kết nối nhà cung cấp và chính sách nguồn/loại bằng phần triển khai nhỏ nhất vượt qua các kiểm thử tập trung.
+4. Thêm kiểm thử FE02 đang thất bại để chứng minh việc gửi xác minh/đặt lại sử dụng một lần gọi bên yêu cầu FE10, tính idempotent theo ID token, không ghi trực tiếp thông báo và không gửi email trực tiếp trùng lặp.
+5. Chỉ chuyển việc gửi xác minh/đặt lại trong `authService`; giữ nguyên email trực tiếp `CHANGE_PASSWORD_OTP` và việc chấp nhận token cũ.
+6. Xác minh lỗi FE10 không chặn luồng, ngữ nghĩa gửi lại bằng token mới, kiểm thử FE02/FE10 tập trung, kiểm thử integration bị ảnh hưởng, khả năng truy vết và `git diff --check`.
 
-## 14. FE02/FE11 Account Setup Follow-up
+## 14. Công việc tiếp theo về thiết lập tài khoản FE02/FE11
 
-1. Add failing tests proving FE02 accepts only valid FE11 `ACCOUNT_SETUP` credentials for inactive admin-created accounts.
-2. Prove setup completion atomically updates password, `EmailVerifiedAt`, lock fields, `Status`, token usage/revocation, and audit.
-3. Prove password-reset credentials cannot activate ordinary inactive accounts.
-4. Preserve the existing `/api/auth/reset-password` compatibility shape while separating reset and setup business branches.
-5. Validate expired, used, revoked, ineligible, and concurrent setup attempts without partial persistence.
+1. Thêm kiểm thử đang thất bại để chứng minh FE02 chỉ chấp nhận thông tin xác thực `ACCOUNT_SETUP` hợp lệ của FE11 cho tài khoản không hoạt động do quản trị viên tạo.
+2. Chứng minh việc hoàn tất thiết lập cập nhật nguyên tử mật khẩu, `EmailVerifiedAt`, các trường khóa, `Status`, việc sử dụng/thu hồi token và audit.
+3. Chứng minh thông tin xác thực đặt lại mật khẩu không thể kích hoạt tài khoản không hoạt động thông thường.
+4. Giữ nguyên cấu trúc tương thích hiện có của `/api/auth/reset-password` trong khi tách các nhánh nghiệp vụ đặt lại và thiết lập.
+5. Xác thực lần thử thiết lập hết hạn, đã dùng, bị thu hồi, không đủ điều kiện và đồng thời mà không lưu dữ liệu dở dang.
 
-## 15. Verification OTP 15-Minute Follow-up
+## 15. Công việc tiếp theo về OTP xác minh 15 phút
 
-1. Add RED registration/resend and environment-configuration tests for an exact 15-minute verification OTP lifetime.
-2. Introduce canonical `EMAIL_VERIFICATION_TTL_MINUTES=15` with temporary legacy-hour fallback.
-3. Keep FE02 credential ownership and FE10 rendering/delivery ownership unchanged.
-4. Validate focused and full backend tests, traceability, secret/leakage checks, and Azure staging email evidence before integration.
+1. Thêm kiểm thử RED cho đăng ký/gửi lại và cấu hình môi trường đối với thời hạn OTP xác minh chính xác 15 phút.
+2. Giới thiệu `EMAIL_VERIFICATION_TTL_MINUTES=15` chuẩn cùng cơ chế fallback tạm thời theo số giờ cũ.
+3. Giữ nguyên quyền sở hữu thông tin xác thực của FE02 và quyền sở hữu việc kết xuất/gửi của FE10.
+4. Xác thực kiểm thử backend tập trung và đầy đủ, khả năng truy vết, kiểm tra secret/rò rỉ và bằng chứng email Azure staging trước khi tích hợp.
 
-## 16. Context Consistency Reconciliation
+## 16. Đối soát tính nhất quán với bối cảnh
 
-The approved implementation baseline remains recorded. Current-role enforcement,
-change-password OTP coverage, current account-state checks, exact rolling-window
-lockout behavior, secure OTP generation, transaction rollback evidence, the
-terminal deactivation guard for atomic email verification, deterministic concurrent
-duplicate registration, and current-state login writes are closed.
-Reconciliation remains open until the FE02-T043 H3 closeout is linked and
-human review of SPEC v0.6.16 is complete. The valid-login and token-validation
-performance targets have repeatable local evidence under FE02-T048.
+Baseline triển khai đã phê duyệt vẫn được ghi nhận. Việc thực thi vai trò hiện tại,
+độ bao phủ OTP thay đổi mật khẩu, kiểm tra trạng thái tài khoản hiện tại, hành vi
+khóa theo cửa sổ trượt chính xác, tạo OTP an toàn, bằng chứng rollback giao dịch,
+chốt chặn hủy kích hoạt ở trạng thái cuối cho việc xác minh email nguyên tử,
+đăng ký trùng lặp đồng thời có tính xác định và thao tác ghi trạng thái hiện tại khi đăng nhập đã được đóng.
+Việc đối soát vẫn đang mở cho đến khi phần chốt H3 FE02-T043 được liên kết và
+hoàn tất rà soát thủ công SPEC v0.6.16. Các mục tiêu hiệu năng về đăng nhập hợp lệ
+và xác thực token có bằng chứng cục bộ có thể lặp lại trong FE02-T048.
 
-## 17. Registration Identity Availability Follow-up
+## 17. Công việc tiếp theo về khả dụng của định danh đăng ký
 
-1. Reuse `POST /api/auth/register`; do not add a separate availability endpoint.
-2. Check normalized username and email before password hashing, account creation, verification-token creation, or OTP delivery.
-3. Preserve database uniqueness as the concurrency authority and map either username or email races to the matching safe `409` conflict.
-4. Keep duplicate feedback on the registration form and proceed to OTP only after successful registration.
-5. Add focused backend and frontend regressions, then run FE02 traceability and frontend lint/build.
+1. Tái sử dụng `POST /api/auth/register`; không thêm endpoint kiểm tra khả dụng riêng.
+2. Kiểm tra username và email đã chuẩn hóa trước khi hash mật khẩu, tạo tài khoản, tạo token xác minh hoặc gửi OTP.
+3. Giữ ràng buộc duy nhất của cơ sở dữ liệu làm nguồn có thẩm quyền cho xử lý đồng thời và ánh xạ tranh chấp username hoặc email sang conflict `409` an toàn tương ứng.
+4. Giữ phản hồi trùng lặp trên biểu mẫu đăng ký và chỉ chuyển sang OTP sau khi đăng ký thành công.
+5. Thêm kiểm thử hồi quy backend và frontend tập trung, sau đó chạy traceability FE02 và lint/build frontend.

@@ -1,134 +1,134 @@
-# PLAN.md - FE03 User Profile
+# PLAN.md - Hồ sơ người dùng FE03
 
-# Version: 0.2.1
+# Phiên bản: 0.2.1
 
-# Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
+# Trạng thái: COMPLETE - ĐÃ GHI NHẬN BẰNG CHỨNG CHỐT GIAI ĐOẠN 2
 
-# Owner: Dat
+# Chủ sở hữu: Dat
 
-# Last Updated: 2026-07-19
+# Cập nhật lần cuối: 2026-07-19
 
 ---
 
-## 1. Implementation Goal
+## 1. Mục tiêu triển khai
 
-Implement the backend API for FE03 User Profile according to `SPEC.md`.
+Triển khai API backend cho Hồ sơ người dùng FE03 theo `SPEC.md`.
 
-The backend shall support:
+Backend phải hỗ trợ:
 
 - `GET /api/profile/me`
 - `PUT /api/profile/me`
 - `POST /api/profile/me/avatar`
-- safe profile response DTOs
-- server-side validation
-- server-side avatar file validation
-- protected-field rejection
-- auto-creation of a missing `UserProfiles` record
-- storing uploaded avatar files under a backend-controlled static uploads directory
-- mandatory safe audit logging for successful profile-field and avatar updates
+- DTO response hồ sơ an toàn
+- xác thực dữ liệu ở server
+- xác thực tệp avatar ở server
+- từ chối trường được bảo vệ
+- tự động tạo bản ghi `UserProfiles` còn thiếu
+- lưu tệp avatar đã tải lên trong thư mục static uploads do backend kiểm soát
+- bắt buộc ghi log audit an toàn cho cập nhật trường hồ sơ và avatar thành công
 
-This plan covers backend work and the minimum frontend wiring needed for users to upload an avatar from their device.
+Kế hoạch này bao phủ công việc backend và phần kết nối frontend tối thiểu cần thiết để người dùng tải avatar từ thiết bị của mình.
 
 ---
 
-## 2. Spec Mapping
+## 2. Ánh xạ đặc tả
 
-| Plan Area | SPEC IDs |
+| Khu vực kế hoạch | ID SPEC |
 | --------- | -------- |
-| Require authenticated user | PRE-FE03-001, BR-FE03-001, FR-FE03-002, NFR-FE03-SEC-001 |
-| Own-profile-only access | PRE-FE03-004, BR-FE03-002, BR-FE03-003, FR-FE03-003 |
-| Safe response DTO | BR-FE03-004, BR-FE03-010, FR-FE03-001, FR-FE03-007, AC-FE03-008 |
-| Update allowed fields | FR-FE03-004, AC-FE03-005 |
-| Reject invalid data | BR-FE03-006, BR-FE03-007, BR-FE03-008, FR-FE03-005, AC-FE03-006 |
-| Reject protected fields | BR-FE03-005, BR-FE03-009, FR-FE03-006, AC-FE03-007 |
-| Missing profile auto-create | PRE-FE03-003, AF-FE03-001, EC-FE03-003, Q-FE03-003 |
-| Audit profile updates | Q-FE03-005 |
-| Avatar upload | PRE-FE03-006, MF-FE03-003, AF-FE03-005, BR-FE03-011, BR-FE03-012, BR-FE03-013, BR-FE03-014, FR-FE03-008, FR-FE03-009, AC-FE03-009, AC-FE03-010, AC-FE03-011 |
+| Yêu cầu người dùng đã xác thực | PRE-FE03-001, BR-FE03-001, FR-FE03-002, NFR-FE03-SEC-001 |
+| Chỉ truy cập hồ sơ của chính mình | PRE-FE03-004, BR-FE03-002, BR-FE03-003, FR-FE03-003 |
+| DTO response an toàn | BR-FE03-004, BR-FE03-010, FR-FE03-001, FR-FE03-007, AC-FE03-008 |
+| Cập nhật trường được phép | FR-FE03-004, AC-FE03-005 |
+| Từ chối dữ liệu không hợp lệ | BR-FE03-006, BR-FE03-007, BR-FE03-008, FR-FE03-005, AC-FE03-006 |
+| Từ chối trường được bảo vệ | BR-FE03-005, BR-FE03-009, FR-FE03-006, AC-FE03-007 |
+| Tự động tạo hồ sơ thiếu | PRE-FE03-003, AF-FE03-001, EC-FE03-003, Q-FE03-003 |
+| Audit cập nhật hồ sơ | Q-FE03-005 |
+| Tải avatar | PRE-FE03-006, MF-FE03-003, AF-FE03-005, BR-FE03-011, BR-FE03-012, BR-FE03-013, BR-FE03-014, FR-FE03-008, FR-FE03-009, AC-FE03-009, AC-FE03-010, AC-FE03-011 |
 
 ---
 
-## 3. Backend Design
+## 3. Thiết kế backend
 
-### 3.1 Route Layer
+### 3.1 Lớp route
 
-Add a profile route module mounted under `/api/profile`.
+Thêm module route hồ sơ được mount dưới `/api/profile`.
 
-Endpoints:
+Endpoint:
 
 - `GET /api/profile/me`
 - `PUT /api/profile/me`
 - `POST /api/profile/me/avatar`
 
-All profile endpoints must use the existing authentication middleware or the smallest compatible middleware available in the backend.
+Mọi endpoint hồ sơ phải sử dụng middleware xác thực hiện có hoặc middleware tương thích nhỏ nhất có sẵn ở backend.
 
-`POST /api/profile/me/avatar` shall accept `multipart/form-data` with one file field named `avatar`.
+`POST /api/profile/me/avatar` phải chấp nhận `multipart/form-data` với một trường tệp tên `avatar`.
 
-### 3.2 Controller Layer
+### 3.2 Lớp controller
 
-The controller shall:
+Controller phải:
 
-- read the current authenticated `userId` from the request identity
-- never trust a `userId` from URL params or request body
-- return safe HTTP status codes and generic server errors
-- return validation errors with field names
+- đọc `userId` đã xác thực hiện tại từ danh tính request
+- không bao giờ tin `userId` từ URL params hoặc request body
+- trả về HTTP status code an toàn và lỗi server chung
+- trả về lỗi xác thực dữ liệu kèm tên trường
 
-Expected status behavior:
+Hành vi status dự kiến:
 
-| Case | Status |
+| Trường hợp | Status |
 | ---- | ------ |
-| Missing/invalid authentication | `401` |
-| Current user not found | `404` |
-| Validation error | `400` |
-| Protected field submitted | `400` |
-| Missing avatar file | `400` |
-| Unsupported avatar file type | `400` |
-| Oversized avatar file | `400` |
-| Successful profile view/update | `200` |
-| Unexpected database/server failure | `500` with safe message |
+| Thiếu/xác thực không hợp lệ | `401` |
+| Không tìm thấy người dùng hiện tại | `404` |
+| Lỗi xác thực dữ liệu | `400` |
+| Gửi trường được bảo vệ | `400` |
+| Thiếu tệp avatar | `400` |
+| Loại tệp avatar không được hỗ trợ | `400` |
+| Tệp avatar vượt kích thước | `400` |
+| Xem/cập nhật hồ sơ thành công | `200` |
+| Lỗi cơ sở dữ liệu/server không mong đợi | `500` cùng thông báo an toàn |
 
-### 3.3 Service Layer
+### 3.3 Lớp service
 
-The service shall:
+Service phải:
 
-- load the current user and profile by authenticated `userId`
-- auto-create a blank `UserProfiles` row when missing
-- build a safe DTO that excludes `PasswordHash`, tokens, role-management internals, and audit internals
-- validate update payload before any database write
-- update `Users.Phone` and `UserProfiles` fields atomically
-- store a validated avatar image with a server-generated filename
-- update `UserProfiles.AvatarUrl` after a successful avatar upload
-- write a safe audit log for every successful profile-field update
+- tải người dùng hiện tại và hồ sơ theo `userId` đã xác thực
+- tự động tạo hàng `UserProfiles` trống khi thiếu
+- xây dựng DTO an toàn loại trừ `PasswordHash`, token, nội bộ quản lý vai trò và nội bộ audit
+- xác thực payload cập nhật trước mọi thao tác ghi cơ sở dữ liệu
+- cập nhật nguyên tử các trường `Users.Phone` và `UserProfiles`
+- lưu ảnh avatar đã xác thực với tên tệp do server tạo
+- cập nhật `UserProfiles.AvatarUrl` sau khi tải avatar thành công
+- ghi audit log an toàn cho mỗi lần cập nhật trường hồ sơ thành công
 
-### 3.4 Model / Repository Layer
+### 3.4 Lớp model/repository
 
-Database access shall use SQL Server parameterized queries through the existing database helper/pool.
+Truy cập cơ sở dữ liệu phải sử dụng truy vấn có tham số SQL Server qua helper/pool cơ sở dữ liệu hiện có.
 
-Required operations:
+Các thao tác bắt buộc:
 
-- find user account summary by `UserId`
-- find profile by `UserId`
-- create blank profile by `UserId`
-- update `Users.Phone`
-- update `UserProfiles.FullName`, `Address`, and `DateOfBirth`; direct `AvatarUrl` mutation is forbidden here
-- update only `UserProfiles.AvatarUrl` after avatar upload
-- create the required safe audit log entry in the source transaction
+- tìm thông tin tóm tắt tài khoản người dùng theo `UserId`
+- tìm hồ sơ theo `UserId`
+- tạo hồ sơ trống theo `UserId`
+- cập nhật `Users.Phone`
+- cập nhật `UserProfiles.FullName`, `Address` và `DateOfBirth`; tại đây cấm thay đổi trực tiếp `AvatarUrl`
+- chỉ cập nhật `UserProfiles.AvatarUrl` sau khi tải avatar
+- tạo bản ghi audit log an toàn bắt buộc trong transaction nguồn
 
-No database schema change is part of this plan.
+Kế hoạch này không bao gồm thay đổi schema cơ sở dữ liệu.
 
 ---
 
-## 4. Validation Rules
+## 4. Quy tắc xác thực dữ liệu
 
-Use server-side validation for every submitted field.
+Sử dụng xác thực ở server cho mọi trường được gửi.
 
-Approved editable fields:
+Các trường được phép chỉnh sửa:
 
 - `fullName`
 - `address`
 - `dateOfBirth`
 - `phone`
 
-Protected fields must be rejected if present:
+Phải từ chối các trường được bảo vệ nếu chúng xuất hiện:
 
 - `password`
 - `passwordHash`
@@ -142,92 +142,92 @@ Protected fields must be rejected if present:
 - `userId`
 - `profileId`
 
-Field rules for Phase 1:
+Quy tắc trường cho Giai đoạn 1:
 
-| Field | Rule |
+| Trường | Quy tắc |
 | ----- | ---- |
-| `fullName` | optional; string; trim; max 100 characters |
-| `address` | optional; string; trim; max 255 characters |
-| `dateOfBirth` | optional; valid ISO date; must not be in the future |
-| `phone` | optional; string; trim; 10-15 digits, optional leading `+` |
+| `fullName` | tùy chọn; chuỗi; trim; tối đa 100 ký tự |
+| `address` | tùy chọn; chuỗi; trim; tối đa 255 ký tự |
+| `dateOfBirth` | tùy chọn; ngày ISO hợp lệ; không được ở tương lai |
+| `phone` | tùy chọn; chuỗi; trim; 10-15 chữ số, có thể có `+` ở đầu |
 
-If validation fails, no profile or phone field may be changed.
+Nếu xác thực dữ liệu thất bại, không trường hồ sơ hoặc số điện thoại nào được thay đổi.
 
-### 4.1 Avatar Upload Rules
+### 4.1 Quy tắc tải avatar
 
-Approved upload field:
+Trường tải lên đã phê duyệt:
 
 - `avatar`
 
-Rules:
+Quy tắc:
 
-| Rule | Decision |
+| Quy tắc | Quyết định |
 | ---- | -------- |
-| Accepted file extensions | JPG, JPEG, PNG, WebP |
-| Maximum file size | 2 MB |
-| Storage path | Backend-controlled static uploads directory, for example `/uploads/avatars` |
-| Stored database value | Generated public URL/path saved in `UserProfiles.AvatarUrl` |
-| Filename policy | Server-generated safe filename; do not trust original filename or local path |
-| Failure behavior | Reject upload and keep the existing `avatarUrl` unchanged |
+| Phần mở rộng tệp được chấp nhận | JPG, JPEG, PNG, WebP |
+| Kích thước tệp tối đa | 2 MB |
+| Đường dẫn lưu trữ | Thư mục static uploads do backend kiểm soát, ví dụ `/uploads/avatars` |
+| Giá trị lưu trong cơ sở dữ liệu | URL/đường dẫn công khai được tạo, lưu trong `UserProfiles.AvatarUrl` |
+| Chính sách tên tệp | Tên tệp an toàn do server tạo; không tin tên tệp gốc hoặc đường dẫn cục bộ |
+| Hành vi thất bại | Từ chối tải lên và giữ nguyên `avatarUrl` hiện có |
 
 ---
 
-## 5. Testing Plan
+## 5. Kế hoạch kiểm thử
 
-Add backend tests with Jest and Supertest where the backend structure supports integration tests.
+Thêm kiểm thử backend bằng Jest và Supertest tại nơi cấu trúc backend hỗ trợ kiểm thử integration.
 
-Required coverage:
+Độ bao phủ bắt buộc:
 
-- authenticated user can view own safe profile
-- guest cannot view profile
-- missing profile is auto-created on first view
-- safe DTO excludes `PasswordHash`
-- authenticated user can update allowed fields
-- invalid fields reject the update
-- protected fields reject the update and do not change protected data
-- update is atomic when validation fails
-- authenticated user can upload a valid avatar image
-- guest cannot upload an avatar
-- unsupported avatar type is rejected
-- oversized avatar file is rejected
-- invalid avatar upload does not change existing `avatarUrl`
+- người dùng đã xác thực có thể xem hồ sơ an toàn của chính mình
+- khách không thể xem hồ sơ
+- hồ sơ thiếu được tự động tạo ở lần xem đầu tiên
+- DTO an toàn loại trừ `PasswordHash`
+- người dùng đã xác thực có thể cập nhật trường được phép
+- trường không hợp lệ bị từ chối cập nhật
+- trường được bảo vệ bị từ chối cập nhật và không thay đổi dữ liệu được bảo vệ
+- cập nhật là nguyên tử khi xác thực dữ liệu thất bại
+- người dùng đã xác thực có thể tải ảnh avatar hợp lệ
+- khách không thể tải avatar
+- loại avatar không được hỗ trợ bị từ chối
+- tệp avatar vượt kích thước bị từ chối
+- việc tải avatar không hợp lệ không thay đổi `avatarUrl` hiện có
 
-Tests should map to `FT12` and `FT13`.
-
----
-
-## 6. Out Of Scope
-
-Do not implement:
-
-- login, logout, registration, password reset, or password change
-- email change or email verification
-- role assignment or account status management
-- admin editing another user's profile
-- membership approval changes
-- borrowing, reservation, or fine history
-- full image editing/cropping
-- database schema migrations unless separately approved
+Kiểm thử phải ánh xạ tới `FT12` và `FT13`.
 
 ---
 
-## 7. Implementation Order
+## 6. Ngoài phạm vi
 
-1. Confirm existing backend auth middleware and database helper.
-2. Add profile DTO and validation helpers.
-3. Add profile model/repository functions.
-4. Add profile service functions.
-5. Add profile controller and routes.
-6. Mount routes in the Express app.
-7. Add backend tests for view/update/profile validation.
-8. Add avatar upload middleware/storage handling.
-9. Add backend tests for avatar upload validation and successful upload.
-10. Add frontend avatar file input and API call.
-11. Run backend and frontend verification.
-12. Update this feature changelog with implementation notes if behavior changes.
+Không triển khai:
+
+- đăng nhập, đăng xuất, đăng ký, đặt lại mật khẩu hoặc thay đổi mật khẩu
+- thay đổi email hoặc xác minh email
+- gán vai trò hoặc quản lý trạng thái tài khoản
+- quản trị viên chỉnh sửa hồ sơ của người dùng khác
+- thay đổi phê duyệt thành viên
+- lịch sử mượn, đặt chỗ hoặc tiền phạt
+- chỉnh sửa/cắt ảnh đầy đủ
+- migration schema cơ sở dữ liệu trừ khi được phê duyệt riêng
 
 ---
 
-## 8. Approval
+## 7. Thứ tự triển khai
 
-This normalized plan is baseline-approved by Nhat on 2026-07-17. T-FE03-016 aligns direct `avatarUrl` rejection, mandatory audit behavior, missing-profile locking, avatar compensation, and safe cleanup logging. Automated, disposable SQL Server, and agent browser validation pass; human B7/L4 review remains pending.
+1. Xác nhận middleware xác thực backend và helper cơ sở dữ liệu hiện có.
+2. Thêm DTO hồ sơ và helper xác thực dữ liệu.
+3. Thêm hàm model/repository hồ sơ.
+4. Thêm hàm service hồ sơ.
+5. Thêm controller và route hồ sơ.
+6. Mount route vào ứng dụng Express.
+7. Thêm kiểm thử backend cho việc xem/cập nhật/xác thực dữ liệu hồ sơ.
+8. Thêm middleware tải tệp/xử lý lưu avatar.
+9. Thêm kiểm thử backend cho xác thực dữ liệu tải avatar và tải thành công.
+10. Thêm input tệp avatar và lời gọi API ở frontend.
+11. Chạy xác thực backend và frontend.
+12. Cập nhật changelog tính năng này với ghi chú triển khai nếu hành vi thay đổi.
+
+---
+
+## 8. Phê duyệt
+
+Kế hoạch chuẩn hóa này được Nhat phê duyệt làm baseline vào 2026-07-17. T-FE03-016 đồng bộ việc từ chối trực tiếp `avatarUrl`, hành vi audit bắt buộc, khóa hồ sơ thiếu, cơ chế bù trừ avatar và ghi log dọn dẹp an toàn. Kiểm thử tự động, SQL Server disposable và xác thực qua trình duyệt của agent đều vượt qua; rà soát thủ công B7/L4 vẫn đang chờ.

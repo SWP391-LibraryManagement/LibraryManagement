@@ -1,144 +1,138 @@
-# CHANGELOG.md - FE04 Membership Management
+# CHANGELOG.md - Quản lý thành viên FE04
 
-## 2026-07-25 - FE04 status recheck
+## 2026-07-25 - Kiểm tra lại trạng thái FE04
 
-- Rechecked the current FE04 source, focused tests, traceability, and extension tasks; no new contract/code drift was found.
-- Kept browser clean-exit, Azure Staging, H2, and human acceptance as open release evidence rather than marking FE04 fully released.
+- Kiểm tra lại nguồn FE04 hiện tại, kiểm thử tập trung, traceability và các nhiệm vụ mở rộng; không tìm thấy sai lệch hợp đồng/mã nguồn mới.
+- Giữ việc thoát sạch trình duyệt, Azure Staging, H2 và nghiệm thu thủ công là bằng chứng phát hành đang mở thay vì đánh dấu FE04 đã phát hành hoàn toàn.
 
-## 2026-07-24 - FE04 contract/code status reconciliation
+## 2026-07-24 - Đối soát trạng thái hợp đồng/mã nguồn FE04
 
-- Synchronized the approved FE04 documents with the current Admin Console implementation: local source coverage is `14/14 FR`, the frontend suite is `219/219`, and the focused FE04 backend suite is `30/30`.
-- Recorded the authenticated FE04 browser scenario and its remaining Windows webServer teardown limitation separately from the still-open Azure Staging, H2, and human acceptance gates.
+- Đồng bộ tài liệu FE04 đã phê duyệt với phần triển khai Admin Console hiện tại: độ bao phủ nguồn cục bộ là `14/14 FR`, suite frontend là `219/219` và suite backend FE04 tập trung là `30/30`.
+- Ghi nhận riêng kịch bản trình duyệt FE04 đã xác thực và giới hạn teardown webServer Windows còn lại, tách khỏi Azure Staging, H2 và các cổng nghiệm thu thủ công vẫn mở.
 
-## 2026-07-23 - Admin Console membership review implemented locally
+## 2026-07-23 - Triển khai cục bộ rà soát thành viên trong Admin Console
 
-- Embedded FE04 review in the FE11 Admin Console while retaining FE04 ownership of list filters, pagination, approve/reject mutations, authorization, audit, notification, and the existing `/membership` workspace.
-- Added pending-only decisions, required 1..500-character rejection reason, authoritative reload after decisions/conflicts, and non-blocking feedback for committed decisions whose FE10 delivery failed.
-- Added responsive table/card source contracts and recorded the full frontend 219/219, lint, and production build passes; authenticated responsive browser, Azure Staging, and human acceptance remain open.
+- Nhúng review FE04 vào Admin Console FE11 trong khi giữ FE04 sở hữu bộ lọc danh sách, phân trang, mutation phê duyệt/từ chối, phân quyền, audit, thông báo và workspace `/membership` hiện có.
+- Thêm quyết định chỉ dành cho đơn đang chờ, lý do từ chối bắt buộc 1..500 ký tự, tải lại có thẩm quyền sau quyết định/conflict và phản hồi không chặn luồng cho quyết định đã commit nhưng FE10 gửi thất bại.
+- Thêm hợp đồng nguồn bảng/thẻ responsive và ghi nhận toàn bộ frontend 219/219, lint, production build vượt qua; trình duyệt responsive đã xác thực, Azure Staging và nghiệm thu thủ công vẫn đang mở.
 
-## 2026-07-22 - Admin Console membership review integration approved
+## 2026-07-22 - Phê duyệt tích hợp rà soát thành viên trong Admin Console
 
-- Approved an embedded Admin-native FE04 review section after User Management while retaining the existing `/membership` Member/Librarian workspace.
-- Preserved the canonical FE04 API, pending-only state transitions, server authorization, atomic audit behavior, and non-blocking FE10 result delivery.
-- Added `FR-FE04-014`, `AC-FE04-013`, and responsive/notification presentation requirements; implementation and validation have not started.
+- Phê duyệt một phần review FE04 gốc Admin được nhúng sau User Management trong khi vẫn giữ workspace Thành viên/Thủ thư `/membership` hiện có.
+- Giữ API FE04 chuẩn, chuyển đổi trạng thái chỉ khi đang chờ, phân quyền ở server, hành vi audit nguyên tử và gửi kết quả FE10 không chặn luồng.
+- Thêm `FR-FE04-014`, `AC-FE04-013` cùng yêu cầu trình bày responsive/thông báo; việc triển khai và xác thực chưa bắt đầu.
 
-## 2026-07-22 - Require complete profile before application
+## 2026-07-22 - Yêu cầu hồ sơ đầy đủ trước khi nộp đơn
 
-- Required non-empty full name, phone, date of birth, and address before creating a membership application; avatar remains optional.
-- Added server-side enforcement plus member-facing missing-field guidance and a link to `/profile`.
+- Yêu cầu họ tên, số điện thoại, ngày sinh và địa chỉ không trống trước khi tạo đơn thành viên; avatar vẫn tùy chọn.
+- Thêm thực thi ở server cùng hướng dẫn trường thiếu cho thành viên và liên kết đến `/profile`.
 
-## 2026-07-21 - Connect approval to borrowing allowance
+## 2026-07-21 - Kết nối phê duyệt với hạn mức mượn
 
-- Kept borrowing available to active `MEMBER` accounts without FE04 approval at a 3-copy daily limit.
-- Defined canonical `APPROVED` membership as the entitlement for a 5-copy daily limit consumed by FE07.
-- Updated the member-facing status and application benefits to show the current 3-or-5-copy daily allowance explicitly.
+- Giữ việc mượn khả dụng cho tài khoản `MEMBER` đang hoạt động không có phê duyệt FE04 với giới hạn 3 bản sao mỗi ngày.
+- Xác định thành viên `APPROVED` chuẩn là quyền hưởng hạn mức 5 bản sao mỗi ngày mà FE07 sử dụng.
+- Cập nhật trạng thái và lợi ích đơn hướng thành viên để hiển thị rõ hạn mức 3 hoặc 5 bản sao mỗi ngày hiện tại.
 
-## 2026-07-21 - Decouple membership applications from circulation authorization
+## 2026-07-21 - Tách đơn thành viên khỏi phân quyền lưu thông
 
-- Made FE04 application status independent from FE07 borrowing and FE08 reservation eligibility.
-- Active accounts with the `MEMBER` role can use circulation workflows without FE04 approval.
+- Làm cho trạng thái đơn FE04 độc lập với điều kiện mượn FE07 và đặt chỗ FE08.
+- Tài khoản đang hoạt động có vai trò `MEMBER` có thể sử dụng quy trình lưu thông không cần phê duyệt FE04.
 
-## 2026-07-20 - Vietnamese UI localization and typography
+## 2026-07-20 - Bản địa hóa UI tiếng Việt và typography
 
-- Localized frontend-generated labels, states, accessibility names, and safe error feedback for this feature.
-- Preserved API contracts, raw enum values, permissions, business rules, and user-owned catalog/profile data.
-- Applied the shared `Be Vietnam Pro` body and `Noto Serif` heading typography contract with Unicode-capable fallbacks.
+- Bản địa hóa nhãn, trạng thái, tên hỗ trợ khả năng truy cập và phản hồi lỗi an toàn do frontend tạo cho tính năng này.
+- Giữ hợp đồng API, giá trị enum thô, quyền, quy tắc nghiệp vụ và dữ liệu catalog/hồ sơ thuộc người dùng.
+- Áp dụng hợp đồng typography dùng chung với `Be Vietnam Pro` cho phần thân và `Noto Serif` cho heading cùng font fallback hỗ trợ Unicode.
 
-## 2026-07-19 - Phase 2 Exit Closeout
+## 2026-07-19 - Chốt thoát Giai đoạn 2
 
-- feat-membership-management is accepted within the complete Phase 2 FE01-FE12 reconciliation recorded by PR #40/#41; validation and residual boundaries are consolidated in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`.
-- Deferred and future-scope limitations remain explicit and are not widened by this closeout.
+- feat-membership-management được chấp nhận trong đợt đối soát đầy đủ FE01-FE12 của Giai đoạn 2 ghi nhận bởi PR #40/#41; kết quả xác thực và ranh giới còn lại được hợp nhất tại `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`.
+- Các giới hạn hoãn lại và thuộc phạm vi tương lai vẫn được nêu rõ, không bị mở rộng bởi lần chốt này.
 
-## 2026-07-19 - Canonical Membership Reconciliation
+## 2026-07-19 - Đối soát thành viên chuẩn
 
-- Added the pending-only filtered unique index, model metadata, ADR decision, and idempotent FE04
-  migration while preserving approved/rejected application history.
-- Made apply/review/member/audit mutations atomic, serialized in-memory races, locked SQL reviews,
-  and returned the canonical applicant-safe status envelope.
-- Added exact post-commit `MEMBERSHIP_RESULT` requester behavior with safe non-blocking delivery
-  status and no provider-error exposure.
-- Reconciled the membership UI with canonical server fields, truthful error states, server-side
-  search, refresh-after-mutation behavior, and 500-character rejection limits.
-- Recorded fresh non-SQL evidence: backend 619/619, frontend 122/122, coverage thresholds, lint,
-  build, import, FE04 trace 12/12, and diff hygiene pass.
-- Applied the FE04 migration twice on a disposable SQL Server and passed all 10/10 FE04 SQL cases;
-  cleanup is recorded in `.sdd/reviews/full-reconciliation-live-sql-validation-2026-07-19.md`.
-- Browser/cross-feature human acceptance remains pending.
+- Thêm unique index chỉ dành cho đơn đang chờ, metadata model, quyết định ADR và migration FE04 idempotent trong khi giữ lịch sử đơn đã phê duyệt/bị từ chối.
+- Làm cho mutation nộp đơn/review/thành viên/audit nguyên tử, tuần tự hóa tranh chấp in-memory, khóa review SQL và trả về envelope trạng thái an toàn cho người nộp đơn chuẩn.
+- Thêm hành vi bên yêu cầu `MEMBERSHIP_RESULT` sau commit chính xác cùng trạng thái gửi an toàn không chặn luồng và không làm lộ lỗi provider.
+- Đối soát UI thành viên với trường server chuẩn, trạng thái lỗi đúng sự thật, tìm kiếm phía server, hành vi làm mới sau mutation và giới hạn từ chối 500 ký tự.
+- Ghi nhận bằng chứng không-SQL mới: backend 619/619, frontend 122/122, ngưỡng coverage, lint, build, import, trace FE04 12/12 và vệ sinh diff đều vượt qua.
+- Áp dụng migration FE04 hai lần trên SQL Server disposable và vượt qua tất cả 10/10 trường hợp SQL FE04; dọn dẹp được ghi tại `.sdd/reviews/full-reconciliation-live-sql-validation-2026-07-19.md`.
+- Nghiệm thu thủ công ở trình duyệt/liên tính năng vẫn đang chờ.
 
-## 2026-07-18 - Member And Librarian UI Integration
+## 2026-07-18 - Tích hợp UI Thành viên và Thủ thư
 
-- Exposed the existing FE04 review workspace in Librarian navigation while preserving the Admin Console review integration.
-- Removed fabricated membership applications on API failure and displayed the canonical FE04 error state instead.
-- Aligned the member application UI with the approved empty-body contract and refreshed the responsive member layout.
+- Hiển thị workspace review FE04 hiện có trong điều hướng Thủ thư, đồng thời giữ tích hợp review Admin Console.
+- Loại đơn thành viên bịa đặt khi API thất bại và hiển thị trạng thái lỗi FE04 chuẩn thay vào đó.
+- Đồng bộ UI nộp đơn thành viên với hợp đồng body trống đã phê duyệt và làm mới layout Thành viên responsive.
 
-## 2026-07-18 - Admin Review List Alignment
+## 2026-07-18 - Đồng bộ danh sách review Admin
 
-- Added database-backed search by application ID, applicant name, username, or email.
-- Added canonical `total` and `totalPages` metadata to the protected review-list response.
-- Aligned the admin refresh, loading, filter, pagination, and Vietnamese review copy with the FE04 workflow.
+- Thêm tìm kiếm dựa trên cơ sở dữ liệu theo ID đơn, tên người nộp đơn, username hoặc email.
+- Thêm metadata `total` và `totalPages` chuẩn vào response danh sách review được bảo vệ.
+- Đồng bộ refresh, trạng thái tải, bộ lọc, phân trang và nội dung review tiếng Việt của Admin với quy trình FE04.
 
-## 2026-07-17 - Phase 1 Baseline Approved
+## 2026-07-17 - Phê duyệt baseline Giai đoạn 1
 
-- Nhật approved the normalized FE04 membership lifecycle, canonical member projection, approval timestamps, and FE10 boundary as the Phase 1 baseline; implementation remains pending.
+- Nhật phê duyệt vòng đời thành viên FE04 đã chuẩn hóa, projection thành viên chuẩn, timestamp phê duyệt và ranh giới FE10 làm baseline Giai đoạn 1; công việc tiếp theo về triển khai vẫn đang chờ.
 
-## 2026-07-17 - Approval Timestamp Traceability
+## 2026-07-17 - Khả năng truy vết timestamp phê duyệt
 
-- Required matching server timestamps for `MembershipApplications.ApprovedAt` and `Members.ApprovedAt` on approval.
-- Required `Members.ApprovedAt = null` on rejection and expanded the related trace/test intent.
+- Yêu cầu timestamp server khớp nhau cho `MembershipApplications.ApprovedAt` và `Members.ApprovedAt` khi phê duyệt.
+- Yêu cầu `Members.ApprovedAt = null` khi từ chối và mở rộng mục tiêu trace/kiểm thử liên quan.
 
-## 2026-07-17 - Canonical Approval Timestamp And Notification Contract
+## 2026-07-17 - Hợp đồng timestamp phê duyệt và thông báo chuẩn
 
-- Distinguished `MembershipApplications.ApprovedAt` from canonical `Members.ApprovedAt`.
-- Standardized FE04 notification requests as `GENERAL_SYSTEM -> MEMBERSHIP_RESULT` and made delivery requests mandatory but non-blocking.
+- Phân biệt `MembershipApplications.ApprovedAt` với `Members.ApprovedAt` chuẩn.
+- Chuẩn hóa request thông báo FE04 thành `GENERAL_SYSTEM -> MEMBERSHIP_RESULT` và bắt buộc request gửi nhưng không chặn luồng.
 
-## 2026-07-17 - FE04/FE10 Requester Boundary Revision
+## 2026-07-17 - Sửa đổi ranh giới bên yêu cầu FE04/FE10
 
-- Bumped `SPEC.md` to v0.2.1 and aligned `TASKS.md` to `READY FOR REVIEW`.
-- Confirmed that FE04 owns `MEMBERSHIP_RESULT` and must use a construction-bound FE04 requester after the membership decision commits.
-- Updated FE10's internal source allowlist and traceability contract to include FE04 without changing HTTP permissions.
+- Tăng `SPEC.md` lên v0.2.1 và đồng bộ `TASKS.md` thành `READY FOR REVIEW`.
+- Xác nhận FE04 sở hữu `MEMBERSHIP_RESULT` và phải dùng bên yêu cầu FE04 gắn với cấu tạo sau khi quyết định thành viên commit.
+- Cập nhật allowlist nguồn nội bộ và hợp đồng traceability của FE10 để bao gồm FE04 mà không thay đổi quyền HTTP.
 
-## 2026-07-16 - Planning Human Review Approval
+## 2026-07-16 - Phê duyệt rà soát thủ công về lập kế hoạch
 
-- Nhat approved the FE04 implementation plan and ordered task decomposition.
-- Marked `PLAN.md` and `TASKS.md` as `APPROVED`; implementation tasks remain unchecked and have not started.
+- Nhat phê duyệt kế hoạch triển khai FE04 và phân rã nhiệm vụ theo thứ tự.
+- Đánh dấu `PLAN.md` và `TASKS.md` là `APPROVED`; nhiệm vụ triển khai vẫn chưa đánh dấu và chưa bắt đầu.
 
-## 2026-07-16 - Implementation Planning Decomposition
+## 2026-07-16 - Phân rã lập kế hoạch triển khai
 
-- Replaced placeholder `PLAN.md` and `TASKS.md` with a `READY FOR REVIEW` prototype-reconciliation plan for approved SPEC v0.2.0.
-- Added ordered RED/GREEN tasks for canonical `Members` eligibility, immutable application history, SQL concurrency, atomic audit writes, FE10 `MEMBERSHIP_RESULT`, and server-backed frontend states.
-- Mapped all 41 BR/FR/AC requirements to concrete implementation tasks, files, dependencies, commands, and human review gates.
+- Thay `PLAN.md` và `TASKS.md` placeholder bằng kế hoạch đối soát prototype `READY FOR REVIEW` cho SPEC v0.2.0 đã phê duyệt.
+- Thêm nhiệm vụ RED/GREEN theo thứ tự cho điều kiện `Members` chuẩn, lịch sử đơn bất biến, đồng thời SQL, ghi audit nguyên tử, `MEMBERSHIP_RESULT` FE10 và trạng thái frontend dựa trên server.
+- Ánh xạ toàn bộ 41 yêu cầu BR/FR/AC tới nhiệm vụ triển khai, tệp, phụ thuộc, lệnh và cổng rà soát thủ công cụ thể.
 
-## 2026-07-16 - Human Review Approval
+## 2026-07-16 - Phê duyệt rà soát thủ công
 
-- Nhat confirmed human review of revision v0.2.0.
-- Marked `SPEC.md` and `CONTEXT.md` as `APPROVED` and completed the revision review gate.
+- Nhat xác nhận rà soát thủ công bản sửa đổi v0.2.0.
+- Đánh dấu `SPEC.md` và `CONTEXT.md` là `APPROVED` và hoàn tất cổng rà soát bản sửa đổi.
 
-## 2026-07-15 - Canonical Membership Contract (v0.2.0)
+## 2026-07-15 - Hợp đồng thành viên chuẩn (v0.2.0)
 
-- Made `Members.Status` the canonical eligibility source for FE07/FE08 while preserving `MembershipApplications` as immutable history.
-- Defined atomic application/member/audit updates, deterministic latest-application selection, and concurrency rules for one pending application.
-- Made rejection reason and audit metadata mandatory, removed `EXPIRED` from Phase 1, and specified rejected-user re-application.
-- Added non-blocking FE10 `MEMBERSHIP_RESULT` delivery after review decisions commit.
-- Defined the non-persisted `membershipStatusView = NONE` response for users who have not applied and aligned optional pre-application `Members` rows.
-- Expanded BR/FR/AC traceability with concrete planned test intents and removed the remaining `TBD` mapping.
+- Đặt `Members.Status` làm nguồn điều kiện chuẩn cho FE07/FE08 trong khi giữ `MembershipApplications` là lịch sử bất biến.
+- Xác định cập nhật application/member/audit nguyên tử, chọn đơn gần nhất có tính xác định và quy tắc đồng thời cho một đơn đang chờ.
+- Làm cho lý do từ chối và metadata audit bắt buộc, loại `EXPIRED` khỏi Giai đoạn 1 và đặc tả việc người dùng bị từ chối nộp lại đơn.
+- Thêm việc gửi `MEMBERSHIP_RESULT` FE10 không chặn luồng sau khi quyết định review commit.
+- Xác định response `membershipStatusView = NONE` không được lưu cho người dùng chưa nộp đơn và đồng bộ các hàng `Members` tùy chọn trước khi nộp đơn.
+- Mở rộng traceability BR/FR/AC với mục đích kiểm thử dự kiến cụ thể và loại ánh xạ `TBD` còn lại.
 
 ## 2026-06-25
 
-- Completed Traceability Matrix to cover all BR/FR/AC IDs.
+- Hoàn tất Ma trận traceability để bao phủ mọi ID BR/FR/AC.
 
 ## 2026-06-10
 
-- Created FE04 Membership Management feature specification structure.
-- Established specification files: CONTEXT.md, SPEC.md, PLAN.md, TASKS.md, and CHANGELOG.md.
-- Aligned owner and assignment scope with the latest assignment sheet: UC13-UC16 and FT14-FT17 owned by Dat.
-- Defined FE04 boundary against FE02 Authentication, FE03 User Profile, FE07 Borrowing, FE08 Reservation, and FE11 User & Role Management.
-- Clarified API contract policy so REST endpoints may stay in SPEC.md unless the team reintroduces a shared API contract file.
+- Tạo cấu trúc đặc tả tính năng Quản lý thành viên FE04.
+- Thiết lập các tệp đặc tả: CONTEXT.md, SPEC.md, PLAN.md, TASKS.md và CHANGELOG.md.
+- Đồng bộ chủ sở hữu và phạm vi phân công với bảng phân công mới nhất: UC13-UC16 và FT14-FT17 do Dat sở hữu.
+- Xác định ranh giới FE04 với Xác thực FE02, Hồ sơ người dùng FE03, Mượn FE07, Đặt chỗ FE08 và Quản lý người dùng và vai trò FE11.
+- Làm rõ chính sách hợp đồng API để REST endpoint có thể ở trong SPEC.md trừ khi nhóm giới thiệu lại tệp hợp đồng API dùng chung.
 
-## 2026-06-10 - Phase 1 Review Decisions Approved
+## 2026-06-10 - Phê duyệt quyết định rà soát Giai đoạn 1
 
-- Approved open-question decisions from `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`.
-- Updated `SPEC.md` decision status from draft/proposed/open to approved where applicable.
-- Preserved Phase 1 scope controls and deferred future-work items explicitly.
+- Phê duyệt quyết định câu hỏi mở từ `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`.
+- Cập nhật trạng thái quyết định `SPEC.md` từ draft/proposed/open thành approved khi phù hợp.
+- Giữ rõ các biện pháp kiểm soát phạm vi Giai đoạn 1 và hạng mục công việc tương lai được hoãn.
 ## 2026-07-22
 
-- Suppressed member-only navigation for staff actors and made rejection feedback neutral.
+- Ẩn điều hướng chỉ dành cho Thành viên khỏi tác nhân nhân viên và làm phản hồi từ chối trung lập.

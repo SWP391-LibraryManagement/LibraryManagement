@@ -1,152 +1,152 @@
-# CONTEXT.md - FE06 Inventory / Book Copy Management
+# CONTEXT.md - FE06 Quản lý tồn kho / bản sao sách
 
-# Version: 0.2.1
+# Phiên bản: 0.2.1
 
-# Status: APPROVED - BASELINE 2026-07-17
+# Trạng thái: ĐÃ PHÊ DUYỆT - MỐC CƠ SỞ 2026-07-17
 
-# Owner: Dat
+# Chủ sở hữu: Dat
 
-# Last Updated: 2026-07-19
+# Cập nhật lần cuối: 2026-07-19
 
-# Feature folder: `.sdd/specs/feat-inventory-book-copy/`
-
----
-
-## 1. Feature Purpose
-
-Inventory / Book Copy Management exists to track the physical copies of each book and their availability for borrowing and reservation.
-
-This feature must keep three levels separate:
-
-- FE05 owns book-level catalog metadata such as title, ISBN, author, category, publisher, and description.
-- FE06 owns copy-level inventory data such as barcode, location, physical status, and availability.
-- FE07/FE08 consume and update copy status through borrowing and reservation workflows.
-
-FE06 is a Full Spec feature because wrong copy status can directly break borrowing, reservation, fines, and reporting.
+# Thư mục tính năng: `.sdd/specs/feat-inventory-book-copy/`
 
 ---
 
-## 2. Real-World Workflow
+## 1. Mục đích tính năng
 
-The typical inventory workflow:
+Quản lý tồn kho / bản sao sách dùng để theo dõi các bản sao vật lý của từng sách và khả năng sẵn sàng cho việc mượn và đặt trước.
 
-1. A librarian views inventory for a book or the whole library.
-2. The system shows physical copies, barcodes, locations, and statuses.
-3. A librarian checks the status of one copy.
-4. A librarian updates copy status when the copy changes state outside normal borrow/return flow.
-5. A librarian/admin adds, updates, or deactivates physical copies.
-6. FE07 and FE08 use the copy status to decide whether the copy can be borrowed or reserved.
+Tính năng này phải giữ tách biệt ba cấp độ:
 
----
+- FE05 sở hữu siêu dữ liệu danh mục ở cấp sách như tiêu đề, ISBN, tác giả, danh mục, nhà xuất bản và mô tả.
+- FE06 sở hữu dữ liệu tồn kho ở cấp bản sao như mã vạch, vị trí, trạng thái vật lý và tính khả dụng.
+- FE07/FE08 sử dụng và cập nhật trạng thái bản sao thông qua quy trình mượn và đặt trước.
 
-## 3. Feature Boundary
-
-FE06 includes:
-
-- View inventory.
-- Check book copy status.
-- Update book copy availability/status.
-- Manage physical book copies.
-- Track barcode and shelf/location for each copy.
-
-FE06 does not include:
-
-- Creating or editing book metadata. That belongs to FE05.
-- Borrow request approval or return processing. That belongs to FE07.
-- Reservation queue processing. That belongs to FE08.
-- Fine calculation for damaged/lost/overdue copies. That belongs to FE09.
-- Public catalog browsing. That belongs to FE01.
+FE06 là tính năng Đặc tả đầy đủ vì trạng thái bản sao sai có thể trực tiếp làm hỏng việc mượn, đặt trước, phạt và báo cáo.
 
 ---
 
-## 4. Current Data Model Notes
+## 2. Quy trình thực tế
 
-The current SQL script includes:
+Quy trình tồn kho điển hình:
+
+1. Thủ thư xem tồn kho của một sách hoặc toàn bộ thư viện.
+2. Hệ thống hiển thị các bản sao vật lý, mã vạch, vị trí và trạng thái.
+3. Thủ thư kiểm tra trạng thái của một bản sao.
+4. Thủ thư cập nhật trạng thái bản sao khi bản sao đổi trạng thái ngoài luồng mượn/trả thông thường.
+5. Thủ thư/quản trị viên thêm, cập nhật hoặc ngừng kích hoạt các bản sao vật lý.
+6. FE07 và FE08 dùng trạng thái bản sao để quyết định bản sao có thể được mượn hoặc đặt trước hay không.
+
+---
+
+## 3. Ranh giới tính năng
+
+FE06 bao gồm:
+
+- Xem tồn kho.
+- Kiểm tra trạng thái bản sao sách.
+- Cập nhật tính khả dụng/trạng thái bản sao sách.
+- Quản lý các bản sao sách vật lý.
+- Theo dõi mã vạch và giá/khu vực cho từng bản sao.
+
+FE06 không bao gồm:
+
+- Tạo hoặc chỉnh sửa siêu dữ liệu sách. Phần này thuộc FE05.
+- Phê duyệt yêu cầu mượn hoặc xử lý trả sách. Phần này thuộc FE07.
+- Xử lý hàng đợi đặt trước. Phần này thuộc FE08.
+- Tính tiền phạt cho bản sao hỏng/mất/quá hạn. Phần này thuộc FE09.
+- Duyệt danh mục công khai. Phần này thuộc FE01.
+
+---
+
+## 4. Ghi chú về mô hình dữ liệu hiện tại
+
+Tập lệnh SQL hiện tại bao gồm:
 
 - `Books(BookId, Title, ISBN, CategoryId, AuthorId, PublisherId, PublishYear, Description, CoverUrl, Status)`
 - `BookCopies(CopyId, BookId, Barcode, Status, Location, Version, CreatedAt, UpdatedAt)`
 - `BorrowDetails(BorrowDetailId, RequestId, CopyId, DueDate, ReturnDate, Status)`
 - `Reservations(ReservationId, UserId, CopyId, ReservedAt, Status)`
 
-Implementation reconciliation points:
+Các điểm cần đối soát khi triển khai:
 
-- Copy status values are standardized across FE06, FE07, and FE08.
-- Current SQL has `CreatedAt`/`UpdatedAt`; FE06 additionally requires SQL `rowversion` for deterministic `If-Match` concurrency.
-- Barcode uniqueness is defined in SQL and must be preserved.
-- Direct manual status updates must not conflict with active borrow/reservation records.
-- Effective availability is derived from `BookCopies.Status = AVAILABLE` plus parent `Books.Status = ACTIVE`; FE05/FE01 never mutate copy state.
-- Manual reservation release always rejects with `RESERVATION_STATE_CONFLICT`; location validation rejects invalid values rather than normalizing them.
+- Giá trị trạng thái bản sao được chuẩn hóa trên FE06, FE07 và FE08.
+- SQL hiện tại có `CreatedAt`/`UpdatedAt`; FE06 bổ sung yêu cầu SQL `rowversion` để kiểm soát đồng thời `If-Match` một cách xác định.
+- Tính duy nhất của mã vạch được xác định trong SQL và phải được giữ nguyên.
+- Các cập nhật trạng thái thủ công trực tiếp không được xung đột với bản ghi mượn/đặt trước đang hoạt động.
+- Tính khả dụng hiệu lực được suy ra từ `BookCopies.Status = AVAILABLE` cùng `Books.Status = ACTIVE` của sách cha; FE05/FE01 không bao giờ thay đổi trạng thái bản sao.
+- Việc giải phóng đặt trước thủ công luôn bị từ chối với `RESERVATION_STATE_CONFLICT`; việc xác thực vị trí từ chối các giá trị không hợp lệ thay vì chuẩn hóa chúng.
 
-These decisions are reflected in `SPEC.md` v0.4.2 and are implemented with automated evidence; cross-feature owner confirmation and final integration remain open.
-
----
-
-## 5. Main Use Cases From Assignment Sheet
-
-Owner column reflects the current team redistribution.
-
-| Use Case ID | Use Case Name | Owner |
-| ----------- | ------------- | ----- |
-| UC25 | View Inventory | Dat |
-| UC26 | Check Book Copy Status | Dat |
-| UC27 | Update Book Copy Availability | Dat |
-| UC28 | Manage Book Copies | Dat |
+Các quyết định này được phản ánh trong `SPEC.md` v0.4.2 và đã được triển khai với bằng chứng tự động; xác nhận chủ sở hữu liên tính năng và tích hợp cuối cùng vẫn đang mở.
 
 ---
 
-## 6. Feature Tests From Assignment Sheet
+## 5. Ca sử dụng chính từ bảng phân công
 
-Owner column reflects the current team redistribution.
+Cột chủ sở hữu phản ánh việc phân công lại hiện tại của nhóm.
 
-| Test ID | Test Name | Owner |
-| ------- | --------- | ----- |
-| FT26 | View inventory | Dat |
-| FT27 | Check book copy status | Dat |
-| FT28 | Update book copy availability | Dat |
-| FT29 | Manage book copies | Dat |
-
----
-
-## 7. Key Risks
-
-- Incorrect copy status may allow the same copy to be borrowed twice.
-- Manual availability updates may override active borrowing or reservation state.
-- Duplicate barcode values may break copy identification.
-- Lost/damaged/deactivated copies may still appear as available if status rules are unclear.
-- Inventory totals may become inconsistent with book-level reporting if derived counts are wrong.
+| ID ca sử dụng | Tên ca sử dụng | Chủ sở hữu |
+| ------------- | -------------- | ---------- |
+| UC25 | Xem tồn kho | Dat |
+| UC26 | Kiểm tra trạng thái bản sao sách | Dat |
+| UC27 | Cập nhật tính khả dụng của bản sao sách | Dat |
+| UC28 | Quản lý bản sao sách | Dat |
 
 ---
 
-## 8. Dependencies
+## 6. Kiểm thử tính năng từ bảng phân công
 
-| Dependency | Why It Matters |
-| ---------- | -------------- |
-| FE05 Book Management | Provides book records that copies belong to. |
-| FE07 Borrowing Management | Updates copy status during borrow and return workflows. |
-| FE08 Reservation Management | Uses/reserves copies and may set reserved state. |
-| FE09 Fine Management | May use damaged/lost/overdue copy data to create fines. |
-| FE11 User & Role Management | Provides librarian/admin permissions. |
-| SQL Server database | Stores book copies and related copy transactions. |
+Cột chủ sở hữu phản ánh việc phân công lại hiện tại của nhóm.
 
----
-
-## 9. Resolved Questions For Team / Teacher
-
-| ID | Approved Decision | Source | Status |
-| -- | ----------------- | ------ | ------ |
-| Q-FE06-001 | Allowed copy statuses: AVAILABLE, BORROWED, RESERVED, DAMAGED, LOST, INACTIVE. | Review packet 2026-06-10 | APPROVED |
-| Q-FE06-002 | Staff cannot manually set BORROWED or RESERVED; those come only from FE07/FE08 flows. | Review packet 2026-06-10 | APPROVED |
-| Q-FE06-003 | DELETE /api/book-copies/{id} deactivates instead of physical delete. | Review packet 2026-06-10 | APPROVED |
-| Q-FE06-004 | Location is optional in Phase 1. | Review packet 2026-06-10 | APPROVED |
-| Q-FE06-005 | Copy condition is not separate from status in Phase 1. | Review packet 2026-06-10 | APPROVED |
-| Q-FE06-006 | Create/update/deactivate/status-change actions write AuditLogs. | Review packet 2026-06-10 | APPROVED |
+| ID kiểm thử | Tên kiểm thử | Chủ sở hữu |
+| ----------- | ------------ | ---------- |
+| FT26 | Xem tồn kho | Dat |
+| FT27 | Kiểm tra trạng thái bản sao sách | Dat |
+| FT28 | Cập nhật tính khả dụng của bản sao sách | Dat |
+| FT29 | Quản lý bản sao sách | Dat |
 
 ---
 
-## 10. Notes For Implementation Later
+## 7. Rủi ro chính
 
-- Existing FE06 backend/tests are prototype artifacts and must be reconciled only after revision v0.4.0 is reviewed.
-- `PLAN.md` and `TASKS.md` stay `NOT STARTED` until the revised contract is approved and decomposed.
-- Barcode uniqueness must be enforced.
-- Status transitions must be checked against FE07 and FE08 active records.
-- Availability should be derived from copy statuses, not guessed in UI.
+- Trạng thái bản sao không đúng có thể cho phép cùng một bản sao được mượn hai lần.
+- Cập nhật tính khả dụng thủ công có thể ghi đè trạng thái mượn hoặc đặt trước đang hoạt động.
+- Giá trị mã vạch trùng lặp có thể làm hỏng việc định danh bản sao.
+- Bản sao mất/hỏng/ngừng kích hoạt vẫn có thể hiển thị là khả dụng nếu quy tắc trạng thái không rõ ràng.
+- Tổng tồn kho có thể không nhất quán với báo cáo ở cấp sách nếu số đếm suy ra sai.
+
+---
+
+## 8. Phụ thuộc
+
+| Phụ thuộc | Lý do quan trọng |
+| ---------- | ---------------- |
+| FE05 Quản lý sách | Cung cấp bản ghi sách mà các bản sao thuộc về. |
+| FE07 Quản lý mượn sách | Cập nhật trạng thái bản sao trong quy trình mượn và trả. |
+| FE08 Quản lý đặt trước | Sử dụng/đặt trước bản sao và có thể đặt trạng thái đã đặt trước. |
+| FE09 Quản lý phạt | Có thể dùng dữ liệu bản sao hỏng/mất/quá hạn để tạo khoản phạt. |
+| FE11 Quản lý người dùng & vai trò | Cung cấp quyền của thủ thư/quản trị viên. |
+| Cơ sở dữ liệu SQL Server | Lưu trữ bản sao sách và các giao dịch bản sao liên quan. |
+
+---
+
+## 9. Câu hỏi đã được giải quyết cho nhóm / giảng viên
+
+| ID | Quyết định đã phê duyệt | Nguồn | Trạng thái |
+| -- | ----------------------- | ------ | ---------- |
+| Q-FE06-001 | Trạng thái bản sao được phép: AVAILABLE, BORROWED, RESERVED, DAMAGED, LOST, INACTIVE. | Gói rà soát 2026-06-10 | ĐÃ PHÊ DUYỆT |
+| Q-FE06-002 | Nhân sự không thể đặt thủ công BORROWED hoặc RESERVED; các trạng thái này chỉ đến từ luồng FE07/FE08. | Gói rà soát 2026-06-10 | ĐÃ PHÊ DUYỆT |
+| Q-FE06-003 | DELETE /api/book-copies/{id} ngừng kích hoạt thay vì xóa vật lý. | Gói rà soát 2026-06-10 | ĐÃ PHÊ DUYỆT |
+| Q-FE06-004 | Vị trí là tùy chọn trong Giai đoạn 1. | Gói rà soát 2026-06-10 | ĐÃ PHÊ DUYỆT |
+| Q-FE06-005 | Tình trạng bản sao không tách riêng khỏi trạng thái trong Giai đoạn 1. | Gói rà soát 2026-06-10 | ĐÃ PHÊ DUYỆT |
+| Q-FE06-006 | Các thao tác tạo/cập nhật/ngừng kích hoạt/thay đổi trạng thái ghi vào AuditLogs. | Gói rà soát 2026-06-10 | ĐÃ PHÊ DUYỆT |
+
+---
+
+## 10. Ghi chú cho việc triển khai sau này
+
+- Backend/kiểm thử FE06 hiện có là các hiện vật prototype và chỉ được đối soát sau khi bản sửa đổi v0.4.0 được rà soát.
+- `PLAN.md` và `TASKS.md` giữ trạng thái `NOT STARTED` cho đến khi hợp đồng đã sửa đổi được phê duyệt và phân rã.
+- Tính duy nhất của mã vạch phải được thực thi.
+- Chuyển trạng thái phải được kiểm tra với các bản ghi hoạt động của FE07 và FE08.
+- Tính khả dụng nên được suy ra từ trạng thái bản sao, không được đoán trong UI.

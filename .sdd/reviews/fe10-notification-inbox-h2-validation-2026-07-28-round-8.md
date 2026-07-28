@@ -1,33 +1,33 @@
-# FE10 Personal Notification Inbox H2 Validation - Round 8
+# Xác thực H2 Hộp thư thông báo cá nhân FE10 - Vòng 8
 
-- Date: 2026-07-28
-- Branch: `codex/feat-fe10-personal-notification-inbox`
-- H1-approved baseline: `main@30f936d644c2034bbbf9cb4e01ba25feab31595c`
-- Rebased committed head: `c72bc77f996a160333c2cb7ee4399f3d591fe17c`
-- Status: **H2 APPROVED**
+- Ngày: 2026-07-28
+- Nhánh: `codex/feat-fe10-personal-notification-inbox`
+- Baseline được H1 phê duyệt: `main@30f936d644c2034bbbf9cb4e01ba25feab31595c`
+- Head đã commit sau rebase: `c72bc77f996a160333c2cb7ee4399f3d591fe17c`
+- Trạng thái: **H2 ĐÃ PHÊ DUYỆT**
 
-The mandatory pre-stage fetch after round 7 found `main@30f936d`. The user
-approved the H1 drift addendum. That upstream commit translates SDD
-documentation to Vietnamese without changing FE10 runtime, API, database,
-migration, UI, tests, or deployment behavior. Exact upstream CI
-`30315665010` and automatic Azure staging `30315842152` passed.
+Fetch bắt buộc trước stage sau vòng 7 phát hiện `main@30f936d`. Người dùng phê
+duyệt phụ lục trôi H1. Commit upstream đó dịch tài liệu SDD sang tiếng Việt mà
+không đổi runtime, API, cơ sở dữ liệu, migration, UI, kiểm thử hay hành vi triển
+khai FE10. CI upstream chính xác `30315665010` và Azure staging tự động
+`30315842152` đạt.
 
-The rebase preserved the Vietnamese SDD translation and the implemented FE10
-v0.5.0 contract. This candidate reconciles the translated source-of-truth
-documents with the already implemented delivery state, records round 7 as
-superseded before use, and removes three historical trailing spaces. It
-contains no runtime change.
+Rebase giữ bản dịch SDD tiếng Việt và hợp đồng v0.5.0 FE10 đã triển khai.
+Candidate này đối soát tài liệu nguồn-sự-thật đã dịch với trạng thái bàn giao đã
+triển khai, ghi vòng 7 là bị thay thế trước khi dùng và loại ba khoảng trắng
+cuối lịch sử. Nó không chứa thay đổi runtime.
 
-## Candidate Identity
+## Danh tính candidate
 
-- Candidate entries: **12**.
-- Candidate fingerprint:
+- Mục candidate: **12**.
+- Fingerprint candidate:
   `e123345be05b59a9e519d182b301ab5464160e8fc32aed8d17d3c463e28e0a15`.
-- Cached/staged files at fingerprint time: **0**.
-- This round-8 decision record is excluded from the candidate fingerprint.
+- Tệp cached/staged tại thời điểm fingerprint: **0**.
+- Bản ghi quyết định vòng 8 này bị loại khỏi fingerprint candidate.
 
-Fingerprint algorithm: porcelain status plus lowercase file SHA-256 plus
-normalized path, path-sorted, LF-joined with a final LF, then UTF-8 SHA-256.
+Thuật toán fingerprint: trạng thái porcelain cộng SHA-256 tệp chữ thường cộng
+đường dẫn chuẩn hóa, sắp theo đường dẫn, ghép LF có LF cuối, sau đó SHA-256
+UTF-8.
 
 ```text
  M|fb379746b49efca62b81bde372a38493b43746db7e6c9826e1788b3ad7299898|.agents/CLAUDE.md
@@ -44,37 +44,37 @@ normalized path, path-sorted, LF-joined with a final LF, then UTF-8 SHA-256.
  M|2401696955450ac3917a391c9742784368ac6378fc750fdcc33387de96e225bd|docs/testing/master-test-plan.md
 ```
 
-## Verification
+## Xác minh
 
-- Runtime tree comparison `cf0a236...c72bc77` across `backend`, `frontend`,
-  `database`, `tests`, `.github`, and package manifests: IDENTICAL.
-- Exact upstream `main@30f936d` CI `30315665010`: PASS.
-- Exact upstream automatic Azure staging `30315842152`: PASS, including
-  backend, frontend, and smoke.
-- `npm.cmd run trace:enforce`: PASS; FE10 14/16 (88%), no implemented feature
-  below 70%.
-- `npm.cmd run test:traceability-state`: PASS, 3/3.
-- `npm.cmd run test:deployment`: PASS, 20/20.
-- Prospective whole-branch `git diff --check origin/main`: PASS.
-- Conflict-marker scan: PASS.
-- Cached/staged diff: empty.
+- So sánh runtime tree `cf0a236...c72bc77` qua `backend`, `frontend`,
+  `database`, `tests`, `.github` và package manifest: IDENTICAL.
+- CI upstream `main@30f936d` chính xác `30315665010`: ĐẠT.
+- Azure staging tự động upstream chính xác `30315842152`: ĐẠT, gồm backend,
+  frontend và smoke.
+- `npm.cmd run trace:enforce`: ĐẠT; FE10 14/16 (88%), không tính năng đã triển
+  khai nào dưới 70%.
+- `npm.cmd run test:traceability-state`: ĐẠT, 3/3.
+- `npm.cmd run test:deployment`: ĐẠT, 20/20.
+- Prospective toàn nhánh `git diff --check origin/main`: ĐẠT.
+- Quét conflict-marker: ĐẠT.
+- Cached/staged diff: rỗng.
 
-## Human H2 Decision
+## Quyết định H2 của con người
 
-Required exact approval:
-
-```text
-duyệt H2 fingerprint e123345be05b59a9e519d182b301ab5464160e8fc32aed8d17d3c463e28e0a15
-```
-
-The user approved the exact candidate in the active task:
+Phê duyệt chính xác bắt buộc:
 
 ```text
 duyệt H2 fingerprint e123345be05b59a9e519d182b301ab5464160e8fc32aed8d17d3c463e28e0a15
 ```
 
-Decision: **APPROVED**.
+Người dùng đã phê duyệt candidate chính xác trong task đang hoạt động:
 
-Only after exact approval and a stable mandatory fetch may the 12 candidate
-entries plus this excluded record be staged, committed, force-pushed with
-lease to update the rebased PR branch, and sent through exact-head CI/Azure.
+```text
+duyệt H2 fingerprint e123345be05b59a9e519d182b301ab5464160e8fc32aed8d17d3c463e28e0a15
+```
+
+Quyết định: **ĐÃ PHÊ DUYỆT**.
+
+Chỉ sau phê duyệt chính xác và fetch bắt buộc ổn định, 12 mục candidate cùng bản
+ghi bị loại này mới có thể được stage, commit, force-push with lease để cập nhật
+nhánh PR đã rebase và gửi qua CI/Azure exact-head.

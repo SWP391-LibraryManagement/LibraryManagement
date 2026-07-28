@@ -1,179 +1,175 @@
-# PLAN.md - FE04 Membership Management
+# PLAN.md - Quản lý thành viên FE04
 
-Status: COMPLETE - CORE PHASE 2 SCOPE; ADMIN EXTENSION PENDING
+Trạng thái: COMPLETE - PHẠM VI GIAI ĐOẠN 2 CỐT LÕI; ĐANG CHỜ MỞ RỘNG QUẢN TRỊ
 
-Owner: Dat
+Chủ sở hữu: Dat
 
-Updated: 2026-07-25
+Cập nhật: 2026-07-25
 
-Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact post-merge `main` CI are recorded in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. Pending/open gate statements retained below are historical execution snapshots superseded by that evidence.
+Trạng thái quy trình: COMPLETE cho phạm vi Giai đoạn 2 đã phê duyệt; H3, merge và CI `main` chính xác sau merge được ghi tại `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. Các phát biểu cổng đang chờ/mở bên dưới là snapshot thực thi lịch sử đã được bằng chứng đó thay thế.
 
-Extension State: Admin Console Membership Review product/source-test scope is implemented under `FE04-ADM01..ADM04`; the focused browser scenario reaches its assertions but the configured Windows webServer teardown does not exit cleanly. Azure Staging, H2, and human acceptance remain open under `FE04-ADM05`.
+Trạng thái mở rộng: Phạm vi sản phẩm/kiểm thử nguồn Admin Console Membership Review đã được triển khai theo `FE04-ADM01..ADM04`; kịch bản trình duyệt tập trung đạt các assertion nhưng việc teardown webServer Windows đã cấu hình không thoát sạch. Azure Staging, H2 và nghiệm thu thủ công vẫn đang mở theo `FE04-ADM05`.
 
-> **For implementation agents:** Execute `TASKS.md` in order. Every behavior task starts with a failing focused test, adds the smallest implementation that satisfies the approved spec, and ends with the listed verification gate.
+> **Dành cho agent triển khai:** Thực hiện `TASKS.md` theo thứ tự. Mỗi nhiệm vụ hành vi bắt đầu bằng kiểm thử tập trung thất bại, thêm phần triển khai nhỏ nhất thỏa đặc tả đã phê duyệt và kết thúc bằng cổng xác thực được liệt kê.
 
 ---
 
-## 1. Goal
+## 1. Mục tiêu
 
-Reconcile the existing FE04 prototype with the approved canonical membership contract so that application history, current eligibility, reviewer metadata, audit data, and FE10 delivery remain deterministic under normal and concurrent use.
+Đối soát prototype FE04 hiện có với hợp đồng thành viên chuẩn đã phê duyệt để lịch sử đơn, điều kiện hiện tại, metadata người rà soát, dữ liệu audit và việc gửi FE10 duy trì tính xác định trong điều kiện sử dụng bình thường và đồng thời.
 
-## 2. Source Documents
+## 2. Tài liệu nguồn
 
 - `.sdd/specs/feat-membership-management/SPEC.md` v0.2.1.
 - `.sdd/specs/feat-membership-management/CONTEXT.md` v0.2.0.
 - `.sdd/specs/feat-membership-management/TEST_PLAN.md`.
 - `.sdd/rfcs/ADR-002-database-design.md`.
-- `.sdd/specs/feat-notification-management/SPEC.md` for `MEMBERSHIP_RESULT` requester ownership.
+- `.sdd/specs/feat-notification-management/SPEC.md` về quyền sở hữu bên yêu cầu `MEMBERSHIP_RESULT`.
 - `database/Librarymanagement.sql`.
 - `.sdd/constraints/safety.md`.
 
-## 3. Existing Baseline And Drift (Historical Snapshot)
+## 3. Baseline hiện có và sai lệch (snapshot lịch sử)
 
-The repository already contains FE04 routes, controller, service, repository, validators, route tests, in-memory repositories, and frontend screens. These files are prototype evidence, not completion evidence for v0.2.0.
+Kho mã nguồn đã chứa FE04 route, controller, service, repository, validator, kiểm thử route, repository in-memory và màn hình frontend. Các tệp này là bằng chứng prototype, không phải bằng chứng hoàn tất cho v0.2.0.
 
-The drift table below records the pre-reconciliation baseline. It is retained for auditability and is superseded by the implementation and Phase 2 exit evidence recorded in `TASKS.md`, `TEST_PLAN.md`, and `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`.
+Bảng sai lệch dưới đây ghi nhận baseline trước đối soát. Bảng được giữ vì khả năng audit và đã được thay thế bởi bằng chứng triển khai và chốt Giai đoạn 2 được ghi trong `TASKS.md`, `TEST_PLAN.md` và `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`.
 
-| Approved contract | Current drift to reconcile |
+| Hợp đồng đã phê duyệt | Sai lệch hiện tại cần đối soát |
 | --- | --- |
-| `Members.Status` is the canonical eligibility source | Status response currently prefers the latest application and does not return the approved `{ membershipStatusView, memberStatus, currentApplication }` shape. |
-| Application/member/audit writes are atomic | Repository mutations and service-level audit writes are currently separate operations. |
-| At most one pending application and one final review result | In-memory checks exist, but SQL-level uniqueness and concurrent review evidence are missing. |
-| Rejected users may re-apply while preserving history | Prototype behavior needs explicit route and SQL tests for the new pending row plus canonical projection reset. |
-| FE10 delivery occurs once after commit and is non-blocking | The current service has no FE04-bound notification requester integration. |
-| Authenticated active `MEMBER` users may apply/view status | Applicant endpoints must enforce the `MEMBER` role while allowing users without a pre-existing membership projection to apply. |
-| Applicant UI shows server truth | The page currently falls back to fabricated demo status/application data after API failure. |
+| `Members.Status` là nguồn điều kiện chuẩn | Response trạng thái hiện ưu tiên đơn gần nhất và không trả về cấu trúc `{ membershipStatusView, memberStatus, currentApplication }` đã phê duyệt. |
+| Ghi application/member/audit là nguyên tử | Thao tác mutation ở repository và ghi audit ở service hiện là các thao tác riêng. |
+| Tối đa một đơn đang chờ và một kết quả rà soát cuối cùng | Có kiểm tra in-memory, nhưng thiếu bằng chứng về uniqueness ở cấp SQL và rà soát đồng thời. |
+| Người dùng bị từ chối có thể nộp lại đơn mà vẫn giữ lịch sử | Hành vi prototype cần kiểm thử route và SQL rõ ràng về hàng đang chờ mới cùng reset projection chuẩn. |
+| Gửi FE10 một lần sau commit và không chặn luồng | Service hiện không có tích hợp bên yêu cầu thông báo gắn với FE04. |
+| Người dùng `MEMBER` đang hoạt động đã xác thực có thể nộp đơn/xem trạng thái | Endpoint người nộp đơn phải thực thi vai trò `MEMBER` nhưng cho phép người dùng chưa có projection thành viên từ trước nộp đơn. |
+| UI người nộp đơn hiển thị sự thật từ server | Trang hiện fallback về dữ liệu trạng thái/đơn demo bịa đặt sau khi API lỗi. |
 
-### 3.1 2026-07-19 Implementation Checkpoint
+### 3.1 Mốc triển khai 2026-07-19
 
-- Canonical apply/status/re-application, atomic review/audit callbacks, FE04-bound post-commit
-  delivery, protected staff list, and truthful frontend state are GREEN for the completed core
-  scope; the Admin extension remains outside that evidence.
-- The filtered pending-only unique index is present in baseline/model/ADR and the idempotent
-  migration; static SQL contract tests pass.
-- Mutable SQL concurrency/rollback execution, human acceptance, and FE07/FE08
-  integration confirmation were historical pre-exit gates; the recorded Phase 2
-  exit evidence supersedes this checkpoint.
-- The approved Admin Console extension is separate from the completed core
-  scope and is implemented locally; release validation remains open for browser
-  process exit, Azure Staging, H2, and human acceptance.
+- Nộp đơn/trạng thái/nộp lại chuẩn, callback review/audit nguyên tử, gửi sau commit
+  gắn với FE04, danh sách nhân viên được bảo vệ và trạng thái frontend đúng sự thật đã GREEN cho
+  phạm vi cốt lõi hoàn tất; phần mở rộng Admin nằm ngoài bằng chứng này.
+- Unique index chỉ lọc các đơn đang chờ có trong baseline/model/ADR và migration idempotent; kiểm thử hợp đồng SQL static vượt qua.
+- Thực thi SQL đồng thời/rollback có thể thay đổi, nghiệm thu thủ công và xác nhận integration FE07/FE08
+  là các cổng lịch sử trước khi chốt; bằng chứng chốt Giai đoạn 2 đã ghi nhận thay thế mốc này.
+- Phần mở rộng Admin Console đã phê duyệt tách biệt với phạm vi cốt lõi đã hoàn tất và được triển khai cục bộ; xác thực phát hành vẫn mở về việc thoát tiến trình trình duyệt, Azure Staging, H2 và nghiệm thu thủ công.
 
-## 4. Scope
+## 4. Phạm vi
 
-### In Scope
+### Trong phạm vi
 
-- Apply, own status, staff list, approve, and reject endpoints from `SPEC.md` section 11.
-- Canonical `Members` projection and immutable `MembershipApplications` history.
-- Active-account checks, one-pending concurrency, re-application, reviewer metadata, required rejection reason, and no-expiry state rules.
-- Atomic application/member/audit writes.
-- One idempotent, non-blocking FE10 `MEMBERSHIP_RESULT` request after review commit.
-- Server-backed member/staff frontend states without demo fallbacks.
-- Focused route, repository, SQL concurrency, frontend, and traceability evidence.
+- Các endpoint nộp đơn, trạng thái của chính mình, danh sách nhân viên, phê duyệt và từ chối từ Mục 11 của `SPEC.md`.
+- Projection `Members` chuẩn và lịch sử `MembershipApplications` bất biến.
+- Kiểm tra tài khoản đang hoạt động, đồng thời một đơn đang chờ, nộp lại đơn, metadata người rà soát, lý do từ chối bắt buộc và quy tắc không hết hạn.
+- Ghi application/member/audit nguyên tử.
+- Một request FE10 `MEMBERSHIP_RESULT` idempotent, không chặn luồng sau commit review.
+- Trạng thái frontend thành viên/nhân viên dựa trên server, không có demo fallback.
+- Bằng chứng route, repository, SQL đồng thời, frontend và traceability tập trung.
 
-### Out Of Scope
+### Ngoài phạm vi
 
-- FE02 registration/login/email verification.
-- FE03 profile editing.
-- FE07 borrowing, FE08 reservation, or FE11 role assignment implementation.
-- Membership expiry, renewal, payment, or a new membership-number scheme.
-- FE10 provider/worker redesign beyond consuming its approved requester interface.
+- Đăng ký/đăng nhập/xác minh email FE02.
+- Chỉnh sửa hồ sơ FE03.
+- Triển khai mượn FE07, đặt chỗ FE08 hoặc gán vai trò FE11.
+- Hết hạn thành viên, gia hạn, thanh toán hoặc cơ chế số thành viên mới.
+- Thiết kế lại provider/worker FE10 vượt ngoài việc sử dụng interface bên yêu cầu đã phê duyệt.
 
-## 5. File And Interface Map
+## 5. Bản đồ tệp và interface
 
-| Area | Files | Responsibility |
+| Khu vực | Tệp | Trách nhiệm |
 | --- | --- | --- |
-| SQL contract | `database/Librarymanagement.sql`, `.sdd/rfcs/ADR-002-database-design.md` | Enforce one pending application per user and retain approved member/application fields without physical history deletion. |
-| HTTP boundary | `backend/src/routes/membershipRoutes.js`, `backend/src/controllers/membershipController.js`, `backend/src/validators/membershipValidators.js` | Authentication, staff RBAC, ID/query/reason validation, and approved response shapes. |
-| Business rules | `backend/src/services/membershipService.js` | Active-account eligibility, canonical status derivation, re-application, final-state checks, and post-commit FE10 request. |
-| Persistence | `backend/src/repositories/membershipRepository.js`, `backend/src/repositories/auditLogRepository.js` | Transactional application/member/audit writes and deterministic latest-application queries. |
-| Notification boundary | `backend/src/services/notificationService.js`, `backend/src/services/membershipService.js`, `backend/src/app.js` | Create and inject the FE04-bound `MEMBERSHIP_RESULT` requester with source metadata and idempotency key. |
-| API documentation | `backend/src/docs/openapi.yaml` | Document the five FE04 endpoints, safe response fields, errors, and role rules. |
-| Backend tests | `backend/tests/membershipRoutes.test.js`, `backend/tests/helpers/inMemoryMembershipRepositories.js`, `backend/tests/sql/membershipConcurrency.sqltest.js` | RED/GREEN route behavior, rollback, re-application, one-pending, one-final-result, and non-blocking delivery evidence. |
-| Frontend | `frontend/src/page/MembershipPage.jsx`, `frontend/src/component/membership/*`, `frontend/src/api/libraryFeatureApi.js` | Render canonical status/list responses and review actions without fabricated server state. |
-| Frontend tests | `frontend/test/membershipFrontend.test.js` | Source-level regression checks for role access, canonical states, error handling, and removal of demo fallback data. |
+| Hợp đồng SQL | `database/Librarymanagement.sql`, `.sdd/rfcs/ADR-002-database-design.md` | Thực thi một đơn đang chờ mỗi người dùng và giữ trường thành viên/đơn đã phê duyệt mà không xóa vật lý lịch sử. |
+| Ranh giới HTTP | `backend/src/routes/membershipRoutes.js`, `backend/src/controllers/membershipController.js`, `backend/src/validators/membershipValidators.js` | Xác thực, RBAC nhân viên, xác thực ID/query/lý do và cấu trúc response đã phê duyệt. |
+| Quy tắc nghiệp vụ | `backend/src/services/membershipService.js` | Điều kiện tài khoản đang hoạt động, suy ra trạng thái chuẩn, nộp lại đơn, kiểm tra trạng thái cuối và request FE10 sau commit. |
+| Persistence | `backend/src/repositories/membershipRepository.js`, `backend/src/repositories/auditLogRepository.js` | Ghi application/member/audit theo transaction và truy vấn đơn gần nhất có tính xác định. |
+| Ranh giới thông báo | `backend/src/services/notificationService.js`, `backend/src/services/membershipService.js`, `backend/src/app.js` | Tạo và inject bên yêu cầu `MEMBERSHIP_RESULT` gắn với FE04 cùng metadata nguồn và khóa idempotent. |
+| Tài liệu API | `backend/src/docs/openapi.yaml` | Ghi nhận năm endpoint FE04, trường response an toàn, lỗi và quy tắc vai trò. |
+| Kiểm thử backend | `backend/tests/membershipRoutes.test.js`, `backend/tests/helpers/inMemoryMembershipRepositories.js`, `backend/tests/sql/membershipConcurrency.sqltest.js` | Hành vi route RED/GREEN, rollback, nộp lại đơn, một đơn đang chờ, một kết quả cuối cùng và bằng chứng gửi không chặn luồng. |
+| Frontend | `frontend/src/page/MembershipPage.jsx`, `frontend/src/component/membership/*`, `frontend/src/api/libraryFeatureApi.js` | Kết xuất response trạng thái/danh sách chuẩn và hành động rà soát không dùng trạng thái server bịa đặt. |
+| Kiểm thử frontend | `frontend/test/membershipFrontend.test.js` | Kiểm tra hồi quy ở cấp nguồn cho quyền truy cập theo vai trò, trạng thái chuẩn, xử lý lỗi và loại bỏ dữ liệu demo fallback. |
 
-## 6. Approved Interfaces
+## 6. Interface đã phê duyệt
 
-| Method | Endpoint | Required behavior |
+| Phương thức | Endpoint | Hành vi bắt buộc |
 | --- | --- | --- |
-| `POST` | `/api/membership/applications` | Authenticated active `MEMBER` user; creates application and canonical `PENDING` projection atomically. |
-| `GET` | `/api/membership/status/me` | Authenticated `MEMBER` only; returns only the actor's `{ membershipStatusView, memberStatus, currentApplication }`. |
-| `GET` | `/api/membership/applications` | Librarian/Admin; validated status filter and paginated review list. |
-| `PATCH` | `/api/membership/applications/{applicationId}/approve` | Pending only; application/member/reviewer/audit commit together, then FE10 is requested. |
-| `PATCH` | `/api/membership/applications/{applicationId}/reject` | Pending only; trimmed `reason` length 1..500, atomic review writes, then FE10 is requested. |
+| `POST` | `/api/membership/applications` | Người dùng `MEMBER` đang hoạt động đã xác thực; tạo đơn và projection `PENDING` chuẩn theo cách nguyên tử. |
+| `GET` | `/api/membership/status/me` | Chỉ `MEMBER` đã xác thực; chỉ trả về `{ membershipStatusView, memberStatus, currentApplication }` của tác nhân. |
+| `GET` | `/api/membership/applications` | Thủ thư/Quản trị viên; bộ lọc trạng thái đã xác thực và danh sách rà soát có phân trang. |
+| `PATCH` | `/api/membership/applications/{applicationId}/approve` | Chỉ đơn đang chờ; application/member/reviewer/audit commit cùng nhau, sau đó yêu cầu FE10. |
+| `PATCH` | `/api/membership/applications/{applicationId}/reject` | Chỉ đơn đang chờ; `reason` đã trim dài 1..500, ghi review nguyên tử, sau đó yêu cầu FE10. |
 
-The FE10 requester call must use type `MEMBERSHIP_RESULT`, source feature `FE04`, source application ID, final status, and idempotency key `FE04:MEMBERSHIP_RESULT:<applicationId>:<finalStatus>`. Raw internal exceptions or protected reviewer data must not cross the HTTP response.
+Lời gọi bên yêu cầu FE10 phải dùng loại `MEMBERSHIP_RESULT`, tính năng nguồn `FE04`, ID đơn nguồn, trạng thái cuối cùng và khóa idempotent `FE04:MEMBERSHIP_RESULT:<applicationId>:<finalStatus>`. Exception nội bộ thô hoặc dữ liệu người rà soát được bảo vệ không được vượt qua response HTTP.
 
-## 7. Ordered Implementation Strategy
+## 7. Chiến lược triển khai theo thứ tự
 
-### 7.1 Lock The Contract With RED Tests
+### 7.1 Khóa hợp đồng bằng kiểm thử RED
 
-- Extend route tests for active `MEMBER` applicants without a pre-existing membership projection, non-member denial, canonical `NONE`, re-application, invalid transitions, privacy, pagination, and FE10 failure.
-- Add SQL tests that race two applications for one user and two final review commands for one application.
-- Make tests assert no partial application/member/audit state after injected failure.
+- Mở rộng kiểm thử route cho người nộp đơn `MEMBER` đang hoạt động nhưng chưa có projection thành viên, từ chối người không phải thành viên, `NONE` chuẩn, nộp lại đơn, chuyển đổi không hợp lệ, quyền riêng tư, phân trang và lỗi FE10.
+- Thêm kiểm thử SQL chạy đua hai đơn cho một người dùng và hai lệnh review cuối cùng cho một đơn.
+- Làm cho kiểm thử assertion không có trạng thái application/member/audit dở dang sau lỗi được inject.
 
-### 7.2 Reconcile Schema And Persistence
+### 7.2 Đối soát schema và persistence
 
-- Add a reviewable SQL uniqueness mechanism that permits history but allows at most one `PENDING` application per `UserId`.
-- Keep `Members.UserId` canonical and unique; do not add `EXPIRED` or delete historical applications.
-- Move apply/approve/reject plus audit writes into repository transactions and return explicit outcomes for duplicate pending, invalid final state, and not found.
+- Thêm cơ chế uniqueness SQL có thể rà soát, cho phép lịch sử nhưng tối đa một đơn `PENDING` cho mỗi `UserId`.
+- Giữ `Members.UserId` chuẩn và duy nhất; không thêm `EXPIRED` hoặc xóa đơn lịch sử.
+- Chuyển thao tác nộp/phê duyệt/từ chối cùng audit vào transaction repository và trả về kết quả rõ ràng cho đơn đang chờ trùng lặp, trạng thái cuối không hợp lệ và không tìm thấy.
 
-### 7.3 Reconcile Boundary And Service Rules
+### 7.3 Đối soát ranh giới và quy tắc service
 
-- Authenticate applicant endpoints and require the `MEMBER` role; an existing membership projection is not required before applying.
-- Validate active `Users.Status`, IDs, filters, pagination, and rejection reason on the server.
-- Derive status from `Members`; select the latest application by `AppliedAt DESC, ApplicationId DESC` only for display.
-- Preserve final application rows and reset only the canonical projection on re-application.
+- Xác thực endpoint người nộp đơn và yêu cầu vai trò `MEMBER`; không cần projection thành viên hiện có trước khi nộp đơn.
+- Xác thực `Users.Status` đang hoạt động, ID, filter, phân trang và lý do từ chối ở server.
+- Suy ra trạng thái từ `Members`; chỉ chọn đơn gần nhất theo `AppliedAt DESC, ApplicationId DESC` để hiển thị.
+- Giữ hàng đơn cuối cùng và chỉ reset projection chuẩn khi nộp lại đơn.
 
-### 7.4 Add FE10 Post-Commit Delivery
+### 7.4 Thêm việc gửi FE10 sau commit
 
-- Request exactly one FE04-bound notification after approval/rejection commit.
-- Treat duplicate idempotency responses as safe and provider/requester failures as non-blocking.
-- Return only safe delivery status; membership state remains committed when delivery fails.
+- Yêu cầu đúng một thông báo gắn với FE04 sau commit phê duyệt/từ chối.
+- Coi response idempotency trùng lặp là an toàn và lỗi provider/bên yêu cầu là không chặn luồng.
+- Chỉ trả về trạng thái gửi an toàn; trạng thái thành viên vẫn commit khi gửi thất bại.
 
-### 7.5 Reconcile Frontend And Evidence
+### 7.5 Đối soát frontend và bằng chứng
 
-- Consume the canonical response fields and display `NONE`, `PENDING`, `APPROVED`, `REJECTED`, and `INACTIVE` distinctly.
-- Remove fabricated application/status rows and show explicit loading, empty, permission, and API-error states.
-- Add `@spec` tags, update API documentation/test strategy evidence, and run focused verification before any full-suite merge gate.
+- Sử dụng các trường response chuẩn và hiển thị riêng biệt `NONE`, `PENDING`, `APPROVED`, `REJECTED` và `INACTIVE`.
+- Loại dữ liệu đơn/trạng thái bịa đặt và hiển thị trạng thái tải, trống, quyền và lỗi API rõ ràng.
+- Thêm tag `@spec`, cập nhật bằng chứng tài liệu API/chiến lược kiểm thử và chạy xác thực tập trung trước cổng merge của toàn bộ suite.
 
-## 8. Dependency Order
+## 8. Thứ tự phụ thuộc
 
-1. RED route/SQL contract tests.
-2. SQL/ADR and repository transaction contract.
-3. Validators, routes, service, and canonical response shape.
-4. FE10 requester integration.
-5. Frontend reconciliation.
-6. Traceability, focused verification, then human review.
+1. Kiểm thử hợp đồng route/SQL RED.
+2. Hợp đồng transaction SQL/ADR và repository.
+3. Validator, route, service và cấu trúc response chuẩn.
+4. Tích hợp bên yêu cầu FE10.
+5. Đối soát frontend.
+6. Traceability, xác thực tập trung, sau đó rà soát thủ công.
 
-FE04 implementation must finish before FE07/FE08 can claim canonical membership eligibility integration complete.
+Triển khai FE04 phải hoàn tất trước khi FE07/FE08 có thể tuyên bố hoàn tất tích hợp điều kiện thành viên chuẩn.
 
-## 9. Verification Gates
+## 9. Cổng xác thực
 
-| Gate | Command | Expected result |
+| Cổng | Lệnh | Kết quả mong đợi |
 | --- | --- | --- |
-| FE04 backend | `npm.cmd --prefix backend test -- --runTestsByPath tests/membershipRoutes.test.js` | Focused route suite passes with no skipped FE04 cases. |
-| FE04 SQL concurrency | `npm.cmd --prefix backend test -- --runTestsByPath tests/sql/membershipConcurrency.sqltest.js` | One-pending, one-final-result, and rollback cases pass when SQL test configuration is available. |
-| FE04 frontend | `node --test frontend/test/membershipFrontend.test.js` | Canonical status, no-demo-fallback, and review-state checks pass. |
-| Traceability | `npm.cmd run trace:enforce` | FE04 changed implementation files satisfy the repository traceability threshold. |
-| Diff hygiene | `git diff --check` | No whitespace errors. |
+| Backend FE04 | `npm.cmd --prefix backend test -- --runTestsByPath tests/membershipRoutes.test.js` | Suite route tập trung vượt qua, không bỏ qua trường hợp FE04. |
+| SQL đồng thời FE04 | `npm.cmd --prefix backend test -- --runTestsByPath tests/sql/membershipConcurrency.sqltest.js` | Các trường hợp một đơn đang chờ, một kết quả cuối và rollback vượt qua khi có cấu hình kiểm thử SQL. |
+| Frontend FE04 | `node --test frontend/test/membershipFrontend.test.js` | Kiểm tra trạng thái chuẩn, không demo fallback và trạng thái rà soát vượt qua. |
+| Traceability | `npm.cmd run trace:enforce` | Các tệp triển khai thay đổi ở FE04 đáp ứng ngưỡng traceability của kho mã nguồn. |
+| Vệ sinh diff | `git diff --check` | Không có lỗi khoảng trắng. |
 
-Full backend/frontend suites remain the final merge gate, but they are not a substitute for the focused RED/GREEN evidence above.
+Toàn bộ suite backend/frontend vẫn là cổng merge cuối cùng, nhưng không thay thế bằng chứng RED/GREEN tập trung ở trên.
 
-## 10. Human Review Gate
+## 10. Cổng rà soát thủ công
 
-- [x] Confirm applicant endpoints use authenticated active-account identity rather than requiring an already-approved membership role.
-- [x] Confirm the SQL one-pending strategy preserves all rejected/approved history.
-- [x] Confirm FE10 requester ownership, source metadata, and idempotency key.
-- [x] Confirm frontend failure states never replace server truth with demo records.
-- [x] Approve `TASKS.md` ordering and mappings before implementation starts.
+- [x] Xác nhận endpoint người nộp đơn dùng danh tính tài khoản đang hoạt động đã xác thực thay vì yêu cầu vai trò thành viên đã được phê duyệt từ trước.
+- [x] Xác nhận chiến lược một đơn đang chờ SQL giữ mọi lịch sử bị từ chối/đã phê duyệt.
+- [x] Xác nhận quyền sở hữu bên yêu cầu FE10, metadata nguồn và khóa idempotency.
+- [x] Xác nhận trạng thái lỗi frontend không bao giờ thay thế sự thật server bằng bản ghi demo.
+- [x] Phê duyệt thứ tự và ánh xạ `TASKS.md` trước khi triển khai bắt đầu.
 
-## 11. Admin Console Membership Review Integration
+## 11. Tích hợp rà soát thành viên trong Admin Console
 
-Decision: APPROVED BY HUMAN - 2026-07-22.
+Quyết định: ĐƯỢC PHÊ DUYỆT BỞI CON NGƯỜI - 2026-07-22.
 
-Design: `docs/superpowers/specs/2026-07-22-admin-membership-review-integration-design.md`.
+Thiết kế: `docs/superpowers/specs/2026-07-22-admin-membership-review-integration-design.md`.
 
-Implementation plan: `docs/superpowers/plans/2026-07-22-admin-membership-review-integration.md`.
+Kế hoạch triển khai: `docs/superpowers/plans/2026-07-22-admin-membership-review-integration.md`.
 
-The extension is Hybrid Standard-depth: FE04 review rules, authorization, audit, and FE10 delivery remain Core; FE11 navigation and the responsive Admin module are Shell. Implementation order is pure/nav RED-GREEN, read-only directory, review mutations/feedback, responsive authenticated browser acceptance, then L1-L4/H2/Azure evidence. No backend production/API/schema change is permitted; the E2E harness may wire the existing in-memory FE04 service.
+Phần mở rộng có độ sâu Hybrid Standard: quy tắc review FE04, phân quyền, audit và gửi FE10 vẫn là Core; điều hướng FE11 và module Admin responsive là Shell. Thứ tự triển khai là RED-GREEN thuần/điều hướng, danh mục chỉ đọc, mutation/phản hồi review, nghiệm thu trình duyệt đã xác thực responsive, sau đó là bằng chứng L1-L4/H2/Azure. Không được thay đổi production/API/schema backend; harness E2E có thể kết nối service FE04 in-memory hiện có.

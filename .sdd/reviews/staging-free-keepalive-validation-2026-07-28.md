@@ -1,127 +1,126 @@
-# Staging Free Keepalive Validation
+# Xác thực keepalive miễn phí cho staging
 
-**Status:** IMPLEMENTATION COMPLETE; H2 REVIEW PENDING
+**Trạng thái:** TRIỂN KHAI HOÀN TẤT; H2 ĐANG CHỜ REVIEW
 
-**Date:** 2026-07-28
+**Ngày:** 2026-07-28
 
-**Branch:** `codex/chore-staging-free-keepalive`
+**Nhánh:** `codex/chore-staging-free-keepalive`
 
-**Implementation baseline:**
+**Mốc cơ sở triển khai:**
 `2c0b169cbb81421b17ad43580a8688dddffa328c`
 
-**H1 governance commit:**
+**Commit quản trị H1:**
 `40c1707` (`docs: approve staging free keepalive plan`)
 
-## 1. Scope Evidence
+## 1. Bằng chứng phạm vi
 
-The uncommitted implementation changes are limited to:
+Các thay đổi triển khai chưa commit được giới hạn ở:
 
 - `.github/workflows/staging-keepalive.yml`
 - `tests/deployment/stagingKeepalivePolicy.test.js`
 - `docs/deployment/azure-staging-guide.md`
-- this validation record
+- biên bản xác thực này
 
-No frontend, backend, database, dependency, environment, or secret file is
-modified.
+Không tệp frontend, backend, database, dependency, environment hay secret nào
+được sửa đổi.
 
-## 2. RED Evidence
+## 2. Bằng chứng RED
 
-### Initial workflow contract
+### Hợp đồng workflow ban đầu
 
-Command:
+Lệnh:
 
 ```powershell
 node --test tests/deployment/stagingKeepalivePolicy.test.js
 ```
 
-Observed result: `0 passed, 4 failed`.
+Kết quả ghi nhận: `0 passed, 4 failed`.
 
-- The workflow-existence assertion failed because
-  `.github/workflows/staging-keepalive.yml` did not exist.
-- Least-privilege, bounded-request, and endpoint assertions failed because the
-  workflow content was empty.
-- The operator-guide assertion failed because the F1 keepalive section did not
-  exist.
+- Assertion về sự tồn tại workflow không đạt vì
+  `.github/workflows/staging-keepalive.yml` chưa tồn tại.
+- Các assertion về đặc quyền tối thiểu, request có giới hạn và endpoint không
+  đạt vì nội dung workflow trống.
+- Assertion hướng dẫn operator không đạt vì phần keepalive F1 chưa tồn tại.
 
-### Inactivity limitation regression
+### Regression giới hạn không hoạt động
 
-After discovering the documented GitHub public-repository inactivity boundary,
-the guide assertion was extended before the guide:
+Sau khi phát hiện ranh giới không hoạt động được GitHub ghi tài liệu cho
+repository công khai, assertion hướng dẫn được mở rộng trước hướng dẫn:
 
 ```text
 3 passed, 1 failed
 Expected: 60 days followed by gh workflow enable staging-keepalive.yml
 ```
 
-The guide was then updated with the limitation and recovery command.
+Hướng dẫn sau đó được cập nhật với giới hạn và lệnh khôi phục.
 
-## 3. GREEN Evidence
+## 3. Bằng chứng GREEN
 
-Focused policy command:
+Lệnh chính sách tập trung:
 
 ```powershell
 node --test tests/deployment/stagingKeepalivePolicy.test.js
 ```
 
-Result: `4 passed, 0 failed`.
+Kết quả: `4 passed, 0 failed`.
 
-Full deployment utility command:
+Lệnh tiện ích triển khai đầy đủ:
 
 ```powershell
 npm.cmd run test:deployment
 ```
 
-Result: `17 passed, 0 failed`.
+Kết quả: `17 passed, 0 failed`.
 
-YAML parser/formatter command:
+Lệnh parser/formatter YAML:
 
 ```powershell
 npx.cmd --yes prettier@3.6.2 --check .github/workflows/staging-keepalive.yml
 ```
 
-Result: `All matched files use Prettier code style!`
+Kết quả: `All matched files use Prettier code style!`
 
-Repository diff command:
+Lệnh diff repository:
 
 ```powershell
 git diff --check
 ```
 
-Result: exit code `0`. The Windows checkout reported only the repository's
-expected future LF-to-CRLF conversion warning for the Markdown guide.
+Kết quả: mã thoát `0`. Windows checkout chỉ báo cảnh báo chuyển đổi LF sang CRLF
+trong tương lai mà repository dự kiến cho hướng dẫn Markdown.
 
-## 4. Workflow Safety Review
+## 4. Rà soát an toàn workflow
 
-- Trigger interval is exactly minutes `3,13,23,33,43,53`, every 10 minutes and
-  away from minute zero.
-- Manual `workflow_dispatch` is available.
-- Repository permission is `contents: read`.
-- One job runs with a three-minute timeout.
-- `curl` fails on non-2xx responses and has bounded retry, delay, connection,
-  and total-request time.
-- The only requested URL is the public HTTPS `/health` endpoint.
-- No checkout, deployment action, mutation endpoint, authentication endpoint,
-  database endpoint, SMTP action, or notification-processing endpoint exists.
-- No GitHub secret expression or credential value exists in the workflow.
-- Concurrency cancels a superseded keepalive run.
+- Khoảng trigger chính xác là các phút `3,13,23,33,43,53`, mỗi 10 phút và tránh
+  phút số không.
+- Có sẵn `workflow_dispatch` thủ công.
+- Quyền repository là `contents: read`.
+- Một job chạy với timeout ba phút.
+- `curl` lỗi với phản hồi không phải 2xx và có số lần retry, delay, connection
+  và thời gian request tổng bị giới hạn.
+- URL duy nhất được request là endpoint HTTPS công khai `/health`.
+- Không có checkout, action triển khai, endpoint mutation, endpoint xác thực,
+  endpoint database, action SMTP hay endpoint xử lý notification.
+- Workflow không có biểu thức GitHub secret hoặc giá trị credential.
+- Concurrency huỷ lượt keepalive đã bị thay thế.
 
-## 5. Documentation Review
+## 5. Rà soát tài liệu
 
-The operator guide now states:
+Hướng dẫn operator nay nêu:
 
-- GitHub schedule and Azure F1 wakefulness are best-effort;
-- schedules run from the default branch;
-- a successful manual run is required before the downgrade;
-- Always On is disabled before scaling to F1;
-- post-change health, public catalog, worker-setting, and queue checks are
-  required;
-- a public repository's scheduled workflows can be disabled after 60 days
-  without repository activity and can be re-enabled with GitHub CLI;
-- rollback is B1 plus `alwaysOn=true`.
+- lịch GitHub và khả năng thức của Azure F1 là best-effort;
+- lịch chạy từ nhánh mặc định;
+- cần một lần chạy thủ công thành công trước khi downgrade;
+- Always On bị tắt trước khi scale xuống F1;
+- kiểm tra health, catalog công khai, setting worker và queue sau thay đổi là
+  bắt buộc;
+- workflow chạy theo lịch của repository công khai có thể bị tắt sau 60 ngày
+  không có hoạt động repository và có thể bật lại bằng GitHub CLI;
+- rollback là B1 cộng `alwaysOn=true`.
 
-## 6. Current Live Pre-Transition Evidence
+## 6. Bằng chứng môi trường sống hiện tại trước chuyển đổi
 
-Read-only checks on 2026-07-28:
+Kiểm tra chỉ đọc ngày 2026-07-28:
 
 ```text
 App Service plan SKU = B1
@@ -137,28 +136,28 @@ GitHub default branch = main
 Current main workflows = CI, Deploy staging
 ```
 
-This proves the safety guard is intact: Azure remains paid/awake and no
-keepalive workflow is active on `main` before H2/H3.
+Điều này chứng minh lớp bảo vệ an toàn còn nguyên: Azure vẫn trả phí/đang thức và
+chưa workflow keepalive nào active trên `main` trước H2/H3.
 
-## 7. Secret And Data Review
+## 7. Rà soát secret và dữ liệu
 
-The reviewed implementation contains:
+Triển khai đã review không chứa:
 
-- no password, token, publish profile, connection string, mailbox, recipient
-  address, rendered email content, or notification payload;
-- no secret lookup or output command;
-- no user or notification record;
-- only the public App Service hostname and non-secret worker-setting names.
+- password, token, publish profile, connection string, mailbox, địa chỉ
+  recipient, nội dung email đã render hay payload notification;
+- lệnh tra cứu hoặc xuất secret;
+- bản ghi user hoặc notification;
+- ngoài hostname App Service công khai và tên setting worker không phải secret.
 
-The existing deployment guide continues to name required secret variables, but
-the implementation adds no value for any such variable.
+Hướng dẫn triển khai hiện có vẫn nêu các biến secret bắt buộc, nhưng phần triển
+khai không thêm giá trị cho bất kỳ biến nào như vậy.
 
-## 8. Remaining Gates
+## 8. Các cổng còn lại
 
-- H2 must review the complete local implementation diff and this evidence.
-- After H2, commit and publish only the reviewed files.
-- Required pull-request checks must pass for the exact head.
-- H3 must approve merge.
-- Post-merge `main` CI and a manual keepalive run must succeed.
-- Only then may the operator disable Always On and scale B1 to F1.
-- Live post-transition evidence and rollback, if needed, remain pending.
+- H2 phải review toàn bộ implementation diff cục bộ và bằng chứng này.
+- Sau H2, chỉ commit và publish các tệp đã review.
+- Các kiểm tra pull request bắt buộc phải đạt tại exact head.
+- H3 phải phê duyệt merge.
+- CI `main` sau merge và một lần chạy keepalive thủ công phải đạt.
+- Chỉ sau đó operator mới được tắt Always On và scale B1 xuống F1.
+- Bằng chứng môi trường sống sau chuyển đổi và rollback, nếu cần, vẫn đang chờ.

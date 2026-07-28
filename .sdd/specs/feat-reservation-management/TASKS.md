@@ -1,173 +1,173 @@
-# TASKS.md - FE08 Reservation Management
+# TASKS.md - FE08 Quản lý đặt chỗ
 
-Status: H3 GOVERNANCE REMEDIATION - FRESH H2 PENDING
+Trạng thái: KHẮC PHỤC QUẢN TRỊ H3 - ĐANG CHỜ H2 MỚI
 Implementation State: COMPLETE
 
-Owner: Nhat
+Chủ sở hữu: Nhat
 
-Updated: 2026-07-27
+Cập nhật: 2026-07-27
 
-Workflow State: The Phase 2 baseline remains complete. `main` owns
-`FE08-T041` through `FE08-T046`; the rule-alignment regression-only task is
-`FE08-T047`. Nhat approved the `8d0059b` H2 addendum on 2026-07-27; the
-reviewed result was committed as `f346ae0`, pushed to draft PR #63, and CI run
-`30244750250` passed. The first H3 review found no FE08 code or business-rule
-defect and returned only stale governance wording. The documentation-only
-remediation remains uncommitted pending fresh H2 and repeated H3.
+Trạng thái quy trình: Mốc cơ sở Giai đoạn 2 vẫn hoàn tất. `main` sở hữu
+`FE08-T041` đến `FE08-T046`; tác vụ chỉ hồi quy căn chỉnh quy tắc là
+`FE08-T047`. Nhat đã phê duyệt phụ lục H2 `8d0059b` vào 2026-07-27; kết quả
+đã rà soát được commit là `f346ae0`, đẩy lên PR nháp #63 và lượt chạy CI
+`30244750250` đã đạt. Lần rà soát H3 đầu tiên không phát hiện lỗi mã hay quy
+tắc nghiệp vụ FE08 mà chỉ trả về diễn đạt quản trị cũ. Việc khắc phục chỉ tài
+liệu vẫn chưa được commit, đang chờ H2 mới và H3 lặp lại.
 
 ---
 
-## 1. Backend Tasks
+## 1. Tác vụ backend
 
-- [x] FE08-T01 Add reservation routes under `/api/reservations`.
-- [x] FE08-T02 Add request validators for create, list, cancel, process, and process queue.
-- [x] FE08-T03 Add role guard middleware for member/librarian/admin actions.
-- [x] FE08-T04 Add reservation service rules for eligibility, duplicate active reservation, available-copy rejection, and max active limit.
-- [x] FE08-T05 Add SQL repository methods for copy lookup, reservation CRUD, staff list, and queue hold.
-- [x] FE08-T06 Add member endpoints: create reservation, list my reservations, cancel my `ACTIVE` or `NOTIFIED` reservation.
-- [x] FE08-T07 Add staff endpoints: list reservations, process one reservation, process next queue item.
-- [x] FE08-T08 Create FE10 `RESERVATION_READY` notification request during queue processing.
-- [x] FE08-T09 Write audit logs for create, cancel, and process actions.
+- [x] FE08-T01 Thêm route đặt chỗ dưới `/api/reservations`.
+- [x] FE08-T02 Thêm validator yêu cầu cho tạo, liệt kê, hủy, xử lý và xử lý hàng đợi.
+- [x] FE08-T03 Thêm middleware bảo vệ vai trò cho thao tác thành viên/thủ thư/quản trị viên.
+- [x] FE08-T04 Thêm quy tắc service đặt chỗ cho điều kiện hợp lệ, đặt chỗ đang hoạt động trùng lặp, từ chối bản sao khả dụng và giới hạn đang hoạt động tối đa.
+- [x] FE08-T05 Thêm phương thức repository SQL cho tra cứu bản sao, CRUD đặt chỗ, danh sách nhân sự và giữ hàng đợi.
+- [x] FE08-T06 Thêm endpoint thành viên: tạo đặt chỗ, liệt kê lượt đặt chỗ của tôi, hủy đặt chỗ `ACTIVE` hoặc `NOTIFIED` của tôi.
+- [x] FE08-T07 Thêm endpoint nhân sự: liệt kê đặt chỗ, xử lý một đặt chỗ, xử lý mục hàng đợi kế tiếp.
+- [x] FE08-T08 Tạo yêu cầu thông báo `RESERVATION_READY` FE10 khi xử lý hàng đợi.
+- [x] FE08-T09 Ghi audit log cho thao tác tạo, hủy và xử lý.
 
-## 2. Test Tasks
+## 2. Tác vụ kiểm thử
 
-- [x] FE08-T10 Add in-memory reservation repository test helper.
-- [x] FE08-T11 Test reservation creation, duplicate rejection, available-copy rejection, and 3-active limit.
-- [x] FE08-T12 Test owner-only cancellation and repeated cancellation handling.
-- [x] FE08-T13 Test staff listing and earliest eligible queue processing.
-- [x] FE08-T14 Test notification request creation when a copy is held.
-- [x] FE08-T15 Test authentication and role guards.
+- [x] FE08-T10 Thêm helper kiểm thử repository đặt chỗ trong bộ nhớ.
+- [x] FE08-T11 Kiểm thử tạo đặt chỗ, từ chối trùng lặp, từ chối bản sao khả dụng và giới hạn 3 hoạt động.
+- [x] FE08-T12 Kiểm thử hủy chỉ chủ sở hữu và xử lý hủy lặp lại.
+- [x] FE08-T13 Kiểm thử danh sách nhân sự và xử lý hàng đợi hợp lệ sớm nhất.
+- [x] FE08-T14 Kiểm thử tạo yêu cầu thông báo khi bản sao được giữ.
+- [x] FE08-T15 Kiểm thử bảo vệ xác thực và vai trò.
 
-## 3. Frontend Tasks
+## 3. Tác vụ frontend
 
-- [x] FE08-T16 Implement member my reservations screen.
-- [x] FE08-T17 Implement librarian reservation management screen.
-- [x] FE08-T18 Implement librarian reservation queue processing screen.
-- [x] FE08-T19 Wire frontend screens to backend APIs.
-- [x] FE08-T20 Add accessibility: table captions, header scopes, form labels, keyboard support.
-- [x] FE08-T21 Add loading, empty, and error states on all screens.
+- [x] FE08-T16 Triển khai màn hình lượt đặt chỗ của tôi cho thành viên.
+- [x] FE08-T17 Triển khai màn hình quản lý đặt chỗ của thủ thư.
+- [x] FE08-T18 Triển khai màn hình xử lý hàng đợi đặt chỗ của thủ thư.
+- [x] FE08-T19 Nối màn hình frontend với API backend.
+- [x] FE08-T20 Thêm khả năng tiếp cận: caption bảng, phạm vi header, nhãn biểu mẫu, hỗ trợ bàn phím.
+- [x] FE08-T21 Thêm trạng thái tải, rỗng và lỗi trên mọi màn hình.
 
-## 4. Frontend Correctness Tasks
+## 4. Tác vụ tính đúng đắn frontend
 
-- [x] FE08-T22 Map `NOTIFIED` and `FULFILLED` to canonical UI states.
-- [x] FE08-T23 Keep only `Waiting` (`ACTIVE`) reservations in the librarian queue and exclude `NOTIFIED` plus terminal states from queue actions.
-- [x] FE08-T24 Add reservation-specific Vietnamese API errors without affecting other APIs.
-- [x] FE08-T25 Connect staff hold-expiration processing to `POST /api/reservations/expire-holds`.
-- [x] FE08-T26 Remove local-only fulfillment and deletion controls.
-- [x] FE08-T27 Add focused frontend regression tests for lifecycle, error isolation, and page contract.
+- [x] FE08-T22 Ánh xạ `NOTIFIED` và `FULFILLED` tới trạng thái UI chính tắc.
+- [x] FE08-T23 Chỉ giữ lượt đặt chỗ `Waiting` (`ACTIVE`) trong hàng đợi thủ thư và loại `NOTIFIED` cùng trạng thái kết thúc khỏi thao tác hàng đợi.
+- [x] FE08-T24 Thêm lỗi API tiếng Việt riêng cho đặt chỗ mà không ảnh hưởng API khác.
+- [x] FE08-T25 Kết nối xử lý hết hạn giữ chỗ nhân sự với `POST /api/reservations/expire-holds`.
+- [x] FE08-T26 Loại điều khiển hoàn tất và xóa chỉ cục bộ.
+- [x] FE08-T27 Thêm kiểm thử hồi quy frontend tập trung cho vòng đời, cô lập lỗi và hợp đồng trang.
 
-## 4.1 FE07-FE08 Integration Task
+## 4.1 Tác vụ tích hợp FE07-FE08
 
-- [x] FE08-T025 Align cancellation/expiration lock order and FE07 fulfillment handoff. Trace: BR-FE08-015/016; AC-FE08-011/012. Dependency: FE07-T029/T030. Done when concurrency tests pass without deadlock.
+- [x] FE08-T025 Căn chỉnh thứ tự khóa hủy/hết hạn và bàn giao hoàn tất FE07. Truy vết: BR-FE08-015/016; AC-FE08-011/012. Phụ thuộc: FE07-T029/T030. Hoàn thành khi kiểm thử đồng thời đạt không deadlock.
 
-## 4.2 V0.4.3 Normalization Tasks
+## 4.2 Tác vụ chuẩn hóa v0.4.3
 
-- [x] **FE08-T028 - Lock deterministic API and pagination behavior.**
-  - Maps to: FR-FE08-027, AC-FE08-013, NFR-FE08-PERF-001/002.
-  - Files: `backend/src/routes/reservationRoutes.js`, `backend/src/validators/reservationValidators.js`, `backend/src/controllers/reservationController.js`, `backend/src/services/reservationService.js`, `backend/src/repositories/reservationRepository.js`, `backend/src/docs/openapi.yaml`, `backend/tests/reservationRoutes.test.js`.
-  - Dependency: historical FE08-T01 through FE08-T15.
-  - RED: add tests for `process-queue` requiring staff `copyId`, rejecting `bookId`, defaulting page/limit, rejecting invalid supplied values, and stable `ReservedAt ASC, ReservationId ASC` ordering.
-  - GREEN: align validators, service, repository, and API documentation with SPEC v0.4.2.
-  - DoD: invalid query/body values are rejected without normalization or repository query.
+- [x] **FE08-T028 - Khóa hành vi API và phân trang xác định.**
+  - Ánh xạ tới: FR-FE08-027, AC-FE08-013, NFR-FE08-PERF-001/002.
+  - Tệp: `backend/src/routes/reservationRoutes.js`, `backend/src/validators/reservationValidators.js`, `backend/src/controllers/reservationController.js`, `backend/src/services/reservationService.js`, `backend/src/repositories/reservationRepository.js`, `backend/src/docs/openapi.yaml`, `backend/tests/reservationRoutes.test.js`.
+  - Phụ thuộc: FE08-T01 đến FE08-T15 lịch sử.
+  - RED: thêm kiểm thử cho `process-queue` yêu cầu `copyId` nhân sự, từ chối `bookId`, mặc định page/limit, từ chối giá trị được cung cấp không hợp lệ và thứ tự `ReservedAt ASC, ReservationId ASC` ổn định.
+  - GREEN: căn chỉnh validator, service, repository và tài liệu API với SPEC v0.4.2.
+  - Tiêu chí hoàn thành: giá trị query/body không hợp lệ bị từ chối không chuẩn hóa hoặc truy vấn repository.
 
-- [x] **FE08-T029 - Lock deterministic queue outcomes.**
-  - Maps to: FR-FE08-018, FR-FE08-020, FR-FE08-021; AC-FE08-006/007/009; Q-FE08-006/007/008.
-  - Files: `backend/src/services/reservationService.js`, `backend/src/repositories/reservationRepository.js`, `backend/tests/reservationRoutes.test.js`.
-  - Dependency: FE08-T028.
-  - RED: add cases proving an ineligible active reservation remains `ACTIVE`, an empty queue returns no selection with unchanged copy state, and notification failure keeps the hold while writing `RESERVATION_NOTIFY_FAILED`.
-  - GREEN: remove policy alternatives and keep the approved state transitions deterministic.
-  - DoD: no automatic notification retry worker or hidden owner data is introduced.
+- [x] **FE08-T029 - Khóa kết quả hàng đợi xác định.**
+  - Ánh xạ tới: FR-FE08-018, FR-FE08-020, FR-FE08-021; AC-FE08-006/007/009; Q-FE08-006/007/008.
+  - Tệp: `backend/src/services/reservationService.js`, `backend/src/repositories/reservationRepository.js`, `backend/tests/reservationRoutes.test.js`.
+  - Phụ thuộc: FE08-T028.
+  - RED: thêm ca chứng minh đặt chỗ đang hoạt động không đủ điều kiện vẫn `ACTIVE`, hàng đợi rỗng không chọn gì với trạng thái bản sao không đổi và lỗi thông báo giữ lượt giữ trong khi ghi `RESERVATION_NOTIFY_FAILED`.
+  - GREEN: loại phương án chính sách và giữ các chuyển đổi trạng thái đã phê duyệt có tính xác định.
+  - Tiêu chí hoàn thành: không thêm worker thử lại thông báo tự động hoặc dữ liệu chủ sở hữu ẩn.
 
-- [x] **FE08-T030 - Reconcile reservation data fields and state invariants.**
-  - Maps to: BR-FE08-008 through BR-FE08-013, BR-FE08-017; FR-FE08-006 through FR-FE08-009, FR-FE08-019, FR-FE08-022, FR-FE08-028; AC-FE08-006 through AC-FE08-009, AC-FE08-014; NFR-FE08-TXN-001/002, NFR-FE08-LOG-001.
-  - Files: `database/Librarymanagement.sql`, `backend/src/models/Reservation.js`, `backend/src/repositories/reservationRepository.js`, `backend/tests/models.test.js`, `backend/tests/reservationRoutes.test.js`.
-  - Dependency: FE08-T029.
-  - RED: add fulfilled, expired, notified-cancelled, and never-notified-cancelled timestamp-retention cases.
-  - GREEN: ensure notification timestamps remain immutable history, `CancelledAt` is cancellation-only, and queue/cancel/expire/fulfill writes use `BookCopies -> Reservations` locking and audit consistently.
-  - DoD: notified reservations retain original timestamps in terminal states, never-notified rows keep them null, only cancelled rows have `CancelledAt`, and at most one notified hold exists per copy.
+- [x] **FE08-T030 - Đối soát trường dữ liệu đặt chỗ và bất biến trạng thái.**
+  - Ánh xạ tới: BR-FE08-008 đến BR-FE08-013, BR-FE08-017; FR-FE08-006 đến FR-FE08-009, FR-FE08-019, FR-FE08-022, FR-FE08-028; AC-FE08-006 đến AC-FE08-009, AC-FE08-014; NFR-FE08-TXN-001/002, NFR-FE08-LOG-001.
+  - Tệp: `database/Librarymanagement.sql`, `backend/src/models/Reservation.js`, `backend/src/repositories/reservationRepository.js`, `backend/tests/models.test.js`, `backend/tests/reservationRoutes.test.js`.
+  - Phụ thuộc: FE08-T029.
+  - RED: thêm ca giữ dấu thời gian hoàn tất, hết hạn, hủy đã thông báo và hủy chưa từng thông báo.
+  - GREEN: bảo đảm dấu thời gian thông báo là lịch sử bất biến, `CancelledAt` chỉ dành cho hủy và ghi hàng đợi/hủy/hết hạn/hoàn tất dùng khóa `BookCopies -> Reservations` cùng audit nhất quán.
+  - Tiêu chí hoàn thành: đặt chỗ đã thông báo giữ dấu thời gian ban đầu ở trạng thái kết thúc, hàng chưa từng thông báo giữ null, chỉ hàng đã hủy có `CancelledAt` và nhiều nhất một lượt giữ đã thông báo mỗi bản sao.
 
-- [x] **FE08-T031 - Reconcile FE07 fulfillment and priority boundary.**
-  - Maps to: BR-FE08-011, BR-FE08-014 through BR-FE08-016; FR-FE08-023 through FR-FE08-026; AC-FE08-008, AC-FE08-011/012.
-  - Files: `backend/src/services/borrowingService.js`, `backend/src/repositories/borrowingRepository.js`, `backend/src/services/reservationService.js`, `backend/tests/borrowingRoutes.test.js`, `backend/tests/reservationRoutes.test.js`, `backend/tests/sql/borrowingConcurrency.sqltest.js`.
-  - Dependency: FE08-T030 and approved FE07-T031 through FE07-T036.
-  - GREEN: only same-member/same-copy FE07 approval fulfills `NOTIFIED`; active queue and another-member holds block ordinary borrow/renewal without exposing owner data.
-  - DoD: shared lock suffix and transaction rollback evidence remain aligned with FE07.
+- [x] **FE08-T031 - Đối soát ranh giới hoàn tất và ưu tiên FE07.**
+  - Ánh xạ tới: BR-FE08-011, BR-FE08-014 đến BR-FE08-016; FR-FE08-023 đến FR-FE08-026; AC-FE08-008, AC-FE08-011/012.
+  - Tệp: `backend/src/services/borrowingService.js`, `backend/src/repositories/borrowingRepository.js`, `backend/src/services/reservationService.js`, `backend/tests/borrowingRoutes.test.js`, `backend/tests/reservationRoutes.test.js`, `backend/tests/sql/borrowingConcurrency.sqltest.js`.
+  - Phụ thuộc: FE08-T030 và FE07-T031 đến FE07-T036 đã phê duyệt.
+  - GREEN: chỉ phê duyệt FE07 cùng thành viên/cùng bản sao mới hoàn tất `NOTIFIED`; hàng đợi đang hoạt động và lượt giữ của thành viên khác chặn mượn/gia hạn thông thường mà không lộ dữ liệu chủ sở hữu.
+  - Tiêu chí hoàn thành: hậu tố khóa dùng chung và bằng chứng hoàn tác giao dịch vẫn căn chỉnh với FE07.
 
-- [x] **FE08-T032 - Reconcile frontend lifecycle and server refresh evidence.**
-  - Maps to: AC-FE08-001 through AC-FE08-013; NFR-FE08-UX-001/002.
-  - Files: `frontend/src/page/reservation/*`, `frontend/src/api/libraryFeatureApi.js`, `frontend/test/reservationFrontend.test.js`.
-  - Dependency: FE08-T028 through FE08-T031.
-  - RED: add focused assertions for `ACTIVE`/`NOTIFIED`/`FULFILLED` labels, queue visibility, pagination, error isolation, and refresh after expiration/cancel/process.
-  - GREEN: frontend displays only canonical server state and never offers local fulfillment/deletion or automatic retry controls.
-  - DoD: the focused frontend test file exists and its command is recorded in `TEST_PLAN.md`.
+- [x] **FE08-T032 - Đối soát vòng đời frontend và bằng chứng làm mới máy chủ.**
+  - Ánh xạ tới: AC-FE08-001 đến AC-FE08-013; NFR-FE08-UX-001/002.
+  - Tệp: `frontend/src/page/reservation/*`, `frontend/src/api/libraryFeatureApi.js`, `frontend/test/reservationFrontend.test.js`.
+  - Phụ thuộc: FE08-T028 đến FE08-T031.
+  - RED: thêm assertion tập trung cho nhãn `ACTIVE`/`NOTIFIED`/`FULFILLED`, hiển thị hàng đợi, phân trang, cô lập lỗi và làm mới sau hết hạn/hủy/xử lý.
+  - GREEN: frontend chỉ hiển thị trạng thái máy chủ chính tắc và không bao giờ cung cấp điều khiển hoàn tất/xóa cục bộ hoặc thử lại tự động.
+  - Tiêu chí hoàn thành: tệp kiểm thử frontend tập trung tồn tại và lệnh của nó được ghi trong `TEST_PLAN.md`.
 
-- [x] **FE08-T033 - Complete requirement traceability and test plan.**
-  - Maps to: all FE08 BR/FR/AC/NFR IDs, including FR-FE08-027/028 and AC-FE08-013/014.
-  - Files: `.sdd/specs/feat-reservation-management/SPEC.md`, `TEST_PLAN.md`, `CHANGELOG.md`, `TASKS.md`.
-  - Dependency: FE08-T028 through FE08-T032.
-  - DoD: no `TBD`, policy alternatives, or missing requirement rows remain; historical B7 results and v0.4.3 evidence are separated.
+- [x] **FE08-T033 - Hoàn tất truy vết yêu cầu và kế hoạch kiểm thử.**
+  - Ánh xạ tới: mọi ID FE08 BR/FR/AC/NFR, gồm FR-FE08-027/028 và AC-FE08-013/014.
+  - Tệp: `.sdd/specs/feat-reservation-management/SPEC.md`, `TEST_PLAN.md`, `CHANGELOG.md`, `TASKS.md`.
+  - Phụ thuộc: FE08-T028 đến FE08-T032.
+  - Tiêu chí hoàn thành: không còn `TBD`, phương án chính sách hay hàng yêu cầu thiếu; kết quả B7 lịch sử và bằng chứng v0.4.3 được tách biệt.
 
-- [x] **FE08-T034 - Normalize terminal timestamp semantics in documentation.**
-  - Maps to: BR-FE08-017, FR-FE08-028, AC-FE08-014, Q-FE08-009, INV-FE08-009..010.
-  - DoD: SPEC, PLAN, TASKS, TEST_PLAN, and CHANGELOG agree that notification timestamps are immutable history and `CancelledAt` is cancellation-only; implementation files remain unchanged.
-  - Review state: documentation complete and human review confirmed by Nhat on 2026-07-17.
+- [x] **FE08-T034 - Chuẩn hóa ngữ nghĩa dấu thời gian kết thúc trong tài liệu.**
+  - Ánh xạ tới: BR-FE08-017, FR-FE08-028, AC-FE08-014, Q-FE08-009, INV-FE08-009..010.
+  - Tiêu chí hoàn thành: SPEC, PLAN, TASKS, TEST_PLAN và CHANGELOG thống nhất rằng dấu thời gian thông báo là lịch sử bất biến và `CancelledAt` chỉ dành cho hủy; các tệp triển khai không đổi.
+  - Trạng thái rà soát: tài liệu hoàn tất và Nhat xác nhận rà soát con người vào 2026-07-17.
 
-- [x] **FE08-T035 - Approve and trace the member-safe candidate contract.**
-  - Maps to: FR-FE08-029, AC-FE08-015/016, NFR-FE08-SEC-004, NFR-FE08-PERF-003, Q-FE08-011.
-  - Files: FE08 `SPEC.md`, `PLAN.md`, `TASKS.md`, `CHANGELOG.md`; candidate design and implementation plan.
-  - DoD: Option A and the written design are explicitly human-approved; query, projection, role, ordering, and non-goals are unambiguous.
+- [x] **FE08-T035 - Phê duyệt và truy vết hợp đồng ứng viên an toàn cho thành viên.**
+  - Ánh xạ tới: FR-FE08-029, AC-FE08-015/016, NFR-FE08-SEC-004, NFR-FE08-PERF-003, Q-FE08-011.
+  - Tệp: `SPEC.md`, `PLAN.md`, `TASKS.md`, `CHANGELOG.md` FE08; thiết kế ứng viên và kế hoạch triển khai.
+  - Tiêu chí hoàn thành: Phương án A và thiết kế viết được phê duyệt rõ ràng bởi con người; truy vấn, projection, vai trò, thứ tự và mục tiêu không thực hiện là rõ ràng.
 
-- [x] **FE08-T036 - Implement and validate the backend candidate API.**
-  - Maps to: FR-FE08-029, AC-FE08-015, NFR-FE08-SEC-004, NFR-FE08-PERF-003.
-  - Files: FE08 validators/routes/controller/service/repository, OpenAPI, in-memory helper, route tests, and `backend/tests/sql/reservationCandidates.sqltest.js`.
-  - RED: role, query, safe-key, status, search, ordering, pagination, active-count, and no-mutation cases fail before the route exists.
-  - GREEN: member-only `{ data, pagination }` projection passes focused Jest and disposable SQL Server suites.
-  - Validation: backend candidate contract `23/23`; focused SQL `2/2`; aggregate SQL `9/9` suites and `69/69` tests.
+- [x] **FE08-T036 - Triển khai và xác thực API ứng viên backend.**
+  - Ánh xạ tới: FR-FE08-029, AC-FE08-015, NFR-FE08-SEC-004, NFR-FE08-PERF-003.
+  - Tệp: validator/route/controller/service/repository FE08, OpenAPI, helper trong bộ nhớ, kiểm thử route và `backend/tests/sql/reservationCandidates.sqltest.js`.
+  - RED: các ca vai trò, query, khóa an toàn, trạng thái, tìm kiếm, thứ tự, phân trang, số đếm đang hoạt động và không thay đổi thất bại trước khi route tồn tại.
+  - GREEN: projection `{ data, pagination }` chỉ thành viên đạt bộ Jest tập trung và SQL Server dùng một lần.
+  - Xác thực: hợp đồng backend ứng viên `23/23`; SQL tập trung `2/2`; SQL tổng hợp `9/9` bộ và `69/69` kiểm thử.
 
-- [x] **FE08-T037 - Replace `DEMO_RESERVABLE` with canonical server candidates.**
-  - Maps to: FR-FE08-029, AC-FE08-015/016, NFR-FE08-PERF-003.
-  - Files: `frontend/src/api/libraryFeatureApi.js`, `frontend/src/page/reservation/MyReservationsPage.jsx`, `frontend/src/utils/libraryFeatureViewModels.js`, `frontend/test/reservationFrontend.test.js`.
-  - RED: source tests fail while the page imports the demo catalog or lacks `reservationApi.listCandidates`.
-  - GREEN: server search/page state, loading/empty/error states, real `copyId` mutation, and post-mutation refresh pass without invented ETA or availability counts.
-  - Validation: current full frontend `149/149`, lint PASS, build PASS, and no `DEMO_RESERVABLE` reference remains.
+- [x] **FE08-T037 - Thay `DEMO_RESERVABLE` bằng ứng viên máy chủ chính tắc.**
+  - Ánh xạ tới: FR-FE08-029, AC-FE08-015/016, NFR-FE08-PERF-003.
+  - Tệp: `frontend/src/api/libraryFeatureApi.js`, `frontend/src/page/reservation/MyReservationsPage.jsx`, `frontend/src/utils/libraryFeatureViewModels.js`, `frontend/test/reservationFrontend.test.js`.
+  - RED: kiểm thử nguồn thất bại khi trang import danh mục demo hoặc thiếu `reservationApi.listCandidates`.
+  - GREEN: trạng thái tìm kiếm/trang máy chủ, tải/rỗng/lỗi, thay đổi `copyId` thực và làm mới sau thay đổi đạt mà không tạo ETA hay số đếm khả dụng.
+  - Xác thực: frontend đầy đủ hiện tại `149/149`, lint PASS, build PASS và không còn tham chiếu `DEMO_RESERVABLE`.
 
-- [x] **FE08-T038 - Add isolated browser acceptance for candidate selection.**
-  - Maps to: FR-FE08-029, AC-FE08-015/016.
-  - Files: `tests/e2e/fe08-reservation-candidate-catalog.spec.js` and deterministic E2E support only if required.
-  - DoD: member catalog, search query, safe payload, real reservation creation, canonical refresh, and mobile overflow pass on isolated ports.
-  - Validation: focused FE08 browser `1/1`; full Playwright `4/4` on `4185/3101`.
+- [x] **FE08-T038 - Thêm chấp nhận trình duyệt cô lập cho chọn ứng viên.**
+  - Ánh xạ tới: FR-FE08-029, AC-FE08-015/016.
+  - Tệp: `tests/e2e/fe08-reservation-candidate-catalog.spec.js` và hỗ trợ E2E xác định chỉ khi cần.
+  - Tiêu chí hoàn thành: danh mục thành viên, truy vấn tìm kiếm, payload an toàn, tạo đặt chỗ thực, làm mới chính tắc và tràn di động đạt trên cổng cô lập.
+  - Xác thực: trình duyệt FE08 tập trung `1/1`; Playwright đầy đủ `4/4` trên `4185/3101`.
 
-- [x] **FE08-T039 - Close TD-028 with full validation evidence.**
-  - Maps to: all v0.4.4 candidate IDs.
-  - Files: `TECH_DEBT.md`, focused validation review, full acceptance packet, and PR evidence.
-  - DoD: focused/full backend/frontend/coverage/integration/SQL/E2E/traceability/safety gates pass; TD-028 moves to RESOLVED; final H3 remains explicit.
-  - Validation: evidence recorded in `.sdd/reviews/fe08-reservation-candidate-catalog-validation-2026-07-19.md`; H3 and post-merge `main` CI remain human gates.
+- [x] **FE08-T039 - Đóng TD-028 bằng bằng chứng xác thực đầy đủ.**
+  - Ánh xạ tới: mọi ID ứng viên v0.4.4.
+  - Tệp: `TECH_DEBT.md`, rà soát xác thực tập trung, gói chấp nhận đầy đủ và bằng chứng PR.
+  - Tiêu chí hoàn thành: cổng backend/frontend/bao phủ/tích hợp/SQL/E2E/truy vết/an toàn tập trung và đầy đủ đạt; TD-028 chuyển sang RESOLVED; H3 cuối vẫn nêu rõ.
+  - Xác thực: bằng chứng được ghi tại `.sdd/reviews/fe08-reservation-candidate-catalog-validation-2026-07-19.md`; H3 và CI `main` sau merge vẫn là cổng con người.
 
-## 5. Validation
+## 5. Xác thực
 
-- [x] `npm.cmd --prefix frontend test` - 14/14 tests passed.
-- [x] `npm.cmd --prefix frontend run lint` - passed with 0 ESLint errors.
-- [x] `npm.cmd --prefix frontend run build` - Vite 8.0.16 production build passed after transforming 14,323 modules; Vite reported a non-failing chunk-size warning.
-- [x] `npm.cmd --prefix backend test` - 15/15 Jest suites and 123/123 tests passed; 0 snapshots.
-- [x] B7 post-merge record - commit `236043864304627f3577baafa9b8648c13c7a691` is in `main`; GitHub Actions CI run `29217437981` passed.
+- [x] `npm.cmd --prefix frontend test` - 14/14 kiểm thử đạt.
+- [x] `npm.cmd --prefix frontend run lint` - đạt với 0 lỗi ESLint.
+- [x] `npm.cmd --prefix frontend run build` - Vite 8.0.16 build production đạt sau khi biến đổi 14,323 module; Vite báo cảnh báo kích thước chunk không gây thất bại.
+- [x] `npm.cmd --prefix backend test` - 15/15 bộ Jest và 123/123 kiểm thử đạt; 0 snapshot.
+- [x] Bản ghi sau merge B7 - commit `236043864304627f3577baafa9b8648c13c7a691` nằm trong `main`; GitHub Actions CI `29217437981` đạt.
 
-### 5.1 Pending V0.4.2 Validation
+### 5.1 Xác thực v0.4.2 đang chờ
 
-- [x] FE08-T028 through FE08-T032 focused tests pass: backend/shared boundary 77/77 and frontend 9/9.
-- [x] `npm.cmd run trace:enforce` passes with FE08 coverage 29/29.
-- [x] `git diff --check` passes.
-- [x] Nhat confirmed human review of the normalized contract on 2026-07-17.
+- [x] Kiểm thử tập trung FE08-T028 đến FE08-T032 đạt: backend/ranh giới dùng chung 77/77 và frontend 9/9.
+- [x] `npm.cmd run trace:enforce` đạt với bao phủ FE08 29/29.
+- [x] `git diff --check` đạt.
+- [x] Nhat xác nhận rà soát con người của hợp đồng chuẩn hóa vào 2026-07-17.
 
-### 5.2 Completed V0.4.4 Candidate Validation
+### 5.2 Xác thực ứng viên v0.4.4 đã hoàn thành
 
-- [x] FE08-T036 backend route and SQL tests pass: focused backend `23/23`; SQL aggregate `9/9` suites, `69/69` tests.
-- [x] FE08-T037 current frontend tests `149/149`, lint, and build pass with no `DEMO_RESERVABLE` reference.
-- [x] FE08-T038 isolated browser acceptance passes: focused `1/1`; full Playwright `4/4` on `4185/3101`.
-- [x] FE08-T039 full regression, traceability, safety, and evidence gates pass; final H3, merge, and post-merge `main` CI are recorded in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`.
+- [x] Kiểm thử route backend và SQL FE08-T036 đạt: backend tập trung `23/23`; SQL tổng hợp `9/9` bộ, `69/69` kiểm thử.
+- [x] Kiểm thử frontend hiện tại FE08-T037 `149/149`, lint và build đạt, không có tham chiếu `DEMO_RESERVABLE`.
+- [x] Chấp nhận trình duyệt cô lập FE08-T038 đạt: tập trung `1/1`; Playwright đầy đủ `4/4` trên `4185/3101`.
+- [x] Hồi quy, truy vết, an toàn và cổng bằng chứng đầy đủ FE08-T039 đạt; H3 cuối, merge và CI `main` sau merge được ghi tại `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`.
 
-## 6. Traceability
+## 6. Truy vết
 
-| Spec ID | Covered by |
+| ID đặc tả | Được bao phủ bởi |
 | --- | --- |
 | BR-FE08-001 | FE08-T03, FE08-T15 |
 | BR-FE08-002 | FE08-T03, FE08-T04, FE08-T11 |
@@ -184,15 +184,15 @@ remediation remains uncommitted pending fresh H2 and repeated H3.
 | FR-FE08-010 | FE08-T06, FE08-T12 |
 | BR-FE08-015/016; AC-FE08-011/012 | FE08-T025 |
 
-### 6.1 Supplemental Frontend Correctness Traceability
+### 6.1 Truy vết bổ sung về tính đúng đắn frontend
 
-| Spec ID | Covered by |
+| ID đặc tả | Được bao phủ bởi |
 | --- | --- |
 | FR-FE08-005 | FE08-T17, FE08-T19, FE08-T23 |
 | FR-FE08-007 | FE08-T18, FE08-T22, FE08-T23 |
 | FR-FE08-009 | FE08-T22, FE08-T23, FE08-T27 |
 | FR-FE08-017 | FE08-T12, FE08-T24, FE08-T27 |
-| FR-FE08-019 | FE08-T25, FE08-T27; `backend/tests/integration.test.js` and `backend/tests/reservationRoutes.test.js` expire-holds promotion coverage |
+| FR-FE08-019 | FE08-T25, FE08-T27; `backend/tests/integration.test.js` và bao phủ nâng expire-holds của `backend/tests/reservationRoutes.test.js` |
 | NFR-FE08-UX-001 | FE08-T21, FE08-T22, FE08-T24, FE08-T27 |
 | FR-FE08-018/020/021/027 | FE08-T028, FE08-T029 |
 | AC-FE08-013 | FE08-T028, FE08-T032 |
@@ -210,77 +210,70 @@ remediation remains uncommitted pending fresh H2 and repeated H3.
 | NFR-FE08-SEC-004 | FE08-T035, FE08-T036, FE08-T039 |
 | NFR-FE08-PERF-003 | FE08-T035, FE08-T036, FE08-T037, FE08-T039 |
 
-## 7. Still Outside This Slice
+## 7. Vẫn ngoài lát cắt này
 
-- Automatic FE07 return-to-queue integration.
-- FE10 delivery worker.
-- Automatic expiration job.
+- Tích hợp trả-sang-hàng-đợi FE07 tự động.
+- Worker giao FE10.
+- Job hết hạn tự động.
 
-## 8. V0.5.3 Atomic Lifecycle Audit And Warning Propagation Remediation
+## 8. Khắc phục audit vòng đời nguyên tử và lan truyền cảnh báo v0.5.3
 
-- [~] **FE08-T040 - Commit lifecycle state and audit together.**
-  - Maps to: BR-FE08-013, FR-FE08-001, FR-FE08-004, FR-FE08-021, NFR-FE08-TXN-001/002, NFR-FE08-LOG-001, NFR-FE08-UX-002.
-  - RED: repository tests require audit-before-commit for create/cancel/hold/expire; service/route tests require rollback, safe post-commit warning, and serialization of expiration-promotion warnings; frontend tests reject cached-member confirmation.
-  - GREEN: lifecycle audit writes participate in mutation transactions; notification failure remains post-commit; unavailable failure-audit returns singular `process-queue.notificationWarning` or one safe `expire-holds.notificationWarnings[]` item per affected promotion; staff confirmation contains only copy context plus server re-selection explanation.
-  - Verification: the initial H2 and H2 addendum passed; commit `97aca62` and PR CI run `30014066260` passed. Fresh H2 then approved remediation commit `b931e00`, and PR CI run `30019439505` passed. The repeated H3 review found missing multi-warning regression depth, the singular warning OpenAPI gap, closing-bracket parity, and stale evidence. Fresh H2 approved the round-two package on 2026-07-23 and authorized its reviewed commit/push; updated PR CI and repeated H3 remain mandatory before merge.
+- [~] **FE08-T040 - Commit trạng thái vòng đời và audit cùng nhau.**
+  - Ánh xạ tới: BR-FE08-013, FR-FE08-001, FR-FE08-004, FR-FE08-021, NFR-FE08-TXN-001/002, NFR-FE08-LOG-001, NFR-FE08-UX-002.
+  - RED: kiểm thử repository yêu cầu audit-trước-commit cho tạo/hủy/giữ/hết hạn; kiểm thử service/route yêu cầu hoàn tác, cảnh báo an toàn sau commit và tuần tự hóa cảnh báo nâng hết hạn; kiểm thử frontend từ chối xác nhận thành viên cache.
+  - GREEN: ghi audit vòng đời tham gia giao dịch thay đổi; lỗi thông báo vẫn sau commit; audit lỗi không sẵn có trả `process-queue.notificationWarning` đơn lẻ hoặc một mục `expire-holds.notificationWarnings[]` an toàn cho mỗi lượt nâng bị ảnh hưởng; xác nhận nhân sự chỉ chứa ngữ cảnh bản sao cùng giải thích chọn lại máy chủ.
+  - Xác minh: H2 ban đầu và phụ lục H2 đã đạt; commit `97aca62` và lượt chạy PR CI `30014066260` đã đạt. H2 mới sau đó phê duyệt commit khắc phục `b931e00`, và lượt chạy PR CI `30019439505` đã đạt. Rà soát H3 lặp lại phát hiện thiếu độ sâu hồi quy đa cảnh báo, khoảng trống OpenAPI cảnh báo đơn lẻ, tính cân bằng ngoặc đóng và bằng chứng cũ. H2 mới phê duyệt gói vòng hai vào 2026-07-23 và cho phép commit/push đã rà soát; PR CI cập nhật và H3 lặp lại vẫn bắt buộc trước merge.
 
-## 9. 2026-07-27 single-role and member presentation baseline
+## 9. 2026-07-27 - Mốc cơ sở một vai trò và trình bày thành viên
 
-- [x] **FE08-T041 - Enforce single-role access to member reservation flows.**
-  - Maps to: BR-FE08-018, FR-FE08-030, AC-FE08-017; BR-FE11-028.
-  - Replace member-any-role guards on candidate/create/own-list/cancel routes with the shared non-staff-member guard.
-  - Redirect invalid stale/legacy role arrays containing both Member and staff away from frontend member routes while preserving staff list/queue operations.
-  - Verify defensive `MEMBER + LIBRARIAN` and `MEMBER + ADMIN` compatibility-array cases without treating them as supported persisted accounts.
+- [x] **FE08-T041 - Thực thi truy cập một vai trò cho các luồng đặt chỗ thành viên.**
+  - Ánh xạ tới: BR-FE08-018, FR-FE08-030, AC-FE08-017; BR-FE11-028.
+  - Thay bảo vệ thành viên-bất-kỳ-vai-trò tại route ứng viên/tạo/danh sách riêng/hủy bằng bảo vệ thành viên không phải nhân sự dùng chung.
+  - Chuyển hướng mảng vai trò cũ/không hợp lệ chứa cả Member và nhân sự khỏi route frontend thành viên trong khi giữ thao tác danh sách/hàng đợi nhân sự.
+  - Xác minh các ca mảng tương thích phòng thủ `MEMBER + LIBRARIAN` và `MEMBER + ADMIN` mà không coi chúng là tài khoản đã lưu được hỗ trợ.
 
-- [x] **FE08-T042 - Connect FE01 selected-book reservation handoff.**
-  - Maps to: FR-FE08-031, AC-FE08-018; BR-FE01-015/016, FR-FE01-014/018.
-  - Read the FE01 `bookId` deep link, resolve its public title, and initialize the protected FE08 candidate search.
-  - Keep candidate `copyId` selection and `POST /api/reservations` authoritative inside FE08; do not widen FE01 public data.
-  - Verify focused FE01 action labels/routes and FE08 selected-book candidate initialization.
+- [x] **FE08-T042 - Kết nối bàn giao đặt chỗ sách được chọn FE01.**
+  - Ánh xạ tới: FR-FE08-031, AC-FE08-018; BR-FE01-015/016, FR-FE01-014/018.
+  - Đọc deep link `bookId` FE01, phân giải tiêu đề công khai của nó và khởi tạo tìm kiếm ứng viên FE08 được bảo vệ.
+  - Giữ chọn `copyId` ứng viên và `POST /api/reservations` có thẩm quyền bên trong FE08; không mở rộng dữ liệu công khai FE01.
+  - Xác minh nhãn/route thao tác FE01 tập trung và khởi tạo ứng viên sách được chọn FE08.
 
-- [x] **FE08-T043 - Separate current Member reservations from history.**
-  - Maps to: FR-FE08-010/032, AC-FE08-010/019, NFR-FE08-UX-001.
-  - Keep canonical own-list records, group `ACTIVE`/`NOTIFIED` separately from terminal history, and render every raw lifecycle state with a visible supported badge.
-  - Connect the candidate action to the matching current reservation so a held copy says `Đến lượt bạn` instead of looking cancelled or stale.
-  - Preserve Librarian/Admin queue ordering and FE07 state-transition ownership.
+- [x] **FE08-T043 - Tách lượt đặt chỗ Thành viên hiện tại khỏi lịch sử.**
+  - Ánh xạ tới: FR-FE08-010/032, AC-FE08-010/019, NFR-FE08-UX-001.
+  - Giữ bản ghi danh sách riêng chính tắc, nhóm `ACTIVE`/`NOTIFIED` tách khỏi lịch sử kết thúc và hiển thị mọi trạng thái vòng đời thô với badge được hỗ trợ rõ ràng.
+  - Kết nối thao tác ứng viên với lượt đặt chỗ hiện tại khớp để bản sao được giữ nói `Đến lượt bạn` thay vì trông như đã hủy hoặc cũ.
+  - Giữ thứ tự hàng đợi Thủ thư/Quản trị viên và quyền sở hữu chuyển trạng thái FE07.
 
-- [x] **FE08-T044 - Show the pickup window and connect the held copy to FE07.**
-  - Maps to: FR-FE08-033, AC-FE08-020; FR-FE07-024/033, AC-FE07-016/027.
-  - Render `NotifiedAt` through `ExpiresAt` for the canonical `NOTIFIED` record and explain that the hold expires after the deadline.
-  - Link the exact held `bookId`/`copyId` to the Member FE07 request page; retain Librarian/Admin approval and FE07 fulfillment ownership.
-  - Update the FE08 Chromium expectation from the superseded `Đã đặt chỗ` label to `Đang đặt chỗ`.
+- [x] **FE08-T044 - Hiển thị cửa sổ nhận sách và kết nối bản sao được giữ tới FE07.**
+  - Ánh xạ tới: FR-FE08-033, AC-FE08-020; FR-FE07-024/033, AC-FE07-016/027.
+  - Hiển thị `NotifiedAt` qua `ExpiresAt` cho bản ghi `NOTIFIED` chính tắc và giải thích lượt giữ hết hạn sau hạn chót.
+  - Liên kết chính xác `bookId`/`copyId` được giữ tới trang yêu cầu FE07 Thành viên; giữ quyền sở hữu phê duyệt Thủ thư/Quản trị viên và hoàn tất FE07.
+  - Cập nhật kỳ vọng Chromium FE08 từ nhãn `Đã đặt chỗ` đã bị thay thế thành `Đang đặt chỗ`.
 
-- [x] **FE08-T045 - Prevent reservation while the Member currently borrows the same book.**
-  - Maps to: BR-FE08-019, FR-FE08-034, AC-FE08-021; BR-FE07-032.
-  - Exclude same-`BookId` candidates, reject direct create with `BOOK_ALREADY_BORROWED`, and revalidate stale queue entries during Librarian/Admin processing.
-  - Coordinate FE07 borrow approval and FE08 create/hold through the Member circulation lock.
-  - Verify repository source, service mapping, route behavior, queue behavior, and Vietnamese error mapping.
-  - Source: upstream-approved and implemented on `main` at `e99daf5`; this is
-    not a new RED claim from the rule-alignment branch.
+- [x] **FE08-T045 - Ngăn đặt chỗ khi Thành viên hiện đang mượn cùng sách.**
+  - Ánh xạ tới: BR-FE08-019, FR-FE08-034, AC-FE08-021; BR-FE07-032.
+  - Loại ứng viên cùng `BookId`, từ chối tạo trực tiếp bằng `BOOK_ALREADY_BORROWED` và xác thực lại mục hàng đợi cũ trong khi Thủ thư/Quản trị viên xử lý.
+  - Phối hợp phê duyệt mượn FE07 và tạo/giữ FE08 qua khóa lưu hành Thành viên.
+  - Xác minh nguồn repository, ánh xạ service, hành vi route, hành vi hàng đợi và ánh xạ lỗi tiếng Việt.
+  - Nguồn: được phê duyệt upstream và triển khai trên `main` tại `e99daf5`; đây không phải khẳng định RED mới từ nhánh căn chỉnh quy tắc.
 
-- [x] **FE08-T046 - Clarify copy-scoped queue positions.**
-  - Maps to: BR-FE08-020, FR-FE08-035, AC-FE08-022.
-  - Preserve per-`CopyId` positions, label Member/Librarian tables with the
-    copy scope, and remove the view-model fallback that invented `#1`.
-  - Render `Chưa xác định` for null canonical positions instead of `#null` or
-    `#undefined`.
-  - Verify equal positions across different books and null positions in both
-    Member and staff presentation contracts.
+- [x] **FE08-T046 - Làm rõ vị trí hàng đợi theo phạm vi bản sao.**
+  - Ánh xạ tới: BR-FE08-020, FR-FE08-035, AC-FE08-022.
+  - Giữ vị trí theo `CopyId`, gắn nhãn bảng Thành viên/Thủ thư với phạm vi bản sao và loại dự phòng view-model tạo `#1`.
+  - Hiển thị `Chưa xác định` cho vị trí chính tắc null thay vì `#null` hoặc `#undefined`.
+  - Xác minh vị trí bằng nhau xuyên sách khác nhau và vị trí null trong hợp đồng trình bày Thành viên và nhân sự.
 
-## 10. 2026-07-27 FE07/FE10 integration regression boundary
+## 10. 2026-07-27 - Ranh giới hồi quy tích hợp FE07/FE10
 
-- [x] **FE08-T047 - Verify unchanged FE07 and FE10 handoffs after latest-main integration.**
-  - Maps to: BD-006, SL-006, AT-006 and existing FR-FE08-008/024.
-  - Scope: regression evidence only after the bounded FE08-T046 null-safe
-    presentation remediation.
-  - Historical evidence against the prior `e20fdc3` merge remains baseline
-    only.
-  - Fresh evidence against the open `8d0059b` merge: queue-position RED/GREEN
-    `1/1`, FE09 backend `22/22`, FE08/FE09 frontend `17/17`, requester and
-    SIT coverage inside the 7-suite cross-feature gate `295/295`, full backend
-    and coverage `1,052/1,052`, frontend `232/232`, and Chromium acceptance
+- [x] **FE08-T047 - Xác minh bàn giao FE07 và FE10 không đổi sau tích hợp main mới nhất.**
+  - Ánh xạ tới: BD-006, SL-006, AT-006 và FR-FE08-008/024 hiện có.
+  - Phạm vi: chỉ bằng chứng hồi quy sau hiệu chỉnh trình bày an toàn null FE08-T046 có giới hạn.
+  - Bằng chứng lịch sử với merge `e20fdc3` trước đó chỉ là mốc cơ sở.
+  - Bằng chứng mới với merge `8d0059b` đang mở: RED/GREEN vị trí hàng đợi
+    `1/1`, backend FE09 `22/22`, frontend FE08/FE09 `17/17`, requester và
+    bao phủ SIT trong cổng liên tính năng 7 bộ `295/295`, backend đầy đủ
+    và bao phủ `1,052/1,052`, frontend `232/232` và chấp nhận Chromium
     `2/2`.
-  - Integration gate: the product H2 addendum approved commit `f346ae0` and PR
-    CI run `30244750250` passed. The documentation-only H3 remediation requires
-    fresh H2 and repeated H3 before merge.
-  - Failure rule: stop and diagnose; any new FE08 rule requires a separate SPEC revision.
+  - Cổng tích hợp: phụ lục H2 sản phẩm phê duyệt commit `f346ae0` và lượt chạy PR
+    CI `30244750250` đã đạt. Khắc phục chỉ tài liệu H3 yêu cầu H2 mới và H3 lặp lại trước merge.
+  - Quy tắc khi thất bại: dừng và chẩn đoán; mọi quy tắc FE08 mới yêu cầu bản sửa đổi SPEC riêng.
