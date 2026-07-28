@@ -1,53 +1,51 @@
-# FE10 Personal Notification Inbox H2 Validation - Round 5
+# Xác thực H2 Hộp thư thông báo cá nhân FE10 - Vòng 5
 
-- Date: 2026-07-28
-- Branch: `codex/feat-fe10-personal-notification-inbox`
+- Ngày: 2026-07-28
+- Nhánh: `codex/feat-fe10-personal-notification-inbox`
 - Baseline: `main@a240705fbd486304464b073cbd3caec77a1fa135`
-- Current committed head: `3f9f23a0bc8705590a977e31b03b05a6d2845628`
-- Status: **H2 APPROVED**
+- Head đã commit hiện tại: `3f9f23a0bc8705590a977e31b03b05a6d2845628`
+- Trạng thái: **H2 ĐÃ PHÊ DUYỆT**
 
-This bounded addendum exists because H3 round two found one lifecycle-only
-contradiction after the round-4-approved candidate was committed, published,
-tested, and deployed. It changes no runtime, API, database, migration,
-authorization, CSS, or test behavior. It only replaces pre-H2/current-state
-wording with the exact events that have now occurred.
+Phụ lục hữu hạn này tồn tại vì H3 vòng hai phát hiện một mâu thuẫn chỉ vòng đời
+sau khi candidate đã được phê duyệt vòng 4 được commit, công bố, kiểm thử và
+triển khai. Nó không thay đổi runtime, API, cơ sở dữ liệu, migration, phân
+quyền, CSS hay hành vi kiểm thử. Nó chỉ thay cách diễn đạt trước-H2/trạng thái
+hiện tại bằng các sự kiện chính xác hiện đã xảy ra.
 
-## 1. Candidate Identity
+## 1. Danh tính candidate
 
-- Candidate entries: **10** modified documentation files.
-- Candidate fingerprint:
+- Mục candidate: **10** tệp tài liệu đã sửa.
+- Fingerprint candidate:
   `6f12878cf3f68bf3d84cf22d4489328da1bd2ef6a54f8725570713430521c6f7`.
-- Candidate baseline and `origin/main`:
+- Baseline candidate và `origin/main`:
   `a240705fbd486304464b073cbd3caec77a1fa135`.
-- Cached/staged files at fingerprint time: **0**.
-- This round-5 decision record is deliberately excluded from the candidate
-  fingerprint so the human decision can be recorded without changing the
-  reviewed closeout text.
+- Tệp cached/staged tại thời điểm fingerprint: **0**.
+- Bản ghi quyết định vòng 5 này được loại có chủ ý khỏi fingerprint candidate để
+  quyết định con người có thể được ghi mà không đổi văn bản closeout đã review.
 
-Fingerprint algorithm:
+Thuật toán fingerprint:
 
-1. Read `git status --porcelain=v1 --untracked-files=all`.
-2. Exclude only
+1. Đọc `git status --porcelain=v1 --untracked-files=all`.
+2. Chỉ loại
    `.sdd/reviews/fe10-notification-inbox-h2-validation-2026-07-28-round-5.md`.
-3. For every remaining file, create
+3. Với mỗi tệp còn lại, tạo
    `<two-character-status>|<lowercase-file-sha256>|<normalized-path>`.
-4. Sort entries by case-sensitive normalized path.
-5. Join entries with LF, include one final LF, encode as UTF-8 without BOM,
-   and calculate SHA-256.
+4. Sắp mục theo đường dẫn chuẩn hóa phân biệt hoa/thường.
+5. Ghép mục bằng LF, gồm một LF cuối, mã hóa UTF-8 không BOM và tính SHA-256.
 
-## 2. Reviewed Scope
+## 2. Phạm vi đã review
 
-- Records H2 round 4 fingerprint `f41dbf50...` as approved.
-- Records exact PR head `3f9f23a`, exact-head CI `30313721511`, and Azure
-  staging deployment `30313949983` as passed.
-- Records public frontend/backend health, protected inbox `401`, approved CORS,
-  exact Azure SQL `ReadAt`/index cardinality, and cleanup evidence.
-- Preserves historical three-role live evidence on `28c4f80` without
-  misrepresenting it as a new exact-head authenticated run.
-- Marks repeated H3, explicit H3 approval, merge, and post-merge monitoring as
-  still pending.
+- Ghi fingerprint H2 vòng 4 `f41dbf50...` là đã phê duyệt.
+- Ghi PR head chính xác `3f9f23a`, CI exact-head `30313721511` và triển khai
+  Azure staging `30313949983` là đã đạt.
+- Ghi health frontend/backend công khai, inbox được bảo vệ `401`, CORS đã phê
+  duyệt, cardinality `ReadAt`/index Azure SQL chính xác và bằng chứng cleanup.
+- Giữ bằng chứng trực tiếp ba vai trò lịch sử trên `28c4f80` mà không trình bày
+  sai là lượt đã xác thực exact-head mới.
+- Đánh dấu H3 lặp lại, phê duyệt H3 rõ ràng, merge và giám sát hậu merge vẫn
+  chờ.
 
-## 3. Candidate Manifest
+## 3. Manifest candidate
 
 ```text
  M|e91ab6bebc16b10cdf8bc2fff71ba0b20e9fa9c12849ab48fb8b59b4239e6c70|.agents/CLAUDE.md
@@ -62,22 +60,22 @@ Fingerprint algorithm:
  M|114277568d500c31dacbb446e06f07d1677df482844fbfbc55e54c837c4ceeb1|docs/testing/master-test-plan.md
 ```
 
-## 4. Human H2 Decision
+## 4. Quyết định H2 của con người
 
-Required exact approval was:
-
-```text
-duyệt H2 fingerprint 6f12878cf3f68bf3d84cf22d4489328da1bd2ef6a54f8725570713430521c6f7
-```
-
-The user approved the exact candidate in the active task:
+Phê duyệt chính xác bắt buộc là:
 
 ```text
 duyệt H2 fingerprint 6f12878cf3f68bf3d84cf22d4489328da1bd2ef6a54f8725570713430521c6f7
 ```
 
-Decision: **APPROVED**.
+Người dùng đã phê duyệt candidate chính xác trong task đang hoạt động:
 
-After approval, this exact 10-entry candidate plus this excluded decision
-record may be staged, committed, pushed, and sent through exact-head CI before
-repeated H3. Any candidate-content change invalidates the authority.
+```text
+duyệt H2 fingerprint 6f12878cf3f68bf3d84cf22d4489328da1bd2ef6a54f8725570713430521c6f7
+```
+
+Quyết định: **ĐÃ PHÊ DUYỆT**.
+
+Sau phê duyệt, candidate 10 mục chính xác này cùng bản ghi quyết định bị loại có
+thể được stage, commit, push và gửi qua CI exact-head trước H3 lặp lại. Mọi thay
+đổi nội dung candidate làm mất hiệu lực thẩm quyền.
