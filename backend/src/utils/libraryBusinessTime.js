@@ -33,6 +33,21 @@ function formatBusinessDate(value) {
   return `${fields.year}-${fields.month}-${fields.day}`;
 }
 
+// @spec BR-FE12-004 FR-FE12-001
+function requireBusinessDate(value) {
+  const errorMessage = 'businessDate must be a valid YYYY-MM-DD date';
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    throw new TypeError(errorMessage);
+  }
+
+  const date = new Date(`${value}T00:00:00.000Z`);
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value) {
+    throw new TypeError(errorMessage);
+  }
+
+  return value;
+}
+
 function businessDateUtcBounds(value) {
   const { year, month, day } = businessDateParts(value);
   const startEpoch =
@@ -58,6 +73,7 @@ module.exports = {
   BUSINESS_TIME_ZONE,
   overdueDaysBetween,
   formatBusinessDate,
+  requireBusinessDate,
   businessDateUtcBounds,
   addBusinessDays,
   compareBusinessDates,

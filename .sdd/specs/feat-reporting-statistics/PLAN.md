@@ -159,3 +159,17 @@ Kế hoạch thực thi chi tiết:
    vi chỉ đọc.
 5. Chạy kiểm thử FE12 tập trung/đầy đủ, truy vết, vệ sinh diff và một yêu cầu
    HTTP runtime thực trước H2.
+
+## 8. Prerequisite ngày nghiệp vụ báo cáo mượn v0.2.1
+
+1. RED: cố định service clock tại ranh giới ngày `Asia/Ho_Chi_Minh`, tái hiện
+   SIT-002/SIT-008 và thêm ca thiếu/sai `businessDate` cho SQL/in-memory.
+2. GREEN: service đọc clock đúng một lần, tạo `businessDate` bằng
+   `formatBusinessDate` và truyền tường minh cho repository.
+3. SQL và in-memory repository bắt buộc `businessDate` hợp lệ chính xác
+   `YYYY-MM-DD`; thiếu, sai định dạng hoặc ngày bất khả thi phải fail-fast trước
+   khi SQL/fixture được đọc.
+4. Mọi direct-repository test truyền ngày cố định; không dùng fake global clock
+   và không đổi expected `BORROWED` thành `OVERDUE` để che drift.
+5. Chạy focused/full backend, coverage, frontend, E2E, deployment, traceability
+   và vệ sinh diff trước H2/H3.

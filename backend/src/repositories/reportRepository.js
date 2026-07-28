@@ -1,4 +1,5 @@
 const { sql, getPool } = require('../config/db');
+const { requireBusinessDate } = require('../utils/libraryBusinessTime');
 
 const BORROW_DETAIL_STATUSES = new Set(['REQUESTED', 'BORROWED', 'RETURNED', 'LOST', 'DAMAGED', 'OVERDUE']);
 const COPY_STATUSES = new Set(['AVAILABLE', 'BORROWED', 'RESERVED', 'DAMAGED', 'LOST', 'INACTIVE']);
@@ -411,7 +412,8 @@ async function getUserRows(filters = {}) {
 }
 
 async function getBorrowingReport(filters = {}, businessDate) {
-  const snapshot = await getBorrowRows(filters, businessDate);
+  const requiredBusinessDate = requireBusinessDate(businessDate);
+  const snapshot = await getBorrowRows(filters, requiredBusinessDate);
   const detailedRows = [...snapshot.pageRows]
     .sort(
       (left, right) =>
@@ -421,7 +423,9 @@ async function getBorrowingReport(filters = {}, businessDate) {
     .map((row) => {
       const rawStatus = normalizeStatus(row.DetailStatus, BORROW_DETAIL_STATUSES);
       const status =
-        rawStatus === 'BORROWED' && row.DueDate && toDateKey(row.DueDate) < businessDate
+        rawStatus === 'BORROWED'
+          && row.DueDate
+          && toDateKey(row.DueDate) < requiredBusinessDate
           ? 'OVERDUE'
           : rawStatus;
       return {

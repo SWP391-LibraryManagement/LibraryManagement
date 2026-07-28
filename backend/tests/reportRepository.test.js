@@ -17,6 +17,7 @@ const repositorySource = fs.readFileSync(
   path.join(__dirname, '..', 'src', 'repositories', 'reportRepository.js'),
   'utf8'
 );
+const TEST_BUSINESS_DATE = '2026-07-14';
 
 function useQueryResult(queryResult) {
   const capture = { inputs: {}, query: '' };
@@ -90,7 +91,7 @@ test('report metrics are aggregated in SQL without returning full temp-table sna
 
 test('report searches are parameterized and user rows use increasing IDs', async () => {
   const borrowing = useRecordset([]);
-  await reportRepository.getBorrowingReport({ q: '1984' });
+  await reportRepository.getBorrowingReport({ q: '1984' }, TEST_BUSINESS_DATE);
   expect(borrowing.inputs.Search).toBe('%1984%');
   expect(borrowing.query).toContain('b.Title LIKE @Search');
 
@@ -155,7 +156,7 @@ test('borrowing request status counts deduplicate joined detail rows', async () 
     ],
   ]);
 
-  const report = await reportRepository.getBorrowingReport();
+  const report = await reportRepository.getBorrowingReport({}, TEST_BUSINESS_DATE);
 
   expect(report.totalRows).toBe(2);
   expect(report.metrics.activeLoans).toBe(2);
@@ -168,7 +169,10 @@ test('borrowing request status counts deduplicate joined detail rows', async () 
 
 test('borrowing date-only toDate filters use an exclusive next-day boundary', async () => {
   const borrowingCapture = useRecordset([]);
-  await reportRepository.getBorrowingReport({ toDate: '2026-06-10' });
+  await reportRepository.getBorrowingReport(
+    { toDate: '2026-06-10' },
+    TEST_BUSINESS_DATE
+  );
 
   expect(borrowingCapture.query).toContain('bd.BorrowDate < @ToDateExclusive');
   expect(borrowingCapture.inputs.ToDateExclusive.toISOString()).toBe('2026-06-11T00:00:00.000Z');
@@ -196,7 +200,7 @@ test('borrowing rows sort by the raw borrow timestamp before the detail ID tie-b
     },
   ]);
 
-  const report = await reportRepository.getBorrowingReport();
+  const report = await reportRepository.getBorrowingReport({}, TEST_BUSINESS_DATE);
 
   expect(report.rows.map((row) => row.borrowDetailId)).toEqual([100, 200]);
   expect(report.rows.map((row) => row.borrowDate)).toEqual(['2026-06-10', '2026-06-10']);
@@ -205,7 +209,10 @@ test('borrowing rows sort by the raw borrow timestamp before the detail ID tie-b
 test('borrowing reports filter derived OVERDUE rows as past-due borrowed details', async () => {
   const capture = useRecordset([]);
 
-  await reportRepository.getBorrowingReport({ status: 'OVERDUE' });
+  await reportRepository.getBorrowingReport(
+    { status: 'OVERDUE' },
+    TEST_BUSINESS_DATE
+  );
 
   expect(capture.query).toContain("bd.Status = 'BORROWED'");
   expect(capture.query).toContain('bd.DueDate < @BusinessDate');
@@ -251,7 +258,7 @@ test('borrowing period metrics do not substitute RequestDate when BorrowDate is 
     },
   ]);
 
-  const report = await reportRepository.getBorrowingReport();
+  const report = await reportRepository.getBorrowingReport({}, TEST_BUSINESS_DATE);
 
   expect(report.metrics.borrowCountByPeriod).toEqual({});
 });
@@ -270,7 +277,7 @@ test('requested-only details do not create borrowing activity metrics', async ()
     },
   ]);
 
-  const report = await reportRepository.getBorrowingReport();
+  const report = await reportRepository.getBorrowingReport({}, TEST_BUSINESS_DATE);
 
   expect(report.metrics.borrowCountByPeriod).toEqual({});
   expect(report.metrics.topBorrowedBooks).toEqual([]);
@@ -290,13 +297,30 @@ test('borrowing activity metrics include all actual-loan statuses and exclude re
     [],
   ]);
 
-  const report = await reportRepository.getBorrowingReport();
+  const report = await reportRepository.getBorrowingReport({}, TEST_BUSINESS_DATE);
 
   expect(report.metrics.borrowCountByPeriod).toEqual({ '2026-06-10': 2, '2026-06-11': 3 });
   expect(report.metrics.topBorrowedBooks).toEqual([
     { bookId: 2, title: 'Book Two', borrowCount: 3 },
     { bookId: 1, title: 'Book One', borrowCount: 2 },
   ]);
+});
+
+// @spec AC-FE12-001
+test.each([
+  undefined,
+  null,
+  '',
+  '2026-2-03',
+  '2026-02-30',
+  'not-a-date',
+])('borrowing reports reject invalid required business dates: %p', async (businessDate) => {
+  useRecordset([]);
+
+  await expect(
+    reportRepository.getBorrowingReport({}, businessDate)
+  ).rejects.toThrow('businessDate must be a valid YYYY-MM-DD date');
+  expect(getPool).not.toHaveBeenCalled();
 });
 
 test('new member periods use membership approval dates instead of account creation dates', async () => {

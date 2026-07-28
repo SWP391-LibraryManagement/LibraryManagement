@@ -233,3 +233,22 @@ Bằng chứng tự động chi tiết được ghi trong
   - Cổng: phụ lục H2 sản phẩm phê duyệt commit `f346ae0` và CI PR
     `30244750250` đạt. Khắc phục H3 chỉ-tài-liệu cần H2 mới và H3 lặp lại trước
     merge.
+
+## 12. Prerequisite ngày nghiệp vụ báo cáo mượn v0.2.1
+
+- [x] **FE12-N12 - Sửa clock drift ở service boundary.**
+  - Ánh xạ: BR-FE12-004/012, FR-FE12-001, AC-FE12-001,
+    NFR-FE12-INT-002.
+  - RED: SIT-002/SIT-008 phân loại theo ngày thật của host thay vì clock của
+    harness.
+  - GREEN: service đọc clock một lần, truyền `businessDate` cho SQL/in-memory
+    repository; system integration không dùng fake global clock.
+- [x] **FE12-N13 - Fail-fast và parity cho `businessDate`.**
+  - SQL/in-memory từ chối thiếu, sai `YYYY-MM-DD` hoặc ngày bất khả thi trước
+    khi đọc dữ liệu.
+  - Direct-repository tests dùng ngày cố định; cùng fixture trước/sau hạn trả
+    cho kết quả `BORROWED`/`OVERDUE` giống nhau.
+  - Bằng chứng cục bộ: RED 12 ca lỗi như dự kiến; GREEN tập trung 5 suite,
+    71/71 kiểm thử.
+
+H2 mới và H3 lặp lại bắt buộc trước commit bổ sung/merge PR prerequisite.
