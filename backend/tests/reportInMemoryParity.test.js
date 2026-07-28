@@ -157,10 +157,31 @@ describe('in-memory FE12 report repository parity', () => {
           status: 'BORROWED',
         },
       ],
-    }).getBorrowingReport({ status: 'OVERDUE' });
+    }).getBorrowingReport({ status: 'OVERDUE' }, '2026-07-29');
 
     expect(report.totalRows).toBe(1);
     expect(report.rows[0].status).toBe('OVERDUE');
+  });
+
+  test('in-memory borrowing projection uses the caller business date instead of host time', async () => {
+    const repository = makeReportRepository({
+      borrowDetails: [
+        {
+          borrowDetailId: 101,
+          requestId: 10,
+          copyId: 1,
+          borrowDate: new Date('2026-07-14T00:00:00.000Z'),
+          dueDate: new Date('2026-07-28T00:00:00.000Z'),
+          status: 'BORROWED',
+        },
+      ],
+    });
+
+    const beforeDueDate = await repository.getBorrowingReport({}, '2026-07-14');
+    const afterDueDate = await repository.getBorrowingReport({}, '2026-07-29');
+
+    expect(beforeDueDate.rows[0].status).toBe('BORROWED');
+    expect(afterDueDate.rows[0].status).toBe('OVERDUE');
   });
 
   test('in-memory low-stock rows mirror the production category and copy envelope', async () => {

@@ -64,17 +64,6 @@ function toDateKey(value) {
   return Number.isNaN(date.getTime()) ? null : date.toISOString().slice(0, 10);
 }
 
-function toLibraryDateKey(value = new Date()) {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Ho_Chi_Minh',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(new Date(value));
-  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
-  return `${values.year}-${values.month}-${values.day}`;
-}
-
 function buildReport(metrics, rows, filters = {}) {
   const page = Number(filters.page) || 1;
   const limit = Number(filters.limit) || 20;
@@ -97,8 +86,7 @@ function matchesDateRange(value, filters = {}) {
 
 function makeInMemoryReportDependencies(authState, borrowingState) {
   const reportRepository = {
-    async getBorrowingReport(filters = {}) {
-      const today = toLibraryDateKey();
+    async getBorrowingReport(filters = {}, businessDate) {
       // Mirror getBorrowRows: filters apply to each request/detail joined row.
       const rows = borrowingState.borrowRequests.flatMap((request) => {
         if (filters.userId && request.userId !== Number(filters.userId)) {
@@ -120,7 +108,7 @@ function makeInMemoryReportDependencies(authState, borrowingState) {
           const detailStatus = normalizeStatus(detail?.status, BORROW_DETAIL_STATUSES);
           if (filters.status === 'OVERDUE') {
             const dueDateKey = toDateKey(detail?.dueDate);
-            if (detailStatus !== 'BORROWED' || !dueDateKey || dueDateKey >= today) {
+            if (detailStatus !== 'BORROWED' || !dueDateKey || dueDateKey >= businessDate) {
               return [];
             }
           } else if (filters.status
@@ -180,7 +168,7 @@ function makeInMemoryReportDependencies(authState, borrowingState) {
             bookId: copy?.bookId || null,
             copyId: detail.copyId,
             status:
-              rawStatus === 'BORROWED' && dueDateKey && dueDateKey < today
+              rawStatus === 'BORROWED' && dueDateKey && dueDateKey < businessDate
                 ? 'OVERDUE'
                 : rawStatus,
             borrowDate: toDateKey(detail.borrowDate),

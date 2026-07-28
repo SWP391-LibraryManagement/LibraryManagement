@@ -18,17 +18,6 @@ function toDateKey(value) {
   return date.toISOString().slice(0, 10);
 }
 
-function toLibraryDateKey(value = new Date()) {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Ho_Chi_Minh',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(new Date(value));
-  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
-  return `${values.year}-${values.month}-${values.day}`;
-}
-
 function normalizeStatus(value, allowedStatuses) {
   if (value == null) return null;
   const normalized = String(value).toUpperCase();
@@ -82,7 +71,7 @@ function toExclusiveNextDay(value) {
   return date;
 }
 
-async function getBorrowRows(filters = {}, businessDate = toLibraryDateKey()) {
+async function getBorrowRows(filters = {}, businessDate) {
   const pool = await getPool();
   const request = pool.request();
   const where = ['1=1'];
@@ -421,9 +410,8 @@ async function getUserRows(filters = {}) {
   };
 }
 
-async function getBorrowingReport(filters = {}) {
-  const today = toLibraryDateKey();
-  const snapshot = await getBorrowRows(filters, today);
+async function getBorrowingReport(filters = {}, businessDate) {
+  const snapshot = await getBorrowRows(filters, businessDate);
   const detailedRows = [...snapshot.pageRows]
     .sort(
       (left, right) =>
@@ -433,7 +421,7 @@ async function getBorrowingReport(filters = {}) {
     .map((row) => {
       const rawStatus = normalizeStatus(row.DetailStatus, BORROW_DETAIL_STATUSES);
       const status =
-        rawStatus === 'BORROWED' && row.DueDate && toDateKey(row.DueDate) < today
+        rawStatus === 'BORROWED' && row.DueDate && toDateKey(row.DueDate) < businessDate
           ? 'OVERDUE'
           : rawStatus;
       return {

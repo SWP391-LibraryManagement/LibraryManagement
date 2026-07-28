@@ -215,6 +215,28 @@ test('borrowing reports filter derived OVERDUE rows as past-due borrowed details
   expect(capture.inputs).not.toHaveProperty('Status');
 });
 
+test('borrowing reports use the service-owned business date for SQL and row projection', async () => {
+  const capture = useRecordset([
+    {
+      RequestId: 10,
+      UserId: 1,
+      BorrowDetailId: 100,
+      CopyId: 1,
+      DetailStatus: 'BORROWED',
+      BorrowDate: new Date('2026-07-14T00:00:00.000Z'),
+      DueDate: new Date('2026-07-28T00:00:00.000Z'),
+      BookId: 1,
+    },
+  ]);
+
+  const report = await reportRepository.getBorrowingReport({}, '2026-07-14');
+
+  expect(capture.inputs.BusinessDate.toISOString()).toBe('2026-07-14T00:00:00.000Z');
+  expect(report.rows).toEqual([
+    expect.objectContaining({ borrowDetailId: 100, status: 'BORROWED' }),
+  ]);
+});
+
 test('borrowing period metrics do not substitute RequestDate when BorrowDate is missing', async () => {
   useRecordset([
     {

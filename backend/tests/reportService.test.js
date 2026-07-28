@@ -3,7 +3,7 @@ const { createReportService } = require('../src/services/reportService');
 const LIBRARIAN = { userId: 22, roles: ['LIBRARIAN'] };
 const MEMBER = { userId: 11, roles: ['MEMBER'] };
 
-function makeService({ auditLogRepository, repository = {} } = {}) {
+function makeService({ auditLogRepository, repository = {}, clock } = {}) {
   const reportRepository = {
     getBorrowingReport: jest.fn(async () => ({ totals: { requests: 1 } })),
     getInventoryReport: jest.fn(async () => ({ totals: { copies: 2 } })),
@@ -12,7 +12,11 @@ function makeService({ auditLogRepository, repository = {} } = {}) {
   };
   const activeAuditRepository =
     auditLogRepository === undefined ? { create: jest.fn(async () => {}) } : auditLogRepository;
-  const service = createReportService({ reportRepository, auditLogRepository: activeAuditRepository });
+  const service = createReportService({
+    reportRepository,
+    auditLogRepository: activeAuditRepository,
+    clock,
+  });
 
   return { service, reportRepository, auditLogRepository: activeAuditRepository };
 }
@@ -26,7 +30,10 @@ describe('FE12 report service coverage', () => {
     await service.getInventoryReport({ status: 'AVAILABLE' }, LIBRARIAN, context);
     await service.getUserStatistics({ status: 'ACTIVE' }, LIBRARIAN, context);
 
-    expect(reportRepository.getBorrowingReport).toHaveBeenCalledWith({ status: 'BORROWED' });
+    expect(reportRepository.getBorrowingReport).toHaveBeenCalledWith(
+      { status: 'BORROWED' },
+      expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/)
+    );
     expect(reportRepository.getInventoryReport).toHaveBeenCalledWith({ status: 'AVAILABLE' });
     expect(reportRepository.getUserStatistics).toHaveBeenCalledWith({ status: 'ACTIVE' });
     expect(auditLogRepository.create).toHaveBeenCalledTimes(3);
@@ -43,6 +50,23 @@ describe('FE12 report service coverage', () => {
       })
     );
     expect(JSON.stringify(auditLogRepository.create.mock.calls)).not.toContain('BORROWED');
+  });
+
+  test('derives one library business date from the service clock for borrowing reports', async () => {
+    const clock = jest.fn(() => new Date('2026-07-13T17:00:00.000Z'));
+    const { service, reportRepository, auditLogRepository } = makeService({ clock });
+
+    await service.getBorrowingReport({}, LIBRARIAN);
+
+    expect(clock).toHaveBeenCalledTimes(1);
+    expect(reportRepository.getBorrowingReport).toHaveBeenCalledWith({}, '2026-07-14');
+    expect(auditLogRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          timestamp: '2026-07-13T17:00:00.000Z',
+        }),
+      })
+    );
   });
 
   test('rejects missing and member roles for all staff report operations', async () => {
