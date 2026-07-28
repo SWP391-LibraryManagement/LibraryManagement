@@ -12,9 +12,11 @@ TASKS v0.2.0 và phụ lục H2 tích hợp `8d0059b` ngày 2026-07-27. Kết qu
 Review H3 đầu tiên không phát hiện lỗi mã FE12 hay quy tắc nghiệp vụ, chỉ trả về
 cách diễn đạt governance cũ. Khắc phục chỉ-tài-liệu vẫn chưa commit, chờ H2 mới
 và H3 lặp lại. Prerequisite v0.2.1 trên PR #81 đã nhận H2 addendum fingerprint
-`063323fcbb0171a6628c6f310d55719369d7afa1f78d8c6b83f36bd69dbdd505`;
-CI exact-head `30402026346` đạt, còn finding H3 về metadata và năm SQL tối thiểu
-đang được khắc phục trước re-review.
+`063323fcbb0171a6628c6f310d55719369d7afa1f78d8c6b83f36bd69dbdd505`
+và H2 remediation fingerprint
+`c4216068a3aafbbfeaddd47ef2398a84555746c35b290e4f1a040d370d9612ed`.
+CI implementation-head `30402908636` tại `65d9198` đạt; commit chỉ-tài-liệu
+chốt bằng chứng phải qua H3 lặp lại và CI exact-head trước merge.
 
 ---
 
