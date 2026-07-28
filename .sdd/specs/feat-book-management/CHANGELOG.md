@@ -1,238 +1,238 @@
-# CHANGELOG.md - FE05 Book Management
+# CHANGELOG.md - FE05 Quản lý sách
 
-## 2026-07-28 - Preserve filters after a one-book status update
+## 2026-07-28 - Giữ bộ lọc sau khi cập nhật trạng thái một sách
 
-- Stopped status commands from clearing the current filter and unexpectedly revealing previously hidden inactive books.
-- Reloaded the same canonical search/category/status/page context after mutating the selected `bookId`.
-- Kept each visible row bound to its own server-owned `Books.Status`.
+- Không để các lệnh trạng thái xóa bộ lọc hiện tại và bất ngờ hiển thị các sách không hoạt động vốn đang bị ẩn.
+- Tải lại cùng ngữ cảnh tìm kiếm/danh mục/trạng thái/trang chính tắc sau khi thay đổi `bookId` đã chọn.
+- Giữ từng hàng hiển thị gắn với `Books.Status` do máy chủ sở hữu.
 
-## 2026-07-28 - Allow approved feature compatibility migrations at startup
+## 2026-07-28 - Cho phép migration tương thích tính năng đã được phê duyệt khi khởi động
 
-- Preserved FE05 catalog readiness while allowing the startup gate to apply the separately approved FE02 auth-token constraint migration.
-- Updated the deployment contract to require packaged migrations and verified postconditions before listen.
-- Aligned SPEC v0.6.9, PLAN, TASKS, deployment guidance, and workflow policy coverage.
+- Giữ trạng thái sẵn sàng của danh mục FE05 trong khi cho phép cổng khởi động áp dụng migration ràng buộc auth-token FE02 đã được phê duyệt riêng.
+- Cập nhật hợp đồng triển khai để yêu cầu migration được đóng gói và xác minh điều kiện sau trước khi lắng nghe.
+- Đồng bộ phạm vi SPEC v0.6.9, PLAN, TASKS, hướng dẫn triển khai và phạm vi chính sách quy trình.
 
-## 2026-07-28 - Preserve the mixed-status list after one-book updates
+## 2026-07-28 - Giữ danh sách nhiều trạng thái sau khi cập nhật một sách
 
-- Preserved the original read-only availability presentation in book details.
-- Stopped both status-change entry points from switching the whole list to the selected book's target-status filter.
-- Reloaded the canonical all-status first page after success so unaffected books remain visible with their server-owned state.
-- Corrected the list's status column to render canonical `Books.Status`; copy availability remains a separate read-only concern.
+- Giữ phần trình bày khả dụng chỉ đọc ban đầu trong chi tiết sách.
+- Không để cả hai điểm vào thay đổi trạng thái chuyển toàn bộ danh sách sang bộ lọc trạng thái đích của sách đã chọn.
+- Sau khi thành công, tải lại trang đầu chính tắc có mọi trạng thái để các sách không bị ảnh hưởng vẫn hiển thị cùng trạng thái do máy chủ sở hữu.
+- Sửa cột trạng thái của danh sách để hiển thị `Books.Status` chính tắc; tính khả dụng của bản sao vẫn là một mối quan tâm chỉ đọc riêng biệt.
 
-## 2026-07-28 - Enable CI-gated continuous staging deployment
+## 2026-07-28 - Bật triển khai staging liên tục có cổng CI
 
-- Triggered `Deploy staging` automatically only after a successful `main` CI run and checked out the exact tested commit.
-- Retained manual reruns, the packaged startup migration, environment approval support, and fail-closed staging smoke.
-- Aligned SPEC v0.6.8, PLAN, TASKS, deployment guidance, and workflow policy regression.
+- Chỉ tự động kích hoạt `Deploy staging` sau khi lượt chạy CI `main` thành công và checkout chính xác commit đã được kiểm thử.
+- Giữ khả năng chạy lại thủ công, migration khởi động đã đóng gói, hỗ trợ phê duyệt môi trường và smoke staging fail-closed.
+- Đồng bộ SPEC v0.6.8, PLAN, TASKS, hướng dẫn triển khai và hồi quy chính sách quy trình.
 
-## 2026-07-27 - Run compile-safe metadata compatibility migration at backend startup
+## 2026-07-27 - Chạy migration tương thích siêu dữ liệu an toàn khi biên dịch lúc khởi động backend
 
-- Packaged the reviewed transactional metadata migration with the backend deployment.
-- Added a pre-listen startup gate that applies the idempotent migration, verifies its postcondition,
-  and refuses to serve a partially compatible catalog when reconciliation fails.
-- Deferred metadata `Status` validation to `sp_executesql` so SQL Server compiles the query after
-  the missing columns are added in the surrounding transaction.
-- Added regression coverage and verified two consecutive passes on the disposable local database
-  `CodexMetadataMigrationValidation_20260727`, then removed that database.
-- Kept `/health/ready` read-only, staging deployment manual-only, smoke fail-closed, and the existing
-  Admin-only mutation plus Librarian/Admin active-reference role boundaries.
-- Avoided the removed Kudu/`Repair staging metadata schema` path and its isolated Node runtime.
-- Reconciled the operator guide with the manual-only staging workflow and the canonical 21-table
-  schema.
+- Đóng gói migration siêu dữ liệu giao dịch đã được rà soát cùng bản triển khai backend.
+- Thêm cổng khởi động trước khi lắng nghe để áp dụng migration idempotent, xác minh điều kiện sau của nó,
+  và từ chối phục vụ một danh mục chỉ tương thích một phần khi đối soát thất bại.
+- Hoãn việc xác thực `Status` của siêu dữ liệu sang `sp_executesql` để SQL Server biên dịch truy vấn sau
+  khi các cột còn thiếu được thêm trong giao dịch bao quanh.
+- Thêm phạm vi hồi quy và xác minh hai lượt đạt liên tiếp trên cơ sở dữ liệu cục bộ dùng một lần
+  `CodexMetadataMigrationValidation_20260727`, sau đó đã xóa cơ sở dữ liệu đó.
+- Giữ `/health/ready` chỉ đọc, triển khai staging chỉ thủ công, kiểm tra smoke fail-closed và các
+  ranh giới thay đổi chỉ Quản trị viên cùng tham chiếu đang hoạt động dành cho Thủ thư/Quản trị viên hiện có.
+- Không dùng đường dẫn Kudu/`Repair staging metadata schema` đã bị loại bỏ và Node runtime tách biệt của nó.
+- Đối soát hướng dẫn vận hành với quy trình staging chỉ thủ công và lược đồ chính tắc gồm 21 bảng.
 
-## 2026-07-27 - Remove failed Kudu staging repair workflow
+## 2026-07-27 - Loại bỏ quy trình sửa staging Kudu thất bại
 
-- Removed `Repair staging metadata schema`, its Kudu/Node runner, bundled runtime, npm command,
-  workflow input, dedicated tests, and addendum evidence.
-- Changed `Deploy staging` to manual-only so pushes run CI without automatically creating a known
-  failing staging deployment while the database still requires operator migration.
-- Retained the reviewed SQL migration, read-only readiness endpoint, fail-closed smoke check, and
-  FE05/FE11 Admin/Librarian role boundaries.
+- Loại bỏ `Repair staging metadata schema`, trình chạy Kudu/Node, runtime đi kèm, lệnh npm,
+  input quy trình, kiểm thử chuyên biệt và bằng chứng phụ lục của nó.
+- Chuyển `Deploy staging` thành chỉ thủ công để các lần push chạy CI mà không tự động tạo một lượt
+  triển khai staging chắc chắn thất bại khi cơ sở dữ liệu vẫn yêu cầu migration do vận hành viên thực hiện.
+- Giữ migration SQL đã được rà soát, endpoint sẵn sàng chỉ đọc, kiểm tra smoke fail-closed và các ranh giới vai trò Quản trị viên/Thủ thư FE05/FE11.
 
-## 2026-07-27 - Detect and repair deployed metadata schema drift
+## 2026-07-27 - Phát hiện và sửa lệch lược đồ siêu dữ liệu đã triển khai
 
-- Added read-only catalog schema readiness for persisted author/publisher/category `Status` and `CreatedAt`.
-- Added the reviewed metadata compatibility SQL migration for authorized operator execution.
-- Extended staging smoke to fail before acceptance when the deployed metadata schema is older than the repository contract.
-- Preserved Admin-only metadata mutation and Librarian/Admin active-choice reads without widening roles.
+- Thêm trạng thái sẵn sàng lược đồ danh mục chỉ đọc cho `Status` và `CreatedAt` đã lưu của tác giả/nhà xuất bản/danh mục.
+- Thêm migration SQL tương thích siêu dữ liệu đã được rà soát để vận hành viên được phân quyền thực hiện.
+- Mở rộng smoke staging để thất bại trước khi chấp nhận khi lược đồ siêu dữ liệu đã triển khai cũ hơn hợp đồng kho mã.
+- Giữ thay đổi siêu dữ liệu chỉ dành cho Quản trị viên và lượt đọc lựa chọn đang hoạt động của Thủ thư/Quản trị viên mà không mở rộng vai trò.
 
-## 2026-07-27 - Public/staff ISBN boundary
+## 2026-07-27 - Ranh giới ISBN công khai/nhân sự
 
-- Classified ISBN as FE05 staff-management metadata: searchable and visible to authenticated Librarian/Admin users.
-- Removed ISBN from Guest/Member public search matching, list DTOs, and detail DTOs while preserving public title/author search.
-- Synchronized FE05 requirements, interfaces, tasks, and test strategy with FE01 public browse and FE11 single-role authorization.
+- Phân loại ISBN là siêu dữ liệu quản lý của nhân sự FE05: có thể tìm kiếm và hiển thị cho người dùng Thủ thư/Quản trị viên đã xác thực.
+- Loại ISBN khỏi việc khớp tìm kiếm công khai của Khách/Thành viên, DTO danh sách và DTO chi tiết, đồng thời giữ tìm kiếm công khai theo tiêu đề/tác giả.
+- Đồng bộ yêu cầu, giao diện, tác vụ và chiến lược kiểm thử FE05 với duyệt công khai FE01 và ủy quyền một vai trò FE11.
 
-## 2026-07-23 - FE01/FE11 role and interface reconciliation
+## 2026-07-23 - Đối soát vai trò và giao diện FE01/FE11
 
-- Added the implemented protected `/api/books/metadata` endpoint to the FE05 API contract and test strategy.
-- Clarified that Librarian/Admin share FE05 book mutations while category/author/publisher mutation remains Admin-only through the FE11 Admin Library integration.
-- Removed the stale PLAN contradiction that classified managed cover upload as out of scope and aligned PLAN to SPEC v0.6.2.
+- Thêm endpoint `/api/books/metadata` đã triển khai và được bảo vệ vào hợp đồng API và chiến lược kiểm thử FE05.
+- Làm rõ rằng Thủ thư/Quản trị viên cùng thực hiện thay đổi sách FE05, trong khi thay đổi danh mục/tác giả/nhà xuất bản vẫn chỉ dành cho Quản trị viên thông qua tích hợp Thư viện Quản trị FE11.
+- Loại bỏ mâu thuẫn PLAN cũ phân loại tải ảnh bìa do hệ thống quản lý là ngoài phạm vi, và đồng bộ PLAN với SPEC v0.6.2.
 
-## 2026-07-22 - Preserve visibility after status update
+## 2026-07-22 - Giữ hiển thị sau khi cập nhật trạng thái
 
-- Reconciled the management status filter with the committed target status after update-form activation/deactivation.
-- Reset the canonical server-owned list to page 1 so the updated book no longer appears to vanish because the previous status filter is still active.
+- Đối soát bộ lọc trạng thái quản lý với trạng thái đích đã ghi nhận sau khi biểu mẫu cập nhật kích hoạt/ngừng kích hoạt.
+- Đặt lại danh sách chính tắc do máy chủ sở hữu về trang 1 để sách cập nhật không có vẻ biến mất vì bộ lọc trạng thái trước đó vẫn đang hoạt động.
 
-## 2026-07-22 - Managed book cover upload
+## 2026-07-22 - Tải ảnh bìa sách do hệ thống quản lý
 
-- Replaced editable cover-URL controls in Librarian/Admin create and update forms with local JPG/PNG/WebP file selection, filename/type/size guidance, and image preview.
-- Added backward-compatible multipart create/update handling with `metadata` plus optional `cover`, a 2 MB limit, extension/MIME/signature validation, server-generated filenames, and `/uploads/book-covers` static delivery.
-- Added compensation so invalid, stale, database, or audit failures do not replace the committed cover or retain an uncommitted managed file; unmanaged/external paths are never deleted.
-- Kept `Books.CoverUrl`, existing JSON clients, SQL schema, `If-Match`, audit atomicity, public response shape, and FE06 ownership boundaries unchanged.
+- Thay thế các điều khiển URL ảnh bìa có thể chỉnh sửa trong biểu mẫu tạo và cập nhật của Thủ thư/Quản trị viên bằng chọn tệp JPG/PNG/WebP cục bộ, hướng dẫn tên tệp/loại/kích thước và xem trước ảnh.
+- Thêm xử lý tạo/cập nhật multipart tương thích ngược với `metadata` cùng `cover` tùy chọn, giới hạn 2 MB, xác thực phần mở rộng/MIME/chữ ký, tên tệp do máy chủ tạo và phân phối tĩnh `/uploads/book-covers`.
+- Thêm cơ chế bù trừ để dữ liệu không hợp lệ, cũ, lỗi cơ sở dữ liệu hoặc lỗi audit không thay thế ảnh bìa đã ghi nhận hay giữ lại tệp do hệ thống quản lý chưa ghi nhận; không bao giờ xóa đường dẫn không được quản lý/bên ngoài.
+- Giữ nguyên `Books.CoverUrl`, các client JSON hiện có, lược đồ SQL, `If-Match`, tính nguyên tử audit, dạng phản hồi công khai và ranh giới sở hữu FE06.
 
-## 2026-07-20 - Vietnamese UI localization and typography
+## 2026-07-20 - Bản địa hóa giao diện tiếng Việt và kiểu chữ
 
-- Localized frontend-generated labels, states, accessibility names, and safe error feedback for this feature.
-- Preserved API contracts, raw enum values, permissions, business rules, and user-owned catalog/profile data.
-- Applied the shared `Be Vietnam Pro` body and `Noto Serif` heading typography contract with Unicode-capable fallbacks.
+- Bản địa hóa nhãn, trạng thái, tên trợ năng và phản hồi lỗi an toàn do frontend tạo cho tính năng này.
+- Giữ nguyên hợp đồng API, giá trị enum thô, quyền, quy tắc nghiệp vụ và dữ liệu danh mục/hồ sơ do người dùng sở hữu.
+- Áp dụng hợp đồng kiểu chữ dùng chung `Be Vietnam Pro` cho thân bài và `Noto Serif` cho tiêu đề, kèm font dự phòng hỗ trợ Unicode.
 
-## 2026-07-19 - Phase 3 Azure staging migration hardening
+## 2026-07-19 - Củng cố migration staging Azure giai đoạn 3
 
-- Reproduced the staging schema drift where the deployed FE05 catalog query failed because `Books.RowVersion` was missing.
-- Updated the approved FE05 reconciliation migration to drop and recreate `UX_Books_ISBN_NotNull` while narrowing legacy `Books.ISBN`, avoiding SQL Server error 4922 from the dependent filtered index.
-- Applied all five approved reconciliation migrations twice to `LibraryManagementStaging`; the public catalog and the SQL-aware staging smoke check then passed.
+- Tái hiện lệch lược đồ staging, nơi truy vấn danh mục FE05 đã triển khai thất bại vì thiếu `Books.RowVersion`.
+- Cập nhật migration đối soát FE05 đã phê duyệt để xóa và tạo lại `UX_Books_ISBN_NotNull`, đồng thời thu hẹp `Books.ISBN` cũ, tránh lỗi SQL Server 4922 từ chỉ mục lọc phụ thuộc.
+- Áp dụng cả năm migration đối soát được phê duyệt hai lần cho `LibraryManagementStaging`; danh mục công khai và kiểm tra smoke staging có nhận biết SQL sau đó đều đạt.
 
-## 2026-07-19 - Phase 2 Exit Closeout
+## 2026-07-19 - Hoàn tất đầu ra giai đoạn 2
 
-- feat-book-management is accepted within the complete Phase 2 FE01-FE12 reconciliation recorded by PR #40/#41; validation and residual boundaries are consolidated in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`.
-- Deferred and future-scope limitations remain explicit and are not widened by this closeout.
+- feat-book-management được chấp nhận trong đợt đối soát hoàn chỉnh Giai đoạn 2 FE01-FE12 ghi nhận bởi PR #40/#41; việc xác thực và các ranh giới còn lại được tổng hợp trong `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`.
+- Các giới hạn đã hoãn và phạm vi tương lai vẫn được nêu rõ, không bị mở rộng bởi đợt hoàn tất này.
 
-## 2026-07-19 - Remove duplicate Admin Console book mutations
+## 2026-07-19 - Loại bỏ các thay đổi sách trùng lặp trong Bảng điều khiển Quản trị
 
-- Kept `UserManagement` Library book rows read-only and removed its create/edit/deactivate book controls.
-- Removed the unused FE11 `adminApi` book mutation aliases; canonical `BookManagement` remains the only FE05 mutation surface.
-- Added frontend regression coverage for the FE05/FE11 ownership boundary.
+- Giữ hàng sách Thư viện của `UserManagement` ở chế độ chỉ đọc và loại bỏ các điều khiển tạo/sửa/ngừng kích hoạt sách.
+- Loại bỏ các alias thay đổi sách FE11 `adminApi` không dùng; `BookManagement` chính tắc vẫn là bề mặt thay đổi FE05 duy nhất.
+- Thêm phạm vi hồi quy frontend cho ranh giới sở hữu FE05/FE11.
 
-## 2026-07-19 - Hybrid reconciliation evidence
+## 2026-07-19 - Bằng chứng đối soát kết hợp
 
-- Executed FE05-T001 through FE05-T008 from RED tests through focused verification in the isolated `feat/fe05-book-reconciliation` worktree.
-- Reconciled frontend reads with `/api/admin/books`, server-owned pagination, canonical `{ items, pagination }`/`{ book }` responses, and `If-Match` version propagation.
-- Added confirmation/reason UX for reasoned deactivate/reactivate commands and mapped `STALE_BOOK_STATE` to a truthful reload message.
-- Added the missing FE05 SQL suite and fixed rowversion comparison to normalize raw `mssql` buffers instead of comparing driver binary strings with API hex versions.
-- Passed focused backend 45/45, FE05 SQL 7/7, frontend 6/6, traceability 26/26, diff hygiene, and the aggregate 61/61 SQL gate with cleanup.
-- Browser acceptance and human integration gates remain open.
+- Thực hiện FE05-T001 đến FE05-T008 từ kiểm thử RED đến xác minh tập trung trong worktree cô lập `feat/fe05-book-reconciliation`.
+- Đối soát lượt đọc frontend với `/api/admin/books`, phân trang do máy chủ sở hữu, phản hồi chính tắc `{ items, pagination }`/`{ book }` và truyền phiên bản `If-Match`.
+- Thêm UX xác nhận/lý do cho các lệnh ngừng kích hoạt/kích hoạt lại có lý do, và ánh xạ `STALE_BOOK_STATE` thành thông báo tải lại trung thực.
+- Thêm bộ SQL FE05 còn thiếu và sửa so sánh rowversion để chuẩn hóa buffer `mssql` thô thay vì so sánh chuỗi nhị phân driver với phiên bản hex API.
+- Đạt backend tập trung 45/45, SQL FE05 7/7, frontend 6/6, truy vết 26/26, vệ sinh diff và cổng SQL tổng hợp 61/61 cùng dọn dẹp.
+- Chấp nhận trên trình duyệt và các cổng tích hợp do con người thực hiện vẫn đang mở.
 
-## 2026-07-19 - Copy Ownership And Route Reconciliation In Progress
+## 2026-07-19 - Đang đối soát sở hữu bản sao và route
 
-- Removed the FE05 availability mutation route and stopped the Book Management UI from changing physical-copy state.
-- Added the canonical protected `/api/admin/books` list route and explicit deactivate/reactivate commands with required reasons.
-- Changed public unavailable copy text to `Không khả dụng`; rowversion, atomic audit, deterministic queries, and remaining task evidence stay pending.
+- Loại bỏ route thay đổi tính khả dụng FE05 và không để giao diện Quản lý sách thay đổi trạng thái bản sao vật lý.
+- Thêm route danh sách chuẩn `/api/admin/books` được bảo vệ và các lệnh ngừng kích hoạt/kích hoạt lại rõ ràng có lý do bắt buộc.
+- Đổi văn bản bản sao không khả dụng công khai thành `Không khả dụng`; rowversion, audit nguyên tử, truy vấn xác định và bằng chứng tác vụ còn lại vẫn chờ.
 
-## 2026-07-18 - Librarian Book Management Navigation
+## 2026-07-18 - Điều hướng Quản lý sách của Thủ thư
 
-- Added the dedicated Librarian sidebar entry and route `/librarian/books` for FE05 book management.
-- Removed the previous redirect from `/librarian/books` to the FE09 fine page.
-- Kept FE05 available only to authenticated Librarian/Admin roles through its dedicated page shell.
+- Thêm mục thanh bên và route `/librarian/books` chuyên biệt cho quản lý sách FE05 của Thủ thư.
+- Loại bỏ chuyển hướng trước đây từ `/librarian/books` sang trang phạt FE09.
+- Giữ FE05 chỉ dành cho các vai trò Thủ thư/Quản trị viên đã xác thực thông qua page shell chuyên biệt.
 
-## 2026-07-18 - Catalog Metadata Creation Timestamps
+## 2026-07-18 - Dấu thời gian tạo siêu dữ liệu danh mục
 
-- Added database-owned `CreatedAt` timestamps to categories, authors, and publishers.
-- Updated protected metadata-management reads and creates to return the persisted timestamp.
-- Replaced the admin UI placeholder with the formatted database timestamp.
-- Enforced the existing inactive-book rule in FE07 borrowing and FE08 reservation creation while preserving inventory and historical reads.
-- Added status-based deactivation for categories, authors, and publishers without cascading changes to existing books.
+- Thêm dấu thời gian `CreatedAt` do cơ sở dữ liệu sở hữu cho danh mục, tác giả và nhà xuất bản.
+- Cập nhật các lượt đọc/tạo quản lý siêu dữ liệu được bảo vệ để trả về dấu thời gian đã lưu.
+- Thay placeholder giao diện quản trị bằng dấu thời gian cơ sở dữ liệu đã định dạng.
+- Thực thi quy tắc sách không hoạt động hiện có trong việc tạo mượn FE07 và đặt trước FE08, đồng thời giữ nguyên tồn kho và lượt đọc lịch sử.
+- Thêm ngừng kích hoạt theo trạng thái cho danh mục, tác giả và nhà xuất bản mà không tạo thay đổi dây chuyền cho sách hiện có.
 
-## 2026-07-17 - Phase 1 Baseline Approved
+## 2026-07-17 - Phê duyệt mốc cơ sở giai đoạn 1
 
-- Nhật approved the normalized FE05 specification, plan, and task boundary as the Phase 1 baseline; implementation tasks remain pending.
+- Nhật đã phê duyệt ranh giới đặc tả, kế hoạch và tác vụ FE05 được chuẩn hóa làm mốc cơ sở Giai đoạn 1; các tác vụ triển khai vẫn đang chờ.
 
-## 2026-07-17 - Final Contract Audit
+## 2026-07-17 - Rà soát hợp đồng cuối cùng
 
-- Made the staff book-list flow use the approved query filters and sort/order contract.
-- Replaced non-verifiable search-performance wording with a database-filtering requirement.
+- Làm cho luồng danh sách sách nhân sự dùng các bộ lọc và hợp đồng sắp xếp/thứ tự đã được phê duyệt.
+- Thay cách diễn đạt hiệu năng tìm kiếm không thể xác minh bằng yêu cầu lọc cơ sở dữ liệu.
 
-## 2026-07-17 - Detail Contract Wording - v0.5.1
+## 2026-07-17 - Diễn đạt hợp đồng chi tiết - v0.5.1
 
-- Clarified that staff detail reads may return both `ACTIVE` and `INACTIVE` books; public callers still receive only active public-safe detail or `404`.
-- Marked SPEC/PLAN/TASKS ready for human re-review; no implementation behavior or code changed.
+- Làm rõ rằng lượt đọc chi tiết của nhân sự có thể trả về cả sách `ACTIVE` và `INACTIVE`; người gọi công khai vẫn chỉ nhận chi tiết an toàn cho công khai đang hoạt động hoặc `404`.
+- Đánh dấu SPEC/PLAN/TASKS sẵn sàng để con người rà soát lại; không thay đổi hành vi triển khai hoặc mã.
 
-## 2026-07-16 - Planning Human Review Approval
+## 2026-07-16 - Phê duyệt rà soát của con người cho việc lập kế hoạch
 
-- Nhat approved the FE05 prototype-reconciliation plan and ordered task decomposition.
-- Marked `PLAN.md` and `TASKS.md` as `APPROVED`; implementation tasks remain unchecked and have not started.
+- Nhat đã phê duyệt kế hoạch đối soát prototype FE05 và yêu cầu phân rã tác vụ.
+- Đánh dấu `PLAN.md` và `TASKS.md` là `APPROVED`; các tác vụ triển khai vẫn chưa được chọn và chưa bắt đầu.
 
-## 2026-07-16 - Implementation Planning Decomposition
+## 2026-07-16 - Phân rã lập kế hoạch triển khai
 
-- Replaced placeholder `PLAN.md` and `TASKS.md` with a `READY FOR REVIEW` reconciliation plan for approved SPEC v0.5.0.
-- Added ordered RED/GREEN tasks for deterministic queries, metadata validation, SQL `rowversion`/`If-Match`, atomic audit writes, and dedicated deactivate/reactivate commands.
-- Made removal of FE05 copy-status mutation ownership and replacement of prototype frontend expectations explicit, with all 61 BR/FR/AC requirements mapped to concrete tasks and verification gates.
+- Thay `PLAN.md` và `TASKS.md` giữ chỗ bằng kế hoạch đối soát `READY FOR REVIEW` cho SPEC v0.5.0 đã được phê duyệt.
+- Thêm các tác vụ RED/GREEN có thứ tự cho truy vấn xác định, xác thực siêu dữ liệu, SQL `rowversion`/`If-Match`, ghi audit nguyên tử và các lệnh ngừng kích hoạt/kích hoạt lại chuyên biệt.
+- Nêu rõ việc loại bỏ quyền sở hữu thay đổi trạng thái bản sao FE05 và thay thế kỳ vọng frontend prototype, với mọi yêu cầu BR/FR/AC trong tổng số 61 được ánh xạ tới các tác vụ cụ thể và cổng xác minh.
 
-## 2026-07-16 - Human Review Approval
+## 2026-07-16 - Phê duyệt rà soát của con người
 
-- Nhat confirmed human review of revision v0.5.0.
-- Marked `SPEC.md` and `CONTEXT.md` as `APPROVED` and completed the revision review gate.
+- Nhat xác nhận đã có rà soát của con người cho bản sửa đổi v0.5.0.
+- Đánh dấu `SPEC.md` và `CONTEXT.md` là `APPROVED` và hoàn thành cổng rà soát bản sửa đổi.
 
-## 2026-07-15 - Catalog Ownership and Deterministic Contract (v0.5.0)
+## 2026-07-15 - Sở hữu danh mục và hợp đồng xác định (v0.5.0)
 
-- Removed FE05 copy-status mutation ownership and deleted the `/api/books/{bookId}/availability` contract.
-- Defined public availability as a read-only aggregation of `Books.Status` and FE06-owned copy states.
-- Formalized `ACTIVE`/`INACTIVE` deactivation/reactivation without rewriting copy, borrow, reservation, or history rows.
-- Added SQL `rowversion`/`If-Match` stale-write protection, deterministic search/pagination/sort rules, and explicit rejection criteria for invalid pages/rating.
-- Standardized the derived unavailable display label as `Không khả dụng` so reserved/damaged/lost/inactive copies are not mislabeled as borrowed.
-- Added complete BR/FR/AC traceability with concrete planned test intents.
+- Loại bỏ quyền sở hữu thay đổi trạng thái bản sao FE05 và xóa hợp đồng `/api/books/{bookId}/availability`.
+- Xác định tính khả dụng công khai là tổng hợp chỉ đọc của `Books.Status` và các trạng thái bản sao do FE06 sở hữu.
+- Chuẩn hóa ngừng kích hoạt/kích hoạt lại `ACTIVE`/`INACTIVE` mà không ghi lại các hàng bản sao, mượn, đặt trước hoặc lịch sử.
+- Thêm bảo vệ ghi cũ SQL `rowversion`/`If-Match`, quy tắc tìm kiếm/phân trang/sắp xếp xác định và tiêu chí từ chối rõ ràng cho trang/đánh giá không hợp lệ.
+- Chuẩn hóa nhãn hiển thị không khả dụng dẫn xuất là `Không khả dụng` để các bản sao được đặt trước/hỏng/mất/không hoạt động không bị gắn nhãn sai là đã mượn.
+- Thêm truy vết BR/FR/AC hoàn chỉnh với ý định kiểm thử dự kiến cụ thể.
 
 ## 2026-06-02
 
-- Created initial FE05 Book Management specification.
-- Defined scope for book catalog management, including book listing, creation, update, and deactivation.
-- Clarified actor responsibilities for Guest, Member, and Librarian.
-- Added stable requirement IDs for business rules, functional requirements, acceptance criteria, edge cases, and open questions.
-- Defined RESTful API considerations for book management operations.
-- Added data model assumptions for Books, Categories, Authors, and Publishers entities.
+- Tạo đặc tả Quản lý sách FE05 ban đầu.
+- Xác định phạm vi quản lý danh mục sách, gồm liệt kê, tạo, cập nhật và ngừng kích hoạt sách.
+- Làm rõ trách nhiệm của Khách, Thành viên và Thủ thư.
+- Thêm ID ổn định cho quy tắc nghiệp vụ, yêu cầu chức năng, tiêu chí chấp nhận, trường hợp biên và câu hỏi mở.
+- Xác định các cân nhắc RESTful API cho thao tác quản lý sách.
+- Thêm các giả định mô hình dữ liệu cho thực thể Books, Categories, Authors và Publishers.
 
 ## 2026-06-10
 
-- Completed FE05 `SPEC.md` sections required by the SDD template: acceptance criteria, edge cases, data requirements, API contract, non-functional requirements, out of scope, dependencies, open questions, traceability, and review checklist.
-- Aligned FE05 scope level with the Master Feature List as Standard Spec.
-- Updated current data model notes to match the SQL script more closely.
-- Updated API contract policy to allow approval in `SPEC.md` unless the team reintroduces a shared API contract document.
+- Hoàn thành các phần `SPEC.md` FE05 theo yêu cầu của mẫu SDD: tiêu chí chấp nhận, trường hợp biên, yêu cầu dữ liệu, hợp đồng API, yêu cầu phi chức năng, ngoài phạm vi, phụ thuộc, câu hỏi mở, truy vết và danh sách kiểm tra rà soát.
+- Căn chỉnh cấp độ phạm vi FE05 với Danh sách tính năng chính thành Đặc tả tiêu chuẩn.
+- Cập nhật ghi chú mô hình dữ liệu hiện tại để khớp hơn với tập lệnh SQL.
+- Cập nhật chính sách hợp đồng API để cho phép phê duyệt trong `SPEC.md` trừ khi nhóm khôi phục một tài liệu hợp đồng API dùng chung.
 
-## 2026-06-10 - Phase 1 Review Decisions Approved
+## 2026-06-10 - Phê duyệt quyết định rà soát giai đoạn 1
 
-- Approved open-question decisions from `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`.
-- Updated `SPEC.md` decision status from draft/proposed/open to approved where applicable.
-- Preserved Phase 1 scope controls and deferred future-work items explicitly.
+- Phê duyệt các quyết định câu hỏi mở từ `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`.
+- Cập nhật trạng thái quyết định `SPEC.md` từ draft/proposed/open thành approved ở nơi áp dụng.
+- Giữ các biện pháp kiểm soát phạm vi Giai đoạn 1 và nêu rõ các hạng mục công việc tương lai bị hoãn.
 
 ## 2026-06-21
 
-- Updated FE05 deactivation behavior so `Delete Book` performs status-based catalog removal even when copies are currently borrowed or reserved.
-- Clarified that borrow/reservation history and copy records remain unchanged when a book is hidden from the public catalog.
-- Added staff update support for changing book `status` directly between `ACTIVE` and `INACTIVE`.
-- Updated FE05 API contract and context notes to align with the implemented `/api/books/{bookId}` update payload.
+- Cập nhật hành vi ngừng kích hoạt FE05 để `Delete Book` thực hiện loại bỏ danh mục dựa trên trạng thái ngay cả khi các bản sao hiện đang được mượn hoặc đặt trước.
+- Làm rõ rằng lịch sử mượn/đặt trước và bản ghi bản sao không thay đổi khi một sách bị ẩn khỏi danh mục công khai.
+- Thêm hỗ trợ cập nhật của nhân sự để thay đổi trực tiếp `status` của sách giữa `ACTIVE` và `INACTIVE`.
+- Cập nhật hợp đồng API và ghi chú bối cảnh FE05 để khớp với payload cập nhật `/api/books/{bookId}` đã triển khai.
 
 ## 2026-06-22
 
-- Added prototype drift notes to `PLAN.md` and `TASKS.md`.
-- Clarified that existing FE05 backend/frontend code is prototype/demo code until reconciled against approved tasks, traceability tags, role checks, audit logging, and tests.
+- Thêm ghi chú lệch prototype vào `PLAN.md` và `TASKS.md`.
+- Làm rõ rằng mã backend/frontend FE05 hiện có là mã prototype/demo cho đến khi được đối soát với các tác vụ đã phê duyệt, thẻ truy vết, kiểm tra vai trò, ghi audit và kiểm thử.
 
 ## 2026-06-25
 
-- Bumped `SPEC.md` version to 0.2.0 (MINOR) and updated Last Updated to 2026-06-25; Status unchanged (APPROVED).
-- Increased the share of "Unwanted" (error/abnormal-condition) Functional Requirements to meet the EARS coverage target of >=30%.
-- Added 9 new EARS Unwanted FRs (IF/WHERE form), each traceable to an existing Alternative Flow, Edge Case, or Business Rule — no new logic introduced:
-  - FR-FE05-011: Reject duplicate ISBN on create/update (AF-FE05-001, EC-FE05-003, BR-FE05-005).
-  - FR-FE05-012: Reject missing/empty title (EC-FE05-002, BR-FE05-006).
-  - FR-FE05-013: Reject non-existent category/author/publisher reference (AF-FE05-002, EC-FE05-005/006/007).
-  - FR-FE05-014: Return not-found for non-existent book on view/update/deactivate (AF-FE05-003, EC-FE05-001).
-  - FR-FE05-015: Deny guest/member access to protected book management (AF-FE05-004, EC-FE05-009, BR-FE05-002/003/004).
-  - FR-FE05-016: Reject invalid or future publish year (EC-FE05-008).
-  - FR-FE05-017: Reject over-length search keyword (EC-FE05-011).
-  - FR-FE05-018: Roll back book update and audit log on partial failure (EC-FE05-012, NFR-FE05-TXN-001).
-  - FR-FE05-019: Prevent borrowing and hide INACTIVE books from public search while preserving history (BR-FE05-008/009, EC-FE05-010, Q-FE05-007).
-- Updated Section 16 Traceability Matrix with the 9 new FRs (Test Case marked TBD).
-- Result: total FRs 10 -> 19; Unwanted FRs 0 -> 9 (~47.4%).
-## 2026-07-18 - Librarian layout alignment
+- Tăng phiên bản `SPEC.md` lên 0.2.0 (MINOR) và cập nhật Cập nhật gần nhất thành 2026-06-25; Trạng thái không thay đổi (APPROVED).
+- Tăng tỷ trọng Yêu cầu chức năng “Không mong muốn” (điều kiện lỗi/bất thường) để đạt mục tiêu bao phủ EARS >=30%.
+- Thêm 9 FR Không mong muốn EARS mới (dạng IF/WHERE), mỗi FR đều truy vết tới Luồng thay thế, Trường hợp biên hoặc Quy tắc nghiệp vụ hiện có — không bổ sung logic mới:
+  - FR-FE05-011: Từ chối ISBN trùng lặp khi tạo/cập nhật (AF-FE05-001, EC-FE05-003, BR-FE05-005).
+  - FR-FE05-012: Từ chối tiêu đề thiếu/rỗng (EC-FE05-002, BR-FE05-006).
+  - FR-FE05-013: Từ chối tham chiếu danh mục/tác giả/nhà xuất bản không tồn tại (AF-FE05-002, EC-FE05-005/006/007).
+  - FR-FE05-014: Trả về không tìm thấy cho sách không tồn tại khi xem/cập nhật/ngừng kích hoạt (AF-FE05-003, EC-FE05-001).
+  - FR-FE05-015: Từ chối Khách/Thành viên truy cập quản lý sách được bảo vệ (AF-FE05-004, EC-FE05-009, BR-FE05-002/003/004).
+  - FR-FE05-016: Từ chối năm xuất bản không hợp lệ hoặc trong tương lai (EC-FE05-008).
+  - FR-FE05-017: Từ chối từ khóa tìm kiếm quá dài (EC-FE05-011).
+  - FR-FE05-018: Hoàn tác cập nhật sách và nhật ký audit khi thất bại một phần (EC-FE05-012, NFR-FE05-TXN-001).
+  - FR-FE05-019: Ngăn mượn và ẩn sách INACTIVE khỏi tìm kiếm công khai trong khi vẫn giữ lịch sử (BR-FE05-008/009, EC-FE05-010, Q-FE05-007).
+- Cập nhật §16 Ma trận truy vết với 9 FR mới (Ca kiểm thử được đánh dấu TBD).
+- Kết quả: tổng FR 10 -> 19; FR Không mong muốn 0 -> 9 (~47.4%).
 
-- Aligned the librarian book-management workspace with the shared cream-and-brown visual system.
-- Clarified summary cards, search, filters, tables, buttons, and Vietnamese section labels without changing FE05 API behavior.
-- Removed the duplicated inner module heading, made refresh reload both catalog metadata and book rows, and added eight-row management pagination.
-- Renamed the destructive-looking Delete area to the actual soft-deactivation behavior while preserving catalog and workflow history.
-- After creation, reset incompatible management filters and navigate to the page containing the new canonical book record.
-- Display continuous row numbers across pages while retaining the immutable database BookId for API calls and cross-feature relationships.
+## 2026-07-18 - Căn chỉnh bố cục Thủ thư
+
+- Căn chỉnh không gian làm việc quản lý sách của thủ thư với hệ thống trực quan kem-nâu dùng chung.
+- Làm rõ các thẻ tổng quan, tìm kiếm, bộ lọc, bảng, nút và nhãn phần tiếng Việt mà không thay đổi hành vi API FE05.
+- Loại bỏ tiêu đề mô-đun bên trong bị lặp, cho thao tác làm mới tải lại cả siêu dữ liệu danh mục và hàng sách, đồng thời thêm phân trang quản lý tám hàng.
+- Đổi tên khu vực mang tính phá hủy Delete thành hành vi ngừng kích hoạt mềm thực tế, trong khi vẫn giữ danh mục và lịch sử quy trình.
+- Sau khi tạo, đặt lại các bộ lọc quản lý không tương thích và chuyển tới trang chứa bản ghi sách chính tắc mới.
+- Hiển thị số thứ tự hàng liên tục qua các trang trong khi vẫn dùng BookId cơ sở dữ liệu bất biến cho các lệnh gọi API và quan hệ liên tính năng.
+
 ## 2026-07-22
 
-- Connected Librarian/Admin search, status, and category filters to the canonical staff book list.
-- Removed staff-facing rating controls/details and book-status reason/confirmation inputs while preserving a generated audit reason.
-- Added deployed metadata schema reconciliation for Authors, Publishers, and Categories.
-- Added `Còn sách`/`Không khả dụng` catalog-status selection to the Librarian update form; the UI continues to use the dedicated version-safe reactivate/deactivate APIs and does not mutate physical-copy status.
-- Documented that deployed Book Management requires both the FE05 rowversion migration and the library-metadata compatibility migration because code deployment does not apply SQL migrations.
+- Kết nối bộ lọc tìm kiếm, trạng thái và danh mục của Thủ thư/Quản trị viên với danh sách sách nhân sự chính tắc.
+- Loại bỏ các điều khiển/chi tiết xếp hạng dành cho nhân sự và input lý do/xác nhận trạng thái sách, đồng thời giữ lý do audit được tạo.
+- Thêm đối soát lược đồ siêu dữ liệu đã triển khai cho Authors, Publishers và Categories.
+- Thêm lựa chọn trạng thái danh mục `Còn sách`/`Không khả dụng` vào biểu mẫu cập nhật của Thủ thư; giao diện tiếp tục dùng các API kích hoạt lại/ngừng kích hoạt chuyên biệt an toàn theo phiên bản và không thay đổi trạng thái bản sao vật lý.
+- Ghi nhận rằng Quản lý sách đã triển khai yêu cầu cả migration rowversion FE05 và migration tương thích siêu dữ liệu thư viện vì triển khai mã không áp dụng migration SQL.

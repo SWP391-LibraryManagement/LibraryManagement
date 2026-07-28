@@ -1,70 +1,70 @@
-# CONTEXT.md - FE05 Book Management
+# CONTEXT.md - Quản lý sách FE05
 
-# Version: 0.2.2
+# Phiên bản: 0.2.2
 
-# Status: APPROVED - BASELINE 2026-07-17
+# Trạng thái: ĐÃ PHÊ DUYỆT - MỐC CƠ SỞ 2026-07-17
 
-# Owner: Dung
+# Chủ sở hữu: Dung
 
-# Last Updated: 2026-07-27
+# Cập nhật lần cuối: 2026-07-27
 
-# Feature folder: `.sdd/specs/feat-book-management/`
-
----
-
-## 1. Feature Purpose
-
-Book Management exists to maintain the library's book catalog and ensure book information remains accurate, searchable, and available for borrowing operations.
-
-This feature must keep three things consistent:
-
-- Book metadata and catalog information.
-- Book availability for members and guests.
-- Relationships between books, authors, categories, publishers, and physical copies.
-
-FE05 is a Standard Spec feature in the Master Feature List. It still needs clear business rules because catalog data is used by inventory, borrowing, reservation, and reporting features.
+# Thư mục tính năng: `.sdd/specs/feat-book-management/`
 
 ---
 
-## 2. Real-World Workflow
+## 1. Mục đích tính năng
 
-The typical library workflow:
+Quản lý sách duy trì danh mục sách của thư viện, bảo đảm thông tin sách chính xác, có thể tìm kiếm và sẵn sàng cho nghiệp vụ mượn.
 
-1. A librarian adds a new book into the library catalog.
-2. The system validates required information and uniqueness constraints (e.g., ISBN).
-3. The book becomes available for public title/author search and staff management search.
-4. Guests and Members search/view public metadata without ISBN; Librarian/Admin may search/view ISBN in FE05 management.
-5. Librarians can update book information when necessary.
-6. Librarians may deactivate books that are no longer available or should not appear in circulation.
-7. Inventory Management maintains the physical copies associated with each book.
-8. Borrowing and Reservation Management use book information to support borrowing and reservation operations.
+Tính năng này phải duy trì tính nhất quán của ba nội dung:
 
----
+- Metadata sách và thông tin catalog.
+- Khả dụng của sách cho Thành viên và Khách.
+- Quan hệ giữa sách, tác giả, thể loại, nhà xuất bản và bản sao vật lý.
 
-## 3. Feature Boundary
-
-FE05 includes:
-
-- Guest/Member title/author search and public detail without ISBN.
-- Librarian/Admin management search, detail, and list including ISBN.
-- Add new books.
-- Update book information.
-- Deactivate books.
-- Manage book catalog metadata.
-
-FE05 does not include:
-
-- Physical copy management. That belongs to FE06.
-- Borrowing workflow. That belongs to FE07.
-- Reservation queue management. That belongs to FE08.
-- Fine management. That belongs to FE09.
-- User and role management. That belongs to FE11.
+FE05 là tính năng Đặc tả tiêu chuẩn trong Danh sách tính năng chính. Tính năng vẫn cần quy tắc nghiệp vụ rõ ràng vì dữ liệu catalog được dùng bởi các tính năng kho, mượn, đặt chỗ và báo cáo.
 
 ---
 
-## 4. Current Data Model Notes
+## 2. Quy trình thực tế
 
-The current SQL design includes:
+Quy trình thư viện điển hình:
+
+1. Thủ thư thêm sách mới vào catalog thư viện.
+2. Hệ thống xác thực thông tin bắt buộc và ràng buộc duy nhất (ví dụ ISBN).
+3. Sách xuất hiện trong tìm kiếm công khai theo tiêu đề/tác giả và tìm kiếm quản lý dành cho nhân viên.
+4. Khách và Thành viên tìm kiếm/xem metadata công khai không có ISBN; Thủ thư/Quản trị viên có thể tìm kiếm/xem ISBN trong quản lý FE05.
+5. Thủ thư có thể cập nhật thông tin sách khi cần.
+6. Thủ thư có thể hủy kích hoạt sách không còn khả dụng hoặc không nên xuất hiện trong lưu thông.
+7. Quản lý kho duy trì các bản sao vật lý liên kết với từng sách.
+8. Quản lý mượn và đặt chỗ sử dụng thông tin sách để hỗ trợ các nghiệp vụ mượn và đặt chỗ.
+
+---
+
+## 3. Ranh giới tính năng
+
+FE05 bao gồm:
+
+- Khách/Thành viên tìm kiếm theo tiêu đề/tác giả và xem chi tiết công khai không có ISBN.
+- Thủ thư/Quản trị viên tìm kiếm, xem chi tiết và danh sách quản lý bao gồm ISBN.
+- Thêm sách mới.
+- Cập nhật thông tin sách.
+- Hủy kích hoạt sách.
+- Quản lý metadata catalog sách.
+
+FE05 không bao gồm:
+
+- Quản lý bản sao vật lý. Nội dung đó thuộc FE06.
+- Quy trình mượn. Nội dung đó thuộc FE07.
+- Quản lý hàng đợi đặt chỗ. Nội dung đó thuộc FE08.
+- Quản lý tiền phạt. Nội dung đó thuộc FE09.
+- Quản lý người dùng và vai trò. Nội dung đó thuộc FE11.
+
+---
+
+## 4. Ghi chú về mô hình dữ liệu hiện tại
+
+Thiết kế SQL hiện tại bao gồm:
 
 - `Books(BookId, Title, ISBN, CategoryId, AuthorId, PublisherId, PublishYear, Description, CoverUrl, Status)`
 - `Authors(AuthorId, AuthorName)`
@@ -72,95 +72,95 @@ The current SQL design includes:
 - `Publishers(PublisherId, PublisherName)`
 - `BookCopies(CopyId, BookId, Barcode, Status, Location)`
 
-Implementation reconciliation points:
+Các điểm đối soát triển khai:
 
-- ISBN uniqueness constraints must be enforced.
-- ISBN is excluded from FE01 Guest/Member projection and public q matching; it remains visible/searchable after FE11 authorizes the account's single Librarian/Admin role.
-- The current SQL supports one author per book; multiple authors would require a later schema change.
-- Status-based deactivation must be used instead of physical deletion.
-- Current SQL includes `Books.Status = ACTIVE|INACTIVE`; FE05 deactivation/reactivation changes only this field and leaves FE06 copy state untouched.
-- FE05 availability is read-only and derived from `Books.Status` plus FE06-owned `BookCopies.Status`; FE05 has no copy-status mutation endpoint.
-- Existing-book mutations require SQL `rowversion`/`If-Match` to reject stale updates deterministically.
-- Deployed environments must apply the reviewed metadata compatibility migration before the backend is catalog-ready; liveness alone is not evidence that protected author/publisher/category reads can execute.
-- Search performance may require indexing on ISBN, Title, and Author.
+- Phải thực thi ràng buộc duy nhất ISBN.
+- ISBN bị loại khỏi projection Khách/Thành viên FE01 và việc khớp q công khai; ISBN vẫn hiển thị/tìm kiếm được sau khi FE11 cấp quyền vai trò Thủ thư/Quản trị viên duy nhất cho tài khoản.
+- SQL hiện tại hỗ trợ một tác giả cho mỗi sách; nhiều tác giả sẽ yêu cầu thay đổi schema về sau.
+- Phải sử dụng hủy kích hoạt dựa trên trạng thái thay vì xóa vật lý.
+- SQL hiện tại có `Books.Status = ACTIVE|INACTIVE`; thao tác hủy kích hoạt/kích hoạt lại FE05 chỉ thay đổi trường này và không ảnh hưởng trạng thái bản sao FE06.
+- Khả dụng FE05 là chỉ đọc và được suy ra từ `Books.Status` cùng `BookCopies.Status` do FE06 sở hữu; FE05 không có endpoint mutation trạng thái bản sao.
+- Mutation sách hiện có yêu cầu SQL `rowversion`/`If-Match` để từ chối cập nhật cũ một cách xác định.
+- Môi trường đã triển khai phải áp dụng metadata compatibility migration đã rà soát trước khi backend sẵn sàng cho catalog; liveness đơn thuần không phải bằng chứng rằng thao tác đọc tác giả/nhà xuất bản/thể loại được bảo vệ có thể thực thi.
+- Hiệu năng tìm kiếm có thể yêu cầu index trên ISBN, Title và Author.
 
-These decisions are reflected in `SPEC.md` v0.5.0 and must be reconciled against the existing prototype before implementation can be considered complete.
+Các quyết định này được phản ánh trong `SPEC.md` v0.5.0 và phải được đối soát với prototype hiện có trước khi phần triển khai được coi là hoàn tất.
 
 ---
 
-## 5. Main Use Cases From Assignment Sheet
+## 5. Các use case chính từ bảng phân công
 
-| Use Case ID | Use Case Name | Owner |
+| ID use case | Tên use case | Chủ sở hữu |
 | ----------- | ------------- | ----- |
-| UC17 | View Book Details (Guest) | Dung |
-| UC18 | Search Books (Guest) | Dung |
-| UC19 | Search Books (Member) | Dung |
-| UC20 | View Book Details (Member) | Dung |
-| UC21 | View Book List | Dung |
-| UC22 | Add Book | Dung |
-| UC23 | Update Book Information | Dung |
-| UC24 | Deactivate Book | Dung |
+| UC17 | Xem chi tiết sách (Khách) | Dung |
+| UC18 | Tìm kiếm sách (Khách) | Dung |
+| UC19 | Tìm kiếm sách (Thành viên) | Dung |
+| UC20 | Xem chi tiết sách (Thành viên) | Dung |
+| UC21 | Xem danh sách sách | Dung |
+| UC22 | Thêm sách | Dung |
+| UC23 | Cập nhật thông tin sách | Dung |
+| UC24 | Hủy kích hoạt sách | Dung |
 
 ---
 
-## 6. Feature Tests From Assignment Sheet
+## 6. Các kiểm thử tính năng từ bảng phân công
 
-| Test ID | Test Name | Owner |
+| ID kiểm thử | Tên kiểm thử | Chủ sở hữu |
 | ------- | --------- | ----- |
-| FT18 | Search books (Guest) | Dung |
-| FT19 | View book details (Guest) | Dung |
-| FT20 | Search books (Member) | Dung |
-| FT21 | View book details (Member) | Dung |
-| FT22 | View book list | Dung |
-| FT23 | Add book | Dung |
-| FT24 | Update book information | Dung |
-| FT25 | Deactivate book | Dung |
+| FT18 | Tìm kiếm sách (Khách) | Dung |
+| FT19 | Xem chi tiết sách (Khách) | Dung |
+| FT20 | Tìm kiếm sách (Thành viên) | Dung |
+| FT21 | Xem chi tiết sách (Thành viên) | Dung |
+| FT22 | Xem danh sách sách | Dung |
+| FT23 | Thêm sách | Dung |
+| FT24 | Cập nhật thông tin sách | Dung |
+| FT25 | Hủy kích hoạt sách | Dung |
 
 ---
 
-## 7. Key Risks
+## 7. Rủi ro chính
 
-- Duplicate ISBN records may create catalog inconsistencies.
-- Incorrect book metadata may affect searching and reporting.
-- Deactivating books hides the catalog record from public browse while keeping copy, borrowing, reservation, and history records unchanged.
-- Search performance may degrade with large numbers of books.
-- Concurrent updates may overwrite book information if version control is not considered.
+- Bản ghi ISBN trùng lặp có thể tạo ra sự không nhất quán của catalog.
+- Metadata sách sai có thể ảnh hưởng tìm kiếm và báo cáo.
+- Hủy kích hoạt sách ẩn bản ghi catalog khỏi duyệt công khai trong khi giữ nguyên bản sao, mượn, đặt chỗ và lịch sử.
+- Hiệu năng tìm kiếm có thể giảm khi số lượng sách lớn.
+- Cập nhật đồng thời có thể ghi đè thông tin sách nếu không xem xét kiểm soát phiên bản.
 
 ---
 
-## 8. Dependencies
+## 8. Phụ thuộc
 
-| Dependency | Why It Matters |
+| Phụ thuộc | Lý do quan trọng |
 | ---------- | -------------- |
-| FE02 Authentication | Identifies current user and permissions. |
-| FE06 Inventory / Book Copy Management | Owns physical book copies. |
-| FE07 Borrowing Management | Uses book information during borrowing. |
-| FE08 Reservation Management | Uses book information for reservations. |
-| FE11 User & Role Management | Controls librarian permissions. |
+| Xác thực FE02 | Xác định người dùng và quyền hiện tại. |
+| Quản lý kho/Bản sao sách FE06 | Sở hữu các bản sao sách vật lý. |
+| Quản lý mượn FE07 | Sử dụng thông tin sách khi mượn. |
+| Quản lý đặt chỗ FE08 | Sử dụng thông tin sách khi đặt chỗ. |
+| Quản lý người dùng và vai trò FE11 | Kiểm soát quyền của Thủ thư. |
 
 ---
 
-## 9. Resolved Questions For Team / Teacher
+## 9. Câu hỏi đã giải quyết cho nhóm/giảng viên
 
-| ID | Approved Decision | Source | Status |
+| ID | Quyết định đã phê duyệt | Nguồn | Trạng thái |
 | -- | ----------------- | ------ | ------ |
-| Q-FE05-001 | ISBN is optional but must be unique when provided. | Review packet 2026-06-10 | APPROVED |
-| Q-FE05-002 | Multiple books can share the same title. | Review packet 2026-06-10 | APPROVED |
-| Q-FE05-003 | Deactivated books are hidden from public search but visible in staff/admin management views. | Review packet 2026-06-10 | APPROVED |
-| Q-FE05-004 | Soft delete/deactivation is required; no physical delete in Phase 1. | Review packet 2026-06-10 | APPROVED |
-| Q-FE05-005 | A book belongs to one category in Phase 1; many-to-many categories are future work. | Review packet 2026-06-10 | APPROVED |
-| Q-FE05-006 | Cover images are stored as URL/path text, not binary database content. | Review packet 2026-06-10 | APPROVED |
-| Q-FE05-007 | Deactivation hides the book from public catalog even when copies are borrowed or reserved; history and copy records remain unchanged. | User correction 2026-06-21 | APPROVED |
-| Q-FE05-008 | Staff use dedicated deactivate/reactivate commands for `Books.Status`; metadata update does not change status, and public browse hides `INACTIVE` books. | Nhat approval after cross-feature audit 2026-07-15 | APPROVED |
-| Q-FE05-009 | Guest/Member public search matches title/author only and public DTOs exclude ISBN; authenticated Librarian/Admin FE05 management retains ISBN search/display. | Product-owner correction 2026-07-27 | APPROVED |
+| Q-FE05-001 | ISBN là tùy chọn nhưng phải duy nhất khi được cung cấp. | Gói rà soát 2026-06-10 | APPROVED |
+| Q-FE05-002 | Nhiều sách có thể cùng tiêu đề. | Gói rà soát 2026-06-10 | APPROVED |
+| Q-FE05-003 | Sách bị hủy kích hoạt bị ẩn khỏi tìm kiếm công khai nhưng hiển thị trong màn hình quản lý nhân viên/quản trị viên. | Gói rà soát 2026-06-10 | APPROVED |
+| Q-FE05-004 | Bắt buộc xóa mềm/hủy kích hoạt; không xóa vật lý trong Giai đoạn 1. | Gói rà soát 2026-06-10 | APPROVED |
+| Q-FE05-005 | Mỗi sách thuộc một thể loại trong Giai đoạn 1; thể loại nhiều-nhiều là công việc tương lai. | Gói rà soát 2026-06-10 | APPROVED |
+| Q-FE05-006 | Ảnh bìa được lưu dưới dạng văn bản URL/đường dẫn, không phải nội dung nhị phân trong cơ sở dữ liệu. | Gói rà soát 2026-06-10 | APPROVED |
+| Q-FE05-007 | Hủy kích hoạt ẩn sách khỏi catalog công khai ngay cả khi bản sao đang được mượn hoặc đặt chỗ; lịch sử và bản ghi bản sao không thay đổi. | Điều chỉnh người dùng 2026-06-21 | APPROVED |
+| Q-FE05-008 | Nhân viên sử dụng lệnh hủy kích hoạt/kích hoạt lại riêng cho `Books.Status`; cập nhật metadata không đổi trạng thái và duyệt công khai ẩn sách `INACTIVE`. | Nhat phê duyệt sau rà soát liên tính năng 2026-07-15 | APPROVED |
+| Q-FE05-009 | Tìm kiếm công khai của Khách/Thành viên chỉ khớp tiêu đề/tác giả và DTO công khai loại ISBN; quản lý FE05 của Thủ thư/Quản trị viên đã xác thực vẫn giữ tìm kiếm/hiển thị ISBN. | Điều chỉnh product owner 2026-07-27 | APPROVED |
 
 ---
 
-## 10. Notes For Implementation Later
+## 10. Ghi chú cho việc triển khai sau này
 
-- The baseline `SPEC.md`, `PLAN.md`, and `TASKS.md` are approved; implement only the ordered task currently in scope.
-- Prototype behavior is not completion evidence; record fresh focused validation for each task.
-- ISBN validation must be enforced on the server.
-- Status-based deactivation is required; physical deletion is forbidden in Phase 1.
-- Search APIs should support pagination and filtering.
-- Every API endpoint must validate role and input on the server.
+- Mốc cơ sở gồm `SPEC.md`, `PLAN.md` và `TASKS.md` đã phê duyệt; chỉ triển khai nhiệm vụ theo thứ tự hiện trong phạm vi.
+- Hành vi prototype không phải bằng chứng hoàn tất; ghi nhận xác thực tập trung mới cho từng nhiệm vụ.
+- Phải thực thi xác thực ISBN ở server.
+- Bắt buộc hủy kích hoạt dựa trên trạng thái; xóa vật lý bị cấm trong Giai đoạn 1.
+- API tìm kiếm nên hỗ trợ phân trang và lọc.
+- Mọi endpoint API phải xác thực vai trò và dữ liệu đầu vào ở server.
