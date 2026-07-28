@@ -182,9 +182,9 @@ The approved SPEC and FE10-H01 through FE10-H09 resolved the implementation bloc
 - `SPEC.md` v0.5.0, the personal inbox design, and FE10-I01..I08 plan are
   H1-approved; governance PR #70 is merged as `25c09ec`.
 - FE10-I01 through FE10-I08, the migration-hash remediation, and the bounded
-  H3 round-one remediation are H2-approved and published as PR #75 runtime head
-  `3f9f23a`, based on user-approved `main@a240705`. Exact-head CI
-  `30313721511` and Azure staging deployment `30313949983` passed.
+  H3 round-one remediation are implemented. PR #75 historical head `cf0a236`
+  passed exact-head CI `30315046007`, Azure staging `30315273298`, and
+  two-axis H3 with no actionable finding.
 - H3 round one against `main@a5fcbb9...28c4f80` failed on missing ADR-002
   read-state documentation, stale lifecycle source-of-truth text, two bounded
   `/notifications` read-state controls, and a browser-reported popover stacking
@@ -194,14 +194,20 @@ The approved SPEC and FE10-H01 through FE10-H09 resolved the implementation bloc
   frontend 259/259 plus lint/build; deployment 20/20; system 10/10;
   traceability state 3/3 and FE10 14/16 (88%); Chromium 11/11; audits, Azure
   schema preparation, and diff hygiene.
+- The user approved documentation-only drift through `main@30f936d`; upstream
+  CI `30315665010` and automatic Azure staging `30315842152` passed. The branch
+  rebased without runtime conflict and preserved the Vietnamese SDD
+  translation. Fresh H2/exact-head gates and repeated H3 are mandatory because
+  the earlier H2 authority cannot be reused after rebase.
 - Exact-head public HTTPS/CORS and protected inbox routing passed on Azure.
   Azure SQL retained exactly one nullable `ReadAt` column and one supporting
   index; temporary probe and firewall state was removed. Historical three-role
   own-record verification remains recorded for unchanged backend head
   `28c4f80`. Repeated H3, explicit H3 approval, merge, and exact post-merge
   CI/deployment remain pending.
-- The bounded evidence-only lifecycle closeout must be H2-approved and the
-  resulting latest PR head must pass exact-head gates before repeated H3.
+- The complete post-`main@30f936d` reconciliation must be fingerprinted and
+  H2-approved; the resulting latest PR head must then pass exact-head gates
+  before repeated H3.
 - The 2026-07-28 H1 deployment addendum preserves upstream CI-gated automatic
   staging while requiring exact migration-hash proof for both automatic and
   manual runs; manual runs retain an additional human confirmation input.

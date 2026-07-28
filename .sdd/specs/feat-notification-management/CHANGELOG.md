@@ -1,5 +1,21 @@
 # CHANGELOG.md - FE10 Notification Management
 
+## 2026-07-28 - Reconcile Vietnamese SDD drift through main@30f936d
+
+- The user approved H1 drift reconciliation through `main@30f936d`. The
+  incoming PR #77 translates SDD documentation to Vietnamese and does not
+  change FE10 runtime, API, migration, UI, or test behavior.
+- Exact upstream CI `30315665010` and automatic Azure staging `30315842152`
+  passed. The FE10 branch rebased without runtime conflict; translated FE10
+  SPEC content was preserved and reconciled with the implemented v0.5.0
+  delivery state.
+- Historical PR #75 head `cf0a236` passed CI `30315046007`, Azure staging
+  `30315273298`, and final two-axis H3 with no actionable finding.
+- H2 round 7 approved a whitespace-only candidate but was superseded before
+  staging by the mandatory fetch of `main@30f936d`; no commit or push used
+  that authority. A fresh candidate fingerprint/H2 and exact-head gates are
+  required before repeated H3 and merge.
+
 ## 2026-07-28 - Remediate FE10 inbox H3 round-one findings
 
 - H2 round 4 approved fingerprint

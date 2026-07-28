@@ -1,7 +1,7 @@
 # FE10 Test Plan - Notification Management
 
 Version: 0.5.0
-Status: V0.5.0 AZURE STAGING VERIFIED - H3 REMEDIATION IN PROGRESS
+Status: V0.5.0 IMPLEMENTED - POST-DRIFT H2/H3 IN PROGRESS
 Last Updated: 2026-07-28
 
 Source Spec: `.sdd/specs/feat-notification-management/SPEC.md`
@@ -166,10 +166,10 @@ npm.cmd run trace:enforce
   `28c4f80`; exact-head CI `30306805399`, backend-first Azure deployment
   `30307855616`, and three-role live verification passed.
 - H3 round one failed on ADR/current-state and bounded UI-state/stacking
-  findings. Focused UI remediation and the complete local matrix are GREEN on
-  H1-approved `main@a240705`. H2 round 4 approved the published runtime
-  remediation head `3f9f23a`; exact-head CI `30313721511`, Azure deployment `30313949983`,
-  public transport/protected-route checks, Azure SQL schema/index verification,
-  and cleanup passed. Repeated H3, merge, and exact post-merge CI/deployment
-  remain pending. An H2-reviewed evidence-only closeout commit may sit above
-  the runtime head; the resulting latest PR head must pass exact-head gates.
+  findings. The focused remediation passed its complete matrix. Later PR #75
+  head `cf0a236` passed exact-head CI `30315046007`, Azure deployment
+  `30315273298`, public transport/protected-route checks, Azure SQL
+  schema/index verification, cleanup, and final two-axis H3 with no actionable
+  finding. The user then approved documentation-only `main@30f936d`; the
+  conflict-free rebase preserves runtime behavior but requires fresh H2,
+  exact-head CI/Azure, repeated H3, merge, and post-merge gates.

@@ -1,6 +1,6 @@
 # PLAN.md - FE10 Notification Management
 
-Status: V0.5.0 AZURE STAGING VERIFIED - H3 REMEDIATION IN PROGRESS
+Status: V0.5.0 IMPLEMENTED - POST-DRIFT H2/H3 IN PROGRESS
 
 Owner: Nhat
 
@@ -13,16 +13,15 @@ remains complete. The user approved the v0.5.0 personal notification inbox
 design and consolidated written SPEC on 2026-07-27. The user approved the new
 implementation plan and FE10-I01..I08 task decomposition as H1 on 2026-07-28.
 Governance PR #70 reached `main` as `25c09ec`. FE10-I01 through FE10-I08,
-the cross-platform migration-hash remediation, and the bounded H3 round-one
-remediation are H2-approved and published as PR #75 runtime head `3f9f23a`, rebased
-cleanly on the user-approved `main@a240705` baseline. Exact-head CI
-`30313721511` and Azure staging deployment `30313949983` passed. Public
-HTTPS/CORS, protected-route, Azure SQL schema/index, and cleanup checks also
-passed. The round-one ADR, lifecycle-documentation, page-state, and popover
-stacking findings are implemented; repeated H3, explicit H3 approval, merge,
-and post-merge CI/deployment remain open.
-An H2-reviewed evidence-only closeout commit may sit above the deployed runtime
-head; the resulting latest PR head must pass exact-head gates before H3.
+the migration-hash remediation, and the bounded H3 round-one remediation are
+implemented. PR #75 historical head `cf0a236` passed exact-head CI
+`30315046007`, Azure staging `30315273298`, public transport/protected-route
+checks, Azure SQL schema/index verification, cleanup, and final two-axis H3
+with no actionable finding. The user then approved documentation-only drift
+through `main@30f936d`; the branch rebased without runtime conflict and
+preserved the upstream Vietnamese SDD translation. The earlier H2 authority
+cannot be reused. A fresh fingerprint/H2, exact-head CI/Azure, repeated H3,
+explicit H3 approval, merge, and post-merge CI/deployment remain open.
 
 ---
 

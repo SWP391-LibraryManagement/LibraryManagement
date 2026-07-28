@@ -1,6 +1,6 @@
 # FE10 Notification Inbox Expansion Design
 
-**Status:** EXACT-HEAD CI/AZURE VERIFIED - REPEATED H3 PENDING
+**Status:** IMPLEMENTED - POST-DRIFT H2/EXACT-HEAD GATES PENDING
 
 **Design approved:** 2026-07-27
 
@@ -16,15 +16,14 @@ shell.
 
 **Implementation baseline:** governance PR #70 merged to `main` as
 `25c09ec5f90d21e4ab0228cccd838b3548d4d90d`. FE10-I01 through FE10-I08,
-the cross-platform migration-hash remediation, and the bounded H3 round-one
-remediation are H2-approved and published as PR #75 runtime head `3f9f23a`. Exact-head
-CI `30313721511` and Azure staging deployment `30313949983` passed. Historical
-three-role API/browser evidence remains recorded for `28c4f80`; the exact
-remediation head additionally passed public HTTPS/CORS, protected-route, Azure
-SQL schema/index, and cleanup checks. Repeated H3, explicit H3 approval, merge,
-and post-merge CI/deployment remain pending. A bounded H2-reviewed evidence-only
-closeout may sit above the runtime head; the resulting latest PR head must pass
-exact-head gates before repeated H3.
+the migration-hash remediation, and the bounded H3 round-one remediation are
+implemented. PR #75 historical head `cf0a236` passed exact-head CI
+`30315046007`, Azure staging `30315273298`, public HTTPS/CORS,
+protected-route, Azure SQL schema/index, cleanup, and final two-axis H3 with no
+actionable finding. Historical three-role API/browser evidence remains
+recorded for `28c4f80`. The approved documentation-only rebase to
+`main@30f936d` preserves runtime behavior but requires fresh H2, exact-head
+CI/Azure, repeated H3, merge, and post-merge gates.
 
 **H1 deployment addendum approved 2026-07-28:** preserve upstream CI-gated
 automatic staging deployment plus manual reruns. Both paths fail closed unless
@@ -61,6 +60,14 @@ remediation; the committed merge-tree is clean. Preserve both contracts, rerun
 complete validation, obtain a new H2 fingerprint, and redeploy the exact FE10
 head because upstream CI `30311801599` and Azure run `30311973740` now serve
 that newer `main`.
+
+**Fifth H1 drift addendum approved 2026-07-28:** reconcile with
+`main@30f936d`, which translates SDD documentation to Vietnamese without FE10
+runtime, API, migration, UI, or test changes. Exact upstream CI `30315665010`
+and automatic Azure staging `30315842152` passed. Preserve the Vietnamese
+translation and implemented v0.5.0 contract, invalidate the earlier H2
+authority, and require a fresh fingerprint/H2 plus exact-head CI/Azure and
+repeated H3 before merge.
 
 ## 1. Outcome And Scope
 

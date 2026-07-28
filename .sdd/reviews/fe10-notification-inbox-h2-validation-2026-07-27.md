@@ -1,8 +1,8 @@
 # FE10 Personal Notification Inbox H2 Validation
 
-Date: 2026-07-28  
-Branch: `codex/feat-fe10-personal-notification-inbox`  
-Baseline: `main@41282b4ebc37b327240fbef4df4dc28b7a9b617c`  
+Date: 2026-07-28
+Branch: `codex/feat-fe10-personal-notification-inbox`
+Baseline: `main@41282b4ebc37b327240fbef4df4dc28b7a9b617c`
 Status: **H2 APPROVED, THEN SUPERSEDED BY UPSTREAM CORE DRIFT**
 
 This record preserves the first H2 decision against `main@41282b4`. A

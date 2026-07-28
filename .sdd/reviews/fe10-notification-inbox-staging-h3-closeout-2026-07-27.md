@@ -4,9 +4,10 @@
 - Pull request: #75
 - H3 round-one base: `main@a5fcbb989d730923548a67a789a1447b180de2a9`
 - H3 round-one head: `28c4f80ca6e249b7802caf854f9fa42cb4840158`
-- Current H1-approved base: `main@a240705fbd486304464b073cbd3caec77a1fa135`
-- Deployed runtime remediation head: `3f9f23a0bc8705590a977e31b03b05a6d2845628`
-- Status: **EXACT-HEAD CI/AZURE PASS; H3 ROUND TWO PENDING**
+- Current H1-approved base: `main@30f936d644c2034bbbf9cb4e01ba25feab31595c`
+- Rebased local committed head: `c72bc77f996a160333c2cb7ee4399f3d591fe17c`
+- Last fully deployed/reviewed head: `cf0a2364b9f526dae4f4e873f261764ea43da777`
+- Status: **POST-DRIFT H2/EXACT-HEAD GATES PENDING**
 
 This record closes no gate early. It reconciles the exact Azure evidence and
 the first H3 outcome required by the approved FE10-I08 plan. Section 5 records
@@ -31,6 +32,18 @@ Repeated H3, merge, and post-merge runs are recorded only after they occur.
   that H1 drift addendum; the upstream FE11 Admin edit-action removal passed CI
   `30311801599` and Azure deployment `30311973740`, and the FE10 branch rebased
   without conflict.
+- Historical head `cf0a2364b9f526dae4f4e873f261764ea43da777`
+  subsequently passed CI `30315046007`, Azure staging `30315273298`, and final
+  separate Standards/Spec H3 reviews with no actionable finding.
+- H2 round 7 approved a three-line whitespace-only correction, but the
+  mandatory pre-stage fetch found `main@30f936d644c2034bbbf9cb4e01ba25feab31595c`.
+  The user approved that H1 drift addendum. No file was staged, committed, or
+  pushed under round-7 authority.
+- `main@30f936d` translates SDD documentation to Vietnamese and has no runtime,
+  API, migration, UI, or test overlap with FE10. Exact upstream CI
+  `30315665010` and automatic Azure staging `30315842152` passed. The branch
+  rebased without runtime conflict and preserved the translated FE10 SPEC;
+  fresh H2 is mandatory.
 - PR #75 remained open, ready, clean, and mergeable at the reviewed head.
 
 ## 2. Exact-Head CI And Azure Staging Evidence
@@ -151,8 +164,8 @@ removing obsolete FE11 edit-action tests, not a skipped FE10 test.
 
 ## 6. Remaining Mandatory Gates
 
-1. Obtain H2 approval for the bounded evidence-only lifecycle closeout, publish
-   it, and make the resulting latest PR head pass exact-head CI/Azure gates.
+1. Obtain fresh H2 approval for the complete post-`main@30f936d` candidate,
+   publish it, and make the resulting latest PR head pass exact-head CI/Azure.
 2. Repeat separate Standards and Spec H3 review on that exact latest head.
 3. Obtain explicit H3 approval before merge.
 4. Merge PR #75, then verify exact post-merge `main` CI and automatic Azure

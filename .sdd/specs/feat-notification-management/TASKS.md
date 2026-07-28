@@ -1,14 +1,16 @@
 # TASKS.md - FE10 Notification Management
 
-Status: V0.5.0 AZURE STAGING VERIFIED - H3 REMEDIATION IN PROGRESS
+Status: V0.5.0 IMPLEMENTED - POST-DRIFT H2/H3 IN PROGRESS
 Implementation State: COMPLETE
-Delivery Gate: H3/MERGE PENDING
+Delivery Gate: POST-DRIFT H2/CI/AZURE/H3/MERGE PENDING
 
 Current v0.5.0 detail: FE10-I01..I08, the migration-hash remediation, and the
-bounded H3 round-one remediation are H2-approved and published on PR #75 head
-as runtime head `3f9f23a`, rebased cleanly on H1-approved `main@a240705`. Exact-head CI
-`30313721511` and Azure staging deployment `30313949983` passed. Repeated H3,
-explicit H3 approval, merge, and post-merge CI/deployment remain pending.
+bounded H3 round-one remediation are implemented. PR #75 historical head
+`cf0a236` passed CI `30315046007`, Azure staging `30315273298`, and clean
+two-axis H3. The branch is rebased locally as `c72bc77` on H1-approved
+`main@30f936d`, which translates SDD documents without runtime overlap. Fresh
+H2, exact-head CI/Azure, repeated H3, explicit H3 approval, merge, and
+post-merge CI/deployment remain pending.
 
 Prior v0.4.5 Implementation State: COMPLETE
 
@@ -20,12 +22,12 @@ Workflow State: The approved Phase 2/G1-G12 and v0.4.5 delivery baseline below
 remains complete. The user approved the v0.5.0 personal inbox design and
 written SPEC on 2026-07-27, then approved FE10-I01..I08 as H1 on 2026-07-28.
 Governance PR #70 reached `main` as `25c09ec`. FE10-I01 through FE10-I08 and
-the round-one remediation are published as PR #75 runtime head `3f9f23a`; H2 round 4,
-exact-head CI, Azure deployment, public transport/protected-route checks,
-Azure SQL schema verification, and cleanup pass. Repeated H3, explicit H3
-approval, merge, and post-merge gates remain open.
-The bounded evidence-only lifecycle closeout must be H2-approved and the
-resulting latest PR head must pass exact-head gates before repeated H3.
+the round-one remediation are implemented; the pre-translation lineage passed
+H2, exact-head CI/Azure, public transport/protected-route checks, Azure SQL
+schema verification, cleanup, and H3. The approved `main@30f936d` rebase
+invalidates only the prior staging authority, not the implementation evidence;
+the resulting latest PR head must pass fresh H2 and exact-head gates before
+repeated H3.
 
 ---
 
