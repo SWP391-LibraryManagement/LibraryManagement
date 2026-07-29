@@ -242,11 +242,11 @@ test('librarian page wires the hold expiration workflow and omits local-only act
     new URL('../src/page/reservation/ReservationsLibrarianPage.jsx', import.meta.url),
     'utf8',
   );
-  const loadReservationsStart = source.indexOf('async function loadReservations');
+  const loadReservationsStart = source.indexOf('const loadReservations = useCallback');
   const loadReservationsEnd = source.indexOf('\n  useEffect(', loadReservationsStart);
   const loadReservationsSource = source.slice(loadReservationsStart, loadReservationsEnd);
 
-  assert.match(source, /async function loadReservations\(\)/);
+  assert.match(source, /const loadReservations = useCallback\(async \(\) => \{/);
   assert.match(loadReservationsSource, /reservationApi\.listAll\(\{ page, limit: RESERVATION_API_PAGE_SIZE \}\)/);
   assert.match(loadReservationsSource, /setRows\(\[\]\)/);
   assert.doesNotMatch(source, /DEMO_ALL_RESERVATIONS/);
@@ -291,6 +291,23 @@ test('librarian page wires the hold expiration workflow and omits local-only act
   assert.doesNotMatch(source, /> Đã giao</);
   assert.doesNotMatch(source, /title="Xóa"/);
   assert.doesNotMatch(source, /item\.status !== 'Ready to pick up'/);
+});
+
+test('librarian reservation loader has a stable callback without stale queue selection', async () => {
+  const source = await readFile(
+    new URL('../src/page/reservation/ReservationsLibrarianPage.jsx', import.meta.url),
+    'utf8',
+  );
+
+  assert.match(source, /import \{ useCallback, useEffect, useMemo, useRef, useState \} from 'react'/);
+  assert.match(source, /const queueCopyIdRef = useRef\(initialQueueCopyId\)/);
+  assert.match(source, /queueCopyIdRef\.current = queueCopyId/);
+  assert.match(source, /const loadReservations = useCallback\(async \(\) => \{/);
+  assert.match(source, /currentCopyId: queueCopyIdRef\.current/);
+  assert.match(
+    source,
+    /const timer = window\.setTimeout\(loadReservations, 0\);[\s\S]*\}, \[loadReservations\]\)/,
+  );
 });
 
 test('return handoff opens the exact reservation queue selected by FE07', async () => {

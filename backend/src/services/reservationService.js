@@ -1,25 +1,7 @@
 const errors = require('../utils/safeErrors');
+const { hasAnyRole, toPositiveInteger } = require('../utils/featureAccess');
 
 const RESERVATION_HOLD_DAYS = 2;
-
-function normalizeRole(role) {
-  return String(role || '').toUpperCase();
-}
-
-function hasAnyRole(user, allowedRoles) {
-  const currentRoles = Array.isArray(user?.roles) ? user.roles.map(normalizeRole) : [];
-  return allowedRoles.map(normalizeRole).some((role) => currentRoles.includes(role));
-}
-
-function toPositiveInteger(value, fieldName) {
-  const numberValue = Number(value);
-
-  if (!Number.isInteger(numberValue) || numberValue <= 0) {
-    throw errors.badRequest('INVALID_ID', `${fieldName} must be a positive integer.`);
-  }
-
-  return numberValue;
-}
 
 function addDays(date, days) {
   const nextDate = new Date(date);
