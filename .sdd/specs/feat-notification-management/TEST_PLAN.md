@@ -1,7 +1,7 @@
 # Kế hoạch kiểm thử FE10 - Quản lý thông báo
 
 Phiên bản: 0.6.0
-Trạng thái: H1 GOVERNANCE ACTIVATION - ĐÃ PHÊ DUYỆT; CHỜ MERGE ĐỂ THỰC THI
+Trạng thái: H2 LOCAL VALIDATION COMPLETE; UNCOMMITTED PENDING H2 APPROVAL
 Cập nhật lần cuối: 2026-07-29
 
 Đặc tả nguồn: `.sdd/specs/feat-notification-management/SPEC.md`
@@ -210,3 +210,16 @@ npm.cmd run trace:enforce
 - FE10 failure isolation trong integration FE07/FE08 và desktop navigation.
 
 Migration contract phải chứng minh seed Azure SQL additive và rerun-safe.
+
+## 10. Bằng chứng H2 cục bộ v0.6.0
+
+- FE10 focused: 4 suite, 175/175 kiểm thử cho canonical pair, source owner,
+  inbox eligibility và migration replay.
+- System integration 11/11; Chromium liên hoàn 1/1 tạo đúng bốn notification,
+  replay không tăng số bản ghi và fixed action path mở đúng nghiệp vụ.
+- Full backend 1.125/1.125; coverage thấp nhất 80,72% branches; deployment
+  20/20; Azure-compatible schema sinh thành công.
+- SHA-256 migration:
+  `680cb4acc2ac3d38740e68026f29753a28a39daceeba647d24dc5e1523f3475a`.
+- Traceability FE10 14/20 FR được tag (70%), đạt ngưỡng enforce.
+- Product diff và migration chưa stage/commit/push, đang chờ H2.

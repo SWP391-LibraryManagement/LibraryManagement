@@ -17,6 +17,10 @@ function isSensitiveQueueNotification(notification) {
 
 const inboxTypeTemplatePairs = new Set([
   'GENERAL_SYSTEM:MEMBERSHIP_RESULT',
+  'GENERAL_SYSTEM:BORROW_REQUEST_APPROVED',
+  'GENERAL_SYSTEM:BORROW_REQUEST_REJECTED',
+  'GENERAL_SYSTEM:BORROW_RENEWED',
+  'GENERAL_SYSTEM:BORROW_RETURNED',
   'RESERVATION_AVAILABLE:RESERVATION_READY',
   'DUE_DATE_REMINDER:DUE_DATE_REMINDER',
   'OVERDUE_NOTICE:OVERDUE_NOTICE',
@@ -87,6 +91,34 @@ function makeInMemoryNotificationDependencies() {
       templateCode: 'MEMBERSHIP_RESULT',
       subject: 'Membership result',
       body: 'Membership status: {{membershipStatus}}',
+      status: 'ACTIVE',
+    },
+    {
+      templateId: 9,
+      templateCode: 'BORROW_REQUEST_APPROVED',
+      subject: 'Yêu cầu mượn đã được duyệt',
+      body: 'Yêu cầu mượn #{{requestId}} đã được duyệt. Hạn trả: {{dueDate}}.',
+      status: 'ACTIVE',
+    },
+    {
+      templateId: 10,
+      templateCode: 'BORROW_REQUEST_REJECTED',
+      subject: 'Yêu cầu mượn đã bị từ chối',
+      body: 'Yêu cầu mượn #{{requestId}} đã bị từ chối.',
+      status: 'ACTIVE',
+    },
+    {
+      templateId: 11,
+      templateCode: 'BORROW_RENEWED',
+      subject: 'Khoản mượn đã được gia hạn',
+      body: 'Khoản mượn #{{borrowDetailId}} đã được gia hạn đến {{dueDate}}.',
+      status: 'ACTIVE',
+    },
+    {
+      templateId: 12,
+      templateCode: 'BORROW_RETURNED',
+      subject: 'Đã ghi nhận trả sách',
+      body: 'Khoản mượn #{{borrowDetailId}} đã được ghi nhận trả với trạng thái {{returnStatus}}.',
       status: 'ACTIVE',
     },
   ];

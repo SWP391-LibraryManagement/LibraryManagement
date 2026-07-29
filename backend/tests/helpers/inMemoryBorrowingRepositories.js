@@ -178,6 +178,12 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
       renewalCount: detail.renewalCount,
       requestStatus: owningRequest?.status || null,
       status: detail.status,
+      requestDate: owningRequest?.requestDate || null,
+      approvedAt: owningRequest?.approvedAt || null,
+      rejectedAt: owningRequest?.rejectedAt || null,
+      processedAt: owningRequest?.processedAt || null,
+      requestCreatedAt: owningRequest?.createdAt || null,
+      requestUpdatedAt: owningRequest?.updatedAt || null,
       createdAt: detail.createdAt,
       updatedAt: detail.updatedAt,
       member: mapMember(detail.userId),
@@ -815,6 +821,10 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
         copyId: detail.copyId,
         dueDate: detail.dueDate,
         returnDate,
+        hasActiveQueue: reservations.some(
+          (reservation) =>
+            reservation.copyId === detail.copyId && reservation.status === 'ACTIVE'
+        ),
       };
       const returnEvidence = typeof buildReturnEvidence === 'function'
         ? buildReturnEvidence(authoritativeReturn)

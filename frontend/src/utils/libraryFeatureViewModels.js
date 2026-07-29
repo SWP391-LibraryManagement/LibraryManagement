@@ -104,6 +104,14 @@ export function mapBorrowDetailsToHistoryRows(details = []) {
       borrowDate: detail.borrowDate || detail.createdAt,
       dueDate: detail.dueDate,
       returnDate: detail.returnDate,
+      rawStatus: String(detail.status || '').toUpperCase(),
+      requestStatus: String(detail.requestStatus || '').toUpperCase(),
+      requestDate: detail.requestDate || detail.createdAt || null,
+      approvedAt: detail.approvedAt || null,
+      rejectedAt: detail.rejectedAt || null,
+      processedAt: detail.processedAt || null,
+      createdAt: detail.createdAt || null,
+      updatedAt: detail.updatedAt || null,
       status: statusToUi(displayStatus, { expiresAt: detail.dueDate }),
       renewalsLeft: detail.status === 'BORROWED'
         ? Math.max(0, 1 - Number(detail.renewalCount || 0))

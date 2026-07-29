@@ -58,6 +58,10 @@ test('safe inbox projection exposes seven fields and derives only canonical acti
 
   const canonicalMappings = [
     ['GENERAL_SYSTEM', 'MEMBERSHIP_RESULT', 'FE04', '/membership'],
+    ['GENERAL_SYSTEM', 'BORROW_REQUEST_APPROVED', 'FE07', '/borrowing/history'],
+    ['GENERAL_SYSTEM', 'BORROW_REQUEST_REJECTED', 'FE07', '/borrowing/history'],
+    ['GENERAL_SYSTEM', 'BORROW_RENEWED', 'FE07', '/borrowing/history'],
+    ['GENERAL_SYSTEM', 'BORROW_RETURNED', 'FE07', '/borrowing/history'],
     ['RESERVATION_AVAILABLE', 'RESERVATION_READY', 'FE08', '/reservations/mine'],
     ['DUE_DATE_REMINDER', 'DUE_DATE_REMINDER', 'FE07', '/borrowing/history'],
     ['OVERDUE_NOTICE', 'OVERDUE_NOTICE', 'FE07', '/borrowing/history'],
@@ -90,6 +94,10 @@ test('SQL inbox queries enforce ownership, eligibility, filters, ordering, and b
 
   for (const [type, templateKey] of [
     ['GENERAL_SYSTEM', 'MEMBERSHIP_RESULT'],
+    ['GENERAL_SYSTEM', 'BORROW_REQUEST_APPROVED'],
+    ['GENERAL_SYSTEM', 'BORROW_REQUEST_REJECTED'],
+    ['GENERAL_SYSTEM', 'BORROW_RENEWED'],
+    ['GENERAL_SYSTEM', 'BORROW_RETURNED'],
     ['RESERVATION_AVAILABLE', 'RESERVATION_READY'],
     ['DUE_DATE_REMINDER', 'DUE_DATE_REMINDER'],
     ['OVERDUE_NOTICE', 'OVERDUE_NOTICE'],
@@ -157,16 +165,28 @@ test('in-memory inbox mirrors own-user eligibility, pagination, and unread count
       sourceFeature: 'FE07',
       createdAt: '2026-07-28T07:00:00.000Z',
       readAt: null,
+    },
+    {
+      notificationId: 106,
+      userId: 7,
+      type: 'GENERAL_SYSTEM',
+      templateKey: 'BORROW_REQUEST_APPROVED',
+      sourceFeature: 'FE07',
+      createdAt: '2026-07-28T08:00:00.000Z',
+      readAt: null,
     }
   );
 
   await expect(
     repository.listInboxForUser({ userId: 7, page: 1, limit: 20, readState: 'unread' })
   ).resolves.toMatchObject({
-    total: 1,
-    notifications: [expect.objectContaining({ notificationId: 101 })],
+    total: 2,
+    notifications: [
+      expect.objectContaining({ notificationId: 106 }),
+      expect.objectContaining({ notificationId: 101 }),
+    ],
   });
-  await expect(repository.countUnreadForUser(7)).resolves.toBe(1);
+  await expect(repository.countUnreadForUser(7)).resolves.toBe(2);
 });
 
 // @spec BR-FE10-014 BR-FE10-015 BR-FE10-016 FR-FE10-013 FR-FE10-014 AC-FE10-013 AC-FE10-014

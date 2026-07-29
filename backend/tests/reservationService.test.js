@@ -193,6 +193,40 @@ describe('FE08 reservation service coverage', () => {
   });
 
   // FR-FE08-021: notification failure never undoes the hold, but audit loss must be explicit.
+  test('keeps a held reservation and returns a safe warning when notification requesting fails', async () => {
+    const notificationRequest = jest.fn(async () => {
+      throw new Error('notification unavailable');
+    });
+    const nextReservation = reservation();
+    const {
+      service,
+      heldReservation,
+      reservationRepository,
+      auditLogRepository,
+    } = makeService({
+      notificationRequest,
+      repository: {
+        findNextActiveReservationForCopy: jest.fn(async () => nextReservation),
+      },
+    });
+
+    const result = await service.processQueue({ copyId: 7 }, LIBRARIAN, {});
+
+    expect(result).toEqual({
+      selectedReservation: heldReservation,
+      notificationWarning: {
+        code: 'RESERVATION_NOTIFICATION_REQUEST_FAILED',
+        message: 'The reservation hold was created, but the notification request failed.',
+      },
+    });
+    expect(result.selectedReservation.status).toBe('NOTIFIED');
+    expect(Object.keys(result.selectedReservation)).not.toContain('notificationWarning');
+    expect(reservationRepository.holdReservation).toHaveBeenCalledTimes(1);
+    expect(auditLogRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'RESERVATION_NOTIFY_FAILED' })
+    );
+  });
+
   test('keeps a held reservation and returns a safe warning when notification failure auditing fails', async () => {
     const auditLogRepository = {
       create: jest.fn(async (entry) => {

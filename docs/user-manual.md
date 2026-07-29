@@ -53,6 +53,10 @@ Mở **Borrowing History** hoặc `/borrowing/history` để xem:
 - bản sao đang mượn hoặc quá hạn;
 - giao dịch đã trả, bị từ chối hoặc đã hoàn tất.
 
+Mỗi giao dịch hiển thị timeline từ dữ liệu backend: đã gửi yêu cầu, đã duyệt
+hoặc từ chối, đang mượn và đã trả. Mốc nào backend chưa ghi thời gian thì giao
+diện để trống; trình duyệt không tự tạo thời gian để làm timeline có vẻ hoàn tất.
+
 Trạng thái hiển thị được lấy từ backend. Khi API lỗi, giao diện phải hiển thị lỗi và trạng thái rỗng
 thay vì tự tạo dữ liệu thành công mẫu.
 
@@ -65,6 +69,9 @@ Mở **My Reservations** hoặc `/reservations/mine`.
 - Thành viên chỉ được hủy reservation của chính mình ở trạng thái cho phép.
 - Khi đến lượt và có bản sao phù hợp, hệ thống có thể chuyển reservation sang trạng thái được thông
   báo/giữ chỗ theo queue.
+- Reservation `NOTIFIED` hiển thị thời gian bắt đầu và hạn nhận sách. Chỉ đúng
+  Thành viên được giữ sách mới thấy nút **Tạo yêu cầu mượn** cho chính xác
+  `bookId`/`copyId` đó.
 
 Nếu queue thay đổi sau khi thủ thư xử lý, tải lại trang để xem trạng thái chuẩn từ backend.
 
@@ -74,7 +81,7 @@ Nếu queue thay đổi sau khi thủ thư xử lý, tải lại trang để xem
 2. Mở **Borrow Requests** hoặc `/librarian/borrow-requests`.
 3. Chọn yêu cầu `PENDING` cần xử lý.
 4. Kiểm tra thành viên, sách và bản sao.
-5. Chọn **Duyệt**, sau đó xác nhận **Duyệt & cấp sách**.
+5. Chọn **Duyệt**, sau đó xác nhận **Duyệt và cấp sách**.
 6. Kiểm tra yêu cầu chuyển thành `APPROVED` và bản sao chuyển sang trạng thái mượn.
 
 ![Thủ thư duyệt yêu cầu](assets/user-manual/manual-librarian-approval.png)
@@ -89,9 +96,43 @@ duyệt tự suy đoán.
 3. Kiểm tra ngày đến hạn, số ngày quá hạn và tình trạng bản sao.
 4. Chọn **Xác nhận trả**.
 5. Kiểm tra trạng thái mượn đã chuyển sang trả và bản sao được cập nhật đúng.
+6. Nếu bản sao có hàng đợi `ACTIVE`, chọn **Xử lý hàng đợi đặt chỗ** trong
+   panel bàn giao xuất hiện sau khi trả thành công.
+7. FE08 mở đúng hàng đợi của bản sao vừa trả. Chọn **Giữ sách & thông báo**,
+   sau đó xác nhận **Xác nhận giữ sách**.
 
 Nếu trả quá hạn, phản hồi có thể tạo `fineCandidate` để FE09 tính phạt. Giao diện FE07 không tự quyết
 định số tiền phạt.
+
+Trả sách và giữ chỗ là hai transaction riêng. Nút bàn giao FE07 chỉ điều hướng
+tới FE08; nếu chưa xác nhận tại FE08 thì hàng đợi chưa chuyển sang `NOTIFIED`.
+Nếu tạo thông báo lỗi sau khi transaction nguồn đã commit, giao diện hiển thị
+cảnh báo thay vì nói rằng cả nghiệp vụ đã thất bại.
+
+## Demo Liên Hoàn FE07 → FE08 → FE10 → FE12
+
+Dùng hai tài khoản Thành viên A/B và một tài khoản Thủ thư:
+
+1. A mở `/borrowing/new`, gửi yêu cầu cho một bản sao `AVAILABLE`.
+2. Thủ thư mở `/librarian/borrow-requests` và duyệt; A nhận thông báo
+   **Yêu cầu mượn đã được duyệt**.
+3. A mở thông báo; hệ thống đánh dấu đã đọc và điều hướng cố định tới
+   `/borrowing/history`, nơi timeline hiển thị trạng thái `BORROWED`.
+4. B mở `/reservations/mine` và đặt đúng bản sao đang được A mượn; reservation
+   chuyển sang `ACTIVE`.
+5. Thủ thư trả sách tại `/librarian/returns`, dùng panel bàn giao để mở đúng
+   queue tại `/librarian/reservations`, rồi giữ sách cho người đầu hàng đợi.
+6. B nhận **Reservation ready**, mở `/reservations/mine`, kiểm tra hạn nhận và
+   chọn **Tạo yêu cầu mượn** cho đúng bản sao được giữ.
+7. Thủ thư duyệt yêu cầu của B. FE07 chuyển bản sao sang `BORROWED`, đồng thời
+   reservation của B chuyển sang `FULFILLED`.
+8. Thủ thư mở `/home`. Sáu KPI FE12 phải khớp snapshot backend: yêu cầu chờ
+   duyệt, sách đang mượn, sách quá hạn, đặt chỗ đang mở, bản sao sẵn có và đầu
+   sách sắp hết.
+
+Luồng này đúng nghiệp vụ vì mỗi feature chỉ sở hữu transaction của mình:
+FE07 sở hữu mượn/trả, FE08 sở hữu queue/hold, FE10 chỉ ghi yêu cầu thông báo
+sau commit và FE12 chỉ đọc snapshot tổng hợp.
 
 ## Thủ Thư/Quản Trị Viên: Biên API Quản Lý Phạt
 
@@ -124,6 +165,11 @@ và không có quyền thay đổi giao dịch nguồn.
 
 Dòng **Đã kết nối backend thật** xác nhận trang đang dùng API báo cáo thay vì dữ liệu fallback mẫu.
 
+Trang `/home` của Thủ thư/Quản trị viên còn hiển thị sáu KPI vận hành từ một
+request `GET /api/reports/operations-summary`. Giá trị không tải được phải hiện
+**Không tải được**, không được thay bằng `0`. Mỗi thẻ điều hướng tới màn nghiệp
+vụ cố định và không thay đổi dữ liệu nguồn.
+
 ## Quản Trị Viên: Quản Lý Người Dùng Và Vai Trò
 
 Mở `/admin/users` bằng tài khoản Quản trị viên để:
@@ -150,6 +196,11 @@ Trên trang thông báo:
 3. Chọn **Đánh dấu tất cả đã đọc** để cập nhật các mục chưa đọc của chính tài khoản hiện tại.
 4. Nếu cập nhật trạng thái đọc lỗi, hệ thống hiển thị cảnh báo an toàn nhưng vẫn mở đường dẫn nghiệp
    vụ đã được backend cho phép. Tải lại trang để đồng bộ trạng thái đọc.
+
+Kết quả duyệt/từ chối/gia hạn/trả của FE07 dùng bốn template do FE07 sở hữu và
+luôn mở `/borrowing/history`. Thông báo sách sẵn sàng của FE08 luôn mở
+`/reservations/mine`. Nội dung từ chối không chứa lý do từ chối, email, token,
+OTP hoặc dữ liệu nhạy cảm khác.
 
 Hộp thư chỉ hiển thị các thông báo nghiệp vụ không nhạy cảm thuộc chính người đang đăng nhập. OTP,
 đặt lại mật khẩu, liên kết thiết lập tài khoản, thông báo legacy, bản ghi hệ thống không có người nhận

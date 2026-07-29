@@ -260,15 +260,19 @@ H2 remediation fingerprint
 
 ## 13. Operations summary v0.3.0
 
-- [ ] **FE12-N14 - Operations summary endpoint và role/query contract.**
+- [x] **FE12-N14 - Operations summary endpoint và role/query contract.**
   - Ánh xạ: BR-FE12-017/018, FR-FE12-012..014, AC-FE12-012/013.
   - Tái sử dụng service-owned `businessDate` đã hoàn tất ở FE12-N12/N13.
   - `availableCopies`/`lowStockBooks` chỉ xét sách `ACTIVE`; bản sao khả dụng
     phải có `BookCopies.Status = 'AVAILABLE'`.
-- [ ] **FE12-N15 - Dashboard snapshot và missing-KPI UX.**
+- [x] **FE12-N15 - Dashboard snapshot và missing-KPI UX.**
   - Ánh xạ: BR-FE12-019, FR-FE12-015, AC-FE12-014/015.
-- [ ] **FE12-N16 - Integration/desktop/full-gate evidence.**
+- [x] **FE12-N16 - Integration/desktop/full-gate evidence.**
   - Ánh xạ: `SL-005`, `SL-006`, `AT-010..AT-013`.
+  - Bằng chứng H2 cục bộ: system integration 11/11; Chromium liên hoàn 1/1
+    đối chiếu cả sáu KPI với snapshot API; full backend 1.125/1.125,
+    frontend 269/269, coverage thấp nhất 80,72% branches, traceability FE12
+    14/15 (93%).
 
-Không sửa expected `BORROWED` thành `OVERDUE` để che drift. Product work bắt
-đầu sau governance activation merge và giữ uncommitted đến H2.
+Không sửa expected `BORROWED` thành `OVERDUE` để che drift. Product diff vẫn
+giữ uncommitted tới khi H2 phê duyệt.

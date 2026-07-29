@@ -89,6 +89,13 @@ function authHeader(accessToken) {
   return `Bearer ${accessToken}`;
 }
 
+const BORROWING_RESULT_TEMPLATE_DATA = {
+  BORROW_REQUEST_APPROVED: { requestId: 91, dueDate: '2026-08-12' },
+  BORROW_REQUEST_REJECTED: { requestId: 91 },
+  BORROW_RENEWED: { borrowDetailId: 91, dueDate: '2026-08-26' },
+  BORROW_RETURNED: { borrowDetailId: 91, returnStatus: 'RETURNED' },
+};
+
 function makeSensitiveRequestInput({
   type,
   recipientEmail,
@@ -1907,6 +1914,73 @@ describe('FE10 notification management', () => {
     expect(authDependencies.state.auditLogs).toHaveLength(0);
   });
 
+  test.each(Object.entries(BORROWING_RESULT_TEMPLATE_DATA))(
+    'accepts FE07 GENERAL_SYSTEM template %s exactly once',
+    async (templateKey, templateData) => {
+      const {
+        app,
+        authDependencies,
+        notificationService,
+        notificationDependencies,
+      } = makeTestApp();
+      const member = await createVerifiedUser({
+        app,
+        authDependencies,
+        email: `borrow-result.${templateKey.toLowerCase()}@example.test`,
+      });
+      const requester = notificationService.createSourceNotificationRequester('FE07');
+      const payload = {
+        type: 'GENERAL_SYSTEM',
+        templateKey,
+        userId: member.userId,
+        recipientEmail: `borrow-result.${templateKey.toLowerCase()}@example.test`,
+        sourceEntityType: templateKey.startsWith('BORROW_REQUEST')
+          ? 'BorrowRequest'
+          : 'BorrowDetail',
+        sourceEntityId: 91,
+        idempotencyKey: `FE07:${templateKey}:91`,
+        templateData,
+      };
+
+      const first = await requester.createNotificationRequest(payload);
+      const replay = await requester.createNotificationRequest(payload);
+
+      expect(replay.notificationId).toBe(first.notificationId);
+      expect(notificationDependencies.state.notifications).toHaveLength(1);
+      expect(notificationDependencies.state.notifications[0]).toMatchObject({
+        type: 'GENERAL_SYSTEM',
+        templateKey,
+        sourceFeature: 'FE07',
+        userId: member.userId,
+      });
+    }
+  );
+
+  test.each(Object.entries(BORROWING_RESULT_TEMPLATE_DATA))(
+    'rejects FE07 borrowing-result template %s from FE04',
+    async (templateKey, templateData) => {
+      const { notificationService, notificationDependencies } = makeTestApp();
+      const requester = notificationService.createSourceNotificationRequester('FE04');
+
+      await expect(
+        requester.createNotificationRequest({
+          type: 'GENERAL_SYSTEM',
+          templateKey,
+          recipientEmail: 'reader@example.test',
+          sourceEntityType: 'BorrowRequest',
+          sourceEntityId: 91,
+          idempotencyKey: `FE07:${templateKey}:91`,
+          templateData,
+        })
+      ).rejects.toMatchObject({
+        code: 'NOTIFICATION_SOURCE_OWNER_MISMATCH',
+        statusCode: 403,
+      });
+
+      expect(notificationDependencies.state.notifications).toHaveLength(0);
+    }
+  );
+
   test('rejects direct HTTP membership-result requests even from staff', async () => {
     const { app, authDependencies, notificationDependencies } = makeTestApp();
     const admin = await createVerifiedUser({
@@ -1924,6 +1998,30 @@ describe('FE10 notification management', () => {
         recipientEmail: 'reader@example.test',
         templateKey: 'MEMBERSHIP_RESULT',
         templateData: { membershipStatus: 'APPROVED' },
+      });
+
+    expect(response.status).toBe(403);
+    expect(response.body.error.code).toBe('NOTIFICATION_SOURCE_OWNER_MISMATCH');
+    expect(notificationDependencies.state.notifications).toHaveLength(0);
+  });
+
+  test('rejects direct HTTP borrowing-result requests even from staff', async () => {
+    const { app, authDependencies, notificationDependencies } = makeTestApp();
+    const admin = await createVerifiedUser({
+      app,
+      authDependencies,
+      email: 'borrow-result-http.admin@example.test',
+      role: 'ADMIN',
+    });
+
+    const response = await request(app)
+      .post('/api/notifications/requests')
+      .set('Authorization', authHeader(admin.accessToken))
+      .send({
+        type: 'GENERAL_SYSTEM',
+        recipientEmail: 'reader@example.test',
+        templateKey: 'BORROW_REQUEST_APPROVED',
+        templateData: BORROWING_RESULT_TEMPLATE_DATA.BORROW_REQUEST_APPROVED,
       });
 
     expect(response.status).toBe(403);

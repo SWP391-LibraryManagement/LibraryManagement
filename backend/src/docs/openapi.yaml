@@ -124,6 +124,20 @@ components:
       properties:
         notificationId: { type: integer }
         status: { type: string, enum: [PENDING, PROCESSING, SENT, DELIVERED, FAILED, SKIPPED, CANCELLED] }
+    NotificationWarning:
+      type: object
+      additionalProperties: false
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          enum:
+            - BORROW_NOTIFICATION_REQUEST_FAILED
+            - RESERVATION_NOTIFICATION_REQUEST_FAILED
+            - RESERVATION_NOTIFY_AUDIT_FAILED
+        message:
+          type: string
+          description: Safe, non-sensitive warning shown after the source mutation has already committed.
     SafeInboxItem:
       type: object
       additionalProperties: false
@@ -534,10 +548,28 @@ components:
         returnDate: { type: string, format: date, nullable: true }
         renewalCount: { type: integer, minimum: 0, maximum: 1 }
         requestStatus: { type: string, enum: [PENDING, APPROVED, REJECTED, COMPLETED, CANCELLED] }
+        requestDate: { type: string, format: date-time, nullable: true }
+        approvedAt: { type: string, format: date-time, nullable: true }
+        rejectedAt: { type: string, format: date-time, nullable: true }
+        processedAt: { type: string, format: date-time, nullable: true }
+        requestCreatedAt: { type: string, format: date-time, nullable: true }
+        requestUpdatedAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time, nullable: true }
+        updatedAt: { type: string, format: date-time, nullable: true }
         status:
           type: string
           enum: [REQUESTED, BORROWED, RETURNED, LOST, DAMAGED]
           description: OVERDUE is derived for reporting when status is BORROWED and dueDate is before today.
+    ReservationQueueAction:
+      type: object
+      additionalProperties: false
+      required: [copyId, hasActiveQueue, actionPath]
+      properties:
+        copyId: { type: integer, minimum: 1 }
+        hasActiveQueue: { type: boolean }
+        actionPath:
+          type: string
+          enum: [/librarian/reservations]
     FineCandidate:
       type: object
       required: [userId, borrowDetailId, copyId, condition, overdueDays, needsFineReview]
@@ -573,17 +605,21 @@ components:
       required: [borrowRequest]
       properties:
         borrowRequest: { $ref: '#/components/schemas/BorrowRequest' }
+        notificationWarning: { $ref: '#/components/schemas/NotificationWarning' }
     BorrowDetailReturnPayload:
       type: object
-      required: [borrowDetail, fineCandidate]
+      required: [borrowDetail, fineCandidate, reservationQueueAction]
       properties:
         borrowDetail: { $ref: '#/components/schemas/BorrowDetail' }
         fineCandidate: { $ref: '#/components/schemas/FineCandidate' }
+        reservationQueueAction: { $ref: '#/components/schemas/ReservationQueueAction' }
+        notificationWarning: { $ref: '#/components/schemas/NotificationWarning' }
     BorrowDetailPayload:
       type: object
       required: [borrowDetail]
       properties:
         borrowDetail: { $ref: '#/components/schemas/BorrowDetail' }
+        notificationWarning: { $ref: '#/components/schemas/NotificationWarning' }
     BorrowingReport:
       type: object
       additionalProperties: false
@@ -1440,14 +1476,7 @@ paths:
                     nullable: true
                   message: { type: string }
                   notificationWarning:
-                    type: object
-                    additionalProperties: false
-                    required: [code, message]
-                    properties:
-                      code:
-                        type: string
-                        enum: [RESERVATION_NOTIFY_AUDIT_FAILED]
-                      message: { type: string }
+                    $ref: '#/components/schemas/NotificationWarning'
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
   /api/reservations/expire-holds:

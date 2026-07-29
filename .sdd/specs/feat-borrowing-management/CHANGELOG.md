@@ -383,3 +383,11 @@
 
 - Ổn định không gian Xử lý trả thành bố cục một cột không va chạm.
 - Củng cố xử lý mục tiêu phê duyệt/từ chối và thêm migration cột quy trình BorrowRequests đã triển khai.
+
+## 2026-07-29 - Luồng lưu thông liên hoàn v0.9.0
+
+- Phát bốn sự kiện kết quả FE07 sau commit cho phê duyệt, từ chối, gia hạn và trả sách; lỗi tạo thông báo chỉ sinh cảnh báo trung thực, không hoàn tác nghiệp vụ đã hoàn tất.
+- Bổ sung mốc thời gian nghiệp vụ chính tắc cho hành trình mượn và handoff bản sao vừa trả sang hàng đợi FE08 khi có lượt đặt `ACTIVE`.
+- Giữ kín lý do từ chối khỏi nội dung thông báo và dùng đường dẫn hành động cố định, an toàn.
+- Bằng chứng cục bộ: 90/90 kiểm thử FE07 tập trung; toàn backend 1125/1125; frontend 269/269; luồng Playwright liên hoàn 1/1.
+- Product diff vẫn chưa stage/commit/push, chờ duyệt H2.

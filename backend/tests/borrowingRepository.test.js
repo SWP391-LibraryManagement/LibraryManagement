@@ -369,6 +369,12 @@ test('return serializes one request before locking copies, details, and reservat
   expect(source).toContain('br.UserId');
   expect(source).toContain('INSERTED.ReturnDate');
   expect(source).toContain('buildReturnEvidence(authoritativeReturn)');
+  expect(source).toContain('SELECT ReservationId, Status');
+  expect(source).toContain('const reservationQueueResult =');
+  expect(source).toContain(
+    "reservationQueueResult.recordset.some((row) => row.Status === 'ACTIVE')"
+  );
+  expect(source).toContain('hasActiveQueue');
   expect(source.indexOf('buildReturnEvidence(authoritativeReturn)')).toBeGreaterThan(
     detailLockIndex
   );

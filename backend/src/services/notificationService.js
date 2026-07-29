@@ -13,14 +13,20 @@ const supportedTypes = [
 ];
 
 const canonicalTemplateKeys = {
-  ACCOUNT_VERIFICATION: 'ACCOUNT_VERIFICATION',
-  PASSWORD_RESET: 'PASSWORD_RESET',
-  ACCOUNT_SETUP: 'ACCOUNT_SETUP',
-  RESERVATION_AVAILABLE: 'RESERVATION_READY',
-  DUE_DATE_REMINDER: 'DUE_DATE_REMINDER',
-  OVERDUE_NOTICE: 'OVERDUE_NOTICE',
-  FINE_NOTICE: 'FINE_NOTICE',
-  GENERAL_SYSTEM: 'MEMBERSHIP_RESULT',
+  ACCOUNT_VERIFICATION: new Set(['ACCOUNT_VERIFICATION']),
+  PASSWORD_RESET: new Set(['PASSWORD_RESET']),
+  ACCOUNT_SETUP: new Set(['ACCOUNT_SETUP']),
+  RESERVATION_AVAILABLE: new Set(['RESERVATION_READY']),
+  DUE_DATE_REMINDER: new Set(['DUE_DATE_REMINDER']),
+  OVERDUE_NOTICE: new Set(['OVERDUE_NOTICE']),
+  FINE_NOTICE: new Set(['FINE_NOTICE']),
+  GENERAL_SYSTEM: new Set([
+    'MEMBERSHIP_RESULT',
+    'BORROW_REQUEST_APPROVED',
+    'BORROW_REQUEST_REJECTED',
+    'BORROW_RENEWED',
+    'BORROW_RETURNED',
+  ]),
 };
 
 const sensitiveTypeOwners = {
@@ -33,7 +39,13 @@ const queuedTypeOwners = {
   DUE_DATE_REMINDER: new Set(['FE07']),
   OVERDUE_NOTICE: new Set(['FE07', 'FE09']),
   FINE_NOTICE: new Set(['FE09']),
-  GENERAL_SYSTEM: new Set(['FE04']),
+};
+const generalSystemTemplateOwners = {
+  MEMBERSHIP_RESULT: 'FE04',
+  BORROW_REQUEST_APPROVED: 'FE07',
+  BORROW_REQUEST_REJECTED: 'FE07',
+  BORROW_RENEWED: 'FE07',
+  BORROW_RETURNED: 'FE07',
 };
 const sensitiveNotificationTypes = new Set(Object.keys(sensitiveTypeOwners));
 const sensitiveQueueIdentifiers = new Set([
@@ -588,21 +600,6 @@ function createNotificationService({
       );
     }
 
-    const queuedOwners = queuedTypeOwners[type];
-    const requiresBoundSource = type === 'GENERAL_SYSTEM';
-    if (
-      queuedOwners
-      && (
-        (requiresBoundSource && !isInternal)
-        || (isInternal && !queuedOwners.has(effectiveSourceFeature))
-      )
-    ) {
-      throw errors.forbidden(
-        'NOTIFICATION_SOURCE_OWNER_MISMATCH',
-        'Notification type is not owned by this source.'
-      );
-    }
-
     if (!supportedTypes.includes(type)) {
       throw errors.badRequest('UNSUPPORTED_NOTIFICATION_TYPE', 'Notification type is not supported.');
     }
@@ -611,10 +608,25 @@ function createNotificationService({
       throw errors.badRequest('UNSUPPORTED_NOTIFICATION_CHANNEL', 'Notification channel is not supported.');
     }
 
-    if (templateKey !== canonicalTemplateKeys[type]) {
+    if (!canonicalTemplateKeys[type].has(templateKey)) {
       throw errors.badRequest(
         'CANONICAL_TEMPLATE_MISMATCH',
         'Notification type and template key do not match.'
+      );
+    }
+
+    const queuedOwners = queuedTypeOwners[type];
+    const generalSystemOwner = generalSystemTemplateOwners[templateKey] || null;
+    if (
+      (queuedOwners && isInternal && !queuedOwners.has(effectiveSourceFeature))
+      || (
+        type === 'GENERAL_SYSTEM'
+        && (!isInternal || effectiveSourceFeature !== generalSystemOwner)
+      )
+    ) {
+      throw errors.forbidden(
+        'NOTIFICATION_SOURCE_OWNER_MISMATCH',
+        'Notification type is not owned by this source.'
       );
     }
 

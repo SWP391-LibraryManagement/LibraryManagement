@@ -263,3 +263,11 @@
 - Giữ xử lý hàng đợi thủ công theo thứ tự thời gian đặt chỗ ổn định và giữ quy trình giữ chỗ hết hạn thủ công Giai đoạn 1.
 - Xác minh kiểm thử backend FE08 tập trung, lint frontend, kiểm thử đặt chỗ frontend và build production.
 - Thêm hành động hàng hiển thị để mở hàng đợi sách đã chọn; thao tác giữ/thông báo chỉ bật sau khi bản sao mục tiêu thành `AVAILABLE`.
+
+## 2026-07-29 - Handoff trả sách và hàng đợi liên hoàn v0.9.0
+
+- Nhận chính xác `copyId` từ kết quả trả FE07 và mở thẳng hàng đợi của bản sao vừa sẵn sàng, không yêu cầu thủ thư tra cứu lại.
+- Giữ ưu tiên FIFO theo lượt `ACTIVE`, bắt xung đột trạng thái cũ bằng tải lại dữ liệu và hiển thị cảnh báo khi nghiệp vụ giữ chỗ đã commit nhưng yêu cầu thông báo/audit thất bại.
+- Xác minh thành viên kế tiếp mượn đúng bản sao đang được giữ trước khi FE08 hoàn tất lượt đặt.
+- Bằng chứng cục bộ: 55/55 kiểm thử FE08 tập trung; kiểm thử frontend liên quan 56/56; SIT 11/11; luồng Playwright liên hoàn 1/1.
+- Product diff vẫn chưa stage/commit/push, chờ duyệt H2.

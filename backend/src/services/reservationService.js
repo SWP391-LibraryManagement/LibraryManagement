@@ -304,6 +304,10 @@ function createReservationService({
     try {
       await createReservationReadyNotification(processedReservation);
     } catch {
+      notificationWarning = {
+        code: 'RESERVATION_NOTIFICATION_REQUEST_FAILED',
+        message: 'The reservation hold was created, but the notification request failed.',
+      };
       try {
         await writeAudit(context, 'RESERVATION_NOTIFY_FAILED', {
           userId: processedReservation.userId,

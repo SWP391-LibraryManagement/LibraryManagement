@@ -13,6 +13,17 @@ const ACTION_MAPPINGS = Object.freeze([
     sourceFeatures: ['FE04'],
     actionPath: '/membership',
   },
+  ...[
+    'BORROW_REQUEST_APPROVED',
+    'BORROW_REQUEST_REJECTED',
+    'BORROW_RENEWED',
+    'BORROW_RETURNED',
+  ].map((templateKey) => ({
+    type: 'GENERAL_SYSTEM',
+    templateKey,
+    sourceFeatures: ['FE07'],
+    actionPath: '/borrowing/history',
+  })),
   {
     type: 'RESERVATION_AVAILABLE',
     templateKey: 'RESERVATION_READY',

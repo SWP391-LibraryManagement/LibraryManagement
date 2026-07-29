@@ -642,7 +642,11 @@ Hệ thống Quản lý Thư viện'),
 ('DUE_DATE_REMINDER','Library due date reminder','Please review your borrowing due date.'),
 ('OVERDUE_NOTICE','Library overdue notice','Please review your overdue borrowing item.'),
 ('FINE_NOTICE','Library fine notice','Please review your library fine notice.'),
-('MEMBERSHIP_RESULT','Membership result','Please review your membership result.');
+('MEMBERSHIP_RESULT','Membership result','Please review your membership result.'),
+('BORROW_REQUEST_APPROVED',N'Yêu cầu mượn đã được duyệt',N'Yêu cầu mượn #{{requestId}} đã được duyệt. Hạn trả: {{dueDate}}.'),
+('BORROW_REQUEST_REJECTED',N'Yêu cầu mượn đã bị từ chối',N'Yêu cầu mượn #{{requestId}} đã bị từ chối.'),
+('BORROW_RENEWED',N'Khoản mượn đã được gia hạn',N'Khoản mượn #{{borrowDetailId}} đã được gia hạn đến {{dueDate}}.'),
+('BORROW_RETURNED',N'Đã ghi nhận trả sách',N'Khoản mượn #{{borrowDetailId}} đã được ghi nhận trả với trạng thái {{returnStatus}}.');
 
 INSERT INTO AuditLogs (UserId, Action, TargetType, TargetId, Metadata)
 VALUES

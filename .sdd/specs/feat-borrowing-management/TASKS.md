@@ -360,14 +360,17 @@ Các tác vụ đã chọn bên dưới mô tả việc triển khai đã hoàn 
 
 ## 2026-07-29 - Batch FE07-FE12 v0.9.0
 
-- [ ] **FE07-T057 - Post-commit borrowing-result notifications.**
+- [x] **FE07-T057 - Post-commit borrowing-result notifications.**
   - Ánh xạ: BR-FE07-035, FR-FE07-040/041, AC-FE07-033/035; `SL-003`.
-- [ ] **FE07-T058 - Return queue handoff chỉ đọc.**
+- [x] **FE07-T058 - Return queue handoff chỉ đọc.**
   - Ánh xạ: BR-FE07-036, FR-FE07-042, AC-FE07-034; không mutation FE08.
-- [ ] **FE07-T059 - Timeline và blocker/stale UX.**
+- [x] **FE07-T059 - Timeline và blocker/stale UX.**
   - Ánh xạ: BR-FE07-037, FR-FE07-043/044, AC-FE07-036.
-- [ ] **FE07-T060 - Integration/E2E và evidence.**
+- [x] **FE07-T060 - Integration/E2E và evidence.**
   - Ánh xạ: `SL-006`, `AT-001..AT-004`, `AT-009`, `AT-012`.
+  - Bằng chứng H2 cục bộ: backend FE07 3 suite/90 kiểm thử; frontend
+    FE07/FE08 tập trung 56/56; system integration 11/11; Chromium liên hoàn
+    1/1 tại 1440x900; full backend 69 suite/1.125 kiểm thử và frontend
+    269/269 cùng lint/build đều đạt.
 
-Các task product chỉ được bắt đầu sau governance activation merge và giữ
-uncommitted đến H2.
+Product diff vẫn giữ uncommitted cho tới khi H2 phê duyệt.

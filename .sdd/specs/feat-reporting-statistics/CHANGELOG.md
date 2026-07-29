@@ -268,3 +268,10 @@
 
 - Xác minh mọi bộ lọc/biểu đồ báo cáo vẫn do backend sở hữu và giảm khoảng cách
   đáy chỉ-báo-cáo.
+
+## 2026-07-29 - Điểm kết thúc báo cáo của luồng liên hoàn v0.9.0
+
+- Giữ FE12 là điểm quan sát chỉ đọc: không thêm chuyển đổi nghiệp vụ mới và không sao chép logic FE07/FE08/FE10 vào frontend.
+- Xác minh bảng tổng quan vận hành sau chuỗi phê duyệt, đặt chỗ, trả, giữ và mượn đúng bản sao bằng cả UI lẫn snapshot API gồm đủ sáu KPI.
+- Bằng chứng cục bộ: SIT 11/11; luồng Playwright liên hoàn 1/1; trace FE12 đạt 14/15 (93%).
+- Product diff vẫn chưa stage/commit/push, chờ duyệt H2.

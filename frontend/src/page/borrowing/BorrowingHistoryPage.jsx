@@ -5,6 +5,7 @@ import { RefreshCw, History, AlertTriangle, CalendarClock, Calendar } from 'luci
 
 import { borrowingApi } from '../../api/libraryFeatureApi';
 import AppLayout from '../../component/layout/AppLayout';
+import BorrowingJourneyTimeline from '../../component/borrowing/BorrowingJourneyTimeline';
 import { Toast, useToast, ConfirmAction, Badge, DataNotice, EmptyState } from '../../component/shared/Feedback';
 import { DataTable, DataToolbar, Pagination } from '../../component/shared/OperationalPatterns';
 import { fmtDate, mapBorrowDetailsToHistoryRows } from '../../utils/libraryFeatureViewModels';
@@ -117,7 +118,11 @@ export default function BorrowingHistoryPage() {
       setRows((current) => current.map((row) => row.borrowDetailId === renewRow.borrowDetailId
         ? { ...row, dueDate: detail.dueDate, renewalsLeft: Math.max(0, 1 - Number(detail.renewalCount || 0)) }
         : row));
-      showToast(`Đã gia hạn "${renewRow.title}".`, 'success');
+      if (data.notificationWarning) {
+        showToast(data.notificationWarning.message, 'warning');
+      } else {
+        showToast(`Đã gia hạn "${renewRow.title}".`, 'success');
+      }
       setRenewRow(null);
     } catch (error) {
       showToast(error.message, 'error');
@@ -179,7 +184,7 @@ export default function BorrowingHistoryPage() {
       <DataTable
         caption="Lịch sử mượn sách"
         className="member-history-table"
-        headers={['Sách', 'Ngày mượn', 'Hạn trả', 'Ngày trả', 'Trạng thái', { label: 'Thao tác', align: 'right' }]}
+        headers={['Sách', 'Hành trình', 'Ngày mượn', 'Hạn trả', 'Ngày trả', 'Trạng thái', { label: 'Thao tác', align: 'right' }]}
         loading={loading}
         isEmpty={!notice && rows.length === 0}
         emptyState={<EmptyState icon={History} title="Không có bản ghi nào" />}
@@ -195,6 +200,7 @@ export default function BorrowingHistoryPage() {
                 </div>
               </div>
             </td>
+            <td data-label="Hành trình"><BorrowingJourneyTimeline row={row} /></td>
             <td data-label="Ngày mượn">{fmtDate(row.borrowDate)}</td>
             <td data-label="Hạn trả">{fmtDate(row.dueDate)}</td>
             <td data-label="Ngày trả">{fmtDate(row.returnDate)}</td>

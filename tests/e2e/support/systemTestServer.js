@@ -8,7 +8,9 @@ process.env.AUTH_EXPOSE_TEST_TOKENS = 'true';
 const {
   createVerifiedActor,
   makeSystemIntegrationApp,
+  syncCopyStatus,
   syncFineSourceFromBorrowing,
+  syncReservationClaims,
 } = require('../../../backend/tests/helpers/systemIntegrationHarness');
 
 const HOST = '127.0.0.1';
@@ -66,6 +68,48 @@ function latestBorrowState() {
     latestRequestStatus: latestRequest?.status || null,
     latestBorrowDetailId: latestDetail?.borrowDetailId || null,
     latestBorrowDetailStatus: latestDetail?.status || null,
+  };
+}
+
+function connectedFlowState(copyId = 1) {
+  const normalizedCopyId = Number(copyId);
+  const borrowingState = setup.dependencies.borrowingDependencies.state;
+  const reservationState = setup.dependencies.reservationDependencies.state;
+  const notificationState = setup.dependencies.notificationDependencies.state;
+
+  return {
+    copyId: normalizedCopyId,
+    borrowingCopyStatus:
+      borrowingState.copies.find((copy) => copy.copyId === normalizedCopyId)?.status || null,
+    reservationCopyStatus:
+      reservationState.copies.find((copy) => copy.copyId === normalizedCopyId)?.status || null,
+    borrowRequests: borrowingState.borrowRequests.map((request) => ({
+      requestId: request.requestId,
+      userId: request.userId,
+      status: request.status,
+      details: borrowingState.borrowDetails
+        .filter((detail) => detail.requestId === request.requestId)
+        .map((detail) => ({
+          borrowDetailId: detail.borrowDetailId,
+          copyId: detail.copyId,
+          status: detail.status,
+        })),
+    })),
+    reservations: reservationState.reservations
+      .filter((reservation) => reservation.copyId === normalizedCopyId)
+      .map((reservation) => ({
+        reservationId: reservation.reservationId,
+        userId: reservation.userId,
+        copyId: reservation.copyId,
+        status: reservation.status,
+        expiresAt: reservation.expiresAt || null,
+      })),
+    notifications: notificationState.notifications.map((notification) => ({
+      notificationId: notification.notificationId,
+      userId: notification.userId,
+      templateKey: notification.templateKey,
+      idempotencyKey: notification.idempotencyKey,
+    })),
   };
 }
 
@@ -232,7 +276,13 @@ function seedNotifications({ ownerUserId, crossUserId, eligibleCount = 5 }) {
 
 async function handleControl(req, res, pathname) {
   if (req.method === 'POST' && pathname === '/__e2e__/setup') {
-    const { memberEmail, librarianEmail, adminEmail, password } = await readJson(req);
+    const {
+      memberEmail,
+      memberBEmail,
+      librarianEmail,
+      adminEmail,
+      password,
+    } = await readJson(req);
     if (!memberEmail || !librarianEmail || !password) {
       sendJson(res, 400, { error: 'memberEmail, librarianEmail, and password are required.' });
       return;
@@ -242,6 +292,9 @@ async function handleControl(req, res, pathname) {
     failNextNotificationRead = false;
 
     const member = await createVerifiedActor({ setup, email: memberEmail, password });
+    const memberB = memberBEmail
+      ? await createVerifiedActor({ setup, email: memberBEmail, password })
+      : null;
     const librarian = await createVerifiedActor({
       setup,
       email: librarianEmail,
@@ -278,9 +331,43 @@ async function handleControl(req, res, pathname) {
     if (application.statusCode !== 201) throw new Error('E2E membership seed failed.');
     sendJson(res, 201, {
       memberUserId: member.userId,
+      memberAUserId: member.userId,
+      ...(memberB ? { memberBUserId: memberB.userId } : {}),
       librarianUserId: librarian.userId,
+      copyId: 1,
+      bookId: 1,
       ...(admin ? { adminUserId: admin.userId } : {}),
     });
+    return;
+  }
+
+  if (req.method === 'POST' && pathname === '/__e2e__/sync-connected-state') {
+    const { from, copyId = 1 } = await readJson(req);
+    const borrowingState = setup.dependencies.borrowingDependencies.state;
+    const reservationState = setup.dependencies.reservationDependencies.state;
+    const sourceState = from === 'borrowing'
+      ? borrowingState
+      : from === 'reservation'
+        ? reservationState
+        : null;
+    const targetState = from === 'borrowing'
+      ? reservationState
+      : from === 'reservation'
+        ? borrowingState
+        : null;
+
+    if (!sourceState || !targetState) {
+      sendJson(res, 400, { error: 'from must be borrowing or reservation.' });
+      return;
+    }
+    syncCopyStatus(sourceState, targetState, copyId);
+    syncReservationClaims(sourceState, targetState, copyId);
+    sendJson(res, 200, connectedFlowState(copyId));
+    return;
+  }
+
+  if (req.method === 'GET' && pathname === '/__e2e__/connected-state') {
+    sendJson(res, 200, connectedFlowState());
     return;
   }
 

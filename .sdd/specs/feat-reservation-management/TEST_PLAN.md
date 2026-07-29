@@ -1,7 +1,7 @@
 # Kế hoạch kiểm thử FE08 - Quản lý đặt chỗ
 
 Phiên bản: 0.6.0
-Trạng thái: H1 GOVERNANCE ACTIVATION - ĐÃ PHÊ DUYỆT; CHỜ MERGE ĐỂ THỰC THI
+Trạng thái: H2 LOCAL VALIDATION COMPLETE; UNCOMMITTED PENDING H2 APPROVAL
 Cập nhật lần cuối: 2026-07-29
 
 Đặc tả nguồn: `.sdd/specs/feat-reservation-management/SPEC.md` v0.6.0
@@ -117,3 +117,14 @@ Các cổng backend/frontend, bao phủ, tích hợp, triển khai, SQL trực t
 
 Focused service/routes/frontend tests, concurrency integration và desktop
 Chromium phải đạt trước H2.
+
+## 10. Bằng chứng H2 cục bộ v0.6.0
+
+- Backend FE08 service/routes: 2 suite, 55/55 kiểm thử.
+- Nhóm frontend FE07/FE08: 56/56, gồm nhận FE07 handoff đúng `copyId`, warning
+  sau commit và stale `409` reload.
+- System integration 11/11 và Chromium 1440x900 1/1 chứng minh FIFO
+  `ACTIVE -> NOTIFIED -> FULFILLED`.
+- Full backend 1.125/1.125, frontend 269/269, lint/build, deployment 20/20 và
+  Azure schema preparation đều đạt.
+- Product diff chưa stage/commit/push và đang chờ H2.

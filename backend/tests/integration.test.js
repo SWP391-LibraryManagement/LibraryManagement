@@ -324,8 +324,8 @@ describe('Integration: End-to-End Flows', () => {
         expect.arrayContaining([
           expect.objectContaining({
             userId: member.userId,
-            type: 'DUE_DATE_REMINDER',
-            templateKey: 'DUE_DATE_REMINDER',
+            type: 'GENERAL_SYSTEM',
+            templateKey: 'BORROW_REQUEST_APPROVED',
             sourceFeature: 'FE07',
           }),
         ])
@@ -619,7 +619,7 @@ describe('Integration: End-to-End Flows', () => {
 
       const expectedPairs = [
         ['FE04', 'GENERAL_SYSTEM', 'MEMBERSHIP_RESULT'],
-        ['FE07', 'DUE_DATE_REMINDER', 'DUE_DATE_REMINDER'],
+        ['FE07', 'GENERAL_SYSTEM', 'BORROW_REQUEST_APPROVED'],
         ['FE08', 'RESERVATION_AVAILABLE', 'RESERVATION_READY'],
       ];
       const ownedNotifications = expectedPairs.map(([sourceFeature, type, templateKey]) => {

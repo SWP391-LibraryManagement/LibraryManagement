@@ -9,6 +9,12 @@ const migrationPath = path.join(
   'migrations',
   '2026-07-27-fe10-personal-inbox-read-state.sql'
 );
+const borrowingResultMigrationPath = path.join(
+  root,
+  'database',
+  'migrations',
+  '2026-07-29-fe10-borrowing-result-templates.sql'
+);
 const modelPath = path.join(__dirname, '..', 'src', 'models', 'Notification.js');
 
 // @spec BR-FE10-016 BR-FE10-019 FR-FE10-013 FR-FE10-014 AC-FE10-013 AC-FE10-014
@@ -102,6 +108,40 @@ test('personal inbox migration uses the exact eligible type-template allowlist a
   ]) {
     expect(migration).toMatch(
       new RegExp(`INCLUDE\\s*\\([\\s\\S]*\\b${includedColumn}\\b[\\s\\S]*\\)`, 'i')
+    );
+  }
+});
+
+// @spec BR-FE10-021 BR-FE10-022 FR-FE10-017 FR-FE10-019
+test('borrowing-result template migration and canonical schema seed all four FE07 templates', () => {
+  expect(fs.existsSync(borrowingResultMigrationPath)).toBe(true);
+  if (!fs.existsSync(borrowingResultMigrationPath)) return;
+
+  const migration = fs.readFileSync(borrowingResultMigrationPath, 'utf8');
+  const schema = fs.readFileSync(canonicalSchemaPath, 'utf8');
+  const templates = [
+    ['BORROW_REQUEST_APPROVED', '{{requestId}}', '{{dueDate}}'],
+    ['BORROW_REQUEST_REJECTED', '{{requestId}}'],
+    ['BORROW_RENEWED', '{{borrowDetailId}}', '{{dueDate}}'],
+    ['BORROW_RETURNED', '{{borrowDetailId}}', '{{returnStatus}}'],
+  ];
+
+  expect(migration).toMatch(/SET\s+XACT_ABORT\s+ON/i);
+  expect(migration).toMatch(/BEGIN\s+TRANSACTION/i);
+  expect(migration).toMatch(/COMMIT\s+TRANSACTION/i);
+  expect(migration).toMatch(/ROLLBACK\s+TRANSACTION/i);
+  expect(migration).toMatch(/THROW\s*;/i);
+  expect(migration).not.toMatch(/\bDELETE\b/i);
+
+  for (const [templateCode, ...variables] of templates) {
+    for (const sqlText of [migration, schema]) {
+      expect(sqlText).toMatch(new RegExp(templateCode));
+      for (const variable of variables) {
+        expect(sqlText).toContain(variable);
+      }
+    }
+    expect(migration).toMatch(
+      new RegExp(`IF\\s+EXISTS[\\s\\S]*TemplateCode\\s*=\\s*'${templateCode}'`, 'i')
     );
   }
 });

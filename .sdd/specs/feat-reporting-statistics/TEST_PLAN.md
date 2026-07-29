@@ -1,7 +1,7 @@
 # Kế hoạch kiểm thử FE12 - Báo cáo và thống kê
 
 Phiên bản: 0.3.0
-Trạng thái: H1 GOVERNANCE ACTIVATION - ĐÃ PHÊ DUYỆT; CHỜ MERGE ĐỂ THỰC THI
+Trạng thái: H2 LOCAL VALIDATION COMPLETE; UNCOMMITTED PENDING H2 APPROVAL
 Cập nhật lần cuối: 2026-07-29
 
 Đặc tả nguồn: `.sdd/specs/feat-reporting-statistics/SPEC.md`
@@ -200,3 +200,14 @@ npm.cmd run trace:enforce
 
 Không được sửa expected state để làm test xanh; RED phải chứng minh host-clock
 leak trước GREEN clock injection.
+
+## 12. Bằng chứng H2 cục bộ operations summary v0.3.0
+
+- System integration 11/11 chứng minh snapshot trước/sau luồng thay đổi đúng
+  nguồn trạng thái và notification replay không tạo side effect.
+- Chromium 1440x900 1/1 đối chiếu cả sáu KPI `/home` với
+  `GET /api/reports/operations-summary`; không tràn ngang, không lỗi console.
+- Full backend 69 suite/1.125 kiểm thử; frontend 269/269; lint/build đạt.
+- Coverage: 91,89% statements, 80,72% branches, 97,61% functions, 91,81%
+  lines. Traceability FE12 14/15 (93%).
+- Product diff chưa stage/commit/push và đang chờ H2.
