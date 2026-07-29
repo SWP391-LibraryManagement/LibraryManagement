@@ -821,10 +821,12 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
         copyId: detail.copyId,
         dueDate: detail.dueDate,
         returnDate,
-        hasActiveQueue: reservations.some(
-          (reservation) =>
-            reservation.copyId === detail.copyId && reservation.status === 'ACTIVE'
-        ),
+        hasActiveQueue: detailStatus === 'RETURNED'
+          && copyStatus === 'AVAILABLE'
+          && reservations.some(
+            (reservation) =>
+              reservation.copyId === detail.copyId && reservation.status === 'ACTIVE'
+          ),
       };
       const returnEvidence = typeof buildReturnEvidence === 'function'
         ? buildReturnEvidence(authoritativeReturn)

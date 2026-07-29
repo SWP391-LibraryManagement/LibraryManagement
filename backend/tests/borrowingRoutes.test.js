@@ -758,7 +758,7 @@ describe('FE07 borrowing management', () => {
     expect(returnResponse.body.fineCandidate.overdueDays).toBe(9);
     expect(returnResponse.body.reservationQueueAction).toEqual({
       copyId: 1,
-      hasActiveQueue: true,
+      hasActiveQueue: false,
       actionPath: '/librarian/reservations',
     });
     expect(notificationStub.requester.createNotificationRequest).toHaveBeenLastCalledWith({
@@ -784,6 +784,57 @@ describe('FE07 borrowing management', () => {
         .status
     ).toBe('COMPLETED');
     expect(borrowingDependencies.state.fines).toHaveLength(0);
+  });
+
+  test('returning a lost copy does not expose a process-queue handoff', async () => {
+    const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'lost-return.member@example.test',
+    });
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'lost-return.librarian@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+
+    const createResponse = await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [1] })
+      .expect(201);
+    const requestId = createResponse.body.borrowRequest.requestId;
+    const approveResponse = await request(app)
+      .patch(`/api/borrow-requests/${requestId}/approve`)
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({})
+      .expect(200);
+    const borrowDetailId = approveResponse.body.borrowRequest.details[0].borrowDetailId;
+
+    borrowingDependencies.state.reservations.push({
+      reservationId: 901,
+      userId: member.userId + 100,
+      copyId: 1,
+      status: 'ACTIVE',
+    });
+
+    const returnResponse = await request(app)
+      .patch(`/api/borrow-details/${borrowDetailId}/return`)
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({ condition: 'LOST', returnDate: '2026-06-10' })
+      .expect(200);
+
+    expect(returnResponse.body.borrowDetail.status).toBe('LOST');
+    expect(returnResponse.body.reservationQueueAction).toEqual({
+      copyId: 1,
+      hasActiveQueue: false,
+      actionPath: '/librarian/reservations',
+    });
   });
 
   test('return response and audit use the due date locked by the repository', async () => {

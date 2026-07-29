@@ -1,5 +1,14 @@
 # CHANGELOG.md - FE07 Quản lý mượn sách
 
+## 2026-07-29 - Chặn handoff hàng đợi cho lượt trả hỏng/thất lạc (v0.9.1)
+
+- `reservationQueueAction.hasActiveQueue` chỉ còn `true` khi lượt trả là `RETURNED`,
+  bản sao đã thành `AVAILABLE` và vẫn có hàng đợi `ACTIVE`.
+- Giữ reservation `ACTIVE` nguyên trạng cho lượt trả `DAMAGED/LOST`, nhưng không
+  phát CTA FE08 sai trạng thái.
+- Bổ sung regression coverage cho cả hai tình trạng trả và cập nhật truy vết
+  `BR-FE07-012`, `BR-FE07-013`, `FR-FE07-007`.
+
 ## 2026-07-29 - Kích hoạt governance luồng demo liên hoàn (v0.9.0)
 
 - Thêm BR-FE07-035..037, FR-FE07-040..044 và AC-FE07-033..036.
