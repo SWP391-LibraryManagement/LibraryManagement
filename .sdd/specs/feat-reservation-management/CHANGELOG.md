@@ -1,5 +1,13 @@
 # CHANGELOG.md - FE08 Quản lý đặt chỗ
 
+## 2026-07-29 - Giữ nguyên bản sao khi handoff bị lỗi thời (v0.6.1)
+
+- FE08 chỉ mở đúng `copyId` do FE07 bàn giao trong lần tải đầu tiên.
+- Khi bản sao đó không còn hàng đợi active, UI hiển thị cảnh báo stale state
+  và không tự chuyển sang bản sao khác.
+- Nhân viên vẫn có thể tải lại hoặc chọn thủ công một bản sao đang có hàng đợi,
+  phù hợp `FR-FE08-039`.
+
 ## 2026-07-29 - Kích hoạt governance luồng demo liên hoàn (v0.6.0)
 
 - Thêm BR-FE08-021/022, FR-FE08-036..039 và AC-FE08-023..025.
