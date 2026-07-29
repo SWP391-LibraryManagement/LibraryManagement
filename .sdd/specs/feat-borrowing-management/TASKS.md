@@ -3,18 +3,18 @@
 Trạng thái: ĐÃ MERGE VÀO MAIN; CI HẬU MERGE ĐẠT; AZURE STAGING BỊ CHẶN DO AZURE SQL PAUSED/QUOTA
 Implementation State: PARTIAL
 
-Mở rộng hiện tại: triển khai và xác thực tự động v0.8.0 đã hoàn tất;
-rà soát của con người vẫn đang chờ. Mốc cơ sở Giai đoạn 2 trước đó vẫn hoàn tất.
+Mở rộng hiện tại: triển khai và xác thực tự động v0.8.0/v0.9.0 đã hoàn tất;
+review H2/H3 và merge đã đóng. Mốc cơ sở Giai đoạn 2 trước đó vẫn hoàn tất.
 
 Chủ sở hữu: Nhat
 
 Cập nhật: 2026-07-29
 
-Trạng thái quy trình: Mốc cơ sở Giai đoạn 2 vẫn hoàn tất. Nhat đã phê duyệt phụ lục H2
-`8d0059b` vào 2026-07-27; kết quả đã được rà soát được commit là
-`f346ae0`, đẩy lên PR nháp #63 và lượt chạy CI `30244750250` đã đạt. Lần rà soát
-H3 đầu tiên không phát hiện lỗi mã hay quy tắc nghiệp vụ FE07 mà chỉ trả về diễn đạt
-quản trị cũ. Việc khắc phục chỉ tài liệu vẫn chưa được commit, đang chờ H2 mới và H3 lặp lại.
+Trạng thái quy trình hiện tại: Mốc cơ sở Giai đoạn 2 vẫn hoàn tất. Đối soát
+FE07-FE12 đã merge qua PR #63 thành `29b4eb0` sau H3 và CI. Batch liên hoàn
+v0.9.0 được H3 phê duyệt ở head `08e472f` và tích hợp vào `main` qua
+`ba29dc0`. CI hậu merge đã đạt; Azure staging vẫn chưa thể nghiệm thu vì Azure
+SQL đang `Paused`/hết quota, không phải finding mã nguồn.
 
 ---
 

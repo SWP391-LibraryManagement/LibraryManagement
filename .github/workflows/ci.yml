@@ -24,7 +24,7 @@ jobs:
         run: npm ci
 
       - name: Secret literal scan
-        run: node scripts/check-tracked-secrets.js
+        run: npm run test:secrets
 
       - name: Root dependency audit
         run: npm audit --audit-level=high

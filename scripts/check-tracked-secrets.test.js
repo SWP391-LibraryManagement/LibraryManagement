@@ -25,7 +25,7 @@ function runScannerWithFixture(content, filename = 'fixture.txt') {
 }
 
 test('fails on an AWS access key without printing its value', () => {
-  const syntheticKey = 'AKIAIOSFODNN7EXAMPLE';
+  const syntheticKey = ['AKIA', 'IOSFODNN7EXAMPLE'].join('');
   const result = runScannerWithFixture(`AWS_ACCESS_KEY_ID=${syntheticKey}`);
 
   assert.equal(result.status, 1);
@@ -35,8 +35,12 @@ test('fails on an AWS access key without printing its value', () => {
 
 test('fails on a database URL password without printing its value', () => {
   const syntheticPassword = 'phase3-test-password';
+  const databaseUrl = [
+    'DATABASE_URL=postgresql://library',
+    `${syntheticPassword}@localhost/library`,
+  ].join(':');
   const result = runScannerWithFixture(
-    `DATABASE_URL=postgresql://library:${syntheticPassword}@localhost/library`
+    databaseUrl
   );
 
   assert.equal(result.status, 1);
@@ -45,9 +49,31 @@ test('fails on a database URL password without printing its value', () => {
 });
 
 test('allows a marked synthetic test password', () => {
+  const syntheticPassword = ['Phase3', 'test-only'].join('-');
+  const markedDatabaseUrl = [
+    'DATABASE_URL=postgresql://library',
+    `${syntheticPassword}@localhost/library // secret-scan: allow-synthetic`,
+  ].join(':');
   const result = runScannerWithFixture(
-    '// secret-scan: allow-synthetic\nDATABASE_URL=postgresql://library:Phase3-test-only@localhost/library'
+    markedDatabaseUrl
   );
 
   assert.equal(result.status, 0);
+});
+
+test('allows only the marked synthetic fixture line', () => {
+  const syntheticPassword = ['Phase3', 'test-only'].join('-');
+  const syntheticKey = ['AKIA', 'IOSFODNN7EXAMPLE'].join('');
+  const markedDatabaseUrl = [
+    'DATABASE_URL=postgresql://library',
+    `${syntheticPassword}@localhost/library // secret-scan: allow-synthetic`,
+  ].join(':');
+  const result = runScannerWithFixture(
+    `${markedDatabaseUrl}\nAWS_ACCESS_KEY_ID=${syntheticKey}`
+  );
+
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /AWS access key/);
+  assert.doesNotMatch(result.stderr, /database URL password/);
+  assert.doesNotMatch(result.stderr, new RegExp(syntheticKey));
 });

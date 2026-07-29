@@ -6,15 +6,13 @@ Chủ sở hữu: Nhat
 
 Cập nhật: 2026-07-29
 
-Trạng thái workflow: baseline Giai đoạn 2 vẫn hoàn tất. Nhat phê duyệt PLAN/
-TASKS v0.2.0 và phụ lục H2 tích hợp `8d0059b` ngày 2026-07-27. Kết quả đã review
-được commit thành `f346ae0`, push lên PR nháp #63 và lượt CI `30244750250` đạt.
-Review H3 đầu tiên không phát hiện lỗi mã FE12 hay quy tắc nghiệp vụ. Prerequisite
-v0.2.1 đã hoàn tất H2/H3, merge qua PR #81 thành `main@0d064b5`; CI exact-head
-`30403316655` và CI hậu merge `30403632044` đều đạt. Azure đã upload backend/
-frontend nhưng smoke bị chặn bởi quota F1 `WP stop requests`, không phải finding
-code. Phạm vi hiện tại là governance activation v0.3.0 đã được H1 phê duyệt và
-đang chờ H3/merge PR #80.
+Trạng thái workflow hiện tại: baseline Giai đoạn 2 vẫn hoàn tất. Đối soát
+FE07-FE12 đã merge qua PR #63 thành `29b4eb0`; prerequisite v0.2.1 đã merge
+qua PR #81 thành `main@0d064b5`. Governance activation v0.3.0 đã merge qua
+PR #80 thành `cd865e3`, operations summary đã merge qua PR #82 thành
+`2645a00`, và batch liên hoàn được H3 phê duyệt ở head `08e472f` rồi tích hợp
+qua `ba29dc0`. CI hậu merge đã đạt. Azure staging vẫn bị chặn vì Azure SQL
+đang `Paused`/hết quota, không phải finding mã nguồn.
 
 ---
 

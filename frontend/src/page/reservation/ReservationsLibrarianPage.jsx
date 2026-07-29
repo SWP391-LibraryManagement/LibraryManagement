@@ -29,6 +29,7 @@ import {
   isActiveReservationQueueStatus,
   runHoldExpirationWorkflow,
 } from '../../utils/reservationViewState';
+import { resolveReservationQueueHandoff } from '../../utils/reservationHandoffState';
 import { getNotificationFeedback, describeNotificationWarnings } from '../../utils/notificationFeedback.js';
 
 const PAGE_SIZE = 8;
@@ -66,7 +67,7 @@ function renderQueuePosition(item) {
   return formatReservationQueuePosition(item.queue, 'cuốn sách này');
 }
 
-// @spec FR-FE08-035, AC-FE08-022
+// @spec FR-FE08-035, FR-FE08-039, AC-FE08-022
 export default function ReservationsLibrarianPage() {
   const location = useLocation();
   const handoffCopyId = Number(location.state?.copyId);
@@ -109,25 +110,15 @@ export default function ReservationsLibrarianPage() {
       const mapped = allReservations.map(mapReservation);
       setRows(mapped);
       setLastUpdated(new Date().toLocaleTimeString('vi-VN'));
-      const requestedCopyId = pendingHandoffCopyId.current;
-      if (requestedCopyId) {
-        const requestedIsActive = mapped.some((item) => (
-          item.copyId === requestedCopyId && isActiveReservationQueueStatus(item.status)
-        ));
-        if (requestedIsActive) {
-          setQueueCopyId(requestedCopyId);
-        } else {
-          setQueueCopyId(null);
-          setQueueNotice('Hàng đợi đã thay đổi. Hãy tải lại hoặc chọn bản sao khác.');
-        }
+      const handoffState = resolveReservationQueueHandoff({
+        pendingCopyId: pendingHandoffCopyId.current,
+        currentCopyId: queueCopyId,
+        reservations: mapped,
+      });
+      setQueueCopyId(handoffState.queueCopyId);
+      setQueueNotice(handoffState.notice);
+      if (handoffState.consumePendingHandoff) {
         pendingHandoffCopyId.current = null;
-      } else {
-        setQueueCopyId((current) => {
-          if (current && mapped.some((item) => (
-            item.copyId === current && isActiveReservationQueueStatus(item.status)
-          ))) return current;
-          return mapped.find((item) => isActiveReservationQueueStatus(item.status))?.copyId || null;
-        });
       }
     } catch (error) {
       setRows([]);
@@ -427,8 +418,12 @@ export default function ReservationsLibrarianPage() {
                     aria-label="Chọn bản sao xem hàng đợi"
                     disabled={!queueCopies.length}
                   >
-                {!queueCopies.length && <option value="">Chưa có bản sao được đặt chỗ</option>}
-                {queueCopies.map((item) => <option key={item.copyId} value={item.copyId}>{item.title} • {item.barcode}</option>)}
+                    {!queueCopies.length ? (
+                      <option value="">Chưa có bản sao được đặt chỗ</option>
+                    ) : (
+                      <option value="" disabled>Chọn bản sao xem hàng đợi</option>
+                    )}
+                    {queueCopies.map((item) => <option key={item.copyId} value={item.copyId}>{item.title} • {item.barcode}</option>)}
                   </select>
                 </div>
                 {queueNotice && (

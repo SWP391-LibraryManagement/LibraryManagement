@@ -2,8 +2,7 @@ const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const SCANNER_TEST_PATH = 'scripts/check-tracked-secrets.test.js';
-const SYNTHETIC_ALLOW_MARKER = /^\s*(?:\/\/|#|--|<!--)?\s*secret-scan:\s*allow-synthetic\s*(?:-->)?\s*$/mi;
+const SYNTHETIC_ALLOW_MARKER = /secret-scan:\s*allow-synthetic/i;
 const PATTERNS = [
   {
     name: 'AWS access key',
@@ -51,8 +50,11 @@ function isBinary(buffer) {
   return buffer.includes(0);
 }
 
-function hasSyntheticAllowMarker(text) {
-  return SYNTHETIC_ALLOW_MARKER.test(text);
+function removeMarkedSyntheticLines(text) {
+  return text
+    .split('\n')
+    .filter((line) => !SYNTHETIC_ALLOW_MARKER.test(line))
+    .join('\n');
 }
 
 function scanTrackedFiles(root = process.cwd()) {
@@ -60,10 +62,6 @@ function scanTrackedFiles(root = process.cwd()) {
 
   for (const relativePath of listTrackedFiles(root)) {
     const normalizedPath = relativePath.replace(/\\/g, '/');
-    if (normalizedPath === SCANNER_TEST_PATH) {
-      continue;
-    }
-
     const filePath = path.resolve(root, relativePath);
     if (!filePath.startsWith(`${path.resolve(root)}${path.sep}`)) {
       continue;
@@ -74,10 +72,9 @@ function scanTrackedFiles(root = process.cwd()) {
       continue;
     }
 
-    const text = buffer.toString('utf8').replace(/\r\n?/g, '\n');
-    if (hasSyntheticAllowMarker(text)) {
-      continue;
-    }
+    const text = removeMarkedSyntheticLines(
+      buffer.toString('utf8').replace(/\r\n?/g, '\n')
+    );
 
     for (const pattern of PATTERNS) {
       if (pattern.expression.test(text)) {
