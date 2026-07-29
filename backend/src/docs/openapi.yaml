@@ -111,6 +111,11 @@ components:
       content:
         application/json:
           schema: { $ref: '#/components/schemas/UserStatisticsReport' }
+    OperationsSummaryResponse:
+      description: Read-only circulation operations snapshot
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/OperationsSummary' }
   schemas:
     NotificationSummary:
       type: object
@@ -707,6 +712,25 @@ components:
         page: { type: integer, minimum: 1 }
         limit: { type: integer, minimum: 1, maximum: 100 }
         totalRows: { type: integer, minimum: 0 }
+    OperationsSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - pendingBorrowRequests
+        - activeLoans
+        - overdueLoans
+        - openReservations
+        - availableCopies
+        - lowStockBooks
+        - generatedAt
+      properties:
+        pendingBorrowRequests: { type: integer, minimum: 0 }
+        activeLoans: { type: integer, minimum: 0 }
+        overdueLoans: { type: integer, minimum: 0 }
+        openReservations: { type: integer, minimum: 0 }
+        availableCopies: { type: integer, minimum: 0 }
+        lowStockBooks: { type: integer, minimum: 0 }
+        generatedAt: { type: string, format: date-time }
     Fine:
       type: object
       additionalProperties: false
@@ -1682,6 +1706,19 @@ paths:
         - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
       responses:
         '200': { $ref: '#/components/responses/BorrowingReportResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/reports/operations-summary:
+    get:
+      tags: [Reporting]
+      summary: Circulation operations summary (FR-FE12-012..014)
+      description: >
+        Librarian/Admin-only read-only snapshot. The service derives generatedAt and the
+        Asia/Ho_Chi_Minh business date from one clock read.
+      parameters: []
+      responses:
+        '200': { $ref: '#/components/responses/OperationsSummaryResponse' }
         '400': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }

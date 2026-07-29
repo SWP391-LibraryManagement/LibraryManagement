@@ -226,6 +226,12 @@ export const reservationApi = {
 };
 
 export const reportApi = {
+  operationsSummary() {
+    return authorizedReportRequest(
+      { method: 'get', url: '/reports/operations-summary' },
+      'Không thể tải tổng quan vận hành.',
+    );
+  },
   borrowing(params = {}) {
     return authorizedReportRequest({ method: 'get', url: '/reports/borrowing', params }, 'Không thể tải báo cáo mượn sách.');
   },

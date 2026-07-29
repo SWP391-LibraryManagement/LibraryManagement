@@ -462,6 +462,68 @@ async function getBorrowingReport(filters = {}, businessDate) {
   );
 }
 
+// @spec BR-FE12-017 BR-FE12-018 FR-FE12-012 FR-FE12-014
+async function getOperationsSummary(businessDate) {
+  const requiredBusinessDate = requireBusinessDate(businessDate);
+  const pool = await getPool();
+  const request = pool.request();
+  request.input(
+    'BusinessDate',
+    sql.Date,
+    new Date(`${requiredBusinessDate}T00:00:00.000Z`)
+  );
+
+  const result = await request.query(`
+    SELECT
+      (
+        SELECT COUNT(*)
+        FROM BorrowRequests WHERE Status = 'PENDING'
+      ) AS PendingBorrowRequests,
+      (
+        SELECT COUNT(*)
+        FROM BorrowDetails WHERE Status = 'BORROWED'
+      ) AS ActiveLoans,
+      (
+        SELECT COUNT(*)
+        FROM BorrowDetails
+        WHERE Status = 'BORROWED'
+          AND DueDate < @BusinessDate
+      ) AS OverdueLoans,
+      (
+        SELECT COUNT(*)
+        FROM Reservations WHERE Status IN ('ACTIVE', 'NOTIFIED')
+      ) AS OpenReservations,
+      (
+        SELECT COUNT(*)
+        FROM BookCopies bc
+        INNER JOIN Books b ON b.BookId = bc.BookId
+        WHERE b.Status = 'ACTIVE'
+          AND bc.Status = 'AVAILABLE'
+      ) AS AvailableCopies,
+      (
+        SELECT COUNT(*)
+        FROM Books b
+        WHERE b.Status = 'ACTIVE'
+          AND (
+            SELECT COUNT(*)
+            FROM BookCopies bc
+            WHERE bc.BookId = b.BookId
+              AND bc.Status = 'AVAILABLE'
+          ) BETWEEN 0 AND 2
+      ) AS LowStockBooks;
+  `);
+
+  const row = result.recordset?.[0] || {};
+  return {
+    pendingBorrowRequests: Number(row.PendingBorrowRequests || 0),
+    activeLoans: Number(row.ActiveLoans || 0),
+    overdueLoans: Number(row.OverdueLoans || 0),
+    openReservations: Number(row.OpenReservations || 0),
+    availableCopies: Number(row.AvailableCopies || 0),
+    lowStockBooks: Number(row.LowStockBooks || 0),
+  };
+}
+
 async function getInventoryReport(filters = {}) {
   const snapshot = await getInventoryRows(filters);
   const detailedRows = snapshot.pageRows
@@ -568,6 +630,7 @@ async function getUserStatistics(filters = {}) {
 
 module.exports = {
   getBorrowingReport,
+  getOperationsSummary,
   getInventoryReport,
   getUserStatistics,
 };

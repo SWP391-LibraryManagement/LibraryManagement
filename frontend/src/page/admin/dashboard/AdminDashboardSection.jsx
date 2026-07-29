@@ -4,6 +4,9 @@ import {
   BarChart2,
   BookCopy,
   BookOpen,
+  Bookmark,
+  ClipboardList,
+  PackageCheck,
   RefreshCw,
   UserCog,
   Users,
@@ -11,6 +14,8 @@ import {
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { adminApi } from '../../../api/adminApi';
+import { reportApi } from '../../../api/libraryFeatureApi';
+import { buildStaffSummary } from '../../dashboard/dashboardViewModel';
 import { createLatestRequestGuard } from '../../../utils/latestRequestGuard';
 import { AdminActionButton } from '../components/AdminActionButton';
 import { AdminEmptyState } from '../components/AdminEmptyState';
@@ -96,9 +101,13 @@ function AdminLineChart({ title, rows }) {
   );
 }
 
-export function AdminDashboardSection({ onNavigate = () => {} }) {
+export function AdminDashboardSection({
+  onNavigatePath = () => {},
+  onNavigateSection = () => {},
+}) {
   const requestGuard = useRef(createLatestRequestGuard());
   const [data, setData] = useState(null);
+  const [operationsSummary, setOperationsSummary] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [updatedAt, setUpdatedAt] = useState(null);
@@ -109,12 +118,36 @@ export function AdminDashboardSection({ onNavigate = () => {} }) {
     setError('');
 
     try {
-      const result = await adminApi.dashboard();
+      const [adminResult, operationsResult] = await Promise.allSettled([
+        adminApi.dashboard(),
+        reportApi.operationsSummary(),
+      ]);
       if (!requestGuard.current.isLatest(token)) return;
-      setData(result);
-      setUpdatedAt(new Date());
+
+      if (adminResult.status === 'fulfilled') {
+        setData(adminResult.value);
+      }
+      setOperationsSummary((current) =>
+        operationsResult.status === 'fulfilled'
+          ? buildStaffSummary(operationsResult.value)
+          : current || buildStaffSummary());
+
+      const errors = [
+        adminResult.status === 'rejected'
+          ? adminResult.reason?.message || 'Không thể tải biểu đồ quản trị.'
+          : null,
+        operationsResult.status === 'rejected'
+          ? operationsResult.reason?.message || 'Không thể tải chỉ số vận hành.'
+          : null,
+      ].filter(Boolean);
+      setError(errors.join(' '));
+
+      if (adminResult.status === 'fulfilled' || operationsResult.status === 'fulfilled') {
+        setUpdatedAt(new Date());
+      }
     } catch (loadError) {
       if (!requestGuard.current.isLatest(token)) return;
+      setOperationsSummary((current) => current || buildStaffSummary());
       setError(loadError.message || 'Không thể tải tổng quan quản trị.');
     } finally {
       if (requestGuard.current.isLatest(token)) setLoading(false);
@@ -130,7 +163,45 @@ export function AdminDashboardSection({ onNavigate = () => {} }) {
   const overdue = selectOperationalChartRows(data?.charts?.overdue);
   const returnedToday = selectOperationalChartRows(data?.charts?.returnedToday);
 
-  const summary = [
+  const summary = operationsSummary ? [
+    {
+      label: 'Yêu cầu chờ duyệt',
+      value: operationsSummary.pendingBorrowRequests,
+      icon: ClipboardList,
+      path: '/librarian/borrow-requests',
+    },
+    {
+      label: 'Sách đang mượn',
+      value: operationsSummary.activeLoans,
+      icon: BookCopy,
+      path: '/reports/borrowing',
+    },
+    {
+      label: 'Sách mượn quá hạn',
+      value: operationsSummary.overdueLoans,
+      icon: AlertTriangle,
+      path: '/reports/borrowing',
+    },
+    {
+      label: 'Đặt chỗ đang mở',
+      value: operationsSummary.openReservations,
+      icon: Bookmark,
+      path: '/librarian/reservations',
+    },
+    {
+      label: 'Bản sao sẵn có',
+      value: operationsSummary.availableCopies,
+      icon: BookOpen,
+      path: '/reports/inventory',
+    },
+    {
+      label: 'Đầu sách sắp hết',
+      value: operationsSummary.lowStockBooks,
+      icon: PackageCheck,
+      path: '/reports/inventory',
+    },
+  ] : [];
+  const administrationSummary = data ? [
     {
       label: 'Tổng số sách',
       value: data?.summary?.totalBooks ?? 0,
@@ -161,26 +232,27 @@ export function AdminDashboardSection({ onNavigate = () => {} }) {
       icon: AlertTriangle,
       destination: { section: 'circulation', status: 'OVERDUE' },
     },
-  ];
+  ] : [];
+  const hasDashboardContent = Boolean(data || operationsSummary);
 
   return (
     <section className="admin-dashboard">
       <AdminPageHeader
         eyebrow="Tình hình vận hành"
         title="Tổng quan"
-        refreshing={loading && Boolean(data)}
+        refreshing={loading && hasDashboardContent}
         onRefresh={loadDashboard}
       />
 
       <div className="admin-section-status" aria-live="polite">
         <span>
-          {loading && data
+          {loading && hasDashboardContent
             ? 'Đang cập nhật...'
             : updatedAt
               ? `Cập nhật lần cuối lúc ${updatedAt.toLocaleTimeString('vi-VN')}`
               : 'Chưa có lần cập nhật thành công.'}
         </span>
-        {error && data ? (
+        {error && hasDashboardContent ? (
           <span className="admin-inline-error">
             <AlertCircle aria-hidden="true" />
             Không thể làm mới: {error}
@@ -189,7 +261,7 @@ export function AdminDashboardSection({ onNavigate = () => {} }) {
         ) : null}
       </div>
 
-      {!data && loading ? (
+      {!hasDashboardContent && loading ? (
         <AdminEmptyState
           icon={RefreshCw}
           title="Đang đồng bộ dữ liệu"
@@ -197,7 +269,7 @@ export function AdminDashboardSection({ onNavigate = () => {} }) {
         />
       ) : null}
 
-      {!data && error ? (
+      {!hasDashboardContent && error ? (
         <AdminEmptyState
           icon={AlertCircle}
           title="Chưa thể tải tổng quan"
@@ -206,26 +278,55 @@ export function AdminDashboardSection({ onNavigate = () => {} }) {
         />
       ) : null}
 
+      {operationsSummary ? (
+        <section className="admin-dashboard__group admin-dashboard__operations">
+          <h2>Luân chuyển và tồn kho</h2>
+          <section className="admin-dashboard__stats" aria-label="Chỉ số vận hành">
+            {summary.map(({ label, value, icon: Icon, path }) => {
+              const unavailable = value === null;
+              const displayValue = unavailable ? 'Không tải được' : value;
+              return (
+                <button
+                  className={`admin-dashboard__stat${unavailable ? ' admin-dashboard__stat--unavailable' : ''}`}
+                  type="button"
+                  key={label}
+                  aria-label={`${label}: ${displayValue}. Mở màn liên quan`}
+                  onClick={() => onNavigatePath(path)}
+                >
+                  <Icon aria-hidden="true" />
+                  <div>
+                    <span>{label}</span>
+                    <strong>{displayValue}</strong>
+                  </div>
+                </button>
+              );
+            })}
+          </section>
+        </section>
+      ) : null}
+
       {data ? (
         <>
-          <section className="admin-dashboard__stats" aria-label="Chỉ số tổng quan">
-            {summary.map(({ label, value, icon: Icon, destination }) => (
-              <button
-                className="admin-dashboard__stat"
-                type="button"
-                key={label}
-                aria-label={`${label}: ${value}. Mở phần liên quan`}
-                onClick={() => onNavigate(destination)}
-              >
-                <Icon aria-hidden="true" />
-                <div>
-                  <span>{label}</span>
-                  <strong>{value}</strong>
-                </div>
-              </button>
-            ))}
+          <section className="admin-dashboard__group">
+            <h2>Quản trị thư viện</h2>
+            <section className="admin-dashboard__stats" aria-label="Chỉ số quản trị">
+              {administrationSummary.map(({ label, value, icon: Icon, destination }) => (
+                <button
+                  className="admin-dashboard__stat"
+                  type="button"
+                  key={label}
+                  aria-label={`${label}: ${value}. Mở phần liên quan`}
+                  onClick={() => onNavigateSection(destination)}
+                >
+                  <Icon aria-hidden="true" />
+                  <div>
+                    <span>{label}</span>
+                    <strong>{value}</strong>
+                  </div>
+                </button>
+              ))}
+            </section>
           </section>
-
           <section className="admin-dashboard__charts" aria-label="Biểu đồ vận hành">
             <AdminLineChart title="Top sách được mượn" rows={mostBorrowed} />
             <AdminLineChart title="Sách đang mượn quá hạn" rows={overdue} />

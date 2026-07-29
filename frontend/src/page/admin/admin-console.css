@@ -165,8 +165,19 @@
 
 .admin-dashboard__stats {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
+}
+
+.admin-dashboard__group {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-dashboard__group > h2 {
+  margin: 0;
+  font-family: Georgia, serif;
+  font-size: 1.05rem;
 }
 
 .admin-dashboard__stat {
@@ -212,6 +223,12 @@
 .admin-dashboard__stat strong {
   font-family: Georgia, serif;
   font-size: clamp(1.35rem, 2vw, 2rem);
+}
+
+.admin-dashboard__stat--unavailable strong {
+  color: var(--admin-danger);
+  font-family: inherit;
+  font-size: 0.9rem;
 }
 
 .admin-dashboard__charts {

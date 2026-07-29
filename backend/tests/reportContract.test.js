@@ -58,9 +58,37 @@ test('OpenAPI documents validation errors for every FE12 report endpoint', () =>
     '/api/reports/borrowing',
     '/api/reports/inventory',
     '/api/reports/users',
+    '/api/reports/operations-summary',
   ]) {
     expect(responseCodes(endpoint)).toEqual(expect.arrayContaining(['200', '400', '401', '403']));
   }
+});
+
+test('OpenAPI binds operations summary to the exact no-query snapshot contract', () => {
+  const endpoint = document.paths['/api/reports/operations-summary'].get;
+
+  expect(endpoint.parameters).toEqual([]);
+  expect(endpoint.responses['200']).toEqual({
+    $ref: '#/components/responses/OperationsSummaryResponse',
+  });
+  expect(Object.keys(document.components.schemas.OperationsSummary.properties)).toEqual([
+    'pendingBorrowRequests',
+    'activeLoans',
+    'overdueLoans',
+    'openReservations',
+    'availableCopies',
+    'lowStockBooks',
+    'generatedAt',
+  ]);
+  expect(document.components.schemas.OperationsSummary.required).toEqual([
+    'pendingBorrowRequests',
+    'activeLoans',
+    'overdueLoans',
+    'openReservations',
+    'availableCopies',
+    'lowStockBooks',
+    'generatedAt',
+  ]);
 });
 
 test('OpenAPI report filters use the exact runtime status enums', () => {

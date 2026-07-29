@@ -29,11 +29,13 @@ test('[E2E-SYS-001] login, borrow, approve, return, fine, and report golden path
   const password = `E2e-${runId}!A1`;
   const memberEmail = `e2e-member-${runId}@example.test`;
   const librarianEmail = `e2e-librarian-${runId}@example.test`;
+  const adminEmail = `e2e-admin-${runId}@example.test`;
   mkdirSync('output/playwright', { recursive: true });
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.clock.setFixedTime(FIXED_NOW);
 
   const setupResponse = await request.post(`${BACKEND_URL}/__e2e__/setup`, {
-    data: { memberEmail, librarianEmail, password },
+    data: { memberEmail, librarianEmail, adminEmail, password },
   });
   expect(setupResponse.ok()).toBeTruthy();
 
@@ -52,7 +54,25 @@ test('[E2E-SYS-001] login, borrow, approve, return, fine, and report golden path
 
   await clearSession(page);
   await login(page, librarianEmail, password, '/home');
-  await page.goto(`${FRONTEND_URL}/librarian/borrow-requests`);
+  const operationsCards = page.locator('.kpi-card-action');
+  await expect(operationsCards).toHaveCount(6);
+  await expect(
+    page.getByRole('button', { name: /Yêu cầu chờ duyệt: 1\./i })
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: /Sách đang mượn: 0\./i })
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth > document.documentElement.clientWidth
+    )
+  ).toBe(false);
+  await page.screenshot({
+    path: 'output/playwright/operations-summary-librarian-desktop.png',
+    fullPage: true,
+  });
+  await page.getByRole('button', { name: /Yêu cầu chờ duyệt: 1\./i }).click();
+  await expect.poll(() => new URL(page.url()).pathname).toBe('/librarian/borrow-requests');
   await expect(page.locator('tbody .badge-pending').first()).toBeVisible();
   await page.getByRole('button', { name: /^Duyệt$/i }).click();
   await page.getByRole('button', { name: /^Duyệt và cấp sách$/i }).click();
@@ -136,4 +156,24 @@ test('[E2E-SYS-001] login, borrow, approve, return, fine, and report golden path
   );
   expect(horizontalOverflow).toBe(false);
   await page.screenshot({ path: 'output/playwright/system-golden-path-mobile.png' });
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await clearSession(page);
+  await login(page, adminEmail, password, '/admin/users');
+  await page.getByRole('button', { name: 'Tổng quan', exact: true }).click();
+  const adminOperationsCards = page.locator('.admin-dashboard__operations .admin-dashboard__stat');
+  await expect(adminOperationsCards).toHaveCount(6);
+  await expect(
+    page.getByRole('button', { name: /Yêu cầu chờ duyệt: 0\./i })
+  ).toBeVisible();
+  await expect(page.getByText('Không tải được')).toHaveCount(0);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth > document.documentElement.clientWidth
+    )
+  ).toBe(false);
+  await page.screenshot({
+    path: 'output/playwright/operations-summary-admin-desktop.png',
+    fullPage: true,
+  });
 });

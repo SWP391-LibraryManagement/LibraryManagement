@@ -8,12 +8,24 @@ export function buildMemberSummary(borrowing = {}, reservations = {}) {
   };
 }
 
-export function buildStaffSummary(borrowing = {}, reservations = {}) {
-  const borrowRows = borrowing.borrowRequests || [];
-  const reservationRows = reservations.reservations || [];
+const OPERATIONS_SUMMARY_KEYS = [
+  'pendingBorrowRequests',
+  'activeLoans',
+  'overdueLoans',
+  'openReservations',
+  'availableCopies',
+  'lowStockBooks',
+];
+
+function canonicalKpiValue(value) {
+  return Number.isInteger(value) && value >= 0 ? value : null;
+}
+
+export function buildStaffSummary(snapshot = {}) {
   return {
-    pendingBorrowRequests: borrowRows.filter((row) => row.status === 'PENDING').length,
-    waitingReservations: reservationRows.filter((row) => row.status === 'WAITING').length,
-    readyReservations: reservationRows.filter((row) => row.status === 'READY').length,
+    ...Object.fromEntries(
+      OPERATIONS_SUMMARY_KEYS.map((key) => [key, canonicalKpiValue(snapshot?.[key])]),
+    ),
+    generatedAt: typeof snapshot?.generatedAt === 'string' ? snapshot.generatedAt : null,
   };
 }

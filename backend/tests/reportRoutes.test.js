@@ -11,7 +11,7 @@ const { makeInMemoryAuthDependencies } = require('./helpers/inMemoryAuthReposito
 const { makeInMemoryBorrowingDependencies } = require('./helpers/inMemoryBorrowingRepositories');
 const { makeInMemoryReportDependencies } = require('./helpers/inMemoryReportRepositories');
 
-function makeTestApp() {
+function makeTestApp({ reportClock } = {}) {
   const authDependencies = makeInMemoryAuthDependencies();
   const borrowingDependencies = makeInMemoryBorrowingDependencies(authDependencies.state);
   const reportDependencies = makeInMemoryReportDependencies(
@@ -28,6 +28,7 @@ function makeTestApp() {
   const reportService = createReportService({
     reportRepository: reportDependencies.reportRepository,
     auditLogRepository: authDependencies.auditLogRepository,
+    clock: reportClock,
   });
   const app = createApp({ authService, borrowingService, reportService });
 
@@ -88,6 +89,7 @@ describe('FE12 reporting and statistics', () => {
     ['/api/reports/borrowing', 'getBorrowingReport'],
     ['/api/reports/inventory', 'getInventoryReport'],
     ['/api/reports/users', 'getUserStatistics'],
+    ['/api/reports/operations-summary', 'getOperationsSummary'],
   ])('rejects unsupported query keys before %s executes', async (path, repositoryMethod) => {
     const { app, authDependencies, borrowingDependencies, reportDependencies } =
       makeTestApp();
@@ -103,6 +105,7 @@ describe('FE12 reporting and statistics', () => {
       jest.spyOn(reportDependencies.reportRepository, 'getBorrowingReport'),
       jest.spyOn(reportDependencies.reportRepository, 'getInventoryReport'),
       jest.spyOn(reportDependencies.reportRepository, 'getUserStatistics'),
+      jest.spyOn(reportDependencies.reportRepository, 'getOperationsSummary'),
     ];
 
     const response = await request(app)
@@ -115,6 +118,68 @@ describe('FE12 reporting and statistics', () => {
     for (const spy of spies) {
       expect(spy).not.toHaveBeenCalled();
     }
+  });
+
+  test('operations summary returns one canonical staff snapshot', async () => {
+    const reportClock = jest.fn(() => new Date('2026-07-28T17:00:00.000Z'));
+    const { app, authDependencies, borrowingDependencies } = makeTestApp({ reportClock });
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'report.operations.librarian@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+
+    borrowingDependencies.state.books.push(
+      { bookId: 2, title: 'No Available Copies', status: 'ACTIVE' },
+      { bookId: 3, title: 'Inactive Book', status: 'INACTIVE' }
+    );
+    borrowingDependencies.state.copies.push(
+      { copyId: 20, bookId: 3, status: 'AVAILABLE' },
+      { copyId: 21, bookId: 3, status: 'AVAILABLE' }
+    );
+    borrowingDependencies.state.borrowRequests.push(
+      { requestId: 100, userId: librarian.userId, status: 'PENDING' }
+    );
+    borrowingDependencies.state.borrowDetails.push(
+      {
+        borrowDetailId: 100,
+        requestId: 100,
+        copyId: 1,
+        status: 'BORROWED',
+        dueDate: new Date('2026-07-28T00:00:00.000Z'),
+      },
+      {
+        borrowDetailId: 101,
+        requestId: 100,
+        copyId: 2,
+        status: 'BORROWED',
+        dueDate: new Date('2026-07-29T00:00:00.000Z'),
+      }
+    );
+    borrowingDependencies.state.reservations.push(
+      { reservationId: 1, status: 'ACTIVE' },
+      { reservationId: 2, status: 'NOTIFIED' },
+      { reservationId: 3, status: 'CANCELLED' }
+    );
+
+    const response = await request(app)
+      .get('/api/reports/operations-summary')
+      .set('Authorization', authHeader(librarian.accessToken));
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({
+      pendingBorrowRequests: 1,
+      activeLoans: 2,
+      overdueLoans: 1,
+      openReservations: 2,
+      availableCopies: 6,
+      lowStockBooks: 1,
+      generatedAt: '2026-07-28T17:00:00.000Z',
+    });
+    expect(reportClock).toHaveBeenCalledTimes(1);
   });
 
   test('borrowing and inventory reports return aggregates without mutating source data', async () => {
@@ -312,7 +377,12 @@ describe('FE12 reporting and statistics', () => {
       email: 'report.guard.member@example.test',
     });
 
-    for (const path of ['/api/reports/borrowing', '/api/reports/inventory', '/api/reports/users']) {
+    for (const path of [
+      '/api/reports/borrowing',
+      '/api/reports/inventory',
+      '/api/reports/users',
+      '/api/reports/operations-summary',
+    ]) {
       await request(app).get(path).expect(401);
 
       const forbidden = await request(app).get(path).set('Authorization', authHeader(member.accessToken));

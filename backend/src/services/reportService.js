@@ -72,6 +72,25 @@ function createReportService({ reportRepository, auditLogRepository, clock = () 
     return report;
   }
 
+  // @spec FR-FE12-012 FR-FE12-013 FR-FE12-014
+  async function getOperationsSummary(actor, context = {}) {
+    requireStaff(actor);
+    const generatedAt = clock();
+    const summary = await reportRepository.getOperationsSummary(
+      formatBusinessDate(generatedAt)
+    );
+
+    await writeAudit(context, 'REPORT_OPERATIONS_SUMMARY_VIEW', {
+      userId: actor.userId,
+      metadata: successMetadata('OPERATIONS_SUMMARY', generatedAt),
+    });
+
+    return {
+      ...summary,
+      generatedAt: generatedAt.toISOString(),
+    };
+  }
+
   async function getInventoryReport(filters, actor, context = {}) {
     requireStaff(actor);
     const report = await reportRepository.getInventoryReport(filters);
@@ -113,6 +132,7 @@ function createReportService({ reportRepository, auditLogRepository, clock = () 
 
   return {
     getBorrowingReport,
+    getOperationsSummary,
     getInventoryReport,
     getUserStatistics,
     auditAccessFailure,

@@ -74,3 +74,17 @@ test('FE12 report pages send server pagination and expose previous/next navigati
     assert.match(source, />Trang sau</);
   }
 });
+
+test('FE12 exposes the operations summary API and both staff dashboards consume it', async () => {
+  const [api, librarianDashboard, adminDashboard] = await Promise.all([
+    readFile(new URL('../src/api/libraryFeatureApi.js', import.meta.url), 'utf8'),
+    readFile(new URL('../src/page/dashboard/RoleDashboardPage.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../src/page/admin/dashboard/AdminDashboardSection.jsx', import.meta.url), 'utf8'),
+  ]);
+
+  assert.match(api, /operationsSummary\(\)[\s\S]*url: '\/reports\/operations-summary'/);
+  assert.match(librarianDashboard, /reportApi\.operationsSummary\(\)/);
+  assert.match(adminDashboard, /reportApi\.operationsSummary\(\)/);
+  assert.doesNotMatch(librarianDashboard, /Promise\.all\(\[borrowingApi\.listAll/);
+  assert.match(adminDashboard, /Không tải được/);
+});

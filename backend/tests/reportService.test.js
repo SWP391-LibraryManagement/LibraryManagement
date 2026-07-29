@@ -8,6 +8,14 @@ function makeService({ auditLogRepository, repository = {}, clock } = {}) {
     getBorrowingReport: jest.fn(async () => ({ totals: { requests: 1 } })),
     getInventoryReport: jest.fn(async () => ({ totals: { copies: 2 } })),
     getUserStatistics: jest.fn(async () => ({ totals: { users: 3 } })),
+    getOperationsSummary: jest.fn(async () => ({
+      pendingBorrowRequests: 1,
+      activeLoans: 2,
+      overdueLoans: 1,
+      openReservations: 3,
+      availableCopies: 4,
+      lowStockBooks: 2,
+    })),
     ...repository,
   };
   const activeAuditRepository =
@@ -69,6 +77,36 @@ describe('FE12 report service coverage', () => {
     );
   });
 
+  test('derives operations summary businessDate and generatedAt from one clock read', async () => {
+    const clock = jest.fn(() => new Date('2026-07-13T17:00:00.000Z'));
+    const { service, reportRepository, auditLogRepository } = makeService({ clock });
+
+    const result = await service.getOperationsSummary(LIBRARIAN);
+
+    expect(clock).toHaveBeenCalledTimes(1);
+    expect(reportRepository.getOperationsSummary).toHaveBeenCalledWith('2026-07-14');
+    expect(result).toEqual({
+      pendingBorrowRequests: 1,
+      activeLoans: 2,
+      overdueLoans: 1,
+      openReservations: 3,
+      availableCopies: 4,
+      lowStockBooks: 2,
+      generatedAt: '2026-07-13T17:00:00.000Z',
+    });
+    expect(auditLogRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: LIBRARIAN.userId,
+        action: 'REPORT_OPERATIONS_SUMMARY_VIEW',
+        metadata: {
+          reportType: 'OPERATIONS_SUMMARY',
+          result: 'SUCCESS',
+          timestamp: '2026-07-13T17:00:00.000Z',
+        },
+      })
+    );
+  });
+
   test('rejects missing and member roles for all staff report operations', async () => {
     const { service } = makeService();
 
@@ -81,6 +119,10 @@ describe('FE12 report service coverage', () => {
       statusCode: 403,
     });
     await expect(service.getUserStatistics({}, MEMBER)).rejects.toMatchObject({
+      code: 'ROLE_REQUIRED',
+      statusCode: 403,
+    });
+    await expect(service.getOperationsSummary(MEMBER)).rejects.toMatchObject({
       code: 'ROLE_REQUIRED',
       statusCode: 403,
     });

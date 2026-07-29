@@ -79,19 +79,23 @@ test('Admin dashboard keeps API ownership, stale-response guard and operational 
   const dashboard = await readFile(new URL('dashboard/AdminDashboardSection.jsx', root), 'utf8');
   const page = await readFile(new URL('AdminConsolePage.jsx', root), 'utf8');
   assert.match(dashboard, /adminApi\.dashboard\(\)/);
+  assert.match(dashboard, /reportApi\.operationsSummary\(\)/);
   assert.match(dashboard, /createLatestRequestGuard/);
   assert.equal(dashboard.match(/selectOperationalChartRows\(/g)?.length, 3);
   for (const metric of [
-    'totalBooks',
-    'totalMembers',
-    'totalAuthors',
-    'totalBorrowed',
-    'overdueBorrowed',
+    'pendingBorrowRequests',
+    'activeLoans',
+    'overdueLoans',
+    'openReservations',
+    'availableCopies',
+    'lowStockBooks',
   ]) {
-    assert.match(dashboard, new RegExp(`data\\?\\.summary\\?\\.${metric}`));
+    assert.match(dashboard, new RegExp(`operationsSummary\\.${metric}`));
   }
-  assert.match(dashboard, /className="admin-dashboard__stat"[\s\S]*?onClick=\{\(\) => onNavigate\(destination\)\}/);
-  assert.match(page, /<AdminDashboardSection onNavigate=\{openDashboardDestination\} \/>/);
+  assert.match(dashboard, /admin-dashboard__stat--unavailable/);
+  assert.match(dashboard, /onClick=\{\(\) => onNavigatePath\(path\)\}/);
+  assert.match(dashboard, /Không tải được/);
+  assert.match(page, /<AdminDashboardSection[\s\S]*onNavigatePath=\{navigate\}[\s\S]*onNavigateSection=\{openDashboardDestination\}/);
   assert.match(page, /<AdminUsersSection[\s\S]*?initialRole=\{sectionContext\.role\}[\s\S]*?initialStatus=\{sectionContext\.status\}/);
   assert.match(page, /<AdminCirculationSection[\s\S]*?initialStatus=\{sectionContext\.status\}/);
   assert.match(page, /<AdminRequestsSection[\s\S]*?initialStatus=\{sectionContext\.status\}/);

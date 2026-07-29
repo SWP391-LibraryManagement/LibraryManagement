@@ -244,6 +244,51 @@ test('borrowing reports use the service-owned business date for SQL and row proj
   ]);
 });
 
+test('operations summary uses one SQL snapshot with canonical source states', async () => {
+  const capture = useRecordset([{
+    PendingBorrowRequests: 1,
+    ActiveLoans: 2,
+    OverdueLoans: 1,
+    OpenReservations: 3,
+    AvailableCopies: 4,
+    LowStockBooks: 2,
+  }]);
+
+  const summary = await reportRepository.getOperationsSummary(TEST_BUSINESS_DATE);
+
+  expect(capture.inputs.BusinessDate.toISOString()).toBe('2026-07-14T00:00:00.000Z');
+  expect(capture.query).toContain("FROM BorrowRequests WHERE Status = 'PENDING'");
+  expect(capture.query).toContain("FROM BorrowDetails WHERE Status = 'BORROWED'");
+  expect(capture.query).toContain("DueDate < @BusinessDate");
+  expect(capture.query).toContain("FROM Reservations WHERE Status IN ('ACTIVE', 'NOTIFIED')");
+  expect(capture.query).toContain("b.Status = 'ACTIVE'");
+  expect(capture.query).toContain("bc.Status = 'AVAILABLE'");
+  expect(capture.query).not.toContain('GETDATE()');
+  expect(summary).toEqual({
+    pendingBorrowRequests: 1,
+    activeLoans: 2,
+    overdueLoans: 1,
+    openReservations: 3,
+    availableCopies: 4,
+    lowStockBooks: 2,
+  });
+});
+
+test.each([
+  undefined,
+  null,
+  '',
+  '2026-2-03',
+  '2026-02-30',
+])('operations summary rejects invalid required business dates: %p', async (businessDate) => {
+  useRecordset([]);
+
+  await expect(
+    reportRepository.getOperationsSummary(businessDate)
+  ).rejects.toThrow('businessDate must be a valid YYYY-MM-DD date');
+  expect(getPool).not.toHaveBeenCalled();
+});
+
 test('borrowing period metrics do not substitute RequestDate when BorrowDate is missing', async () => {
   useRecordset([
     {

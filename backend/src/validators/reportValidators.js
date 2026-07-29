@@ -198,6 +198,11 @@ const userStatisticsValidators = [
   handleValidationErrors,
 ];
 
+// @spec FR-FE12-013
+const operationsSummaryValidators = [
+  rejectUnsupportedQueryParameters([]),
+];
+
 module.exports = {
   borrowingStatuses,
   copyStatuses,
@@ -205,5 +210,6 @@ module.exports = {
   membershipStatuses,
   borrowingReportValidators,
   inventoryReportValidators,
+  operationsSummaryValidators,
   userStatisticsValidators,
 };

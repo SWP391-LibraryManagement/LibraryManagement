@@ -154,14 +154,70 @@ test('member dashboard summarizes the canonical personal borrowing envelope', ()
   );
 });
 
-test('staff dashboard summarizes operational queues', () => {
+test('staff dashboard consumes the canonical FE12 operations snapshot', () => {
   assert.deepEqual(
-    buildStaffSummary(
-      { borrowRequests: [{ status: 'PENDING' }, { status: 'APPROVED' }] },
-      { reservations: [{ status: 'WAITING' }, { status: 'READY' }] },
-    ),
-    { pendingBorrowRequests: 1, waitingReservations: 1, readyReservations: 1 },
+    buildStaffSummary({
+      pendingBorrowRequests: 1,
+      activeLoans: 2,
+      overdueLoans: 3,
+      openReservations: 4,
+      availableCopies: 5,
+      lowStockBooks: 6,
+      generatedAt: '2026-07-29T00:00:00.000Z',
+    }),
+    {
+      pendingBorrowRequests: 1,
+      activeLoans: 2,
+      overdueLoans: 3,
+      openReservations: 4,
+      availableCopies: 5,
+      lowStockBooks: 6,
+      generatedAt: '2026-07-29T00:00:00.000Z',
+    },
   );
+});
+
+test('staff dashboard preserves missing or invalid KPIs as unavailable', () => {
+  assert.deepEqual(buildStaffSummary({
+    pendingBorrowRequests: 0,
+    activeLoans: '0',
+    overdueLoans: -1,
+  }), {
+    pendingBorrowRequests: 0,
+    activeLoans: null,
+    overdueLoans: null,
+    openReservations: null,
+    availableCopies: null,
+    lowStockBooks: null,
+    generatedAt: null,
+  });
+});
+
+test('staff dashboard uses one FE12 snapshot and fixed KPI drill-down routes', async () => {
+  const source = await readFile(new URL('../src/page/dashboard/RoleDashboardPage.jsx', import.meta.url), 'utf8');
+
+  assert.match(source, /reportApi\.operationsSummary\(\)/);
+  assert.doesNotMatch(source, /borrowingApi\.listAll/);
+  assert.doesNotMatch(source, /reservationApi\.listAll/);
+  for (const metric of [
+    'pendingBorrowRequests',
+    'activeLoans',
+    'overdueLoans',
+    'openReservations',
+    'availableCopies',
+    'lowStockBooks',
+  ]) {
+    assert.match(source, new RegExp(`summary\\.${metric}`));
+  }
+  for (const path of [
+    '/librarian/borrow-requests',
+    '/reports/borrowing',
+    '/librarian/reservations',
+    '/reports/inventory',
+  ]) {
+    assert.match(source, new RegExp(path.replaceAll('/', '\\/')));
+  }
+  assert.match(source, /Không tải được/);
 });
 
 test('personal profile inherits the shared app layout and sidebar', async () => {
