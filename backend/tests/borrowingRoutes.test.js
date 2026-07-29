@@ -623,19 +623,18 @@ describe('FE07 borrowing management', () => {
     expect(notificationStub.requester.createNotificationRequest).toHaveBeenCalledTimes(1);
     const notificationRequest = notificationStub.requester.createNotificationRequest.mock.calls[0][0];
     expect(notificationRequest).toEqual({
-      type: 'DUE_DATE_REMINDER',
+      type: 'GENERAL_SYSTEM',
       channel: 'EMAIL',
-      templateKey: 'DUE_DATE_REMINDER',
+      templateKey: 'BORROW_REQUEST_APPROVED',
       userId: member.userId,
       recipientEmail: 'approve.member@example.test',
       templateData: {
-        purpose: 'BORROW_APPROVED',
         requestId,
         dueDate: expect.any(Date),
       },
-      sourceEntityType: 'BORROWING',
+      sourceEntityType: 'BorrowRequest',
       sourceEntityId: requestId,
-      idempotencyKey: `FE07:DUE_DATE_REMINDER:BORROW_APPROVED:${requestId}`,
+      idempotencyKey: `FE07:BORROW_REQUEST_APPROVED:${requestId}`,
     });
     expect(notificationRequest).not.toHaveProperty('sourceFeature');
 
@@ -649,7 +648,7 @@ describe('FE07 borrowing management', () => {
   });
 
   test('member history exposes a rejected request without rewriting the detail status', async () => {
-    const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    const { app, authDependencies, borrowingDependencies, notificationStub } = makeTestApp();
     const member = await createVerifiedUser({
       app,
       authDependencies,
@@ -671,11 +670,27 @@ describe('FE07 borrowing management', () => {
       .expect(201);
     const requestId = created.body.borrowRequest.requestId;
 
-    await request(app)
+    const rejected = await request(app)
       .patch(`/api/borrow-requests/${requestId}/reject`)
       .set('Authorization', authHeader(librarian.accessToken))
       .send({ reason: 'Không đủ điều kiện xử lý.' })
       .expect(200);
+
+    expect(rejected.body.notificationWarning).toBeUndefined();
+    expect(notificationStub.requester.createNotificationRequest).toHaveBeenCalledWith({
+      type: 'GENERAL_SYSTEM',
+      channel: 'EMAIL',
+      templateKey: 'BORROW_REQUEST_REJECTED',
+      userId: member.userId,
+      recipientEmail: 'rejected.history.member@example.test',
+      templateData: { requestId },
+      sourceEntityType: 'BorrowRequest',
+      sourceEntityId: requestId,
+      idempotencyKey: `FE07:BORROW_REQUEST_REJECTED:${requestId}`,
+    });
+    expect(
+      notificationStub.requester.createNotificationRequest.mock.calls[0][0].templateData
+    ).not.toHaveProperty('reason');
 
     const history = await request(app)
       .get('/api/borrow-requests/me')
@@ -688,7 +703,7 @@ describe('FE07 borrowing management', () => {
   });
 
   test('return processing updates detail, copy, completion, and fine candidate data', async () => {
-    const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    const { app, authDependencies, borrowingDependencies, notificationStub } = makeTestApp();
     const member = await createVerifiedUser({
       app,
       authDependencies,
@@ -718,6 +733,12 @@ describe('FE07 borrowing management', () => {
     borrowingDependencies.state.borrowDetails.find(
       (detail) => detail.borrowDetailId === borrowDetailId
     ).dueDate = new Date('2026-06-01T00:00:00.000Z');
+    borrowingDependencies.state.reservations.push({
+      reservationId: 900,
+      userId: member.userId + 100,
+      copyId: 1,
+      status: 'ACTIVE',
+    });
 
     const returnResponse = await request(app)
       .patch(`/api/borrow-details/${borrowDetailId}/return`)
@@ -735,6 +756,25 @@ describe('FE07 borrowing management', () => {
       needsFineReview: true,
     });
     expect(returnResponse.body.fineCandidate.overdueDays).toBe(9);
+    expect(returnResponse.body.reservationQueueAction).toEqual({
+      copyId: 1,
+      hasActiveQueue: true,
+      actionPath: '/librarian/reservations',
+    });
+    expect(notificationStub.requester.createNotificationRequest).toHaveBeenLastCalledWith({
+      type: 'GENERAL_SYSTEM',
+      channel: 'EMAIL',
+      templateKey: 'BORROW_RETURNED',
+      userId: member.userId,
+      recipientEmail: 'return.member@example.test',
+      templateData: {
+        borrowDetailId,
+        returnStatus: 'DAMAGED',
+      },
+      sourceEntityType: 'BorrowDetail',
+      sourceEntityId: borrowDetailId,
+      idempotencyKey: `FE07:BORROW_RETURNED:${borrowDetailId}`,
+    });
     expect(borrowingDependencies.state.copies.find((copy) => copy.copyId === 1).status).toBe(
 
       'DAMAGED'
@@ -927,6 +967,9 @@ describe('FE07 borrowing management', () => {
       borrowDate: null,
       dueDate: null,
       returnDate: null,
+      requestDate: expect.stringMatching(/T/),
+      approvedAt: null,
+      processedAt: null,
       createdAt: expect.stringMatching(/T/),
     });
 
@@ -940,6 +983,9 @@ describe('FE07 borrowing management', () => {
       borrowDate: '2026-06-10',
       dueDate: '2026-06-24',
       returnDate: null,
+      requestDate: expect.stringMatching(/T/),
+      approvedAt: expect.stringMatching(/T/),
+      processedAt: expect.stringMatching(/T/),
       createdAt: expect.stringMatching(/T/),
       updatedAt: expect.stringMatching(/T/),
     });
@@ -1006,20 +1052,18 @@ describe('FE07 borrowing management', () => {
     expect(notificationStub.requester.createNotificationRequest).toHaveBeenCalledTimes(2);
     const notificationRequest = notificationStub.requester.createNotificationRequest.mock.calls[1][0];
     expect(notificationRequest).toEqual({
-      type: 'DUE_DATE_REMINDER',
+      type: 'GENERAL_SYSTEM',
       channel: 'EMAIL',
-      templateKey: 'DUE_DATE_REMINDER',
+      templateKey: 'BORROW_RENEWED',
       userId: member.userId,
       recipientEmail: 'renew.member@example.test',
       templateData: {
-        purpose: 'BORROW_RENEWED',
-        requestId,
         borrowDetailId: firstDetail.borrowDetailId,
         dueDate: '2026-07-08',
       },
-      sourceEntityType: 'BORROWING',
-      sourceEntityId: requestId,
-      idempotencyKey: `FE07:DUE_DATE_REMINDER:BORROW_RENEWED:${firstDetail.borrowDetailId}`,
+      sourceEntityType: 'BorrowDetail',
+      sourceEntityId: firstDetail.borrowDetailId,
+      idempotencyKey: `FE07:BORROW_RENEWED:${firstDetail.borrowDetailId}`,
     });
     expect(notificationRequest).not.toHaveProperty('sourceFeature');
 
@@ -1224,7 +1268,7 @@ describe('FE07 borrowing management', () => {
     ).toHaveLength(1);
     expect(
       notificationStub.requester.createNotificationRequest.mock.calls.filter(
-        ([notification]) => notification.templateData.purpose === 'BORROW_RENEWED'
+        ([notification]) => notification.templateKey === 'BORROW_RENEWED'
       )
     ).toHaveLength(1);
   });
@@ -1261,6 +1305,10 @@ describe('FE07 borrowing management', () => {
 
     expect(approveResponse.status).toBe(200);
     expect(approveResponse.body.borrowRequest.status).toBe('APPROVED');
+    expect(approveResponse.body.notificationWarning).toEqual({
+      code: 'BORROW_NOTIFICATION_REQUEST_FAILED',
+      message: 'Nghiệp vụ đã hoàn tất nhưng thông báo chưa được tạo.',
+    });
     const borrowDetailId = approveResponse.body.borrowRequest.details[0].borrowDetailId;
     expect(borrowingDependencies.state.copies.find((copy) => copy.copyId === 1).status).toBe(
       'BORROWED'
@@ -1273,6 +1321,10 @@ describe('FE07 borrowing management', () => {
 
     expect(renewResponse.status).toBe(200);
     expect(renewResponse.body.borrowDetail.renewalCount).toBe(1);
+    expect(renewResponse.body.notificationWarning).toEqual({
+      code: 'BORROW_NOTIFICATION_REQUEST_FAILED',
+      message: 'Nghiệp vụ đã hoàn tất nhưng thông báo chưa được tạo.',
+    });
     expect(notificationStub.requester.createNotificationRequest).toHaveBeenCalledTimes(2);
   });
 

@@ -1,7 +1,7 @@
 # Kế hoạch kiểm thử FE07 - Quản lý mượn sách
 
 Phiên bản: 0.9.0
-Trạng thái: H1 GOVERNANCE ACTIVATION - ĐÃ PHÊ DUYỆT; CHỜ MERGE ĐỂ THỰC THI
+Trạng thái: H2 LOCAL VALIDATION COMPLETE; UNCOMMITTED PENDING H2 APPROVAL
 Cập nhật lần cuối: 2026-07-29
 
 Đặc tả nguồn: `.sdd/specs/feat-borrowing-management/SPEC.md`
@@ -100,3 +100,17 @@ npm.cmd run trace:enforce
 
 Yêu cầu RED trước GREEN; focused suites, full backend/frontend, Chromium và
 traceability phải đạt trước H2.
+
+## 10. Bằng chứng H2 cục bộ v0.9.0
+
+- RED/GREEN: thiếu result template, queue action, timeline và cảnh báo trung
+  thực đều được tái hiện trước khi triển khai.
+- Backend FE07: 3 suite, 90/90 kiểm thử.
+- Nhóm frontend FE07/FE08: 56/56 kiểm thử.
+- Full gate: backend 69 suite/1.125 kiểm thử; frontend 269/269; lint và build
+  production đạt; system integration 11/11.
+- Chromium 1440x900: `E2E-CONNECTED-001` đạt 1/1, không tràn ngang và không có
+  lỗi console ngoài dự kiến.
+- Coverage backend: 91,89% statements, 80,72% branches, 97,61% functions,
+  91,81% lines.
+- Product diff chưa stage/commit/push và đang chờ H2.

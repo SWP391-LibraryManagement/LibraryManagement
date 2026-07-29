@@ -27,6 +27,7 @@ const BORROWING_ERROR_MESSAGES = {
   BORROW_REQUEST_NOT_PENDING: 'Chỉ yêu cầu đang chờ xử lý mới có thể được duyệt hoặc từ chối.',
   BORROW_DETAIL_NOT_FOUND: 'Không tìm thấy lượt mượn sách này.',
   BORROW_DETAIL_NOT_BORROWED: 'Chỉ sách đang được mượn mới có thể trả hoặc gia hạn.',
+  BORROW_STATE_CONFLICT: 'Trạng thái lượt mượn hoặc bản sao vừa thay đổi. Vui lòng tải lại dữ liệu trước khi thử lại.',
   INVALID_RETURN_DATE: 'Ngày trả phải nằm trong khoảng từ ngày mượn đến ngày hiện tại.',
   BOOK_INACTIVE: 'Sách này đã ngừng phục vụ nên không thể mượn.',
   RENEWAL_LIMIT_REACHED: 'Sách này đã được gia hạn một lần và không thể gia hạn thêm.',

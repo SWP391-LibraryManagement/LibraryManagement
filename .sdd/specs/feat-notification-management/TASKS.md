@@ -846,13 +846,16 @@ Các bước chi tiết, lệnh RED/GREEN và ranh giới commit nằm trong
 
 ## Batch FE07-FE12 v0.6.0
 
-- [ ] **FE10-I09 - Canonical FE07 template/source ownership và RED tests.**
+- [x] **FE10-I09 - Canonical FE07 template/source ownership và RED tests.**
   - Ánh xạ: BR-FE10-021/023, FR-FE10-017, AC-FE10-017/020.
-- [ ] **FE10-I10 - Idempotent persistence/replay và additive template seed.**
+- [x] **FE10-I10 - Idempotent persistence/replay và additive template seed.**
   - Ánh xạ: FR-FE10-018, AC-FE10-018.
-- [ ] **FE10-I11 - Inbox eligibility và fixed borrowing action path.**
+- [x] **FE10-I11 - Inbox eligibility và fixed borrowing action path.**
   - Ánh xạ: BR-FE10-022, FR-FE10-019/020, AC-FE10-019.
-- [ ] **FE10-I12 - Integration, sensitive scan và desktop evidence.**
+- [x] **FE10-I12 - Integration, sensitive scan và desktop evidence.**
   - Ánh xạ: `SL-002`, `SL-006`, `AT-002/003/006/009/012`.
+  - Bằng chứng H2 cục bộ: 4 suite FE10/175 kiểm thử; migration replay-safe;
+    system integration 11/11; Chromium liên hoàn 1/1 chứng minh bốn notification
+    không trùng, fixed action path và không lộ rejection reason.
 
-Không thêm bảng/kênh; product diff giữ uncommitted đến H2.
+Không thêm bảng/kênh; product diff vẫn giữ uncommitted tới khi H2 phê duyệt.

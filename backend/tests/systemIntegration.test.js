@@ -137,7 +137,8 @@ describe('System integration', () => {
       expect.arrayContaining([expect.objectContaining({
         userId: member.userId,
         sourceFeature: 'FE07',
-        type: 'DUE_DATE_REMINDER',
+        type: 'GENERAL_SYSTEM',
+        templateKey: 'BORROW_REQUEST_APPROVED',
       })])
     );
 
@@ -279,6 +280,170 @@ describe('System integration', () => {
       (copy) => copy.copyId === 1
     ).status).toBe('BORROWED');
     expect(setup.dependencies.notificationDependencies.state.notifications).toHaveLength(0);
+  });
+
+  test('SIT-010 connects FE07, FE08, FE10, and FE12 without duplicate side effects', async () => {
+    const setup = makeSystemIntegrationApp();
+    const memberA = await createVerifiedActor({
+      setup,
+      email: 'sit.connected.member-a@example.test',
+    });
+    const memberB = await createVerifiedActor({
+      setup,
+      email: 'sit.connected.member-b@example.test',
+    });
+    const librarian = await createVerifiedActor({
+      setup,
+      email: 'sit.connected.librarian@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+    const auth = { Authorization: authHeader(librarian.accessToken) };
+    const notificationState = setup.dependencies.notificationDependencies.state.notifications;
+
+    const initialSummary = await request(setup.app)
+      .get('/api/reports/operations-summary')
+      .set(auth)
+      .expect(200);
+    expect(initialSummary.body).toMatchObject({
+      pendingBorrowRequests: 0,
+      activeLoans: 0,
+      openReservations: 0,
+    });
+
+    const createdA = await request(setup.app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(memberA.accessToken))
+      .send({ copyIds: [1] })
+      .expect(201);
+    const requestAId = createdA.body.borrowRequest.requestId;
+    expect(createdA.body.borrowRequest).toMatchObject({ status: 'PENDING' });
+    expect(notificationState).toHaveLength(0);
+
+    const approvedA = await request(setup.app)
+      .patch(`/api/borrow-requests/${requestAId}/approve`)
+      .set(auth)
+      .send({})
+      .expect(200);
+    const detailAId = approvedA.body.borrowRequest.details[0].borrowDetailId;
+    expect(approvedA.body.borrowRequest.details[0].status).toBe('BORROWED');
+    expect(notificationState).toHaveLength(1);
+    expect(notificationState[0]).toMatchObject({
+      userId: memberA.userId,
+      sourceFeature: 'FE07',
+      templateKey: 'BORROW_REQUEST_APPROVED',
+      idempotencyKey: `FE07:BORROW_REQUEST_APPROVED:${requestAId}`,
+    });
+
+    await request(setup.app)
+      .post('/api/reservations')
+      .set('Authorization', authHeader(memberB.accessToken))
+      .send({ copyId: 1 })
+      .expect(201);
+    syncReservationClaims(
+      setup.dependencies.reservationDependencies.state,
+      setup.dependencies.borrowingDependencies.state,
+      1
+    );
+    expect(setup.dependencies.borrowingDependencies.state.reservations).toEqual([
+      expect.objectContaining({ userId: memberB.userId, copyId: 1, status: 'ACTIVE' }),
+    ]);
+
+    const returnedA = await request(setup.app)
+      .patch(`/api/borrow-details/${detailAId}/return`)
+      .set(auth)
+      .send({ condition: 'NORMAL', returnDate: '2026-07-14' })
+      .expect(200);
+    expect(returnedA.body).toMatchObject({
+      borrowDetail: { status: 'RETURNED' },
+      reservationQueueAction: {
+        copyId: 1,
+        hasActiveQueue: true,
+        actionPath: '/librarian/reservations',
+      },
+    });
+    expect(notificationState).toHaveLength(2);
+    expect(notificationState[1]).toMatchObject({
+      userId: memberA.userId,
+      templateKey: 'BORROW_RETURNED',
+    });
+
+    syncCopyStatus(
+      setup.dependencies.borrowingDependencies.state,
+      setup.dependencies.reservationDependencies.state,
+      1
+    );
+    const heldB = await request(setup.app)
+      .post('/api/reservations/process-queue')
+      .set(auth)
+      .send({ copyId: 1 })
+      .expect(200);
+    expect(heldB.body.selectedReservation).toMatchObject({
+      userId: memberB.userId,
+      copyId: 1,
+      status: 'NOTIFIED',
+    });
+    expect(notificationState).toHaveLength(3);
+    expect(notificationState[2]).toMatchObject({
+      userId: memberB.userId,
+      sourceFeature: 'FE08',
+      templateKey: 'RESERVATION_READY',
+    });
+
+    syncCopyStatus(
+      setup.dependencies.reservationDependencies.state,
+      setup.dependencies.borrowingDependencies.state,
+      1
+    );
+    syncReservationClaims(
+      setup.dependencies.reservationDependencies.state,
+      setup.dependencies.borrowingDependencies.state,
+      1
+    );
+    const createdB = await request(setup.app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(memberB.accessToken))
+      .send({ copyIds: [1] })
+      .expect(201);
+    const requestBId = createdB.body.borrowRequest.requestId;
+    const approvedB = await request(setup.app)
+      .patch(`/api/borrow-requests/${requestBId}/approve`)
+      .set(auth)
+      .send({})
+      .expect(200);
+    expect(approvedB.body.borrowRequest.details[0].status).toBe('BORROWED');
+    expect(setup.dependencies.borrowingDependencies.state.reservations[0].status).toBe('FULFILLED');
+    expect(notificationState).toHaveLength(4);
+
+    const beforeReplayCount = notificationState.length;
+    const requester = setup.services.notificationService.createSourceNotificationRequester('FE07');
+    const replay = await requester.createNotificationRequest({
+      type: 'GENERAL_SYSTEM',
+      channel: 'EMAIL',
+      templateKey: 'BORROW_REQUEST_APPROVED',
+      userId: memberA.userId,
+      recipientEmail: 'sit.connected.member-a@example.test',
+      sourceEntityType: 'BorrowRequest',
+      sourceEntityId: requestAId,
+      idempotencyKey: `FE07:BORROW_REQUEST_APPROVED:${requestAId}`,
+      templateData: {
+        requestId: requestAId,
+        dueDate: approvedA.body.borrowRequest.details[0].dueDate,
+      },
+    });
+    expect(replay.notificationId).toBe(notificationState[0].notificationId);
+    expect(notificationState).toHaveLength(beforeReplayCount);
+
+    const finalSummary = await request(setup.app)
+      .get('/api/reports/operations-summary')
+      .set(auth)
+      .expect(200);
+    expect(finalSummary.body).toMatchObject({
+      pendingBorrowRequests: 0,
+      activeLoans: 1,
+      openReservations: 0,
+    });
+    expect(finalSummary.body).not.toEqual(initialSummary.body);
   });
 
   test('SIT-003 FE08 queue holds a copy, notifies the member, and blocks another borrower', async () => {

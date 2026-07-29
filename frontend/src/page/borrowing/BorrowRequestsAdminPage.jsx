@@ -169,10 +169,15 @@ export default function BorrowRequestsAdminPage() {
     }
     setActionPending(true);
     try {
-      await borrowingApi.approve(requestId);
+      const approvedId = approveTarget.id;
+      const result = await borrowingApi.approve(requestId);
       setApproveTarget(null);
       await loadRequests();
-      showToast(`Đã duyệt yêu cầu ${approveTarget.id}.`, 'success');
+      if (result.notificationWarning) {
+        showToast(result.notificationWarning.message, 'warning');
+      } else {
+        showToast(`Đã duyệt yêu cầu ${approvedId}.`, 'success');
+      }
     } catch (error) {
       showToast(error.message, 'error');
       await loadRequests();
@@ -191,11 +196,15 @@ export default function BorrowRequestsAdminPage() {
     setActionPending(true);
     try {
       const rejectedId = rejectTarget.id;
-      await borrowingApi.reject(requestId, rejectReason.trim());
+      const result = await borrowingApi.reject(requestId, rejectReason.trim());
       setRejectTarget(null);
       setRejectReason('');
       await loadRequests();
-      showToast(`Đã từ chối yêu cầu ${rejectedId}.`, 'info');
+      if (result.notificationWarning) {
+        showToast(result.notificationWarning.message, 'warning');
+      } else {
+        showToast(`Đã từ chối yêu cầu ${rejectedId}.`, 'info');
+      }
     } catch (error) {
       showToast(error.message, 'error');
       await loadRequests();

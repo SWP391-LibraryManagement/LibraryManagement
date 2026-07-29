@@ -205,6 +205,14 @@ test('member history maps canonical borrow-detail rows without a request envelop
     borrowDate: '2026-07-01',
     dueDate: '2026-07-15',
     returnDate: null,
+    rawStatus: 'OVERDUE',
+    requestStatus: '',
+    requestDate: null,
+    approvedAt: null,
+    rejectedAt: null,
+    processedAt: null,
+    createdAt: null,
+    updatedAt: null,
     status: 'Overdue',
     renewalsLeft: 0,
   }]);
@@ -272,6 +280,18 @@ test('approval UI does not invent audit notes or eligibility evidence', async ()
   assert.match(source, /borrowingApi\.approve\(requestId\)/);
 });
 
+test('staff decisions report a committed result with a truthful notification warning', async () => {
+  const source = await readFile(
+    new URL('../src/page/borrowing/BorrowRequestsAdminPage.jsx', import.meta.url),
+    'utf8',
+  );
+
+  assert.match(source, /const result = await borrowingApi\.approve\(requestId\)/);
+  assert.match(source, /const result = await borrowingApi\.reject\(requestId, rejectReason\.trim\(\)\)/);
+  assert.match(source, /result\.notificationWarning/);
+  assert.match(source, /showToast\(result\.notificationWarning\.message,\s*'warning'\)/);
+});
+
 test('librarian borrow request review filters and refreshes canonical API state', async () => {
   const { mapBorrowRequestsToAdminRows } = await loadBorrowingViewModels();
   const source = await readFile(new URL('../src/page/borrowing/BorrowRequestsAdminPage.jsx', import.meta.url), 'utf8');
@@ -319,6 +339,20 @@ test('return UI omits the client UTC date and does not claim a fine handoff occu
   assert.match(source, /selected\.renewalCount > 0 \? `Đã gia hạn \$\{selected\.renewalCount\} lần` : 'Chưa gia hạn'/);
   assert.doesNotMatch(source, /<small>Quá hạn<\/small><strong>\{overdueDays > 0 \? `\$\{overdueDays\} ngày` : 'Đúng hạn'\}/);
   assert.match(source, /setReturnTarget\(loan\)/);
+});
+
+test('return queue handoff is persistent, fixed-path, and reports notification warnings truthfully', async () => {
+  const source = await readFile(new URL('../src/page/borrowing/ProcessReturnsPage.jsx', import.meta.url), 'utf8');
+
+  assert.match(source, /const RESERVATION_QUEUE_ACTION_PATH = '\/librarian\/reservations'/);
+  assert.match(source, /const \[queueHandoff, setQueueHandoff\] = useState\(null\)/);
+  assert.match(source, /result\.reservationQueueAction/);
+  assert.match(source, /handoff\?\.actionPath === RESERVATION_QUEUE_ACTION_PATH/);
+  assert.match(source, /className="return-queue-handoff"/);
+  assert.match(source, /Xử lý hàng đợi đặt chỗ/);
+  assert.match(source, /navigate\(queueHandoff\.actionPath,\s*\{\s*state:\s*\{\s*copyId:\s*queueHandoff\.copyId\s*\}/s);
+  assert.match(source, /result\.notificationWarning/);
+  assert.match(source, /showToast\(result\.notificationWarning\.message,\s*'warning'\)/);
 });
 
 test('overdue return selection can create a server-calculated FE09 fine', async () => {

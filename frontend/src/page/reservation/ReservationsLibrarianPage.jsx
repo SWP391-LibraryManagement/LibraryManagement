@@ -5,6 +5,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   Bell,
   CalendarClock,
@@ -67,14 +68,19 @@ function renderQueuePosition(item) {
 
 // @spec FR-FE08-035, AC-FE08-022
 export default function ReservationsLibrarianPage() {
-  const [view, setView] = useState('list');
+  const location = useLocation();
+  const handoffCopyId = Number(location.state?.copyId);
+  const initialQueueCopyId = Number.isInteger(handoffCopyId) && handoffCopyId > 0
+    ? handoffCopyId
+    : null;
+  const [view, setView] = useState(initialQueueCopyId ? 'queue' : 'list');
   const [rows, setRows] = useState([]);
   const [searchDraft, setSearchDraft] = useState('');
   const [search, setSearch] = useState('');
   const [bookFilter, setBookFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [page, setPage] = useState(1);
-  const [queueCopyId, setQueueCopyId] = useState(null);
+  const [queueCopyId, setQueueCopyId] = useState(initialQueueCopyId);
   const [notifyTarget, setNotifyTarget] = useState(null);
   const [notifying, setNotifying] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -208,17 +214,25 @@ export default function ReservationsLibrarianPage() {
         showToast('Không có thành viên đủ điều kiện trong hàng chờ.', 'info');
       } else {
         const selected = mapReservation(result.selectedReservation);
-        // @spec BR-FE10-012, MF-FE10-003 — đọc notificationStatus, không luôn báo success.
-        const feedback = getNotificationFeedback({
-          action: 'notify',
-          notificationStatus: result.notificationStatus,
-          customActionLabel: 'Đã giữ sách',
-          successMessage: `Đã giữ "${selected.title}" cho ${selected.member} và tạo thông báo sẵn sàng nhận.`,
-        });
-        showToast(feedback.message, feedback.type);
+        if (result.notificationWarning) {
+          showToast(result.notificationWarning.message, 'warning');
+        } else {
+          // @spec BR-FE10-012, MF-FE10-003 — đọc notificationStatus, không luôn báo success.
+          const feedback = getNotificationFeedback({
+            action: 'notify',
+            notificationStatus: result.notificationStatus,
+            customActionLabel: 'Đã giữ sách',
+            successMessage: `Đã giữ "${selected.title}" cho ${selected.member} và tạo thông báo sẵn sàng nhận.`,
+          });
+          showToast(feedback.message, feedback.type);
+        }
       }
       setNotifyTarget(null);
     } catch (error) {
+      if (error?.cause?.response?.status === 409) {
+        await loadReservations();
+        setNotifyTarget(null);
+      }
       showToast(error.message, 'error');
     } finally {
       setNotifying(false);

@@ -864,6 +864,11 @@ describe('FE08 reservation management', () => {
 
     expect(processResponse.status).toBe(200);
     expect(processResponse.body.selectedReservation.status).toBe('NOTIFIED');
+    expect(processResponse.body.notificationWarning).toEqual({
+      code: 'RESERVATION_NOTIFICATION_REQUEST_FAILED',
+      message: 'The reservation hold was created, but the notification request failed.',
+    });
+    expect(processResponse.body.selectedReservation).not.toHaveProperty('notificationWarning');
     expect(requester.createNotificationRequest).toHaveBeenCalled();
     expect(authDependencies.state.auditLogs).toEqual(
       expect.arrayContaining([

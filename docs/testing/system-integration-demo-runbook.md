@@ -1,6 +1,6 @@
 # System Integration Demo Runbook
 
-Date: 2026-07-14; Phase 3 evidence update: 2026-07-19
+Date: 2026-07-14; connected-flow update: 2026-07-29
 
 Audience: SWP391 project presentation
 
@@ -8,7 +8,10 @@ Target duration: five minutes
 
 ## 1. Evidence Boundary
 
-Use the FE07 and FE12 pages for the visible workflow. Use API responses or the safe SQL query below for FE09 and FE10 when the corresponding frontend screen has not been verified against the production SQL services.
+Use the FE07, FE08, FE10 and FE12 pages for the visible connected workflow.
+The authoritative staging database is Azure SQL. A green `/health` response
+proves only that the backend process is reachable; it does not prove the four
+feature state transitions or Azure SQL business data are correct.
 
 Do not use local-storage sample rows as proof of database integration. Do not display passwords, tokens, notification bodies, `SafePayload`, connection strings, or `.env` content.
 
@@ -26,25 +29,35 @@ npm.cmd run smoke:staging
   timing plus entry-bundle metrics are emitted without identities or tokens.
 - Start both applications with `npm.cmd run dev`.
 - Verify `Invoke-RestMethod http://localhost:3000/health` returns a healthy response.
-- Open the frontend URL printed by Vite and confirm login works for one approved Member and one Librarian account.
+- Open the frontend URL printed by Vite and confirm login works for two approved
+  Member accounts (A/B) and one Librarian account.
 - Record one synthetic `copyId` whose status is `AVAILABLE`.
-- Confirm the member is `ACTIVE`, membership is `APPROVED`, has fewer than five active loans, has no overdue active loan, and has no `UNPAID` fine.
-- Keep a small state sheet with `memberUserId`, `librarianUserId`, `copyId`, `requestId`, `borrowDetailId`, `notificationId`, and `fineId`.
+- Confirm both members are `ACTIVE`, membership is `APPROVED`, each has fewer
+  than five active loans, no overdue active loan and no `UNPAID` fine.
+- Keep a small state sheet with `memberAUserId`, `memberBUserId`,
+  `librarianUserId`, `copyId`, both `requestId` values, `borrowDetailId`,
+  `reservationId` and the four expected `notificationId` values.
 - Never place account passwords or bearer tokens in this file or presentation slides.
 
 ## 3. Five-Minute Flow
 
 | Time | Action | Evidence to show |
 | --- | --- | --- |
-| 0:00-0:30 | Show `/health`, login, and the selected `AVAILABLE` copy. | Backend reachable; correct Member session; clean fixture. |
-| 0:30-1:10 | Member opens `/borrowing/new` and creates a request. | Request is `PENDING`; detail is `REQUESTED`. |
-| 1:10-1:50 | Librarian opens `/librarian/borrow-requests` and approves it. | Request is `APPROVED`; detail/copy are `BORROWED`; due date is approval date +14 days. |
-| 1:50-2:20 | Show the FE10 due-date notification metadata. | `SourceFeature=FE07`, `SourceEntityType=BORROWING`, matching request ID, status `PENDING` or later delivery status. |
-| 2:20-3:10 | Use a prepared overdue fixture, then return it from `/librarian/returns`. | Return response contains `fineCandidate`; 14 overdue days maps to 70,000 VND at 5,000 VND/day. |
-| 3:10-4:10 | Calculate the FE09 fine, retry borrowing while unpaid, mark it paid, then retry. | `UNPAID` fine blocks the next borrow; `PAID` removes that blocker. |
-| 4:10-5:00 | Open `/reports/borrowing`. | FE12 shows the integrated request/loan activity and remains read-only. |
+| 0:00-0:25 | Show `/health`, name the Azure SQL boundary and login as Member A. | Reachability is a preflight only; the selected copy is `AVAILABLE`. |
+| 0:25-0:55 | A opens `/borrowing/new` and creates a request. | FE07 request is `PENDING`; detail is `REQUESTED`. |
+| 0:55-1:25 | Librarian opens `/librarian/borrow-requests` and approves. | FE07 request/detail/copy become `APPROVED`/`BORROWED`/`BORROWED`; one `BORROW_REQUEST_APPROVED` request exists. |
+| 1:25-1:50 | A opens the bell item. | FE10 marks it read, opens `/borrowing/history`, and FE07 timeline uses canonical timestamps. |
+| 1:50-2:20 | B opens `/reservations/mine` and reserves that borrowed copy. | FE08 reservation is `ACTIVE`; queue position is copy-scoped. |
+| 2:20-3:05 | Librarian returns A's copy and chooses **Xử lý hàng đợi đặt chỗ**. | FE07 is `RETURNED`; read-only `reservationQueueAction` opens the exact FE08 queue without mutating it. |
+| 3:05-3:35 | Librarian chooses **Giữ sách & thông báo**. | FE08 picks FIFO head, reservation/copy become `NOTIFIED`/`RESERVED`; FE10 contains one `RESERVATION_READY`. |
+| 3:35-4:15 | B opens **Reservation ready**, checks expiry and chooses **Tạo yêu cầu mượn**. | Deep link contains the held `bookId` and exact `copyId`; second FE07 request is `PENDING`. |
+| 4:15-4:40 | Librarian approves B's request. | Second detail/copy become `BORROWED`; FE08 reservation becomes `FULFILLED`. |
+| 4:40-5:00 | Librarian opens `/home`. | Six FE12 KPI values equal the current backend snapshot; pending/open are `0`, active loans are `1`. |
 
-For the overdue step, prepare the due date before the presentation. Do not edit a shared production record during the talk. The automated SQL proof uses due date `2026-06-30` and return date `2026-07-14`, producing exactly 14 overdue days.
+Do not turn the FE07 return button into an automatic FE08 queue mutation. The
+separate confirmation demonstrates responsibility and audit boundaries. If a
+post-commit FE10 request fails, show the safe warning and keep the already
+committed FE07/FE08 source state.
 
 ## 4. API Fallback
 
@@ -92,13 +105,17 @@ If the UI or API cannot start, use the deterministic automated evidence:
 
 ```powershell
 npm.cmd run test:system
+npx.cmd playwright test tests/e2e/fe07-fe12-connected-demo-flow.spec.js --project=chromium
 
 $env:SYSTEM_SQL_TEST_ALLOW_MUTATION = 'true'
 $env:SYSTEM_SQL_TEST_ENV_FILE = 'D:\SWP391\library-management-system\backend\.env'
 npm.cmd --prefix backend run test:sql:system
 ```
 
-The SQL suite creates synthetic rows, proves FE07 -> FE10 -> FE09 -> FE12 shared state, and verifies cleanup before exiting.
+The system test and connected Chromium test prove
+FE07 -> FE10 -> FE08 -> FE07 -> FE12 with deterministic synthetic users. The
+optional SQL suite proves the separately documented SQL-backed path and verifies
+cleanup before exiting.
 
 If port `4173` is already used by another local session, preserve that process
 and run the browser evidence on isolated ports:
@@ -125,8 +142,11 @@ SELECT
   CreatedAt
 FROM Notifications
 WHERE SourceFeature = 'FE07'
-  AND SourceEntityType = 'BORROWING'
-  AND SourceEntityId = @RequestId;
+  AND (
+    (SourceEntityType = 'BorrowRequest' AND SourceEntityId = @RequestId)
+    OR
+    (SourceEntityType = 'BorrowDetail' AND SourceEntityId = @BorrowDetailId)
+  );
 ```
 
 ## 6. Failure Fallbacks

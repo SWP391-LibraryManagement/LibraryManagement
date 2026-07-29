@@ -74,23 +74,34 @@ function createBorrowingService({
     await auditLogRepository.create(buildAuditEntry(context, action, extra));
   }
 
-  async function requestDueDateNotification({ userId, recipientEmail, sourceEntityId, templateData }) {
+  async function requestBorrowingResultNotification({
+    templateKey,
+    userId,
+    recipientEmail,
+    sourceEntityType,
+    sourceEntityId,
+    idempotencyKey,
+    templateData,
+  }) {
     try {
       await notificationRequester.createNotificationRequest({
-        type: 'DUE_DATE_REMINDER',
+        type: 'GENERAL_SYSTEM',
         channel: 'EMAIL',
-        templateKey: 'DUE_DATE_REMINDER',
+        templateKey,
         userId,
         recipientEmail,
         templateData,
-        sourceEntityType: 'BORROWING',
+        sourceEntityType,
         sourceEntityId,
-        idempotencyKey: `FE07:DUE_DATE_REMINDER:${templateData.purpose}:${
-          templateData.borrowDetailId || sourceEntityId
-        }`,
+        idempotencyKey,
       });
+      return null;
     } catch {
       // A notification failure must not undo a completed borrowing state change.
+      return {
+        code: 'BORROW_NOTIFICATION_REQUEST_FAILED',
+        message: 'Nghiệp vụ đã hoàn tất nhưng thông báo chưa được tạo.',
+      };
     }
   }
 
@@ -605,12 +616,14 @@ function createBorrowingService({
 
     const approvedRequest = approvalResult.borrowRequest;
 
-    await requestDueDateNotification({
+    const notificationWarning = await requestBorrowingResultNotification({
+      templateKey: 'BORROW_REQUEST_APPROVED',
       userId: approvedRequest.userId,
       recipientEmail: approvedRequest.member.email,
+      sourceEntityType: 'BorrowRequest',
       sourceEntityId: approvedRequest.requestId,
+      idempotencyKey: `FE07:BORROW_REQUEST_APPROVED:${approvedRequest.requestId}`,
       templateData: {
-        purpose: 'BORROW_APPROVED',
         requestId: approvedRequest.requestId,
         dueDate,
       },
@@ -618,6 +631,7 @@ function createBorrowingService({
 
     return {
       borrowRequest: approvedRequest,
+      ...(notificationWarning ? { notificationWarning } : {}),
     };
   }
 
@@ -652,8 +666,21 @@ function createBorrowingService({
       throw errors.conflict('BORROW_REQUEST_NOT_PENDING', 'Only pending borrow requests can be rejected.');
     }
 
+    const notificationWarning = await requestBorrowingResultNotification({
+      templateKey: 'BORROW_REQUEST_REJECTED',
+      userId: rejectedRequest.userId,
+      recipientEmail: rejectedRequest.member.email,
+      sourceEntityType: 'BorrowRequest',
+      sourceEntityId: rejectedRequest.requestId,
+      idempotencyKey: `FE07:BORROW_REQUEST_REJECTED:${rejectedRequest.requestId}`,
+      templateData: {
+        requestId: rejectedRequest.requestId,
+      },
+    });
+
     return {
       borrowRequest: rejectedRequest,
+      ...(notificationWarning ? { notificationWarning } : {}),
     };
   }
 
@@ -753,6 +780,18 @@ function createBorrowingService({
 
     const { authoritativeReturn, ...publicBorrowDetail } = returnedDetail;
     const overdueDays = authoritativeReturn.overdueDays;
+    const notificationWarning = await requestBorrowingResultNotification({
+      templateKey: 'BORROW_RETURNED',
+      userId: authoritativeReturn.userId,
+      recipientEmail: publicBorrowDetail.member.email,
+      sourceEntityType: 'BorrowDetail',
+      sourceEntityId: borrowDetailId,
+      idempotencyKey: `FE07:BORROW_RETURNED:${borrowDetailId}`,
+      templateData: {
+        borrowDetailId,
+        returnStatus: publicBorrowDetail.status,
+      },
+    });
 
     return {
       borrowDetail: publicBorrowDetail,
@@ -764,6 +803,12 @@ function createBorrowingService({
         overdueDays,
         needsFineReview: overdueDays > 0 || input.condition === 'DAMAGED' || input.condition === 'LOST',
       },
+      reservationQueueAction: {
+        copyId: authoritativeReturn.copyId,
+        hasActiveQueue: Boolean(authoritativeReturn.hasActiveQueue),
+        actionPath: '/librarian/reservations',
+      },
+      ...(notificationWarning ? { notificationWarning } : {}),
     };
   }
 
@@ -867,13 +912,14 @@ function createBorrowingService({
 
     const renewedDetail = renewalResult.borrowDetail;
 
-    await requestDueDateNotification({
+    const notificationWarning = await requestBorrowingResultNotification({
+      templateKey: 'BORROW_RENEWED',
       userId: borrowDetail.userId,
       recipientEmail: borrowDetail.member.email,
-      sourceEntityId: borrowDetail.requestId,
+      sourceEntityType: 'BorrowDetail',
+      sourceEntityId: borrowDetailId,
+      idempotencyKey: `FE07:BORROW_RENEWED:${borrowDetailId}`,
       templateData: {
-        purpose: 'BORROW_RENEWED',
-        requestId: borrowDetail.requestId,
         borrowDetailId,
         dueDate: newDueDate,
       },
@@ -881,6 +927,7 @@ function createBorrowingService({
 
     return {
       borrowDetail: renewedDetail,
+      ...(notificationWarning ? { notificationWarning } : {}),
     };
   }
 

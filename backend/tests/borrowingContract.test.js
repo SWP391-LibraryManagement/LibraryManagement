@@ -174,3 +174,50 @@ test('OpenAPI documents reservation-priority conflicts on borrow create and appr
     );
   }
 });
+
+// @spec FR-FE07-042, FR-FE08-038
+test('OpenAPI documents connected-flow handoff and non-blocking notification warnings', () => {
+  const notificationWarning = document.components.schemas.NotificationWarning;
+  const queueAction = document.components.schemas.ReservationQueueAction;
+  const returnPayload = document.components.schemas.BorrowDetailReturnPayload;
+  const processQueuePayload = document.paths['/api/reservations/process-queue']
+    .post.responses['200'].content['application/json'].schema;
+
+  expect(notificationWarning).toMatchObject({
+    type: 'object',
+    additionalProperties: false,
+    required: ['code', 'message'],
+  });
+  expect(notificationWarning.properties.code.enum).toEqual([
+    'BORROW_NOTIFICATION_REQUEST_FAILED',
+    'RESERVATION_NOTIFICATION_REQUEST_FAILED',
+    'RESERVATION_NOTIFY_AUDIT_FAILED',
+  ]);
+  expect(queueAction).toMatchObject({
+    type: 'object',
+    additionalProperties: false,
+    required: ['copyId', 'hasActiveQueue', 'actionPath'],
+  });
+  expect(queueAction.properties.actionPath.enum).toEqual(['/librarian/reservations']);
+  expect(returnPayload.required).toEqual([
+    'borrowDetail',
+    'fineCandidate',
+    'reservationQueueAction',
+  ]);
+  expect(returnPayload.properties.reservationQueueAction.$ref).toBe(
+    '#/components/schemas/ReservationQueueAction'
+  );
+
+  for (const payloadName of [
+    'BorrowRequestPayload',
+    'BorrowDetailPayload',
+    'BorrowDetailReturnPayload',
+  ]) {
+    expect(document.components.schemas[payloadName].properties.notificationWarning.$ref).toBe(
+      '#/components/schemas/NotificationWarning'
+    );
+  }
+  expect(processQueuePayload.properties.notificationWarning.$ref).toBe(
+    '#/components/schemas/NotificationWarning'
+  );
+});

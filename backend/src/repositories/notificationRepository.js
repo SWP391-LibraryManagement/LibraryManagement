@@ -5,6 +5,10 @@ let notificationColumnsPromise;
 const INBOX_ELIGIBILITY_SQL = `
   (
     (NotificationType = 'GENERAL_SYSTEM' AND TemplateKey = 'MEMBERSHIP_RESULT')
+    OR (NotificationType = 'GENERAL_SYSTEM' AND TemplateKey = 'BORROW_REQUEST_APPROVED')
+    OR (NotificationType = 'GENERAL_SYSTEM' AND TemplateKey = 'BORROW_REQUEST_REJECTED')
+    OR (NotificationType = 'GENERAL_SYSTEM' AND TemplateKey = 'BORROW_RENEWED')
+    OR (NotificationType = 'GENERAL_SYSTEM' AND TemplateKey = 'BORROW_RETURNED')
     OR (NotificationType = 'RESERVATION_AVAILABLE' AND TemplateKey = 'RESERVATION_READY')
     OR (NotificationType = 'DUE_DATE_REMINDER' AND TemplateKey = 'DUE_DATE_REMINDER')
     OR (NotificationType = 'OVERDUE_NOTICE' AND TemplateKey = 'OVERDUE_NOTICE')

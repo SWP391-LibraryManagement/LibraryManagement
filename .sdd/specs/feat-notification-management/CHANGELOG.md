@@ -579,3 +579,11 @@ bên dưới.
   bằng chứng độ phù hợp hệ thống, kiến trúc, tác động tương lai và tài liệu.
 - Đối soát FE02 và tích hợp người gọi FE09 vẫn hoãn rõ ràng và không được
   closeout này tuyên bố.
+
+## 2026-07-29 - Thông báo kết quả lưu thông v0.9.0
+
+- Bổ sung bốn template chính tắc cho kết quả phê duyệt, từ chối, gia hạn và trả sách của FE07; quyền sở hữu template được kiểm tra theo nguồn nghiệp vụ.
+- Ánh xạ mọi thông báo kết quả mượn về `/borrowing/history` và chỉ phát cho người nhận đủ điều kiện.
+- Thêm migration Azure SQL additive, idempotent và có thể chạy lại để upsert template mà không xóa dữ liệu hiện hữu.
+- Bằng chứng cục bộ: 175/175 kiểm thử FE10 tập trung; migration được kiểm tra cấu trúc và gói chuẩn bị Azure SQL tạo thành công.
+- Product diff vẫn chưa stage/commit/push, chờ duyệt H2.

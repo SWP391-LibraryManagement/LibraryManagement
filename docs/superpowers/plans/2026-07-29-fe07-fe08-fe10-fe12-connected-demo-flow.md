@@ -303,7 +303,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
 
   Each new FE07-owned row returns `actionPath: '/borrowing/history'`.
 
-- [ ] **Step 1: Write failing canonical-pair and source-ownership tests**
+- [x] **Step 1: Write failing canonical-pair and source-ownership tests**
 
   Add table-driven cases to `backend/tests/notificationRoutes.test.js`:
 
@@ -334,7 +334,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   cannot send `MEMBERSHIP_RESULT`, and public HTTP cannot provide a bound
   `GENERAL_SYSTEM` source.
 
-- [ ] **Step 2: Run RED FE10 tests**
+- [x] **Step 2: Run RED FE10 tests**
 
   Run:
 
@@ -344,7 +344,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
 
   Expected: FAIL because new templates are not canonical/seeded/eligible.
 
-- [ ] **Step 3: Implement per-template canonical ownership**
+- [x] **Step 3: Implement per-template canonical ownership**
 
   Refactor the FE10 constants to preserve exact ownership:
 
@@ -396,7 +396,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   }
   ```
 
-- [ ] **Step 4: Add inbox eligibility and fixed action mappings**
+- [x] **Step 4: Add inbox eligibility and fixed action mappings**
 
   Add four `ACTION_MAPPINGS` entries:
 
@@ -417,7 +417,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   Add the same exact pairs to `INBOX_ELIGIBILITY_SQL` and the in-memory
   `inboxTypeTemplatePairs`.
 
-- [ ] **Step 5: Add idempotent Azure SQL template migration and base seed**
+- [x] **Step 5: Add idempotent Azure SQL template migration and base seed**
 
   The migration must upsert these exact definitions:
 
@@ -436,7 +436,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   Use one transaction, `SET XACT_ABORT ON`, and update-or-insert per
   `TemplateCode`. Add the same rows to `database/Librarymanagement.sql`.
 
-- [ ] **Step 6: Run GREEN FE10 and migration tests**
+- [x] **Step 6: Run GREEN FE10 and migration tests**
 
   Run:
 
@@ -449,7 +449,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   Expected: focused FE10 backend/frontend tests pass; migration replay assertions
   pass; diff check is empty.
 
-- [ ] **Step 7: Record the slice checkpoint without committing product code**
+- [x] **Step 7: Record the slice checkpoint without committing product code**
 
   Save RED/GREEN commands and output in FE10 `TEST_PLAN.md`/`TASKS.md`.
   Leave product changes uncommitted for H2.
@@ -485,7 +485,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   }
   ```
 
-- [ ] **Step 1: Write failing service/route tests for all four source events**
+- [x] **Step 1: Write failing service/route tests for all four source events**
 
   Capture requester calls and assert:
 
@@ -503,13 +503,13 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   include `reason`; make requester throw and prove committed source status is
   preserved while response contains a safe `notificationWarning`.
 
-- [ ] **Step 2: Write failing repository test for locked queue evidence**
+- [x] **Step 2: Write failing repository test for locked queue evidence**
 
   Assert the return transaction reads `Reservations` under
   `UPDLOCK, HOLDLOCK`, and maps only `Status = 'ACTIVE'` to
   `authoritativeReturn.hasActiveQueue`.
 
-- [ ] **Step 3: Run RED FE07 backend tests**
+- [x] **Step 3: Run RED FE07 backend tests**
 
   Run:
 
@@ -520,7 +520,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   Expected: FAIL on missing FE07 result requests and missing
   `reservationQueueAction`.
 
-- [ ] **Step 4: Implement one safe post-commit requester helper**
+- [x] **Step 4: Implement one safe post-commit requester helper**
 
   Add:
 
@@ -558,7 +558,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
 
   Invoke it only after repository mutation resolves successfully.
 
-- [ ] **Step 5: Preserve queue evidence inside the return transaction**
+- [x] **Step 5: Preserve queue evidence inside the return transaction**
 
   Replace the discarded reservation lock query with:
 
@@ -586,7 +586,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   }
   ```
 
-- [ ] **Step 6: Run GREEN FE07 backend tests**
+- [x] **Step 6: Run GREEN FE07 backend tests**
 
   Run:
 
@@ -598,7 +598,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   Expected: all focused suites pass; mutation success survives notification
   failure; no rejection reason appears in persisted/request payload.
 
-- [ ] **Step 7: Record the slice checkpoint without committing product code**
+- [x] **Step 7: Record the slice checkpoint without committing product code**
 
   Update FE07 `TEST_PLAN.md`/`TASKS.md` evidence and leave code uncommitted.
 
@@ -624,7 +624,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   }>
   ```
 
-- [ ] **Step 1: Write failing pure-view-model tests**
+- [x] **Step 1: Write failing pure-view-model tests**
 
   Add cases:
 
@@ -645,7 +645,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
 
   Add BORROWED and RETURNED cases and assert missing timestamps remain `null`.
 
-- [ ] **Step 2: Run RED frontend tests**
+- [x] **Step 2: Run RED frontend tests**
 
   Run:
 
@@ -655,7 +655,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
 
   Expected: FAIL because the journey helper/component and handoff UI do not exist.
 
-- [ ] **Step 3: Implement canonical row projection and timeline component**
+- [x] **Step 3: Implement canonical row projection and timeline component**
 
   Preserve these raw members in `mapBorrowDetailsToHistoryRows`:
 
@@ -672,7 +672,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   Render an ordered list with `aria-label={`Hành trình ${row.title}`}`. Do not
   synthesize timestamps or infer a completed step from client time.
 
-- [ ] **Step 4: Implement return handoff and truthful notification warning**
+- [x] **Step 4: Implement return handoff and truthful notification warning**
 
   In `ProcessReturnsPage`:
 
@@ -704,13 +704,13 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
 
   Validate the server path against the fixed literal before navigation.
 
-- [ ] **Step 5: Extend blocker copy and stale guidance**
+- [x] **Step 5: Extend blocker copy and stale guidance**
 
   Add `BORROW_STATE_CONFLICT` and update FE07 conflict messages so every 409
   tells the user to reload, reject a stale request, resolve fines/overdue items,
   or process the FE08 queue as appropriate. Never display backend raw messages.
 
-- [ ] **Step 6: Add desktop CSS**
+- [x] **Step 6: Add desktop CSS**
 
   Use focused classes:
 
@@ -723,7 +723,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   Do not alter notification popover width/z-index or add mobile-specific
   redesign in this batch.
 
-- [ ] **Step 7: Run GREEN FE07 frontend tests**
+- [x] **Step 7: Run GREEN FE07 frontend tests**
 
   Run:
 
@@ -736,7 +736,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
 
   Expected: focused tests, lint and production build pass.
 
-- [ ] **Step 8: Record the slice checkpoint without committing product code**
+- [x] **Step 8: Record the slice checkpoint without committing product code**
 
   Update FE07 evidence files; leave implementation uncommitted.
 
@@ -764,7 +764,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   }
   ```
 
-- [ ] **Step 1: Write failing backend warning-isolation tests**
+- [x] **Step 1: Write failing backend warning-isolation tests**
 
   Make the requester throw while audit succeeds and assert:
 
@@ -778,7 +778,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
 
   Preserve the stronger audit-failure warning when both operations fail.
 
-- [ ] **Step 2: Write failing frontend stale/warning tests**
+- [x] **Step 2: Write failing frontend stale/warning tests**
 
   Assert `ReservationsLibrarianPage`:
 
@@ -799,7 +799,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
 
   and the exact link with both `bookId` and `copyId`.
 
-- [ ] **Step 3: Run RED FE08 tests**
+- [x] **Step 3: Run RED FE08 tests**
 
   Run:
 
@@ -811,19 +811,19 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   Expected: warning test fails because request failure is currently hidden when
   audit succeeds; stale reload assertion fails.
 
-- [ ] **Step 4: Implement enumerable safe warnings**
+- [x] **Step 4: Implement enumerable safe warnings**
 
   Always set a request-failure warning after the hold commits. If audit also
   fails, replace it with `RESERVATION_NOTIFY_AUDIT_FAILED`. Keep the warning
   outside `selectedReservation`; expose it only at the response envelope.
 
-- [ ] **Step 5: Implement UI warning and 409 refresh**
+- [x] **Step 5: Implement UI warning and 409 refresh**
 
   After a successful hold, show success only when no warning exists. When a
   warning exists, say the hold succeeded but notification has not been created.
   On 409, reload canonical reservation data before closing the confirmation.
 
-- [ ] **Step 6: Run GREEN FE08 tests**
+- [x] **Step 6: Run GREEN FE08 tests**
 
   Run:
 
@@ -836,7 +836,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   Expected: focused FE08 suites pass and no notification failure rolls back a
   `NOTIFIED` hold.
 
-- [ ] **Step 7: Record the slice checkpoint without committing product code**
+- [x] **Step 7: Record the slice checkpoint without committing product code**
 
   Update FE08 evidence files; leave implementation uncommitted.
 
@@ -866,7 +866,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
 
   HTTP adds `generatedAt` from the service clock.
 
-- [ ] **Step 1: Write failing repository/service/route tests**
+- [x] **Step 1: Write failing repository/service/route tests**
 
   Assert exact body:
 
@@ -889,7 +889,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   `2026-07-28` remains `BORROWED` in both SQL-contract and in-memory report
   projections even when the host date is later.
 
-- [ ] **Step 2: Run RED FE12 backend tests**
+- [x] **Step 2: Run RED FE12 backend tests**
 
   Run:
 
@@ -899,7 +899,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
 
   Expected: FAIL because endpoint/repository/service methods do not exist.
 
-- [ ] **Step 3: Implement the parameterized read-only SQL snapshot**
+- [x] **Step 3: Implement the parameterized read-only SQL snapshot**
 
   Add one repository query using `@BusinessDate`:
 
@@ -933,7 +933,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
 
   Map all SQL `BIGINT` values through `Number(...)`. Do not accept raw filters.
 
-- [ ] **Step 4: Add service/controller/route/validator**
+- [x] **Step 4: Add service/controller/route/validator**
 
   Service:
 
@@ -977,7 +977,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   ];
   ```
 
-- [ ] **Step 5: Implement in-memory parity**
+- [x] **Step 5: Implement in-memory parity**
 
   Extend the helper signature without breaking report-only tests:
 
@@ -995,7 +995,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   consume the explicit `businessDate` argument so in-memory parity cannot drift
   with the host clock.
 
-- [ ] **Step 6: Run GREEN FE12 backend tests**
+- [x] **Step 6: Run GREEN FE12 backend tests**
 
   Run:
 
@@ -1005,7 +1005,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
 
   Expected: all focused report suites pass.
 
-- [ ] **Step 7: Write failing frontend summary tests**
+- [x] **Step 7: Write failing frontend summary tests**
 
   Assert API and view model:
 
@@ -1023,7 +1023,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
 
   Add a missing-field case whose card value is `null`, never `0`.
 
-- [ ] **Step 8: Replace staff dashboard fan-out with FE12 summary**
+- [x] **Step 8: Replace staff dashboard fan-out with FE12 summary**
 
   Keep Member dashboard behavior unchanged. For staff:
 
@@ -1049,7 +1049,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   Render `Không tải được` for a `null` value and provide per-card retry by
   reloading the single snapshot. Do not derive counts from paginated rows.
 
-- [ ] **Step 9: Run GREEN FE12 frontend tests**
+- [x] **Step 9: Run GREEN FE12 frontend tests**
 
   Run:
 
@@ -1062,7 +1062,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
 
   Expected: focused frontend tests, lint and build pass.
 
-- [ ] **Step 10: Record the slice checkpoint without committing product code**
+- [x] **Step 10: Record the slice checkpoint without committing product code**
 
   Update FE12 evidence files; leave implementation uncommitted.
 
@@ -1089,14 +1089,14 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   -> FE12 operations summary matches final source state
   ```
 
-- [ ] **Step 1: Write a failing backend cross-feature integration test**
+- [x] **Step 1: Write a failing backend cross-feature integration test**
 
   Extend `backend/tests/systemIntegration.test.js` to use Member A, Member B and
   Librarian. Assert source state and notification count after every transition.
   Snapshot the FE12 body before and after; assert no duplicate notification after
   replaying an identical source request.
 
-- [ ] **Step 2: Run RED system test**
+- [x] **Step 2: Run RED system test**
 
   Run:
 
@@ -1107,7 +1107,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   Expected: new connected case fails until all slices are wired into the shared
   in-memory harness.
 
-- [ ] **Step 3: Extend the deterministic E2E harness**
+- [x] **Step 3: Extend the deterministic E2E harness**
 
   Add setup helpers only under `/__e2e__/` for:
 
@@ -1124,7 +1124,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   Use production routes for every business mutation. Harness-only endpoints may
   seed dates or inspect state; they must not perform the mutation being tested.
 
-- [ ] **Step 4: Write the desktop Playwright golden flow**
+- [x] **Step 4: Write the desktop Playwright golden flow**
 
   Set:
 
@@ -1148,7 +1148,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   browser console contains no unexpected error.
   ```
 
-- [ ] **Step 5: Run GREEN integration and browser tests**
+- [x] **Step 5: Run GREEN integration and browser tests**
 
   Run:
 
@@ -1159,7 +1159,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
 
   Expected: both pass at `1440x900`.
 
-- [ ] **Step 6: Update user/demo documentation**
+- [x] **Step 6: Update user/demo documentation**
 
   Add exact routes, roles, setup data, clicks and expected state transitions to:
 
@@ -1171,7 +1171,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   State that Azure staging uses Azure SQL and that `/health` alone is not
   business-flow evidence.
 
-- [ ] **Step 7: Run the full local verification gate**
+- [x] **Step 7: Run the full local verification gate**
 
   Run:
 
@@ -1193,7 +1193,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   `80%` branches/functions/lines/statements; traceability stays at or above
   `70%`; Azure-compatible schema is generated without database create/switch.
 
-- [ ] **Step 8: Record complete L1-L4 evidence and stop for H2**
+- [x] **Step 8: Record complete L1-L4 evidence and stop for H2**
 
   Record exact counts, command output, browser screenshot paths, migration hash
   and the complete local diff. Do not stage or commit product implementation
@@ -1214,7 +1214,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
 - Produces: exact-head PR, merged `main`, exact post-merge CI and Azure staging
   evidence against Azure SQL.
 
-- [ ] **Step 1: Present the H2 packet**
+- [x] **Step 1: Present the H2 packet**
 
   Include:
 
@@ -1249,7 +1249,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
 
   ```powershell
   git commit -m "feat: connect borrowing reservation notifications and reporting"
-  git push -u origin codex/impl-fe07-fe12-connected-demo-flow
+  git push -u origin feat/connected-circulation-flow
   ```
 
   Open a draft PR, wait for required CI, then mark ready only when the exact head

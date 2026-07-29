@@ -255,6 +255,15 @@ test('librarian page wires the hold expiration workflow and omits local-only act
   );
   assert.match(confirmNotifySource, /result\.selectedReservation/);
   assert.match(confirmNotifySource, /mapReservation\(result\.selectedReservation\)/);
+  assert.match(confirmNotifySource, /result\.notificationWarning/);
+  assert.match(
+    confirmNotifySource,
+    /showToast\(result\.notificationWarning\.message,\s*'warning'\)/,
+  );
+  assert.match(
+    confirmNotifySource,
+    /error\?\.cause\?\.response\?\.status === 409[\s\S]*await loadReservations\(\)/,
+  );
   assert.doesNotMatch(confirmNotifySource, /notifyTarget\.member/);
   const confirmDialogStart = source.indexOf('{notifyTarget && (');
   const confirmDialogEnd = source.indexOf('<Toast', confirmDialogStart);
@@ -274,6 +283,24 @@ test('librarian page wires the hold expiration workflow and omits local-only act
   assert.doesNotMatch(source, /> Đã giao</);
   assert.doesNotMatch(source, /title="Xóa"/);
   assert.doesNotMatch(source, /item\.status !== 'Ready to pick up'/);
+});
+
+test('return handoff opens the exact reservation queue selected by FE07', async () => {
+  const source = await readFile(
+    new URL('../src/page/reservation/ReservationsLibrarianPage.jsx', import.meta.url),
+    'utf8',
+  );
+
+  assert.match(source, /import \{ useLocation \} from 'react-router-dom'/);
+  assert.match(source, /const location = useLocation\(\)/);
+  assert.match(source, /const handoffCopyId = Number\(location\.state\?\.copyId\)/);
+  assert.match(
+    source,
+    /const initialQueueCopyId = Number\.isInteger\(handoffCopyId\)[\s\S]*\? handoffCopyId[\s\S]*: null/,
+  );
+  assert.match(source, /useState\(initialQueueCopyId \? 'queue' : 'list'\)/);
+  assert.match(source, /useState\(initialQueueCopyId\)/);
+  assert.doesNotMatch(source, /useEffect\(\(\) => \{[\s\S]*setQueueCopyId\(handoffCopyId\)/);
 });
 
 test('FE08 pages adopt shared operational patterns and staff page uses canonical API data', async () => {

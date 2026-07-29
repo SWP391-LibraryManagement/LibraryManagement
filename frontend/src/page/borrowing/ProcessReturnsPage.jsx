@@ -1,6 +1,7 @@
 /** FE07 - UC33 - Process Returns (Librarian). */
 
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PackageCheck, AlertTriangle, CheckCircle2, Search, RefreshCw, X, UserRound, Mail, Phone, Hash, MapPin, CalendarDays, Barcode, ClipboardCheck, ReceiptText } from 'lucide-react';
 
 import { borrowingApi, fineApi } from '../../api/libraryFeatureApi';
@@ -12,6 +13,7 @@ import { fmtDate, mapBorrowRequestsToReturnRows } from '../../utils/libraryFeatu
 
 const CONDITION_LABELS = { NORMAL: 'Tốt • không hư hỏng', DAMAGED: 'Hư hỏng', LOST: 'Thất lạc' };
 const PAGE_SIZE = 8;
+const RESERVATION_QUEUE_ACTION_PATH = '/librarian/reservations';
 
 function normalizeSearchValue(value) {
   return String(value || '')
@@ -23,6 +25,7 @@ function normalizeSearchValue(value) {
 }
 
 export default function ProcessReturnsPage() {
+  const navigate = useNavigate();
   const [loans, setLoans] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [returnTarget, setReturnTarget] = useState(null);
@@ -35,6 +38,7 @@ export default function ProcessReturnsPage() {
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [queueHandoff, setQueueHandoff] = useState(null);
   const [toast, showToast, clearToast] = useToast();
 
   async function loadLoans({ announce = false } = {}) {
@@ -132,15 +136,25 @@ export default function ProcessReturnsPage() {
     try {
       const returnedBook = returnTarget.book;
       const result = await borrowingApi.returnDetail(returnTarget.borrowDetailId, { condition });
+      const handoff = result.reservationQueueAction;
+      setQueueHandoff(
+        handoff?.hasActiveQueue && handoff?.actionPath === RESERVATION_QUEUE_ACTION_PATH
+          ? handoff
+          : null,
+      );
       setCondition('NORMAL');
       setReturnTarget(null);
       await loadLoans();
-      showToast(
-        result.fineCandidate?.needsFineReview
-          ? `Đã ghi nhận trả "${returnedBook}". Giao dịch có dữ liệu cần xem xét tiền phạt.`
-          : `Đã ghi nhận trả "${returnedBook}".`,
-        'success',
-      );
+      if (result.notificationWarning) {
+        showToast(result.notificationWarning.message, 'warning');
+      } else {
+        showToast(
+          result.fineCandidate?.needsFineReview
+            ? `Đã ghi nhận trả "${returnedBook}". Giao dịch có dữ liệu cần xem xét tiền phạt.`
+            : `Đã ghi nhận trả "${returnedBook}".`,
+          'success',
+        );
+      }
     } catch (error) {
       showToast(error.message, 'error');
     } finally {
@@ -156,6 +170,24 @@ export default function ProcessReturnsPage() {
       actions={<button className="btn btn-outline" onClick={() => loadLoans({ announce: true })} disabled={loading}><RefreshCw size={16} className={loading ? 'spin' : ''} /> {loading ? 'Đang tải...' : 'Tải lại'}</button>}
     >
       {notice && <DataNotice type="error" title="Không thể tải sách đang mượn">{notice}</DataNotice>}
+
+      {queueHandoff && (
+        <section className="return-queue-handoff" aria-live="polite">
+          <div>
+            <strong>Bản sao #{queueHandoff.copyId} đang có hàng đợi đặt chỗ</strong>
+            <span>Trả sách đã hoàn tất. Hàng đợi vẫn giữ nguyên cho đến khi thủ thư xử lý tại FE08.</span>
+          </div>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => navigate(queueHandoff.actionPath, {
+              state: { copyId: queueHandoff.copyId },
+            })}
+          >
+            Xử lý hàng đợi đặt chỗ
+          </button>
+        </section>
+      )}
 
       <section className="return-toolbar" aria-label="Tìm kiếm sách đang mượn">
         <div className="return-summary">

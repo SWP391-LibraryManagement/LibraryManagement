@@ -280,13 +280,17 @@ liệu vẫn chưa được commit, đang chờ H2 mới và H3 lặp lại.
 
 ## 2026-07-29 - Batch FE07-FE12 v0.6.0
 
-- [ ] **FE08-T048 - Owner-only held-copy CTA và exact `copyId` handoff.**
+- [x] **FE08-T048 - Owner-only held-copy CTA và exact `copyId` handoff.**
   - Ánh xạ: BR-FE08-021, FR-FE08-036, AC-FE08-024.
-- [ ] **FE08-T049 - Staff queue decision surface, giữ xử lý thủ công.**
+- [x] **FE08-T049 - Staff queue decision surface, giữ xử lý thủ công.**
   - Ánh xạ: FR-FE08-037, AC-FE08-023.
-- [ ] **FE08-T050 - Safe notification warning và stale 409 refresh.**
+- [x] **FE08-T050 - Safe notification warning và stale 409 refresh.**
   - Ánh xạ: BR-FE08-022, FR-FE08-038/039, AC-FE08-025.
-- [ ] **FE08-T051 - Race/integration/desktop evidence.**
+- [x] **FE08-T051 - Race/integration/desktop evidence.**
   - Ánh xạ: `SL-004`, `SL-006`, `AT-005`, `AT-007..AT-009`, `AT-012`.
+  - Bằng chứng H2 cục bộ: service/routes 2 suite/55 kiểm thử; nhóm frontend
+    FE07/FE08 56/56; system integration 11/11; Chromium liên hoàn 1/1 chứng
+    minh `ACTIVE -> NOTIFIED -> FULFILLED`, warning an toàn và handoff đúng
+    `copyId`.
 
-Product work bắt đầu sau governance activation merge và giữ uncommitted đến H2.
+Product diff vẫn giữ uncommitted cho tới khi H2 phê duyệt.

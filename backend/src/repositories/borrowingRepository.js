@@ -61,6 +61,11 @@ const borrowDetailSelect = `
     br.UserId,
     br.RequestDate,
     br.Status AS RequestStatus,
+    br.ApprovedAt,
+    br.RejectedAt,
+    br.ProcessedAt,
+    br.CreatedAt AS RequestCreatedAt,
+    br.UpdatedAt AS RequestUpdatedAt,
     u.Username,
     u.Email,
     u.Phone,
@@ -171,6 +176,12 @@ function mapBorrowDetail(row) {
     renewalCount: row.RenewalCount,
     requestStatus: row.RequestStatus,
     status: row.DetailStatus,
+    requestDate: row.RequestDate,
+    approvedAt: row.ApprovedAt,
+    rejectedAt: row.RejectedAt,
+    processedAt: row.ProcessedAt,
+    requestCreatedAt: row.RequestCreatedAt,
+    requestUpdatedAt: row.RequestUpdatedAt,
     createdAt: row.DetailCreatedAt,
     updatedAt: row.DetailUpdatedAt,
     member: mapMember(row),
@@ -1421,10 +1432,10 @@ async function returnBorrowDetail({
         WHERE RequestId = @RequestId;
       `);
 
-    await new sql.Request(transaction)
+    const reservationQueueResult = await new sql.Request(transaction)
       .input('CopyId', sql.Int, lockedDetail.CopyId)
       .query(`
-        SELECT ReservationId
+        SELECT ReservationId, Status
         FROM Reservations WITH (UPDLOCK, HOLDLOCK)
         WHERE CopyId = @CopyId
           AND Status IN ('ACTIVE', 'NOTIFIED');
@@ -1488,6 +1499,7 @@ async function returnBorrowDetail({
       copyId: Number(lockedDetail.CopyId),
       dueDate: lockedDetail.DueDate,
       returnDate: detail.ReturnDate,
+      hasActiveQueue: reservationQueueResult.recordset.some((row) => row.Status === 'ACTIVE'),
     };
     returnEvidence = typeof buildReturnEvidence === 'function'
       ? buildReturnEvidence(authoritativeReturn)
