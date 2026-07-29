@@ -7,13 +7,12 @@ Chủ sở hữu: Nhat
 
 Cập nhật: 2026-07-29
 
-Trạng thái quy trình: Mốc cơ sở Giai đoạn 2 vẫn hoàn tất. `main` sở hữu
-`FE08-T041` đến `FE08-T046`; tác vụ chỉ hồi quy căn chỉnh quy tắc là
-`FE08-T047`. Nhat đã phê duyệt phụ lục H2 `8d0059b` vào 2026-07-27; kết quả
-đã rà soát được commit là `f346ae0`, đẩy lên PR nháp #63 và lượt chạy CI
-`30244750250` đã đạt. Lần rà soát H3 đầu tiên không phát hiện lỗi mã hay quy
-tắc nghiệp vụ FE08 mà chỉ trả về diễn đạt quản trị cũ. Việc khắc phục chỉ tài
-liệu vẫn chưa được commit, đang chờ H2 mới và H3 lặp lại.
+Trạng thái quy trình hiện tại: Mốc cơ sở Giai đoạn 2 vẫn hoàn tất. `main` sở
+hữu `FE08-T041` đến `FE08-T046`; tác vụ chỉ hồi quy căn chỉnh quy tắc là
+`FE08-T047`. Đối soát FE07-FE12 đã merge qua PR #63 thành `29b4eb0` sau H3
+và CI. Batch liên hoàn v0.6.0 được H3 phê duyệt ở head `08e472f` và tích hợp
+vào `main` qua `ba29dc0`. CI hậu merge đã đạt; Azure staging vẫn chưa thể
+nghiệm thu vì Azure SQL đang `Paused`/hết quota, không phải finding mã nguồn.
 
 ---
 

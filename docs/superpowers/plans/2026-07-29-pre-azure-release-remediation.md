@@ -285,20 +285,20 @@ Expected: all automated checks pass; no statement says Azure migration or authen
 
 - [ ] **Step 1: Write the failing scanner tests**
 
-<!-- secret-scan: allow-synthetic -->
-
 Create tests with temporary files containing a synthetic AWS key and a database URL password, plus a safe fixture:
 
 ```js
 test('fails on high-confidence credential patterns without printing values', () => {
-  const result = runScannerWithFixture('AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE');
+  const syntheticKey = ['AKIA', 'IOSFODNN7EXAMPLE'].join('');
+  const result = runScannerWithFixture(`AWS_ACCESS_KEY_ID=${syntheticKey}`);
   assert.equal(result.status, 1);
   assert.match(result.stderr, /AWS access key/);
-  assert.doesNotMatch(result.stderr, /AKIAIOSFODNN7EXAMPLE/);
+  assert.doesNotMatch(result.stderr, new RegExp(syntheticKey));
 });
 
 test('allows marked synthetic test passwords', () => {
-  const result = runScannerWithFixture('// secret-scan: allow-synthetic\npassword=Phase3-test-only');
+  const password = ['Phase3', 'test-only'].join('-');
+  const result = runScannerWithFixture(`password=${password} // secret-scan: allow-synthetic`);
   assert.equal(result.status, 0);
 });
 ```
@@ -315,7 +315,7 @@ Expected: fail because the scanner script does not exist.
 
 - [ ] **Step 3: Implement the minimal scanner**
 
-Use Node built-ins only. Read tracked files as buffers, skip binary files and the scanner’s own test fixtures, normalize text, detect only high-confidence patterns (AWS access key, private key header, Azure publish profile XML secret, connection string password, and JWT-like assignment), support one-line `secret-scan: allow-synthetic`, and print only `path: pattern-name`.
+Use Node built-ins only. Read tracked files as buffers, skip binary files, normalize text, detect only high-confidence patterns (AWS access key, private key header, Azure publish profile XML secret, connection string password, and JWT-like assignment), support one-line `secret-scan: allow-synthetic` only for that line, and print only `path: pattern-name`.
 
 - [ ] **Step 4: Wire the scanner into CI**
 
@@ -323,7 +323,7 @@ Add:
 
 ```yaml
 - name: Secret literal scan
-  run: node scripts/check-tracked-secrets.js
+  run: npm run test:secrets
 ```
 
 Run before dependency audits. Keep `npm audit --audit-level=high` unchanged.

@@ -2,7 +2,7 @@
 
 Trạng thái: ĐÃ MERGE VÀO MAIN; CI HẬU MERGE ĐẠT; AZURE STAGING BỊ CHẶN DO AZURE SQL PAUSED/QUOTA
 Implementation State: PARTIAL
-Cổng giao hàng: V0.6.0 CHƯA KÍCH HOẠT
+Cổng giao hàng: V0.6.0 ĐÃ KÍCH HOẠT, H3 PHÊ DUYỆT VÀ TÍCH HỢP
 
 Chi tiết v0.5.0 hiện tại: FE10-I01..I08, biện pháp khắc phục hash migration và
 biện pháp khắc phục H3 vòng một có giới hạn đã hoàn tất. Fingerprint được H2
@@ -17,16 +17,13 @@ Trạng thái triển khai v0.4.5 trước đó: HOÀN TẤT
 
 Chủ sở hữu: Nhat
 
-Cập nhật: 2026-07-28
+Cập nhật: 2026-07-29
 
-Trạng thái quy trình: baseline giao hàng Giai đoạn 2/G1-G12 và v0.4.5 đã được
-phê duyệt bên dưới vẫn hoàn tất. Người dùng đã phê duyệt thiết kế hộp thư cá
-nhân v0.5.0 và SPEC bằng văn bản ngày 2026-07-27, sau đó phê duyệt FE10-I01..I08
-theo H1 ngày 2026-07-28. Governance PR #70 đã vào `main` dưới dạng `25c09ec`.
-FE10-I01 đến FE10-I08 và biện pháp khắc phục vòng một đã hoàn tất. Rebase
-`main@30f936d` đã được phê duyệt giữ bằng chứng triển khai và tiếp theo là H2
-mới, CI/Azure exact-head, H3 lặp lại, merge và bằng chứng CI/Azure hậu merge
-đã ghi ở trên.
+Trạng thái quy trình hiện tại: baseline Giai đoạn 2/G1-G12, hộp thư v0.5.0
+qua PR #75 và template kết quả FE07 v0.6.0 đều đã hoàn tất. Batch v0.6.0 được
+H3 phê duyệt ở head `08e472f` và tích hợp vào `main` qua `ba29dc0`; CI hậu
+merge đã đạt. Azure staging hiện bị chặn vì Azure SQL đang `Paused`/hết quota,
+không phải finding FE10.
 
 ---
 

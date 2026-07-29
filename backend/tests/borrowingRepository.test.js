@@ -382,6 +382,12 @@ test('return serializes one request before locking copies, details, and reservat
   );
 });
 
+test('return repository traces the return-state and reservation-handoff business rules', () => {
+  expect(repositorySource).toContain(
+    '// @spec FR-FE07-007, FR-FE07-008, BR-FE07-012, BR-FE07-013, FR-FE07-022'
+  );
+});
+
 test('renewal revalidates member and all blockers under canonical locks before mutation', () => {
   const start = repositorySource.indexOf('async function renewBorrowDetail');
   const end = repositorySource.indexOf('module.exports', start);

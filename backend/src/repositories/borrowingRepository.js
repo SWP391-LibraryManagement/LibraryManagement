@@ -1336,7 +1336,7 @@ async function rejectBorrowRequest({ requestId, rejectedBy, auditLogRepository, 
   return findBorrowRequestById(requestId);
 }
 
-// @spec FR-FE07-007, FR-FE07-008, FR-FE07-022 — return updates detail, copy
+// @spec FR-FE07-007, FR-FE07-008, BR-FE07-012, BR-FE07-013, FR-FE07-022 — return updates detail, copy
 // status, request completion, and authoritative evidence atomically.
 async function returnBorrowDetail({
   borrowDetailId,

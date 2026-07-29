@@ -18,6 +18,14 @@ async function loadReservationViewState() {
   }
 }
 
+async function loadReservationHandoffState() {
+  try {
+    return await import('../src/utils/reservationHandoffState.js');
+  } catch {
+    return {};
+  }
+}
+
 test('maps every FE08 reservation lifecycle state to its canonical UI state', async () => {
   const { statusToUi } = await loadViewModels();
 
@@ -302,8 +310,53 @@ test('return handoff opens the exact reservation queue selected by FE07', async 
   assert.match(source, /useState\(initialQueueCopyId\)/);
   assert.match(source, /const pendingHandoffCopyId = useRef\(initialQueueCopyId\)/);
   assert.match(source, /pendingHandoffCopyId\.current = null/);
-  assert.match(source, /setQueueNotice\('Hàng đợi đã thay đổi\. Hãy tải lại hoặc chọn bản sao khác\.'\)/);
+  assert.match(source, /resolveReservationQueueHandoff\(\{/);
+  assert.match(source, /setQueueNotice\(handoffState\.notice\)/);
+  assert.match(source, /<option value="" disabled>Chọn bản sao xem hàng đợi<\/option>/);
+  assert.match(source, /\/\/ @spec FR-FE08-035, FR-FE08-039, AC-FE08-022/);
   assert.doesNotMatch(source, /useEffect\(\(\) => \{[\s\S]*setQueueCopyId\(handoffCopyId\)/);
+});
+
+test('stale FE07 handoff never falls back to a different active reservation queue', async () => {
+  const { resolveReservationQueueHandoff, STALE_QUEUE_HANDOFF_NOTICE } = await loadReservationHandoffState();
+
+  assert.equal(typeof resolveReservationQueueHandoff, 'function');
+  assert.deepEqual(
+    resolveReservationQueueHandoff({
+      pendingCopyId: 42,
+      currentCopyId: 42,
+      reservations: [
+        { copyId: 42, status: 'Ready to pick up' },
+        { copyId: 99, status: 'Waiting' },
+      ],
+    }),
+    {
+      queueCopyId: null,
+      notice: STALE_QUEUE_HANDOFF_NOTICE,
+      consumePendingHandoff: true,
+    },
+  );
+});
+
+test('queue selection falls back only when no FE07 handoff is pending', async () => {
+  const { resolveReservationQueueHandoff } = await loadReservationHandoffState();
+
+  assert.equal(typeof resolveReservationQueueHandoff, 'function');
+  assert.deepEqual(
+    resolveReservationQueueHandoff({
+      pendingCopyId: null,
+      currentCopyId: null,
+      reservations: [
+        { copyId: 42, status: 'Ready to pick up' },
+        { copyId: 99, status: 'Waiting' },
+      ],
+    }),
+    {
+      queueCopyId: 99,
+      notice: '',
+      consumePendingHandoff: false,
+    },
+  );
 });
 
 test('FE08 pages adopt shared operational patterns and staff page uses canonical API data', async () => {

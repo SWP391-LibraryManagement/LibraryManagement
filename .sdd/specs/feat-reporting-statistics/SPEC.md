@@ -13,8 +13,10 @@
 # Thư mục tính năng: `.sdd/specs/feat-reporting-statistics/`
 
 > Trạng thái phân phối hiện tại (2026-07-29): `COMPLETE` cho phạm vi Giai đoạn
-> 1 và prerequisite ngày nghiệp vụ v0.2.1 đã merge qua PR #81; phạm vi v0.3.0
-> operations summary đã được H1 phê duyệt nhưng vẫn chờ H3/merge activation.
+> 1, prerequisite ngày nghiệp vụ v0.2.1 đã merge qua PR #81, governance v0.3.0
+> đã merge qua PR #80 và operations summary đã merge qua PR #82. Batch liên
+> hoàn sau đó đã được H3 phê duyệt và tích hợp vào `main` tại `ba29dc0`; CI hậu
+> merge đạt, còn Azure staging bị chặn do Azure SQL `Paused`/quota.
 > `TASKS.md` và `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`
 > là nguồn có thẩm quyền về trạng thái triển khai hiện tại. Các nhãn `Not Started` cũ hơn,
 > `PARTIAL`, `READY FOR REVIEW` hoặc đang chờ đánh giá được giữ lại bên dưới là
