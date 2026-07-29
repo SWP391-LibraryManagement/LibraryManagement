@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE10 Quản lý thông báo
 
+## 2026-07-29 - Đồng bộ trạng thái phát hành hậu merge (v0.6.1)
+
+- Xác nhận phạm vi FE10 đã merge vào `main` và CI hậu merge đạt.
+- Ghi rõ Azure staging chưa thể chấp nhận do Azure SQL đang `Paused` sau khi hết quota;
+  migration template kết quả vẫn được kiểm soát bằng preflight trước deployment.
+
 ## 2026-07-29 - Kích hoạt template kết quả FE07 (v0.6.0)
 
 - Thêm BR-FE10-021..023, FR-FE10-017..020 và AC-FE10-017..020.

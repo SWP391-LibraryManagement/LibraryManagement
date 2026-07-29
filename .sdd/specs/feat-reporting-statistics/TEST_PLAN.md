@@ -1,7 +1,7 @@
 # Kế hoạch kiểm thử FE12 - Báo cáo và thống kê
 
 Phiên bản: 0.3.0
-Trạng thái: H2 LOCAL VALIDATION COMPLETE; UNCOMMITTED PENDING H2 APPROVAL
+Trạng thái: ĐÃ MERGE VÀO MAIN; CI HẬU MERGE ĐẠT; AZURE STAGING BỊ CHẶN DO AZURE SQL PAUSED/QUOTA
 Cập nhật lần cuối: 2026-07-29
 
 Đặc tả nguồn: `.sdd/specs/feat-reporting-statistics/SPEC.md`

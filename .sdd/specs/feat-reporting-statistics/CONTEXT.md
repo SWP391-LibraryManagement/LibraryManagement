@@ -2,7 +2,7 @@
 
 # Phiên bản: 0.3.0
 
-# Trạng thái: H1 GOVERNANCE ACTIVATION - ĐÃ PHÊ DUYỆT; CHỜ H3/MERGE
+# Trạng thái: ĐÃ MERGE VÀO MAIN; CI HẬU MERGE ĐẠT; AZURE STAGING BỊ CHẶN DO AZURE SQL PAUSED/QUOTA
 
 # Chủ sở hữu: Nhat
 

@@ -1,6 +1,6 @@
 # TASKS.md - FE10 Quản lý thông báo
 
-Trạng thái: H1 GOVERNANCE ACTIVATION - ĐÃ PHÊ DUYỆT; CHỜ H3/MERGE
+Trạng thái: ĐÃ MERGE VÀO MAIN; CI HẬU MERGE ĐẠT; AZURE STAGING BỊ CHẶN DO AZURE SQL PAUSED/QUOTA
 Implementation State: PARTIAL
 Cổng giao hàng: V0.6.0 CHƯA KÍCH HOẠT
 

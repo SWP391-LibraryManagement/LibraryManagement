@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE12 Báo cáo và thống kê
 
+## 2026-07-29 - Đồng bộ trạng thái phát hành hậu merge (v0.3.1)
+
+- Xác nhận phạm vi FE12 đã merge vào `main` và CI hậu merge đạt.
+- Ghi rõ Azure staging chưa thể chấp nhận do Azure SQL đang `Paused` sau khi hết quota;
+  không xem đây là bằng chứng triển khai thành công.
+
 ## 2026-07-29 - Kích hoạt operations summary và clock xác định (v0.3.0)
 
 - Thêm BR-FE12-017..020, FR-FE12-012..015 và AC-FE12-012..016.

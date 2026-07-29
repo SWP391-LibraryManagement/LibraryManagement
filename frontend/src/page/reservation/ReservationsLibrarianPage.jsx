@@ -4,7 +4,7 @@
  * POST /api/reservations/expire-holds.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
   Bell,
@@ -73,6 +73,7 @@ export default function ReservationsLibrarianPage() {
   const initialQueueCopyId = Number.isInteger(handoffCopyId) && handoffCopyId > 0
     ? handoffCopyId
     : null;
+  const pendingHandoffCopyId = useRef(initialQueueCopyId);
   const [view, setView] = useState(initialQueueCopyId ? 'queue' : 'list');
   const [rows, setRows] = useState([]);
   const [searchDraft, setSearchDraft] = useState('');
@@ -86,6 +87,7 @@ export default function ReservationsLibrarianPage() {
   const [loading, setLoading] = useState(false);
   const [expiringHolds, setExpiringHolds] = useState(false);
   const [loadError, setLoadError] = useState('');
+  const [queueNotice, setQueueNotice] = useState('');
   const [lastUpdated, setLastUpdated] = useState('');
   const [toast, showToast, clearToast] = useToast();
 
@@ -107,12 +109,26 @@ export default function ReservationsLibrarianPage() {
       const mapped = allReservations.map(mapReservation);
       setRows(mapped);
       setLastUpdated(new Date().toLocaleTimeString('vi-VN'));
-      setQueueCopyId((current) => {
-        if (current && mapped.some((item) => (
-          item.copyId === current && isActiveReservationQueueStatus(item.status)
-        ))) return current;
-        return mapped.find((item) => isActiveReservationQueueStatus(item.status))?.copyId || null;
-      });
+      const requestedCopyId = pendingHandoffCopyId.current;
+      if (requestedCopyId) {
+        const requestedIsActive = mapped.some((item) => (
+          item.copyId === requestedCopyId && isActiveReservationQueueStatus(item.status)
+        ));
+        if (requestedIsActive) {
+          setQueueCopyId(requestedCopyId);
+        } else {
+          setQueueCopyId(null);
+          setQueueNotice('Hàng đợi đã thay đổi. Hãy tải lại hoặc chọn bản sao khác.');
+        }
+        pendingHandoffCopyId.current = null;
+      } else {
+        setQueueCopyId((current) => {
+          if (current && mapped.some((item) => (
+            item.copyId === current && isActiveReservationQueueStatus(item.status)
+          ))) return current;
+          return mapped.find((item) => isActiveReservationQueueStatus(item.status))?.copyId || null;
+        });
+      }
     } catch (error) {
       setRows([]);
       setLoadError(error.message || 'Không thể tải dữ liệu đặt chỗ.');
@@ -394,20 +410,33 @@ export default function ReservationsLibrarianPage() {
               )}
             </div>
           </>
-        ) : (
-          <div className="reservation-queue-card">
-            <div className="reservation-queue-header">
+            ) : (
+              <div className="reservation-queue-card">
+                <div className="reservation-queue-header">
               <div>
                 <p className="reservation-eyebrow">HÀNG ĐỢI ƯU TIÊN</p>
                 <h2>Hàng đợi theo bản sao</h2>
                 <p>Hệ thống xử lý theo thời gian đặt tăng dần; không cho phép thay đổi thứ tự thủ công.</p>
               </div>
-              <select value={queueCopyId ?? ''} onChange={(event) => setQueueCopyId(Number(event.target.value))} aria-label="Chọn bản sao xem hàng đợi" disabled={!queueCopies.length}>
+                  <select
+                    value={queueCopyId ?? ''}
+                    onChange={(event) => {
+                      setQueueNotice('');
+                      setQueueCopyId(Number(event.target.value));
+                    }}
+                    aria-label="Chọn bản sao xem hàng đợi"
+                    disabled={!queueCopies.length}
+                  >
                 {!queueCopies.length && <option value="">Chưa có bản sao được đặt chỗ</option>}
                 {queueCopies.map((item) => <option key={item.copyId} value={item.copyId}>{item.title} • {item.barcode}</option>)}
-              </select>
-            </div>
-            <div className="queue-list">
+                  </select>
+                </div>
+                {queueNotice && (
+                  <DataNotice type="warning" title="Handoff đặt chỗ đã thay đổi">
+                    {queueNotice}
+                  </DataNotice>
+                )}
+                <div className="queue-list">
               {queue.map((item, index) => (
                 <div className={`queue-item${index === 0 ? ' head' : ''}`} key={item.id}>
                   <span className="queue-pos">{item.queue ?? '—'}</span>

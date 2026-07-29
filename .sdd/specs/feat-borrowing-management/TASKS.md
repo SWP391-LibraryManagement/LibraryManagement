@@ -1,6 +1,6 @@
 # TASKS.md - FE07 Quản lý mượn sách
 
-Trạng thái: H1 GOVERNANCE ACTIVATION - ĐÃ PHÊ DUYỆT; CHỜ H3/MERGE
+Trạng thái: ĐÃ MERGE VÀO MAIN; CI HẬU MERGE ĐẠT; AZURE STAGING BỊ CHẶN DO AZURE SQL PAUSED/QUOTA
 Implementation State: PARTIAL
 
 Mở rộng hiện tại: triển khai và xác thực tự động v0.8.0 đã hoàn tất;

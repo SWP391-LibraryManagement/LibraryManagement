@@ -1499,7 +1499,9 @@ async function returnBorrowDetail({
       copyId: Number(lockedDetail.CopyId),
       dueDate: lockedDetail.DueDate,
       returnDate: detail.ReturnDate,
-      hasActiveQueue: reservationQueueResult.recordset.some((row) => row.Status === 'ACTIVE'),
+      hasActiveQueue: detailStatus === 'RETURNED'
+        && copyStatus === 'AVAILABLE'
+        && reservationQueueResult.recordset.some((row) => row.Status === 'ACTIVE'),
     };
     returnEvidence = typeof buildReturnEvidence === 'function'
       ? buildReturnEvidence(authoritativeReturn)

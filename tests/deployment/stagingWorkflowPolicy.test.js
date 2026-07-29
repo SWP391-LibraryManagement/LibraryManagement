@@ -29,6 +29,10 @@ test('staging deployment follows successful main CI and packages the reviewed st
     workflow,
     /Copy-Item [^\r\n]*database\/migrations\/add_change_password_otp_token_type\.sql[^\r\n]*deploy\/backend\/database\/migrations\//
   );
+  assert.match(
+    workflow,
+    /Copy-Item [^\r\n]*database\/migrations\/2026-07-29-fe10-borrowing-result-templates\.sql[^\r\n]*deploy\/backend\/database\/migrations\//
+  );
 });
 
 test('automatic and manual staging deployment require the fail-closed smoke check', () => {
@@ -44,6 +48,16 @@ test('FE10 staging deploy is ordered behind exact-head migration proof for autom
   assert.match(workflow, /FE10_INBOX_MIGRATION_SHA256/);
   assert.match(workflow, /\$migrationPath[\s\S]*?2026-07-27-fe10-personal-inbox-read-state\.sql/);
   assert.match(workflow, /MANUAL_CONFIRMATION[\s\S]*?fe10_inbox_migration_confirmed/);
+  assert.match(workflow, /fe10_borrowing_result_templates_confirmed:/);
+  assert.match(workflow, /FE10_BORROWING_RESULT_TEMPLATES_SHA256/);
+  assert.match(
+    workflow,
+    /\$resultMigrationPath[\s\S]*?2026-07-29-fe10-borrowing-result-templates\.sql/
+  );
+  assert.match(
+    workflow,
+    /RESULT_MANUAL_CONFIRMATION[\s\S]*?fe10_borrowing_result_templates_confirmed/
+  );
   assert.match(workflow, /deploy-backend:[\s\S]*?needs:\s*preflight/);
   assert.match(workflow, /deploy-frontend:[\s\S]*?needs:\s*deploy-backend/);
   assert.match(workflow, /smoke-test:[\s\S]*?needs:\s*\[deploy-backend, deploy-frontend\]/);
@@ -76,10 +90,12 @@ test('operator guide matches migration-gated CI deployment and canonical schema 
 
 test('operator guide keeps FE10 SQL operator-owned, repeatable, and ahead of backend/frontend deploy', () => {
   assert.match(guide, /2026-07-27-fe10-personal-inbox-read-state\.sql/);
+  assert.match(guide, /2026-07-29-fe10-borrowing-result-templates\.sql/);
   assert.match(guide, /sqlcmd\b[\s\S]*?-b/);
   assert.match(guide, /apply[^\n]*twice|execute[^\n]*twice|run[^\n]*twice/i);
   assert.match(guide, /temporary[^\n]*firewall rule/i);
   assert.match(guide, /fe10_inbox_migration_confirmed/);
   assert.match(guide, /FE10_INBOX_MIGRATION_SHA256/);
+  assert.match(guide, /FE10_BORROWING_RESULT_TEMPLATES_SHA256/);
   assert.match(guide, /backend[\s\S]*frontend[\s\S]*browser/i);
 });

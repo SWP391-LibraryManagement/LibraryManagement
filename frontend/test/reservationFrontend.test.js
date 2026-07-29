@@ -300,6 +300,9 @@ test('return handoff opens the exact reservation queue selected by FE07', async 
   );
   assert.match(source, /useState\(initialQueueCopyId \? 'queue' : 'list'\)/);
   assert.match(source, /useState\(initialQueueCopyId\)/);
+  assert.match(source, /const pendingHandoffCopyId = useRef\(initialQueueCopyId\)/);
+  assert.match(source, /pendingHandoffCopyId\.current = null/);
+  assert.match(source, /setQueueNotice\('Hàng đợi đã thay đổi\. Hãy tải lại hoặc chọn bản sao khác\.'\)/);
   assert.doesNotMatch(source, /useEffect\(\(\) => \{[\s\S]*setQueueCopyId\(handoffCopyId\)/);
 });
 
