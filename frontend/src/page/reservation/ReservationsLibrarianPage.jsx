@@ -4,7 +4,7 @@
  * POST /api/reservations/expire-holds.
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
   Bell,
@@ -83,6 +83,7 @@ export default function ReservationsLibrarianPage() {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [page, setPage] = useState(1);
   const [queueCopyId, setQueueCopyId] = useState(initialQueueCopyId);
+  const queueCopyIdRef = useRef(initialQueueCopyId);
   const [notifyTarget, setNotifyTarget] = useState(null);
   const [notifying, setNotifying] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -92,7 +93,11 @@ export default function ReservationsLibrarianPage() {
   const [lastUpdated, setLastUpdated] = useState('');
   const [toast, showToast, clearToast] = useToast();
 
-  async function loadReservations() {
+  useEffect(() => {
+    queueCopyIdRef.current = queueCopyId;
+  }, [queueCopyId]);
+
+  const loadReservations = useCallback(async () => {
     setLoading(true);
     setLoadError('');
     try {
@@ -112,7 +117,7 @@ export default function ReservationsLibrarianPage() {
       setLastUpdated(new Date().toLocaleTimeString('vi-VN'));
       const handoffState = resolveReservationQueueHandoff({
         pendingCopyId: pendingHandoffCopyId.current,
-        currentCopyId: queueCopyId,
+        currentCopyId: queueCopyIdRef.current,
         reservations: mapped,
       });
       setQueueCopyId(handoffState.queueCopyId);
@@ -127,12 +132,12 @@ export default function ReservationsLibrarianPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     const timer = window.setTimeout(loadReservations, 0);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [loadReservations]);
 
   const books = useMemo(
     () => ['ALL', ...new Set(rows.map((item) => item.title).filter(Boolean))],

@@ -1,14 +1,6 @@
 const errors = require('../utils/safeErrors');
+const { hasAnyRole } = require('../utils/featureAccess');
 const { formatBusinessDate } = require('../utils/libraryBusinessTime');
-
-function normalizeRole(role) {
-  return String(role || '').toUpperCase();
-}
-
-function hasAnyRole(user, allowedRoles) {
-  const currentRoles = Array.isArray(user?.roles) ? user.roles.map(normalizeRole) : [];
-  return allowedRoles.map(normalizeRole).some((role) => currentRoles.includes(role));
-}
 
 function createReportService({ reportRepository, auditLogRepository, clock = () => new Date() } = {}) {
   if (!reportRepository) {
@@ -36,12 +28,6 @@ function createReportService({ reportRepository, auditLogRepository, clock = () 
   }
 
   function requireStaff(actor) {
-    if (!hasAnyRole(actor, ['LIBRARIAN', 'ADMIN'])) {
-      throw errors.forbidden('ROLE_REQUIRED', 'Your role cannot perform this action.');
-    }
-  }
-
-  function requireAdminOrApprovedStaff(actor) {
     if (!hasAnyRole(actor, ['LIBRARIAN', 'ADMIN'])) {
       throw errors.forbidden('ROLE_REQUIRED', 'Your role cannot perform this action.');
     }
@@ -104,7 +90,7 @@ function createReportService({ reportRepository, auditLogRepository, clock = () 
   }
 
   async function getUserStatistics(filters, actor, context = {}) {
-    requireAdminOrApprovedStaff(actor);
+    requireStaff(actor);
     const report = await reportRepository.getUserStatistics(filters);
 
     await writeAudit(context, 'REPORT_USERS_VIEW', {

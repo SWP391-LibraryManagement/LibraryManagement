@@ -1,4 +1,5 @@
 const errors = require('../utils/safeErrors');
+const { hasAnyRole, toPositiveInteger } = require('../utils/featureAccess');
 const {
   formatBusinessDate,
   businessDateUtcBounds,
@@ -14,25 +15,6 @@ const LOAN_DAYS = 14;
 const RENEWAL_LIMIT = 1;
 const ACTIVE_BORROW_STATUSES = ['BORROWED', 'OVERDUE'];
 const TERMINAL_DETAIL_STATUSES = ['RETURNED', 'LOST', 'DAMAGED'];
-
-function normalizeRole(role) {
-  return String(role || '').toUpperCase();
-}
-
-function hasAnyRole(user, allowedRoles) {
-  const currentRoles = Array.isArray(user?.roles) ? user.roles.map(normalizeRole) : [];
-  return allowedRoles.map(normalizeRole).some((role) => currentRoles.includes(role));
-}
-
-function toPositiveInteger(value, fieldName) {
-  const numberValue = Number(value);
-
-  if (!Number.isInteger(numberValue) || numberValue <= 0) {
-    throw errors.badRequest('INVALID_ID', `${fieldName} must be a positive integer.`);
-  }
-
-  return numberValue;
-}
 
 function createBorrowingService({
   borrowingRepository,
