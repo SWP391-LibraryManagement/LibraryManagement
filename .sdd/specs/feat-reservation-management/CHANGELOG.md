@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE08 Quản lý đặt chỗ
 
+## 2026-07-29 - Đồng bộ trạng thái phát hành hậu merge (v0.6.2)
+
+- Xác nhận phạm vi FE08 đã merge vào `main` và CI hậu merge đạt.
+- Ghi rõ Azure staging chưa thể chấp nhận do Azure SQL đang `Paused` sau khi hết quota;
+  không xem đây là bằng chứng triển khai thành công.
+
 ## 2026-07-29 - Giữ nguyên bản sao khi handoff bị lỗi thời (v0.6.1)
 
 - FE08 chỉ mở đúng `copyId` do FE07 bàn giao trong lần tải đầu tiên.

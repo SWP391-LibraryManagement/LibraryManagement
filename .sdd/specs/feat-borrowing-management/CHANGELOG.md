@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE07 Quản lý mượn sách
 
+## 2026-07-29 - Đồng bộ trạng thái phát hành hậu merge (v0.9.2)
+
+- Xác nhận phạm vi FE07 đã merge vào `main` và CI hậu merge đạt.
+- Ghi rõ Azure staging chưa thể chấp nhận do Azure SQL đang `Paused` sau khi hết quota;
+  không xem đây là bằng chứng triển khai thành công.
+
 ## 2026-07-29 - Chặn handoff hàng đợi cho lượt trả hỏng/thất lạc (v0.9.1)
 
 - `reservationQueueAction.hasActiveQueue` chỉ còn `true` khi lượt trả là `RETURNED`,

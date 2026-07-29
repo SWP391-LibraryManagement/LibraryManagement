@@ -178,6 +178,7 @@ database/migrations/2026-07-19-fe11-finalization.sql
 database/migrations/2026-07-22-borrow-request-workflow-columns.sql
 database/migrations/2026-07-23-fe10-processing-status.sql
 database/migrations/2026-07-27-fe10-personal-inbox-read-state.sql
+database/migrations/2026-07-29-fe10-borrowing-result-templates.sql
 ```
 
 Do not run `2026-07-22-library-metadata-compatibility.sql` manually. The backend startup gate owns
@@ -218,18 +219,20 @@ GitHub-hosted runner IP ranges or widen the firewall.
 After startup succeeds, verify `GET /health/ready` returns HTTP `200` with
 `checks.catalogMetadata = "ok"`. A successful `main` CI run automatically starts the staging
 workflow for that exact commit; `workflow_dispatch` remains available for an operator rerun. Both
-paths are fail-closed behind the exact FE10 migration file hash stored in the GitHub `staging`
+paths are fail-closed behind the exact FE10 migration file hashes stored in the GitHub `staging`
 Environment. The workflow itself does not connect to SQL or execute SQL; schema reconciliation runs
 inside the configured backend application identity before listen. The deployment package includes
 both the catalog metadata compatibility migration and the `CHANGE_PASSWORD_OTP` token-type
-compatibility migration; startup verifies both postconditions before serving requests.
+compatibility migration plus the reviewed FE10 borrowing-result template script. The latter remains
+operator-owned and is packaged only for auditable release evidence; startup does not execute it.
 
-### FE10 Personal Inbox Migration Gate
+### FE10 Migration Gates
 
-The FE10 inbox migration is operator-owned and must finish before either application is deployed.
-Apply `database/migrations/2026-07-27-fe10-personal-inbox-read-state.sql` twice with `sqlcmd -b`.
-The second execution is an idempotence check; it must not backfill notifications created after the
-first execution.
+Both FE10 migrations are operator-owned and must finish before either application is deployed:
+`database/migrations/2026-07-27-fe10-personal-inbox-read-state.sql` and
+`database/migrations/2026-07-29-fe10-borrowing-result-templates.sql`. Apply each migration twice
+with `sqlcmd -b`. The second execution is an idempotence check; the inbox migration must not
+backfill notifications created after its first execution.
 
 1. Resolve the operator's current public IP without logging credentials.
 2. Add one temporary Azure SQL firewall rule whose start and end values are that exact IP.
@@ -238,22 +241,28 @@ first execution.
 4. Run the migration twice, stopping on the first SQL error:
 
 ```powershell
-$fe10Migration = Resolve-Path 'database/migrations/2026-07-27-fe10-personal-inbox-read-state.sql'
+$fe10InboxMigration = Resolve-Path 'database/migrations/2026-07-27-fe10-personal-inbox-read-state.sql'
+$fe10ResultTemplatesMigration = Resolve-Path 'database/migrations/2026-07-29-fe10-borrowing-result-templates.sql'
 
-sqlcmd -S $env:FE10_SQL_SERVER -d $env:FE10_SQL_DATABASE `
-  -U $env:FE10_SQL_USER -P $env:FE10_SQL_PASSWORD -b -i $fe10Migration
-sqlcmd -S $env:FE10_SQL_SERVER -d $env:FE10_SQL_DATABASE `
-  -U $env:FE10_SQL_USER -P $env:FE10_SQL_PASSWORD -b -i $fe10Migration
+foreach ($fe10Migration in @($fe10InboxMigration, $fe10ResultTemplatesMigration)) {
+  sqlcmd -S $env:FE10_SQL_SERVER -d $env:FE10_SQL_DATABASE `
+    -U $env:FE10_SQL_USER -P $env:FE10_SQL_PASSWORD -b -i $fe10Migration
+  sqlcmd -S $env:FE10_SQL_SERVER -d $env:FE10_SQL_DATABASE `
+    -U $env:FE10_SQL_USER -P $env:FE10_SQL_PASSWORD -b -i $fe10Migration
+}
 ```
 
 5. Query only aggregate postconditions: one nullable `ReadAt` column; one
    `IX_Notifications_User_ReadAt_CreatedAt` index; eligible historical rows backfilled to
    `CreatedAt`; sensitive, userless, and post-first-run rows still unread; and unchanged row count,
-   delivery status, attempt count, and idempotency-key count.
+   delivery status, attempt count, and idempotency-key count. Confirm exactly one active template
+   for each of `BORROW_REQUEST_APPROVED`, `BORROW_REQUEST_REJECTED`, `BORROW_RENEWED`, and
+   `BORROW_RETURNED`.
 6. Remove the exact temporary firewall rule immediately, even when a command fails.
-7. Compute the reviewed migration SHA-256 and store it as the non-secret GitHub `staging`
-   Environment variable `FE10_INBOX_MIGRATION_SHA256`. This value proves the exact migration file
-   hash that was applied; never set or update it before steps 1-6 pass:
+7. Compute each reviewed migration SHA-256 and store it as non-secret GitHub `staging`
+   Environment variables `FE10_INBOX_MIGRATION_SHA256` and
+   `FE10_BORROWING_RESULT_TEMPLATES_SHA256`. These values prove the exact migration file hashes
+   that were applied; never set or update either before steps 1-6 pass:
 
    Record the hash of the bytes actually applied by the operator. Git may render the same UTF-8
    text with LF on the Linux deployment runner and CRLF on Windows. The preflight derives the exact
@@ -261,16 +270,23 @@ sqlcmd -S $env:FE10_SQL_SERVER -d $env:FE10_SQL_DATABASE `
    matches one of those two renderings. It does not accept any migration-content change.
 
 ```powershell
-$fe10MigrationHash = (Get-FileHash -Algorithm SHA256 $fe10Migration).Hash.ToLowerInvariant()
+$fe10InboxMigrationHash = (Get-FileHash -Algorithm SHA256 $fe10InboxMigration).Hash.ToLowerInvariant()
+$fe10ResultTemplatesMigrationHash = (Get-FileHash -Algorithm SHA256 $fe10ResultTemplatesMigration).Hash.ToLowerInvariant()
 gh variable set FE10_INBOX_MIGRATION_SHA256 `
   --env staging `
   --repo SWP391-LibraryManagement/LibraryManagement `
-  --body $fe10MigrationHash
+  --body $fe10InboxMigrationHash
+gh variable set FE10_BORROWING_RESULT_TEMPLATES_SHA256 `
+  --env staging `
+  --repo SWP391-LibraryManagement/LibraryManagement `
+  --body $fe10ResultTemplatesMigrationHash
 ```
 
 8. Before H3, run `Deploy staging` manually for the exact PR branch with
-   `fe10_inbox_migration_confirmed=true`. The boolean is an additional operator acknowledgement;
-   preflight still compares the checked-out migration file with `FE10_INBOX_MIGRATION_SHA256`.
+   `fe10_inbox_migration_confirmed=true` and
+   `fe10_borrowing_result_templates_confirmed=true`. The booleans are additional operator
+   acknowledgements; preflight still compares both checked-out migration files with their
+   corresponding staging Environment variables.
 
 Deployment then proceeds in a fixed order: preflight, backend, frontend, fail-closed smoke, and
 browser verification. Verify backend `/health`, `/health/ready`, and anonymous inbox `401` before
@@ -359,6 +375,7 @@ Variables:
 AZURE_WEBAPP_NAME=app-library-api-staging-nhat714
 STAGING_API_URL=https://app-library-api-staging-nhat714.azurewebsites.net
 FE10_INBOX_MIGRATION_SHA256=<lowercase SHA-256 set only after the verified migration>
+FE10_BORROWING_RESULT_TEMPLATES_SHA256=<lowercase SHA-256 set only after the verified migration>
 ```
 
 Create `STAGING_FRONTEND_URL` using the exact Azure-generated Static Web Apps URL.
@@ -381,11 +398,13 @@ passes. For FE10, the operator-owned migration must be proven before merge becau
 `main` CI can deploy automatically:
 
 1. Wait for exact-head PR CI to pass.
-2. Apply the FE10 migration twice, verify only aggregate postconditions, and remove the exact
+2. Apply both FE10 migrations twice, verify only aggregate postconditions, and remove the exact
    temporary firewall rule.
-3. Set `FE10_INBOX_MIGRATION_SHA256` to the exact migration file hash.
+3. Set `FE10_INBOX_MIGRATION_SHA256` and `FE10_BORROWING_RESULT_TEMPLATES_SHA256` to their exact
+   migration file hashes.
 4. Manually run `Deploy staging` for the exact PR branch with
-   `fe10_inbox_migration_confirmed=true`.
+   `fe10_inbox_migration_confirmed=true` and
+   `fe10_borrowing_result_templates_confirmed=true`.
 5. Confirm preflight, backend startup reconciles the packaged catalog and auth-token migrations,
    `/health/ready` returns `200`, frontend and smoke pass, and MEMBER/LIBRARIAN/ADMIN browser checks
    succeed before H3.
@@ -397,7 +416,9 @@ passes. For FE10, the operator-owned migration must be proven before merge becau
 
 Failed CI runs do not deploy. `workflow_dispatch` remains available for an operator rerun after any
 required operator-owned migration is applied. A missing or mismatched migration hash blocks both
-automatic and manual deployment without changing Azure SQL.
+automatic and manual deployment without changing Azure SQL. If Azure SQL is paused or quota-blocked,
+do not set either hash or trigger a deployment; resume only after the database can be reached and the
+two idempotence checks have completed.
 
 After changing App Service settings, allow the F1 instance to warm up before
 judging the smoke result. A first request may return `503` while the application
