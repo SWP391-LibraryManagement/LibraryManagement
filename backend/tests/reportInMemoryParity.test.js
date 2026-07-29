@@ -78,6 +78,64 @@ function makeReportRepository({ borrowDetails, roleOverrides = [] } = {}) {
 }
 
 describe('in-memory FE12 report repository parity', () => {
+  test('operations summary mirrors canonical states and excludes inactive-book stock', async () => {
+    const authState = { users: [], rolesByUserId: new Map() };
+    const borrowingState = {
+      books: [
+        { bookId: 1, title: 'Low Stock', status: 'ACTIVE' },
+        { bookId: 2, title: 'Healthy Stock', status: 'ACTIVE' },
+        { bookId: 3, title: 'Zero Stock', status: 'ACTIVE' },
+        { bookId: 4, title: 'Inactive Stock', status: 'INACTIVE' },
+      ],
+      copies: [
+        { copyId: 1, bookId: 1, status: 'AVAILABLE' },
+        { copyId: 2, bookId: 1, status: 'AVAILABLE' },
+        { copyId: 3, bookId: 1, status: 'BORROWED' },
+        { copyId: 4, bookId: 2, status: 'AVAILABLE' },
+        { copyId: 5, bookId: 2, status: 'AVAILABLE' },
+        { copyId: 6, bookId: 2, status: 'AVAILABLE' },
+        { copyId: 7, bookId: 4, status: 'AVAILABLE' },
+      ],
+      borrowRequests: [
+        { requestId: 1, status: 'PENDING' },
+        { requestId: 2, status: 'APPROVED' },
+      ],
+      borrowDetails: [
+        { borrowDetailId: 1, status: 'BORROWED', dueDate: '2026-07-13' },
+        { borrowDetailId: 2, status: 'BORROWED', dueDate: '2026-07-28' },
+        { borrowDetailId: 3, status: 'RETURNED', dueDate: '2026-07-01' },
+      ],
+      reservations: [
+        { reservationId: 1, status: 'ACTIVE' },
+        { reservationId: 2, status: 'NOTIFIED' },
+        { reservationId: 3, status: 'FULFILLED' },
+      ],
+      categories: [],
+      memberStatuses: new Map(),
+      memberApprovedAt: new Map(),
+    };
+    const repository = makeInMemoryReportDependencies(
+      authState,
+      borrowingState
+    ).reportRepository;
+
+    const beforeSecondDueDate = await repository.getOperationsSummary('2026-07-14');
+    const afterSecondDueDate = await repository.getOperationsSummary('2026-07-29');
+
+    expect(beforeSecondDueDate).toEqual({
+      pendingBorrowRequests: 1,
+      activeLoans: 2,
+      overdueLoans: 1,
+      openReservations: 2,
+      availableCopies: 5,
+      lowStockBooks: 2,
+    });
+    expect(afterSecondDueDate).toEqual({
+      ...beforeSecondDueDate,
+      overdueLoans: 2,
+    });
+  });
+
   test('borrowing date filters apply to BorrowDate', async () => {
     const report = await makeReportRepository().getBorrowingReport({
       fromDate: '2026-01-11',

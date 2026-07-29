@@ -207,6 +207,52 @@ function makeInMemoryReportDependencies(authState, borrowingState) {
       );
     },
 
+    async getOperationsSummary(businessDate) {
+      const requiredBusinessDate = requireBusinessDate(businessDate);
+      const books = borrowingState.books || [];
+      const copies = borrowingState.copies || [];
+      const borrowRequests = borrowingState.borrowRequests || [];
+      const borrowDetails = borrowingState.borrowDetails || [];
+      const reservations = borrowingState.reservations || [];
+      const activeBooks = books.filter(
+        (book) => String(book.status || '').toUpperCase() === 'ACTIVE'
+      );
+      const activeBookIds = new Set(activeBooks.map((book) => book.bookId));
+      const availableCopies = copies.filter(
+        (copy) =>
+          activeBookIds.has(copy.bookId)
+          && String(copy.status || '').toUpperCase() === 'AVAILABLE'
+      );
+      const availableByBookId = availableCopies.reduce((counts, copy) => {
+        counts.set(copy.bookId, (counts.get(copy.bookId) || 0) + 1);
+        return counts;
+      }, new Map());
+
+      return {
+        pendingBorrowRequests: borrowRequests.filter(
+          (request) => String(request.status || '').toUpperCase() === 'PENDING'
+        ).length,
+        activeLoans: borrowDetails.filter(
+          (detail) => String(detail.status || '').toUpperCase() === 'BORROWED'
+        ).length,
+        overdueLoans: borrowDetails.filter((detail) => {
+          const dueDate = toDateKey(detail.dueDate);
+          return String(detail.status || '').toUpperCase() === 'BORROWED'
+            && dueDate
+            && dueDate < requiredBusinessDate;
+        }).length,
+        openReservations: reservations.filter((reservation) =>
+          ['ACTIVE', 'NOTIFIED'].includes(
+            String(reservation.status || '').toUpperCase()
+          )
+        ).length,
+        availableCopies: availableCopies.length,
+        lowStockBooks: activeBooks.filter(
+          (book) => (availableByBookId.get(book.bookId) || 0) <= 2
+        ).length,
+      };
+    },
+
     async getInventoryReport(filters = {}) {
       const categoryNameById = new Map(
         (borrowingState.categories || []).map((category) => [category.categoryId, category.categoryName])

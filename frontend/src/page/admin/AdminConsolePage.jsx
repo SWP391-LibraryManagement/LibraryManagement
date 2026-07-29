@@ -55,7 +55,10 @@ export default function AdminConsolePage() {
       ) : activeSection === 'membership' ? (
         <AdminMembershipSection onToast={setToast} />
       ) : activeSection === 'dashboard' ? (
-        <AdminDashboardSection onNavigate={openDashboardDestination} />
+        <AdminDashboardSection
+          onNavigatePath={navigate}
+          onNavigateSection={openDashboardDestination}
+        />
       ) : activeSection === 'requests' ? (
         <AdminRequestsSection onToast={setToast} initialStatus={sectionContext.status} />
       ) : activeSection === 'permissions' ? (

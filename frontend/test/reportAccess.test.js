@@ -58,7 +58,8 @@ test('FE12 report pages do not substitute demo statistics after API failures', a
   }
 
   assert.match(apiSource, /function authorizedReportRequest[\s\S]*getReportErrorMessage/);
-  assert.equal((apiSource.match(/return authorizedReportRequest/g) || []).length, 3);
+  assert.equal((apiSource.match(/return authorizedReportRequest/g) || []).length, 4);
+  assert.match(apiSource, /url: '\/reports\/operations-summary'/);
   assert.doesNotMatch(viewModelSource, /DEMO_REPORTS|requestStatusCounts|copyStatusCounts|membersByStatus/);
 });
 

@@ -5,6 +5,7 @@ const { defaultReportService } = require('../services/reportService');
 const {
   borrowingReportValidators,
   inventoryReportValidators,
+  operationsSummaryValidators,
   userStatisticsValidators,
 } = require('../validators/reportValidators');
 
@@ -16,6 +17,12 @@ function createReportRoutes({ authService, reportService } = {}) {
   const staffOnly = [authenticate, requireAnyRole('LIBRARIAN', 'ADMIN')];
 
   router.get('/borrowing', ...staffOnly, borrowingReportValidators, controller.borrowing);
+  router.get(
+    '/operations-summary',
+    ...staffOnly,
+    operationsSummaryValidators,
+    controller.operationsSummary
+  );
   router.get('/inventory', ...staffOnly, inventoryReportValidators, controller.inventory);
   router.get('/users', ...staffOnly, userStatisticsValidators, controller.users);
 

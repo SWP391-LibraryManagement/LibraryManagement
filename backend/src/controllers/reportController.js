@@ -15,6 +15,19 @@ function createReportController(reportService = defaultReportService) {
       }
     },
 
+    // @spec FR-FE12-012, FR-FE12-013, FR-FE12-014
+    operationsSummary: async (req, res, next) => {
+      try {
+        const result = await reportService.getOperationsSummary(req.user, {
+          ip: req.ip,
+          userAgent: req.get('user-agent'),
+        });
+        return res.status(200).json(result);
+      } catch (error) {
+        return next(error);
+      }
+    },
+
     // @spec FR-FE12-002, FR-FE12-004, FR-FE12-005, FR-FE12-006, FR-FE12-007
     inventory: async (req, res, next) => {
       try {
