@@ -285,6 +285,8 @@ Expected: all automated checks pass; no statement says Azure migration or authen
 
 - [ ] **Step 1: Write the failing scanner tests**
 
+<!-- secret-scan: allow-synthetic -->
+
 Create tests with temporary files containing a synthetic AWS key and a database URL password, plus a safe fixture:
 
 ```js
@@ -333,7 +335,7 @@ Run:
 ```powershell
 node --test scripts/check-tracked-secrets.test.js
 npm run test:deployment
-git grep -n -I -E "(AKIA[0-9A-Z]{16}|BEGIN (RSA|OPENSSH|EC) PRIVATE KEY|password=.{8,})" -- ':!scripts/check-tracked-secrets.test.js'
+git grep -n -I -E "(AKIA[0-9A-Z]{16}|BEGIN (RSA|OPENSSH|EC) PRIVATE KEY|password=.{8,})" -- ':!scripts/check-tracked-secrets.test.js' ':!docs/superpowers/plans/2026-07-29-pre-azure-release-remediation.md'
 ```
 
 Expected: scanner tests pass, known synthetic fixtures are allowlisted, and the final grep produces no real credential value.
@@ -434,4 +436,3 @@ Confirm changed files match this plan, no secret appears in the diff, and the SD
 git add backend frontend scripts .github docs .sdd
 git commit -m "fix: close pre-azure release findings"
 ```
-

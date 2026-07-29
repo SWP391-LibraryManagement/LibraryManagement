@@ -8,6 +8,7 @@
     "test:e2e": "playwright test --project=chromium",
     "test:system": "npm --prefix backend run test:integration:system",
     "test:deployment": "node --test tests/deployment/*.test.js",
+    "test:secrets": "node --test scripts/check-tracked-secrets.test.js && node scripts/check-tracked-secrets.js",
     "schema:azure:prepare": "node scripts/prepare-azure-schema.js",
     "smoke:staging": "node scripts/smoke-staging.js",
     "docs:screenshots": "playwright test tests/e2e/system-golden-path.spec.js --project=chromium && node scripts/promote-doc-screenshots.js",
