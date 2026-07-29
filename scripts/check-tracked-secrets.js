@@ -66,6 +66,9 @@ function scanTrackedFiles(root = process.cwd()) {
     if (!filePath.startsWith(`${path.resolve(root)}${path.sep}`)) {
       continue;
     }
+    if (!fs.existsSync(filePath)) {
+      continue;
+    }
 
     const buffer = fs.readFileSync(filePath);
     if (isBinary(buffer)) {

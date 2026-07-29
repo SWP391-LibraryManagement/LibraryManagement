@@ -7,13 +7,17 @@ const test = require('node:test');
 
 const scannerPath = path.join(__dirname, 'check-tracked-secrets.js');
 
-function runScannerWithFixture(content, filename = 'fixture.txt') {
+function runScannerWithFixture(content, filename = 'fixture.txt', { removeWorkingCopy = false } = {}) {
   const fixtureRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'lms-secret-scan-'));
 
   try {
     execFileSync('git', ['init', '--quiet'], { cwd: fixtureRoot });
     fs.writeFileSync(path.join(fixtureRoot, filename), content, 'utf8');
     execFileSync('git', ['add', filename], { cwd: fixtureRoot });
+
+    if (removeWorkingCopy) {
+      fs.rmSync(path.join(fixtureRoot, filename));
+    }
 
     return spawnSync(process.execPath, [scannerPath], {
       cwd: fixtureRoot,
@@ -76,4 +80,12 @@ test('allows only the marked synthetic fixture line', () => {
   assert.match(result.stderr, /AWS access key/);
   assert.doesNotMatch(result.stderr, /database URL password/);
   assert.doesNotMatch(result.stderr, new RegExp(syntheticKey));
+});
+
+test('ignores a tracked file removed from the working tree', () => {
+  const result = runScannerWithFixture('temporary source', 'removed-file.js', {
+    removeWorkingCopy: true,
+  });
+
+  assert.equal(result.status, 0);
 });
