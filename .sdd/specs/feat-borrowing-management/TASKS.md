@@ -36,7 +36,7 @@ Các tác vụ đã chọn bên dưới mô tả việc triển khai đã hoàn 
 - [x] FE07-T07 Thêm luồng phê duyệt đánh dấu chi tiết `BORROWED`, đặt hạn trả và đánh dấu bản sao `BORROWED`.
 - [x] FE07-T08 Thêm luồng từ chối cho yêu cầu đang chờ.
 - [x] FE07-T09 Thêm luồng trả cho lượt trả bình thường, hỏng và mất.
-- [x] FE07-T10 Thêm luồng gia hạn với giới hạn một lần gia hạn và kiểm tra xung đột đặt trước FE08.
+- [x] FE07-T10 Thêm luồng gia hạn với giới hạn một lần gia hạn và kiểm tra xung đột đặt chỗ FE08.
 - [x] FE07-T11 Công khai dữ liệu rà soát phạt mà không tạo hàng phạt FE09.
 - [x] FE07-T12 Ghi nhật ký kiểm toán cho tạo, phê duyệt, từ chối, trả và gia hạn.
 - [x] FE07-T13 Căn chỉnh tập lệnh SQL với các trạng thái FE07 đã phê duyệt.
@@ -46,8 +46,8 @@ Các tác vụ đã chọn bên dưới mô tả việc triển khai đã hoàn 
 - [x] FE07-T14 Thêm helper tầng truy cập dữ liệu mượn trong bộ nhớ.
 - [x] FE07-T15 Kiểm thử tạo yêu cầu, từ chối bản sao trùng lặp và từ chối bản sao không khả dụng.
 - [x] FE07-T16 Kiểm thử phê duyệt và lịch sử chỉ thành viên.
-- [x] FE07-T17 Kiểm thử xử lý trả, cập nhật yêu cầu hoàn thành và đầu ra ứng viên phạt.
-- [x] FE07-T18 Kiểm thử gia hạn thành công, giới hạn gia hạn và xung đột đặt trước.
+- [x] FE07-T17 Kiểm thử xử lý trả, cập nhật yêu cầu hoàn thành và dữ liệu đề xuất tính phạt.
+- [x] FE07-T18 Kiểm thử gia hạn thành công, giới hạn gia hạn và xung đột đặt chỗ.
 - [x] FE07-T19 Kiểm thử bảo vệ xác thực và vai trò.
 
 ## 3. Tác vụ frontend
@@ -63,8 +63,8 @@ Các tác vụ đã chọn bên dưới mô tả việc triển khai đã hoàn 
 
 ## 3.1 Tác vụ tích hợp FE07-FE08
 
-- [x] FE07-T029 Thực thi khả năng mượn có nhận biết đặt trước khi tạo và phê duyệt. Truy vết: BR-FE07-023/024; AC-FE07-015/016. Phụ thuộc: trạng thái hàng đợi FE08. Hoàn thành khi kiểm thử tuyến API RED/GREEN đạt.
-- [x] FE07-T030 Hoàn tất lượt đặt trước đã thông báo khớp trong giao dịch phê duyệt. Truy vết: BR-FE07-025; AC-FE07-017. Phụ thuộc: FE07-T029. Hoàn thành khi kiểm thử hoàn tác SQL và trong bộ nhớ đạt.
+- [x] FE07-T029 Thực thi khả năng mượn có nhận biết lượt đặt chỗ khi tạo và phê duyệt. Truy vết: BR-FE07-023/024; AC-FE07-015/016. Phụ thuộc: trạng thái hàng đợi FE08. Hoàn thành khi kiểm thử tuyến API RED/GREEN đạt.
+- [x] FE07-T030 Hoàn tất lượt đặt chỗ đã thông báo khớp trong giao dịch phê duyệt. Truy vết: BR-FE07-025; AC-FE07-017. Phụ thuộc: FE07-T029. Hoàn thành khi kiểm thử hoàn tác SQL và trong bộ nhớ đạt.
 
 ## 3.2 Tác vụ đối soát v0.5.0
 
@@ -74,7 +74,7 @@ Các tác vụ đã chọn bên dưới mô tả việc triển khai đã hoàn 
   - Phụ thuộc: SPEC v0.5.0 đã phê duyệt.
   - RED: thêm các ca tạo và phê duyệt cho tài khoản không hoạt động, thành viên chuẩn thiếu/chưa được phê duyệt, sách cha không hoạt động và lượt giữ chỗ đã thông báo thuộc người yêu cầu có sách cha trở nên không hoạt động trước khi phê duyệt.
   - Xác minh RED: `npm.cmd --prefix backend test -- --runTestsByPath tests/borrowingRoutes.test.js tests/sql/borrowingConcurrency.sqltest.js` chỉ thất bại vì hành vi v0.5.0 còn thiếu.
-  - Tiêu chí hoàn thành: mọi nhánh bị chặn giữ nguyên trạng thái yêu cầu, chi tiết, bản sao, đặt trước và kiểm toán, đồng thời trả mã an toàn đã phê duyệt.
+  - Tiêu chí hoàn thành: mọi nhánh bị chặn giữ nguyên trạng thái yêu cầu, chi tiết, bản sao, lượt đặt chỗ và kiểm toán, đồng thời trả mã an toàn đã phê duyệt.
 
 - [x] **FE07-T032 - Thêm kiểm thử đồng thời RED năm bản sao theo phạm vi thành viên.**
   - Ánh xạ tới: BR-FE07-005; FR-FE07-014, FR-FE07-019; AC-FE07-003, AC-FE07-019; NFR-FE07-TXN-001, NFR-FE07-TXN-003.
@@ -82,13 +82,13 @@ Các tác vụ đã chọn bên dưới mô tả việc triển khai đã hoàn 
   - Phụ thuộc: FE07-T031.
   - RED: seed một thành viên có bốn chi tiết mượn đang hoạt động và hai yêu cầu đang chờ, mỗi yêu cầu một bản sao; phê duyệt đồng thời trên các bản sao khác nhau và xác nhận nhiều nhất một yêu cầu thành công, tổng đang hoạt động đã commit là năm.
   - Xác minh RED: kiểm thử mới cho thấy việc tuần tự hóa thành viên hiện còn thiếu/sai trước khi triển khai.
-  - Tiêu chí hoàn thành: kiểm thử cũng xác nhận không deadlock, bên thua vẫn `PENDING` và trạng thái bản sao/đặt trước/kiểm toán của bên thua không đổi.
+  - Tiêu chí hoàn thành: kiểm thử cũng xác nhận không deadlock, bên thua vẫn `PENDING` và trạng thái bản sao/lượt đặt chỗ/kiểm toán của bên thua không đổi.
 
 - [x] **FE07-T033 - Đối soát điều kiện hợp lệ chuẩn và bảo vệ sách cha.**
   - Ánh xạ tới: BR-FE07-004, BR-FE07-007, BR-FE07-008, BR-FE07-023, BR-FE07-024; FR-FE07-001, FR-FE07-004, FR-FE07-015, FR-FE07-018, FR-FE07-023, FR-FE07-024, FR-FE07-026; AC-FE07-001, AC-FE07-002, AC-FE07-004, AC-FE07-005, AC-FE07-015, AC-FE07-016, AC-FE07-018.
   - Tệp: `backend/src/services/borrowingService.js`, `backend/src/repositories/borrowingRepository.js`, `backend/tests/borrowingRoutes.test.js`, `backend/tests/sql/borrowingConcurrency.sqltest.js`.
   - Phụ thuộc: FE07-T031.
-  - GREEN: phân loại điều kiện hợp lệ chỉ từ `Users` đang hoạt động cùng `Members` chuẩn đã phê duyệt; đưa `Books.Status` cha vào lượt đọc tạo và khóa/xác thực lại khi phê duyệt; giữ nguyên khả năng mượn có nhận biết đặt trước.
+  - GREEN: phân loại điều kiện hợp lệ chỉ từ `Users` đang hoạt động cùng `Members` chuẩn đã phê duyệt; đưa `Books.Status` cha vào lượt đọc tạo và khóa/xác thực lại khi phê duyệt; giữ nguyên khả năng mượn có nhận biết lượt đặt chỗ.
   - Xác minh: kiểm thử tuyến API/SQL tập trung đạt mọi ca điều kiện hợp lệ, sách cha, hàng đợi, chủ giữ chỗ và hoàn tác.
   - Tiêu chí hoàn thành: lịch sử ứng dụng không bao giờ được dùng làm điều kiện thành viên và `BOOK_INACTIVE` không thay đổi trạng thái nào.
 
@@ -96,8 +96,8 @@ Các tác vụ đã chọn bên dưới mô tả việc triển khai đã hoàn 
   - Ánh xạ tới: BR-FE07-005, BR-FE07-008 đến BR-FE07-010, BR-FE07-025, BR-FE07-026; FR-FE07-004, FR-FE07-005, FR-FE07-012, FR-FE07-014, FR-FE07-019, FR-FE07-022, FR-FE07-025; AC-FE07-003 đến AC-FE07-005, AC-FE07-017, AC-FE07-019; NFR-FE07-TXN-001, NFR-FE07-TXN-003.
   - Tệp: `backend/src/repositories/borrowingRepository.js`, `backend/src/repositories/auditLogRepository.js`, `backend/tests/borrowingRepository.test.js`, `backend/tests/sql/borrowingConcurrency.sqltest.js`.
   - Phụ thuộc: FE07-T032, FE07-T033.
-  - GREEN: lấy khóa SQL Server theo phạm vi thành viên, sau đó khóa `BookCopies`, `BorrowRequests/BorrowDetails` và `Reservations`; tính số đang hoạt động sau khóa; lưu nguyên tử `ApprovedAt`, `ApprovedBy`, `BorrowDate`, hạn trả, trạng thái, hoàn tất đặt trước và kiểm toán.
-  - Xác minh: kiểm thử SQL đạt cho cùng bản sao, cùng thành viên/bản sao khác, hoàn tất đặt trước, siêu dữ liệu và ca kiểm toán thất bại được chèn mà không deadlock.
+  - GREEN: lấy khóa SQL Server theo phạm vi thành viên, sau đó khóa `BookCopies`, `BorrowRequests/BorrowDetails` và `Reservations`; tính số đang hoạt động sau khóa; lưu nguyên tử `ApprovedAt`, `ApprovedBy`, `BorrowDate`, hạn trả, trạng thái, hoàn tất đặt chỗ và kiểm toán.
+  - Xác minh: kiểm thử SQL đạt cho cùng bản sao, cùng thành viên/bản sao khác, hoàn tất đặt chỗ, siêu dữ liệu và ca kiểm toán thất bại được chèn mà không deadlock.
   - Tiêu chí hoàn thành: `activeBorrowedCount + requestedDetailCount` không bao giờ vượt năm và mọi siêu dữ liệu phê duyệt đều khác null trên bản ghi đã phê duyệt được commit.
 
 - [x] **FE07-T035 - Đối soát chính sách ngày Thành phố Hồ Chí Minh và lý do từ chối.**
@@ -122,7 +122,7 @@ Các tác vụ đã chọn bên dưới mô tả việc triển khai đã hoàn 
   - Ánh xạ tới: AC-FE07-002 đến AC-FE07-005, AC-FE07-015 đến AC-FE07-021; NFR-FE07-UX-001.
   - Tệp: `frontend/src/page/borrowing/*`, `frontend/src/api/libraryFeatureApi.js`, `frontend/test/borrowingFrontend.test.js`.
   - Phụ thuộc: FE07-T033 đến FE07-T036.
-  - RED: kiểm thử thất bại khi `BOOK_INACTIVE`, `BORROW_LIMIT_EXCEEDED`, `INVALID_RETURN_DATE`, `REJECTION_REASON_REQUIRED`, lỗi cũ/điều kiện hợp lệ hoặc ưu tiên đặt trước thiếu phản hồi có thể hành động trong phạm vi.
+  - RED: kiểm thử thất bại khi `BOOK_INACTIVE`, `BORROW_LIMIT_EXCEEDED`, `INVALID_RETURN_DATE`, `REJECTION_REASON_REQUIRED`, lỗi cũ/điều kiện hợp lệ hoặc ưu tiên đặt chỗ thiếu phản hồi có thể hành động trong phạm vi.
   - GREEN: giữ phân giải lỗi riêng FE07 cô lập, yêu cầu lý do từ chối trong UI nhân sự, bỏ ngày trả phía máy khách khi dùng mặc định máy chủ và làm mới trạng thái máy chủ chuẩn sau thay đổi.
   - Xác minh: `node --test frontend/test/borrowingFrontend.test.js` đạt.
   - Tiêu chí hoàn thành: UI không bao giờ tạo ra thành công phê duyệt/trả hoặc bằng chứng điều kiện hợp lệ giả.
@@ -220,7 +220,7 @@ Các tác vụ đã chọn bên dưới mô tả việc triển khai đã hoàn 
 - [x] **FE07-T040 - Căn chỉnh triển khai lịch sử và kiểm thử tập trung.**
   - Ánh xạ tới: BR-FE07-028, FR-FE07-028, AC-FE07-022.
   - Tiêu chí hoàn thành: giá trị không hợp lệ thất bại trước truy vấn, phạm vi thành viên được thực thi, phân trang mặc định/biên và bộ lọc ngày bao gồm hai đầu đạt, thứ tự ổn định được bao phủ cho endpoint thành viên và nhân sự.
-  - Bằng chứng: `/me` hiện dùng bộ lọc trạng thái chi tiết và trả `{ borrowings, pagination }`; trang thành viên gửi `status/page/limit` máy chủ chuẩn, loại bỏ cắt trang phía phía máy khách và ánh xạ hàng chi tiết. Backend tập trung 66/66 và frontend 18/18 đạt.
+  - Bằng chứng: `/me` hiện dùng bộ lọc trạng thái chi tiết và trả `{ borrowings, pagination }`; trang thành viên gửi `status/page/limit` máy chủ chuẩn, loại bỏ cắt trang phía máy khách và ánh xạ hàng chi tiết. Backend tập trung 66/66 và frontend 18/18 đạt.
 
 - [x] **FE07-T041 - Hiển thị đúng yêu cầu mượn bị từ chối trong lịch sử thành viên.**
   - Ánh xạ tới: BR-FE07-029, FR-FE07-029, AC-FE07-023.
@@ -233,8 +233,8 @@ Các tác vụ đã chọn bên dưới mô tả việc triển khai đã hoàn 
 ## 6. Vẫn ngoài phạm vi triển khai này
 
 - Tạo khoản phạt FE09.
-- Tiến trình xử lý nền giao hàng FE10.
-- `OVERDUE` đã lưu, hủy yêu cầu mượn và xử lý hàng đợi đặt trước tự động.
+- Tiến trình nền gửi thông báo FE10.
+- `OVERDUE` đã lưu, hủy yêu cầu mượn và xử lý hàng đợi đặt chỗ tự động.
 
 ## 7. Hoàn tất tích hợp và rà soát B7
 
@@ -265,7 +265,7 @@ Các tác vụ đã chọn bên dưới mô tả việc triển khai đã hoàn 
 - [x] **FE07-T044 - Loại bỏ thông báo trả bình thường dư thừa.**
   - Ánh xạ tới: NFR-FE07-UX-005.
   - Loại thông báo khẳng định `Không có dấu hiệu...` cho lượt trả `NORMAL` đúng hạn trong khi vẫn giữ cảnh báo rà soát phạt cho kết quả quá hạn, hỏng hoặc mất.
-  - Giữ nguyên lệnh trả chuẩn, chọn tình trạng, phản hồi ứng viên phạt và ranh giới sở hữu FE09.
+  - Giữ nguyên lệnh trả chuẩn, chọn tình trạng, dữ liệu đề xuất tính phạt trong phản hồi và ranh giới trách nhiệm của FE09.
 - [x] **FE07-T045 - Đối soát thông tin tình trạng hạn trả của Xử lý trả.**
   - Ánh xạ tới: FR-FE07-031, AC-FE07-025, BR-FE07-011, NFR-FE07-TIME-001.
   - Giữ `BorrowDate`, `DueDate` và `RenewalCount` từ phản hồi chi tiết chuẩn.
@@ -282,14 +282,14 @@ Các tác vụ đã chọn bên dưới mô tả việc triển khai đã hoàn 
 
 - [x] **FE07-T047 - Thực thi truy cập một vai trò cho các luồng mượn của thành viên.**
   - Ánh xạ tới: BR-FE07-031, FR-FE07-032, AC-FE07-026; BR-FE11-028.
-  - Thay bảo vệ thành viên-bất-kỳ-vai-trò tại tuyến API ứng viên/tạo/lịch sử riêng bằng bảo vệ thành viên không phải nhân sự dùng chung.
+  - Thay bộ bảo vệ Thành viên-bất-kỳ-vai-trò tại các API liệt kê bản sao/tạo/lịch sử riêng bằng bộ bảo vệ dùng chung dành cho Thành viên không có vai trò Thủ thư/Quản trị viên.
   - Chuyển hướng mảng vai trò cũ/không hợp lệ chứa cả Member và nhân sự khỏi tuyến API frontend thành viên trong khi giữ tuyến API vận hành nhân sự.
   - Xác minh các ca mảng tương thích phòng thủ `MEMBER + LIBRARIAN` và `MEMBER + ADMIN` mà không coi chúng là tài khoản đã lưu được hỗ trợ.
 
 - [x] **FE07-T048 - Chọn trước chính xác bản sao FE08 được giữ thuộc người yêu cầu.**
   - Ánh xạ tới: FR-FE07-024/033, AC-FE07-016/027; FR-FE08-033, AC-FE08-020.
-  - Đọc bàn giao `bookId`/`copyId` của FE08 và chỉ chọn chính xác bản sao từ phản hồi ứng viên mượn Thành viên chuẩn.
-  - Giữ tạo yêu cầu đang chờ bình thường, xác thực lại máy chủ, phê duyệt Thủ thư/Quản trị viên và hoàn tất đặt trước nguyên tử.
+  - Đọc `bookId`/`copyId` do FE08 chuyển sang và chỉ chọn chính xác bản sao từ danh sách bản sao có thể yêu cầu mượn của Thành viên.
+  - Giữ tạo yêu cầu đang chờ bình thường, xác thực lại máy chủ, phê duyệt Thủ thư/Quản trị viên và hoàn tất đặt chỗ trong cùng giao dịch.
 
 ## 2026-07-27 - Đợt tích hợp căn chỉnh quy tắc v0.7.7
 
@@ -329,7 +329,7 @@ Các tác vụ đã chọn bên dưới mô tả việc triển khai đã hoàn 
 
 - [x] **FE07-T053 - Thực thi một yêu cầu đang chờ trên mỗi bản sao xuyên vai trò.**
   - Ánh xạ tới: BR-FE07-033, FR-FE07-034/035, AC-FE07-028/029; ranh giới yêu cầu đang chờ FE06; cấu thành Quản trị FE11.
-  - Backend: SQL ứng viên loại yêu cầu đang hoạt động; giao dịch tạo khóa và
+  - Backend: truy vấn SQL liệt kê bản sao loại các yêu cầu đang hoạt động; giao dịch tạo khóa và
     từ chối yêu cầu xung đột bằng `COPY_PENDING_REQUEST_CONFLICT`; FE06
     trạng thái/ngừng kích hoạt từ chối `PENDING_BORROW_REQUEST_CONFLICT`.
   - Frontend: chi tiết Quản trị hiển thị trạng thái bản sao vật lý; lỗi quyết định
@@ -344,7 +344,7 @@ Các tác vụ đã chọn bên dưới mô tả việc triển khai đã hoàn 
 
 - [x] **FE07-T054 - Thực thi một quy trình mượn đang hoạt động cho mỗi Thành viên/tiêu đề.**
   - Ánh xạ tới: BR-FE07-034, FR-FE07-036/037, AC-FE07-030; bảo vệ vòng đời FE11.
-  - Đường ứng viên và tạo dùng `BookId`; tạo/phê duyệt xác thực lại dưới khóa giao dịch theo phạm vi thành viên.
+  - API liệt kê bản sao và API tạo dùng `BookId`; thao tác tạo/phê duyệt kiểm tra lại dưới khóa giao dịch theo phạm vi Thành viên.
   - Yêu cầu cũ không hợp lệ vẫn có thể bị từ chối và hiện công khai xung đột phê duyệt riêng biệt về chủ sở hữu,
     tài khoản, bản sao và cùng tiêu đề.
   - Hồi quy backend/frontend và rà soát con người đã đạt trong hoàn tất PR #89.
@@ -365,7 +365,7 @@ Các tác vụ đã chọn bên dưới mô tả việc triển khai đã hoàn 
 
 - [x] **FE07-T057 - Gửi thông báo kết quả mượn sau khi commit.**
   - Ánh xạ: BR-FE07-035, FR-FE07-040/041, AC-FE07-033/035; `SL-003`.
-- [x] **FE07-T058 - Bàn giao hàng đợi sau khi trả theo chế độ chỉ đọc.**
+- [x] **FE07-T058 - Chuyển dữ liệu hàng đợi sau khi trả theo chế độ chỉ đọc.**
   - Ánh xạ: BR-FE07-036, FR-FE07-042, AC-FE07-034; không thao tác thay đổi dữ liệu FE08.
 - [x] **FE07-T059 - Dòng thời gian và hướng dẫn UX cho điều kiện chặn hoặc dữ liệu lỗi thời.**
   - Ánh xạ: BR-FE07-037, FR-FE07-043/044, AC-FE07-036.

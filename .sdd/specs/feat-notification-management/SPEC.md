@@ -14,7 +14,7 @@
 
 > Trạng thái bàn giao hiện tại (2026-08-01): phạm vi Giai đoạn 1 và phần mở
 > rộng hộp thư cá nhân v0.5.0 đã hoàn tất. Sau cập nhật nhánh tài liệu lên
-> `main@30f936d`, H2 phê duyệt mã đối chiếu nội dung
+> `main@30f936d`, H2 phê duyệt mã băm nội dung
 > `e123345be05b59a9e519d182b301ab5464160e8fc32aed8d17d3c463e28e0a15`.
 > PR #75 tại commit `778e0a470d8a1083bf571a8007b3c058eee4bb22` vượt CI
 > `30317424995`, môi trường thử nghiệm Azure `30317621429`, H3 hai trục không có phát hiện có
@@ -50,7 +50,7 @@
 > ID thông điệp của nhà cung cấp trong lịch sử lần thử; và một tiến trình SYSTEM tùy chọn xử lý các bản ghi
 > `PENDING` không nhạy cảm đã xếp hàng khi backend còn hoạt động. API thủ công
 > được bảo vệ và chính sách chỉ thử lại thủ công vẫn không đổi. Trên gói
-> F1 của môi trường tiền sản xuất, lịch này được xác định rõ là chỉ thực hiện trong khả năng tốt nhất vì Always On bị tắt.
+> Trên gói F1 của môi trường tiền sản xuất, lịch chạy này có thể bị gián đoạn khi ứng dụng ngủ vì Always On bị tắt.
 > Người dùng đã phê duyệt thiết kế và hợp đồng bằng văn bản ngày 2026-07-27.
 >
 > Bản sửa đổi v0.5.0 bổ sung hợp đồng hộp thư thông báo cá nhân. Người dùng đã
@@ -164,8 +164,8 @@ Tính năng này chỉ có thể bắt đầu khi:
 
 ### MF-FE10-003: Gửi thông báo đặt sách
 
-1. FE08 Quản lý đặt chỗ yêu cầu gửi thông báo đặt chỗ khi trạng thái đặt chỗ thay đổi hoặc một cuốn sách đã đặt trước trở nên sẵn có.
-2. FE10 kiểm tra người nhận, kênh email, cặp `RESERVATION_AVAILABLE -> RESERVATION_READY` chuẩn và dữ liệu mẫu đặt trước.
+1. FE08 Quản lý đặt chỗ yêu cầu gửi thông báo khi trạng thái đặt chỗ thay đổi hoặc một cuốn sách đã đặt chỗ trở nên sẵn có.
+2. FE10 kiểm tra người nhận, kênh email, cặp `RESERVATION_AVAILABLE -> RESERVATION_READY` chuẩn và dữ liệu mẫu đặt chỗ.
 3. FE10 xác nhận rằng FE08 sở hữu hàng đợi đặt chỗ và quyết định về tình trạng sẵn có.
 4. FE10 từ chối đệ quy các khóa giống bí mật trong dữ liệu xếp hàng và tạo thông báo `PENDING` không nhạy cảm có nội dung đã tạo từ mẫu.
 5. Tiến trình xử lý thông báo nhận bản ghi một cách nguyên tử dưới trạng thái `PROCESSING`, cam kết quyền nhận xử lý đó rồi mới gọi bộ điều hợp nhà cung cấp đã cấu hình.
@@ -240,7 +240,7 @@ Tính năng này chỉ có thể bắt đầu khi:
 2. FE10 trả về lỗi kiểm tra hợp lệ/mẫu 4xx an toàn trước khi tạo nội dung từ mẫu hoặc tạo bản ghi thông báo.
 3. FE10 không lưu vào cơ sở dữ liệu nội dung yêu cầu không hợp lệ; trạng thái `FAILED` đã lưu chỉ dành cho yêu cầu được chấp nhận nhưng nhà cung cấp gửi thất bại.
 4. Cặp loại/mẫu không khớp luôn bị từ chối trước khi gửi hoặc lưu vào cơ sở dữ liệu vào hàng đợi; cờ hay bí danh do người gọi cung cấp không bao giờ được dùng để chuyển đổi cặp đó.
-5. FE10 không làm sạch một định nghĩa mẫu đã lưu không an toàn để biến nó thành mẫu được chấp nhận. Các giá trị khi chạy được truyền vào vào một định nghĩa vốn an toàn vẫn được thoát hoặc làm sạch.
+5. FE10 không làm sạch một định nghĩa mẫu đã lưu không an toàn để biến nó thành mẫu được chấp nhận. Các giá trị khi chạy được truyền vào một định nghĩa vốn an toàn vẫn được thoát hoặc làm sạch.
 
 ### AF-FE10-004: Nhà cung cấp email không khả dụng
 
@@ -259,7 +259,7 @@ Tính năng này chỉ có thể bắt đầu khi:
 ### AF-FE10-006: Loại xác thực nhạy cảm được gửi sai ranh giới
 
 1. Người gọi HTTP của nhân viên gửi `ACCOUNT_VERIFICATION`, `PASSWORD_RESET` hoặc `ACCOUNT_SETUP`; người yêu cầu không phải FE02 gửi loại thuộc sở hữu của FE02; hoặc người yêu cầu không phải FE11 gửi `ACCOUNT_SETUP`.
-2. FE10 trả về `403 SENSITIVE_NOTIFICATION_INTERNAL_ONLY` kèm thông báo `Sensitive authentication notifications must be requested internally.` trước khi tạo nội dung từ mẫu mẫu, lưu vào cơ sở dữ liệu hoặc gửi qua nhà cung cấp.
+2. FE10 trả về `403 SENSITIVE_NOTIFICATION_INTERNAL_ONLY` kèm thông báo `Sensitive authentication notifications must be requested internally.` trước khi tạo nội dung từ mẫu, lưu vào cơ sở dữ liệu hoặc gửi qua nhà cung cấp.
 3. Không tạo bản ghi thông báo hoặc lần thử gửi nào.
 
 ### AF-FE10-007: Vi Phạm Quyền Sở Hữu Hoặc Mức Nhạy Cảm Của Hộp Thư
@@ -289,7 +289,7 @@ Dùng các ID ổn định này cho nhiệm vụ và kiểm thử.
 - BR-FE10-003: FE10 không được tạo hoặc xác thực OTP dùng cho xác thực hay mã thông báo xác minh/đặt lại kiểu cũ.
 - BR-FE10-004: FE10 không được lưu vào cơ sở dữ liệu, ghi nhật ký, ghi kiểm toán hoặc trả về mã thông báo thô, giá trị OTP, mật khẩu, liên kết xác minh/đặt lại/thiết lập, tiêu đề/nội dung xác thực nhạy cảm đã tạo từ mẫu, thông tin xác thực/chi tiết của nhà cung cấp hoặc dấu vết ngăn xếp nội bộ. `templateData` không nhạy cảm đã xếp hàng và `safePayload` đã lưu phải duyệt đệ quy qua đối tượng/mảng, đồng thời chuẩn hóa khóa bằng cách chuyển thành chữ thường và bỏ `_`, `-` cùng khoảng trắng. Yêu cầu xếp hàng bị từ chối khi khóa đã chuẩn hóa chứa `token`, `otp`, `password`, `verificationlink`, `resetlink` hoặc `setuplink`; các khóa tương tự bị che khỏi `safePayload`.
 - BR-FE10-005: Mọi yêu cầu nguồn trong tiến trình phải chứa `sourceFeature`, `sourceEntityType`, `sourceEntityId` dạng số nguyên và một khóa chống gửi trùng; người gọi không thể ghi đè siêu dữ liệu đã ràng buộc. Yêu cầu HTTP dùng hợp đồng được bảo vệ riêng và không thể cung cấp `sourceFeature`.
-- BR-FE10-006: Một khóa chống gửi trùng ánh xạ tới một bản ghi thông báo xuyên suốt mọi trạng thái. Yêu cầu trùng phải phát lại bản tóm tắt bản ghi hiện có và không được tạo hoặc gửi bản trùng.
+- BR-FE10-006: Một khóa chống gửi trùng chỉ ánh xạ tới một bản ghi thông báo xuyên suốt mọi trạng thái. Yêu cầu trùng phải trả lại bản tóm tắt của bản ghi hiện có, không tạo hoặc gửi thêm thông báo.
 - BR-FE10-007: FE10 phải hỗ trợ tám cặp loại/mẫu Giai đoạn 1 đã phê duyệt, gồm `ACCOUNT_SETUP -> ACCOUNT_SETUP` và `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`; không hỗ trợ bí danh hay cặp không được lập tài liệu.
 - BR-FE10-008: Lần gửi thông báo thất bại phải được ghi cùng lý do lỗi an toàn và số lần thử. Chỉ thông báo không nhạy cảm đã xếp hàng nhưng gửi thất bại mới được thử lại thủ công trên cùng bản ghi; việc gửi thông báo xác thực nhạy cảm thất bại yêu cầu sự kiện nguồn mới. Bản ghi `PROCESSING` có kết quả nhà cung cấp không chắc chắn và không được tự động hay thủ công nhận lại hoặc thử lại.
 - BR-FE10-009: Thông tin xác thực của nhà cung cấp email phải được lưu trữ bên ngoài mã nguồn.
@@ -355,10 +355,10 @@ Dùng các ID ổn định này cho nhiệm vụ và kiểm thử.
 - FR-FE10-013: Khi tác nhân đã xác thực đánh dấu đã đọc một thông báo đủ điều
   kiện thuộc sở hữu của mình, FE10 phải đặt `ReadAt` một lần và trả về bản tóm
   tắt an toàn; ID không tồn tại, nhạy cảm hoặc không thuộc sở hữu phải trả về
-  cùng một `404` không thể phân biệt và thao tác phát lại phải có khả năng xử lý lặp an toàn.
+  cùng một `404` không thể phân biệt và việc gọi lại thao tác phải cho cùng kết quả an toàn.
 - FR-FE10-014: Khi tác nhân đã xác thực đánh dấu đã đọc tất cả thông báo cá nhân,
   FE10 phải đặt một dấu thời gian máy chủ chỉ trên các hàng đủ điều kiện chưa đọc
-  của tác nhân đó và trả về `{ updated }`; phát lại phải trả về `updated: 0`.
+  của tác nhân đó và trả về `{ updated }`; khi gọi lại thao tác, hệ thống phải trả về `updated: 0`.
 - FR-FE10-015: Khi FE10 chiếu một thông báo đủ điều kiện, hệ thống phải suy ra
   `actionPath` tương đối từ danh sách cho phép chuẩn cố định hoặc trả về null;
   không chấp nhận URL nội dung do bên gọi kiểm soát hoặc đã lưu vào cơ sở dữ liệu.
@@ -381,7 +381,7 @@ Dùng các ID ổn định này cho nhiệm vụ và kiểm thử.
 - AC-FE10-006: Với từng cặp trong tám cặp loại/mẫu đã quy định, gồm `ACCOUNT_SETUP -> ACCOUNT_SETUP` và `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`, khi FE10 kiểm tra một yêu cầu đầy đủ từ ranh giới được cấp quyền cùng định nghĩa mẫu đã lưu an toàn, thì kiểm tra ánh xạ đạt và các giá trị khi chạy được thoát/làm sạch. Với người nhận/biến bị thiếu, ID nguồn dạng chuỗi, cặp không khớp, mẫu không rõ/không hoạt động, định nghĩa mẫu đã lưu không an toàn, ghi đè nguồn qua HTTP, nguồn nhạy cảm không được cấp quyền hoặc khóa bí mật lồng nhau trong dữ liệu xếp hàng, việc kiểm tra trả về lỗi 4xx an toàn trước khi tạo nội dung từ mẫu, lưu vào cơ sở dữ liệu, tạo lần thử hoặc gửi.
 - AC-FE10-007: Với việc FE02 cung cấp OTP qua thành phần gửi yêu cầu đã ràng buộc, khi FE10 gửi thì OTP cùng tiêu đề/nội dung nhạy cảm đã tạo từ mẫu không xuất hiện trong dữ liệu lưu vào cơ sở dữ liệu, nhật ký, bản ghi kiểm toán hay phản hồi HTTP.
 - AC-FE10-008: Với một khóa chống gửi trùng đã tồn tại ở bất kỳ trạng thái nào, khi FE10 nhận yêu cầu trùng thì hệ thống trả về `200 { notificationId, status }` cho bản ghi đó và không gửi trùng.
-- AC-FE10-009: Với lỗi gửi từ nhà cung cấp, khi FE10 ghi nhận lỗi thì luồng nguồn vẫn hoàn tất; bản ghi không nhạy cảm đã xếp hàng nhưng thất bại có thể thử lại trên cùng lịch sử, còn thử lại thông báo nhạy cảm trả về lỗi an toàn `409 REISSUE_REQUIRED`. Với trường hợp thao tác gọi nhà cung cấp hoàn tất nhưng lưu vào cơ sở dữ liệu trạng thái cuối thất bại, hàng vẫn ở `PROCESSING`, thao tác phát lại trùng không gửi và thử lại trả về lỗi an toàn `409 DELIVERY_STATE_UNCERTAIN`.
+- AC-FE10-009: Khi nhà cung cấp gửi thất bại và FE10 ghi nhận lỗi, luồng nguồn vẫn hoàn tất; bản ghi không nhạy cảm đã xếp hàng nhưng thất bại có thể thử lại trên cùng lịch sử, còn thông báo nhạy cảm trả về lỗi an toàn `409 REISSUE_REQUIRED`. Nếu nhà cung cấp đã xử lý nhưng hệ thống không lưu được trạng thái cuối vào cơ sở dữ liệu, bản ghi vẫn ở `PROCESSING`; yêu cầu trùng không gửi lại và thao tác thử lại trả về `409 DELIVERY_STATE_UNCERTAIN`.
 - AC-FE10-010: Với việc thành phần gửi yêu cầu được ràng buộc với `FE11` gửi dữ liệu thiết lập tài khoản chuẩn, khi FE10 gửi đồng bộ thì hệ thống trả về bản tóm tắt `SENT`/`FAILED` an toàn, lưu vào cơ sở dữ liệu siêu dữ liệu `AuthToken` an toàn và không lưu vào cơ sở dữ liệu hay trả về mã thông báo/liên kết/nội dung thiết lập đã tạo từ mẫu.
 - AC-FE10-011: Cho trước bất kỳ vai trò đăng nhập đã xác thực nào có thông báo đủ
   điều kiện, khi vai trò đó liệt kê hộp thư bằng bộ lọc hợp lệ thì chỉ các hàng
@@ -397,7 +397,7 @@ Dùng các ID ổn định này cho nhiệm vụ và kiểm thử.
 - AC-FE10-014: Cho trước nhiều hàng đủ điều kiện chưa đọc của một người dùng và
   các hàng của người dùng khác, khi chạy thao tác đánh dấu tất cả thì chỉ các
   hàng đủ điều kiện của người dùng hiện tại nhận cùng một dấu thời gian đọc từ
-  máy chủ; phát lại trả về `updated: 0`.
+  máy chủ; khi gọi lại thao tác, hệ thống trả về `updated: 0`.
 - AC-FE10-015: Cho trước mọi loại chuẩn đủ điều kiện, khi FE10 trả về một mục hộp
   thư thì `actionPath` bằng tuyến tương đối đã phê duyệt. Siêu dữ liệu không xác
   định hoặc không tương thích trả về null và không URL nào được gửi lên có thể
@@ -427,15 +427,15 @@ Dùng các ID ổn định này cho nhiệm vụ và kiểm thử.
 | EC-FE10-011 | Giao dịch nguồn hoàn tất nhưng gửi thất bại hoặc thành phần gửi yêu cầu ném lỗi | Giữ giao dịch nguồn ở trạng thái hoàn tất; ghi nhận/xử lý an toàn lỗi FE10. Chỉ bản ghi không nhạy cảm đã xếp hàng nhưng thất bại mới được thử lại về `PENDING`. |
 | EC-FE10-012 | Nhà cung cấp trả về các chi tiết nhạy cảm, người gọi ghi đè nguồn bị ràng buộc hoặc yêu cầu thử lại nhạy cảm | Chỉ lưu trữ một bản tóm tắt đã được làm sạch; từ chối ghi đè nguồn; thử lại nhạy cảm sẽ trả về `409 REISSUE_REQUIRED`. |
 | EC-FE10-013 | Nhân viên qua HTTP hoặc thành phần gửi yêu cầu không có quyền sở hữu gửi thông báo xác thực nhạy cảm | Trả về lỗi an toàn `403 SENSITIVE_NOTIFICATION_INTERNAL_ONLY`; FE02 sở hữu riêng việc xác minh/đặt lại và FE11 sở hữu riêng việc thiết lập tài khoản. |
-| EC-FE10-014 | Lần gửi lại của FE02 phát hành mã thông báo OTP mới | Dùng `AuthTokens.TokenId` mới trong khóa chống gửi trùng mới; không phát lại thông báo OTP trước đó. |
+| EC-FE10-014 | Lần gửi lại của FE02 phát hành mã thông báo OTP mới | Dùng `AuthTokens.TokenId` mới trong khóa chống gửi trùng mới; không dùng lại thông báo OTP trước đó. |
 | EC-FE10-015 | Người gọi HTTP cung cấp `sourceFeature` | Trả về `400 SOURCE_FEATURE_HTTP_FORBIDDEN` với thông báo `Notification source cannot be supplied through HTTP.`; không tạo thông báo hay lần thử. |
-| EC-FE10-016 | Gửi lại FE11 tạo mã thông báo thiết lập mới | Sử dụng khóa `AuthTokens.TokenId` và `FE11:ACCOUNT_SETUP:<tokenId>` mới; không bao giờ phát lại liên kết thiết lập trước đó. |
-| EC-FE10-017 | Có kết quả từ nhà cung cấp nhưng lưu vào cơ sở dữ liệu trạng thái cuối/lần thử thất bại | Giữ hàng đã cam kết ở `PROCESSING`; không tự động nhận lại hoặc gửi lại; phát lại trùng trả về cùng bản tóm tắt và thử lại thủ công trả về `409 DELIVERY_STATE_UNCERTAIN`. |
+| EC-FE10-016 | Gửi lại FE11 tạo mã thông báo thiết lập mới | Dùng khóa `AuthTokens.TokenId` và `FE11:ACCOUNT_SETUP:<tokenId>` mới; không bao giờ dùng lại liên kết thiết lập trước đó. |
+| EC-FE10-017 | Có kết quả từ nhà cung cấp nhưng không lưu được trạng thái cuối/lần thử vào cơ sở dữ liệu | Giữ bản ghi đã cam kết ở `PROCESSING`; không tự động nhận lại hoặc gửi lại; yêu cầu trùng trả về cùng bản tóm tắt và thao tác thử lại thủ công trả về `409 DELIVERY_STATE_UNCERTAIN`. |
 | EC-FE10-018 | Khách gọi endpoint hộp thư cá nhân | Trả về `401` an toàn; không làm lộ số lượng hoặc siêu dữ liệu mục. |
 | EC-FE10-019 | Người dùng đã xác thực yêu cầu ID thông báo của người dùng khác | Trả về cùng một `404` an toàn dùng cho ID không tồn tại; không làm lộ quyền sở hữu hoặc thay đổi `ReadAt`. |
 | EC-FE10-020 | Người dùng đã xác thực yêu cầu ID thông báo xác thực/thiết lập nhạy cảm | Trả về cùng một `404` an toàn; không làm lộ nội dung nhạy cảm và sự tồn tại. |
 | EC-FE10-021 | Trang, giới hạn, trạng thái đọc hoặc bộ lọc loại không đủ điều kiện cho hộp thư không hợp lệ | Trả về `400` an toàn; không thực thi truy vấn dự phòng không giới hạn. |
-| EC-FE10-022 | Thao tác đánh dấu một hoặc đánh dấu tất cả được phát lại | Giữ dấu thời gian đọc đầu tiên; trả về cùng mục đã đọc an toàn hoặc `updated: 0`; không tạo lần thử gửi. |
+| EC-FE10-022 | Thao tác đánh dấu một hoặc đánh dấu tất cả được gọi lại | Giữ dấu thời gian đọc đầu tiên; trả về cùng mục đã đọc an toàn hoặc `updated: 0`; không tạo lần thử gửi. |
 | EC-FE10-023 | Siêu dữ liệu đã lưu vào cơ sở dữ liệu không có ánh xạ điều hướng được phê duyệt | Trả về `actionPath: null`; không bao giờ tạo đường dẫn từ tiêu đề, nội dung, dữ liệu hoặc dữ liệu đầu vào tùy ý. |
 | EC-FE10-024 | Thao tác cập nhật trạng thái đọc thất bại khi người dùng mở quy trình liên quan | Giữ bản ghi ở trạng thái chưa đọc, hiển thị phản hồi an toàn không chặn và cho phép điều hướng tới tuyến đã nằm trong danh sách cho phép. |
 
@@ -472,8 +472,8 @@ Dùng các ID ổn định này cho nhiệm vụ và kiểm thử.
 | sourceEntityId | integer | Bắt buộc với yêu cầu trong tiến trình | Tham chiếu dương của Giai đoạn 1 tới bản ghi nguồn; giá trị bị thiếu và chuỗi đều bị từ chối. Yêu cầu xác thực nhạy cảm dùng `AuthTokens.TokenId` đã lưu vào cơ sở dữ liệu. |
 | idempotencyKey | string | Không | Ánh xạ một sự kiện nguồn tới một bản ghi thông báo xuyên suốt mọi trạng thái. FE02 suy ra khóa nhạy cảm từ loại cộng `AuthTokens.TokenId`, tuyệt đối không từ OTP. Thử lại dùng lại cùng khóa. |
 | createdAt | datetime | Có | Dấu thời gian tạo thông báo. |
-| đã gửiAt | datetime | Không | Dấu thời gian máy chủ được đặt khi nhà cung cấp email Giai đoạn 1 chấp nhận lần gửi và chuyển đổi trạng thái cuối có bảo vệ được cam kết; là null khi ở `PENDING`/`PROCESSING` và sau lần thử thất bại. |
-| readAt | datetime | Không | Trạng thái hộp thư cá nhân có thể null cho các hàng có `userId` khác null và loại không nhạy cảm đủ điều kiện. Thông báo đủ điều kiện mới bắt đầu bằng null; thao tác đọc thành công đầu tiên đặt một dấu thời gian máy chủ. Các hàng đủ điều kiện hiện có được điền lùi bằng `createdAt`; các hàng nhạy cảm và hàng chỉ gửi email không có người dùng không bao giờ hiển thị trong hộp thư. |
+| sentAt | datetime | Không | Dấu thời gian máy chủ được đặt khi nhà cung cấp email Giai đoạn 1 chấp nhận lần gửi và hệ thống lưu thành công trạng thái cuối; là null khi ở `PENDING`/`PROCESSING` và sau lần thử thất bại. |
+| readAt | datetime | Không | Trạng thái đọc của hộp thư cá nhân, có thể null với bản ghi không nhạy cảm đủ điều kiện và có `userId` khác null. Thông báo đủ điều kiện mới bắt đầu bằng null; thao tác đọc thành công đầu tiên đặt dấu thời gian máy chủ. Các bản ghi lịch sử đủ điều kiện được cập nhật bằng `createdAt`; bản ghi nhạy cảm và bản ghi chỉ gửi email không gắn người dùng không xuất hiện trong hộp thư. |
 | attemptNo | integer | Không | Số thứ tự lần thử gửi. |
 | errorMessage | string | Không | Chỉ chứa lý do lỗi đã làm sạch; không chứa chi tiết nhà cung cấp hay giá trị nhạy cảm đã gửi. |
 
@@ -508,14 +508,14 @@ Mọi cặp khác đều bị từ chối. `EMAIL_VERIFY` và `DUE_OR_FINE_NOTIC
 
 | Phương thức | Điểm cuối | Tác nhân | Yêu cầu | Phản hồi | Ghi chú |
 | ------ | -------- | ----- | ------- | -------- | ----- |
-| POST | `/api/notifications/requests` | `LIBRARIAN`, `ADMIN` | `{ type, channel, userId?, recipientEmail?, templateKey, templateData, sourceEntityType?, sourceEntityId?, idempotencyKey? }` | Yêu cầu mới: `201 { notificationId, status }`; phát lại lũy đẳng: `200 { notificationId, status }`; loại nhạy cảm: lỗi an toàn `403` | Ranh giới HTTP cho thông báo không nhạy cảm được bảo vệ bằng vai trò. Không chấp nhận `sourceFeature`. Mọi loại xác thực nhạy cảm đều trả về `SENSITIVE_NOTIFICATION_INTERNAL_ONLY`. Tuyệt đối không trả về toàn bộ nội dung hoặc `safePayload`. |
+| POST | `/api/notifications/requests` | `LIBRARIAN`, `ADMIN` | `{ type, channel, userId?, recipientEmail?, templateKey, templateData, sourceEntityType?, sourceEntityId?, idempotencyKey? }` | Yêu cầu mới: `201 { notificationId, status }`; yêu cầu trùng theo khóa chống gửi trùng: `200 { notificationId, status }`; loại nhạy cảm: lỗi an toàn `403` | Ranh giới HTTP cho thông báo không nhạy cảm được bảo vệ bằng vai trò. Không chấp nhận `sourceFeature`. Mọi loại xác thực nhạy cảm đều trả về `SENSITIVE_NOTIFICATION_INTERNAL_ONLY`. Tuyệt đối không trả về toàn bộ nội dung hoặc `safePayload`. |
 | POST | `/api/notifications/process-pending` | `LIBRARIAN`, `ADMIN` | `{ limit?: number }` | `200 { processed, failed }` | Chỉ xử lý các bản ghi `PENDING` không nhạy cảm; không công khai. |
 | POST | `/api/notifications/{id}/retry` | `LIBRARIAN`, `ADMIN` | Không có | Thành công: `200 { notificationId, status }`; xung đột: an toàn `409` | Chỉ các bản ghi xếp hàng không nhạy cảm bị lỗi mới quay trở lại `PENDING`. Xác thực nhạy cảm trả về `409 { code: "REISSUE_REQUIRED", message: "Create a new notification from the source event." }`. |
 | Trong tiến trình | `createSourceNotificationRequester(sourceFeature)` | `FE02`, `FE04`, `FE07`, `FE08`, `FE09`, `FE11`, `SYSTEM` | Cùng yêu cầu thông báo nhưng không có `sourceFeature` do người gọi kiểm soát | Cùng ngữ nghĩa bản tóm tắt tối thiểu | Quyền sở hữu được ràng buộc khi khởi tạo: FE02 xác minh/đặt lại, FE04 kết quả tư cách thành viên, FE11 thiết lập tài khoản. Bản ghi kiểm toán nguồn dùng `userId: null`. |
 | GET | `/api/notifications/mine` | `MEMBER`, `LIBRARIAN`, `ADMIN` đã xác thực | Truy vấn: `page?`, `limit?`, `readState?=all|unread|read`, `type?` đủ điều kiện | `200 { notifications: SafeInboxItem[], pagination }` | Chỉ các hàng không nhạy cảm đủ điều kiện của chính mình; mặc định trang 1/giới hạn 20, tối đa 100; mới nhất trước. |
 | GET | `/api/notifications/mine/unread-count` | `MEMBER`, `LIBRARIAN`, `ADMIN` đã xác thực | Không có | `200 { unreadCount }` | Chỉ đếm các hàng đủ điều kiện của chính mình có `ReadAt IS NULL`. |
 | PATCH | `/api/notifications/{id}/read` | `MEMBER`, `LIBRARIAN`, `ADMIN` đã xác thực | Không có | `200 SafeInboxItem`; không tồn tại/nhạy cảm/không thuộc sở hữu: `404` an toàn | Có khả năng xử lý lặp an toàn; không thể thay đổi trạng thái gửi hoặc các lần thử. |
-| PATCH | `/api/notifications/mine/read-all` | `MEMBER`, `LIBRARIAN`, `ADMIN` đã xác thực | Không có | `200 { updated }` | Một dấu thời gian máy chủ cho các hàng đủ điều kiện chưa đọc của chính mình; phát lại trả về 0. |
+| PATCH | `/api/notifications/mine/read-all` | `MEMBER`, `LIBRARIAN`, `ADMIN` đã xác thực | Không có | `200 { updated }` | Dùng một dấu thời gian máy chủ cho các bản ghi đủ điều kiện chưa đọc của chính mình; gọi lại thao tác trả về 0. |
 
 Lỗi kiểm tra hợp lệ và lỗi mẫu dùng nội dung phản hồi 4xx an toàn. Trạng thái thử lại không hợp lệ dùng nội dung phản hồi `409` an toàn. Không phản hồi nào chứa nội dung đã tạo từ mẫu, bí mật đầu vào thô, chi tiết nhà cung cấp hoặc dấu vết ngăn xếp nội bộ.
 
@@ -550,7 +550,7 @@ lũy đẳng, siêu dữ liệu nguồn, mã định danh/lỗi nhà cung cấp 
 
 - NFR-FE10-REL-001: Lần gửi thất bại phải ghi số thứ tự lần thử, dấu thời gian và lý do lỗi an toàn.
 - NFR-FE10-REL-002: Không được hoàn tác giao dịch nghiệp vụ nguồn chỉ vì gửi thông báo thất bại.
-- NFR-FE10-REL-003: Sự kiện nguồn trùng phải phát lại một bản ghi xuyên suốt mọi trạng thái. Thử lại thủ công thông báo không nhạy cảm phải giữ nguyên ID thông báo, khóa chống gửi trùng và lịch sử lần thử. thao tác gọi nhà cung cấp chỉ được thực hiện sau khi quyền nhận xử lý `PROCESSING` đã được lưu vào cơ sở dữ liệu, và hàng `PROCESSING` có kết quả không chắc chắn tuyệt đối không được tự động nhận lại.
+- NFR-FE10-REL-003: Sự kiện nguồn trùng phải trả về cùng một bản ghi xuyên suốt mọi trạng thái. Thao tác thử lại thủ công với thông báo không nhạy cảm phải giữ nguyên ID thông báo, khóa chống gửi trùng và lịch sử lần thử. Chỉ được gọi nhà cung cấp sau khi quyền xử lý `PROCESSING` đã được lưu vào cơ sở dữ liệu; bản ghi `PROCESSING` có kết quả không chắc chắn tuyệt đối không được tự động nhận lại.
 - NFR-FE10-REL-004: Thao tác thay đổi trạng thái đọc phải có khả năng xử lý lặp an toàn, giữ
   `ReadAt` thành công đầu tiên và độc lập với việc gửi qua nhà cung cấp cũng như
   giao dịch nguồn. Lỗi đọc không được chặn điều hướng tới quy trình nguồn đã phê duyệt.
@@ -642,12 +642,12 @@ Tính năng này không bao gồm:
 | Q-FE10-010 | Các trạng thái thông báo Giai đoạn 1 là `PENDING`, `PROCESSING`, `SENT` và `FAILED`; quyền nhận xử lý/chấp nhận thông báo nhạy cảm cam kết `PROCESSING` trước thao tác gọi nhà cung cấp, còn các trạng thái tương thích không có chuyển đổi trong Giai đoạn 1. | Chuẩn hóa vòng đời thông báo 2026-07-17; biện pháp khắc phục an toàn gửi được phê duyệt 2026-07-23 | APPROVED |
 | Q-FE10-011 | FE04 sử dụng `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`; FE08 sử dụng `RESERVATION_AVAILABLE -> RESERVATION_READY`; người gọi phải gửi cả hai trường chuẩn. | Chuẩn hóa hợp đồng nguồn 2026-07-17 | APPROVED |
 | Q-FE10-012 | FE10 làm sạch hay từ chối một định nghĩa mẫu đã lưu không an toàn? | Nhat, 2026-07-27 | APPROVED: từ chối định nghĩa đã lưu trước khi tạo nội dung từ mẫu/lưu vào cơ sở dữ liệu/gửi; tiếp tục thoát hoặc làm sạch giá trị khi chạy. |
-| Q-FE10-013 | Môi trường tiền sản xuất dùng một tiến trình SYSTEM trong tiến trình có cơ chế bật tùy chọn, khoảng lặp mặc định 60 giây và kích thước lô 20. Tiến trình chạy một lần sau khi khởi động, ngăn các lượt chạy cục bộ chồng lấp, chỉ xử lý hàng `PENDING` không nhạy cảm và dừng cùng máy chủ HTTP. Điểm cuối nhân viên hiện có vẫn được bảo vệ và việc thử lại `FAILED` vẫn chỉ thủ công. Trạng thái ngủ của F1 tạm dừng tiến trình. | Phê duyệt của người dùng và thiết kế bằng văn bản 2026-07-27 | APPROVED |
+| Q-FE10-013 | Môi trường tiền sản xuất dùng tiến trình nền SYSTEM chạy cùng ứng dụng, có cơ chế bật tùy chọn, chu kỳ mặc định 60 giây và kích thước lô 20. Tiến trình chạy một lần sau khi khởi động, ngăn các lượt chạy cục bộ chồng lấp, chỉ xử lý bản ghi `PENDING` không nhạy cảm và dừng cùng máy chủ HTTP. Endpoint nhân viên hiện có vẫn được bảo vệ và trạng thái `FAILED` chỉ được thử lại thủ công. Khi gói F1 ngủ, tiến trình cũng tạm dừng. | Phê duyệt của người dùng và thiết kế bằng văn bản 2026-07-27 | APPROVED |
 | Q-FE10-014 | Mọi tài khoản `MEMBER`, `LIBRARIAN` và `ADMIN` đã xác thực có thể dùng cùng một hộp thư cá nhân và chỉ xem các hàng có `UserId` của chính mình; không bổ sung nhật ký nhân viên toàn cục. | Thiết kế hộp thư và SPEC bằng văn bản được người dùng phê duyệt ngày 2026-07-27 | APPROVED |
 | Q-FE10-015 | Mọi thông báo không nhạy cảm đủ điều kiện xuất hiện qua quy trình email hiện tại và hộp thư web; tính năng nguồn không chọn kênh. | Thiết kế hộp thư và SPEC bằng văn bản được người dùng phê duyệt ngày 2026-07-27 | APPROVED |
 | Q-FE10-016 | Nhấp vào một mục sẽ đánh dấu mục đó đã đọc và điều hướng tới tuyến nằm trong danh sách cho phép do backend suy ra; lỗi đọc vẫn không chặn. | Thiết kế hộp thư và SPEC bằng văn bản được người dùng phê duyệt ngày 2026-07-27 | APPROVED |
 | Q-FE10-017 | Lịch sử thông báo được giữ lại và phân trang, không có thao tác xóa/lưu trữ. | Thiết kế hộp thư và SPEC bằng văn bản được người dùng phê duyệt ngày 2026-07-27 | APPROVED |
-| Q-FE10-018 | Các hàng đủ điều kiện hiện có được điền lùi là đã đọc, trong khi chỉ các hàng đủ điều kiện mới sau bản cập nhật cơ sở dữ liệu bắt đầu ở trạng thái chưa đọc. | Thiết kế hộp thư và SPEC bằng văn bản được người dùng phê duyệt ngày 2026-07-27 | APPROVED |
+| Q-FE10-018 | Các bản ghi lịch sử đủ điều kiện được cập nhật thành đã đọc, trong khi chỉ bản ghi đủ điều kiện tạo sau bản cập nhật cơ sở dữ liệu mới bắt đầu ở trạng thái chưa đọc. | Thiết kế hộp thư và SPEC bằng văn bản được người dùng phê duyệt ngày 2026-07-27 | APPROVED |
 
 ---
 
@@ -658,16 +658,16 @@ Các quyết định ban đầu được phê duyệt trong gói rà soát Giai 
 | Quyết định | Câu trả lời được phê duyệt | Trạng thái |
 | -------- | --------------- | ------ |
 | Q-FE10-001 | Kênh bắt buộc của Giai đoạn 1 là email qua bộ điều hợp nhà cung cấp đã cấu hình; kiểm thử dùng nhà cung cấp mô phỏng được truyền vào. | APPROVED |
-| Q-FE10-002 | v0.5.0 thay thế quyết định hoãn hộp thư bằng phép chiếu cá nhân của các bản ghi không nhạy cảm đủ điều kiện hiện có; việc gửi vẫn chỉ dùng email. | APPROVED 2026-07-27 |
+| Q-FE10-002 | v0.5.0 thay thế quyết định hoãn hộp thư bằng dữ liệu hiển thị cá nhân từ các bản ghi không nhạy cảm đủ điều kiện hiện có; kênh gửi vẫn chỉ dùng email. | APPROVED 2026-07-27 |
 | Q-FE10-003 | Các mẫu bắt buộc gồm xác minh, đặt lại mật khẩu, thiết lập tài khoản, nhắc hạn trả, thông báo quá hạn, thông báo tiền phạt, đặt chỗ sẵn sàng và kết quả tư cách thành viên. | APPROVED |
 | Q-FE10-004 | Lưu các lần thử gửi thông báo và trạng thái. | APPROVED |
 | Q-FE10-005 | Chỉ thử lại bản ghi không nhạy cảm đã xếp hàng nhưng thất bại; xác thực nhạy cảm yêu cầu nguồn phát hành lại. | APPROVED |
 | Q-FE10-006 | Lỗi thông báo không được chặn luồng nghiệp vụ nguồn. | APPROVED |
 | Q-FE10-007 | Hệ thống/Bộ lập lịch dùng thành phần gửi yêu cầu nội bộ đã ràng buộc và không phải vai trò đăng nhập. | APPROVED |
 | Q-FE10-008 | Thiết lập tài khoản là thao tác gửi nhạy cảm đồng bộ thuộc quyền sở hữu của thành phần gửi yêu cầu được ràng buộc với FE11. | APPROVED |
-| Q-FE10-013 | Tiến trình SYSTEM bật tùy chọn chạy lúc khởi động và mặc định cứ 60 giây một lần, với kích thước lô 20, ngăn chạy cục bộ chồng lấp, dừng theo vòng đời, giữ nguyên phân quyền HTTP của nhân viên, chỉ thử lại lỗi thủ công và có giới hạn thực hiện trong khả năng tốt nhất rõ ràng trên F1. | APPROVED 2026-07-27 |
+| Q-FE10-013 | Tiến trình SYSTEM có thể bật để chạy lúc khởi động và mặc định cứ 60 giây một lần với kích thước lô 20; ngăn chạy cục bộ chồng lấp, dừng theo vòng đời ứng dụng, giữ nguyên phân quyền HTTP của nhân viên, chỉ thử lại lỗi thủ công và có thể bị gián đoạn khi gói F1 ngủ. | APPROVED 2026-07-27 |
 | G1 | Thông báo xác thực nhạy cảm được gửi đồng bộ mà không lưu vào cơ sở dữ liệu nội dung đã tạo từ mẫu; thông báo không nhạy cảm vẫn được xếp hàng với cơ chế đệ quy bảo vệ khóa bí mật đã chuẩn hóa và che dữ liệu `safePayload` tương ứng. | APPROVED 2026-07-13 |
-| G2 | Các thao tác tạo/phát lại/xử lý/thử lại chỉ trả về DTO tối thiểu đã phê duyệt. | APPROVED 2026-07-13 |
+| G2 | Các thao tác tạo/yêu cầu trùng/xử lý/thử lại chỉ trả về DTO tối thiểu đã phê duyệt. | APPROVED 2026-07-13 |
 | G3 | `createSourceNotificationRequester(sourceFeature)` ràng buộc một nguồn trong `FE02`, `FE04`, `FE07`, `FE08`, `FE09`, `FE11`, `SYSTEM`; HTTP vẫn dùng `LIBRARIAN`/`ADMIN`. | APPROVED 2026-07-13; được mở rộng bởi ADR-005 2026-07-15 và kiểm toán FE04 2026-07-17 |
 | G4 | `sourceEntityId` chỉ có số nguyên trong Giai đoạn 1. | APPROVED 2026-07-13 |
 | G5 | Thử lại thủ công được bảo vệ và chỉ áp dụng cho bản ghi không nhạy cảm đã xếp hàng nhưng thất bại; thử lại thông báo nhạy cảm trả về `REISSUE_REQUIRED`. | APPROVED 2026-07-13 |
@@ -700,14 +700,14 @@ Các quyết định ban đầu được phê duyệt trong gói rà soát Giai 
 | AC-FE10-005 | Hợp đồng quá hạn/tiền phạt FE09 được phê duyệt mà FE10 không tính tiền phạt; tích hợp người gọi được trì hoãn | FR-FE10-004 | BR-FE10-001, BR-FE10-002, BR-FE10-007, BR-FE10-012 | FT49 | FE10-H01, FE10-H02, FE10-H05 | Đã phê duyệt; tích hợp được trì hoãn |
 | AC-FE10-006 | Cả tám cặp loại/mẫu đã quy định và định nghĩa an toàn đều đạt kiểm tra; người nhận, biến, ID nguồn hoặc ánh xạ không hợp lệ, mẫu không an toàn/bị thiếu/không hoạt động, quyền sở hữu nguồn, ghi đè nguồn HTTP hoặc bí mật trong dữ liệu xếp hàng được phát hiện đệ quy đều trả về lỗi 4xx an toàn trước khi tạo nội dung từ mẫu/lưu vào cơ sở dữ liệu/gửi | FR-FE10-005, FR-FE10-009 | BR-FE10-002, BR-FE10-004, BR-FE10-007, BR-FE10-010, BR-FE10-011 | FT46 đến FT49 cùng ma trận định nghĩa lưu trữ không an toàn trong `notificationRoutes.test.js` | FE10-H02, FE10-H04, FE10-S02, FE10-S06, FE10-S11 | Bằng chứng tự động hoàn tất; H2 tích hợp đã được phê duyệt; CI của PR đã đạt; khắc phục H3 chỉ liên quan tài liệu đang chờ H2 mới |
 | AC-FE10-007 | OTP xác thực và nội dung nhạy cảm đã tạo từ mẫu không bao giờ vượt qua ranh giới lưu vào cơ sở dữ liệu/nhật ký/kiểm toán/HTTP | FR-FE10-001, FR-FE10-002 | BR-FE10-003, BR-FE10-004, BR-FE10-008, BR-FE10-013 | FT46, FT47 | FE10-H03, FE10-H04, FE10-S03 | Đã phê duyệt để triển khai |
-| AC-FE10-008 | Khóa trùng phát lại cùng một bản ghi xuyên suốt mọi trạng thái bằng DTO `200` tối thiểu | FR-FE10-008 | BR-FE10-006, BR-FE10-013 | FT46 đến FT49 | FE10-H08 | Đã phê duyệt để triển khai |
+| AC-FE10-008 | Khóa chống gửi trùng trả về cùng một bản ghi xuyên suốt mọi trạng thái bằng DTO `200` tối thiểu | FR-FE10-008 | BR-FE10-006, BR-FE10-013 | FT46 đến FT49 | FE10-H08 | Đã phê duyệt để triển khai |
 | AC-FE10-009 | Lỗi được xử lý an toàn/không chặn; FE02 phát hành lại sự kiện OTP/mã thông báo mới, thao tác thử lại `FAILED` không nhạy cảm dùng lại lịch sử, còn `PROCESSING` không chắc chắn tuyệt đối không được gửi lại | FR-FE10-007 | BR-FE10-004, BR-FE10-008, BR-FE10-012, BR-FE10-013 | Các trường hợp nhà cung cấp/chuyển đổi/thử lại trong `backend/tests/notificationRoutes.test.js` | FE10-H03, FE10-H08, FE10-S04, FE10-S10 | Có bằng chứng tự động; đang chờ rà soát H2 |
 | AC-FE10-010 | Thiết lập tài khoản từ thành phần gửi yêu cầu ràng buộc với FE11 được gửi đồng bộ bằng siêu dữ liệu nguồn an toàn và không lưu vào cơ sở dữ liệu thông tin xác thực/nội dung thiết lập | FR-FE10-010 | BR-FE10-002, BR-FE10-004 đến BR-FE10-008, BR-FE10-010 đến BR-FE10-013 | FT52, FT55 | FE10-S06 đến FE10-S08 | Đã phê duyệt để triển khai |
 | AC-FE10-011 | Danh sách cá nhân đã xác thực chỉ trả về DTO an toàn không nhạy cảm đủ điều kiện thuộc sở hữu, với bộ lọc SQL, thứ tự mới nhất trước và phân trang | FR-FE10-011 | BR-FE10-014, BR-FE10-015, BR-FE10-020 | Bản cập nhật cơ sở dữ liệu, tầng truy cập dữ liệu, tuyến, tích hợp và trình duyệt | FE10-I01 đến FE10-I03, FE10-I06 đến FE10-I08 | Hoàn tất qua PR #75; CI/Azure đúng commit và hậu hợp nhất đều đạt |
 | AC-FE10-012 | Số lượng chưa đọc chỉ gồm các bản ghi đủ điều kiện chưa đọc của người dùng đã xác thực | FR-FE10-012 | BR-FE10-014 đến BR-FE10-016, BR-FE10-020 | Tầng truy cập dữ liệu, tuyến, frontend, tích hợp và trình duyệt | FE10-I01 đến FE10-I04, FE10-I07, FE10-I08 | Hoàn tất qua PR #75; CI/Azure đúng commit và hậu hợp nhất đều đạt |
 | AC-FE10-013 | Đánh dấu một mục chỉ áp dụng cho bản ghi của chính mình, an toàn với dữ liệu nhạy cảm, có khả năng xử lý lặp an toàn và độc lập với việc gửi email | FR-FE10-013 | BR-FE10-014 đến BR-FE10-016 | Tầng truy cập dữ liệu, tuyến, frontend, tích hợp và trình duyệt | FE10-I01 đến FE10-I04, FE10-I06 đến FE10-I08 | Hoàn tất qua PR #75; CI/Azure đúng commit và hậu hợp nhất đều đạt |
-| AC-FE10-014 | Đánh dấu tất cả chỉ thay đổi các hàng đủ điều kiện chưa đọc của người dùng hiện tại bằng một dấu thời gian và phát lại trả về 0 | FR-FE10-014 | BR-FE10-014 đến BR-FE10-016 | Bản cập nhật cơ sở dữ liệu, tầng truy cập dữ liệu, tuyến, frontend và trình duyệt | FE10-I01 đến FE10-I03, FE10-I06 đến FE10-I08 | Hoàn tất qua PR #75; CI/Azure đúng commit và hậu hợp nhất đều đạt |
-| AC-FE10-015 | Các mục đủ điều kiện chỉ nhận đường dẫn thao tác tương đối chuẩn nằm trong danh sách cho phép của backend | FR-FE10-015 | BR-FE10-017 | Phép chiếu, tuyến, frontend, tích hợp và trình duyệt | FE10-I02, FE10-I03, FE10-I05, FE10-I07, FE10-I08 | Hoàn tất qua PR #75; CI/Azure đúng commit và hậu hợp nhất đều đạt |
+| AC-FE10-014 | Đánh dấu tất cả chỉ thay đổi các bản ghi đủ điều kiện chưa đọc của người dùng hiện tại bằng một dấu thời gian; gọi lại thao tác trả về 0 | FR-FE10-014 | BR-FE10-014 đến BR-FE10-016 | Bản cập nhật cơ sở dữ liệu, tầng truy cập dữ liệu, tuyến, frontend và trình duyệt | FE10-I01 đến FE10-I03, FE10-I06 đến FE10-I08 | Hoàn tất qua PR #75; CI/Azure đúng commit và hậu hợp nhất đều đạt |
+| AC-FE10-015 | Các mục đủ điều kiện chỉ nhận đường dẫn thao tác tương đối nằm trong danh sách cho phép của backend | FR-FE10-015 | BR-FE10-017 | Dữ liệu hiển thị, tuyến, frontend, tích hợp và trình duyệt | FE10-I02, FE10-I03, FE10-I05, FE10-I07, FE10-I08 | Hoàn tất qua PR #75; CI/Azure đúng commit và hậu hợp nhất đều đạt |
 | AC-FE10-016 | Chuông, phần xem trước, bộ lọc/phân trang hộp thư, thao tác đọc, trạng thái an toàn và điều hướng không chặn khớp với hợp đồng API | FR-FE10-016 | BR-FE10-014 đến BR-FE10-018 | Hợp đồng frontend, khung ứng dụng, trang và trình duyệt | FE10-I04 đến FE10-I08 | Hoàn tất qua PR #75; CI/Azure đúng commit và hậu hợp nhất đều đạt |
 
 ### Tóm tắt độ bao phủ
@@ -726,7 +726,7 @@ Các quyết định ban đầu được phê duyệt trong gói rà soát Giai 
 | FR-FE10-006 | Việc nhà cung cấp chấp nhận đặt `SENT`, `sentAt` và một lần thử thành công | Đã lên kế hoạch |
 | BR-FE10-011 / Q-FE10-009 | Quyền sở hữu kết quả thành viên được ràng buộc bởi FE04 và ranh giới HTTP được bảo vệ | Đã lên kế hoạch |
 | BR-FE10-010 / FR-FE10-005 / FR-FE10-009 | `notificationRoutes.test.js` từ chối ba lớp định nghĩa đã lưu không an toàn trước khi tạo nội dung từ mẫu, lưu vào cơ sở dữ liệu hoặc gọi nhà cung cấp; các giá trị được chèn khi chạy vẫn được làm sạch | Hoàn thành |
-| BR-FE10-014 đến BR-FE10-020 / FR-FE10-011 đến FR-FE10-016 | Quyền sở hữu hộp thư cá nhân, loại trừ dữ liệu nhạy cảm, phép chiếu an toàn, trạng thái đọc, danh sách thao tác cho phép, bản cập nhật cơ sở dữ liệu/điền lùi và chấp nhận giao diện | Hoàn tất qua FE10-I01..I08 và PR #75; bằng chứng H2/H3, CI/Azure đúng commit và hậu hợp nhất đã ghi nhận |
+| BR-FE10-014 đến BR-FE10-020 / FR-FE10-011 đến FR-FE10-016 | Quyền sở hữu hộp thư cá nhân, loại trừ dữ liệu nhạy cảm, dữ liệu hiển thị an toàn, trạng thái đọc, danh sách thao tác cho phép, bản cập nhật cơ sở dữ liệu/cập nhật dữ liệu lịch sử và chấp nhận giao diện | Hoàn tất qua FE10-I01..I08 và PR #75; bằng chứng H2/H3, CI/Azure đúng commit và hậu hợp nhất đã ghi nhận |
 
 
 ### Truy vết bài tập bên ngoài (ID UC trong Excel)
@@ -760,7 +760,7 @@ Danh sách kiểm tra hợp đồng tăng cường (được Nhat phê duyệt n
 - [x] Các cặp loại/mẫu đã quy định là chính xác và cờ của người gọi không thể bỏ qua chúng.
 - [x] Thông báo xác thực nhạy cảm được gửi đồng bộ và nội dung nhạy cảm đã tạo từ mẫu chỉ tồn tại trong bộ nhớ của nhà cung cấp.
 - [x] Dữ liệu không nhạy cảm đã xếp hàng dùng kiểm tra đệ quy đối tượng/mảng, từ chối khóa bí mật đã chuẩn hóa và che dữ liệu `safePayload` tương ứng.
-- [x] Các thao tác tạo/phát lại/xử lý/thử lại chỉ dùng DTO tối thiểu.
+- [x] Các thao tác tạo/yêu cầu trùng/xử lý/thử lại chỉ dùng DTO tối thiểu.
 - [x] `sourceEntityId` chỉ có số nguyên.
 - [x] Danh sách cho phép của thành phần gửi yêu cầu nguồn đã ràng buộc và ranh giới HTTP `LIBRARIAN`/`ADMIN` được nêu rõ.
 - [x] Khả năng xử lý lặp an toàn áp dụng xuyên suốt mọi trạng thái.
@@ -772,7 +772,7 @@ Danh sách kiểm tra hợp đồng tăng cường (được Nhat phê duyệt n
 ### Cổng an toàn mẫu của bản sửa đổi v0.4.4
 
 - [x] Tách việc từ chối định nghĩa mẫu đã lưu khỏi thao tác thoát giá trị khi chạy.
-- [x] Bảo toàn cặp loại/mẫu đã quy định, khóa giống bí mật, tải trọng an toàn, DTO tối thiểu và các quy tắc sở hữu nguồn.
+- [x] Bảo toàn cặp loại/mẫu đã quy định, khóa có độ nhạy tương đương bí mật, dữ liệu an toàn, DTO tối thiểu và các quy tắc sở hữu nguồn.
 - [x] Yêu cầu từ chối an toàn trước khi tạo nội dung từ mẫu, lưu vào cơ sở dữ liệu thông báo/lần thử hoặc gửi qua nhà cung cấp.
 - [x] Nhat đã trực tiếp rà soát và phê duyệt SPEC v0.4.4 bằng văn bản ngày 2026-07-27; PLAN/TASKS có thể tiếp tục, còn việc triển khai vẫn bị chặn trong khi chờ phê duyệt kế hoạch.
 
@@ -810,7 +810,7 @@ Danh sách kiểm tra hợp đồng tăng cường (được Nhat phê duyệt n
 
 - BR-FE10-021: Quyền sở hữu `GENERAL_SYSTEM` phải được kiểm tra theo từng khóa
   mẫu đã quy định, không chỉ theo loại thông báo.
-- BR-FE10-022: Các hàng hộp thư kết quả mượn chỉ ánh xạ tới đường dẫn tương đối cố định
+- BR-FE10-022: Các bản ghi hộp thư về kết quả mượn chỉ ánh xạ tới đường dẫn tương đối cố định
   `/borrowing/history`.
 - BR-FE10-023: Dữ liệu gửi thông báo kết quả mượn không chứa lý do từ chối,
   email, mã thông báo, OTP, dấu vết ngăn xếp hoặc chi tiết nhà cung cấp.

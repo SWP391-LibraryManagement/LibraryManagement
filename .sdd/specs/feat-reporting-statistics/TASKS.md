@@ -52,7 +52,7 @@ nhiệm vụ, hợp nhất qua PR #89 thành `main@39092fb`; CI `30675444178` v�
 ## 4. Xác thực phạm vi nền lịch sử (2026-07-13)
 
 Các kết quả này mô tả phạm vi nền đã tích hợp trước đó và chỉ còn là bằng chứng
-lịch sử; bằng chứng lượt xác định được ghi ở Phần 9.1.
+lịch sử; bằng chứng kiểm tra tính ổn định được ghi ở Phần 9.1.
 
 - [x] `npm.cmd --prefix backend test` đạt: 18 bộ, 236 kiểm thử.
 - [x] `npm.cmd --prefix frontend test` đạt: 24 kiểm thử.
@@ -107,7 +107,7 @@ Trạng thái triển khai B5: HOÀN TẤT. Xác thực trình duyệt tự đ�
 minh đầy đủ mới đạt, rà soát lại độc lập cuối sạch và Nhat xác nhận rà soát con
 người.
 
-- [x] FE12-H01 Thêm kiểm thử hồi quy cho khử trùng lặp yêu cầu, bộ lọc chỉ-ngày
+- [x] FE12-H01 Thêm kiểm thử hồi quy cho khử trùng lặp yêu cầu, bộ lọc chỉ gồm ngày
   bao hàm, kỳ phê duyệt tư cách thành viên, số thể loại kho và tổng bản sao tồn
   thấp.
 - [x] FE12-H02 Sửa hành vi tổng hợp tầng truy cập dữ liệu và ranh giới ngày.
@@ -122,7 +122,7 @@ người.
 - [x] FE12-H08 Loại giá trị truy vấn thô khỏi siêu dữ liệu kiểm toán báo cáo thành công.
 - [x] FE12-H09 Chỉ áp dụng khoảng ngày người dùng cho `newMembersByPeriod` theo
   `Members.ApprovedAt`.
-- [x] FE12-H10 Thêm xác thực chỉ-ngày nghiêm ngặt và phản hồi `400` OpenAPI đầy
+- [x] FE12-H10 Thêm xác thực nghiêm ngặt cho giá trị chỉ gồm ngày và phản hồi `400` OpenAPI đầy
   đủ.
 - [x] FE12-H11 Mặc định bộ lọc ngày báo cáo là trống và bỏ tham số truy vấn rỗng.
 - [x] FE12-H12 Căn chỉnh hành vi tồn thấp môi trường thực tế/kiểm thử thành
@@ -144,16 +144,16 @@ Bằng chứng chi tiết được ghi trong
 - [x] Bằng chứng chi tiết được ghi trong
   `.sdd/reviews/fe12-b7-integration-review-closeout-2026-07-13.md`.
 
-## 9. Theo dõi quy tắc xác định
+## 9. Theo dõi quy tắc cho kết quả ổn định
 
 - [x] FE12-N01 Chuẩn hóa tài liệu về truy cập mọi báo cáo, hành vi ID/trạng thái
   không rõ, phân trang/thứ tự, kiểm toán, phạm vi xuất và truy vết.
 - [x] FE12-N02 Căn chỉnh truy cập, xác thực, cấu trúc phản hồi chỉ số/hàng chuẩn, quy tắc
   ID/trạng thái không rõ, thứ tự ổn định, kiểm toán thành công an toàn và tuần tự hóa
-  hàng chỉ-ngày với hợp đồng xác định đã phê duyệt.
+  trường ngày không kèm giờ với hợp đồng ổn định đã phê duyệt.
 - [x] FE12-N03 Thêm kiểm thử hợp đồng tập trung cho ID không rõ, nhóm trạng thái
   `UNKNOWN`, giới hạn page/limit, thứ tự ổn định, kiểm toán thành công, hàng mượn
-  chỉ-ngày và không có chức năng xuất.
+  chỉ gồm ngày và không có chức năng xuất.
 - [x] FE12-N04 Căn chỉnh cả ba phần sử dụng báo cáo frontend và các khẳng định kiểm thử tích hợp
   liên tính năng với `{ metrics, rows, page, limit, totalRows }` không có trường
   phản hồi cũ.
@@ -161,7 +161,7 @@ Bằng chứng chi tiết được ghi trong
   lượng sẵn có toàn sách cho tính toán tồn thấp và đánh giá ranh giới ngày kỳ
   phê duyệt người dùng trong SQL mà không đổi tổng toàn cục.
 - [x] FE12-N06 Chạy xác thực tự động tập trung/đầy đủ, lint, build, truy vết và
-  vệ sinh phần thay đổi; ghi bằng chứng lượt xác định.
+  vệ sinh phần thay đổi; ghi bằng chứng kiểm tra tính ổn định.
 - [x] FE12-N07 Chạy chấp nhận trình duyệt mới cho màn hình mượn/kho/người dùng
   chuẩn, lọc kết quả bằng không, bố cục điện thoại và từ chối Member/Guest.
 - [x] FE12-N08 Đã nhận rà soát tích hợp con người; H3, hợp nhất và hoàn tất B7
@@ -169,7 +169,7 @@ Bằng chứng chi tiết được ghi trong
 - [x] FE12-N09 Thêm tìm kiếm chuẩn và bộ lọc báo cáo đầy đủ, bỏ thông báo tải
   thành công và sắp hàng người dùng tăng dần theo `UserId`.
 
-### 9.1 Bằng chứng tự động lượt xác định
+### 9.1 Bằng chứng tự động về tính ổn định
 
 - [x] Cổng backend FE12 tập trung đạt: 6 bộ, 46 kiểm thử.
 - [x] Bộ backend đầy đủ đạt: 39 bộ, 615 kiểm thử.
@@ -204,7 +204,7 @@ Bằng chứng tự động chi tiết được ghi trong
   - Ánh xạ tới: BR-FE12-009, BR-FE12-015/016, FR-FE12-003/011, AC-FE12-003/011.
   - Trước khi sửa: `q` người dùng không khớp ID/trạng thái/tư cách thành viên/vai trò và
     mẫu ký tự đại diện SQL; các phê duyệt lịch sử không hoạt động biến mất khỏi chỉ số tăng
-    trưởng và thứ tự dữ liệu kiểm thử rò vào hàng chi tiết.
+    trưởng và thứ tự dữ liệu kiểm thử rò vào danh sách chi tiết.
   - Sau khi sửa: tầng truy cập dữ liệu trong bộ nhớ khớp tìm kiếm SQL `LIKE` có
     tham số ở môi trường thực tế, gồm `%`, `_`, biểu thức trong ngoặc vuông và
     biểu thức phủ định trên trường đã phê duyệt, cùng
@@ -254,7 +254,7 @@ Bằng chứng tự động chi tiết được ghi trong
   - Bằng chứng cục bộ: trước khi sửa 14 ca lỗi như dự kiến; sau khi sửa tập trung 5 bộ,
     73/73 kiểm thử.
 
-Mã đối chiếu nội dung H2 sau khắc phục
+Mã băm nội dung H2 sau khắc phục
 `c4216068a3aafbbfeaddd47ef2398a84555746c35b290e4f1a040d370d9612ed`
 đã được phê duyệt. H3 hai trục và CI đúng commit đạt; PR #81 đã hợp nhất thành
 `main@0d064b5` và CI sau hợp nhất `30403632044` đạt.

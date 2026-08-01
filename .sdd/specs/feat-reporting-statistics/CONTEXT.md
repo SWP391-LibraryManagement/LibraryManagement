@@ -146,7 +146,7 @@ Cột chủ sở hữu phản ánh phân công lại đội hiện tại.
 | Q-FE12-004 | Thống kê người dùng: tổng thành viên, người dùng hoạt động/không hoạt động, thành viên mới theo kỳ. | Gói rà soát 2026-06-10 | APPROVED |
 | Q-FE12-005 | Mọi xuất báo cáo hoàn toàn ngoài phạm vi Giai đoạn 1. | Gói rà soát 2026-06-10; chuẩn hóa 2026-07-17 | APPROVED |
 | Q-FE12-006 | Truy cập báo cáo ghi kiểm toán cho lượt xem báo cáo của Quản trị/Thủ thư. | Gói rà soát 2026-06-10 | APPROVED |
-| Q-FE12-007 | ID không rõ có định dạng hợp lệ trả báo cáo rỗng, trạng thái nguồn không rõ nhóm thành `UNKNOWN` và hàng chi tiết dùng phân trang/thứ tự xác định. | Chuẩn hóa spec 2026-07-17 | APPROVED |
+| Q-FE12-007 | ID không tồn tại nhưng đúng định dạng trả về báo cáo rỗng, trạng thái nguồn không rõ được nhóm thành `UNKNOWN` và danh sách chi tiết dùng phân trang/thứ tự ổn định. | Chuẩn hóa spec 2026-07-17 | APPROVED |
 
 ---
 
@@ -164,7 +164,7 @@ Cột chủ sở hữu phản ánh phân công lại đội hiện tại.
 
 - FE12 cung cấp một tổng quan vận hành chỉ đọc cho Librarian/Admin.
 - Trang tổng quan không tự đếm từ các danh sách FE07/FE08 phân trang.
-- Một lần đọc tầng dịch vụ đồng hồ sinh cả `generatedAt` và `businessDate`.
+- Tầng dịch vụ chỉ đọc nguồn thời gian một lần để tạo cả `generatedAt` và `businessDate`.
 - `businessDate` được truyền cho báo cáo mượn và tổng quan vận hành ở cả SQL
   Server/Azure SQL lẫn trong bộ nhớ tầng truy cập dữ liệu; đồng hồ máy chủ không được ẩn trong
   tầng truy cập dữ liệu.

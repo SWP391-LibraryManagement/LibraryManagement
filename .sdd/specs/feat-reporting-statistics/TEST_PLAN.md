@@ -21,7 +21,7 @@ trang/thứ tự xác định, kiểm toán lượt xem thành công bắt buộ
 điều khiển xuất.
 
 Nó cũng bao phủ hợp đồng frontend `{ metrics, rows, page, limit, totalRows }`
-chính xác, trường hàng mượn chỉ-ngày, bộ lọc trạng thái/vị trí kho cùng-bản-sao
+chính xác, trường ngày không kèm giờ của bản ghi mượn, bộ lọc trạng thái/vị trí kho áp dụng trên cùng bản sao
 và predicate kỳ phê duyệt tư cách thành viên được đánh giá trong cơ sở dữ liệu
 không thu hẹp tổng người dùng toàn cục.
 
@@ -57,7 +57,7 @@ không thu hẹp tổng người dùng toàn cục.
 - Nhân viên mở báo cáo mượn.
 - Nhân viên mở báo cáo kho.
 - Nhân viên mở báo cáo thống kê người dùng.
-- Member/non-nhân viên không thể truy cập báo cáo.
+- Thành viên và người không thuộc nhóm nhân viên thư viện không thể truy cập báo cáo.
 
 ## 5. Bằng chứng hiện tại
 
@@ -71,9 +71,9 @@ không thu hẹp tổng người dùng toàn cục.
 - `backend/tests/reportInMemoryParity.test.js` (10 kiểm thử tính đồng nhất với môi trường thực tế
   cho tổng hợp mượn, kho và người dùng, gồm lọc derived-overdue và hành vi thiếu
   `BorrowDate`).
-- `backend/tests/reportDeterministicPolicy.test.js` (4 kiểm thử quy tắc xác định
+- `backend/tests/reportDeterministicPolicy.test.js` (4 kiểm thử quy tắc cho kết quả ổn định
   bao phủ giới hạn phân trang, ID/trạng thái không rõ, thứ tự ổn định, hàng
-  chỉ-ngày và không có chức năng xuất).
+  chỉ gồm ngày và không có chức năng xuất).
 - `backend/tests/reportService.test.js` (siêu dữ liệu kiểm toán lượt xem thành công an
   toàn và quyền truy cập mọi nhân viên).
 - `backend/tests/integration.test.js` và
@@ -83,7 +83,7 @@ không thu hẹp tổng người dùng toàn cục.
   trung thực, siêu dữ liệu, đáp ứng và mặc định không lọc).
 - `frontend/test/reportFilters.test.js` (3 kiểm thử truy vấn-builder).
 - `frontend/test/reportOperationalFrontend.test.js` (3 kiểm thử hợp đồng
-  shared-pattern/API/cấu trúc phản hồi xác định).
+  shared-pattern/API/cấu trúc phản hồi ổn định).
 - Bộ backend FE12 tập trung: **6 bộ / 46 kiểm thử đạt**.
 - Bộ backend đầy đủ: **39 bộ / 615 kiểm thử đạt**.
 - Ngưỡng độ bao phủ backend đạt: **92.54% câu lệnh, 82.33% nhánh, 97.14%
@@ -105,10 +105,10 @@ không thu hẹp tổng người dùng toàn cục.
 ## 6. Bằng chứng trình duyệt
 
 Bằng chứng trong phần này thuộc phạm vi nền lịch sử. Nó chưa chứng minh
-cấu trúc phản hồi xác định v0.1.6 hoặc bảng hàng chi tiết mới trong worktree
+cấu trúc phản hồi ổn định v0.1.6 hoặc bảng danh sách chi tiết mới trong worktree
 hiện tại.
 
-Bằng chứng trình duyệt lượt xác định mới ngày 2026-07-19:
+Bằng chứng kiểm tra tính ổn định trên trình duyệt ngày 2026-07-19:
 
 - Librarian hoàn tất luồng chính hệ thống và tải cả ba trang báo cáo chuẩn.
 - Mượn hiển thị chỉ số/hàng xác định và khoảng ngày tương lai tạo trạng thái
@@ -186,11 +186,11 @@ npm.cmd run trace:enforce
 - Xác minh tìm kiếm kho bao phủ tiêu đề, barcode, vị trí và ID sách trong khi giữ
   phép tính tồn thấp.
 - Xác minh tìm kiếm người dùng bao phủ identifier/trường trạng thái an toàn
-  không-PII và hàng chi tiết dùng `UserId ASC`.
+  không chứa PII và danh sách chi tiết dùng `UserId ASC`.
 - Xác minh tải thành công không hiển thị thông báo “Đã tải dữ liệu” dư trong khi
   lỗi vẫn hiển thị.
 
-## 11. Ma trận kiểm thử tổng quan vận hành và đồng hồ xác định
+## 11. Ma trận kiểm thử tổng quan vận hành và nguồn thời gian nhất quán
 
 - AC-FE12-012/013: phản hồi đúng sáu KPI, ma trận vai trò nhân viên và danh sách
   cho phép không có tham số truy vấn.

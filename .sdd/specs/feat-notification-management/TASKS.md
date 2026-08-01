@@ -2,7 +2,7 @@
 
 Trạng thái: HOÀN THÀNH; PR #89 ĐÃ HỢP NHẤT; CI VÀ AZURE ĐÃ CHẠY THÀNH CÔNG TRÊN ĐÚNG COMMIT
 Implementation State: COMPLETE
-Cổng giao hàng: V0.6.0 ĐÃ KÍCH HOẠT, H3 PHÊ DUYỆT VÀ TÍCH HỢP
+Cổng triển khai: V0.6.0 ĐÃ KÍCH HOẠT, H3 PHÊ DUYỆT VÀ TÍCH HỢP
 
 Chi tiết v0.5.0 hiện tại: FE10-I01..I08, biện pháp khắc phục mã băm bản cập nhật
 cơ sở dữ liệu và biện pháp khắc phục H3 vòng một có giới hạn đã hoàn tất. Mã
@@ -21,7 +21,7 @@ Chủ sở hữu: Nhat
 Cập nhật: 2026-08-01
 
 Trạng thái quy trình hiện tại: mốc chuẩn Giai đoạn 2/G1-G12, hộp thư v0.5.0
-qua PR #75 và mẫu kết quả FE07 v0.6.0 đều đã hoàn tất. Đợt v0.6.0 được
+qua PR #75 và mẫu thông báo kết quả FE07 v0.6.0 đều đã hoàn tất. Đợt v0.6.0 được
 H3 phê duyệt ở commit `08e472f` và tích hợp vào `main` qua `ba29dc0`. Hoàn tất
 bản thay đổi `6189b1a` tiếp tục được phê duyệt H3 trong nhiệm vụ, hợp nhất qua PR #89
 thành `main@39092fb`; CI `30675444178` và môi trường thử nghiệm Azure `30675744992` đều đạt
@@ -48,7 +48,7 @@ trên đúng commit.
 
 - [x] FE10-T11 Thêm hàm hỗ trợ tầng truy cập dữ liệu thông báo trong bộ nhớ.
 - [x] FE10-T12 Kiểm thử tạo yêu cầu xác minh tài khoản.
-- [x] FE10-T13 Kiểm thử xử lý khóa chống gửi trùng trùng.
+- [x] FE10-T13 Kiểm thử xử lý khóa chống gửi trùng.
 - [x] FE10-T14 Kiểm thử lỗi thiếu biến mẫu.
 - [x] FE10-T15 Kiểm thử che dữ liệu dữ liệu đặt lại mật khẩu.
 - [x] FE10-T16 Kiểm thử thành công process-đang chờ và ghi log lần thử thất bại
@@ -178,10 +178,10 @@ triển khai sở hữu kiểm thử tập trung trong cùng phạm vi triển k
   `backend/tests/notificationRoutes.test.js`,
   `backend/tests/integration.test.js`, `backend/src/docs/openapi.yaml`.
 - Tiêu chí hoàn thành: thao tác tạo trả `201 { notificationId, status }`; mọi
-  phát lại lũy đẳng trả `200` cùng hình dạng; xử lý trả
+  yêu cầu trùng theo khóa chống gửi trùng trả `200` cùng hình dạng; xử lý trả
   `200 { processed, failed }`; không đối tượng thông báo đầy đủ, mảng, nội dung
   hoặc `safePayload` nào vượt HTTP; `sourceEntityId` chỉ nhận số nguyên; OpenAPI
-  và khẳng định kiểm thử tích hợp ghi nhận phản hồi tạo/phát lại/xử lý đã phê duyệt cùng
+  và khẳng định kiểm thử tích hợp ghi nhận phản hồi tạo/yêu cầu trùng/xử lý đã phê duyệt cùng
   hình dạng lỗi xác thực an toàn. Tài liệu thử lại vẫn do FE10-H08 sở hữu cùng
   triển khai tuyến API của nó.
 - Xác minh: kiểm thử tuyến API và tích hợp tập trung bao phủ mã trạng thái/khóa thân
@@ -264,7 +264,7 @@ triển khai sở hữu kiểm thử tập trung trong cùng phạm vi triển k
   `backend/tests/helpers/inMemoryNotificationRepositories.js`,
   `backend/tests/notificationRoutes.test.js`,
   `backend/tests/integration.test.js`, `backend/src/docs/openapi.yaml`.
-- Tiêu chí hoàn thành: tra cứu lũy đẳng phát lại một bản ghi xuyên suốt mọi trạng
+- Tiêu chí hoàn thành: tra cứu theo khóa chống gửi trùng trả về một bản ghi xuyên suốt mọi trạng
   thái và giữ khóa duy nhất mọi trạng thái; `POST /api/notifications/{id}/retry`
   được bảo vệ chỉ cho phép thông báo đã xếp hàng không nhạy cảm thất bại dùng lại
   cùng bản ghi/khóa/lịch sử lần thử và trả `200 { notificationId, status }`;
@@ -272,7 +272,7 @@ triển khai sở hữu kiểm thử tập trung trong cùng phạm vi triển k
   `409 REISSUE_REQUIRED` an toàn không có chi tiết nhà cung cấp hay bí mật;
   OpenAPI và khẳng định kiểm thử tích hợp ghi nhận tuyến API thử lại đã triển khai cùng thân
   `200`/`409` chính xác.
-- Xác minh: kiểm thử tập trung và tích hợp bao phủ phát lại cho `PENDING`,
+- Xác minh: kiểm thử tập trung và tích hợp bao phủ yêu cầu trùng ở các trạng thái `PENDING`,
   `SENT`, `FAILED`, chuyển đổi thử lại/bảo toàn lịch sử, truy cập không được
   ủy quyền, xung đột trạng thái, cả hai ca phát hành lại nhạy cảm và tính đồng
   nhất phản hồi được ghi; chạy tệp kiểm thử FE10 và tích hợp tập trung.
@@ -286,7 +286,7 @@ triển khai sở hữu kiểm thử tập trung trong cùng phạm vi triển k
 - Tệp chính xác: `.sdd/specs/feat-notification-management/TASKS.md`,
   `.sdd/specs/feat-notification-management/CHANGELOG.md`; không có tệp triển
   khai được lên kế hoạch.
-- Tiêu chí hoàn thành: kiểm thử tập trung FE10, FE07 và FE08 đạt; toàn bộ bộ
+- Tiêu chí hoàn thành: kiểm thử tập trung FE10, FE07 và FE08 đạt; toàn bộ
   backend đạt; truy vết từ SPEC đến nhiệm vụ đến kiểm thử đầy đủ; không bí
   mật/liên kết/mã thông báo nào bị lộ qua dữ liệu kiểm thử, log, khẳng định kiểm thử lưu vào cơ sở dữ liệu hoặc
   phản hồi; phần thay đổi không chứa frontend, triển khai FE02, triển khai FE09, nhà
@@ -321,7 +321,7 @@ Bằng chứng xác thực ghi ngày 2026-07-13:
   `DUE_OR_FINE_NOTICE` là phát biểu không chuẩn rõ ràng; `EMAIL_VERIFY` chỉ
   còn trong phần từ chối/trì hoãn FE02 rõ ràng hoặc xử lý cũ phòng vệ.
 - Các lệnh quét rò rỉ kiểm tra dòng backend được thêm cho mẫu log/phản hồi nhạy
-  cảm và chữ ký thông tin xác thực thực; ĐẠT với 0 log nhạy cảm thêm, 0 phản hồi
+  cảm và chữ ký thông tin xác thực thật; ĐẠT với 0 log nhạy cảm thêm, 0 phản hồi
   nhạy cảm thêm và 0 chữ ký bí mật thực. Sentinel nhà cung cấp/kiểm thử tổng hợp
   chỉ xuất hiện trong đầu vào bộ nhớ nhà cung cấp và khẳng định kiểm thử âm.
 - Lệnh phạm vi tệp thay đổi: `git diff --name-only a613604..HEAD`; ĐẠT với 0
@@ -519,9 +519,9 @@ ADR-004 và G8-G10 chỉ thay thế phần mẫu liên kết và trì hoãn FE02
   gian được kiểm thử và lỗi gửi vẫn không chặn sau khi quyết định tư cách thành
   viên đã commit.
 
-## 12. Khắc phục an toàn tuyên bố giao hàng
+## 12. Khắc phục an toàn cho quy trình gửi thông báo
 
-### FE10-S10 Lưu quyền sở hữu giao hàng trước thao tác gọi nhà cung cấp
+### FE10-S10 Lưu quyền xử lý trước khi gọi nhà cung cấp
 
 - [x] Trạng thái: HOÀN TẤT; KHẮC PHỤC H3, HỢP NHẤT VÀ AZURE ĐÚNG COMMIT ĐÃ ĐẠT
 - Thiết kế đã phê duyệt:
@@ -533,7 +533,7 @@ ADR-004 và G8-G10 chỉ thay thế phần mẫu liên kết và trì hoãn FE02
   `2026-07-23-fe10-processing-status.sql`, phụ thuộc trong bộ nhớ và kiểm thử
   tập trung.
 - Bằng chứng lỗi được tái hiện trước khi sửa: thiếu tham chiếu nguồn nội bộ, lỗi lưu vào cơ sở dữ liệu chuyển đổi kết
-  thúc, phát lại trùng khi không chắc chắn và đồng thời nhận/hoàn tất đều thất
+  thúc, yêu cầu trùng khi trạng thái không chắc chắn và việc nhận/hoàn tất đồng thời đều thất
   bại với phần triển khai `PENDING`-qua-nhà-cung-cấp trước đó.
 - Hợp đồng Sau khi sửa: chấp nhận nhạy cảm và nhận hàng đợi lưu `PROCESSING` trước
   thao tác gọi nhà cung cấp; chuyển đổi kết thúc được bảo vệ dùng giao dịch ngắn mới;
@@ -563,7 +563,7 @@ ADR-004 và G8-G10 chỉ thay thế phần mẫu liên kết và trì hoãn FE02
   `400 UNSAFE_TEMPLATE_DEFINITION` an toàn trước khi tạo nội dung từ mẫu/lưu vào cơ sở dữ liệu/thao tác gọi nhà
   cung cấp.
 - Bằng chứng: 3/3 ca lỗi được tái hiện trước khi sửa được giải quyết là `SENT`; Kiểm thử tập trung sau khi sửa đạt 4/4
-  bao gồm làm sạch khi chạy, toàn bộ bộ FE10 đạt 139/139.
+  bao gồm làm sạch khi chạy, toàn bộ FE10 đạt 139/139.
 - Bảo toàn: giá trị khi chạy vẫn được escape/làm sạch; từ chối khóa giống bí
   mật, che `safePayload`, quyền sở hữu nguồn, lũy đẳng, DTO và trạng thái giao
   hàng bền vững không đổi.
@@ -592,7 +592,7 @@ ADR-004 và G8-G10 chỉ thay thế phần mẫu liên kết và trì hoãn FE02
 - Tiêu chí hoàn thành: bản cập nhật cơ sở dữ liệu có giao dịch, lũy đẳng, chỉ bổ sung, chuẩn và đạt
   hai lần thực thi với đúng một hàng `ACCOUNT_SETUP` hoạt động.
 - Bằng chứng: bản cập nhật cơ sở dữ liệu dùng `XACT_ABORT`, một giao dịch, hành vi
-  update-or-insert chuẩn, hoàn tác/rethhàng và không xóa. Kiểm thử hợp đồng
+  update-or-insert chuẩn, hoàn tác/rethrow và không xóa. Kiểm thử hợp đồng
   bản cập nhật cơ sở dữ liệu tĩnh xanh; hai lần thực thi môi trường thử nghiệm vẫn có cổng H2.
 - Môi trường thử nghiệm: cả hai lần thực thi đều đạt và kết quả tổng hợp mẫu
   cuối là `1|1|1|1|1`; quy tắc tường lửa tạm thời cho đúng địa chỉ IP đã được
@@ -681,23 +681,23 @@ Các bước chi tiết, lệnh trước và sau khi sửa và ranh giới commi
   AC-FE10-014.
 - Tệp: SQL chuẩn, mô hình Thông báo, bản cập nhật cơ sở dữ liệu lũy đẳng mới, kiểm thử hợp đồng
   bản cập nhật cơ sở dữ liệu.
-- Tiêu chí hoàn thành: `ReadAt DATETIME2 NULL`, hàng lịch sử đủ điều kiện được
-  điền lùi thành `CreatedAt`, chỉ mục hỗ trợ tồn tại, hàng nhạy cảm/không người
+- Tiêu chí hoàn thành: `ReadAt DATETIME2 NULL`, bản ghi lịch sử đủ điều kiện được
+  cập nhật thành `CreatedAt`, chỉ mục hỗ trợ tồn tại, bản ghi nhạy cảm/không người
   dùng bị loại và hai lần thực thi tạo cùng điều kiện hậu.
 
-### FE10-I02 Thêm tầng truy cập dữ liệu bản ghi của chính mình và phép chiếu an toàn
+### FE10-I02 Thêm tầng truy cập dữ liệu bản ghi của chính mình và dữ liệu hiển thị an toàn
 
 - [x] Trạng thái: HOÀN TẤT - H3 PHÊ DUYỆT, PR #75 ĐÃ HỢP NHẤT, CI/AZURE SAU HỢP NHẤT
   ĐẠT
 - Phụ thuộc: FE10-I01.
 - Ánh xạ tới: BR-FE10-014 đến BR-FE10-017, BR-FE10-020; AC-FE10-011 đến
   AC-FE10-015.
-- Tệp: tầng truy cập dữ liệu thông báo, tiện ích phép chiếu/thao tác hộp thư, tầng truy cập dữ liệu
+- Tệp: tầng truy cập dữ liệu thông báo, tiện ích tạo dữ liệu hiển thị/thao tác hộp thư, tầng truy cập dữ liệu
   trong bộ nhớ, kiểm thử tầng truy cập dữ liệu/đơn vị tập trung.
 - Tiêu chí hoàn thành: SQL liệt kê/đếm/đọc lọc theo `UserId` hiện tại và danh
   sách cho phép đủ điều kiện chính xác trước khi hiện thực hóa; phân trang phía
   SQL; thay đổi đọc có khả năng xử lý lặp an toàn và không thay đổi trạng thái gửi; DTO/đường
-  dẫn thao tác cố định, không có siêu dữ liệu nhạy cảm hoặc giao hàng.
+  dẫn thao tác cố định, không có siêu dữ liệu nhạy cảm hoặc dữ liệu nội bộ về quá trình gửi.
 
 ### FE10-I03 Công khai API hộp thư cá nhân đã xác thực
 
@@ -788,19 +788,19 @@ Các bước chi tiết, lệnh trước và sau khi sửa và ranh giới commi
   nhớ đã làm vậy. Hồi quy tầng truy cập dữ liệu kiểm thử trước khi sửa tái hiện không khớp; cả hai bộ chọn
   đang chờ SQL hiện chia sẻ loại trừ đầy đủ bốn loại, Kiểm thử tập trung sau khi sửa đạt 161/161
   trước khi chạy lại toàn bộ backend.
-- H2 phê duyệt mã đối chiếu nội dung `2b53d7e`; commit `b11b59e` và CI PR của nó đạt.
+- H2 phê duyệt mã băm nội dung `2b53d7e`; commit `b11b59e` và CI PR của nó đạt.
   môi trường thử nghiệm Azure đã bản cập nhật cơ sở dữ liệu từ không có lên một cột `ReadAt` và chỉ mục hỗ trợ;
-  17 hàng lịch sử đủ điều kiện đã điền lùi, 25 hàng bị loại vẫn chưa đọc, một
+  17 bản ghi lịch sử đủ điều kiện đã được cập nhật, 25 bản ghi bị loại vẫn chưa đọc, một
   probe sau lượt một vẫn chưa đọc sau lượt hai, tổng hợp được bảo vệ không đổi
   và dọn dẹp probe/firewall đạt.
 - Lượt triển khai thủ công `30305596861` chặn an toàn khi kiểm tra không đạt trước triển khai vì Windows áp
   dụng byte bản cập nhật cơ sở dữ liệu CRLF (`6e8b6b4...`) trong khi runner Linux băm checkout
   LF tương đương (`143cd8e...`). Bao phủ chính sách triển khai trước và sau khi sửa hiện
   chỉ cho phép đúng bản dựng LF/CRLF của nội dung UTF-8 không đổi đó.
-- Phụ lục hash được H2 phê duyệt với mã đối chiếu nội dung `f78e0cc9...` và công bố trên
+- Phụ lục hash được H2 phê duyệt với mã băm nội dung `f78e0cc9...` và công bố trên
   commit PR chính xác `28c4f80`; CI `30306805399` và môi trường thử nghiệm Azure triển khai
   `30307855616` đạt mọi job. Kiểm tra API/trình duyệt trực tiếp bao phủ cả ba
-  vai trò, cô lập bản ghi của chính mình, loại trừ nhạy cảm, phát lại đọc, điều
+  vai trò, cô lập bản ghi của chính mình, loại trừ dữ liệu nhạy cảm, gọi lại thao tác đọc, điều
   hướng an toàn, HTTPS/CORS và dọn dẹp probe/firewall Azure.
 - H3 vòng một phát hiện thiếu đối soát ADR/trạng thái hiện tại, trạng thái mục
   lỗi thời sau một lần đọc thành công không điều hướng, đánh dấu tất cả bị vô
@@ -824,12 +824,12 @@ Các bước chi tiết, lệnh trước và sau khi sửa và ranh giới commi
   frontend 259/259 cùng kiểm tra mã/bản dựng; triển khai 20/20; hệ thống 10/10; trạng thái
   truy vết 3/3 và FE10 14/16 (88%); Chromium 11/11; kiểm toán, chuẩn bị
   cấu trúc cơ sở dữ liệu Azure và vệ sinh phần thay đổi.
-- H2 vòng 4 phê duyệt mã đối chiếu nội dung `f41dbf50...`; biện pháp khắc phục được commit
+- H2 vòng 4 phê duyệt mã băm nội dung `f41dbf50...`; biện pháp khắc phục được commit
   và push dưới commit PR #75 `3f9f23a`. CI đúng commit `30313721511`, Azure triển khai
   `30313949983`, kiểm tra transport công khai/tuyến API được bảo vệ, xác minh cấu trúc cơ sở dữ liệu/
   chỉ mục Azure SQL và dọn dẹp đều đạt. H3 lặp lại, phê duyệt H3 rõ ràng, hợp nhất
   và CI/triển khai hậu hợp nhất là bắt buộc tại mốc kiểm tra lịch sử đó.
-- Tích hợp cuối: H2 phê duyệt mã đối chiếu nội dung
+- Tích hợp cuối: H2 phê duyệt mã băm nội dung
   `e123345be05b59a9e519d182b301ab5464160e8fc32aed8d17d3c463e28e0a15`;
   commit PR #75 `778e0a470d8a1083bf571a8007b3c058eee4bb22` đạt CI
   `30317424995` và môi trường thử nghiệm Azure `30317621429`, sau đó H3 hai trục sạch và phê

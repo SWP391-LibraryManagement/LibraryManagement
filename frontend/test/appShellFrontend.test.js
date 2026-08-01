@@ -280,6 +280,13 @@ test('homepage membership copy stays within approved library rules', async () =>
   assert.match(source, /5 yêu cầu mỗi ngày sau khi được duyệt hội viên/);
 });
 
+test('homepage uses the approved reservation term consistently', async () => {
+  const source = await readFile(new URL('../src/page/HomePage.jsx', import.meta.url), 'utf8');
+
+  assert.doesNotMatch(source, /đặt trước/i);
+  assert.match(source, /đặt chỗ/i);
+});
+
 test('public homepage exposes a usable mobile menu and responsive layout contract', async () => {
   const source = await readFile(new URL('../src/page/HomePage.jsx', import.meta.url), 'utf8');
 

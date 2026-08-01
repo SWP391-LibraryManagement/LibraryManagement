@@ -23,7 +23,7 @@
 - Ghi rõ môi trường thử nghiệm Azure chưa thể chấp nhận do Azure SQL đang `Paused` sau khi hết quota;
   không xem đây là bằng chứng triển khai thành công.
 
-## 2026-07-29 - Kích hoạt tổng quan vận hành và đồng hồ xác định (v0.3.0)
+## 2026-07-29 - Kích hoạt tổng quan vận hành và nguồn thời gian nhất quán (v0.3.0)
 
 - Thêm BR-FE12-017..020, FR-FE12-012..015 và AC-FE12-012..016.
 - Chốt bản tổng hợp chỉ đọc gồm sáu KPI và liên kết cố định từ trang tổng quan
@@ -103,25 +103,25 @@
   `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`.
 - Giới hạn phạm vi hoãn và tương lai vẫn rõ ràng, không bị hoàn tất này mở rộng.
 
-## 2026-07-19 - Đối soát triển khai quy tắc xác định
+## 2026-07-19 - Đối soát triển khai quy tắc cho kết quả ổn định
 
 - Thay dữ liệu gửi báo cáo cũ bằng hợp đồng `{ metrics, rows, page, limit, totalRows }`
   chính xác xuyên backend, OpenAPI, phần sử dụng frontend và kiểm thử liên tính
   năng.
 - Thêm xác thực page/limit, thứ tự ổn định riêng báo cáo, hành vi ID/trạng thái
-  không rõ chuẩn và tuần tự hóa hàng mượn chỉ-ngày.
+  không rõ theo quy tắc đã duyệt và tuần tự hóa trường ngày không kèm giờ của bản ghi mượn.
 - Cho phép cả Librarian và Admin xem cả ba báo cáo, làm mọi lượt xem thành công
   ghi siêu dữ liệu an toàn không có bộ lọc hay hàng.
 - Áp dụng bộ lọc trạng thái/vị trí kho vào cùng bản sao trong khi giữ lượng sẵn
   có hiệu dụng toàn sách cho tính toán tồn thấp.
 - Đánh giá ranh giới ngày kỳ phê duyệt người dùng trong SQL mà không thu hẹp
   chỉ số người dùng/trạng thái/vai trò toàn cục.
-- Thêm bao phủ hồi quy quy tắc xác định, tầng truy cập dữ liệu, frontend-cấu trúc phản hồi và
+- Thêm kiểm thử hồi quy cho quy tắc tạo kết quả ổn định, tầng truy cập dữ liệu, cấu trúc phản hồi frontend và
   không-xuất; bộ tự động đầy đủ, lint, build, truy vết và vệ sinh phần thay đổi đạt.
 - Gắn lọc quá hạn vào cùng ngày nghiệp vụ `Asia/Ho_Chi_Minh` do ứng dụng tính,
   dùng bởi tổng hợp báo cáo, loại dự phòng `RequestDate` không hợp lệ khi thiếu
   `BorrowDate` và căn chỉnh bộ lọc `OVERDUE` trong bộ nhớ với hành vi
-  derived-status môi trường thực tế.
+  trạng thái dẫn xuất trong môi trường thực tế.
 - Loại dữ liệu kiểm thử cũ `DEMO_REPORTS` không dùng để công việc báo cáo tương lai
   không thể âm thầm dùng lại dữ liệu gửi lỗi thời.
 - Chấp nhận Playwright mới đạt trên cả ba màn hình báo cáo chuẩn, lọc kết quả
@@ -132,7 +132,7 @@
 
 ## 2026-07-17 - Mốc chuẩn Giai đoạn 1 được phê duyệt
 
-- Nhật phê duyệt bộ lọc báo cáo FE12, phản hồi xác định, xử lý phía cơ sở dữ liệu,
+- Nhật phê duyệt bộ lọc báo cáo FE12, phản hồi ổn định, xử lý phía cơ sở dữ liệu,
   kiểm toán và quy tắc xuất ngoài phạm vi đã chuẩn hóa làm mốc chuẩn Giai đoạn 1; phần
   theo dõi triển khai vẫn chờ.
 
@@ -144,7 +144,7 @@
 
 ## 2026-07-17 - Hợp đồng phản hồi báo cáo xác định - v0.1.6
 
-- Thêm cấu trúc dữ liệu chỉ số chính xác và hàng chi tiết cho báo cáo mượn, kho và người
+- Thêm cấu trúc dữ liệu chỉ số chính xác và danh sách chi tiết cho báo cáo mượn, kho và người
   dùng.
 - Xác định ngữ nghĩa ngày, giới hạn/quy tắc phân hạng sách hàng đầu và cấu trúc phản hồi
   báo cáo.
@@ -255,9 +255,9 @@
 
 ## 2026-07-13 - Củng cố xác thực B6
 
-- Sửa số trạng thái yêu cầu mượn để hàng chi tiết join không nhân bản tổng yêu
+- Sửa cách đếm trạng thái yêu cầu mượn để phép join danh sách chi tiết không nhân bản tổng yêu
   cầu.
-- Làm bộ lọc `toDate` chỉ-ngày gồm cả ngày đã chọn qua ranh giới ngày kế tiếp
+- Làm bộ lọc `toDate` chỉ gồm ngày bao gồm cả ngày đã chọn bằng ranh giới loại trừ của ngày kế tiếp
   loại trừ.
 - Dựa kỳ thành viên mới vào `Members.ApprovedAt` thay vì thời điểm tạo tài
   khoản.
