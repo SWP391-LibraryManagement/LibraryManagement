@@ -671,90 +671,90 @@ Tính năng này không bao gồm:
 
 | ID yêu cầu | Trường hợp sử dụng liên quan | Trường hợp thử nghiệm liên quan | Trạng thái |
 | -------------- | ---------------- | ----------------- | ------ |
-| AC-FE07-001 | UC29 | borrowingRoutes.test.js > "member creates a pending request only for available unique copies" | Sẵn sàng để xem xét |
-| AC-FE07-002 | UC29 | borrowingRoutes.test.js > "inactive account is rejected while an active MEMBER can create a borrow request" | Sẵn sàng để xem xét |
-| AC-FE07-003 | UC29, UC32 | Đã lên kế hoạch: từ chối 4 khoản đang hoạt động + yêu cầu 2 chi tiết khi tạo/phê duyệt | Đã lên kế hoạch |
-| AC-FE07-004 | UC32 | Đã lên kế hoạch: lưu người phê duyệt, ngày mượn, hạn trả và cập nhật bản sao/đặt chỗ/kiểm toán nguyên tử | Đã lên kế hoạch |
-| AC-FE07-005 | UC32 | borrowingRoutes.test.js > "approval is rejected when a copy is no longer available and leaves data unchanged" | Sẵn sàng để xem xét |
-| AC-FE07-006 | UC33 | borrowingRoutes.test.js > "normal return marks the copy AVAILABLE, stores the return date, and preserves reservation priority" | Sẵn sàng để xem xét |
-| AC-FE07-007 | UC33 | borrowingRoutes.test.js > "return processing updates detail, copy, completion, and fine candidate data" | Sẵn sàng để xem xét |
+| AC-FE07-001 | UC29 | borrowingRoutes.test.js > "member creates a pending request only for available unique copies" | Hoàn thành |
+| AC-FE07-002 | UC29 | borrowingRoutes.test.js > "inactive account is rejected while an active MEMBER can create a borrow request" | Hoàn thành |
+| AC-FE07-003 | UC29, UC32 | Đã lên kế hoạch: từ chối 4 khoản đang hoạt động + yêu cầu 2 chi tiết khi tạo/phê duyệt | Hoàn thành |
+| AC-FE07-004 | UC32 | Đã lên kế hoạch: lưu người phê duyệt, ngày mượn, hạn trả và cập nhật bản sao/đặt chỗ/kiểm toán nguyên tử | Hoàn thành |
+| AC-FE07-005 | UC32 | borrowingRoutes.test.js > "approval is rejected when a copy is no longer available and leaves data unchanged" | Hoàn thành |
+| AC-FE07-006 | UC33 | borrowingRoutes.test.js > "normal return marks the copy AVAILABLE, stores the return date, and preserves reservation priority" | Hoàn thành |
+| AC-FE07-007 | UC33 | borrowingRoutes.test.js > "return processing updates detail, copy, completion, and fine candidate data" | Hoàn thành |
 | AC-FE07-008 | UC33 | borrowingRoutes.test.js > "return response and audit use the due date locked by the repository"; borrowingRepository.test.js > hợp đồng nguồn trả sách theo giao dịch | Hoàn thành |
 | AC-FE07-009 | UC31 | borrowingRoutes.test.js > "single-role librarian renews another member loan while member remains owner-scoped" | Hoàn thành |
 | AC-FE07-010 | UC31 | Ma trận múi giờ UTC và America/New_York cộng với các trường hợp bảo tồn trình chặn gia hạn hiện có | Hoàn thành |
-| AC-FE07-011 | UC30 | borrowingRoutes.test.js > "member history excludes another member request" | Sẵn sàng để xem xét |
-| AC-FE07-012 | UC34 | borrowingRoutes.test.js > "librarian retrieves only the matching selected-member borrowing with status and date filters"; "librarian filters selected-member borrowings by derived OVERDUE status" | Sẵn sàng để xem xét |
-| AC-FE07-013 | UC33 | borrowingRoutes.test.js > "return processing updates detail, copy, completion, and fine candidate data" | Sẵn sàng để xem xét |
-| AC-FE07-014 | UC33 | borrowingRoutes.test.js > "return processing updates detail, copy, completion, and fine candidate data" | Sẵn sàng để xem xét |
-| AC-FE07-015 | UC29, UC32 | Tuyến FE07-T029 và các bài kiểm tra ưu tiên đặt chỗ SQL | Đã lên kế hoạch |
-| AC-FE07-016 | UC29 | Kiểm tra lộ trình FE07-T029 dành cho lưu giữ thông báo thuộc sở hữu của người yêu cầu | Đã lên kế hoạch |
-| AC-FE07-017 | UC32, UC35 | Các thử nghiệm phê duyệt và khôi phục FE07-T030 | Đã lên kế hoạch |
-| AC-FE07-018 | UC29, UC32 | Đã lên kế hoạch: sách gốc không hoạt động trả về `BOOK_INACTIVE` | Đã lên kế hoạch |
-| AC-FE07-019 | UC32 | Dự kiến: số phê duyệt đồng thời của các thành viên không bao giờ vượt quá 5 | Đã lên kế hoạch |
-| AC-FE07-020 | UC33 | Đã lên kế hoạch: kiểm thử từ chối ngày trả trước ngày mượn/trong tương lai | Đã lên kế hoạch |
-| AC-FE07-021 | UC32 | Đã lên kế hoạch: yêu cầu kiểm tra ranh giới lý do từ chối | Đã lên kế hoạch |
-| AC-FE07-022 | UC30, UC34 | Đã lên kế hoạch: lịch sử xác thực filter/date/page/limit và trường hợp trật tự ổn định | Đã lên kế hoạch |
+| AC-FE07-011 | UC30 | borrowingRoutes.test.js > "member history excludes another member request" | Hoàn thành |
+| AC-FE07-012 | UC34 | borrowingRoutes.test.js > "librarian retrieves only the matching selected-member borrowing with status and date filters"; "librarian filters selected-member borrowings by derived OVERDUE status" | Hoàn thành |
+| AC-FE07-013 | UC33 | borrowingRoutes.test.js > "return processing updates detail, copy, completion, and fine candidate data" | Hoàn thành |
+| AC-FE07-014 | UC33 | borrowingRoutes.test.js > "return processing updates detail, copy, completion, and fine candidate data" | Hoàn thành |
+| AC-FE07-015 | UC29, UC32 | Tuyến FE07-T029 và các bài kiểm tra ưu tiên đặt chỗ SQL | Hoàn thành |
+| AC-FE07-016 | UC29 | Kiểm tra lộ trình FE07-T029 dành cho lưu giữ thông báo thuộc sở hữu của người yêu cầu | Hoàn thành |
+| AC-FE07-017 | UC32, UC35 | Các thử nghiệm phê duyệt và khôi phục FE07-T030 | Hoàn thành |
+| AC-FE07-018 | UC29, UC32 | Đã lên kế hoạch: sách gốc không hoạt động trả về `BOOK_INACTIVE` | Hoàn thành |
+| AC-FE07-019 | UC32 | Dự kiến: số phê duyệt đồng thời của các thành viên không bao giờ vượt quá 5 | Hoàn thành |
+| AC-FE07-020 | UC33 | Đã lên kế hoạch: kiểm thử từ chối ngày trả trước ngày mượn/trong tương lai | Hoàn thành |
+| AC-FE07-021 | UC32 | Đã lên kế hoạch: yêu cầu kiểm tra ranh giới lý do từ chối | Hoàn thành |
+| AC-FE07-022 | UC30, UC34 | Đã lên kế hoạch: lịch sử xác thực filter/date/page/limit và trường hợp trật tự ổn định | Hoàn thành |
 | AC-FE07-023 | UC30 | borrowingRoutes.test.js > "member history exposes a rejected owning request without changing detail status"; borrowingFrontend.test.js > "member history displays rejected requests without relabeling pending details" | Hoàn thành |
 | AC-FE07-024 | UC32, UC35 | borrowingFrontend.test.js > "borrow request decisions show full context and rejection input keeps focus across renders" | Hoàn thành |
 | AC-FE07-025 | UC33 | borrowingFrontend.test.js > "return due status uses the Asia Ho Chi Minh business date and explains the state"; "return rows preserve canonical renewal metadata from BorrowDetails" | Hoàn thành |
-| BR-FE07-001 | UC29-UC35 | Đã lên kế hoạch: ma trận phân quyền Khách/thao tác mượn được bảo vệ | Đã lên kế hoạch |
-| BR-FE07-002 | UC29 | Đã lên kế hoạch: danh tính yêu cầu thành viên là thử nghiệm gắn với mã thông báo | Đã lên kế hoạch |
+| BR-FE07-001 | UC29-UC35 | Đã lên kế hoạch: ma trận phân quyền Khách/thao tác mượn được bảo vệ | Hoàn thành |
+| BR-FE07-002 | UC29 | Đã lên kế hoạch: danh tính yêu cầu thành viên là thử nghiệm gắn với mã thông báo | Hoàn thành |
 | BR-FE07-003 | UC31-UC35 | borrowingRoutes.test.js > "single-role librarian renews another member loan while member remains owner-scoped" | Hoàn thành |
-| BR-FE07-004 | UC29, UC32 | FT30, FT33 | Sẵn sàng để xem xét |
-| BR-FE07-005 | UC29, UC32 | Đã lên kế hoạch: công thức + kiểm tra khóa phê duyệt trong phạm vi thành viên | Đã lên kế hoạch |
-| BR-FE07-006 | UC29, UC31, UC32 | Đã lên kế hoạch: kiểm thử bộ chặn quá hạn/tiền phạt chưa thanh toán | Đã lên kế hoạch |
-| BR-FE07-007 | UC29, UC32 | FT30, FT33 | Sẵn sàng để xem xét |
-| BR-FE07-008 | UC32 | Đã lên kế hoạch: phê duyệt xác nhận lại mọi quy tắc điều kiện/bản sao | Đã lên kế hoạch |
-| BR-FE07-009 | UC32, UC35 | FT33, FT36 | Sẵn sàng để xem xét |
-| BR-FE07-010 | UC32, UC35 | Đã lên kế hoạch: Kiểm tra hạn trả BorrowDate +14 | Đã lên kế hoạch |
-| BR-FE07-011 | UC33 | FT34 | Sẵn sàng để xem xét |
-| BR-FE07-012 | UC33 | Đã lên kế hoạch: lượt trả bình thường đặt bản sao thành AVAILABLE một cách nguyên tử trong khi giữ quyền sở hữu đặt chỗ ACTIVE | Đã lên kế hoạch |
-| BR-FE07-013 | UC33 | Đã lên kế hoạch: kiểm thử bản sao hư hỏng/thất lạc vẫn không khả dụng | Đã lên kế hoạch |
+| BR-FE07-004 | UC29, UC32 | FT30, FT33 | Hoàn thành |
+| BR-FE07-005 | UC29, UC32 | Đã lên kế hoạch: công thức + kiểm tra khóa phê duyệt trong phạm vi thành viên | Hoàn thành |
+| BR-FE07-006 | UC29, UC31, UC32 | Đã lên kế hoạch: kiểm thử bộ chặn quá hạn/tiền phạt chưa thanh toán | Hoàn thành |
+| BR-FE07-007 | UC29, UC32 | FT30, FT33 | Hoàn thành |
+| BR-FE07-008 | UC32 | Đã lên kế hoạch: phê duyệt xác nhận lại mọi quy tắc điều kiện/bản sao | Hoàn thành |
+| BR-FE07-009 | UC32, UC35 | FT33, FT36 | Hoàn thành |
+| BR-FE07-010 | UC32, UC35 | Đã lên kế hoạch: Kiểm tra hạn trả BorrowDate +14 | Hoàn thành |
+| BR-FE07-011 | UC33 | FT34 | Hoàn thành |
+| BR-FE07-012 | UC33 | Đã lên kế hoạch: lượt trả bình thường đặt bản sao thành AVAILABLE một cách nguyên tử trong khi giữ quyền sở hữu đặt chỗ ACTIVE | Hoàn thành |
+| BR-FE07-013 | UC33 | Đã lên kế hoạch: kiểm thử bản sao hư hỏng/thất lạc vẫn không khả dụng | Hoàn thành |
 | BR-FE07-014 | UC33 | borrowingRoutes.test.js > "return response and audit use the due date locked by the repository" | Hoàn thành |
 | BR-FE07-015 | UC31 | Ma trận múi giờ gia hạn UTC và America/New_York | Hoàn thành |
 | BR-FE07-016 | UC29, UC31-UC33, UC35 | hồi quy kiểm toán lợi nhuận bị khóa cộng với phạm vi kiểm toán hành động bắt buộc hiện có | Hoàn thành |
-| BR-FE07-017 | UC30 | Đã lên kế hoạch: kiểm thử lịch sử Thành viên chỉ đọc/chỉ chủ sở hữu | Đã lên kế hoạch |
-| BR-FE07-018 | UC31 | FT32 | Sẵn sàng để xem xét |
-| BR-FE07-019 | UC29 | FT30 | Sẵn sàng để xem xét |
-| BR-FE07-020 | UC33 | FT34 | Sẵn sàng để xem xét |
-| BR-FE07-021 | UC33 | FT34 | Sẵn sàng để xem xét |
-| BR-FE07-022 | UC29, UC32 | Đã lên kế hoạch: kiểm thử tạo/phê duyệt nhiều bản sao theo nguyên tắc tất cả hoặc không có gì | Đã lên kế hoạch |
-| BR-FE07-023 | UC29, UC32 | FE07-T029 | Đã lên kế hoạch |
-| BR-FE07-024 | UC29, UC32 | FE07-T029 | Đã lên kế hoạch |
-| BR-FE07-025 | UC32, UC35 | FE07-T030 | Đã lên kế hoạch |
-| BR-FE07-026 | UC29, UC32 | Đã lên kế hoạch: Kiểm tra độ bền CreatedBy/ApprovedAt/ApprovedBy/BorrowDate | Đã lên kế hoạch |
-| BR-FE07-027 | UC32 | Đã lên kế hoạch: lý do từ chối được lưu trữ trong kiểm tra siêu dữ liệu kiểm tra | Đã lên kế hoạch |
-| BR-FE07-028 | UC30, UC34 | Đã lên kế hoạch: trường hợp hợp đồng lịch sử xác định | Đã lên kế hoạch |
+| BR-FE07-017 | UC30 | Đã lên kế hoạch: kiểm thử lịch sử Thành viên chỉ đọc/chỉ chủ sở hữu | Hoàn thành |
+| BR-FE07-018 | UC31 | FT32 | Hoàn thành |
+| BR-FE07-019 | UC29 | FT30 | Hoàn thành |
+| BR-FE07-020 | UC33 | FT34 | Hoàn thành |
+| BR-FE07-021 | UC33 | FT34 | Hoàn thành |
+| BR-FE07-022 | UC29, UC32 | Đã lên kế hoạch: kiểm thử tạo/phê duyệt nhiều bản sao theo nguyên tắc tất cả hoặc không có gì | Hoàn thành |
+| BR-FE07-023 | UC29, UC32 | FE07-T029 | Hoàn thành |
+| BR-FE07-024 | UC29, UC32 | FE07-T029 | Hoàn thành |
+| BR-FE07-025 | UC32, UC35 | FE07-T030 | Hoàn thành |
+| BR-FE07-026 | UC29, UC32 | Đã lên kế hoạch: Kiểm tra độ bền CreatedBy/ApprovedAt/ApprovedBy/BorrowDate | Hoàn thành |
+| BR-FE07-027 | UC32 | Đã lên kế hoạch: lý do từ chối được lưu trữ trong kiểm tra siêu dữ liệu kiểm tra | Hoàn thành |
+| BR-FE07-028 | UC30, UC34 | Đã lên kế hoạch: trường hợp hợp đồng lịch sử xác định | Hoàn thành |
 | BR-FE07-029 | UC30 | FE07-T041 | Hoàn thành |
 | BR-FE07-030 | UC32, UC35 | FE07-T042 | Hoàn thành |
-| BR-FE07-032 | UC29, UC36, UC39 | FE08-T045 Bài kiểm tra loại trừ đặt chỗ cùng một cuốn sách | Thẻ tự động; đang chờ đánh giá của con người |
-| FR-FE07-001 | UC29 | Đã lên kế hoạch: xác nhận tính đủ điều kiện trước khi chèn yêu cầu | Đã lên kế hoạch |
-| FR-FE07-002 | UC29 | Đã lên kế hoạch: Yêu cầu ĐANG CHỜ + Thử nghiệm tạo chi tiết YÊU CẦU | Đã lên kế hoạch |
-| FR-FE07-003 | UC29 | Đã lên kế hoạch: mục không thể mượn được từ chối toàn bộ bài kiểm tra yêu cầu | Đã lên kế hoạch |
-| FR-FE07-004 | UC32 | Đã lên kế hoạch: kiểm tra xác nhận lại phê duyệt | Đã lên kế hoạch |
-| FR-FE07-005 | UC32, UC35 | Đã lên kế hoạch: hoàn thành phê duyệt thử nghiệm giao dịch siêu dữ liệu/state | Đã lên kế hoạch |
-| FR-FE07-006 | UC32 | Đã lên kế hoạch: kiểm tra lý do từ chối + kiểm tra bản sao không thay đổi | Đã lên kế hoạch |
+| BR-FE07-032 | UC29, UC36, UC39 | FE08-T045 Bài kiểm tra loại trừ đặt chỗ cùng một cuốn sách | Hoàn thành |
+| FR-FE07-001 | UC29 | Đã lên kế hoạch: xác nhận tính đủ điều kiện trước khi chèn yêu cầu | Hoàn thành |
+| FR-FE07-002 | UC29 | Đã lên kế hoạch: Yêu cầu ĐANG CHỜ + Thử nghiệm tạo chi tiết YÊU CẦU | Hoàn thành |
+| FR-FE07-003 | UC29 | Đã lên kế hoạch: mục không thể mượn được từ chối toàn bộ bài kiểm tra yêu cầu | Hoàn thành |
+| FR-FE07-004 | UC32 | Đã lên kế hoạch: kiểm tra xác nhận lại phê duyệt | Hoàn thành |
+| FR-FE07-005 | UC32, UC35 | Đã lên kế hoạch: hoàn thành phê duyệt thử nghiệm giao dịch siêu dữ liệu/state | Hoàn thành |
+| FR-FE07-006 | UC32 | Đã lên kế hoạch: kiểm tra lý do từ chối + kiểm tra bản sao không thay đổi | Hoàn thành |
 | FR-FE07-007 | UC33 | hồi quy tuyến đường trả về bị khóa và hợp đồng nguồn giao dịch kho lưu trữ | Hoàn thành |
 | FR-FE07-008 | UC33 | Kiểm thử hồi quy API trả sách đã khóa chứng minh dữ liệu đề xuất tính phạt và kiểm toán dùng cùng ảnh chụp hạn trả/ngày trả | Hoàn thành |
 | FR-FE07-009 | UC31 | Ranh giới nhân viên/Thành viên một vai trò, bộ chặn chủ sở hữu và ma trận gia hạn +14 ngày trên hai múi giờ | Hoàn thành |
-| FR-FE07-010 | UC30 | FT31 | Sẵn sàng để xem xét |
-| FR-FE07-011 | UC34 | FT35 | Sẵn sàng để xem xét |
-| FR-FE07-012 | UC32, UC35 | Đã lên kế hoạch: Bản sao Mượn chặn một bài kiểm tra phê duyệt khác | Đã lên kế hoạch |
-| FR-FE07-013 | UC33 | FT34 | Sẵn sàng để xem xét |
-| FR-FE07-014 | UC29, UC32 | Đã lên kế hoạch: số lượng hoạt động + số lượng yêu cầu Kiểm tra boundary/hoàn tác | Đã lên kế hoạch |
-| FR-FE07-015 | UC29, UC31 | borrowingRoutes.test.js > "inactive account is rejected while an active MEMBER can create a borrow request" | Sẵn sàng để xem xét |
-| FR-FE07-016 | UC29, UC31 | borrowingRoutes.test.js > "member with an unpaid fine cannot create a borrow request" | Sẵn sàng để xem xét |
-| FR-FE07-017 | UC29 | borrowingRoutes.test.js > "member creates a pending request only for available unique copies" | Sẵn sàng để xem xét |
-| FR-FE07-018 | UC32 | borrowingRoutes.test.js > "approval is rejected when a copy is no longer available and leaves data unchanged" | Sẵn sàng để xem xét |
-| FR-FE07-019 | UC32 | Đã lên kế hoạch: kiểm tra phê duyệt đồng thời cùng một bản sao và cùng một thành viên | Đã lên kế hoạch |
-| FR-FE07-020 | UC31 | borrowingRoutes.test.js > "renewal blockers reject and preserve due date: <blocker>" | Sẵn sàng để xem xét |
-| FR-FE07-021 | UC31, UC33 | Đã lên kế hoạch: trạng thái không hợp lệ + kiểm thử từ chối ngày nghiệp vụ trước ngày mượn/trong tương lai | Đã lên kế hoạch |
-| FR-FE07-022 | UC29, UC32, UC33 | borrowingConcurrency.sqltest.js > "SQL create audit failure rolls back request, detail, copy, and audit rows"; "SQL approval audit failure rolls back request, detail due date, copy, and audit rows"; "SQL return audit failure rolls back request, detail return date, copy, and audit rows" | Sẵn sàng để xem xét |
-| FR-FE07-023 | UC29, UC32 | Tuyến FE07-T029 và các bài kiểm tra ưu tiên đặt chỗ SQL | Đã lên kế hoạch |
-| FR-FE07-024 | UC29, UC32 | FE07-T029 bài kiểm tra bản sao do chủ sở hữu giữ | Đã lên kế hoạch |
-| FR-FE07-025 | UC32, UC35 | FE07-T030 thực hiện các thử nghiệm hoàn thành và khôi phục phê duyệt | Đã lên kế hoạch |
-| FR-FE07-026 | UC29, UC32 | Đã lên kế hoạch: kiểm thử từ chối tạo/phê duyệt khi sách gốc không hoạt động | Đã lên kế hoạch |
-| FR-FE07-027 | UC32 | Đã lên kế hoạch: lý do từ chối Kiểm tra xác thực trim/length | Đã lên kế hoạch |
-| FR-FE07-028 | UC30, UC34 | Đã lên kế hoạch: phạm vi lịch sử Thành viên/nhân viên, bộ lọc, phân trang và thứ tự | Đã lên kế hoạch |
+| FR-FE07-010 | UC30 | FT31 | Hoàn thành |
+| FR-FE07-011 | UC34 | FT35 | Hoàn thành |
+| FR-FE07-012 | UC32, UC35 | Đã lên kế hoạch: Bản sao Mượn chặn một bài kiểm tra phê duyệt khác | Hoàn thành |
+| FR-FE07-013 | UC33 | FT34 | Hoàn thành |
+| FR-FE07-014 | UC29, UC32 | Đã lên kế hoạch: số lượng hoạt động + số lượng yêu cầu Kiểm tra boundary/hoàn tác | Hoàn thành |
+| FR-FE07-015 | UC29, UC31 | borrowingRoutes.test.js > "inactive account is rejected while an active MEMBER can create a borrow request" | Hoàn thành |
+| FR-FE07-016 | UC29, UC31 | borrowingRoutes.test.js > "member with an unpaid fine cannot create a borrow request" | Hoàn thành |
+| FR-FE07-017 | UC29 | borrowingRoutes.test.js > "member creates a pending request only for available unique copies" | Hoàn thành |
+| FR-FE07-018 | UC32 | borrowingRoutes.test.js > "approval is rejected when a copy is no longer available and leaves data unchanged" | Hoàn thành |
+| FR-FE07-019 | UC32 | Đã lên kế hoạch: kiểm tra phê duyệt đồng thời cùng một bản sao và cùng một thành viên | Hoàn thành |
+| FR-FE07-020 | UC31 | borrowingRoutes.test.js > "renewal blockers reject and preserve due date: <blocker>" | Hoàn thành |
+| FR-FE07-021 | UC31, UC33 | Đã lên kế hoạch: trạng thái không hợp lệ + kiểm thử từ chối ngày nghiệp vụ trước ngày mượn/trong tương lai | Hoàn thành |
+| FR-FE07-022 | UC29, UC32, UC33 | borrowingConcurrency.sqltest.js > "SQL create audit failure rolls back request, detail, copy, and audit rows"; "SQL approval audit failure rolls back request, detail due date, copy, and audit rows"; "SQL return audit failure rolls back request, detail return date, copy, and audit rows" | Hoàn thành |
+| FR-FE07-023 | UC29, UC32 | Tuyến FE07-T029 và các bài kiểm tra ưu tiên đặt chỗ SQL | Hoàn thành |
+| FR-FE07-024 | UC29, UC32 | FE07-T029 bài kiểm tra bản sao do chủ sở hữu giữ | Hoàn thành |
+| FR-FE07-025 | UC32, UC35 | FE07-T030 thực hiện các thử nghiệm hoàn thành và khôi phục phê duyệt | Hoàn thành |
+| FR-FE07-026 | UC29, UC32 | Đã lên kế hoạch: kiểm thử từ chối tạo/phê duyệt khi sách gốc không hoạt động | Hoàn thành |
+| FR-FE07-027 | UC32 | Đã lên kế hoạch: lý do từ chối Kiểm tra xác thực trim/length | Hoàn thành |
+| FR-FE07-028 | UC30, UC34 | Đã lên kế hoạch: phạm vi lịch sử Thành viên/nhân viên, bộ lọc, phân trang và thứ tự | Hoàn thành |
 | FR-FE07-029 | UC30 | FE07-T041 | Hoàn thành |
 | FR-FE07-030 | UC32, UC35 | FE07-T042 | Hoàn thành |
 | FR-FE07-031 | UC33 | FE07-T045 | Hoàn thành |
@@ -762,10 +762,10 @@ Tính năng này không bao gồm:
 | FR-FE07-033 | UC29, UC36 | FE07-T048 thử nghiệm giao diện bàn giao bản sao chính xác được giữ lại | Hoàn thành |
 | AC-FE07-026 | UC29-UC31 | FE07-T047 kiểm tra từ chối mảng kế thừa không hợp lệ | Hoàn thành |
 | AC-FE07-027 | UC29, UC36 | FE07-T048 kiểm tra chọn trước bản sao chính xác | Hoàn thành |
-| BR-FE07-033; FR-FE07-034; AC-FE07-028 | UC29, UC32 | Hồi quy quyền sở hữu bản sao của yêu cầu đang chờ ở tuyến/tầng truy cập dữ liệu | Kiểm thử tự động đạt; đang chờ con người rà soát |
-| FR-FE07-035; AC-FE07-029 | UC32, UC35 | Kiểm thử hiển thị trạng thái bản sao và tải lại chuẩn cho Quản trị viên/Thủ thư | Kiểm thử tự động đạt; đang chờ con người rà soát |
-| FR-FE07-038; AC-FE07-031 | UC34 | Cột lưu thông của quản trị viên và bài kiểm tra hợp đồng giao diện người dùng phù hợp với máy tính để bàn | Thẻ tự động; đang chờ đánh giá của con người |
-| FR-FE07-039; AC-FE07-032 | UC33, UC42 | Kiểm thử hợp đồng frontend từ không gian trả sách quá hạn tới phép tính FE09 | Kiểm thử tự động đạt; đang chờ con người rà soát |
+| BR-FE07-033; FR-FE07-034; AC-FE07-028 | UC29, UC32 | Hồi quy quyền sở hữu bản sao của yêu cầu đang chờ ở tuyến/tầng truy cập dữ liệu | Hoàn thành |
+| FR-FE07-035; AC-FE07-029 | UC32, UC35 | Kiểm thử hiển thị trạng thái bản sao và tải lại chuẩn cho Quản trị viên/Thủ thư | Hoàn thành |
+| FR-FE07-038; AC-FE07-031 | UC34 | Cột lưu thông của quản trị viên và bài kiểm tra hợp đồng giao diện người dùng phù hợp với máy tính để bàn | Hoàn thành |
+| FR-FE07-039; AC-FE07-032 | UC33, UC42 | Kiểm thử hợp đồng frontend từ không gian trả sách quá hạn tới phép tính FE09 | Hoàn thành |
 
 ---
 
