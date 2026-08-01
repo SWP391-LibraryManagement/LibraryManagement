@@ -57,6 +57,44 @@ test('deployed plain-HTTP auth requests are rejected before the auth service see
 });
 
 // @spec AC-FE02-024, BR-FE02-017, NFR-FE02-SEC-003
+test('deployed plain-HTTP admin API requests are rejected before authentication', async () => {
+  const snapshot = envSnapshot();
+  try {
+    withProductionHttps();
+    let authCalled = false;
+    let adminCalled = false;
+    const app = createApp({
+      authService: {
+        authenticateToken: async () => {
+          authCalled = true;
+          return { userId: 1, roles: ['ADMIN'] };
+        },
+      },
+      adminService: {
+        listResource: async () => {
+          adminCalled = true;
+          return [];
+        },
+      },
+    });
+
+    const response = await request(app).get('/api/admin/library/authors');
+
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({
+      error: {
+        code: 'HTTPS_REQUIRED',
+        message: 'HTTPS is required for API requests.',
+      },
+    });
+    expect(authCalled).toBe(false);
+    expect(adminCalled).toBe(false);
+  } finally {
+    restoreEnvironment(snapshot);
+  }
+});
+
+// @spec AC-FE02-024, BR-FE02-017, NFR-FE02-SEC-003
 test('trusted HTTPS termination via X-Forwarded-Proto allows the auth request to continue', async () => {
   const snapshot = envSnapshot();
   try {
@@ -79,6 +117,47 @@ test('trusted HTTPS termination via X-Forwarded-Proto allows the auth request to
     expect(response.status).toBe(200);
     expect(response.body).toEqual({ ok: true });
     expect(authCalled).toBe(true);
+  } finally {
+    restoreEnvironment(snapshot);
+  }
+});
+
+// @spec AC-FE02-024, BR-FE02-017, NFR-FE02-SEC-003
+test('trusted HTTPS termination allows an authenticated admin API request', async () => {
+  const snapshot = envSnapshot();
+  try {
+    withProductionHttps({ TRUST_PROXY: 'true' });
+    const authService = {
+      authenticateToken: jest.fn(async () => ({ userId: 1, roles: ['ADMIN'] })),
+    };
+    const adminService = {
+      listResource: jest.fn(async () => []),
+    };
+    const app = createApp({ authService, adminService });
+
+    const response = await request(app)
+      .get('/api/admin/library/authors')
+      .set('Authorization', 'Bearer test-token')
+      .set('X-Forwarded-Proto', 'https');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual([]);
+    expect(authService.authenticateToken).toHaveBeenCalledWith('test-token');
+    expect(adminService.listResource).toHaveBeenCalledWith('authors', {});
+  } finally {
+    restoreEnvironment(snapshot);
+  }
+});
+
+test('health check remains available over internal HTTP', async () => {
+  const snapshot = envSnapshot();
+  try {
+    withProductionHttps();
+    const app = createApp();
+
+    const response = await request(app).get('/health');
+
+    expect(response.status).toBe(200);
   } finally {
     restoreEnvironment(snapshot);
   }

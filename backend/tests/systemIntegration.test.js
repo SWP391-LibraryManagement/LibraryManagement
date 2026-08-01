@@ -1,6 +1,5 @@
 process.env.BCRYPT_COST = '4';
 process.env.JWT_SECRET = require('crypto').randomBytes(32).toString('hex');
-process.env.AUTH_EXPOSE_TEST_TOKENS = 'true';
 
 const { makeSystemIntegrationApp } = require('./helpers/systemIntegrationHarness');
 const request = require('supertest');

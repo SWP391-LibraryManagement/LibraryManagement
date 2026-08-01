@@ -175,6 +175,23 @@ function getResourceConfig(resource) {
   return resourceMap[String(resource || '').toLowerCase()] || null;
 }
 
+async function withTransaction(work) {
+  const transaction = new sql.Transaction(await getPool());
+  await transaction.begin();
+  try {
+    const result = await work(transaction);
+    await transaction.commit();
+    return result;
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
+  }
+}
+
+async function resourceRequest(transaction) {
+  return transaction ? new sql.Request(transaction) : (await getPool()).request();
+}
+
 async function listResource(resource, filters = {}) {
   const config = getResourceConfig(resource);
   const pool = await getPool();
@@ -200,10 +217,9 @@ async function listResource(resource, filters = {}) {
   return result.recordset;
 }
 
-async function createResource(resource, name) {
+async function createResource(resource, name, transaction) {
   const config = getResourceConfig(resource);
-  const pool = await getPool();
-  const result = await pool.request()
+  const result = await (await resourceRequest(transaction))
     .input('name', sql.NVarChar(100), name)
     .query(`
       INSERT INTO ${config.table} (${config.name})
@@ -215,25 +231,24 @@ async function createResource(resource, name) {
   return result.recordset[0];
 }
 
-async function updateResource(resource, id, name) {
+async function updateResource(resource, id, name, transaction) {
   const config = getResourceConfig(resource);
-  const pool = await getPool();
-  await pool.request()
+  const result = await (await resourceRequest(transaction))
     .input('id', sql.Int, id)
     .input('name', sql.NVarChar(100), name)
     .query(`
       UPDATE ${config.table}
       SET ${config.name} = @name
+      OUTPUT INSERTED.${config.id} AS id, INSERTED.${config.name} AS name
       WHERE ${config.id} = @id;
     `);
 
-  return { id, name };
+  return result.recordset[0] || null;
 }
 
-async function deactivateResource(resource, id) {
+async function deactivateResource(resource, id, transaction) {
   const config = getResourceConfig(resource);
-  const pool = await getPool();
-  const result = await pool.request()
+  const result = await (await resourceRequest(transaction))
     .input('id', sql.Int, id)
     .query(`
       UPDATE ${config.table}
@@ -423,6 +438,7 @@ module.exports = {
   getDashboard,
   listBooks,
   getResourceConfig,
+  withTransaction,
   listResource,
   createResource,
   updateResource,

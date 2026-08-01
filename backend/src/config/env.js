@@ -24,6 +24,20 @@ function positiveIntegerFromEnv(name, defaultValue) {
   return value;
 }
 
+function bcryptCostFromEnv() {
+  const bcryptCost = positiveIntegerFromEnv('BCRYPT_COST', 10);
+  const minimumCost = process.env.NODE_ENV === 'test' ? 4 : 10;
+
+  if (bcryptCost < minimumCost) {
+    const environment = process.env.NODE_ENV === 'test'
+      ? 'in test environments'
+      : 'outside test environments';
+    throw new Error(`BCRYPT_COST must be an integer >= ${minimumCost} ${environment}`);
+  }
+
+  return bcryptCost;
+}
+
 function emailVerificationTtlMinutesFromEnv() {
   const minuteValue = process.env.EMAIL_VERIFICATION_TTL_MINUTES;
 
@@ -69,7 +83,7 @@ function requiredEnv(name) {
 }
 
 module.exports = {
-  bcryptCost: numberFromEnv('BCRYPT_COST', 10),
+  bcryptCost: bcryptCostFromEnv(),
   accessTokenTtlSeconds: numberFromEnv('ACCESS_TOKEN_TTL_SECONDS', 15 * 60),
   refreshTokenTtlDays: numberFromEnv('REFRESH_TOKEN_TTL_DAYS', 7),
   emailVerificationTtlMinutes: emailVerificationTtlMinutesFromEnv(),

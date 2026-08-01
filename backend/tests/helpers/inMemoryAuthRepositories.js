@@ -306,12 +306,12 @@ function makeInMemoryAuthDependencies(options = {}) {
       );
     },
 
-    async markTokenUsed(tokenId) {
+    async markTokenUsed(tokenId, _transaction) {
       const token = tokens.find((item) => item.tokenId === Number(tokenId));
       token.usedAt = new Date();
     },
 
-    async revokeToken(tokenId) {
+    async revokeToken(tokenId, _transaction) {
       const token = tokens.find((item) => item.tokenId === Number(tokenId));
       token.revokedAt = new Date();
     },
