@@ -1,6 +1,6 @@
 # TASKS.md - FE10 Quản lý thông báo
 
-Trạng thái: ĐÃ MERGE VÀO MAIN; CI HẬU MERGE ĐẠT; AZURE RUNTIME ĐÃ PHỤC HỒI; CLOSEOUT CANDIDATE CHƯA DEPLOY
+Trạng thái: COMPLETE; PR #89 ĐÃ MERGE; CI VÀ AZURE DEPLOY EXACT-HEAD ĐẠT
 Implementation State: COMPLETE
 Cổng giao hàng: V0.6.0 ĐÃ KÍCH HOẠT, H3 PHÊ DUYỆT VÀ TÍCH HỢP
 
@@ -17,14 +17,14 @@ Trạng thái triển khai v0.4.5 trước đó: HOÀN TẤT
 
 Chủ sở hữu: Nhat
 
-Cập nhật: 2026-07-29
+Cập nhật: 2026-08-01
 
 Trạng thái quy trình hiện tại: baseline Giai đoạn 2/G1-G12, hộp thư v0.5.0
 qua PR #75 và template kết quả FE07 v0.6.0 đều đã hoàn tất. Batch v0.6.0 được
-H3 phê duyệt ở head `08e472f` và tích hợp vào `main` qua `ba29dc0`; CI hậu
-merge đã đạt. Sau reset quota ngày 2026-08-01, Azure runtime hiện
-`Running`/`Online` và smoke trên bản đã deploy đạt; closeout candidate này chưa
-deploy và vẫn chờ H3, không phải finding FE10.
+H3 phê duyệt ở head `08e472f` và tích hợp vào `main` qua `ba29dc0`. Closeout
+candidate `6189b1a` tiếp tục được phê duyệt H3 trong task, merge qua PR #89
+thành `main@39092fb`; CI `30675444178` và Azure staging `30675744992` đều đạt
+trên exact head.
 
 ---
 
@@ -521,8 +521,7 @@ ADR-004 và G8-G10 chỉ thay thế phần mẫu liên kết và trì hoãn FE02
 
 ### FE10-S10 Lưu quyền sở hữu giao hàng trước I/O nhà cung cấp
 
-- [~] Trạng thái: ĐÃ TRIỂN KHAI VÀ XÁC THỰC TỰ ĐỘNG; KHẮC PHỤC H3 ĐANG TIẾN
-  HÀNH
+- [x] Trạng thái: HOÀN TẤT; KHẮC PHỤC H3, MERGE VÀ AZURE EXACT-HEAD ĐÃ ĐẠT
 - Thiết kế đã phê duyệt:
   `docs/superpowers/specs/2026-07-23-fe07-fe08-fe10-fe12-final-verification-remediation-design.md`.
 - Ánh xạ tới: BR-FE10-005, BR-FE10-006, BR-FE10-008, BR-FE10-013;
@@ -545,7 +544,8 @@ ADR-004 và G8-G10 chỉ thay thế phần mẫu liên kết và trì hoãn FE02
   một lần lên staging. H2 mới sau đó phê duyệt commit khắc phục `b931e00` và
   PR CI `30019439505` đạt. Review H3 lặp lại chỉ trả về finding hoàn tất vòng
   hai có giới hạn. H2 mới phê duyệt gói vòng hai ngày 2026-07-23 và ủy quyền
-  commit/push đã review; CI PR cập nhật và H3 lặp lại vẫn bắt buộc trước merge.
+  commit/push đã review; finding được khắc phục, H3 lặp lại, merge và closeout
+  cuối đều đã đóng.
 
 ## 13. An toàn định nghĩa mẫu đã lưu
 

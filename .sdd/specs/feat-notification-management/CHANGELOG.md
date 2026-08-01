@@ -7,8 +7,8 @@
   giới production.
 - Đổi metadata triển khai sang `COMPLETE`; không thay đổi template, kênh gửi,
   nội dung lưu bền, API, schema hoặc ranh giới dữ liệu nhạy cảm.
-- Sau reset quota, Azure runtime hiện `Running`/`Online` và smoke bản đang deploy
-  đạt; closeout candidate chưa deploy nên chưa thể dùng kết quả này để nghiệm thu.
+- Closeout candidate `6189b1a` đã merge qua PR #89 thành `main@39092fb`; CI
+  `30675444178` và Azure staging `30675744992` đều đạt exact-head.
 
 ## 2026-07-29 - Đồng bộ trạng thái phát hành hậu merge (v0.6.1)
 

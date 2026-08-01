@@ -2,23 +2,24 @@
 
 # Phiên bản: 0.6.0
 
-# Trạng thái: ĐÃ MERGE VÀO MAIN; CI HẬU MERGE ĐẠT; AZURE STAGING BỊ CHẶN DO AZURE SQL PAUSED/QUOTA
+# Trạng thái: COMPLETE; PR #89 ĐÃ MERGE; CI VÀ AZURE DEPLOY EXACT-HEAD ĐẠT
 
 # Chủ sở hữu: Nhat
 
-# Cập nhật lần cuối: 2026-07-29
+# Cập nhật lần cuối: 2026-08-01
 
 # ID tính năng: FE08
 
 # Thư mục tính năng: `.sdd/specs/feat-reservation-management/`
 
-> Trạng thái bàn giao hiện tại (2026-07-20): `COMPLETE` cho phạm vi Giai đoạn 1 đã được phê duyệt.
+> Trạng thái bàn giao hiện tại (2026-08-01): `COMPLETE`; closeout PR #89,
+> CI `30675444178` và Azure exact-head `30675744992` đã đạt.
 > `TASKS.md` và `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`
 > là nguồn chuẩn cho trạng thái triển khai hiện tại. Các nhãn cũ `Not Started`,
 > `PARTIAL`, `READY FOR REVIEW` hoặc đang chờ rà soát được giữ lại bên dưới chỉ là
 > ảnh chụp nhanh kế hoạch/bằng chứng lịch sử, không phải trạng thái bàn giao hiện tại.
 
-> Nguồn chuẩn cho Quản lý đặt chỗ FE08. Bản sửa đổi v0.4.4 bổ sung danh mục ứng viên đặt chỗ an toàn cho Thành viên đã được phê duyệt, đồng thời giữ nguyên hợp đồng thay đổi dữ liệu theo `CopyId` và lịch sử bất biến của các dấu thời gian ở trạng thái cuối. Phần triển khai danh mục ứng viên đã qua xác thực tự động; bước kiểm tra xuyên suốt cuối cùng của con người/đánh giá H3 vẫn bắt buộc trước khi hợp nhất.
+> Nguồn chuẩn cho Quản lý đặt chỗ FE08. Bản sửa đổi v0.4.4 bổ sung danh mục ứng viên đặt chỗ an toàn cho Thành viên đã được phê duyệt, đồng thời giữ nguyên hợp đồng thay đổi dữ liệu theo `CopyId` và lịch sử bất biến của các dấu thời gian ở trạng thái cuối. Phần triển khai, kiểm tra xuyên suốt, H3, merge và Azure exact-head đã đóng qua PR #89 và các lượt chạy `30675444178`/`30675744992`.
 >
 > Bản sửa đổi v0.5.2 bảo đảm nhật ký kiểm toán vòng đời khi tạo/hủy/giữ/làm hết hạn
 > được ghi nguyên tử cùng thay đổi trạng thái tương ứng và loại bỏ thông tin Thành viên lưu đệm
@@ -584,11 +585,11 @@ Danh sách kiểm tra phê duyệt Giai đoạn 1 (hoàn thành ngày 2026-06-10
 
 ### 17.1 Gate rà soát bản sửa đổi v0.4.2
 
-- [ ] Xác nhận bản ghi hàng đợi không đủ điều kiện bị bỏ qua nhưng vẫn giữ `ACTIVE`.
-- [ ] Xác nhận hành vi không có lựa chọn giữ nguyên trạng thái bản sao và đặt chỗ.
-- [ ] Xác nhận `process-queue` chỉ chấp nhận đầu vào `copyId` của nhân viên.
-- [ ] Xác nhận giá trị mặc định/giới hạn phân trang và thứ tự hàng đợi/danh sách ổn định.
-- [ ] Xác nhận lỗi FE10 được ghi thành sự kiện kiểm toán mà không có tiến trình thử lại tự động.
+- [x] Xác nhận bản ghi hàng đợi không đủ điều kiện bị bỏ qua nhưng vẫn giữ `ACTIVE`.
+- [x] Xác nhận hành vi không có lựa chọn giữ nguyên trạng thái bản sao và đặt chỗ.
+- [x] Xác nhận `process-queue` chỉ chấp nhận đầu vào `copyId` của nhân viên.
+- [x] Xác nhận giá trị mặc định/giới hạn phân trang và thứ tự hàng đợi/danh sách ổn định.
+- [x] Xác nhận lỗi FE10 được ghi thành sự kiện kiểm toán mà không có tiến trình thử lại tự động.
 
 ### 17.2 Gate danh mục ứng viên của bản sửa đổi v0.4.4
 
@@ -596,7 +597,7 @@ Danh sách kiểm tra phê duyệt Giai đoạn 1 (hoàn thành ngày 2026-06-10
 - [x] Người dùng đã phê duyệt bằng văn bản thiết kế danh mục ứng viên vào ngày 2026-07-19.
 - [x] Các trường phản hồi của ứng viên, trạng thái đủ điều kiện, giới hạn truy vấn, thứ tự và quy tắc lược bỏ dữ liệu đều rõ ràng.
 - [x] Hợp đồng duyệt sách công khai FE01, kho dành cho nhân viên FE06 và `POST { copyId }` không thay đổi.
-- [ ] Phần triển khai ứng viên, bằng chứng dựa trên SQL, chấp nhận trình duyệt và rà soát tích hợp cuối cùng đều đạt.
+- [x] Phần triển khai ứng viên, bằng chứng SQL, chấp nhận trình duyệt và rà soát tích hợp cuối cùng đều đạt.
 
 ## 18. Phụ lục luồng demo liên hoàn FE07-FE12 v0.6.0
 

@@ -1,16 +1,17 @@
 # PLAN.md - FE07 Quản lý mượn sách
 
-Trạng thái: ĐÃ MERGE VÀO MAIN; CI HẬU MERGE ĐẠT; AZURE STAGING BỊ CHẶN DO AZURE SQL PAUSED/QUOTA
+Trạng thái: COMPLETE; PR #89 ĐÃ MERGE; CI VÀ AZURE DEPLOY EXACT-HEAD ĐẠT
 
 Chủ sở hữu: Nhat
 
-Cập nhật: 2026-07-29
+Cập nhật: 2026-08-01
 
 Trạng thái quy trình: Mốc cơ sở Giai đoạn 2 vẫn hoàn tất. Nhat đã phê duyệt phụ lục H2
 `8d0059b` vào 2026-07-27; kết quả đã được rà soát được commit là
-`f346ae0`, đẩy lên PR nháp #63 và lượt chạy CI `30244750250` đã đạt. Lần rà soát
-H3 đầu tiên không phát hiện lỗi mã hay quy tắc nghiệp vụ FE07 mà chỉ trả về diễn đạt
-quản trị cũ. Việc khắc phục chỉ tài liệu vẫn chưa được commit, đang chờ H2 mới và H3 lặp lại.
+`f346ae0`, đẩy lên PR nháp #63 và lượt chạy CI `30244750250` đã đạt. Finding
+diễn đạt quản trị của lượt H3 đầu đã được khắc phục và tích hợp. Closeout
+candidate `6189b1a` được phê duyệt H3 trong task, merge qua PR #89 thành
+`main@39092fb`; CI `30675444178` và Azure staging `30675744992` đều đạt.
 
 ---
 

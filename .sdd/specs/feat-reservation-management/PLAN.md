@@ -1,18 +1,19 @@
 # PLAN.md - FE08 Quản lý đặt chỗ
 
-Trạng thái: ĐÃ MERGE VÀO MAIN; CI HẬU MERGE ĐẠT; AZURE STAGING BỊ CHẶN DO AZURE SQL PAUSED/QUOTA
+Trạng thái: COMPLETE; PR #89 ĐÃ MERGE; CI VÀ AZURE DEPLOY EXACT-HEAD ĐẠT
 
 Chủ sở hữu: Nhat
 
-Cập nhật: 2026-07-29
+Cập nhật: 2026-08-01
 
 Trạng thái quy trình: Mốc cơ sở Giai đoạn 2 vẫn hoàn tất. `main` sở hữu
 `FE08-T041` đến `FE08-T046`; ranh giới hồi quy căn chỉnh quy tắc là
 `FE08-T047`. Nhat đã phê duyệt phụ lục H2 `8d0059b` vào 2026-07-27; kết quả
 đã rà soát được commit là `f346ae0`, đẩy lên PR nháp #63 và lượt chạy CI
-`30244750250` đã đạt. Lần rà soát H3 đầu tiên không phát hiện lỗi mã hay quy
-tắc nghiệp vụ FE08 mà chỉ trả về diễn đạt quản trị cũ. Việc khắc phục chỉ tài
-liệu vẫn chưa được commit, đang chờ H2 mới và H3 lặp lại.
+`30244750250` đã đạt. Finding diễn đạt quản trị của lượt H3 đầu đã được khắc
+phục và tích hợp. Closeout candidate `6189b1a` được phê duyệt H3 trong task,
+merge qua PR #89 thành `main@39092fb`; CI `30675444178` và Azure staging
+`30675744992` đều đạt trên exact head.
 
 ---
 
@@ -135,7 +136,7 @@ Không bao gồm:
 - Trình bày vòng đời frontend, ngữ nghĩa hàng đợi, cô lập lỗi và xử lý hết hạn giữ chỗ được căn chỉnh với `SPEC.md`.
 - Phê duyệt FE07 chỉ có thể hoàn tất lượt đặt chỗ đã thông báo khớp; xử lý hàng đợi tự động sau trả vẫn ngoài Giai đoạn 1.
 - Các tác vụ đối soát v0.4.2/v0.4.3 được triển khai và giữ ranh giới bằng chứng lịch sử.
-- Hợp đồng ứng viên v0.4.4 đã được phê duyệt rõ ràng và đạt cổng tự động tập trung/đầy đủ; H3 cuối, merge và CI `main` sau merge vẫn đang mở.
+- Hợp đồng ứng viên v0.4.4 đã được phê duyệt, đạt cổng tự động/SQL/trình duyệt; H3, merge, CI `main` và Azure exact-head đã đóng.
 
 ## 5. Bằng chứng hoàn tất B7
 
@@ -169,7 +170,7 @@ Không bao gồm:
 - [x] Kế hoạch triển khai được ghi tại `docs/superpowers/plans/2026-07-19-fe08-reservation-candidate-catalog.md`.
 - [x] Triển khai và bằng chứng FE08-T035 đến FE08-T039 đạt.
 - [x] Cổng quyết định A ghi nhận hợp đồng Phương án A đã phê duyệt.
-- [ ] Cổng quyết định B / H3 được cập nhật theo đầu PR xanh cuối và CI sau walkthrough của con người.
+- [x] Cổng quyết định B / H3 đã đóng theo PR #89, CI hậu merge và Azure exact-head sau walkthrough của con người.
 
 ## 9. Khắc phục audit vòng đời nguyên tử và lan truyền cảnh báo v0.5.3
 

@@ -1,8 +1,8 @@
 # Kế hoạch kiểm thử FE10 - Quản lý thông báo
 
 Phiên bản: 0.6.0
-Trạng thái: ĐÃ MERGE VÀO MAIN; CI HẬU MERGE ĐẠT; AZURE STAGING BỊ CHẶN DO AZURE SQL PAUSED/QUOTA
-Cập nhật lần cuối: 2026-07-29
+Trạng thái: COMPLETE; PR #89 ĐÃ MERGE; CI VÀ AZURE DEPLOY EXACT-HEAD ĐẠT
+Cập nhật lần cuối: 2026-08-01
 
 Đặc tả nguồn: `.sdd/specs/feat-notification-management/SPEC.md`
 ID tính năng: `BR-FE10-*`, `FR-FE10-*`, `AC-FE10-*`
@@ -222,4 +222,5 @@ Migration contract phải chứng minh seed Azure SQL additive và rerun-safe.
 - SHA-256 migration:
   `680cb4acc2ac3d38740e68026f29753a28a39daceeba647d24dc5e1523f3475a`.
 - Traceability FE10 14/20 FR được tag (70%), đạt ngưỡng enforce.
-- Product diff và migration chưa stage/commit/push, đang chờ H2.
+- Product diff và migration của wave này sau đó đã qua H2/H3, merge; closeout
+  cuối được xác nhận qua PR #89, CI và Azure exact-head.

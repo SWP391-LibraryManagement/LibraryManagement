@@ -1,8 +1,8 @@
 # Kế hoạch kiểm thử FE07 - Quản lý mượn sách
 
 Phiên bản: 0.9.0
-Trạng thái: ĐÃ MERGE VÀO MAIN; CI HẬU MERGE ĐẠT; AZURE STAGING BỊ CHẶN DO AZURE SQL PAUSED/QUOTA
-Cập nhật lần cuối: 2026-07-29
+Trạng thái: COMPLETE; PR #89 ĐÃ MERGE; CI VÀ AZURE DEPLOY EXACT-HEAD ĐẠT
+Cập nhật lần cuối: 2026-08-01
 
 Đặc tả nguồn: `.sdd/specs/feat-borrowing-management/SPEC.md`
 ID tính năng: `BR-FE07-*`, `FR-FE07-*`, `AC-FE07-*`
@@ -113,4 +113,5 @@ traceability phải đạt trước H2.
   lỗi console ngoài dự kiến.
 - Coverage backend: 91,89% statements, 80,72% branches, 97,61% functions,
   91,81% lines.
-- Product diff chưa stage/commit/push và đang chờ H2.
+- Product diff của wave này sau đó đã qua H2/H3, merge; closeout cuối được xác
+  nhận qua PR #89, CI và Azure exact-head.

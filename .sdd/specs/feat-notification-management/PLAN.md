@@ -1,10 +1,10 @@
 # PLAN.md - FE10 Quản lý thông báo
 
-Trạng thái: ĐÃ MERGE VÀO MAIN; CI HẬU MERGE ĐẠT; AZURE STAGING BỊ CHẶN DO AZURE SQL PAUSED/QUOTA
+Trạng thái: COMPLETE; PR #89 ĐÃ MERGE; CI VÀ AZURE DEPLOY EXACT-HEAD ĐẠT
 
 Chủ sở hữu: Nhat
 
-Cập nhật: 2026-07-29
+Cập nhật: 2026-08-01
 
 Phê duyệt: G1-G7 được phê duyệt 2026-07-13; G8-G10/ADR-004 và G11/ADR-005
 được phê duyệt 2026-07-15; ranh giới FE04 G12 được Nhat phê duyệt
@@ -22,7 +22,9 @@ Head PR #75 `778e0a470d8a1083bf571a8007b3c058eee4bb22` đã đạt CI exact-head
 duyệt rõ ràng, rồi merge thành
 `b75776b10d6cf4b6868d2ba51eb3268073483b8b`. CI hậu merge chính xác
 `30341279111` và Azure staging tự động `30341540847` đều đạt. FE10-I01 đến
-FE10-I08 cùng biện pháp khắc phục có giới hạn đã hoàn tất.
+FE10-I08 cùng biện pháp khắc phục có giới hạn đã hoàn tất. Closeout tiếp theo
+`6189b1a` đã merge qua PR #89 thành `main@39092fb`; CI `30675444178` và Azure
+staging `30675744992` đều đạt exact-head.
 
 ---
 
