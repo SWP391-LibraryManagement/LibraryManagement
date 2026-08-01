@@ -1,20 +1,20 @@
 # TASKS.md - FE12 Báo cáo và thống kê
 
-Trạng thái: ĐÃ MERGE VÀO MAIN; CI HẬU MERGE ĐẠT; AZURE RUNTIME ĐÃ PHỤC HỒI; CLOSEOUT CANDIDATE CHƯA DEPLOY
+Trạng thái: COMPLETE; PR #89 ĐÃ MERGE; CI VÀ AZURE DEPLOY EXACT-HEAD ĐẠT
 Implementation State: COMPLETE
 
 Chủ sở hữu: Nhat
 
-Cập nhật: 2026-07-29
+Cập nhật: 2026-08-01
 
 Trạng thái workflow hiện tại: baseline Giai đoạn 2 vẫn hoàn tất. Đối soát
 FE07-FE12 đã merge qua PR #63 thành `29b4eb0`; prerequisite v0.2.1 đã merge
 qua PR #81 thành `main@0d064b5`. Governance activation v0.3.0 đã merge qua
 PR #80 thành `cd865e3`, operations summary đã merge qua PR #82 thành
 `2645a00`, và batch liên hoàn được H3 phê duyệt ở head `08e472f` rồi tích hợp
-qua `ba29dc0`. CI hậu merge đã đạt. Sau reset quota ngày 2026-08-01, Azure
-runtime hiện `Running`/`Online` và smoke trên bản đã deploy đạt; closeout
-candidate này chưa deploy và vẫn chờ H3, không phải finding mã nguồn.
+qua `ba29dc0`. Closeout candidate `6189b1a` tiếp tục được phê duyệt H3 trong
+task, merge qua PR #89 thành `main@39092fb`; CI `30675444178` và Azure staging
+`30675744992` đều đạt trên exact head.
 
 ---
 
@@ -164,8 +164,8 @@ Bằng chứng chi tiết được ghi trong
   vệ sinh diff; ghi bằng chứng wave xác định.
 - [x] FE12-N07 Chạy chấp nhận trình duyệt mới cho màn hình mượn/kho/người dùng
   chuẩn, lọc kết quả bằng không, layout mobile và từ chối Member/Guest.
-- [ ] FE12-N08 Nhận review tích hợp con người trước commit, push, merge hoặc
-  closeout B7 wave xác định.
+- [x] FE12-N08 Đã nhận review tích hợp con người; H3, merge và closeout B7
+  được đóng qua PR #89 cùng CI/Azure exact-head.
 - [x] FE12-N09 Thêm tìm kiếm chuẩn và bộ lọc báo cáo đầy đủ, loại banner tải
   thành công và sắp hàng người dùng tăng dần theo `UserId`.
 
@@ -188,7 +188,7 @@ Bằng chứng chi tiết được ghi trong
 - [x] Tích hợp hệ thống SQL-backed đạt trong
   `backend/tests/sql/systemIntegration.sqltest.js` trên cơ sở dữ liệu
   reconciliation dùng một lần, có bằng chứng cleanup.
-- [ ] Chấp nhận B7/L4 con người vẫn chờ.
+- [x] Chấp nhận B7/L4 con người đã được ghi nhận trong H3 và closeout PR #89.
 
 Bằng chứng tự động chi tiết được ghi trong
 `.sdd/reviews/fe12-deterministic-policy-validation-2026-07-19.md`.
@@ -200,7 +200,7 @@ Bằng chứng tự động chi tiết được ghi trong
 - [x] Xác nhận lại biểu đồ tiêu thụ metric backend xác định không có fallback
   giả.
 - [x] Giảm khoảng trắng đáy chỉ-báo-cáo và giữ kiểm thử layout đáp ứng.
-- [~] **FE12-N10 - Khôi phục parity report in-memory và truy vết.**
+- [x] **FE12-N10 - Khôi phục parity report in-memory và truy vết.**
   - Ánh xạ tới: BR-FE12-009, BR-FE12-015/016, FR-FE12-003/011, AC-FE12-003/011.
   - RED: `q` người dùng không khớp ID/trạng thái/tư cách thành viên/vai trò và
     mẫu wildcard SQL, phê duyệt lịch sử không hoạt động biến mất khỏi metric tăng
@@ -213,7 +213,7 @@ Bằng chứng tự động chi tiết được ghi trong
     `30019439505` đạt. Review H3 lặp lại phát hiện edge parity dấu đóng-bracket
     SQL `LIKE` hợp lệ cộng khoảng trống bằng chứng liên tính năng hữu hạn. H2
     mới phê duyệt gói vòng hai ngày 2026-07-23 và cho phép commit/push đã review;
-    CI PR cập nhật và H3 lặp lại vẫn bắt buộc trước merge.
+    finding được khắc phục, H3 lặp lại, merge và closeout cuối đều đã đóng.
 
 ## 11. Ranh giới allowlist query V0.2.0
 
@@ -276,5 +276,5 @@ H2 remediation fingerprint
 
 Không sửa expected `BORROWED` thành `OVERDUE` để che drift. Câu “uncommitted
 tới khi H2 phê duyệt” là snapshot trước publish; FE12-N14..N16 đã được tích
-hợp qua PR #82 (`2645a00`) và CI hậu merge đã đạt. Azure staging vẫn chờ quota
-và Azure SQL được resume.
+hợp qua PR #82 (`2645a00`) và CI hậu merge đã đạt. Closeout cuối đã merge qua
+PR #89 thành `main@39092fb`; Azure exact-head `30675744992` đã đạt.

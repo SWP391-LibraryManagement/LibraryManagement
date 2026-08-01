@@ -251,6 +251,35 @@ components:
           properties:
             code: { type: string, example: ROLE_REQUIRED }
             message: { type: string, example: Access is denied. }
+    BorrowCandidateCopy:
+      type: object
+      additionalProperties: false
+      required: [copyId, barcode, location]
+      properties:
+        copyId: { type: integer, minimum: 1 }
+        barcode: { type: string }
+        location: { type: string }
+    BorrowCandidateBook:
+      type: object
+      additionalProperties: false
+      required: [bookId, title, author, category, copies]
+      properties:
+        bookId: { type: integer, minimum: 1 }
+        title: { type: string }
+        author: { type: string }
+        category: { type: string }
+        copies:
+          type: array
+          minItems: 1
+          items: { $ref: '#/components/schemas/BorrowCandidateCopy' }
+    BorrowCandidateListResponse:
+      type: object
+      additionalProperties: false
+      required: [books]
+      properties:
+        books:
+          type: array
+          items: { $ref: '#/components/schemas/BorrowCandidateBook' }
     ReservationCandidate:
       type: object
       additionalProperties: false
@@ -1243,6 +1272,22 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/AuditLogListResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/borrow-requests/candidates:
+    get:
+      tags: [Borrowing]
+      summary: Member lists borrowable physical-copy candidates (FR-FE07-033/034/036)
+      parameters:
+        - { name: bookId, in: query, required: false, schema: { type: integer, minimum: 1 } }
+        - { name: q, in: query, required: false, schema: { type: string, maxLength: 200 } }
+      responses:
+        '200':
+          description: Member-scoped books and physical copies currently eligible for a borrow request
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BorrowCandidateListResponse' }
         '400': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }

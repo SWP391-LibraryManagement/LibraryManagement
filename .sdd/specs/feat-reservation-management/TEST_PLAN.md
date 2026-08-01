@@ -1,8 +1,8 @@
 # Kế hoạch kiểm thử FE08 - Quản lý đặt chỗ
 
 Phiên bản: 0.6.0
-Trạng thái: ĐÃ MERGE VÀO MAIN; CI HẬU MERGE ĐẠT; AZURE STAGING BỊ CHẶN DO AZURE SQL PAUSED/QUOTA
-Cập nhật lần cuối: 2026-07-29
+Trạng thái: COMPLETE; PR #89 ĐÃ MERGE; CI VÀ AZURE DEPLOY EXACT-HEAD ĐẠT
+Cập nhật lần cuối: 2026-08-01
 
 Đặc tả nguồn: `.sdd/specs/feat-reservation-management/SPEC.md` v0.6.0
 ID tính năng: `BR-FE08-*`, `FR-FE08-*`, `AC-FE08-*`
@@ -14,7 +14,7 @@ ID tính năng: `BR-FE08-*`, `FR-FE08-*`, `AC-FE08-*`
 
 Tạo đặt chỗ cho bản sao vật lý, hiển thị thành viên và nhân sự, xử lý hàng đợi xác định, hủy, hết hạn giữ chỗ, bàn giao hoàn tất FE07, lỗi thông báo FE10, ủy quyền, phân trang, thứ tự, toàn vẹn giao dịch và truy vết audit.
 
-Các tác vụ vòng đời đã chuẩn hóa và danh mục ứng viên đã hoàn tất phía agent. Bằng chứng tự động chứng minh FE08-T028 đến FE08-T039; tích hợp của con người vẫn là cổng riêng.
+Các tác vụ vòng đời đã chuẩn hóa và danh mục ứng viên đã hoàn tất. Bằng chứng tự động chứng minh FE08-T028 đến FE08-T039; H3, merge, CI và Azure exact-head đã đóng qua PR #89.
 
 ## 2. Mục tiêu kiểm thử đơn vị / service
 
@@ -74,7 +74,7 @@ Các tác vụ vòng đời đã chuẩn hóa và danh mục ứng viên đã ho
 - FE08-T028 đến FE08-T034 đạt cổng backend/ranh giới dùng chung tập trung 77/77 và frontend 9/9; truy vết là 29/29.
 - FE08-T035 đến FE08-T039 đạt: hợp đồng backend ứng viên 23/23, SQL ứng viên 2/2, frontend đầy đủ hiện tại 149/149 cùng lint/build, trình duyệt tập trung 1/1 và Playwright đầy đủ 4/4 trên các cổng cô lập.
 - Các đường ưu tiên đặt trước, hoàn tất chủ giữ chỗ, race và hoàn tác FE07/FE08 đạt trong bộ mượn SQL Server dùng một lần được ghi trong rà soát SQL trực tiếp đối soát đầy đủ.
-- Chấp nhận toàn kho cuối và tích hợp của con người vẫn đang mở.
+- Chấp nhận toàn kho và tích hợp con người đã đóng trong H3/PR #89.
 - `TD-028` đã được giải quyết cho lát cắt triển khai và xác thực tự động phía agent; trang thành viên hiện dùng danh mục ứng viên được bảo vệ có SQL hỗ trợ và không còn import `DEMO_RESERVABLE`.
 - Xử lý hàng đợi tự động, job hết hạn giữ chỗ tự động và worker giao FE10 vẫn ngoài Giai đoạn 1.
 
@@ -127,4 +127,5 @@ Chromium phải đạt trước H2.
   `ACTIVE -> NOTIFIED -> FULFILLED`.
 - Full backend 1.125/1.125, frontend 269/269, lint/build, deployment 20/20 và
   Azure schema preparation đều đạt.
-- Product diff chưa stage/commit/push và đang chờ H2.
+- Product diff của wave này sau đó đã qua H2/H3, merge; closeout cuối được xác
+  nhận qua PR #89, CI và Azure exact-head.

@@ -56,6 +56,43 @@ test('OpenAPI documents FE07 input constraints and supported history filters', (
   }
 });
 
+// @spec FR-FE07-033, FR-FE07-034, FR-FE07-036
+test('OpenAPI documents the protected FE07 borrow candidate catalog', () => {
+  const operation = document.paths['/api/borrow-requests/candidates'].get;
+
+  expect(operation.parameters.map((parameter) => parameter.name)).toEqual([
+    'bookId',
+    'q',
+  ]);
+  expect(operation.parameters[0].schema).toEqual({ type: 'integer', minimum: 1 });
+  expect(operation.parameters[1].schema).toEqual({ type: 'string', maxLength: 200 });
+  expect(operation.responses['200'].content['application/json'].schema.$ref).toBe(
+    '#/components/schemas/BorrowCandidateListResponse'
+  );
+
+  expect(document.components.schemas.BorrowCandidateListResponse).toMatchObject({
+    type: 'object',
+    additionalProperties: false,
+    required: ['books'],
+  });
+  expect(document.components.schemas.BorrowCandidateBook.required).toEqual([
+    'bookId',
+    'title',
+    'author',
+    'category',
+    'copies',
+  ]);
+  expect(document.components.schemas.BorrowCandidateCopy.required).toEqual([
+    'copyId',
+    'barcode',
+    'location',
+  ]);
+
+  expect(operation.responses['400'].$ref).toBe('#/components/responses/ValidationError');
+  expect(operation.responses['401'].$ref).toBe('#/components/responses/Unauthorized');
+  expect(operation.responses['403'].$ref).toBe('#/components/responses/Forbidden');
+});
+
 test('OpenAPI binds FE07 action bodies to the current runtime requests', () => {
   expect(schemaRef('/api/borrow-requests/{requestId}/approve', 'patch')).toBe(
     '#/components/schemas/BorrowRequestApproveInput'

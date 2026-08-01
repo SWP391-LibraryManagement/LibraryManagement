@@ -1,18 +1,19 @@
 # PLAN.md - FE12 Báo cáo và thống kê
 
-Trạng thái: ĐÃ MERGE VÀO MAIN; CI HẬU MERGE ĐẠT; AZURE STAGING BỊ CHẶN DO AZURE SQL PAUSED/QUOTA
+Trạng thái: COMPLETE; PR #89 ĐÃ MERGE; CI VÀ AZURE DEPLOY EXACT-HEAD ĐẠT
 
 Chủ sở hữu: Nhat
 
-Cập nhật: 2026-07-29
+Cập nhật: 2026-08-01
 
 Trạng thái workflow hiện tại: baseline Giai đoạn 2 vẫn hoàn tất. Đối soát
 FE07-FE12 đã merge qua PR #63 thành `29b4eb0`; prerequisite v0.2.1 đã merge
 qua PR #81 thành `main@0d064b5`. Governance activation v0.3.0 đã merge qua
 PR #80 thành `cd865e3`, operations summary đã merge qua PR #82 thành
 `2645a00`, và batch liên hoàn được H3 phê duyệt ở head `08e472f` rồi tích hợp
-qua `ba29dc0`. CI hậu merge đã đạt. Azure staging vẫn bị chặn vì Azure SQL
-đang `Paused`/hết quota, không phải finding mã nguồn.
+qua `ba29dc0`. Closeout `6189b1a` đã merge qua PR #89 thành
+`main@39092fb`; CI `30675444178` và Azure staging `30675744992` đều đạt
+exact-head.
 
 ---
 

@@ -94,30 +94,42 @@ test('FE07, FE08, FE10, and FE12 have complete production-source FR traceability
   }
 });
 
-test('FE07, FE08, FE10, and FE12 release headers preserve the current runtime/candidate boundary', () => {
-  const taskFiles = [
+test('FE07, FE08, FE10, and FE12 release headers preserve the deployed exact-head boundary', () => {
+  const featureDirectories = [
     'feat-borrowing-management',
     'feat-reservation-management',
     'feat-notification-management',
     'feat-reporting-statistics',
   ];
+  const releaseFiles = ['CONTEXT.md', 'SPEC.md', 'PLAN.md', 'TASKS.md', 'TEST_PLAN.md'];
 
-  for (const featureDirectory of taskFiles) {
-    const source = fs.readFileSync(
+  for (const featureDirectory of featureDirectories) {
+    for (const releaseFile of releaseFiles) {
+      const source = fs.readFileSync(
+        path.join(__dirname, '..', '.sdd', 'specs', featureDirectory, releaseFile),
+        'utf8',
+      );
+      const releaseHeader = source.split(/\r?\n---/)[0];
+
+      assert.match(
+        releaseHeader,
+        /Trạng thái: COMPLETE; PR #89 ĐÃ MERGE; CI VÀ AZURE DEPLOY EXACT-HEAD ĐẠT/,
+      );
+      assert.doesNotMatch(
+        releaseHeader,
+        /CLOSEOUT CANDIDATE CHƯA DEPLOY|AZURE STAGING BỊ CHẶN DO AZURE SQL PAUSED\/QUOTA/,
+      );
+    }
+
+    const taskSource = fs.readFileSync(
       path.join(__dirname, '..', '.sdd', 'specs', featureDirectory, 'TASKS.md'),
       'utf8',
     );
-    const releaseHeader = source.split(/\r?\n---/)[0];
+    const taskHeader = taskSource.split(/\r?\n---/)[0];
 
-    assert.equal(parseImplementationState(releaseHeader).state, 'COMPLETE');
-    assert.match(
-      releaseHeader,
-      /Trạng thái: ĐÃ MERGE VÀO MAIN; CI HẬU MERGE ĐẠT; AZURE RUNTIME ĐÃ PHỤC HỒI; CLOSEOUT CANDIDATE CHƯA DEPLOY/,
-    );
-    assert.doesNotMatch(releaseHeader, /AZURE STAGING BỊ CHẶN DO AZURE SQL PAUSED\/QUOTA/);
-    assert.doesNotMatch(
-      releaseHeader,
-      /đang chờ H2 mới và H3 lặp lại|H3\/merge|V0\.6\.0 CHƯA KÍCH HOẠT/i,
-    );
+    assert.equal(parseImplementationState(taskHeader).state, 'COMPLETE');
+    assert.match(taskHeader, /PR #89\s+thành `main@39092fb`/);
+    assert.match(taskHeader, /CI `30675444178` và\s+Azure staging\s+`30675744992`/);
+    assert.doesNotMatch(taskHeader, /đang chờ H2 mới và H3 lặp lại|V0\.6\.0 CHƯA KÍCH HOẠT/i);
   }
 });

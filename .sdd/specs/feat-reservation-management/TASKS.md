@@ -1,19 +1,19 @@
 # TASKS.md - FE08 Quản lý đặt chỗ
 
-Trạng thái: ĐÃ MERGE VÀO MAIN; CI HẬU MERGE ĐẠT; AZURE RUNTIME ĐÃ PHỤC HỒI; CLOSEOUT CANDIDATE CHƯA DEPLOY
+Trạng thái: COMPLETE; PR #89 ĐÃ MERGE; CI VÀ AZURE DEPLOY EXACT-HEAD ĐẠT
 Implementation State: COMPLETE
 
 Chủ sở hữu: Nhat
 
-Cập nhật: 2026-07-29
+Cập nhật: 2026-08-01
 
 Trạng thái quy trình hiện tại: Mốc cơ sở Giai đoạn 2 vẫn hoàn tất. `main` sở
 hữu `FE08-T041` đến `FE08-T046`; tác vụ chỉ hồi quy căn chỉnh quy tắc là
 `FE08-T047`. Đối soát FE07-FE12 đã merge qua PR #63 thành `29b4eb0` sau H3
 và CI. Batch liên hoàn v0.6.0 được H3 phê duyệt ở head `08e472f` và tích hợp
-vào `main` qua `ba29dc0`. CI hậu merge đã đạt. Sau reset quota ngày 2026-08-01,
-Azure runtime hiện `Running`/`Online` và smoke trên bản đã deploy đạt; closeout
-candidate này chưa deploy và vẫn chờ H3, không phải finding mã nguồn.
+vào `main` qua `ba29dc0`. Closeout candidate `6189b1a` tiếp tục được phê duyệt
+H3 trong task, merge qua PR #89 thành `main@39092fb`; CI `30675444178` và
+Azure staging `30675744992` đều đạt trên exact head.
 
 ---
 
@@ -218,11 +218,11 @@ candidate này chưa deploy và vẫn chờ H3, không phải finding mã nguồ
 
 ## 8. Khắc phục audit vòng đời nguyên tử và lan truyền cảnh báo v0.5.3
 
-- [~] **FE08-T040 - Commit trạng thái vòng đời và audit cùng nhau.**
+- [x] **FE08-T040 - Commit trạng thái vòng đời và audit cùng nhau.**
   - Ánh xạ tới: BR-FE08-013, FR-FE08-001, FR-FE08-004, FR-FE08-021, NFR-FE08-TXN-001/002, NFR-FE08-LOG-001, NFR-FE08-UX-002.
   - RED: kiểm thử repository yêu cầu audit-trước-commit cho tạo/hủy/giữ/hết hạn; kiểm thử service/route yêu cầu hoàn tác, cảnh báo an toàn sau commit và tuần tự hóa cảnh báo nâng hết hạn; kiểm thử frontend từ chối xác nhận thành viên cache.
   - GREEN: ghi audit vòng đời tham gia giao dịch thay đổi; lỗi thông báo vẫn sau commit; audit lỗi không sẵn có trả `process-queue.notificationWarning` đơn lẻ hoặc một mục `expire-holds.notificationWarnings[]` an toàn cho mỗi lượt nâng bị ảnh hưởng; xác nhận nhân sự chỉ chứa ngữ cảnh bản sao cùng giải thích chọn lại máy chủ.
-  - Xác minh: H2 ban đầu và phụ lục H2 đã đạt; commit `97aca62` và lượt chạy PR CI `30014066260` đã đạt. H2 mới sau đó phê duyệt commit khắc phục `b931e00`, và lượt chạy PR CI `30019439505` đã đạt. Rà soát H3 lặp lại phát hiện thiếu độ sâu hồi quy đa cảnh báo, khoảng trống OpenAPI cảnh báo đơn lẻ, tính cân bằng ngoặc đóng và bằng chứng cũ. H2 mới phê duyệt gói vòng hai vào 2026-07-23 và cho phép commit/push đã rà soát; PR CI cập nhật và H3 lặp lại vẫn bắt buộc trước merge.
+  - Xác minh: H2 ban đầu và phụ lục H2 đã đạt; commit `97aca62` và lượt chạy PR CI `30014066260` đã đạt. H2 mới sau đó phê duyệt commit khắc phục `b931e00`, và lượt chạy PR CI `30019439505` đã đạt. Finding H3 vòng hai đã được khắc phục, review lại và tích hợp; closeout cuối được xác nhận qua PR #89, CI và Azure exact-head.
 
 ## 9. 2026-07-27 - Mốc cơ sở một vai trò và trình bày thành viên
 

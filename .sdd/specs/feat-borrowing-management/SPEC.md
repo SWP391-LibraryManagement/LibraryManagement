@@ -2,17 +2,18 @@
 
 # Phiên bản: 0.9.0
 
-# Trạng thái: ĐÃ MERGE VÀO MAIN; CI HẬU MERGE ĐẠT; AZURE STAGING BỊ CHẶN DO AZURE SQL PAUSED/QUOTA
+# Trạng thái: COMPLETE; PR #89 ĐÃ MERGE; CI VÀ AZURE DEPLOY EXACT-HEAD ĐẠT
 
 # Chủ sở hữu: Nhat
 
-# Cập nhật lần cuối: 2026-07-29
+# Cập nhật lần cuối: 2026-08-01
 
 # ID tính năng: FE07
 
 # Thư mục tính năng: `.sdd/specs/feat-borrowing-management/`
 
-> Trạng thái phân phối hiện tại (2026-07-20): `COMPLETE` cho phạm vi Giai đoạn 1 đã được phê duyệt.
+> Trạng thái phân phối hiện tại (2026-08-01): `COMPLETE`; closeout PR #89,
+> CI `30675444178` và Azure exact-head `30675744992` đã đạt.
 > `TASKS.md` và `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`
 > có thẩm quyền cho trạng thái thực hiện hiện tại. `Not Started` cũ hơn,
 > `PARTIAL`, `READY FOR REVIEW` hoặc các nhãn đang chờ xem xét được giữ lại bên dưới là
@@ -561,6 +562,7 @@ stateDiagram-v2
 
 | Phương thức | Endpoint | Tác nhân | Yêu cầu | Phản hồi | Ghi chú |
 | ------ | -------- | ----- | ------- | -------- | ----- |
+| GET | `/api/borrow-requests/candidates` | Thành viên | Truy vấn: `bookId?` là số nguyên dương, `q?` tối đa 200 ký tự | `{ books: [{ bookId, title, author, category, copies: [{ copyId, barcode, location }] }] }` | Danh mục được bảo vệ, chỉ trả các bản sao Thành viên hiện tại có thể đưa vào yêu cầu mượn; vẫn xác thực lại mọi quy tắc FE07/FE08 khi tạo yêu cầu. |
 | POST | `/api/borrow-requests` | Thành viên | `{ copyIds: number[] }` | Đã tạo yêu cầu vay | Tạo yêu cầu đang chờ xử lý. |
 | GET | `/api/borrow-requests/me` | Thành viên | Truy vấn: `status?, fromDate?, toDate?, page=1, limit=20` | Lịch sử vay mượn của chính mình được phân trang | `status` là trạng thái chi tiết bao gồm `OVERDUE` dẫn xuất; bộ lọc ngày được bao gồm và sử dụng BorrowDate hoặc RequestDate cho các hàng vẫn được yêu cầu; thứ tự ổn định là BorrowDate DESC null cuối cùng, BorrowDetailId DESC. Mỗi chi tiết được trả về bao gồm `requestStatus` từ yêu cầu sở hữu của nó; `status` vẫn giữ nguyên trạng thái chi tiết được các bộ lọc sử dụng. |
 | GET | `/api/borrow-requests` | Librarian/Admin | Truy vấn: trạng thái, memberId | Danh sách yêu cầu mượn | Endpoint được bảo vệ. |
@@ -796,7 +798,7 @@ Danh sách kiểm tra phê duyệt giai đoạn 1 (hoàn thành trên 2026-06-10
 - [x] Hộp thoại xác nhận quyết định chỉ sử dụng các trường chuẩn do nhân viên đọc và không tạo ra bằng chứng đủ điều kiện.
 - [x] Xác nhận thao tác phê duyệt vẫn xác nhận lại điều kiện, giới hạn, bản sao, đặt chỗ, tiền phạt, quá hạn và trạng thái đặt chỗ trên máy chủ.
 - [x] Xác nhận thao tác từ chối vẫn yêu cầu lý do chuẩn dài 1..500 ký tự đã cắt khoảng trắng và không thay đổi trạng thái bản sao.
-- [ ] Con người xem xét sự khác biệt hoàn chỉnh khi triển khai v0.7.3 và bằng chứng xác minh tập trung trước khi tích hợp.
+- [x] Con người đã xem xét khác biệt hoàn chỉnh; các lượt H2/H3, PR #89, CI và Azure exact-head đã đóng bằng chứng tích hợp.
 
 ### 17.3 Bản sửa đổi v0.7.5 Cổng điều chỉnh quy tắc kinh doanh
 

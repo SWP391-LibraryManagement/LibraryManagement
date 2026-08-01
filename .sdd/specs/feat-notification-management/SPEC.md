@@ -2,17 +2,17 @@
 
 # Phiên bản: 0.6.0
 
-# Trạng thái: ĐÃ MERGE VÀO MAIN; CI HẬU MERGE ĐẠT; AZURE STAGING BỊ CHẶN DO AZURE SQL PAUSED/QUOTA
+# Trạng thái: COMPLETE; PR #89 ĐÃ MERGE; CI VÀ AZURE DEPLOY EXACT-HEAD ĐẠT
 
 # Chủ sở hữu: Nhat
 
-# Cập nhật lần cuối: 2026-07-29
+# Cập nhật lần cuối: 2026-08-01
 
 # ID tính năng: FE10
 
 # Thư mục tính năng: `.sdd/specs/feat-notification-management/`
 
-> Trạng thái bàn giao hiện tại (2026-07-28): phạm vi Giai đoạn 1 và phần mở
+> Trạng thái bàn giao hiện tại (2026-08-01): phạm vi Giai đoạn 1 và phần mở
 > rộng hộp thư cá nhân v0.5.0 đã hoàn tất. Sau rebase tài liệu lên
 > `main@30f936d`, H2 phê duyệt fingerprint
 > `e123345be05b59a9e519d182b301ab5464160e8fc32aed8d17d3c463e28e0a15`.
@@ -20,7 +20,9 @@
 > `30317424995`, Azure staging `30317621429`, H3 hai trục không có finding có
 > thể hành động và được phê duyệt, rồi merge thành
 > `b75776b10d6cf4b6868d2ba51eb3268073483b8b`. CI hậu merge `30341279111` và
-> Azure staging tự động `30341540847` đều đạt. `TASKS.md` và
+> Azure staging tự động `30341540847` đều đạt. Closeout tiếp theo đã merge qua
+> PR #89 thành `main@39092fb`; CI `30675444178` và Azure staging
+> `30675744992` đều đạt exact-head. `TASKS.md` và
 > `.sdd/reviews/fe10-notification-inbox-staging-h3-closeout-2026-07-27.md` là
 > nguồn chuẩn cho trạng thái giao hàng này. Các nhãn lịch sử `Not Started`,
 > `PARTIAL` hoặc đang chờ review không phải trạng thái hiện tại.

@@ -7,8 +7,8 @@
   và `FR-FE08-038` tại đúng ranh giới production.
 - Đổi metadata triển khai sang `COMPLETE`; không thay đổi FIFO, API, schema hoặc
   quyền sở hữu trạng thái FE08.
-- Sau reset quota, Azure runtime hiện `Running`/`Online` và smoke bản đang deploy
-  đạt; closeout candidate chưa deploy nên chưa thể dùng kết quả này để nghiệm thu.
+- Closeout candidate `6189b1a` đã merge qua PR #89 thành `main@39092fb`; CI
+  `30675444178` và Azure staging `30675744992` đều đạt exact-head.
 
 ## 2026-07-29 - Đồng bộ trạng thái phát hành hậu merge (v0.6.2)
 

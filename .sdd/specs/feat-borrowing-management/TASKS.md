@@ -1,6 +1,6 @@
 # TASKS.md - FE07 Quản lý mượn sách
 
-Trạng thái: ĐÃ MERGE VÀO MAIN; CI HẬU MERGE ĐẠT; AZURE RUNTIME ĐÃ PHỤC HỒI; CLOSEOUT CANDIDATE CHƯA DEPLOY
+Trạng thái: COMPLETE; PR #89 ĐÃ MERGE; CI VÀ AZURE DEPLOY EXACT-HEAD ĐẠT
 Implementation State: COMPLETE
 
 Mở rộng hiện tại: triển khai và xác thực tự động v0.8.0/v0.9.0 đã hoàn tất;
@@ -8,14 +8,15 @@ review H2/H3 và merge đã đóng. Mốc cơ sở Giai đoạn 2 trước đó 
 
 Chủ sở hữu: Nhat
 
-Cập nhật: 2026-07-29
+Cập nhật: 2026-08-01
 
 Trạng thái quy trình hiện tại: Mốc cơ sở Giai đoạn 2 vẫn hoàn tất. Đối soát
 FE07-FE12 đã merge qua PR #63 thành `29b4eb0` sau H3 và CI. Batch liên hoàn
 v0.9.0 được H3 phê duyệt ở head `08e472f` và tích hợp vào `main` qua
-`ba29dc0`. CI hậu merge đã đạt. Sau reset quota ngày 2026-08-01, Azure runtime
-hiện `Running`/`Online` và smoke trên bản đã deploy đạt; closeout candidate này
-chưa deploy và vẫn chờ H3, không phải finding mã nguồn.
+`ba29dc0`. Closeout candidate `6189b1a` sau đó được phê duyệt H3 trong task,
+merge qua PR #89 thành `main@39092fb`; CI `30675444178` và Azure staging
+`30675744992` đều đạt trên exact head. App Service `Running`, SQL `Online` và
+smoke frontend/health/readiness/catalog/CORS/protected-route đều đạt.
 
 ---
 
@@ -125,7 +126,7 @@ Các tác vụ đã chọn bên dưới mô tả việc triển khai đã hoàn 
   - Xác minh: `node --test frontend/test/borrowingFrontend.test.js` đạt.
   - Tiêu chí hoàn thành: UI không bao giờ tạo ra thành công phê duyệt/trả hoặc bằng chứng điều kiện hợp lệ giả.
 
-- [~] **FE07-T038 - Chạy cổng xác thực tập trung và rà soát v0.5.0.**
+- [x] **FE07-T038 - Chạy cổng xác thực tập trung và rà soát v0.5.0.**
   - Ánh xạ tới: mọi ID BR/FR/AC v0.5.0 mới/đã đối soát và Định nghĩa hoàn thành.
   - Tệp: `.sdd/specs/feat-borrowing-management/TEST_PLAN.md`, `.sdd/specs/feat-borrowing-management/CHANGELOG.md`, triển khai/kiểm thử FE07 đã thay đổi.
   - Phụ thuộc: FE07-T031 đến FE07-T037.
@@ -147,13 +148,13 @@ Các tác vụ đã chọn bên dưới mô tả việc triển khai đã hoàn 
 - [x] Cổng tự động cuối B6: frontend 37/37, lint/build, backend 273/273, SQL trực tiếp 14/14 có dọn dẹp, truy vết FE07 22/22 và `git diff --check`.
 - [x] Nhat xác nhận rà soát của con người vào 2026-07-14 trước commit, push hoặc merge.
 
-### 4.1 Xác thực v0.5.0 đang chờ
+### 4.1 Xác thực v0.5.0 đã đóng
 
 - [x] Kiểm thử route/repository/contract/model mượn tập trung đạt: 66/66.
 - [x] Bằng chứng đồng thời SQL trực tiếp chứng minh việc tuần tự hóa năm bản sao cùng thành viên và thứ tự khóa đã phê duyệt là một phần của lượt chạy SQL tổng hợp 61/61.
 - [x] Kiểm thử hồi quy frontend v0.5.1 đạt: 18/18.
-- [~] Truy vết đạt 28/28; `git diff --check` vẫn là một phần của lần chạy lại kho mã cuối.
-- [ ] Nhat xác nhận rà soát con người cho triển khai đối soát.
+- [x] Truy vết đạt 28/28; `git diff --check` và cổng kho mã cuối đã đạt.
+- [x] Nhat xác nhận rà soát con người; trạng thái cuối được ghi qua H3 và PR #89.
 
 ## 5. Truy vết
 
@@ -256,10 +257,10 @@ Các tác vụ đã chọn bên dưới mô tả việc triển khai đã hoàn 
   - GREEN: tái sử dụng `RequestReviewSummary`, mở rộng/xếp chồng đáp ứng hộp thoại, cung cấp trợ giúp có thể tiếp cận cho textarea từ chối và giữ callback đóng mới nhất trong ref.
   - Theo dõi: loại bỏ banner khả dụng chung dư thừa và trường view-model tổng hợp không dùng; các trạng thái bản sao chính tắc riêng vẫn hiển thị và máy chủ vẫn xác thực lại khi phê duyệt.
   - Ranh giới: không đổi API/schema/vai trò/giao dịch; Thủ thư/Quản trị viên giữ các lệnh FE07 chính tắc như cũ.
-- [~] **FE07-T043 - Xác minh và rà soát con người hiệu chỉnh v0.7.3.**
+- [x] **FE07-T043 - Xác minh và rà soát con người hiệu chỉnh v0.7.3.**
   - Ánh xạ tới: AC-FE07-024, AC-FE07-025 và các cổng kế hoạch v0.7.3.
   - Bằng chứng: frontend tập trung 24/24, frontend đầy đủ 201/201, backend FE07 66/66, tích hợp Quản trị/vai trò 25/25, Chromium E2E 4/4, lint/build frontend, truy vết FE07 31/31 và `git diff --check` đạt.
-  - Cổng còn lại: rà soát của con người cho diff v0.7.3 hoàn chỉnh.
+  - Cổng cuối đã đóng qua các lượt H2/H3 và closeout PR #89.
 - [x] **FE07-T044 - Loại bỏ thông báo trả bình thường dư thừa.**
   - Ánh xạ tới: NFR-FE07-UX-005.
   - Loại banner khẳng định `Không có dấu hiệu...` cho lượt trả `NORMAL` đúng hạn trong khi vẫn giữ cảnh báo rà soát phạt cho kết quả quá hạn, hỏng hoặc mất.
@@ -270,11 +271,11 @@ Các tác vụ đã chọn bên dưới mô tả việc triển khai đã hoàn 
   - Suy ra `Còn N ngày`, `Đến hạn hôm nay` hoặc `Quá hạn N ngày` từ ngày nghiệp vụ `Asia/Ho_Chi_Minh` và thay cách trình bày mơ hồ `Quá hạn: Đúng hạn`.
   - Giữ hợp đồng thay đổi trả/rà soát phạt không đổi.
 
-- [~] **FE07-T046 - Làm kiểm tra thời gian nghiệp vụ và trạng thái trả có tính xác định.**
+- [x] **FE07-T046 - Làm kiểm tra thời gian nghiệp vụ và trạng thái trả có tính xác định.**
   - Ánh xạ tới: BR-FE07-011, BR-FE07-014, BR-FE07-018, FR-FE07-007/020/021, AC-FE07-006/008/010, NFR-FE07-TIME-001.
   - RED: dưới `TZ=UTC`, lượt trả theo ngày Việt Nam vượt qua ngày quá hạn kỳ vọng; chi tiết có bản sao vật lý không phải `BORROWED` phải trả `BORROW_STATE_CONFLICT`.
   - GREEN: trả/gia hạn dùng `libraryBusinessTime`; double trong bộ nhớ và SQL chia sẻ bất biến bản sao vật lý; kỳ vọng SQL dùng điều kiện hợp lệ vai trò `MEMBER` hiện tại và kết quả xung đột rõ ràng.
-  - Xác minh: kiểm thử FE07 tập trung đạt dưới `TZ=UTC`; SQL dùng một lần và hồi quy đầy đủ đạt. H2 ban đầu và phụ lục H2 đã đạt; commit `97aca62` và lượt chạy PR CI `30014066260` đã đạt. H2 mới sau đó phê duyệt commit khắc phục `b931e00`, và lượt chạy PR CI `30019439505` đã đạt. Rà soát H3 lặp lại trả về phát hiện về tính hoàn chỉnh vòng hai có phạm vi giới hạn. H2 mới phê duyệt gói vòng hai vào 2026-07-23 và cho phép commit/push đã rà soát; PR CI đã cập nhật và H3 lặp lại vẫn bắt buộc trước merge.
+  - Xác minh: kiểm thử FE07 tập trung đạt dưới `TZ=UTC`; SQL dùng một lần và hồi quy đầy đủ đạt. H2 ban đầu và phụ lục H2 đã đạt; commit `97aca62` và lượt chạy PR CI `30014066260` đã đạt. H2 mới sau đó phê duyệt commit khắc phục `b931e00`, và lượt chạy PR CI `30019439505` đã đạt. Finding H3 vòng hai đã được khắc phục, review lại và tích hợp; closeout cuối được xác nhận qua PR #89, CI và Azure exact-head.
 
 ## 2026-07-27 - Mốc cơ sở tự phục vụ thành viên một vai trò
 
@@ -325,7 +326,7 @@ Các tác vụ đã chọn bên dưới mô tả việc triển khai đã hoàn 
 
 ## 2026-07-27 - Hiệu chỉnh yêu cầu bản sao đang chờ v0.8.0
 
-- [~] **FE07-T053 - Thực thi một yêu cầu đang chờ trên mỗi bản sao xuyên vai trò.**
+- [x] **FE07-T053 - Thực thi một yêu cầu đang chờ trên mỗi bản sao xuyên vai trò.**
   - Ánh xạ tới: BR-FE07-033, FR-FE07-034/035, AC-FE07-028/029; ranh giới yêu cầu đang chờ FE06; cấu thành Quản trị FE11.
   - Backend: SQL ứng viên loại yêu cầu đang hoạt động; giao dịch tạo khóa và
     từ chối yêu cầu xung đột bằng `COPY_PENDING_REQUEST_CONFLICT`; FE06
@@ -336,28 +337,28 @@ Các tác vụ đã chọn bên dưới mô tả việc triển khai đã hoàn 
   - Bằng chứng: backend tập trung 123/123 và frontend tập trung 36/36; backend đầy đủ
     1,056/1,056; frontend đầy đủ 232/232; lint/build frontend; truy vết và
     vệ sinh diff đạt cục bộ.
-  - Còn lại: rà soát của con người.
+  - Rà soát con người và cổng tích hợp đã đóng qua H3 và PR #89.
 
 ## 2026-07-27 - Hiệu chỉnh quy trình cùng tiêu đề v0.8.1
 
-- [~] **FE07-T054 - Thực thi một quy trình mượn đang hoạt động cho mỗi Thành viên/tiêu đề.**
+- [x] **FE07-T054 - Thực thi một quy trình mượn đang hoạt động cho mỗi Thành viên/tiêu đề.**
   - Ánh xạ tới: BR-FE07-034, FR-FE07-036/037, AC-FE07-030; bảo vệ vòng đời FE11.
   - Đường ứng viên và tạo dùng `BookId`; tạo/phê duyệt xác thực lại dưới khóa giao dịch theo phạm vi thành viên.
   - Yêu cầu cũ không hợp lệ vẫn có thể bị từ chối và hiện công khai xung đột phê duyệt riêng biệt về chủ sở hữu,
     tài khoản, bản sao và cùng tiêu đề.
-  - Hồi quy backend/frontend tự động là bắt buộc; rà soát của con người vẫn còn.
+  - Hồi quy backend/frontend và rà soát con người đã đạt trong closeout PR #89.
 
-- [~] **FE07-T055 - Đưa danh mục lưu hành Quản trị vừa khung nhìn desktop.**
+- [x] **FE07-T055 - Đưa danh mục lưu hành Quản trị vừa khung nhìn desktop.**
   - Ánh xạ tới: FR-FE07-038, AC-FE07-031.
   - Loại các cột ID yêu cầu và mã vạch riêng khỏi danh mục lưu hành Quản trị và projection danh mục DOCX mà không xóa trường API/cơ sở dữ liệu chính tắc nào.
   - Giữ ID chi tiết mượn làm mã định danh vận hành hiển thị, căn chỉnh mọi header còn lại với giá trị hàng của nó và bọc nội dung thành viên/sách dài trong ô bố cục cố định.
-  - Xác minh kiểm thử frontend Quản trị tập trung, lint/build và vệ sinh diff; rà soát của con người vẫn bắt buộc.
+  - Kiểm thử frontend Quản trị tập trung, lint/build, vệ sinh diff và H3 đã đạt.
 
-- [~] **FE07-T056 - Kết nối lựa chọn trả quá hạn với tạo khoản phạt FE09.**
+- [x] **FE07-T056 - Kết nối lựa chọn trả quá hạn với tạo khoản phạt FE09.**
   - Ánh xạ tới: FR-FE07-039, AC-FE07-032; FR-FE09-020, AC-FE09-018.
   - Chỉ hiển thị `Tạo phiếu phạt` cho khoản mượn đang hoạt động đã chọn có hạn trả chính tắc quá hạn trong `Asia/Ho_Chi_Minh`.
   - Gọi tính toán FE09 chỉ với `borrowDetailId`; giữ ngày, số tiền, ngăn trùng lặp, vai trò và hành vi trạng thái kết thúc do máy chủ sở hữu.
-  - Xác minh kiểm thử frontend FE07/FE09 tập trung, kiểm thử frontend đầy đủ, lint/build, truy vết và vệ sinh diff; rà soát của con người vẫn bắt buộc.
+  - Kiểm thử FE07/FE09 tập trung, frontend đầy đủ, lint/build, truy vết, vệ sinh diff và H3 đã đạt.
 
 ## 2026-07-29 - Batch FE07-FE12 v0.9.0
 

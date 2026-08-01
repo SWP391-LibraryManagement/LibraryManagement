@@ -1,8 +1,8 @@
 # Kế hoạch kiểm thử FE12 - Báo cáo và thống kê
 
 Phiên bản: 0.3.0
-Trạng thái: ĐÃ MERGE VÀO MAIN; CI HẬU MERGE ĐẠT; AZURE STAGING BỊ CHẶN DO AZURE SQL PAUSED/QUOTA
-Cập nhật lần cuối: 2026-07-29
+Trạng thái: COMPLETE; PR #89 ĐÃ MERGE; CI VÀ AZURE DEPLOY EXACT-HEAD ĐẠT
+Cập nhật lần cuối: 2026-08-01
 
 Đặc tả nguồn: `.sdd/specs/feat-reporting-statistics/SPEC.md`
 ID tính năng: `BR-FE12-*`, `FR-FE12-*`, `AC-FE12-*`
@@ -141,16 +141,16 @@ Bằng chứng trình duyệt wave xác định mới ngày 2026-07-19:
 - Chụp screenshot trình duyệt bị timeout, nên bằng chứng được ghi từ DOM snapshot
   và giá trị layout đo thay vì image artifact.
 
-## 7. Khoảng trống
+## 7. Trạng thái closeout
 
-- Re-review tích hợp con người đang chờ; chấp nhận trình duyệt do agent thực
-  hiện hiện có nhưng không thay thế phê duyệt B7/L4 con người.
+- Re-review tích hợp và phê duyệt B7/L4 của con người đã đóng trong H3/PR #89;
+  chấp nhận tự động, SQL và trình duyệt vẫn là bằng chứng kỹ thuật bổ trợ.
 - Tích hợp hệ thống SQL-backed đạt với
   `SYSTEM_SQL_TEST_ALLOW_MUTATION=true` trên cơ sở dữ liệu reconciliation dùng
   một lần; cleanup được ghi trong
   `.sdd/reviews/full-reconciliation-live-sql-validation-2026-07-19.md`.
-- Re-review lát cắt base lịch sử và chấp nhận con người không đóng phần theo dõi
-  v0.1.6.
+- Re-review lát cắt base lịch sử đã được supersede bởi closeout exact-head
+  `main@39092fb` và Azure staging `30675744992`.
 - Logout `AppLayout` dùng chung hiện điều hướng tới `/login` mà không xóa auth
   storage; lỗi authentication-shell có sẵn này ngoài FE12 và nên xử lý riêng.
 
@@ -210,4 +210,5 @@ leak trước GREEN clock injection.
 - Full backend 69 suite/1.125 kiểm thử; frontend 269/269; lint/build đạt.
 - Coverage: 91,89% statements, 80,72% branches, 97,61% functions, 91,81%
   lines. Traceability FE12 14/15 (93%).
-- Product diff chưa stage/commit/push và đang chờ H2.
+- Product diff của wave này đã qua H2/H3, merge; closeout sau cùng được xác nhận
+  tại PR #89 cùng CI `30675444178` và Azure `30675744992`.

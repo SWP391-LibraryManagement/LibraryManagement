@@ -7,8 +7,10 @@
   `FR-FE07-044` tại đúng ranh giới production sở hữu hành vi.
 - Đổi metadata triển khai sang `COMPLETE`; không thay đổi API, schema, trạng thái
   nghiệp vụ hoặc hành vi quan sát được.
-- Sau reset quota, Azure runtime hiện `Running`/`Online` và smoke bản đang deploy
-  đạt; closeout candidate chưa deploy nên chưa thể dùng kết quả này để nghiệm thu.
+- Closeout candidate `6189b1a` đã merge qua PR #89 thành `main@39092fb`; CI
+  `30675444178` và Azure staging `30675744992` đều đạt exact-head.
+- Bổ sung hợp đồng đã tồn tại `GET /api/borrow-requests/candidates` vào FE07
+  SPEC/OpenAPI và contract test; không thay đổi runtime API hay business rule.
 
 ## 2026-07-29 - Đồng bộ trạng thái phát hành hậu merge (v0.9.2)
 

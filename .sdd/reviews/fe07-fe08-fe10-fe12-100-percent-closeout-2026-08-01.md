@@ -5,11 +5,13 @@
 - Baseline review: `37be6e0b0a4435c011f13504331ebc139f35a1c8`.
 - Branch review: `feat/fe07-fe08-fe10-fe12-closeout-100`.
 - Phạm vi: đóng truy vết production-source và kiểm chứng hành vi đã có cho FE07,
-  FE08, FE10 và FE12; không thêm API, schema, role, state transition hoặc
-  business rule.
+  FE08, FE10 và FE12; không thêm runtime API, schema, role, state transition
+  hoặc business rule. Follow-up chỉ tài liệu hóa endpoint FE07 đã tồn tại.
 - H2: **APPROVED** bởi Nhat trong task ngày 2026-08-01 cho fingerprint cuối bên
   dưới; commit/push và draft PR đã được ủy quyền.
-- Cổng cao nhất còn mở: H3 trước merge/deploy.
+- H3: **APPROVED** bởi Nhat trong task; GitHub không tạo formal review object
+  cho PR #89 nhưng quyết định tích hợp được ghi trong task/commit closeout.
+- Cổng closeout PR #89: **CLOSED** sau merge, CI và Azure exact-head.
 - Fingerprint exact tracked diff (packet này và plan untracked được loại khỏi
   phạm vi hash): `9acd9a09a6a90c976d4e920cfe95ab2142e8336b`.
 
@@ -21,7 +23,7 @@
 | `backend/src`, `frontend/src` | Mọi FR của FE07/08/10/12 đều có owner `@spec` | Observed implementation evidence |
 | `backend/tests`, `frontend/test`, `tests/e2e` | Unit/contract/integration/browser regression xanh | Observed verification evidence |
 | SQL concurrency/system suites | Fixture cũ dùng cùng `BookId`, ngày động và template cũ; đã căn chỉnh fixture theo BR/FR hiện hành, không đổi production behavior | Test-fixture reconciliation |
-| Azure staging | Sau reset quota: App Service `Running`, SQL `Online`, smoke bản đang deploy PASS | Runtime recovered; closeout candidate chưa deploy |
+| Azure staging | App Service `Running`, SQL `Online`; exact-head smoke PASS | PR #89 đã deploy thành công trên `main@39092fb` |
 
 ## 3. Traceability dashboard
 
@@ -59,6 +61,9 @@ Gate implementation: `COMPLETE` yêu cầu 100%; `PARTIAL` vẫn yêu cầu tố
 - SQL test fixtures được sửa để tôn trọng BR-FE07-034, ngày nghiệp vụ xác định,
   bốn template kết quả FE07 và cleanup notification an toàn. Đây là test-only
   reconciliation, không phải product behavior change.
+- Follow-up closeout tài liệu hóa endpoint FE07 đã tồn tại
+  `GET /api/borrow-requests/candidates` trong SPEC/OpenAPI và khóa hợp đồng bằng
+  test; không thêm route hoặc thay đổi runtime behavior.
 
 ## 6. Verification dashboard
 
@@ -68,7 +73,8 @@ Gate implementation: `COMPLETE` yêu cầu 100%; `PARTIAL` vẫn yêu cầu tố
 | `npm test` (frontend) | 272 tests PASS |
 | `npm run lint` + `npm run build` | PASS |
 | `npm run test:traceability-state` + `npm run trace:enforce` | 6/6 PASS; 4 target features 100% |
-| Disposable SQL Server 2022 (`npm run test:sql:fe07`) | 9 suites; 46 passed, 25 skipped; DB/login removed and verified |
+| `borrowingContract.test.js` | RED đúng vì thiếu OpenAPI path; GREEN 8/8 sau khi bổ sung hợp đồng |
+| Disposable SQL Server 2022 (`npm run test:sql:fe07`) | 9 suites; 48 passed, 23 skipped ngoài FE07/FE08/system; disposable DB removed and verified |
 | `npm run test:deployment` | 20/20 PASS |
 | `npm run test:secrets` | 5/5 PASS |
 | `npm run test:e2e` Chromium | 12/12 PASS, including connected FE07→FE08→FE10→FE12 and system golden path |
@@ -87,14 +93,44 @@ Inspection sau reset quota:
 - `npm run smoke:staging` PASS cho frontend, health, schema-readiness,
   SQL catalog, allowed/blocked CORS và protected route.
 - Public frontend `https://www.thuvienhub.io.vn/` và `/login` trả HTTP 200;
-  đây vẫn là bản đã deploy trước closeout candidate.
+  console không có lỗi trong lượt kiểm tra hậu deploy.
 
-Closeout candidate chưa deploy; migration/deploy vẫn chờ H3. SQL serverless tự
-resume khi có traffic kiểm tra sau quota reset; không có lệnh resume thủ công.
+Closeout candidate `6189b1a` đã merge qua PR #89 thành `main@39092fb`. CI
+`30675444178` và Azure staging `30675744992` đều `success` trên exact head;
+migration preflight, backend, frontend và smoke đã đạt. SQL serverless tự resume
+khi có traffic kiểm tra sau quota reset; không có lệnh resume thủ công.
 
-## 8. Human decisions required
+## 8. Quyết định và kết quả tích hợp
 
 1. H2: **APPROVED** cho fingerprint cuối sau khi cập nhật trạng thái Azure.
-2. Commit/push và draft PR: **AUTHORIZED**; H3 vẫn bắt buộc.
-3. Sau H3, authorize migration, deploy và exact-head staging smoke. Cho đến lúc
-   đó chỉ runtime cũ được xác minh; closeout candidate chưa được nghiệm thu Azure.
+2. Commit/push và PR #89: **AUTHORIZED**, sau đó đã merge thành `39092fb`.
+3. H3 được Nhat phê duyệt trong task; PR #89 không có formal GitHub review
+   object, nên task/commit là bằng chứng quyết định con người.
+4. CI hậu merge và Azure exact-head đều đạt; closeout candidate đã được nghiệm
+   thu kỹ thuật trên staging.
+
+## 9. Acceptance staging còn tách riêng
+
+- Anonymous authorization đã xác minh: API bảo vệ trả `401`, 10 route FE07/08/
+  FE10/FE12 chuyển về `/login` và console không có lỗi.
+- Walkthrough có đăng nhập bằng tài khoản `MEMBER` và `LIBRARIAN` trên Azure
+  vẫn cần phiên đăng nhập của người dùng; đây là cổng acceptance vận hành sau
+  closeout kỹ thuật, không phải finding mã nguồn hay dữ liệu.
+
+## 10. Follow-up hợp đồng và hồ sơ closeout
+
+- Nhánh: `codex/fe07-fe12-final-closeout`; base `main@39092fb`.
+- Phương pháp: SDD Light. Core là hợp đồng đọc FE07 đã tồn tại; Shell là metadata
+  closeout. Không đổi route runtime, schema, role, state hoặc business rule.
+- Fingerprint tracked diff, loại packet này để tránh self-reference:
+  `e02ff19354255a18a642ad4fc1b2fb294f11a1b8`.
+- TDD: contract test RED vì thiếu `/api/borrow-requests/candidates`, sau đó GREEN
+  `8/8` khi SPEC/OpenAPI/schema phản hồi được đồng bộ.
+- H2 local diff review: **PASS**. Cả 20 header CONTEXT/SPEC/PLAN/TASKS/TEST_PLAN
+  có cùng trạng thái exact-head; marker chưa chọn còn lại chỉ là lựa chọn độ sâu
+  spec, không phải công việc đang mở.
+- Verification: traceability state `6/6`; bốn target 100%; backend coverage
+  `1.141/1.141`; frontend `272/272`, lint/build; system `11/11`; E2E `12/12`;
+  deployment `20/20`; secret/dependency audits và `git diff --check` đạt.
+- Cổng còn lại của follow-up PR: H3 trước merge; acceptance Azure có đăng nhập
+  vẫn cần phiên `MEMBER` và `LIBRARIAN` của người dùng.

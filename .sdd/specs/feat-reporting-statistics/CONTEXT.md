@@ -2,11 +2,11 @@
 
 # Phiên bản: 0.3.0
 
-# Trạng thái: ĐÃ MERGE VÀO MAIN; CI HẬU MERGE ĐẠT; AZURE STAGING BỊ CHẶN DO AZURE SQL PAUSED/QUOTA
+# Trạng thái: COMPLETE; PR #89 ĐÃ MERGE; CI VÀ AZURE DEPLOY EXACT-HEAD ĐẠT
 
 # Chủ sở hữu: Nhat
 
-# Cập nhật lần cuối: 2026-07-29
+# Cập nhật lần cuối: 2026-08-01
 
 # Thư mục tính năng: `.sdd/specs/feat-reporting-statistics/`
 
