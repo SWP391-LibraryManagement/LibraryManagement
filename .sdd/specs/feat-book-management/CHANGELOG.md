@@ -1,5 +1,10 @@
 # CHANGELOG.md - FE05 Quản lý sách
 
+## 2026-08-01 - Kích hoạt củng cố audit dữ liệu tham chiếu catalog (v0.6.11)
+
+- Làm rõ mutation tác giả/nhà xuất bản/thể loại của Quản trị viên chịu ranh giới transaction/audit FE05 hiện có.
+- Kích hoạt `FE05-T019`; chưa ghi nhận bằng chứng triển khai sản phẩm.
+
 ## 2026-07-28 - Giữ bộ lọc sau khi cập nhật trạng thái một sách
 
 - Không để các lệnh trạng thái xóa bộ lọc hiện tại và bất ngờ hiển thị các sách không hoạt động vốn đang bị ẩn.

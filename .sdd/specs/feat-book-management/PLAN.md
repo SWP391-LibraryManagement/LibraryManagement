@@ -163,3 +163,10 @@ Hợp đồng đọc FE05 phải ổn định trước khi FE06/FE07 sử dụng
 4. Bù trừ thao tác ghi filesystem khi create/update, đồng thời lạc quan, database hoặc audit xử lý thất bại.
 5. Thay cả hai trường URL ảnh bìa có thể chỉnh sửa bằng bộ chọn tệp cục bộ, preview, hướng dẫn tên tệp/loại/kích thước và phân giải asset theo backend origin.
 6. Xác thực suite backend/frontend tập trung, phân tích OpenAPI, lint/build, traceability và vệ sinh diff trước khi rà soát thủ công.
+
+## 2026-08-01 Củng cố mutation dữ liệu tham chiếu catalog
+
+1. Thêm kiểm thử RED cho context tác nhân, not-found, action/target audit và rollback khi audit lỗi.
+2. Làm ba mutation `/api/admin/library/*` dùng cùng transaction với `AuditLogs`.
+3. Giữ role, endpoint, schema, envelope thành công và soft-deactivate hiện có.
+4. Xác minh backend tập trung/đầy đủ, coverage, traceability, secret scan, system/E2E/deployment và vệ sinh diff trước H2-P.

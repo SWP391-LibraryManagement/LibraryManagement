@@ -239,3 +239,10 @@ và xác thực token có bằng chứng cục bộ có thể lặp lại trong 
 3. Giữ ràng buộc duy nhất của cơ sở dữ liệu làm nguồn có thẩm quyền cho xử lý đồng thời và ánh xạ tranh chấp username hoặc email sang conflict `409` an toàn tương ứng.
 4. Giữ phản hồi trùng lặp trên biểu mẫu đăng ký và chỉ chuyển sang OTP sau khi đăng ký thành công.
 5. Thêm kiểm thử hồi quy backend và frontend tập trung, sau đó chạy traceability FE02 và lint/build frontend.
+
+## 18. Củng cố runtime và session-audit 2026-08-01
+
+1. Thêm RED cho bcrypt floor production/test, OTP response, HTTPS toàn API và rollback login/logout khi audit lỗi.
+2. Loại debug OTP path; test lấy OTP qua dependency được inject/fake delivery.
+3. Dùng transaction hiện có cho login success và logout; giữ các event login failure/lock ngoài phạm vi batch này.
+4. Không đổi schema, token format, role, endpoint hoặc response thành công ngoài việc loại trường debug bị cấm.

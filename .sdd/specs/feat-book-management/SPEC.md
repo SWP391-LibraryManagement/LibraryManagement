@@ -1,12 +1,12 @@
 # SPEC.md - Quản lý sách FE05
 
-# Phiên bản: 0.6.10
+# Phiên bản: 0.6.11
 
 # Trạng thái: ĐÃ PHÊ DUYỆT - BASELINE 2026-07-17
 
 # Chủ sở hữu: Dung
 
-# Cập nhật lần cuối: 2026-07-28
+# Cập nhật lần cuối: 2026-08-01
 
 # ID tính năng: FE05
 
@@ -367,7 +367,7 @@ Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
 - `frontend/src/page/BookManagement.jsx` là giao diện thay đổi FE05 chuẩn cho các thao tác tạo sách, cập nhật siêu dữ liệu, vô hiệu hóa và kích hoạt lại.
 - `frontend/src/page/UserManagement.jsx` có thể đọc danh sách sách của Thư viện quản trị để cung cấp ngữ cảnh bảng điều khiển, nhưng các hàng sách ở chế độ chỉ đọc và không hiển thị điều khiển thay đổi FE05 trùng lặp.
 - `adminApi` của FE11 không chứa bí danh thay đổi sách; mọi thay đổi sách hiện có đều dùng hợp đồng API FE05 ở trên với `If-Match` và lý do khi bắt buộc.
-- Thư viện quản trị FE11 có thể tạo/cập nhật/vô hiệu hóa bản ghi tham chiếu danh mục, tác giả và nhà xuất bản qua ranh giới `/api/admin/library/*` chỉ dành cho Quản trị viên. Thủ thư chỉ nhận các lựa chọn `/api/books/metadata` đang hoạt động cần thiết cho việc thay đổi sách FE05.
+- Thư viện quản trị FE11 có thể tạo/cập nhật/vô hiệu hóa bản ghi tham chiếu danh mục, tác giả và nhà xuất bản qua ranh giới `/api/admin/library/*` chỉ dành cho Quản trị viên. Mỗi mutation phải ghi actor và audit catalog trong cùng giao dịch; cập nhật hoặc vô hiệu hóa ID không tồn tại/không còn hoạt động trả `404 ADMIN_RESOURCE_ITEM_NOT_FOUND`. Thủ thư chỉ nhận các lựa chọn `/api/books/metadata` đang hoạt động cần thiết cho việc thay đổi sách FE05.
 
 ---
 
@@ -384,7 +384,7 @@ Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
 
 ### 12.2 Tính toàn vẹn giao dịch
 
-- NFR-FE05-TXN-001: Tạo/cập nhật/vô hiệu hóa/kích hoạt lại và log audit bắt buộc phải cùng thành công hoặc cùng rollback.
+- NFR-FE05-TXN-001: Tạo/cập nhật/vô hiệu hóa/kích hoạt lại sách hoặc dữ liệu tham chiếu catalog và log audit bắt buộc phải cùng thành công hoặc cùng rollback.
 - NFR-FE05-TXN-002: Việc vô hiệu hóa sách chỉ thay đổi `Books.Status`; FE05 phải giữ nguyên trạng thái vòng đời bản sao của FE06 và mọi lần đọc tính khả dụng phải kết hợp các trạng thái sách/bản sao đã commit mới nhất.
 - NFR-FE05-TXN-003: Việc ghi hệ thống tệp được bù trừ quanh giao dịch sách/audit nguyên tử: thao tác thay đổi thất bại sẽ xóa bìa được quản lý mới, còn thay thế thành công chỉ xóa tệp được FE05 quản lý trước đó.
 
@@ -399,7 +399,7 @@ Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
 
 ### 12.5 Ghi log và audit
 
-- NFR-FE05-LOG-001: Thao tác thêm, cập nhật, vô hiệu hóa và kích hoạt lại phải truy vết được bằng tác nhân, dấu thời gian, ID sách, trạng thái cũ/mới, lý do khi áp dụng và kết quả.
+- NFR-FE05-LOG-001: Thao tác thêm, cập nhật, vô hiệu hóa và kích hoạt lại sách hoặc dữ liệu tham chiếu catalog phải truy vết được bằng tác nhân, dấu thời gian, loại/ID mục tiêu, trạng thái cũ/mới và lý do khi áp dụng.
 
 ### 12.6 Khả năng sử dụng
 

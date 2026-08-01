@@ -1,5 +1,10 @@
 # CHANGELOG.md - FE11 Quản lý người dùng và vai trò
 
+## 2026-08-01 - Kích hoạt audit nguyên tử cho metadata Quản trị (v0.6.14)
+
+- Khóa action/target allowlist, context tác nhân, transaction và lỗi not-found cho `/api/admin/library/*`.
+- Kích hoạt `FE11-CAT01`; chưa ghi nhận bằng chứng triển khai sản phẩm.
+
 ## 2026-07-28 - Giới hạn thao tác Quản trị với người dùng hiện có vào vai trò và vô hiệu hóa (v0.6.13)
 
 - Loại thao tác `Chỉnh sửa` khỏi hàng, thẻ và chi tiết người dùng.

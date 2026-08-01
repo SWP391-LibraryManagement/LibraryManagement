@@ -1,5 +1,10 @@
 # CHANGELOG.md - Xác thực FE02
 
+## 2026-08-01 - Kích hoạt củng cố runtime và session-audit FE02 (v0.6.20)
+
+- Làm rõ bcrypt floor, cấm debug OTP, HTTPS namespace API và transaction audit cho đăng nhập thành công/đăng xuất.
+- Kích hoạt `FE02-T067`; chưa ghi nhận bằng chứng triển khai sản phẩm.
+
 ## 2026-07-28 - Đặc tả kiểm tra khả dụng của định danh đăng ký
 
 - Yêu cầu cả username và email đều khả dụng trước khi tạo trạng thái xác minh hoặc yêu cầu gửi OTP.

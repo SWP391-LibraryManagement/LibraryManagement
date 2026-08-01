@@ -1,12 +1,12 @@
 # SPEC.md - FE11 Quản lý vai trò và người dùng
 
-# Phiên bản: 0.6.13
+# Phiên bản: 0.6.14
 
 # Trạng thái: ĐÃ TRIỂN KHAI RANH GIỚI QUẢN TRỊ TÀI KHOẢN QUẢN TRỊ - ĐANG CHỜ CON NGƯỜI RÀ SOÁT
 
 # Chủ sở hữu: Dung
 
-# Cập nhật lần cuối: 2026-07-28
+# Cập nhật lần cuối: 2026-08-01
 
 # ID tính năng: FE11
 
@@ -315,7 +315,7 @@ Dùng các ID ổn định này cho nhiệm vụ và kiểm thử.
 - BR-FE11-030: FE11 không được vô hiệu hóa tài khoản hay thay thế vai trò `MEMBER` khi FE07 báo còn yêu cầu mượn đang chờ hoặc chi tiết mượn đang hoạt động. Thao tác vòng đời và thao tác tạo/phê duyệt FE07 dùng cùng khóa giao dịch theo Thành viên.
 - BR-FE11-031: Với yêu cầu cũ đang chờ có chủ sở hữu đã biết là không hoạt động/không phải Thành viên hoặc bản sao không sẵn có, Quản lý yêu cầu Quản trị viên vô hiệu hóa thao tác phê duyệt kèm điều kiện chặn có hướng xử lý nhưng vẫn cho phép từ chối; FE07 vẫn là nguồn chuẩn tại thời điểm thực thi lệnh.
 - BR-FE11-032: Số liệu Thành viên trên Bảng điều khiển Quản trị đếm tài khoản `ACTIVE` qua ánh xạ đơn chuẩn `UserRoles`. Biểu đồ mượn chỉ đếm chi tiết FE07 đã cam kết `BorrowDate`; biểu đồ trả trong ngày dùng ngày nghiệp vụ `Asia/Ho_Chi_Minh` dùng chung với FE07. Phần trình bày đã phê duyệt vẫn gồm năm thẻ tóm tắt và ba biểu đồ. Thẻ bảng điều khiển chuyển tới mô-đun sở hữu và giữ bộ lọc trạng thái tương ứng.
-- BR-FE11-033: Vai trò hiện tại duy nhất của tài khoản kiểm soát quyền truy cập dữ liệu tham chiếu danh mục: `ADMIN` có thể liệt kê/tạo/cập nhật/vô hiệu hóa tác giả, nhà xuất bản và danh mục qua `/api/admin/library/*`; `LIBRARIAN` chỉ được đọc lựa chọn đang hoạt động qua FE05 `/api/books/metadata`; `MEMBER` và Khách không được thực hiện hai nhóm thao tác này.
+- BR-FE11-033: Vai trò hiện tại duy nhất của tài khoản kiểm soát quyền truy cập dữ liệu tham chiếu danh mục: `ADMIN` có thể liệt kê/tạo/cập nhật/vô hiệu hóa tác giả, nhà xuất bản và danh mục qua `/api/admin/library/*`; mọi mutation được phép phải ghi actor và audit catalog trong cùng giao dịch. `LIBRARIAN` chỉ được đọc lựa chọn đang hoạt động qua FE05 `/api/books/metadata`; `MEMBER` và Khách không được thực hiện hai nhóm thao tác này.
 
 ---
 
@@ -348,7 +348,7 @@ Dùng các ID ổn định này cho nhiệm vụ và kiểm thử.
 - FR-FE11-040: Khi lệnh phê duyệt/từ chối của Quản trị viên thành công hoặc xung đột, Quản lý yêu cầu phải tải lại danh sách và chi tiết chuẩn. Từ chối phải yêu cầu lý do đã loại khoảng trắng đầu/cuối dài 1..500 ký tự và giải thích rằng từ chối yêu cầu đang chờ sẽ giải phóng quyền giữ bản sao logic của yêu cầu.
 - FR-FE11-041: NẾU Quản trị viên cố gắng vô hiệu hóa người dùng có yêu cầu mượn đang chờ xử lý, FE11 sẽ trả về `409 PENDING_BORROW_REQUESTS_EXIST`; NẾU Quản trị viên cố gắng thay thế `MEMBER` trong khi tồn tại các yêu cầu đang chờ xử lý hoặc khoản vay đang hoạt động, FE11 sẽ trả lại `409 MEMBER_BORROWING_WORKFLOW_EXISTS`.
 - FR-FE11-042: KHI Quản trị viên mở yêu cầu cũ đang chờ được xác định là không thể phê duyệt, chi tiết phải liệt kê thông báo điều kiện chặn an toàn, chỉ vô hiệu hóa phê duyệt và vẫn cho phép từ chối.
-- FR-FE11-043: NẾU Thủ thư, Thành viên hoặc Khách gọi bất kỳ điểm cuối `/api/admin/library/{authors|publishers|categories}` nào, máy chủ phải từ chối yêu cầu trước khi gọi tầng lưu bền siêu dữ liệu; Quản trị viên đã xác thực được cấp quyền bằng phép chiếu vai trò đơn chuẩn.
+- FR-FE11-043: NẾU Thủ thư, Thành viên hoặc Khách gọi bất kỳ điểm cuối `/api/admin/library/{authors|publishers|categories}` nào, máy chủ phải từ chối yêu cầu trước khi gọi tầng lưu bền siêu dữ liệu. KHI Quản trị viên đã xác thực tạo/cập nhật/vô hiệu hóa dữ liệu tham chiếu, mutation và audit catalog phải cùng commit/rollback; cập nhật ID không tồn tại hoặc vô hiệu hóa ID không tồn tại/không còn hoạt động trả `404 ADMIN_RESOURCE_ITEM_NOT_FOUND` mà không ghi audit thành công.
 
 ### 7.1 Yêu cầu hành vi không mong muốn (Lỗi / Điều kiện bất thường)
 
@@ -540,6 +540,7 @@ DTO phải loại trừ `passwordHash`, mật khẩu thô, token xác thực th�
 - NFR-FE11-TXN-004: FE10 phân phối thiết lập sau giao dịch nguồn FE11; lỗi provider/requester không được rollback tài khoản hoặc token và chỉ được trả về trạng thái phân phối an toàn.
 - NFR-FE11-TXN-005: Việc xác thực lại Quản trị viên thực hiện gửi lại thiết lập, thu hồi token, tạo token mới và ghi nhật ký kiểm toán phải cùng commit hoặc cùng rollback.
 - NFR-FE11-TXN-006: Thay thế vai trò phải khóa hàng `UserRoles` bị ảnh hưởng và số lượng vai trò Quản trị viên đang hoạt động trước khi thay đổi; các thao tác đồng thời phải được tuần tự hóa để mỗi tài khoản có chính xác một vai trò và luôn còn ít nhất một Quản trị viên đang hoạt động.
+- NFR-FE11-TXN-007: Tạo, cập nhật hoặc vô hiệu hóa tác giả/nhà xuất bản/thể loại và bản ghi audit tương ứng phải dùng cùng một giao dịch SQL.
 
 ### 12.3 Hiệu năng
 
@@ -551,6 +552,7 @@ DTO phải loại trừ `passwordHash`, mật khẩu thô, token xác thực th�
 
 - NFR-FE11-LOG-001: Các thao tác tạo, gửi lại thiết lập, vô hiệu hóa và thay thế vai trò có hiệu lực phải ghi mục nhật ký kiểm toán; thay đổi vai trò bị từ chối hoặc không làm thay đổi dữ liệu không được ghi bản kiểm toán thành công.
 - NFR-FE11-LOG-002: Nhật ký kiểm toán phải gồm: loại hành động, ID quản trị viên, ID người dùng mục tiêu, dấu thời gian và chi tiết thay đổi.
+- NFR-FE11-LOG-003: Audit mutation dữ liệu tham chiếu catalog phải dùng `CATALOG_METADATA_CREATE`, `CATALOG_METADATA_UPDATE` hoặc `CATALOG_METADATA_DEACTIVATE`, chứa ID Quản trị viên, IP, user-agent, target type/ID và metadata theo allowlist; không chứa body thô hoặc credential.
 
 ### 12.5 Khả năng sử dụng
 
@@ -691,7 +693,7 @@ Các quyết định sau đã được phê duyệt trong gói đánh giá Giai 
 | AC-FE11-022 | Gửi lại không đủ điều kiện/bị giới hạn thời gian chờ sẽ bị từ chối mà không tạo thông tin xác thực | FR-FE11-038 | BR-FE11-023, BR-FE11-025 | FE11-S01..S07; auth-account-setup-boundary-validation-review-2026-07-15.md | COMPLETE (B7) |
 | AC-FE11-023 | expectedUpdatedAt cũ khi vô hiệu hóa -> 409 STALE_USER_STATE và không lưu thay đổi/bản kiểm toán thành công | FR-FE11-023 | BR-FE11-027 | Các trường hợp thay đổi dùng trạng thái cũ FE11-LIFE04 | Chưa bắt đầu |
 | AC-FE11-025 | Dashboard giữ nguyên năm thẻ/ba biểu đồ, dùng đúng chủ sở hữu chuẩn và các thẻ mở mô-đun đã lọc tương ứng | FR-FE11-031 | BR-FE11-020, BR-FE11-032 | `backend/tests/adminDashboardRepository.test.js`, `frontend/test/adminConsoleStructure.test.js` | TỰ ĐỘNG CỤC BỘ; CON NGƯỜI ĐANG ĐÁNH GIÁ |
-| AC-FE11-026 | Chỉ Quản trị viên truy cập quản lý tác giả/nhà xuất bản/danh mục; Thủ thư vẫn dùng lựa chọn chỉ đọc của FE05 | FR-FE11-043 | BR-FE11-033 | `backend/tests/adminLibraryRoleBoundary.test.js`; `backend/tests/bookRoutes.test.js` | COMPLETE (TỰ ĐỘNG CỤC BỘ); CON NGƯỜI ĐANG ĐÁNH GIÁ |
+| AC-FE11-026 | Chỉ Quản trị viên truy cập quản lý tác giả/nhà xuất bản/danh mục; mutation được phép ghi audit nguyên tử và ID không tồn tại trả 404; Thủ thư vẫn dùng lựa chọn chỉ đọc của FE05 | FR-FE11-043 | BR-FE11-033 | `backend/tests/adminLibraryRoleBoundary.test.js`; `backend/tests/adminCatalogMetadataService.test.js`; `backend/tests/adminCatalogMetadataRepository.test.js`; `backend/tests/adminAuditLogService.test.js` | PARTIAL: ROLE BOUNDARY COMPLETE; FE11-CAT01 PENDING |
 
 ### Từ yêu cầu hành vi không mong muốn FE11 đến nguồn và kiểm thử
 
@@ -720,6 +722,7 @@ Các quyết định sau đã được phê duyệt trong gói đánh giá Giai 
 | FR-FE11-035 | Hành động trên yêu cầu đã hoàn tất bị vô hiệu hóa/từ chối | BR-FE11-019 | Q-FE11-013, EC-FE11-017 | FE11-REQ03; xác thực Wave B | SẴN SÀNG ĐỂ ĐÁNH GIÁ |
 | FR-FE11-037 | Lỗi phân phối thiết lập FE10 giữ nguyên trạng thái nguồn không hoạt động và trả về trạng thái an toàn | BR-FE11-023, BR-FE11-024 | EC-FE11-019, Q-FE11-015 | FE11-S01..S07 bao phủ lỗi phân phối an toàn và điều kiện/thời gian chờ gửi lại | COMPLETE (B7) |
 | FR-FE11-038 | Gửi lại thiết lập không đủ điều kiện hoặc bị giới hạn thời gian chờ không tạo thông tin xác thực | BR-FE11-025 | EC-FE11-020, EC-FE11-021, Q-FE11-016 | FE11-S01..S07 bao phủ lỗi phân phối an toàn và điều kiện/thời gian chờ gửi lại | COMPLETE (B7) |
+| FR-FE11-043 | Ranh giới role metadata và mutation/audit nguyên tử | BR-FE11-033 | AC-FE11-026 | FE11-CAT01 và các kiểm thử metadata Admin tập trung | PARTIAL: ROLE BOUNDARY COMPLETE; FE11-CAT01 PENDING |
 
 ### Tóm tắt độ bao phủ (FE11)
 

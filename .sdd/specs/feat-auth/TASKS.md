@@ -317,3 +317,11 @@ Bằng chứng này chỉ đóng nhóm nhiệm vụ UX Xác thực/OTP. Phần g
   - Phụ thuộc: FE02-T010, FE02-T020, FE02-T025.
   - DoD: `POST /api/auth/register` trả về `409 EMAIL_ALREADY_REGISTERED` hoặc `409 USERNAME_ALREADY_REGISTERED` tương ứng cho giá trị trùng lặp tồn tại trước và đồng thời; không tạo người dùng mới, token xác minh hoặc request gửi OTP; frontend vẫn ở biểu mẫu đăng ký với phản hồi theo trường và chỉ vào bước OTP sau khi đăng ký thành công; kiểm thử hồi quy backend/frontend tập trung vượt qua.
   - Bằng chứng: `authService.register` kiểm tra username/email đã chuẩn hóa trước trạng thái xác minh và ánh xạ cả hai conflict tranh chấp unique; kiểm thử hồi quy trùng lặp khi đăng ký chứng minh không có trạng thái người dùng/token/request bổ sung; frontend giữ phản hồi tiếng Việt về trùng lặp ở bước 1. Backend tập trung vượt qua 62/62, frontend 242/242, lint/build và traceability vượt qua.
+
+## Giai đoạn 9: Củng cố runtime và session-audit 2026-08-01
+
+- [ ] **FE02-T067 - Củng cố bcrypt, OTP response, HTTPS và audit session nguyên tử.**
+  - Ánh xạ tới: BR-FE02-005, BR-FE02-011, BR-FE02-016, BR-FE02-017, BR-FE02-020; AC-FE02-024; NFR-FE02-SEC-001/003/015, NFR-FE02-TXN-002, NFR-FE02-LOG-001/002.
+  - RED: production bcrypt dưới 10, `debugOtp`, HTTP API ngoài auth, trusted proxy/health exclusions, login/logout audit rollback và audit context.
+  - GREEN: fail-fast config, xóa debug response, gate `/api`, transaction audit bắt buộc cho login success/logout và revoke nhận transaction.
+  - Ranh giới: audit login attempt/failure/lock/auto-unlock vẫn là follow-up riêng; không tuyên bố đã chuyển chúng sang fail-closed.

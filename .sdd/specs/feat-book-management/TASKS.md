@@ -193,3 +193,11 @@ Trạng thái quy trình: đã hoàn tất cho phạm vi Giai đoạn 2 đã ph�
   - Giữ ngữ cảnh search/category/status/page đã áp dụng và tải lại danh sách chuẩn đó sau cả biểu mẫu cập nhật lẫn lệnh trạng thái độc lập.
   - Kết xuất cột trạng thái danh sách quản lý từ `Books.Status` chuẩn, không phải `availabilityStatus`.
   - Xác minh kiểm thử frontend tập trung, toàn bộ kiểm thử frontend, lint/build, traceability và vệ sinh diff trước khi rà soát thủ công.
+
+## 2026-08-01 Củng cố mutation dữ liệu tham chiếu catalog
+
+- [ ] **FE05-T019 - Ghi audit nguyên tử cho mutation dữ liệu tham chiếu catalog.**
+  - Ánh xạ tới: NFR-FE05-TXN-001, NFR-FE05-LOG-001; tích hợp FE11 `BR-FE11-033`, `FR-FE11-043`, `AC-FE11-026`.
+  - RED: actor context, ba action audit allowlist, update/deactivate không tồn tại và rollback audit.
+  - GREEN: mutation và audit dùng một transaction SQL tham số hóa; update không có hàng trả null để service ánh xạ `404`.
+  - Ranh giới: không đổi schema, endpoint, role, envelope thành công hoặc quyền sở hữu trạng thái bản sao FE06.
