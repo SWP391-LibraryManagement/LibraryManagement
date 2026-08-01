@@ -2,7 +2,7 @@
 
 # Phiên bản: 0.9.0
 
-# Trạng thái: COMPLETE; PR #89 ĐÃ MERGE; CI VÀ AZURE DEPLOY EXACT-HEAD ĐẠT
+# Trạng thái: HOÀN THÀNH; PR #89 ĐÃ HỢP NHẤT; CI VÀ AZURE ĐÃ CHẠY THÀNH CÔNG TRÊN ĐÚNG COMMIT
 
 # Chủ sở hữu: Nhat
 
@@ -20,7 +20,7 @@ Tính năng này phải giữ nhất quán ba yếu tố:
 
 - Trạng thái mượn của thành viên.
 - Trạng thái bản sao vật lý trong tồn kho.
-- Lịch sử giao dịch được dùng sau này cho phạt, báo cáo và audit.
+- Lịch sử giao dịch được dùng sau này cho phạt, báo cáo và kiểm toán.
 
 Vì mượn sách là trung tâm của hoạt động thư viện hằng ngày, tính năng này được xem là một tính năng Đặc tả đầy đủ.
 
@@ -77,7 +77,7 @@ Tập lệnh SQL hiện tại bao gồm:
 Các điểm cần đối soát khi triển khai:
 
 - Các mục đang chờ dùng `BorrowDetails.Status = REQUESTED`; không thêm bảng chi tiết yêu cầu riêng trong Giai đoạn 1.
-- Lý do từ chối là bắt buộc trong siêu dữ liệu audit; FE07 không yêu cầu cột lý do từ chối mới trong `BorrowRequests`.
+- Lý do từ chối là bắt buộc trong siêu dữ liệu kiểm toán; FE07 không yêu cầu cột lý do từ chối mới trong `BorrowRequests`.
 - Prototype/schema phải cung cấp hợp đồng số lần gia hạn đã phê duyệt, `CreatedBy`, `ApprovedAt`, `ApprovedBy` và `BorrowDate` theo từng chi tiết.
 - Phê duyệt phải triển khai bảo vệ năm bản sao theo phạm vi thành viên và thứ tự khóa dùng chung từ `SPEC.md` v0.5.0.
 - Ngày nghiệp vụ mượn, đến hạn, trả và quá hạn dùng `Asia/Ho_Chi_Minh`.
@@ -126,7 +126,7 @@ Các quyết định này được phản ánh trong `SPEC.md` v0.5.0 và phải
 
 | Phụ thuộc | Lý do quan trọng |
 | ---------- | ---------------- |
-| FE02 Xác thực | Xác định actor hiện tại. |
+| FE02 Xác thực | Xác định tác nhân hiện tại. |
 | FE04 Quản lý thành viên | Xác nhận người dùng có phải thành viên đã được phê duyệt hay không. |
 | FE06 Quản lý tồn kho / bản sao sách | Sở hữu trạng thái bản sao vật lý. |
 | FE08 Quản lý đặt trước | Sở hữu trạng thái hàng đợi/giữ chỗ; FE07 thực thi ưu tiên, kiểm tra xung đột gia hạn và hoàn tất lượt giữ chỗ đã thông báo khớp trong khi phê duyệt. |
@@ -159,11 +159,11 @@ Các quyết định này được phản ánh trong `SPEC.md` v0.5.0 và phải
 - Dùng các giao dịch và thứ tự khóa đã phê duyệt cho luồng phê duyệt và trả.
 - Mọi endpoint API phải xác thực vai trò và đầu vào trên máy chủ.
 
-## 11. Bối cảnh batch FE07-FE12 2026-07-29
+## 11. Bối cảnh đợt FE07-FE12 2026-07-29
 
 - FE07 tiếp tục sở hữu transaction mượn/trả/gia hạn và sự kiện nguồn.
-- FE10 chỉ nhận yêu cầu thông báo sau commit; lỗi thông báo không rollback FE07.
-- FE07 chỉ công khai handoff hàng đợi chỉ đọc cho FE08; Librarian vẫn phải xác
+- FE10 chỉ nhận yêu cầu thông báo sau commit; lỗi thông báo không hoàn tác FE07.
+- FE07 chỉ công khai bàn giao hàng đợi chỉ đọc cho FE08; Librarian vẫn phải xác
   nhận xử lý thủ công.
-- Timeline và blocker copy chỉ trình bày state/timestamp/error code chính tắc.
+- Timeline và điều kiện chặn copy chỉ trình bày state/timestamp/error code chuẩn.
 - Scope thuộc `SL-003`, phụ thuộc governance `SL-001` và template FE10 `SL-002`.
