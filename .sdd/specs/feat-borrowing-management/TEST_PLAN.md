@@ -37,7 +37,7 @@ Theo dõi hợp đồng lịch sử: xác thực `status?`, `fromDate?`, `toDate
 - `PATCH /api/borrow-requests/:requestId/approve`: hợp lệ, bản sao không khả dụng, mượn hai lần đồng thời, bị cấm.
 - `PATCH /api/borrow-requests/:requestId/reject`: hợp lệ, trạng thái không hợp lệ.
 - `PATCH /api/borrow-details/:borrowDetailId/return`: hợp lệ, trạng thái/ngày không hợp lệ, đã trả.
-- `PATCH /api/borrow-details/:borrowDetailId/renew`: hợp lệ, quá hạn, giới hạn gia hạn, xung đột đặt trước.
+- `PATCH /api/borrow-details/:borrowDetailId/renew`: hợp lệ, quá hạn, giới hạn gia hạn, xung đột đặt chỗ.
 
 ## 4. Luồng chấp nhận E2E / thủ công
 
@@ -45,7 +45,7 @@ Theo dõi hợp đồng lịch sử: xác thực `status?`, `fromDate?`, `toDate
 - Một mảng tương thích cũ Thành viên/nhân sự không hợp lệ bị chuyển hướng khỏi tuyến API thành viên và chỉ giữ quyền truy cập vận hành nhân sự khớp; tài khoản đã lưu vẫn một vai trò.
 - FE08 đánh dấu lượt giữ chỗ `NOTIFIED` -> Thành viên theo bàn giao chính xác `bookId`/`copyId`
   -> FE07 chọn trước bản sao được giữ -> Thành viên gửi yêu cầu đang chờ
-  -> Thủ thư/Quản trị viên phê duyệt và hoàn tất lượt đặt trước.
+  -> Thủ thư/Quản trị viên phê duyệt và hoàn tất lượt đặt chỗ.
 - Hành vi quá hạn/gia hạn được xác minh với ngày xác định.
 
 ## 5. Bằng chứng hiện có
@@ -54,7 +54,7 @@ Theo dõi hợp đồng lịch sử: xác thực `status?`, `fromDate?`, `toDate
 - `backend/tests/models.test.js` (4 kiểm thử; trạng thái FE07 đã lưu và siêu dữ liệu hạn trả có thể để trống).
 - `backend/tests/borrowingContract.test.js` (4 kiểm thử; dữ liệu đầu vào OpenAPI FE07, bộ lọc, trường FineCandidate khi chạy, dữ liệu phản hồi và lỗi an toàn).
 - `backend/tests/reportRepository.test.js` (9 kiểm thử; gồm lọc SQL `OVERDUE` dẫn xuất).
-- `backend/tests/sql/borrowingConcurrency.sqltest.js` đạt trong lượt chạy SQL Server dùng một lần tổng hợp 61/61 và bao phủ tuần tự hóa theo phạm vi thành viên, ưu tiên/hoàn tất đặt trước, kết quả điều kiện hợp lệ và hoàn tác kiểm toán thất bại.
+- `backend/tests/sql/borrowingConcurrency.sqltest.js` đạt trong lượt chạy SQL Server dùng một lần tổng hợp 61/61 và bao phủ tuần tự hóa theo phạm vi thành viên, ưu tiên/hoàn tất đặt chỗ, kết quả điều kiện hợp lệ và hoàn tác kiểm toán thất bại.
 - `backend/tests/integration.test.js`.
 - `frontend/test/borrowingFrontend.test.js`: 24/24 kiểm thử tập trung đạt, gồm cấu trúc phản hồi chi tiết chuẩn, hợp đồng trạng thái/phân trang lịch sử do máy chủ sở hữu, ngữ cảnh quyết định Thủ thư/Quản trị viên, tiêu điểm trường nhập từ chối ổn định, tình trạng hạn trả theo thời gian nghiệp vụ và hợp đồng siêu dữ liệu gia hạn.
 - Hồi quy frontend đầy đủ đạt 201/201; kiểm thử tập trung cho Quản lý yêu cầu Quản trị, vai trò và khung ứng dụng đạt 25/25.
@@ -62,7 +62,7 @@ Theo dõi hợp đồng lịch sử: xác thực `status?`, `fromDate?`, `toDate
 - Lint/build frontend, truy vết FE07 31/31 và `git diff --check` đạt cho hiệu chỉnh v0.7.3.
 - Chấp nhận trên trình duyệt với backend thực: truy cập khách/thành viên/nhân sự, phê duyệt, gia hạn, trả bình thường, lỗi mạng, hiển thị hộp thoại và kiểm tra tràn màn hình máy tính/di động.
 - Luồng chính hệ thống xác nhận nhãn đến hạn trả rõ ràng `Quá hạn 14 ngày` trước khi xử lý trả quá hạn và bàn giao phạt FE09.
-- Hồi quy E2E Chromium đầy đủ đạt 4/4, gồm luồng đặt trước FE08, quản lý phạt FE09, quản lý yêu cầu Quản trị FE11 và luồng chính hệ thống.
+- Hồi quy E2E Chromium đầy đủ đạt 4/4, gồm luồng đặt chỗ FE08, quản lý phạt FE09, quản lý yêu cầu Quản trị FE11 và luồng chính hệ thống.
 - Truy vết: bao phủ FR `@spec` **100%** (`npm run trace:enforce`).
 
 ## 6. Khoảng trống
@@ -94,13 +94,13 @@ npm.cmd run trace:enforce
 
 - AC-FE07-033: thành phần gửi yêu cầu phê duyệt/từ chối không tạo bản ghi trùng
   khi xử lý lặp và chỉ dùng dữ liệu an toàn.
-- AC-FE07-034: return bàn giao có/không hàng đợi, không thao tác thay đổi dữ liệu reservation.
-- AC-FE07-035: FE10 failure giữ commit FE07 và trả cảnh báo.
-- AC-FE07-036: timeline/state/timestamp/điều kiện chặn/lỗi thời màn hình máy tính dữ liệu hiển thị.
-- Cross-feature: `AT-001..AT-004`, `AT-009`, `AT-012`.
+- AC-FE07-034: Luồng trả sách chuyển dữ liệu sang FE08 khi có hàng đợi và không thay đổi dữ liệu đặt chỗ khi không có hàng đợi.
+- AC-FE07-035: Khi FE10 gặp lỗi, giao dịch FE07 vẫn được giữ và phản hồi có cảnh báo.
+- AC-FE07-036: Mốc thời gian, trạng thái, điều kiện chặn và lỗi hiển thị đúng dữ liệu chuẩn trên màn hình máy tính.
+- Liên tính năng: `AT-001..AT-004`, `AT-009`, `AT-012`.
 
 Yêu cầu RED trước GREEN; các bộ kiểm thử tập trung, toàn bộ kiểm thử backend/frontend, Chromium và
-traceability phải đạt trước H2.
+truy vết phải đạt trước H2.
 
 ## 10. Bằng chứng H2 cục bộ v0.9.0
 

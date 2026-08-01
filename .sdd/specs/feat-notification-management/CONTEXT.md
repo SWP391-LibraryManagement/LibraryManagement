@@ -64,7 +64,7 @@ FE10 bao gồm:
   và phê duyệt.
 - Gửi thông báo xác minh tài khoản, đặt lại mật khẩu, đặt chỗ, hạn trả, quá hạn
   và tiền phạt.
-- Chiếu các bản ghi không nhạy cảm đủ điều kiện vào hộp thư web cá nhân của
+- Hiển thị các bản ghi không nhạy cảm đủ điều kiện trong hộp thư web cá nhân của
   người nhận đã xác thực mà không tạo thông báo hoặc kênh khác.
 - Theo dõi `ReadAt` có thể null độc lập với việc gửi email và suy ra điều hướng
   nghiệp vụ an toàn từ danh sách cho phép backend cố định.
@@ -106,7 +106,7 @@ phần mở rộng v0.5.0 đã được phê duyệt bổ sung hợp đồng tr�
   toàn và ID thông điệp nhà cung cấp.
 - `UserNotificationPreferences` vẫn là công việc tương lai. Hộp thư web cá
   nhân đã được phê duyệt tái sử dụng `Notifications` và không cần bảng tùy chọn
-  hay bảng chiếu.
+  hay bảng dữ liệu hiển thị riêng.
 
 Các vấn đề tiềm ẩn cần rà soát:
 
@@ -222,7 +222,7 @@ triển khai ở trên; các hạng mục phạm vi tương lai vẫn được t
   chuẩn bị cấu trúc cơ sở dữ liệu Azure và vệ sinh phần thay đổi.
 - Phần chênh lệch chỉ tài liệu được người dùng phê duyệt qua
   `main@30f936d` đã giữ bản dịch SDD tiếng Việt mà không xung đột khi chạy.
-  Mã đối chiếu nội dung H2 mới `e123345be05b59a9e519d182b301ab5464160e8fc32aed8d17d3c463e28e0a15`,
+  Mã băm nội dung H2 mới `e123345be05b59a9e519d182b301ab5464160e8fc32aed8d17d3c463e28e0a15`,
   CI/Azure đúng commit và H3 lặp lại đều hoàn tất trước khi PR #75 hợp nhất.
 - PR #75 đã hợp nhất thành `b75776b10d6cf4b6868d2ba51eb3268073483b8b`. CI hậu
   hợp nhất chính xác `30341279111` và môi trường thử nghiệm Azure tự động `30341540847` đã đạt,
@@ -239,7 +239,7 @@ triển khai ở trên; các hạng mục phạm vi tương lai vẫn được t
   hai FE07/FE08/FE10/FE12 ở phần triển khai trước qua `main@db97f17`, bao gồm lý do hủy của
   thành viên bằng tiếng Việt và các điều khiển trả/đặt chỗ đáp ứng, đồng thời
   giữ API và kiểu dáng hộp thư FE10.
-- FE10-H01 đến FE10-H09 và FE10-S01 đến FE10-S16 vẫn là công việc giao hàng
+- FE10-H01 đến FE10-H09 và FE10-S01 đến FE10-S16 vẫn là công việc triển khai
   lịch sử đã hoàn tất; FE10-I01 đến FE10-I08 là các nhiệm vụ hộp thư cá nhân
   mới có giới hạn.
 - Dùng biến môi trường hoặc cấu hình triển khai cho thông tin xác thực nhà cung

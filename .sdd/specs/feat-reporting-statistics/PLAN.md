@@ -62,7 +62,7 @@ Không bao gồm:
 ### 3.1 Báo cáo mượn
 
 - Xác thực bộ lọc khoảng ngày, trạng thái, sách và người dùng.
-- Trả chỉ số lượt mượn hoạt động/quá hạn chuẩn cùng hàng chi tiết có phân trang.
+- Trả chỉ số lượt mượn đang hoạt động/quá hạn cùng danh sách chi tiết có phân trang.
 - Nhóm số khoản mượn thực theo kỳ và sách được mượn nhiều nhất mà không đếm chi
   tiết `REQUESTED` đang chờ.
 - Tuần tự hóa ngày hàng mượn thành giá trị `YYYY-MM-DD` chính xác và áp dụng thứ
@@ -98,18 +98,18 @@ Không bao gồm:
 - Thêm kiểm thử frontend cho guard tuyến API báo cáo, tính toàn vẹn trạng thái lỗi và
   bộ lọc thể loại kho.
 - Bao phủ chỉ số mượn, chỉ số kho, thống kê người dùng, xử lý kết quả bằng không,
-  kiểm soát truy cập, xác thực nghiêm ngặt chỉ-ngày, phản hồi lỗi OpenAPI, ngưỡng
+  kiểm soát truy cập, xác thực nghiêm ngặt cho giá trị chỉ gồm ngày, phản hồi lỗi OpenAPI, ngưỡng
   tồn thấp và quyền riêng tư kiểm toán.
-- Thêm kiểm thử có tính xác định cấu trúc phản hồi, ID/trạng thái không rõ, phân trang/thứ
-  tự, kiểm toán thành công an toàn, không xuất, bộ lọc kho cùng-bản-sao và hợp đồng
-  hàng chỉ-ngày.
+- Thêm kiểm thử bảo đảm cấu trúc phản hồi ổn định, cách xử lý ID/trạng thái không rõ, phân trang/thứ
+  tự, kiểm toán thành công an toàn, không xuất, bộ lọc kho áp dụng trên cùng bản sao và hợp đồng
+  trường ngày không kèm giờ.
 
 ---
 
 ## 4. Ghi chú rà soát
 
 - Phạm vi chỉ đọc và không thay đổi dữ liệu nguồn.
-- Xuất hoàn toàn ngoài Giai đoạn 1; triển khai/xác minh quy tắc xác định chỉ theo
+- Xuất hoàn toàn ngoài Giai đoạn 1; triển khai/xác minh quy tắc cho kết quả ổn định chỉ theo
   sau rà soát v0.1.5.
 
 ## 5. Trạng thái xác thực B6 và tích hợp B7
@@ -124,7 +124,7 @@ CI `29249491818` đạt cho
 cùng commit. Bằng chứng B7 chi tiết ghi trong
 `.sdd/reviews/fe12-b7-integration-review-closeout-2026-07-13.md`.
 
-## 6. Trạng thái theo dõi quy tắc xác định
+## 6. Trạng thái theo dõi quy tắc cho kết quả ổn định
 
 Hợp đồng xác định v0.1.6 được đối soát trên `feat/fe12-deterministic-policy`
 dùng độ sâu Hybrid/Standard: API báo cáo, phân quyền, bộ lọc, siêu dữ liệu kiểm toán và

@@ -39,16 +39,16 @@ thông báo cá nhân/trạng thái đã đọc đã được phê duyệt.
 - `POST /notifications/process-pending`: luồng thành công, không có bản ghi
   chờ, xử lý gửi thất bại, không được ủy quyền.
 - `GET /notifications/mine`: xác thực, ba vai trò được cho phép, bộ lọc/phân
-  trang/thứ tự phía SQL, phép chiếu an toàn, ranh giới bản ghi của chính mình
+  trang/thứ tự phía SQL, dữ liệu hiển thị an toàn, ranh giới bản ghi của chính mình
   và trang trống.
 - `GET /notifications/mine/unread-count`: chỉ các hàng chưa đọc đủ điều kiện
   của chính mình.
 - `PATCH /notifications/{id}/read`: khả năng xử lý lặp an toàn cùng `404` không thể phân
   biệt cho hàng không tồn tại, nhạy cảm và của người dùng khác.
-- `PATCH /notifications/mine/read-all`: một dấu thời gian máy chủ, chỉ hàng đủ
-  điều kiện của chính mình và số lượng phát lại bằng không.
+- `PATCH /notifications/mine/read-all`: dùng một dấu thời gian máy chủ, chỉ cập nhật
+  bản ghi đủ điều kiện của chính mình và trả về 0 khi gọi lại thao tác.
 - Tích hợp FE04/FE07/FE08 chứng minh một bản ghi email đã lưu vào cơ sở dữ liệu cũng chính là
-  hàng hộp thư.
+  bản ghi xuất hiện trong hộp thư.
 
 ## 4. Luồng chấp nhận E2E / thủ công
 
@@ -56,7 +56,7 @@ thông báo cá nhân/trạng thái đã đọc đã được phê duyệt.
   cấp mô phỏng đã cấu hình.
 - Thông tin xác thực nhạy cảm và nội dung nhạy cảm đã tạo từ mẫu không bao giờ
   xuất hiện trên giao diện API/kiểm toán/quản trị.
-- Lỗi nhà cung cấp giữ luồng nguồn ở trạng thái hoàn tất với trạng thái an toàn.
+- Khi nhà cung cấp gửi lỗi, luồng nghiệp vụ nguồn vẫn giữ trạng thái đã hoàn tất và FE10 ghi trạng thái lỗi an toàn.
 - Mỗi MEMBER, LIBRARIAN và ADMIN đều thấy chuông dùng chung và chỉ hộp
   thư của chính họ.
 - Giới hạn huy hiệu, phần xem trước năm mục chưa đọc, bộ lọc, phân trang 20 mục,
@@ -68,7 +68,7 @@ thông báo cá nhân/trạng thái đã đọc đã được phê duyệt.
 ## 5. Bằng chứng hiện tại
 
 - `backend/tests/notificationInboxMigration.test.js` bao phủ `ReadAt` có thể
-  null, điền lùi bản ghi đủ điều kiện chỉ ở lần chạy đầu, điều kiện loại/mẫu
+  null, cập nhật bản ghi lịch sử đủ điều kiện chỉ ở lần chạy đầu, điều kiện loại/mẫu
   chính xác, tạo chỉ mục có thể lặp lại và hợp đồng giao dịch/lỗi Azure SQL.
 - Bằng chứng tập trung FE10-I01: 4 kiểm thử hợp đồng bản cập nhật cơ sở dữ liệu đạt; bản cập nhật cơ sở dữ liệu,
   hồi quy tầng truy cập dữ liệu hiện có và ma trận bản cập nhật cơ sở dữ liệu OTP đạt 11/11; chuẩn bị cấu trúc cơ sở dữ liệu
@@ -77,11 +77,11 @@ thông báo cá nhân/trạng thái đã đọc đã được phê duyệt.
   dịch `ReadAt` trong cùng một lô. Một kiểm thử hồi quy TRƯỚC KHI SỬA đã được thêm, cập
   nhật/chỉ mục được chuyển phía sau `sys.sp_executesql`, và lần diễn tập nghiêm
   ngặt hai lượt sau đó đã đạt: 1 cột có thể null, 1 chỉ mục, 5 hàng lịch sử đủ
-  điều kiện đã điền lùi, 6 hàng bị loại vẫn chưa đọc, hàng sau lượt chạy đầu vẫn
+  điều kiện đã được cập nhật, 6 bản ghi bị loại vẫn chưa đọc, bản ghi tạo sau lượt chạy đầu vẫn
   chưa đọc, các tổng hợp được bảo vệ không đổi và cơ sở dữ liệu dùng một lần đã
   bị xóa.
 - `backend/tests/notificationInboxRepository.test.js` và bộ kiểm thử tuyến API mở
-  rộng bao phủ phép chiếu an toàn chính xác, danh sách cho phép thao tác, quyền
+  rộng bao phủ dữ liệu hiển thị an toàn, danh sách cho phép thao tác, quyền
   sở hữu/bộ lọc SQL, cả ba vai trò đăng nhập, xác thực, `404` an toàn trước IDOR,
   đánh dấu một/đánh dấu tất cả có khả năng xử lý lặp an toàn và trung lập với trạng thái gửi.
   Bằng chứng tập trung đạt 154/154.
@@ -99,19 +99,19 @@ thông báo cá nhân/trạng thái đã đọc đã được phê duyệt.
 - Hồi quy tích hợp nguồn FE10-I07 đạt 5/5 bộ và 285/285 kiểm thử trên FE04, FE07,
   FE08, FE10 và tích hợp hệ thống. Khẳng định tích hợp chứng minh đúng một hàng
   email đủ điều kiện cho mỗi kết quả nguồn, liệt kê của chính người dùng, `404`
-  không thể phân biệt giữa người dùng, phát lại thao tác đọc và trạng thái gửi
+  không thể phân biệt giữa người dùng, việc gọi lại thao tác đọc và trạng thái gửi
   không đổi.
 - `tests/e2e/fe10-notification-inbox.spec.js` đạt 3/3 ca Chromium tập trung
   cho MEMBER/LIBRARIAN/ADMIN, `99+`, loại trừ nhạy cảm/không người dùng/khác
-  người dùng, phát lại đánh dấu một/đánh dấu tất cả, lỗi đọc không chặn và không
+  người dùng, gọi lại thao tác đánh dấu một/đánh dấu tất cả, lỗi đọc không chặn và không
   tràn tại 390x844.
-- Toàn bộ bộ Chromium đạt 11/11 sau khi dữ liệu kiểm thử xác thực tổng hợp FE09 được
+- Toàn bộ Chromium đạt 11/11 sau khi dữ liệu kiểm thử xác thực tổng hợp FE09 được
   cập nhật để cô lập yêu cầu đếm chưa đọc nền mới. Chính sách triển khai đạt
   20/20, tích hợp hệ thống đạt 10/10, trạng thái truy vết đạt 3/3 và
   truy vết thực thi đạt với FE10 có 14/16 thẻ FR (88%, trên cổng 70%).
 - Commit PR chính xác `28c4f80` đạt CI `30306805399` và triển khai môi trường thử nghiệm Azure
   `30307855616`. Xác minh Azure trực tiếp bao phủ quyền sở hữu
-  MEMBER/LIBRARIAN/ADMIN, loại trừ nhạy cảm, phát lại đánh dấu một/đánh dấu tất
+  MEMBER/LIBRARIAN/ADMIN, loại trừ dữ liệu nhạy cảm, gọi lại thao tác đánh dấu một/đánh dấu tất
   cả, bộ lọc, điều hướng an toàn, HTTPS/CORS, điều kiện hậu bản cập nhật cơ sở dữ liệu, tổng hợp
   được bảo vệ và dọn dẹp probe/firewall.
 - Các phát hiện giao diện H3 vòng một hiện có phạm vi trước và sau khi sửa tập trung cho
@@ -132,7 +132,7 @@ thông báo cá nhân/trạng thái đã đọc đã được phê duyệt.
   bộ backend đạt 69 bộ/1114 kiểm thử.
 - Nhánh chính `main@f3ebe95` sau đó chỉ bổ sung ba tệp kiểm thử hồi quy FE07/FE08
   không chồng lấp; bản thay đổi đã đồng bộ chúng không xung đột và chạy lại toàn bộ
-  frontend đạt 258/258 trước khi tạo mã đối chiếu nội dung.
+  frontend đạt 258/258 trước khi tạo mã băm nội dung để duyệt H2.
 - Việc cập nhật nhánh lên `main@a240705` đã được phê duyệt và giữ nguyên việc loại bỏ thao tác chỉnh
   sửa FE11 độc lập ở phần triển khai trước. Các cổng mới đạt backend 69/69 bộ và 1084/1084
   kiểm thử, frontend 259/259 cùng kiểm tra mã/bản dựng, triển khai 20/20, hệ thống 10/10,
@@ -143,7 +143,7 @@ thông báo cá nhân/trạng thái đã đọc đã được phê duyệt.
 - Mốc chuẩn trước triển khai trên `main@25c09ec`: backend 67 bộ / 1091 kiểm thử
   đạt và frontend 234/234 kiểm thử đạt.
 
-Bằng chứng giao hàng v0.4.x lịch sử được giữ bên dưới:
+Bằng chứng triển khai v0.4.x lịch sử được giữ bên dưới:
 
 - `backend/tests/notificationRoutes.test.js` bao phủ quyền sở hữu chuẩn, gửi
   OTP/thiết lập tài khoản trong bộ nhớ nhà cung cấp, ranh giới lưu vào cơ sở dữ liệu/kiểm toán/
@@ -197,7 +197,7 @@ npm.cmd run trace:enforce
   `30307855616` và xác minh trực tiếp ba vai trò đã đạt.
 - H3 vòng một thất bại do phát hiện ADR/trạng thái hiện tại và trạng thái giao
   diện/xếp chồng có giới hạn; biện pháp khắc phục tập trung đã đạt toàn bộ ma
-  trận. Sau cập nhật nhánh chỉ tài liệu `main@30f936d`, H2 đã phê duyệt mã đối chiếu nội dung
+  trận. Sau cập nhật nhánh chỉ tài liệu `main@30f936d`, H2 đã phê duyệt mã băm nội dung
   `e123345be05b59a9e519d182b301ab5464160e8fc32aed8d17d3c463e28e0a15`.
   Commit PR #75 `778e0a470d8a1083bf571a8007b3c058eee4bb22` đạt CI đúng commit
   `30317424995` và môi trường thử nghiệm Azure `30317621429`, sau đó H3 hai trục sạch và

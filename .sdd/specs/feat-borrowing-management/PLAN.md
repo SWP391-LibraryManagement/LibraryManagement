@@ -25,11 +25,11 @@ Triển khai FE07 hiện có và các tác vụ B7/B8 đã hoàn thành có trư
 
 Bao gồm:
 
-- Thành viên tạo yêu cầu mượn cho bản sao khả dụng thông thường hoặc bản sao do lượt đặt trước đã thông báo của chính họ giữ.
+- Thành viên tạo yêu cầu mượn cho bản sao khả dụng thông thường hoặc bản sao do lượt đặt chỗ đã thông báo của chính họ giữ.
 - Thành viên chỉ xem lịch sử mượn của chính mình.
 - Thủ thư/quản trị viên liệt kê, phê duyệt, từ chối, trả và gia hạn bản ghi mượn.
 - Xử lý trả cập nhật trạng thái bản sao và công khai dữ liệu rà soát phạt cho FE09.
-- Gia hạn kiểm tra quá hạn, phạt chưa thanh toán, giới hạn gia hạn và xung đột đặt trước FE08.
+- Gia hạn kiểm tra quá hạn, phạt chưa thanh toán, giới hạn gia hạn và xung đột đặt chỗ FE08.
 - Các thao tác mượn ghi nhật ký kiểm toán và tạo yêu cầu thông báo FE10 an toàn khi hữu ích.
 - Màn hình mượn frontend hiển thị phản hồi có thể hành động cho tải, rỗng, quyền, điều kiện hợp lệ, trạng thái không hợp lệ và lỗi API.
 - Quản lý lưu hành của Quản trị viên giữ mã định danh yêu cầu/bản sao trong dữ liệu chuẩn đồng thời hiển thị chín cột vận hành vừa bố cục màn hình máy tính được hỗ trợ mà không cuộn ngang.
@@ -38,7 +38,7 @@ Bao gồm:
 Không bao gồm:
 
 - Tính tiền phạt hoặc tạo khoản phạt FE09.
-- Triển khai tiến trình xử lý nền giao hàng FE10.
+- Triển khai tiến trình nền gửi thông báo FE10.
 - Thiết kế lại màn hình frontend ngoài quy trình mượn FE07.
 - Luồng phần cứng/RFID.
 
@@ -53,12 +53,12 @@ Không bao gồm:
 | Một lần gia hạn mỗi chi tiết | Đường gia hạn chỉ tăng `RenewalCount` một lần. |
 | Mục đang chờ dùng `BorrowDetails.Status = REQUESTED` | Tập lệnh cơ sở dữ liệu và tầng truy cập dữ liệu dùng trạng thái đã phê duyệt. |
 | Phạt chưa thanh toán chặn mượn/gia hạn | Tầng dịch vụ kiểm tra `Fines` trước khi tạo và gia hạn. |
-| Đặt trước của thành viên khác chặn gia hạn | Tầng dịch vụ kiểm tra trạng thái đặt trước FE08 trước khi gia hạn. |
-| Hàng đợi đặt trước đang hoạt động chặn mượn thông thường | Tạo và phê duyệt trả về `RESERVATION_QUEUE_PRIORITY` cho đến khi nhân sự xử lý hàng đợi. |
-| Chủ sở hữu đã thông báo có thể mượn bản sao đang giữ | FE07 chấp nhận yêu cầu bình thường và xác thực lại quyền sở hữu đặt trước khi phê duyệt. |
-| Phê duyệt FE07 hoàn tất lượt giữ chỗ | Yêu cầu, chi tiết, bản sao, đặt trước khớp và kiểm toán được commit nguyên tử. |
+| Lượt đặt chỗ của thành viên khác chặn gia hạn | Tầng dịch vụ kiểm tra trạng thái đặt chỗ FE08 trước khi gia hạn. |
+| Hàng đợi đặt chỗ đang hoạt động chặn mượn thông thường | Tạo và phê duyệt trả về `RESERVATION_QUEUE_PRIORITY` cho đến khi nhân sự xử lý hàng đợi. |
+| Chủ sở hữu đã thông báo có thể mượn bản sao đang giữ | FE07 chấp nhận yêu cầu bình thường và xác thực lại quyền sở hữu lượt đặt chỗ khi phê duyệt. |
+| Phê duyệt FE07 hoàn tất lượt giữ chỗ | Yêu cầu, chi tiết, bản sao, lượt đặt chỗ khớp và kiểm toán được commit trong cùng giao dịch. |
 | FE07 không tạo khoản phạt | Phản hồi trả công khai `fineCandidate`; không tầng dịch vụ/tầng truy cập dữ liệu FE07 nào chèn `Fines`. UI trả của nhân sự có thể gọi endpoint tính chuẩn của FE09 cho `borrowDetailId` quá hạn được chọn. |
-| Điều kiện hợp lệ chuẩn là danh tính MEMBER đang hoạt động, không phải nhân sự | Tạo/ứng viên/lịch sử tự phục vụ thành viên yêu cầu `MEMBER` không có `LIBRARIAN`/`ADMIN`; phê duyệt vẫn xác thực lại danh tính `MEMBER` hoạt động của chủ yêu cầu và FE04 không chặn FE07. |
+| Điều kiện hợp lệ chuẩn là tài khoản MEMBER đang hoạt động, không có vai trò Thủ thư/Quản trị viên | Các chức năng tạo, liệt kê bản sao và xem lịch sử tự phục vụ yêu cầu `MEMBER` không có `LIBRARIAN`/`ADMIN`; khi phê duyệt, hệ thống vẫn kiểm tra lại chủ yêu cầu là `MEMBER` đang hoạt động và FE04 không chặn FE07. |
 | Sách cha phải vẫn hoạt động | Tạo và phê duyệt từ chối sách cha không hoạt động với `BOOK_INACTIVE`. |
 | Phê duyệt dùng khóa năm bản sao theo phạm vi thành viên | Thứ tự khóa là `member -> BookCopies -> BorrowRequests/BorrowDetails -> Reservations`; việc đếm diễn ra sau khóa. |
 | Siêu dữ liệu phê duyệt là lịch sử giao dịch | Lưu `CreatedBy`, `ApprovedAt`, `ApprovedBy` và `BorrowDate` từng chi tiết; hạn trả là ngày mượn +14 ngày dương lịch. |
@@ -80,14 +80,14 @@ Không bao gồm:
 
 - Xác thực `copyIds` và từ chối trùng lặp.
 - Kiểm tra tài khoản hoạt động và ủy quyền `MEMBER` không phải nhân sự tại tuyến API tự phục vụ thành viên.
-- Áp dụng hợp đồng khả năng mượn có nhận biết đặt trước cho mọi bản sao.
+- Áp dụng hợp đồng khả năng mượn có xét trạng thái đặt chỗ cho mọi bản sao.
 - Từ chối người dùng bị chặn do khoản mượn quá hạn đang hoạt động hoặc phạt chưa thanh toán.
 - Tạo yêu cầu `PENDING` và chi tiết `REQUESTED`.
 
 ### 3.3 Phê duyệt và từ chối của nhân sự
 
-- Kiểm tra lại điều kiện hợp lệ thành viên, yếu tố chặn mượn, khả năng mượn bản sao có nhận biết đặt trước và giới hạn mượn.
-- Phê duyệt theo giao dịch: trạng thái yêu cầu, trạng thái chi tiết, hạn trả, trạng thái bản sao, hoàn tất đặt trước khớp và kiểm toán.
+- Kiểm tra lại điều kiện của thành viên, yếu tố chặn mượn, khả năng mượn bản sao có xét trạng thái đặt chỗ và giới hạn mượn.
+- Phê duyệt theo giao dịch: trạng thái yêu cầu, trạng thái chi tiết, hạn trả, trạng thái bản sao, hoàn tất lượt đặt chỗ khớp và kiểm toán.
 - Từ chối yêu cầu đang chờ mà không thay đổi trạng thái bản sao.
 
 ### 3.4 Trả và gia hạn
@@ -99,7 +99,7 @@ Không bao gồm:
 ### 3.5 Kiểm thử
 
 - Thêm kiểm thử tuyến API với tầng truy cập dữ liệu trong bộ nhớ.
-- Bao phủ tạo, bản sao trùng lặp, bản sao không khả dụng, phê duyệt, lịch sử, trả, ứng viên phạt, hoàn tất, gia hạn, xung đột đặt trước và bảo vệ một vai trò.
+- Bao phủ tạo, bản sao trùng lặp, bản sao không khả dụng, phê duyệt, lịch sử, trả, dữ liệu đề xuất phạt, hoàn tất, gia hạn, xung đột đặt chỗ và bảo vệ một vai trò.
 - Thêm kiểm thử Node frontend tập trung cho thông báo lỗi API mượn và hành vi dự phòng chung.
 
 ### 3.6 Xử lý lỗi frontend
@@ -112,11 +112,11 @@ Không bao gồm:
 ### 3.7 Tích hợp FE07-FE08
 
 - Giữ FE07 là chủ sở hữu duy nhất của tạo và phê duyệt yêu cầu mượn.
-- Đọc các yêu cầu đặt trước `ACTIVE` và `NOTIFIED` lúc tạo và dưới khóa phê duyệt.
-- Khóa hàng bản sao trước hàng đặt trước bất cứ khi nào một giao dịch thay đổi cả hai trạng thái.
+- Đọc các lượt đặt chỗ `ACTIVE` và `NOTIFIED` lúc tạo và dưới khóa phê duyệt.
+- Khóa bản ghi bản sao trước bản ghi đặt chỗ bất cứ khi nào một giao dịch thay đổi cả hai trạng thái.
 - Chặn mượn thông thường khi tồn tại mục hàng đợi `ACTIVE`.
-- Chỉ cho phép bản sao `RESERVED` đối với cùng thành viên sở hữu lượt đặt trước `NOTIFIED` của nó.
-- Hoàn tất đặt trước đã thông báo khớp trong giao dịch phê duyệt.
+- Chỉ cho phép bản sao `RESERVED` với đúng Thành viên sở hữu lượt đặt chỗ `NOTIFIED` của bản sao đó.
+- Hoàn tất lượt đặt chỗ đã thông báo khớp trong giao dịch phê duyệt.
 - Giữ xử lý hàng đợi FE08 thủ công, dạng endpoint hiện tại và schema cơ sở dữ liệu hiện có.
 
 ### 3.8 Phạm vi triển khai đối soát v0.5.0
@@ -127,7 +127,7 @@ Không bao gồm:
 | --- | --- | --- |
 | Ranh giới | `backend/src/routes/borrowingRoutes.js`, `backend/src/controllers/borrowingController.js`, `backend/src/validators/borrowingValidators.js` | Lý do từ chối bắt buộc, ngày trả nghiêm ngặt, ID/trạng thái và hợp đồng lỗi an toàn. |
 | Quy tắc nghiệp vụ | `backend/src/services/borrowingService.js`, tạo `backend/src/utils/libraryBusinessTime.js` | Điều kiện hợp lệ chuẩn, bảo vệ sách cha, công thức năm bản sao và ngày nghiệp vụ Thành phố Hồ Chí Minh xác định. |
-| Lưu trữ | `backend/src/repositories/borrowingRepository.js`, `backend/src/repositories/auditLogRepository.js` | Khóa theo phạm vi thành viên, thứ tự khóa đã phê duyệt, siêu dữ liệu, cập nhật đặt trước/kiểm toán nguyên tử và kết quả hoàn tác. |
+| Lưu trữ | `backend/src/repositories/borrowingRepository.js`, `backend/src/repositories/auditLogRepository.js` | Khóa theo phạm vi thành viên, thứ tự khóa đã phê duyệt, siêu dữ liệu, cập nhật lượt đặt chỗ/kiểm toán trong cùng giao dịch và kết quả hoàn tác. |
 | Schema/mô hình/API | `database/Librarymanagement.sql`, `backend/src/models/BorrowRequest.js`, `backend/src/models/BorrowDetail.js`, `backend/src/docs/openapi.yaml` | Xác minh cột/enum đã phê duyệt và căn chỉnh siêu dữ liệu khi chạy/API mà không thêm trạng thái chưa được phê duyệt. |
 | Kiểm thử backend | `backend/tests/borrowingRoutes.test.js`, `backend/tests/helpers/inMemoryBorrowingRepositories.js`, `backend/tests/borrowingRepository.test.js`, `backend/tests/borrowingContract.test.js`, `backend/tests/sql/borrowingConcurrency.sqltest.js` | RED/GREEN cho điều kiện hợp lệ, sách cha không hoạt động, race giới hạn cùng thành viên, siêu dữ liệu, múi giờ/ngày, lý do, hoàn tác và bằng chứng truy vết. |
 | Frontend | `frontend/src/page/borrowing/*`, `frontend/src/api/libraryFeatureApi.js`, `frontend/test/borrowingFrontend.test.js` | Lỗi v0.5.0 có thể hành động và trạng thái thay đổi trung thực. |
@@ -136,7 +136,7 @@ Không bao gồm:
 
 1. Thêm kiểm thử RED tuyến API/tầng truy cập dữ liệu/SQL còn thiếu cho điều kiện hợp lệ chuẩn và kiểm tra sách cha không hoạt động tại cả tạo lẫn phê duyệt.
 2. Thêm kiểm thử đồng thời hai yêu cầu cùng thành viên, chứng minh phê duyệt không thể đưa thành viên từ bốn lên sáu bản sao đang mượn.
-3. Đối soát khóa tầng truy cập dữ liệu để khóa theo phạm vi thành viên đi trước `BookCopies`, sau đó hàng yêu cầu/chi tiết rồi đặt trước; chỉ tính số đang hoạt động sau khi khóa.
+3. Đối soát khóa tầng truy cập dữ liệu để khóa theo phạm vi thành viên đi trước `BookCopies`, sau đó bản ghi yêu cầu/chi tiết rồi lượt đặt chỗ; chỉ tính số đang hoạt động sau khi khóa.
 4. Đối soát ghi `CreatedBy`, `ApprovedAt`, `ApprovedBy`, `BorrowDate` và hạn trả trong giao dịch phê duyệt.
 5. Tập trung chuyển đổi ngày nghiệp vụ `Asia/Ho_Chi_Minh`, từ chối lượt trả tương lai/trước mượn và yêu cầu lý do từ chối dài 1..500.
 6. Căn chỉnh siêu dữ liệu OpenAPI/mô hình/SQL và hành vi lỗi frontend, sau đó chạy xác thực tập trung và rà soát của con người.
@@ -144,8 +144,8 @@ Không bao gồm:
 #### Mục tiêu không thực hiện rõ ràng
 
 - Không gắn lại nhãn FE07-T01 đến FE07-T030 hoặc bằng chứng B7 là hoàn thành v0.5.0.
-- Không lưu `OVERDUE`, triển khai `CANCELLED`, tạo khoản phạt, tự động hóa hàng đợi đặt trước hoặc thêm dạng endpoint mới.
-- Không thay đổi quyền sở hữu bản sao/đặt trước FE06/FE08 hoặc hậu tố thứ tự khóa đã phê duyệt.
+- Không lưu `OVERDUE`, triển khai `CANCELLED`, tạo khoản phạt, tự động hóa hàng đợi đặt chỗ hoặc thêm dạng endpoint mới.
+- Không thay đổi quyền sở hữu bản sao/lượt đặt chỗ FE06/FE08 hoặc thứ tự khóa đã phê duyệt.
 
 ---
 
@@ -169,8 +169,8 @@ Không bao gồm:
 
 ## 6. Cổng rà soát của con người v0.5.0
 
-- [x] Xác nhận cơ chế khóa theo phạm vi thành viên hoạt động trên SQL Server và đi trước mọi khóa bản sao/yêu cầu/đặt trước.
-- [x] Xác nhận việc kiểm tra lại số đếm đang hoạt động và sách cha/đặt trước chỉ diễn ra sau khi giữ các khóa liên quan.
+- [x] Xác nhận cơ chế khóa theo phạm vi thành viên hoạt động trên SQL Server và đi trước mọi khóa bản sao/yêu cầu/lượt đặt chỗ.
+- [x] Xác nhận việc kiểm tra lại số đếm đang hoạt động và đầu sách/lượt đặt chỗ chỉ diễn ra sau khi giữ các khóa liên quan.
 - [x] Xác nhận mọi ngày nghiệp vụ đều xác định trong `Asia/Ho_Chi_Minh`.
 - [x] Xác nhận lý do từ chối và siêu dữ liệu phê duyệt được lưu/kiểm toán chính xác như đã phê duyệt.
 - [x] Phê duyệt FE07-T031 đến FE07-T038 trước khi triển khai bắt đầu.
@@ -182,7 +182,7 @@ Không bao gồm:
 3. Tái sử dụng một tóm tắt rà soát yêu cầu cho phê duyệt và từ chối để Thủ thư/Quản trị viên đưa ra cả hai quyết định trên cùng trường chuẩn.
 4. Giữ thông báo vận hành nhân sự theo hướng ngoại lệ: lượt trả bình thường/đúng hạn dựa vào ngày và tình trạng hiển thị thay vì thông báo khẳng định bổ sung; cảnh báo quá hạn/hỏng/mất vẫn hiển thị.
 5. Đối soát trình bày tình trạng hạn trả của trả với trường mượn/hạn trả/gia hạn chuẩn và ngày nghiệp vụ `Asia/Ho_Chi_Minh`; phân biệt rõ trạng thái sắp đến hạn, đến hạn hôm nay và quá hạn.
-6. Giữ nguyên API FE07, bảo vệ vai trò, xác thực lại phía máy chủ, giao dịch phê duyệt/từ chối/trả nguyên tử, đối soát lịch sử thành viên, quyền sở hữu bản sao FE06, quyền sở hữu đặt trước FE08 và ranh giới FE09/FE10 hiện có.
+6. Giữ nguyên API FE07, bảo vệ vai trò, xác thực lại phía máy chủ, giao dịch phê duyệt/từ chối/trả, đối soát lịch sử thành viên, quyền sở hữu bản sao FE06, quyền sở hữu lượt đặt chỗ FE08 và ranh giới FE09/FE10 hiện có.
 7. Chạy kiểm thử frontend tập trung, lint/build frontend, truy vết FE07 và vệ sinh diff trước khi rà soát của con người.
 
 ### Cổng xác minh v0.7.3
@@ -205,8 +205,8 @@ Không bao gồm:
 ## 9. Bàn giao bản sao được giữ FE08 v0.7.6
 
 1. Chấp nhận `bookId` cùng `copyId` là gợi ý chọn chỉ ở frontend từ FE08.
-2. Chỉ chọn bản sao chính xác khi nó tồn tại trong phản hồi ứng viên có nhận biết đặt trước được bảo vệ của FE07 cho Thành viên hiện tại.
-3. Giữ `POST /api/borrow-requests` và các kiểm tra điều kiện hợp lệ/đặt trước phía máy chủ của nó chính thức.
+2. Chỉ chọn đúng bản sao khi nó xuất hiện trong phản hồi được bảo vệ của FE07 dành cho Thành viên hiện tại và có xét trạng thái đặt chỗ.
+3. Giữ `POST /api/borrow-requests` và các kiểm tra điều kiện/trạng thái đặt chỗ phía máy chủ làm nguồn quyết định chính thức.
 4. Giữ yêu cầu `PENDING` bình thường sau đó là phê duyệt Thủ thư/Quản trị viên và hoàn tất FE08 nguyên tử.
 
 ## 10. Kế hoạch căn chỉnh quy tắc v0.7.5
@@ -250,7 +250,7 @@ Kế hoạch thực thi chi tiết là
 ## 14. Bất biến quy trình cùng tiêu đề v0.8.1
 
 1. Thêm bao phủ RED cho Thành viên gửi một bản sao khác của `BookId` đã có trong yêu cầu đang chờ hoặc khoản mượn đang hoạt động.
-2. Lọc ứng viên ở phạm vi `BookId` và xác thực lại dưới khóa giao dịch theo phạm vi thành viên hiện có trước khi chèn yêu cầu.
+2. Lọc danh sách bản sao theo `BookId` và kiểm tra lại dưới khóa giao dịch theo phạm vi Thành viên hiện có trước khi chèn yêu cầu.
 3. Trong khi phê duyệt, từ chối bản sao cũ trùng lặp nếu Thành viên đã có một chi tiết `BORROWED` cho cùng `BookId`; giữ từ chối như một bước dọn dẹp.
 4. Công khai các yếu tố chặn phê duyệt riêng biệt về chủ sở hữu-vai trò/tài khoản/bản sao/cùng tiêu đề cho FE11 mà không chuyển quyền sở hữu lệnh FE07.
 

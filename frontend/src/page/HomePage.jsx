@@ -61,7 +61,7 @@ const FOOTER_POLICIES = {
     title: 'Điều khoản sử dụng',
     paragraphs: [
       'Khi sử dụng hệ thống, người dùng cần cung cấp thông tin chính xác, bảo vệ thông tin đăng nhập và sử dụng tài khoản đúng mục đích.',
-      'Hoạt động mượn, trả, gia hạn, đặt trước và xử lý phí được thực hiện theo quy định thư viện đang áp dụng. Không sử dụng hệ thống để truy cập hoặc thay đổi dữ liệu khi chưa được cấp quyền.',
+      'Hoạt động mượn, trả, gia hạn, đặt chỗ và xử lý phí được thực hiện theo quy định thư viện đang áp dụng. Không sử dụng hệ thống để truy cập hoặc thay đổi dữ liệu khi chưa được cấp quyền.',
     ],
   },
   cookies: {
@@ -650,11 +650,11 @@ const HomePage = () => {
         : {
           eyebrow: 'Không gian thành viên',
           title: 'Tiếp tục hành trình đọc của bạn',
-          description: 'Tạo yêu cầu mượn, theo dõi lịch sử, quản lý sách đặt trước và kiểm tra trạng thái hội viên.',
+          description: 'Tạo yêu cầu mượn, theo dõi lịch sử, quản lý lượt đặt chỗ và kiểm tra trạng thái hội viên.',
           actions: [
             { label: 'Đăng ký mượn sách', type: 'path', value: '/borrowing/new' },
             { label: 'Lịch sử mượn sách', type: 'path', value: '/borrowing/history' },
-            { label: 'Sách đã đặt trước', type: 'path', value: '/reservations/mine' },
+            { label: 'Sách đã đặt chỗ', type: 'path', value: '/reservations/mine' },
             { label: 'Trạng thái hội viên', type: 'path', value: '/membership' },
           ],
         };
@@ -1266,7 +1266,7 @@ const HomePage = () => {
           {[
             { number: '01', title: 'Khám phá đầu sách', desc: 'Tìm theo tên sách hoặc tác giả và mở thông tin công khai của đầu sách.' },
             { number: '02', title: 'Chọn luồng phù hợp', desc: 'Đăng nhập để mượn sách; hệ thống tự áp dụng đúng quyền và hạn mức hội viên.' },
-            { number: '03', title: 'Theo dõi xuyên suốt', desc: 'Quản lý yêu cầu, lịch sử mượn, đặt trước và các khoản phí tại khu vực cá nhân.' },
+            { number: '03', title: 'Theo dõi xuyên suốt', desc: 'Quản lý yêu cầu, lịch sử mượn, đặt chỗ và các khoản phí tại khu vực cá nhân.' },
           ].map((step) => (
             <article key={step.number} className="home-journey-step">
               <span>{step.number}</span>

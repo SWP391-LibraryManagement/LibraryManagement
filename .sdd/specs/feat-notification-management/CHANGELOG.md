@@ -24,7 +24,7 @@
 - Ghi rõ môi trường thử nghiệm Azure chưa thể chấp nhận do Azure SQL đang `Paused` sau khi hết quota;
   bản cập nhật cơ sở dữ liệu mẫu kết quả vẫn được kiểm soát bằng bước kiểm tra trước triển khai.
 
-## 2026-07-29 - Kích hoạt mẫu kết quả FE07 (v0.6.0)
+## 2026-07-29 - Kích hoạt mẫu thông báo kết quả FE07 (v0.6.0)
 
 - Thêm BR-FE10-021..023, FR-FE10-017..020 và AC-FE10-017..020.
 - Chốt bốn mẫu kết quả, quyền sở hữu theo từng mẫu, cơ chế chống gửi trùng,
@@ -33,9 +33,9 @@
 - Chưa thay đổi mã nguồn sản phẩm hoặc cấu trúc dữ liệu; H1 đã duyệt và việc
   kích hoạt đang chờ H3/hợp nhất.
 
-## 2026-07-28 - Hoàn tất giao hàng hộp thư thông báo cá nhân FE10
+## 2026-07-28 - Hoàn tất triển khai hộp thư thông báo cá nhân FE10
 
-- H2 sau `main@30f936d` đã phê duyệt mã đối chiếu nội dung
+- H2 sau `main@30f936d` đã phê duyệt mã băm nội dung
   `e123345be05b59a9e519d182b301ab5464160e8fc32aed8d17d3c463e28e0a15`.
 - Commit PR #75 `778e0a470d8a1083bf571a8007b3c058eee4bb22` đã đạt CI đúng commit
   `30317424995` và môi trường thử nghiệm Azure `30317621429`; rà soát H3 theo trục Tiêu chuẩn
@@ -54,18 +54,18 @@
   hành vi kiểm thử FE10.
 - CI phần triển khai trước chính xác `30315665010` và môi trường thử nghiệm Azure tự động `30315842152`
   đã đạt. Nhánh FE10 được cập nhật không xung đột; nội dung SPEC FE10 đã dịch
-  được giữ và đối soát với trạng thái giao hàng v0.5.0 đã triển khai.
+  được giữ và đối soát với trạng thái triển khai v0.5.0.
 - Commit lịch sử PR #75 `cf0a236` đạt CI `30315046007`, môi trường thử nghiệm Azure
   `30315273298` và H3 hai trục cuối không có phát hiện có thể hành động.
 - H2 vòng 7 phê duyệt bản chỉ thay đổi khoảng trắng, nhưng kết quả này hết hiệu
   lực khi nhánh được đồng bộ bắt buộc với `main@30f936d` trước khi triển khai
   lên môi trường thử nghiệm; quyền phê duyệt cũ không được dùng để commit hoặc
-  đẩy mã. Cần tạo mã đối chiếu nội dung và phê duyệt H2 mới, đồng thời chạy lại
+  đẩy mã. Cần tạo mã băm nội dung và phê duyệt H2 mới, đồng thời chạy lại
   cổng kiểm tra đúng commit trước H3 và hợp nhất.
 
 ## 2026-07-28 - Khắc phục các phát hiện H3 vòng một của hộp thư FE10
 
-- H2 vòng 4 phê duyệt mã đối chiếu nội dung
+- H2 vòng 4 phê duyệt mã băm nội dung
   `f41dbf50680d9c5601ae00d3c53651a7bb782ff81724ca641ef49b7cd88844e4`.
   Biện pháp khắc phục được công bố là khi chạy commit PR #75 `3f9f23a`; CI
   đúng commit `30313721511` và môi trường thử nghiệm Azure `30313949983` đạt. Kiểm tra vận
@@ -83,7 +83,7 @@
   commit chính xác mới sau H2 và công bố.
 - Xác minh Azure trực tiếp bao phủ điều kiện hậu bản cập nhật cơ sở dữ liệu/chỉ mục, bảo toàn
   tổng hợp được bảo vệ, quyền sở hữu MEMBER/LIBRARIAN/ADMIN, loại trừ nhạy cảm,
-  phát lại đọc, bộ lọc, điều hướng an toàn, HTTPS/CORS và dọn dẹp probe/firewall
+  gọi lại thao tác đọc, bộ lọc, điều hướng an toàn, HTTPS/CORS và dọn dẹp probe/firewall
   đầy đủ.
 - H3 vòng một phát hiện thiếu tài liệu trạng thái đọc ADR-002, văn bản nguồn
   chuẩn vòng đời lỗi thời, trạng thái mục lỗi thời sau một lần đọc thành công
@@ -100,7 +100,7 @@
   kiểm thử; frontend 259/259 cùng kiểm tra mã/bản dựng; triển khai 20/20; hệ thống 10/10;
   trạng thái truy vết 3/3 và FE10 14/16 (88%); Chromium 11/11; kiểm toán,
   chuẩn bị cấu trúc cơ sở dữ liệu Azure, vệ sinh phần thay đổi và quét mâu thuẫn.
-- Người dùng phê duyệt mã đối chiếu nội dung H2 `e1143e6a...`, nhưng lượt đồng bộ từ nhánh chính tiền
+- Người dùng phê duyệt mã băm nội dung H2 `e1143e6a...`, nhưng lượt đồng bộ từ nhánh chính tiền
   môi trường thử nghiệm bắt buộc tìm thấy `main@a240705` nên không tệp nào được
   đưa vào vùng chờ, commit hoặc đẩy mã theo quyền đó. Sau đó người dùng phê duyệt
   `H1 drift addendum main@a240705`. Đối soát giữ việc phần triển khai trước loại bỏ thao tác
@@ -114,12 +114,12 @@
 
 ## 2026-07-28 - Khắc phục cổng mã băm bản cập nhật cơ sở dữ liệu môi trường thử nghiệm đa nền tảng
 
-- H2 phê duyệt mã đối chiếu nội dung `2b53d7e`; FE10 được công bố là commit `b11b59e`
+- H2 phê duyệt mã băm nội dung `2b53d7e`; FE10 được công bố là commit `b11b59e`
   trên PR #75 và lượt CI đúng commit `30304661463` đã đạt.
 - môi trường thử nghiệm Azure nhận bản cập nhật cơ sở dữ liệu đã rà soát hai lần. Nó tạo một cột `ReadAt` có
-  thể null và một chỉ mục hỗ trợ, điền lùi 17 hàng lịch sử đủ điều kiện, giữ 25
+  thể null và một chỉ mục hỗ trợ, cập nhật 17 bản ghi lịch sử đủ điều kiện, giữ 25
   hàng bị loại chưa đọc, giữ probe sau lượt một chưa đọc ở lượt hai, bảo toàn
-  tổng hợp giao hàng/lần thử/lũy đẳng và xóa probe cùng mọi quy tắc firewall
+  tổng hợp quá trình gửi/lần thử/khả năng xử lý lặp và xóa probe cùng mọi quy tắc firewall
   FE10 tạm thời.
 - Lượt triển khai thủ công `30305596861` chặn an toàn khi kiểm tra không đạt trước triển khai vì hash
   byte CRLF Windows do người vận hành áp dụng là `6e8b6b4...`, trong khi hash byte LF
@@ -137,8 +137,8 @@
 - Không tệp nào trong ba tệp mới chồng lấp với 48 tệp của bản thay đổi FE10, nên
   việc cập nhật thẳng nhánh không tạo quyết định nghiệp vụ cốt lõi mới, xung
   đột, tệp được đưa vào vùng chờ hoặc thay đổi mã nguồn sản phẩm.
-- Toàn bộ bộ kiểm thử frontend đạt 258/258 trên mốc chuẩn đã đồng bộ chính xác
-  trước khi tạo mã đối chiếu nội dung H2 mới.
+- Toàn bộ kiểm thử frontend đạt 258/258 trên mốc chuẩn đã đồng bộ chính xác
+  trước khi tạo mã băm nội dung H2 mới.
 
 ## 2026-07-28 - Phê duyệt phụ lục đối soát chênh lệch phần nghiệp vụ cốt lõi thứ hai
 
@@ -152,13 +152,13 @@
   do hủy của thành viên bằng tiếng Việt ở phần triển khai trước, điều khiển trả/đặt chỗ đáp
   ứng và mọi chỉnh sửa phần triển khai trước vòng hai khác, cùng API hộp thư FE10 và kiểu
   thông báo theo phạm vi.
-- Xác thực đầy đủ sau chênh lệch và mã đối chiếu nội dung H2 mới vẫn bắt buộc trước công
+- Xác thực đầy đủ sau chênh lệch và mã băm nội dung H2 mới vẫn bắt buộc trước công
   bố.
 - Bằng chứng mới sau chênh lệch đạt: bao phủ backend 69/69 bộ và 1114/1114 kiểm
   thử, frontend 258/258 cùng kiểm tra mã/bản dựng, triển khai 15/15, hệ thống
   10/10, truy vết trạng thái 3/3, truy vết FE10 14/16 (88%) và Chromium 11/11.
 - Bản cập nhật cơ sở dữ liệu đạt hai lần với đúng một cột `ReadAt` và một chỉ mục hỗ trợ,
-  điền lùi chỉ lịch sử, tổng hợp được bảo vệ không đổi và không còn cơ sở dữ liệu
+  chỉ cập nhật dữ liệu lịch sử, giữ nguyên các số liệu tổng hợp được bảo vệ và không còn cơ sở dữ liệu
   dùng một lần. Kiểm toán thư viện phụ thuộc của backend báo không có lỗ hổng;
   cổng kiểm toán
   frontend tầng truy cập dữ liệu chỉ chấp nhận cảnh báo React Router RSC không ổn định
@@ -181,7 +181,7 @@
   mức sẵn sàng `add_change_password_otp_token_type.sql` đóng gói và dữ liệu mẫu xác minh
   tài khoản tiếng Việt cùng kiểm tra trước bản cập nhật cơ sở dữ liệu FE10 và triển khai có thứ tự.
 - Bản thay đổi được cập nhật nhánh lên `main@5a3c84b`; xác thực đầy đủ sau chênh lệch và
-  mã đối chiếu nội dung H2 mới bắt buộc trước công bố.
+  mã băm nội dung H2 mới bắt buộc trước công bố.
 
 ## 2026-07-28 - Phê duyệt phụ lục triển khai có cổng CI
 
@@ -198,7 +198,7 @@
 
 ## 2026-07-28 - Triển khai bản thay đổi hộp thư thông báo cá nhân (v0.5.0)
 
-- Bổ sung bản cập nhật cơ sở dữ liệu `Notifications.ReadAt` có thể null lặp lại, điền lùi hàng
+- Bổ sung bản cập nhật cơ sở dữ liệu `Notifications.ReadAt` có thể null, chạy lặp an toàn và cập nhật bản ghi lịch sử
   lịch sử đủ điều kiện, chỉ mục của chính người dùng hỗ trợ, cấu trúc cơ sở dữ liệu/mô hình chuẩn
   và kiểm thử hợp đồng bản cập nhật cơ sở dữ liệu/tầng truy cập dữ liệu.
 - Bổ sung thao tác SQL liệt kê của chính người dùng, đếm chưa đọc, đánh dấu một
@@ -248,7 +248,7 @@
   thực, giới hạn ở bản ghi không nhạy cảm của chính tác nhân.
 - Tái sử dụng mỗi thông báo email đủ điều kiện hiện có làm bản ghi hộp thư web;
   không đưa vào kênh gửi `IN_APP` hoặc thông báo trùng lặp.
-- Đặc tả `ReadAt` có thể null, điền lùi hàng lịch sử đủ điều kiện, API danh
+- Đặc tả `ReadAt` có thể null, cập nhật bản ghi lịch sử đủ điều kiện, API danh
   sách cá nhân/đếm chưa đọc, thao tác đánh dấu một/đánh dấu tất cả có tính lũy
   đẳng, DTO an toàn và điều hướng danh sách cho phép do backend suy ra.
 - Thêm chuông đã xác thực, xem trước năm mục, trang `/notifications`, bộ lọc
@@ -323,7 +323,7 @@
 
 - Thực thi quyền sở hữu tính năng chuẩn cho mọi loại thông báo đã xếp hàng và
   yêu cầu khóa chống gửi trùng tại mọi ranh giới nguồn trong tiến trình.
-- Phát lại thông báo đã lưu sau một race khóa duy nhất lũy đẳng thay vì hiển thị
+- Trả lại thông báo đã lưu sau tình huống tranh chấp khóa chống gửi trùng thay vì hiển thị
   lỗi nội bộ.
 - Yêu cầu mọi yêu cầu trong tiến trình cung cấp loại thực thể nguồn không rỗng
   và ID thực thể nguồn số nguyên dương.
@@ -404,7 +404,7 @@
 ## 2026-07-19 - Kích hoạt đồng bộ độ rộng email người nhận
 
 - Nâng `SPEC.md` lên 0.4.2 và đặt hợp đồng `recipientEmail` đã lưu là 255 ký tự
-  để giao hàng thiết lập tài khoản FE11 không cắt ngắn email người dùng hợp lệ.
+  để quá trình gửi thông báo thiết lập tài khoản FE11 không cắt ngắn email hợp lệ của người dùng.
 - Giữ quyền sở hữu gửi FE10, danh sách cho phép nguồn nhạy cảm, lũy đẳng, kết
   xuất và ngữ nghĩa lỗi không chặn.
 - Đồng bộ cấu trúc cơ sở dữ liệu/mô hình/tầng truy cập dữ liệu vẫn chờ FE11 Finalization Đợt A.
@@ -439,7 +439,7 @@
 
 ## 2026-07-15 - Triển khai và xác thực gửi thiết lập tài khoản FE11
 
-- Thực thi quyền sở hữu chỉ FE11 cho giao hàng
+- Thực thi quyền sở hữu riêng của FE11 đối với việc gửi thông báo
   `ACCOUNT_SETUP -> ACCOUNT_SETUP` chuẩn trong khi giữ quyền sở hữu FE02 cho
   loại OTP xác minh/đặt lại.
 - Bổ sung gửi qua nhà cung cấp đã cấu hình chỉ có siêu dữ liệu nguồn
@@ -549,7 +549,7 @@ bên dưới.
   hồi HTTP.
 - Giữ thông báo không nhạy cảm đã xếp hàng và yêu cầu kiểm tra đối tượng/mảng
   đệ quy với từ chối khóa bí mật chuẩn hóa cùng che `safePayload` tương ứng.
-- Phê duyệt DTO tạo/phát lại/xử lý/thử lại tối thiểu, `sourceEntityId` chỉ số
+- Phê duyệt DTO tối thiểu cho tạo/yêu cầu trùng/xử lý/thử lại, `sourceEntityId` chỉ số
   nguyên, tuyến API HTTP được bảo vệ và danh sách cho phép thành phần gửi yêu cầu ràng buộc
   khi khởi tạo `FE02`, `FE07`, `FE08`, `FE09`, `SYSTEM`.
 - Đổi lũy đẳng thành một bản ghi cho mỗi khóa xuyên suốt mọi trạng thái và xác
@@ -568,7 +568,7 @@ bên dưới.
 - Gửi thông báo xác minh tài khoản và đặt lại mật khẩu đồng bộ qua nhà cung cấp
   mô phỏng trong khi giữ liên kết thô và nội dung nhạy cảm đã tạo từ mẫu khỏi lưu
   bền, log, kiểm toán và phản hồi HTTP.
-- Rút gọn phản hồi tạo, phát lại, xử lý và thử lại thành DTO đã phê duyệt, giữ
+- Rút gọn phản hồi tạo, yêu cầu trùng, xử lý và thử lại thành DTO đã phê duyệt, giữ
   tuyến API HTTP thông báo được bảo vệ.
 - Bổ sung thành phần gửi yêu cầu nguồn ràng buộc khi khởi tạo, sau đó chỉ bản cập nhật cơ sở dữ liệu thông
   báo mượn sách FE07 và đặt chỗ FE08 với hành vi luồng nguồn không chặn.

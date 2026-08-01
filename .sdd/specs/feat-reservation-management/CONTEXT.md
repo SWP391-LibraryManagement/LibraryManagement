@@ -37,7 +37,7 @@ Tính năng ngăn các danh sách chờ thủ công tùy tiện và giúp thủ 
 FE08 bao gồm:
 
 - Đặt chỗ sách.
-- Tìm kiếm và chọn ứng viên an toàn cho thành viên đối với bản sao vật lý.
+- Tìm kiếm và chọn bản sao vật lý có thể đặt chỗ theo cách an toàn cho Thành viên.
 - Hủy đặt chỗ.
 - Xem danh sách đặt chỗ.
 - Xử lý hàng đợi đặt chỗ.
@@ -123,15 +123,15 @@ Vấn đề tiềm năng cần rà soát:
 | Q-FE08-005 | Xử lý hàng đợi do thủ thư thực hiện thủ công trong Giai đoạn 1; kích hoạt tự động là công việc tương lai. | Gói rà soát 2026-06-10 | ĐÃ PHÊ DUYỆT |
 | Q-FE08-006 | Lượt đặt chỗ đang hoạt động không đủ điều kiện bị bỏ qua trong lần chạy hiện tại và vẫn hoạt động để thử lại thủ công sau. | Rà soát chuẩn hóa Nhat 2026-07-17 | ĐÃ PHÊ DUYỆT |
 | Q-FE08-007 | Không có mục hàng đợi hợp lệ thì không chọn gì và giữ trạng thái bản sao/đặt chỗ không đổi. | Rà soát chuẩn hóa Nhat 2026-07-17 | ĐÃ PHÊ DUYỆT |
-| Q-FE08-008 | Lỗi thông báo FE10 giữ lượt đặt chỗ chỗ đã commit và ghi kiểm toán thất bại; không có tiến trình xử lý nền thử lại tự động trong Giai đoạn 1. | Rà soát chuẩn hóa Nhat 2026-07-17 | ĐÃ PHÊ DUYỆT |
+| Q-FE08-008 | Lỗi thông báo FE10 giữ lượt đặt chỗ đã commit và ghi kiểm toán thất bại; không có tiến trình xử lý nền thử lại tự động trong Giai đoạn 1. | Rà soát chuẩn hóa Nhat 2026-07-17 | ĐÃ PHÊ DUYỆT |
 | Q-FE08-009 | Dấu thời gian thông báo/hết hạn tồn tại qua chuyển đổi kết thúc; chỉ hàng đã hủy có `CancelledAt`. | Chuẩn hóa đặc tả 2026-07-17 | ĐÃ PHÊ DUYỆT |
-| Q-FE08-011 | Phương án A: một API ứng viên chỉ Thành viên được bảo vệ trả về hàng đã che bớt bảy trường cho mỗi bản sao `BORROWED`/`RESERVED` của sách đang hoạt động, gồm `hasActiveReservation` theo phạm vi thành viên; tìm kiếm và phân trang do máy chủ sở hữu, bản sao đã đặt chỗ vẫn hiển thị với thao tác trùng lặp bị vô hiệu hóa và `POST /api/reservations { copyId }` vẫn chính thức. | Phê duyệt thiết kế FE08 2026-07-19; làm rõ UI thành viên 2026-07-21 | ĐÃ PHÊ DUYỆT |
+| Q-FE08-011 | Phương án A: API danh sách bản sao có thể đặt chỗ được bảo vệ và chỉ dành cho Thành viên trả về bảy trường an toàn cho mỗi bản sao `BORROWED`/`RESERVED` của sách đang hoạt động, gồm `hasActiveReservation` theo phạm vi Thành viên; máy chủ xử lý tìm kiếm và phân trang, bản sao đã đặt chỗ vẫn hiển thị nhưng thao tác trùng lặp bị vô hiệu hóa và `POST /api/reservations { copyId }` vẫn là API chính thức. | Phê duyệt thiết kế FE08 2026-07-19; làm rõ UI thành viên 2026-07-21 | ĐÃ PHÊ DUYỆT |
 
 ---
 
 ## 10. Ghi chú cho việc triển khai sau này
 
-- `SPEC.md` v0.4.4 đã được phê duyệt làm mốc cơ sở; chuẩn hóa vòng đời và phạm vi triển khai ứng viên an toàn cho thành viên đã được xác thực tự động, tích hợp của con người vẫn đang chờ.
+- `SPEC.md` v0.4.4 đã được phê duyệt làm mốc cơ sở; vòng đời chuẩn và phạm vi triển khai danh sách bản sao có thể đặt chỗ an toàn cho Thành viên đã được kiểm tra tự động, còn chờ rà soát tích hợp của con người.
 - `PLAN.md` và `TASKS.md` ghi riêng phạm vi triển khai B7 lịch sử với các tác vụ đối soát v0.4.3/v0.4.4.
 - Xử lý hàng đợi nên theo giao dịch.
 - Thành viên không bao giờ được hủy đặt chỗ của thành viên khác.

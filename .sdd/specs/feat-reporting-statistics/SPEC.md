@@ -59,7 +59,7 @@ Báo cáo phải ở dạng chỉ đọc. Các tính năng nguồn vẫn chịu 
 
 Hệ thống sẽ:
 
-- Cho phép các bên được ủy quyền xem báo cáo vay.
+- Cho phép người dùng được phân quyền xem báo cáo mượn sách.
 - Cho phép các tác nhân được ủy quyền xem báo cáo hàng tồn kho.
 - Cho phép các tác nhân được ủy quyền xem số liệu thống kê của người dùng.
 - Xác thực bộ lọc báo cáo.
@@ -78,8 +78,8 @@ Hệ thống sẽ:
 
 | Tác nhân | Mô tả | Quyền / Trách nhiệm |
 | ----- | ----------- | --------------------------- |
-| Thủ thư | Nhân viên thư viện | Xem tất cả ba báo cáo Giai đoạn 1: số liệu thống kê về vay, tồn kho và người dùng. |
-| Quản trị viên | Quản trị viên hệ thống | Xem tất cả ba báo cáo Giai đoạn 1: số liệu thống kê về vay, tồn kho và người dùng. |
+| Thủ thư | Nhân viên thư viện | Xem cả ba báo cáo Giai đoạn 1: chỉ số mượn sách, tồn kho và người dùng. |
+| Quản trị viên | Quản trị viên hệ thống | Xem cả ba báo cáo Giai đoạn 1: chỉ số mượn sách, tồn kho và người dùng. |
 | Thành viên | Người dùng thư viện đã đăng ký | Không có quyền truy cập báo cáo dành cho nhân viên trong FE12. |
 | Khách | Khách truy cập không được xác thực | Không có quyền truy cập báo cáo. |
 | Các tính năng nguồn | Nguồn cung cấp dữ liệu nội bộ | Cung cấp dữ liệu nguồn qua các bản ghi cơ sở dữ liệu. |
@@ -106,7 +106,7 @@ Tính năng này chỉ có thể bắt đầu khi:
 2. Tác nhân chọn không có hoặc có nhiều bộ lọc đã phê duyệt: `q`, `fromDate`, `toDate`, `status`, `bookId`, `userId`, `page` hoặc `limit`.
 3. Hệ thống từ chối các khóa truy vấn không xác định, sau đó xác thực các giá trị bộ lọc đã được phê duyệt trước khi thực hiện báo cáo.
 4. Hệ thống đọc `BorrowRequests`, `BorrowDetails`, `BookCopies`, `Books` và dữ liệu thành viên liên quan.
-5. Hệ thống tính toán số liệu vay được phê duyệt.
+5. Hệ thống tính các chỉ số mượn sách đã được phê duyệt.
 6. Hệ thống hiển thị báo cáo mà không thay đổi dữ liệu mượn.
 
 ### MF-FE12-002: Xem báo cáo tồn kho
@@ -175,7 +175,7 @@ Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
 - BR-FE12-012: Số lượng tổng hợp phải được tái tạo từ bản ghi nguồn.
 - BR-FE12-013: Xuất CSV, PDF, bảng tính và các định dạng báo cáo khác hoàn toàn nằm ngoài phạm vi Giai đoạn 1; FE12 không cung cấp API hoặc điều khiển xuất.
 - BR-FE12-014: Mỗi lần Thủ thư/Quản trị viên xem báo cáo thành công phải ghi một sự kiện kiểm toán an toàn, xác định tác nhân, loại báo cáo, dấu thời gian và kết quả thành công nhưng không chứa giá trị bộ lọc/truy vấn thô hay các hàng báo cáo đã trả về.
-- BR-FE12-015: Các hàng chi tiết sử dụng `page=1`, `limit=20`, với `page>=1` và `limit=1..100`; thứ tự ổn định là mượn `BorrowDate DESC, BorrowDetailId DESC`, hàng tồn kho `Title ASC, BookId ASC, CopyId ASC` và người dùng `UserId ASC`.
+- BR-FE12-015: Các bản ghi chi tiết dùng `page=1`, `limit=20`, với `page>=1` và `limit=1..100`; thứ tự ổn định là mượn `BorrowDate DESC, BorrowDetailId DESC`, tồn kho `Title ASC, BookId ASC, CopyId ASC` và người dùng `UserId ASC`.
 - BR-FE12-016: Mỗi báo cáo chấp nhận `q` tùy chọn, đã trim và tối đa 200 ký tự. Môi trường môi trường thực tế bind mẫu hiệu lực `%${q}%` làm giá trị SQL `LIKE` tham số hóa và không escape hoặc từ chối `%`, `_`, lớp/khoảng trong ngoặc vuông hay lớp ngoặc vuông phủ định; tầng truy cập dữ liệu báo cáo trong bộ nhớ phải mô phỏng các ngữ nghĩa không phân biệt hoa thường đó. Tìm kiếm mượn khớp tiêu đề sách, mã vạch, tên người dùng, email hoặc ID người dùng; tìm kiếm tồn kho khớp tiêu đề, mã vạch, vị trí hoặc ID sách; tìm kiếm người dùng khớp ID người dùng, vai trò, trạng thái tài khoản hoặc trạng thái tư cách thành viên. Tìm kiếm và các bộ lọc đã chọn được áp dụng trước khi tổng hợp và phân trang.
 
 ---
@@ -183,15 +183,15 @@ Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
 ## 7. Yêu cầu chức năng
 
 - FR-FE12-001: Khi tác nhân được ủy quyền xem báo cáo mượn, hệ thống phải trả về chính xác các chỉ số mượn và trường dữ liệu hàng được định nghĩa trong Phần 10.3. Tầng dịch vụ phải đọc đồng hồ đúng một lần cho yêu cầu, tạo `businessDate` dạng `YYYY-MM-DD` và truyền giá trị hợp lệ bắt buộc này cho cả tầng truy cập dữ liệu SQL và tầng truy cập dữ liệu trong bộ nhớ.
-- FR-FE12-002: Khi tác nhân được ủy quyền xem báo cáo tồn kho, hệ thống phải trả về chính xác các chỉ số tồn kho và trường dữ liệu hàng được định nghĩa trong Phần 10.3, đồng thời xác định sách sắp hết hàng có từ hai bản sao sẵn có hiệu lực trở xuống.
+- FR-FE12-002: Khi tác nhân được ủy quyền xem báo cáo tồn kho, hệ thống phải trả về chính xác các chỉ số tồn kho và trường dữ liệu được định nghĩa trong Phần 10.3, đồng thời xác định các đầu sách có mức sẵn có thấp, tức còn không quá hai bản sao sẵn sàng để mượn.
 - FR-FE12-003: Khi tác nhân được ủy quyền xem thống kê người dùng, hệ thống phải trả về chính xác các chỉ số và trường dữ liệu hàng của người dùng/thành viên được định nghĩa trong Phần 10.3, với bộ lọc ngày chỉ áp dụng cho mức tăng trưởng trong kỳ phê duyệt.
 - FR-FE12-004: Nếu tác nhân không được ủy quyền thì hệ thống sẽ từ chối quyền truy cập báo cáo.
 - FR-FE12-005: Nếu yêu cầu báo cáo chứa khóa truy vấn ngoài danh sách cho phép của API đã chọn, hệ thống phải trả về `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` an toàn trước khi chạy tầng dịch vụ hoặc tầng truy cập dữ liệu báo cáo. Nếu khóa được phê duyệt có cú pháp, tư cách thành viên trong enum, phạm vi ngày, độ dài tìm kiếm, ID, trang hoặc giới hạn không hợp lệ, hệ thống phải trả về lỗi xác thực an toàn hiện có trước khi thực thi truy vấn báo cáo.
-- FR-FE12-006: Nếu các bộ lọc hợp lệ không khớp dữ liệu nào, bao gồm ID nguồn không xác định nhưng đúng định dạng, hệ thống sẽ trả về số liệu tổng hợp bằng không và các hàng chi tiết trống.
+- FR-FE12-006: Nếu các bộ lọc hợp lệ không khớp dữ liệu nào, kể cả ID nguồn không tồn tại nhưng đúng định dạng, hệ thống sẽ trả về các chỉ số tổng hợp bằng không và danh sách chi tiết trống.
 - FR-FE12-007: Khi báo cáo được tạo, hệ thống sẽ không cập nhật dữ liệu nguồn.
 - FR-FE12-008: Khi số liệu thống kê người dùng được tạo, hệ thống sẽ trả về dữ liệu tổng hợp theo mặc định thay vì chi tiết cá nhân thô.
 - FR-FE12-009: Khi yêu cầu báo cáo được ủy quyền thành công, hệ thống phải ghi sự kiện kiểm toán xem báo cáo an toàn theo BR-FE12-014.
-- FR-FE12-010: Khi các hàng chi tiết được trả về, hệ thống sẽ áp dụng các giá trị mặc định, giới hạn phân trang đã được phê duyệt và thứ tự ổn định dành riêng cho báo cáo từ BR-FE12-015.
+- FR-FE12-010: Khi trả về danh sách chi tiết, hệ thống sẽ áp dụng các giá trị mặc định, giới hạn phân trang đã được phê duyệt và thứ tự ổn định riêng cho từng báo cáo theo BR-FE12-015.
 - FR-FE12-011: Khi nhân viên tìm kiếm hoặc lọc một báo cáo, hệ thống sẽ kết hợp `q` với tất cả các bộ lọc dành riêng cho báo cáo được cung cấp, tải lại các hàng và chỉ số máy chủ chuẩn, đồng thời tránh biểu ngữ tải thành công dư thừa.
 
 ---
@@ -199,7 +199,7 @@ Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
 ## 8. Tiêu chí chấp nhận
 
 - AC-FE12-001: Với Thủ thư hoặc Quản trị viên, khi xem báo cáo mượn, hệ thống hiển thị tổng số lượt mượn và số lượng theo trạng thái. Với cùng dữ liệu và `businessDate` cố định trước/sau hạn trả, SQL và trong bộ nhớ phải phân loại `BORROWED`/`OVERDUE` giống nhau; thiếu, sai định dạng hoặc ngày bất khả thi phải từ chối ngay trước khi truy vấn.
-- AC-FE12-002: Với Thủ thư hoặc Quản trị viên, khi xem báo cáo tồn kho, hệ thống hiển thị số bản sao theo trạng thái và sách/danh mục tương ứng với bộ lọc, đồng thời các sách có 0-2 bản sao sẵn có xuất hiện trong danh sách sắp hết hàng. Bộ lọc trạng thái/vị trí chọn các sách và tổng số bản sao đã lọc tương ứng nhưng không che mất toàn bộ mức sẵn có của các sách đó khỏi phép tính sắp hết hàng.
+- AC-FE12-002: Với Thủ thư hoặc Quản trị viên, khi xem báo cáo tồn kho, hệ thống hiển thị số bản sao theo trạng thái và sách/danh mục tương ứng với bộ lọc; các đầu sách có 0-2 bản sao sẵn có xuất hiện trong danh sách mức sẵn có thấp. Bộ lọc trạng thái/vị trí chọn các sách và tổng số bản sao tương ứng nhưng phép tính mức sẵn có thấp vẫn phải xét toàn bộ bản sao sẵn có của những sách đã chọn.
 - AC-FE12-003: Với Thủ thư hoặc Quản trị viên, khi xem thống kê người dùng trong một phạm vi ngày, số lượng tổng/trạng thái/vai trò vẫn là toàn cục và `newMembersByPeriod` chỉ gồm các lần phê duyệt trong phạm vi đó.
 - AC-FE12-004: Với Khách hoặc Thành viên, khi yêu cầu báo cáo dành cho nhân viên, quyền truy cập bị từ chối.
 - AC-FE12-005: Với bất kỳ một trong ba API báo cáo nhận `?bogus=1` hoặc khóa truy vấn không xác định khác, khi gửi yêu cầu, hệ thống trả về `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` an toàn và cả tầng dịch vụ lẫn tầng truy cập dữ liệu báo cáo đều không chạy. Với khóa đã phê duyệt có giá trị sai định dạng/không được hỗ trợ hoặc phạm vi phân trang/ngày không hợp lệ, lỗi xác thực an toàn hiện có được trả về trước khi truy vấn.
@@ -224,9 +224,9 @@ Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
 | EC-FE12-006 | Không có bản ghi khớp | Trả về số lượng bằng không và các hàng trống. |
 | EC-FE12-007 | Giá trị trạng thái nguồn đã lưu không được nhận diện | Nhóm vào `UNKNOWN` và giữ bản ghi trong tổng số có thể tái tạo. |
 | EC-FE12-008 | Truy vấn báo cáo hết thời gian | Trả về lỗi an toàn và ghi nhật ký an toàn. |
-| EC-FE12-009 | Phạm vi ngày hợp lệ nhưng lớn | Trả về chỉ số tổng hợp và phân trang các hàng chi tiết bằng giá trị mặc định/giới hạn đã phê duyệt; không thay thế bằng phản hồi chỉ cảnh báo. |
+| EC-FE12-009 | Khoảng ngày hợp lệ nhưng lớn | Trả về chỉ số tổng hợp và danh sách chi tiết có phân trang theo giá trị mặc định/giới hạn đã phê duyệt; không thay thế bằng phản hồi chỉ có cảnh báo. |
 | EC-FE12-010 | Thiếu trường nguồn tùy chọn | Sử dụng dự phòng an toàn trong hiển thị báo cáo. |
-| EC-FE12-011 | Yêu cầu chứa một hoặc nhiều khóa truy vấn ngoài danh sách cho phép của API đã chọn | Trả về `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` an toàn trước khi chạy tầng dịch vụ/tầng truy cập dữ liệu; lỗi có thể xác định khóa nhưng không được phản chiếu giá trị của khóa. |
+| EC-FE12-011 | Yêu cầu chứa một hoặc nhiều khóa truy vấn ngoài danh sách cho phép của API đã chọn | Trả về `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` an toàn trước khi chạy tầng dịch vụ/tầng truy cập dữ liệu; lỗi có thể nêu tên khóa nhưng không được đưa lại giá trị của khóa vào phản hồi. |
 
 ---
 
@@ -239,7 +239,7 @@ Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
 | Users | Nguồn thống kê người dùng và số lượng thành viên/nhân viên. |
 | UserRoles | Nguồn thống kê người dùng theo vai trò. |
 | Roles | Cung cấp tên vai trò. |
-| Members | Nguồn đếm trạng thái tư cách thành viên tại khi chạy và các kỳ tăng trưởng theo `ApprovedAt`. |
+| Members | Nguồn đếm trạng thái hội viên tại thời điểm chạy và các kỳ tăng trưởng theo `ApprovedAt`. |
 | Books | Nguồn siêu dữ liệu sách cho báo cáo tồn kho và mượn. |
 | Categories | Nguồn nhóm tồn kho. |
 | BookCopies | Nguồn để đếm trạng thái hàng tồn kho. |
@@ -258,9 +258,9 @@ Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
 | categoryId | integer | Không | Dùng cho báo cáo tồn kho. |
 | bookId | integer | Không | Dùng cho báo cáo mượn/tồn kho. |
 | userId | integer | Không | Bộ lọc chỉ dành cho nhân viên khi được phê duyệt. |
-| vai tròId | integer | Không | Dùng cho thống kê người dùng. |
+| roleId | integer | Không | Dùng cho thống kê người dùng. |
 | location | string | Không | Chỉ dùng cho báo cáo tồn kho; được xác thực theo hợp đồng bộ lọc tồn kho đã phê duyệt. |
-| page | integer | Không | Mặc định là 1; phải là số nguyên ít nhất bằng 1 đối với các hàng chi tiết. |
+| page | integer | Không | Mặc định là 1; phải là số nguyên từ 1 trở lên đối với danh sách chi tiết. |
 | limit | integer | Không | Mặc định là 20; phải là số nguyên từ 1 đến 100. |
 | q | string | Không | Tìm kiếm văn bản tự do đã trim, tối đa 200 ký tự, dùng các trường riêng của báo cáo trong BR-FE12-016. |
 
@@ -270,7 +270,7 @@ Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
 
 Cả ba API báo cáo đều trả về `{ metrics, rows, page, limit, totalRows }`. `rows` là các bản ghi chi tiết sau khi lọc; `metrics` được tính từ toàn bộ tập nguồn đã lọc trước khi phân trang.
 
-| Báo cáo | Hợp đồng số liệu | Hợp đồng hàng chi tiết |
+| Báo cáo | Hợp đồng chỉ số | Các trường của danh sách chi tiết |
 | ------ | ---------------- | --------------------- |
 | Mượn | `activeLoans` đếm các chi tiết `BORROWED`; `overdueLoans` đếm các chi tiết `BORROWED` có hạn trả trước ngày nghiệp vụ `Asia/Ho_Chi_Minh` do tầng dịch vụ truyền xuống; `borrowCountByPeriod` nhóm các chi tiết lượt mượn thực tế đủ điều kiện theo `BorrowDate` (`YYYY-MM-DD`); `topBorrowedBooks` trả về tối đa 10 sách, sắp xếp theo số lượt mượn giảm dần, tiêu đề tăng dần, rồi `BookId` tăng dần. | `borrowDetailId`, `requestId`, `userId`, `bookId`, `copyId`, `status`, `borrowDate`, `dueDate`, `returnDate`. `OVERDUE` là trạng thái hiển thị suy ra cho một chi tiết `BORROWED` đã quá hạn. |
 | Tồn kho | `totalBooks` đếm các sách riêng biệt trong phạm vi sách đã lọc; `totalCopies` đếm các bản sao đã lọc; `copiesByStatus` nhóm các bản sao đã lọc theo trạng thái FE06 được phê duyệt; `lowStockBooks` liệt kê các sách riêng biệt có 0..2 bản sao `AVAILABLE` hiệu lực, dùng toàn bộ mức sẵn có của từng sách đã chọn ngay cả khi bộ lọc trạng thái/vị trí thu hẹp các hàng. | `bookId`, `title`, `copyId`, `barcode`, `location`, `status`, `effectiveAvailability`. |
@@ -294,7 +294,7 @@ Các trường truy vấn hiển thị cho mỗi API là danh sách cho phép ch
 Trước mọi lệnh gọi tầng dịch vụ hoặc tầng truy cập dữ liệu báo cáo, khóa không xác định sẽ trả về
 `400 { error: { code: "UNSUPPORTED_REPORT_QUERY_PARAMETER", message: "Unsupported report query parameter." } }`.
 Lỗi an toàn có thể xác định khóa không được hỗ trợ trong chi tiết xác thực
-có cấu trúc nhưng không được phản chiếu giá trị của khóa.
+có cấu trúc nhưng không được đưa lại giá trị của khóa vào phản hồi.
 
 ---
 
@@ -364,14 +364,14 @@ Tính năng này không bao gồm:
 | -- | ----------------- | ------ | ------ |
 | Q-FE12-001 | Thủ thư và Quản trị viên có thể xem cả ba báo cáo (mượn, tồn kho, người dùng); Thành viên/Khách không thể xem báo cáo FE12 nào. | Gói đánh giá 2026-06-10; chuẩn hóa 2026-07-17 | APPROVED |
 | Q-FE12-002 | Chỉ số mượn: lượt mượn đang hoạt động, lượt mượn quá hạn, số lượt mượn theo kỳ, sách được mượn nhiều nhất. Chỉ số theo kỳ mượn và sách đứng đầu loại trừ `REQUESTED` và chỉ tính các trạng thái lượt mượn thực tế: `BORROWED`, `RETURNED`, `LOST`, `DAMAGED` và `OVERDUE`. | Gói đánh giá 2026-06-10; khắc phục đánh giá cuối 2026-07-13 | APPROVED |
-| Q-FE12-003 | Chỉ số tồn kho: tổng số sách, tổng số bản sao, bản sao theo trạng thái và sách sắp hết hàng được định nghĩa là có 0-2 bản sao sẵn có. | Gói đánh giá 2026-06-10; làm rõ B6 2026-07-13 | APPROVED |
+| Q-FE12-003 | Chỉ số tồn kho: tổng số sách, tổng số bản sao, bản sao theo trạng thái và đầu sách có mức sẵn có thấp, được định nghĩa là còn 0-2 bản sao sẵn có. | Gói đánh giá 2026-06-10; làm rõ B6 2026-07-13 | APPROVED |
 | Q-FE12-004 | Thống kê người dùng: tổng số thành viên, người dùng hoạt động/không hoạt động và thành viên mới theo `Members.ApprovedAt`; phạm vi ngày chỉ ảnh hưởng kỳ thành viên mới. | Gói đánh giá 2026-06-10; làm rõ B6 2026-07-13 | APPROVED |
 | Q-FE12-005 | Xuất CSV/PDF/bảng tính và mọi định dạng báo cáo khác hoàn toàn nằm ngoài phạm vi Giai đoạn 1. | Gói đánh giá 2026-06-10; chuẩn hóa 2026-07-17 | APPROVED |
 | Q-FE12-006 | Truy cập báo cáo ghi nhật ký kiểm toán cho các lần Quản trị viên/Thủ thư xem báo cáo mà không lưu giá trị truy vấn/bộ lọc thô. | Gói đánh giá 2026-06-10; làm rõ B6 2026-07-13 | APPROVED |
 | Q-FE12-007 | ID bộ lọc không xác định được định dạng đúng sẽ trả về một báo cáo trống; ID không đúng định dạng là lỗi xác thực. | Chuẩn hóa đặc tả 2026-07-17 | APPROVED |
 | Q-FE12-008 | Các trạng thái nguồn liên tục không xác định được nhóm thành `UNKNOWN` và được giữ lại trong tổng số. | Chuẩn hóa đặc tả 2026-07-17 | APPROVED |
-| Q-FE12-009 | Các hàng chi tiết sử dụng phân trang xác định và thứ tự ổn định dành riêng cho báo cáo; phạm vi ngày hợp lệ lớn không trả về các lựa chọn thay thế chỉ mang tính cảnh báo. | Chuẩn hóa đặc tả 2026-07-17 | APPROVED |
-| Q-FE12-010 | Phản hồi báo cáo dùng chính xác các chỉ số và trường dữ liệu hàng trong Phần 10.3; danh sách sách được mượn nhiều nhất giới hạn ở 10 sách với quy tắc phân hạng hòa mang tính xác định. | Chuẩn hóa hợp đồng báo cáo 2026-07-17 | APPROVED |
+| Q-FE12-009 | Danh sách chi tiết dùng phân trang và thứ tự ổn định riêng cho từng báo cáo; khoảng ngày hợp lệ nhưng lớn không trả về phương án thay thế chỉ có cảnh báo. | Chuẩn hóa đặc tả 2026-07-17 | APPROVED |
+| Q-FE12-010 | Phản hồi báo cáo dùng chính xác các chỉ số và trường dữ liệu trong Phần 10.3; danh sách sách được mượn nhiều nhất giới hạn ở 10 sách với quy tắc xếp hạng ổn định khi bằng điểm. | Chuẩn hóa hợp đồng báo cáo 2026-07-17 | APPROVED |
 | Q-FE12-011 | Xử lý khóa truy vấn báo cáo không xác định như thế nào? | Nhat, 2026-07-27 | APPROVED: từ chối bằng `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` an toàn trước khi chạy tầng dịch vụ/tầng truy cập dữ liệu báo cáo; danh sách cho phép của API là chính xác. |
 
 ---
@@ -437,7 +437,7 @@ Tính năng này không bao gồm:
 Danh sách kiểm tra phê duyệt Giai đoạn 1 (hoàn tất vào 2026-06-10):
 
 - [x] Vai trò của người xem báo cáo đã được phê duyệt.
-- [x] Các số liệu vay bắt buộc đã được phê duyệt.
+- [x] Các chỉ số mượn sách bắt buộc đã được phê duyệt.
 - [x] Các chỉ số tồn kho bắt buộc đã được phê duyệt.
 - [x] Số liệu thống kê người dùng cần thiết đã được phê duyệt.
 - [x] Phạm vi xuất được phê duyệt hoặc được xác định rõ là ngoài phạm vi.
@@ -455,7 +455,7 @@ Danh sách kiểm tra phê duyệt Giai đoạn 1 (hoàn tất vào 2026-06-10):
 - [x] Duy trì xác thực giá trị đã phê duyệt, báo cáo trống cho ID không xác định, SQL tham số hóa và hành vi chỉ đọc.
 - [x] Nhat đã trực tiếp đánh giá và phê duyệt bản SPEC v0.2.0 bằng văn bản vào 2026-07-27; PLAN/TASKS có thể tiếp tục, còn triển khai vẫn bị chặn trong khi chờ phê duyệt kế hoạch.
 
-## 18. Phụ lục tổng quan vận hành và đồng hồ xác định v0.3.0
+## 18. Phụ lục tổng quan vận hành và nguồn thời gian nhất quán v0.3.0
 
 Đợt: `BATCH-FE07-FE12-CONNECTED-DEMO-2026-07-29`.
 

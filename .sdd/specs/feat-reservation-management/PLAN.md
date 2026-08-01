@@ -30,7 +30,7 @@ Bao gồm:
 - Làm mới dựa trên máy chủ sau khi giữ chỗ hết hạn.
 - Bàn giao FE07 giữ ưu tiên hàng đợi và hoàn tất lượt đặt chỗ của chủ sở hữu đã thông báo trong khi phê duyệt mượn.
 - Phân trang danh sách đặt chỗ xác định và thứ tự danh sách/hàng đợi ổn định.
-- Tìm kiếm và phân trang ứng viên đặt chỗ an toàn cho thành viên được bảo vệ, dựa trên trạng thái SQL.
+- Tìm kiếm và phân trang danh sách bản sao có thể đặt chỗ an toàn cho Thành viên đã xác thực, dựa trên trạng thái SQL.
 - Loại danh mục `DEMO_RESERVABLE` mã cứng.
 
 Không bao gồm:
@@ -50,8 +50,8 @@ Không bao gồm:
 | Tối đa 3 lượt đặt chỗ đang hoạt động | Tầng dịch vụ từ chối lượt đặt chỗ đang hoạt động thứ tư của cùng thành viên. |
 | Cửa sổ giữ chỗ là 2 ngày dương lịch | Xử lý hàng đợi đặt `ExpiresAt` bằng hiện tại + 2 ngày. |
 | Xử lý hàng đợi thủ công trong Giai đoạn 1 | Nhân sự kích hoạt `/api/reservations/process-queue`. |
-| Nguồn ứng viên thành viên là API FE08 được bảo vệ | `GET /api/reservations/candidates` trả một hàng đã che bớt cho mỗi bản sao `BORROWED`/`RESERVED` của sách đang hoạt động; hợp đồng FE01 và FE06 không đổi. |
-| Bàn giao sách đã chọn FE01 vẫn an toàn theo bản sao | `/reservations/mine?bookId=...` phân giải tiêu đề công khai và khởi tạo tìm kiếm ứng viên FE08; Thành viên vẫn chọn `copyId` được bảo vệ chính thức trước thay đổi. |
+| Nguồn danh sách bản sao dành cho Thành viên là API FE08 được bảo vệ | `GET /api/reservations/candidates` trả một bản ghi đã lược bỏ dữ liệu nhạy cảm cho mỗi bản sao `BORROWED`/`RESERVED` của sách đang hoạt động; hợp đồng FE01 và FE06 không đổi. |
+| Việc chuyển sách đã chọn từ FE01 vẫn an toàn theo từng bản sao | `/reservations/mine?bookId=...` phân giải tiêu đề công khai và khởi tạo tìm kiếm bản sao qua FE08; Thành viên vẫn chọn `copyId` chính thức trước khi thay đổi dữ liệu. |
 
 ---
 
@@ -119,14 +119,14 @@ Không bao gồm:
 - Đối soát `QueuePosition`, `NotifiedAt`, `ExpiresAt` và `CancelledAt` với ngữ nghĩa lịch sử thông báo bất biến: dấu thời gian thông báo/hết hạn tồn tại qua chuyển đổi kết thúc, trong khi `CancelledAt` chỉ tồn tại ở hàng đã hủy.
 - Giữ thứ tự khóa dùng chung `BookCopies -> Reservations` cho hàng đợi, hủy, hết hạn và hoàn tất FE07.
 
-### 3.9 Danh mục ứng viên đặt chỗ v0.4.4
+### 3.9 Danh sách bản sao có thể đặt chỗ v0.4.4
 
 - Thêm `GET /api/reservations/candidates` chỉ thành viên có `q`, `page` và `limit` tùy chọn.
 - Trả chính xác `copyId`, `bookId`, `title`, `authorName` có thể để trống, `copyStatus` và `activeReservationCount` trong `{ data, pagination }`.
 - Lọc tới sách đang hoạt động và bản sao vật lý ở `BORROWED` hoặc `RESERVED`; sắp xếp theo tiêu đề, ID sách rồi ID bản sao.
 - Giữ đường đọc có tham số, chỉ đọc, không kiểm toán và độc lập với duyệt công khai FE01 và tồn kho nhân sự FE06.
 - Giữ `POST /api/reservations { copyId }` chính thức cho điều kiện hợp lệ thành viên, trùng lặp, giới hạn và kiểm tra xung đột bản sao cũ.
-- Thay `DEMO_RESERVABLE` bằng trạng thái ứng viên máy chủ; tìm kiếm và phân trang do máy chủ sở hữu, UI không tạo ETA hay số lượng khả dụng.
+- Thay `DEMO_RESERVABLE` bằng trạng thái bản sao từ máy chủ; máy chủ xử lý tìm kiếm và phân trang, giao diện không tự tạo thời gian dự kiến hay số lượng khả dụng.
 
 ---
 
@@ -136,12 +136,12 @@ Không bao gồm:
 - Trình bày vòng đời frontend, ngữ nghĩa hàng đợi, cô lập lỗi và xử lý hết hạn giữ chỗ được căn chỉnh với `SPEC.md`.
 - Phê duyệt FE07 chỉ có thể hoàn tất lượt đặt chỗ đã thông báo khớp; xử lý hàng đợi tự động sau trả vẫn ngoài Giai đoạn 1.
 - Các tác vụ đối soát v0.4.2/v0.4.3 được triển khai và giữ ranh giới bằng chứng lịch sử.
-- Hợp đồng ứng viên v0.4.4 đã được phê duyệt, đạt cổng tự động/SQL/trình duyệt; H3, hợp nhất, CI `main` và Azure đúng commit đã đóng.
+- Hợp đồng danh sách bản sao v0.4.4 đã được phê duyệt và đạt các cổng tự động, SQL, trình duyệt; H3, hợp nhất, CI `main` và Azure đúng commit đã hoàn tất.
 
 ## 5. Bằng chứng hoàn tất B7
 
 - Commit `236043864304627f3577baafa9b8648c13c7a691` nằm trong `main`.
-- Lượt chạy GitHub Actions CI `29217437981` đã hoàn thành thành công cho commit đó.
+- Lượt chạy GitHub Actions CI `29217437981` đã chạy thành công cho commit đó.
 - Bản ghi tích hợp/rà soát theo phạm vi là `.sdd/reviews/fe08-b7-integration-review-closeout-2026-07-13.md`.
 
 ## 6. Cổng xác minh v0.4.2
@@ -152,9 +152,9 @@ Không bao gồm:
 | Frontend FE08 | `node --test frontend/test/reservationFrontend.test.js` | Các ca vòng đời chuẩn, cô lập lỗi và làm mới máy chủ đạt khi tệp tập trung tồn tại. |
 | Truy vết | `npm.cmd run trace:enforce` | Các tệp FE08 thay đổi thỏa ngưỡng truy vết. |
 | Vệ sinh diff | `git diff --check` | Không có lỗi khoảng trắng. |
-| Backend ứng viên FE08 | `npm.cmd --prefix backend test -- --runTestsByPath tests/reservationRoutes.test.js` | Các ca vai trò, xác thực, tìm kiếm, phân trang, che bớt, thứ tự và không thay đổi đạt. |
-| SQL ứng viên FE08 | `npm.cmd --prefix backend test -- --runTestsByPath tests/sql/reservationCandidates.sqltest.js` | Lọc SQL thực, số đếm đang hoạt động, thứ tự, phân trang và dữ liệu hiển thị an toàn đạt trên SQL Server dùng một lần. |
-| Trình duyệt ứng viên FE08 | Playwright cô lập `tests/e2e/fe08-reservation-candidate-catalog.spec.js` | Luồng danh mục/tìm kiếm/tạo/làm mới thành viên đạt mà không lộ siêu dữ liệu được bảo vệ. |
+| Backend danh sách bản sao FE08 | `npm.cmd --prefix backend test -- --runTestsByPath tests/reservationRoutes.test.js` | Các ca vai trò, xác thực, tìm kiếm, phân trang, lược bỏ dữ liệu nhạy cảm, thứ tự và không thay đổi đều đạt. |
+| SQL danh sách bản sao FE08 | `npm.cmd --prefix backend test -- --runTestsByPath tests/sql/reservationCandidates.sqltest.js` | Bộ lọc SQL thực, số đếm đang hoạt động, thứ tự, phân trang và dữ liệu hiển thị an toàn đều đạt trên SQL Server dùng một lần. |
+| Trình duyệt danh sách bản sao FE08 | Playwright độc lập `tests/e2e/fe08-reservation-candidate-catalog.spec.js` | Luồng danh sách/tìm kiếm/tạo/làm mới dành cho Thành viên đạt mà không lộ siêu dữ liệu được bảo vệ. |
 
 ## 7. Cổng rà soát và triển khai mốc cơ sở v0.4.3
 
@@ -163,7 +163,7 @@ Không bao gồm:
 - [x] Nhat xác nhận phân trang và thứ tự ổn định vào 2026-07-17.
 - [x] Nhat xác nhận hoàn tất FE07 vẫn là kích hoạt `NOTIFIED -> FULFILLED` duy nhất vào 2026-07-17.
 
-## 8. Cổng rà soát và triển khai ứng viên v0.4.4
+## 8. Cổng rà soát và triển khai danh sách bản sao v0.4.4
 
 - [x] Người dùng phê duyệt Phương án A TD-028 vào 2026-07-19.
 - [x] Người dùng phê duyệt `docs/superpowers/specs/2026-07-19-fe08-reservation-candidate-catalog-design.md` vào 2026-07-19.
@@ -174,20 +174,20 @@ Không bao gồm:
 
 ## 9. Khắc phục kiểm toán vòng đời nguyên tử và lan truyền cảnh báo v0.5.3
 
-1. Truyền từng kiểm toán vòng đời tạo/hủy/giữ/hết hạn vào giao dịch tầng truy cập dữ liệu sở hữu và hoàn tác cả trạng thái lẫn kiểm toán khi một trong hai thất bại.
-2. Giữ giao thông báo FE10 sau commit giữ chỗ. Bảo toàn lượt đặt chỗ khi thông báo thất bại và ghi `RESERVATION_NOTIFY_FAILED` riêng.
+1. Đưa việc ghi kiểm toán cho vòng đời tạo/hủy/giữ/hết hạn vào cùng giao dịch của tầng truy cập dữ liệu; hoàn tác cả trạng thái lẫn bản ghi kiểm toán nếu một trong hai thất bại.
+2. Chỉ gửi yêu cầu thông báo FE10 sau khi giao dịch giữ chỗ đã được ghi nhận. Giữ nguyên lượt đặt chỗ khi gửi thông báo thất bại và ghi `RESERVATION_NOTIFY_FAILED` riêng.
 3. Nếu kiểm toán lỗi sau commit đó không sẵn có, trả siêu dữ liệu cảnh báo `RESERVATION_NOTIFY_AUDIT_FAILED` an toàn mà không hoàn tác lượt đặt chỗ.
-4. Loại danh tính thành viên cache khỏi xác nhận nhân sự; xác định bản sao vật lý và giải thích việc chọn lại điều kiện hợp lệ phía máy chủ.
-5. Giữ cảnh báo `process-queue` đơn lẻ hiện có và thu một mục `{ reservationId, copyId, code, message }` an toàn cho mỗi lượt nâng `expire-holds` bị ảnh hưởng trong `notificationWarnings[]` tùy chọn cấp cao nhất; giữ DTO đặt chỗ đã nâng không đổi.
-6. Xác minh thứ tự giao dịch tầng truy cập dữ liệu, hành vi tầng dịch vụ/tuyến API, nội dung xác nhận frontend và hồi quy đầy đủ trước H2.
+4. Không dùng danh tính Thành viên đã lưu đệm trong bước xác nhận của Thủ thư/Quản trị viên; máy chủ phải kiểm tra lại bản sao vật lý và giải thích rõ khi chọn lại lượt hợp lệ.
+5. Giữ cảnh báo đơn lẻ hiện có của `process-queue` và thêm một mục `{ reservationId, copyId, code, message }` an toàn vào `notificationWarnings[]` cấp cao nhất cho mỗi lượt đặt chỗ được chuyển lên bởi `expire-holds`; không đổi DTO của lượt đặt chỗ đã được chuyển lên.
+6. Kiểm tra thứ tự giao dịch ở tầng truy cập dữ liệu, hành vi tầng dịch vụ/API, nội dung xác nhận trên giao diện và toàn bộ hồi quy trước H2.
 
 ## 10. Trình bày trạng thái hiện tại và lịch sử thành viên v0.5.6
 
 1. Giữ `GET /api/reservations/me` làm nguồn chuẩn và giữ mọi bản ghi vòng đời.
 2. Trình bày `ACTIVE` và `NOTIFIED` là lượt đặt chỗ hiện tại; trình bày `FULFILLED`, `CANCELLED` và `EXPIRED` trong phần lịch sử riêng.
 3. Suy ra nhãn tiếng Việt hiển thị và sắc độ badge được hỗ trợ từ trạng thái vòng đời FE08 thô.
-4. Phản ánh lượt đặt chỗ hiện tại khớp trong thao tác ứng viên là `Đang đặt chỗ` hoặc `Đến lượt bạn`.
-5. Tải lại lượt đặt chỗ và ứng viên thành viên chuẩn sau tạo/hủy mà không đổi hợp đồng hàng đợi Thủ thư/Quản trị viên hay quyền sở hữu hoàn tất FE07.
+4. Hiển thị lượt đặt chỗ hiện tại tương ứng trên thao tác của bản sao bằng `Đang đặt chỗ` hoặc `Đến lượt bạn`.
+5. Tải lại lượt đặt chỗ và danh sách bản sao chuẩn của Thành viên sau khi tạo/hủy mà không đổi hợp đồng hàng đợi của Thủ thư/Quản trị viên hay trách nhiệm hoàn tất của FE07.
 
 ## 11. Cửa sổ nhận sách đã thông báo và bàn giao FE07 v0.5.7
 
@@ -195,20 +195,20 @@ Không bao gồm:
 2. Chỉ hiển thị thông báo rõ ràng sẵn sàng nhận sách cho lượt đặt chỗ `NOTIFIED`.
 3. Truyền chính xác `bookId` và `copyId` được giữ cho FE07 để Thành viên tạo yêu cầu mượn đang chờ bình thường cho bản sao vật lý đó.
 4. Giữ xử lý hàng đợi Thủ thư/Quản trị viên trong FE08 và phê duyệt mượn/hoàn tất đặt chỗ nguyên tử trong FE07.
-5. Giữ assertion chấp nhận Chromium FE08 trên nhãn `Đang đặt chỗ` hiện tại.
+5. Giữ kiểm tra chấp nhận FE08 trên Chromium cho nhãn `Đang đặt chỗ` hiện tại.
 
 ## 12. Loại trừ khoản mượn cùng sách hiện tại v0.5.8
 
-1. Coi `BorrowDetails.Status = BORROWED` FE07 được join qua `BookId` của bản sao vật lý là tín hiệu khoản mượn hiện tại chính thức.
-2. Loại mọi bản sao cùng sách khỏi danh mục ứng viên FE08 của Thành viên yêu cầu.
+1. Coi bản ghi FE07 có `BorrowDetails.Status = BORROWED` được liên kết qua `BookId` của bản sao vật lý là nguồn xác định khoản mượn hiện tại.
+2. Loại mọi bản sao cùng sách khỏi danh sách FE08 của Thành viên gửi yêu cầu.
 3. Xác thực lại trong giao dịch tạo và trả `409 BOOK_ALREADY_BORROWED` để lời gọi API trực tiếp không thể vượt danh mục.
-4. Xác thực lại điều kiện hợp lệ hàng đợi khi Thủ thư/Quản trị viên xử lý bản sao đã trả; giữ đặt chỗ cũ `ACTIVE` và bản sao không đổi trong khi tiếp tục sang Thành viên hợp lệ tiếp theo.
-5. Chia sẻ khóa lưu hành Thành viên FE07 trước khóa thay đổi FE08 để phê duyệt mượn và tạo/giữ đặt chỗ không thể tranh chấp đồng thời trên cùng Thành viên.
+4. Kiểm tra lại điều kiện hợp lệ của hàng đợi khi Thủ thư/Quản trị viên xử lý bản sao đã trả; giữ nguyên đặt chỗ cũ `ACTIVE` và trạng thái bản sao, rồi tiếp tục với Thành viên đủ điều kiện tiếp theo.
+5. Dùng chung khóa giao dịch theo Thành viên của FE07 trước khóa thay đổi FE08 để thao tác phê duyệt mượn và tạo/giữ đặt chỗ không thể tranh chấp đồng thời trên cùng Thành viên.
 
 ## 13. Làm rõ vị trí hàng đợi theo phạm vi bản sao v0.5.9
 
 1. Giữ tính toán hàng đợi FE08 chuẩn cho mỗi `CopyId`; không thêm chuỗi đặt chỗ Thành viên toàn cục.
-2. Thay copy “Vị trí hàng đợi” mơ hồ bằng “Vị trí của bản sách” cho Thành viên và nhân sự.
+2. Thay nhãn “Vị trí hàng đợi” còn mơ hồ bằng “Vị trí của bản sách” cho Thành viên và nhân viên thư viện.
 3. Hiển thị vị trí thuộc sách/bản sao hiện tại và giữ giá trị bằng nhau trên các hàng đợi khác nhau.
 4. Giữ vị trí chuẩn thiếu là null và hiển thị `Chưa xác định`; không bao giờ tạo `#1` hay chuyển null thành chuỗi.
 
@@ -216,7 +216,7 @@ Không bao gồm:
 
 1. Không thêm thay đổi mã môi trường triển khai thực tế, schema, API, vòng đời hay chính sách hàng đợi FE08 ngoài trình bày an toàn null theo FR-FE08-035.
 2. Giữ `FE08-T041` đến `FE08-T046` từ `main` và dùng `FE08-T047` cho xác minh chỉ hồi quy của đợt này.
-3. Thêm kiểm thử hợp đồng frontend thất bại cho vị trí hàng đợi Thành viên/nhân sự null, sau đó thực hiện sửa trình bày nhỏ nhất.
+3. Thêm kiểm thử hợp đồng giao diện ở trạng thái thất bại khi vị trí hàng đợi của Thành viên/nhân viên thư viện là null, sau đó thực hiện chỉnh sửa hiển thị tối thiểu.
 4. Chạy lại kiểm thử tập trung cho thành phần gửi yêu cầu đặt chỗ, chứng minh
    FE08 tạo yêu cầu FE10 `RESERVATION_AVAILABLE -> RESERVATION_READY` đúng quy định.
 5. Chạy lại `SIT-003` chứng minh giữ hàng đợi cộng tạo thông báo và `SIT-004` chứng minh ưu tiên FE08 vẫn chặn gia hạn FE07 mà không thay đổi.

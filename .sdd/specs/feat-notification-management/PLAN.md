@@ -10,13 +10,13 @@ Phê duyệt: G1-G7 được phê duyệt 2026-07-13; G8-G10/ADR-004 và G11/ADR
 được phê duyệt 2026-07-15; ranh giới FE04 G12 được Nhat phê duyệt
 2026-07-17
 
-Trạng thái quy trình: mốc chuẩn giao hàng Giai đoạn 2/G1-G12 và v0.4.5 đã được
+Trạng thái quy trình: mốc triển khai Giai đoạn 2/G1-G12 và v0.4.5 đã được
 phê duyệt vẫn hoàn tất. Người dùng đã phê duyệt thiết kế hộp thư thông báo cá
 nhân v0.5.0 và SPEC hợp nhất bằng văn bản ngày 2026-07-27, sau đó phê duyệt kế
 hoạch triển khai và phân rã nhiệm vụ FE10-I01..I08 dưới H1 ngày 2026-07-28.
 PR #70 về quản trị đã vào `main` tại `25c09ec`. Sau khi cập nhật nhánh với phần
 thay đổi chỉ gồm tài liệu,
-tài liệu `main@30f936d`, H2 đã phê duyệt mã đối chiếu nội dung
+tài liệu `main@30f936d`, H2 đã phê duyệt mã băm nội dung
 `e123345be05b59a9e519d182b301ab5464160e8fc32aed8d17d3c463e28e0a15`.
 Commit PR #75 `778e0a470d8a1083bf571a8007b3c058eee4bb22` đã đạt CI đúng commit
 `30317424995` và môi trường thử nghiệm Azure `30317621429`, nhận H3 hai trục sạch và phê
@@ -59,7 +59,7 @@ sử triển khai G1-G7. Đây không phải hợp đồng OTP hiện tại; Ph�
 | LÕI | Ranh giới gửi xác thực nhạy cảm | SPEC FE10 hiện tại cấm lưu vào cơ sở dữ liệu nội dung OTP nhạy cảm. Với `ACCOUNT_VERIFICATION` và `PASSWORD_RESET`, kiểm tra hợp lệ `templateData` thô, tạo nội dung từ mẫu rồi gửi đồng bộ qua bộ điều hợp nhà cung cấp đã cấu hình trong FE10, chỉ lưu vào cơ sở dữ liệu bản tóm tắt thông báo/`safePayload` đã che dữ liệu, trạng thái và lần gửi. Mẫu chuẩn yêu cầu `{{otp}}` và `{{expiresInMinutes}}`. Không bao giờ lưu vào cơ sở dữ liệu, ghi log, ghi kiểm toán hoặc trả về OTP thô hay tiêu đề/nội dung nhạy cảm đã tạo từ mẫu. Khi nhà cung cấp thất bại, chỉ ghi bản tóm tắt thất bại an toàn. FE02 vẫn là chủ sở hữu duy nhất của việc tạo và xác thực OTP. |
 | LÕI | Gửi thông báo không nhạy cảm đã xếp hàng | Các thông báo đặt chỗ, hạn trả, quá hạn, tiền phạt và thông báo chung vẫn được xếp hàng. Khi tạo yêu cầu, FE10 tạo tiêu đề/nội dung từ mẫu rồi lưu vào cơ sở dữ liệu. `process-pending` chỉ chọn các bản ghi `PENDING` không nhạy cảm để gửi. Hệ thống duyệt đệ quy đối tượng và mảng `templateData`, chuyển khóa về chữ thường và bỏ dấu gạch dưới, gạch nối, khoảng trắng. Yêu cầu bị từ chối nếu khóa sau khi chuẩn hóa chứa `token`, `otp`, `password`, `verificationlink` hoặc `resetlink`. Quy tắc này phát hiện cả `OTP`, `reset_token`, `verification-link` và dữ liệu lồng nhau trước khi bí mật có thể đi vào `Body` đã lưu. `safePayload` cũng được che dữ liệu theo cùng quy tắc. |
 | LÕI | Hợp đồng loại/mẫu | Mã phía máy chủ, không phải cờ do người gọi cung cấp, thực thi các cặp: `ACCOUNT_VERIFICATION -> ACCOUNT_VERIFICATION`; `PASSWORD_RESET -> PASSWORD_RESET`; `RESERVATION_AVAILABLE -> RESERVATION_READY`; `DUE_DATE_REMINDER -> DUE_DATE_REMINDER`; `OVERDUE_NOTICE -> OVERDUE_NOTICE`; `FINE_NOTICE -> FINE_NOTICE`; `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`. Từ chối mọi trường hợp không khớp. `DUE_OR_FINE_NOTICE` không phải chuẩn nếu chưa được phê duyệt riêng. |
-| LÕI | Hợp đồng phản hồi API công khai | Thao tác tạo/xử lý hiện làm lộ bản ghi đầy đủ, bao gồm nội dung và dữ liệu an toàn. Lỗi xác thực/mẫu vẫn trả phản hồi 4xx an toàn thông thường. Thành công từ nhà cung cấp nhạy cảm lưu thông báo/lần thử `SENT` và trả về `201 { notificationId, status: "SENT" }`; thất bại của nhà cung cấp nhạy cảm lưu thông báo/lần thử `FAILED` với lý do an toàn và vẫn trả về `201 { notificationId, status: "FAILED" }` vì yêu cầu đã được chấp nhận và luồng nguồn không được hoàn tác. Việc tạo không nhạy cảm trả về cùng DTO tối thiểu với trạng thái đã lưu. Mọi phát lại lũy đẳng trả `200 { notificationId, status }` cho trạng thái hiện có; xử lý trả `200 { processed, failed }`. Không trả về đối tượng hoặc mảng đầy đủ. |
+| LÕI | Hợp đồng phản hồi API công khai | Thao tác tạo/xử lý hiện làm lộ bản ghi đầy đủ, bao gồm nội dung và dữ liệu an toàn. Lỗi xác thực/mẫu vẫn trả phản hồi 4xx an toàn thông thường. Thành công từ nhà cung cấp nhạy cảm lưu thông báo/lần thử `SENT` và trả về `201 { notificationId, status: "SENT" }`; thất bại của nhà cung cấp nhạy cảm lưu thông báo/lần thử `FAILED` với lý do an toàn và vẫn trả về `201 { notificationId, status: "FAILED" }` vì yêu cầu đã được chấp nhận và luồng nguồn không được hoàn tác. Việc tạo không nhạy cảm trả về cùng DTO tối thiểu với trạng thái đã lưu. Mọi yêu cầu trùng theo khóa chống gửi trùng trả `200 { notificationId, status }` cho trạng thái hiện có; xử lý trả `200 { processed, failed }`. Không trả về đối tượng hoặc mảng đầy đủ. |
 | LÕI | Ranh giới tác nhân và nguồn nội bộ | `createSourceNotificationRequester(sourceFeature)` ràng buộc một nguồn trong `FE02`, `FE07`, `FE08`, `FE09`, `FE11` hoặc `SYSTEM`; nguồn được ràng buộc khi khởi tạo thay vì tin đầu vào. Quyền sở hữu nguồn/loại được thực thi trước khi tạo nội dung từ mẫu hoặc lưu vào cơ sở dữ liệu. Các tuyến API HTTP vẫn là `LIBRARIAN`/`ADMIN` cho loại không nhạy cảm. |
 | LÕI | Mô hình trạng thái thử lại và lũy đẳng | Q-FE10-005 hứa hẹn thử lại thủ công nhưng không có chuyển đổi, và chỉ mục cơ sở dữ liệu áp dụng mọi trạng thái trong khi tra cứu chỉ trạng thái hoạt động. Chính sách được khuyến nghị: một bản ghi cho mỗi khóa chống gửi trùng xuyên suốt mọi trạng thái; tra cứu bao phủ mọi trạng thái; giữ chỉ mục duy nhất mọi trạng thái hiện tại; thử lại dùng lại cùng bản ghi/khóa/lịch sử đã xếp hàng không nhạy cảm. |
 | LÕI | Loại tham chiếu nguồn và khóa mẫu | Hợp đồng dữ liệu ghi số nguyên/chuỗi nhưng mọi PK nguồn và tầng thực thi FE10 là `INT`; FE02 trực tiếp dùng `EMAIL_VERIFY` trong khi khóa SQL/đặc tả chuẩn bao gồm `ACCOUNT_VERIFICATION` và `PASSWORD_RESET`. Quyết định Giai đoạn 1 được khuyến nghị là chỉ số nguyên, kèm sửa SPEC FE10. Xác định `ACCOUNT_VERIFICATION` và `PASSWORD_RESET` là khóa chuẩn; không bổ sung bí danh `EMAIL_VERIFY` không được lập tài liệu. |
@@ -72,7 +72,7 @@ sử triển khai G1-G7. Đây không phải hợp đồng OTP hiện tại; Ph�
 | Cổng | Chênh lệch đã chứng minh | Khuyến nghị ràng buộc để phê duyệt | Phương án thay thế và hệ quả |
 | --- | --- | --- | --- |
 | G1: kiến trúc gửi nhạy cảm | Việc làm sạch chạy trước khi tạo nội dung từ mẫu; danh sách kiểm tra rà soát FE10 cấm lưu nội dung OTP nhạy cảm; xử lý bình thường cần nội dung xếp hàng đã lưu vào cơ sở dữ liệu. | Tách theo cặp loại/mẫu do máy chủ thực thi. Dữ liệu kiểm thử SQL/kiểm thử yêu cầu `ACCOUNT_VERIFICATION` và `PASSWORD_RESET` chứa `{{otp}}` và `{{expiresInMinutes}}`; tạo nội dung từ mẫu rồi gửi đồng bộ và chỉ lưu bản tóm tắt/`safePayload` đã che dữ liệu, trạng thái gửi và lần thử. Không lưu tiêu đề/nội dung nhạy cảm đã tạo từ mẫu hoặc giá trị OTP thô. Chỉ xếp hàng các cặp loại/mẫu đã quy định không nhạy cảm; duyệt đệ quy đối tượng/mảng, chuẩn hóa khóa bằng chữ thường và loại `_`, `-`, khoảng trắng, rồi từ chối nếu khóa chuẩn hóa chứa `token`, `otp`, `password`, `verificationlink` hoặc `resetlink`. Dùng cùng quy tắc đệ quy chuẩn hóa để che `safePayload`. | Nội dung nhạy cảm đã xếp hàng dạng văn bản thuần cần sửa SPEC, chuẩn kiểm soát truy cập cơ sở dữ liệu rõ ràng và chủ sở hữu được chỉ định. Dữ liệu gửi mã hóa sống ngắn bị từ chối vì quá kỹ thuật cho Giai đoạn 1. |
-| G2: phản hồi tối thiểu | Bộ điều khiển trả kết quả tầng dịch vụ chứa thông báo/mảng đầy đủ. | Giữ lỗi xác thực/mẫu là phản hồi 4xx an toàn thông thường. Thành công nhà cung cấp nhạy cảm lưu `SENT` cùng lần thử và trả `201 { notificationId, status: "SENT" }`; thất bại nhà cung cấp nhạy cảm lưu `FAILED` cùng lý do lần thử an toàn và trả `201 { notificationId, status: "FAILED" }`. Việc tạo không nhạy cảm trả trạng thái tối thiểu đã lưu. Phát lại lũy đẳng trả `200 { notificationId, status }` cho bất kỳ trạng thái hiện có nào; xử lý trả `200 { processed, failed }`; không bao giờ trả đối tượng/mảng đầy đủ. | Giữ đối tượng đầy đủ mâu thuẫn SPEC hiện tại và để lộ nội dung. |
+| G2: phản hồi tối thiểu | Bộ điều khiển trả kết quả tầng dịch vụ chứa thông báo/mảng đầy đủ. | Giữ lỗi xác thực/mẫu là phản hồi 4xx an toàn thông thường. Thành công nhà cung cấp nhạy cảm lưu `SENT` cùng lần thử và trả `201 { notificationId, status: "SENT" }`; thất bại nhà cung cấp nhạy cảm lưu `FAILED` cùng lý do lần thử an toàn và trả `201 { notificationId, status: "FAILED" }`. Việc tạo không nhạy cảm trả trạng thái tối thiểu đã lưu. Yêu cầu trùng theo khóa chống gửi trùng trả `200 { notificationId, status }` cho bất kỳ trạng thái hiện có nào; xử lý trả `200 { processed, failed }`; không bao giờ trả đối tượng/mảng đầy đủ. | Giữ đối tượng đầy đủ mâu thuẫn SPEC hiện tại và để lộ nội dung. |
 | G3: thành phần gửi yêu cầu nội bộ | Tuyến API/tầng dịch vụ yêu cầu `LIBRARIAN`/`ADMIN`; tính năng nguồn cần ranh giới trong tiến trình đáng tin cậy. | Dùng `createSourceNotificationRequester(sourceFeature)` với danh sách cho phép `FE02`/`FE07`/`FE08`/`FE09`/`FE11`/`SYSTEM`, siêu dữ liệu ràng buộc khi khởi tạo, quyền sở hữu nguồn/loại, kiểm toán nguồn `userId: null`, lỗi an toàn và catch không chặn ở phía người gọi. | HTTP nội bộ đã xác thực sẽ cần thông tin xác thực dịch vụ và nhiều công việc ranh giới hơn. Không tạo vai trò đăng nhập `SYSTEM`. |
 | G4: ID thực thể nguồn | SPEC cho phép số nguyên/chuỗi; validator/tầng truy cập dữ liệu/mô hình/SQL là `INT`, còn khóa chính nguồn hiện tại là số nguyên. | Giai đoạn 1 chỉ dùng số nguyên; sửa yêu cầu dữ liệu SPEC FE10 từ số nguyên/chuỗi thành số nguyên. | Hỗ trợ chuỗi yêu cầu bản cập nhật cơ sở dữ liệu cấu trúc cơ sở dữ liệu phối hợp và cập nhật validator/mô hình/tầng truy cập dữ liệu. Không âm thầm mở rộng/thu hẹp hợp đồng. |
 | G5: thử lại thủ công | Không có hành vi tuyến API/tầng dịch vụ/tầng truy cập dữ liệu thử lại; `FAILED` không bao giờ được chọn lại bởi xử lý đang chờ. | Thêm `POST /api/notifications/{id}/retry` được bảo vệ cho `LIBRARIAN`/`ADMIN`. Chỉ cho phép một thông báo đã xếp hàng không nhạy cảm `FAILED` chuyển sang `PENDING`, giữ nguyên bản ghi, khóa chống gửi trùng và lịch sử lần thử; trả `200 { notificationId, status }` và `409` trong trường hợp khác. Thử lại `ACCOUNT_VERIFICATION` hoặc `PASSWORD_RESET` trả thân lỗi `409` an toàn chuẩn với mã `REISSUE_REQUIRED` và thông điệp chung hướng dẫn tạo sự kiện nguồn mới; không gồm bí mật hay chi tiết nhà cung cấp. | Quy trình vận hành không có endpoint chỉ có thể thực hiện nếu tác nhân, cơ chế, chuyển đổi, kiểm toán và hợp đồng phản hồi của nó được thêm vào SPEC. Không thể thực thi thử lại cho đến khi một phương án được phê duyệt. |
@@ -163,7 +163,7 @@ biệt sau khi phụ thuộc thành phần gửi yêu cầu chung hoàn tất.
   đệ quy chuẩn hóa tương ứng, ranh giới lưu vào cơ sở dữ liệu đã che dữ liệu, factory trình
   yêu cầu nguồn, lũy đẳng mọi trạng thái, chuyển đổi thử lại và hành vi kiểm
   toán an toàn.
-- `backend/src/controllers/notificationController.js` - DTO tạo/phát lại/xử
+- `backend/src/controllers/notificationController.js` - DTO tạo/yêu cầu trùng/xử
   lý/thử lại tối thiểu chính xác.
 - `backend/src/routes/notificationRoutes.js` - tuyến API thử lại được bảo vệ trong
   khi giữ các tuyến API yêu cầu/xử lý được bảo vệ.
@@ -190,13 +190,13 @@ biệt sau khi phụ thuộc thành phần gửi yêu cầu chung hoàn tất.
   và che `safePayload`; kiểm thử xác nhận nội dung nhạy cảm chỉ được tạo khi gọi
   nhà cung cấp cho cả hai liên kết
   không rò rỉ qua lưu vào cơ sở dữ liệu/API/kiểm toán/log, phản hồi tối thiểu thành công/thất
-  bại nhạy cảm đồng bộ, xếp hàng không nhạy cảm, hành vi phát lại mọi trạng
+  bại nhạy cảm đồng bộ, xếp hàng không nhạy cảm, hành vi trả kết quả cho yêu cầu trùng ở mọi trạng
   thái, xung đột thử lại/trạng thái và kiểm thử lũy đẳng.
 - `backend/tests/integration.test.js` - cập nhật khẳng định kiểm thử phản hồi thông báo
   đầy đủ hiện có thành kỳ vọng DTO tối thiểu G2, bất kể bản cập nhật cơ sở dữ liệu FE07/FE08 có
   diễn ra hay không.
 - `backend/src/docs/openapi.yaml` - xác thực yêu cầu đã phê duyệt, phản hồi
-  `SENT`/`FAILED` 201 nhạy cảm đồng bộ, phản hồi xử lý không nhạy cảm, phát lại
+  `SENT`/`FAILED` 201 nhạy cảm đồng bộ, phản hồi xử lý không nhạy cảm, yêu cầu trùng
   và hợp đồng lỗi thử lại.
 
 ### Các tích hợp đã phê duyệt và phụ thuộc bị hoãn
@@ -222,10 +222,10 @@ Không dự kiến tệp frontend, thông tin xác thực nhà cung cấp, mã S
 phụ thuộc mới, giao diện thử lại, siêu dữ liệu hết hạn, cơ chế bản cập nhật cơ sở dữ liệu
 cơ sở dữ liệu hoặc tái cấu trúc không liên quan.
 
-## 6. Các phạm vi triển khai triển khai B5 theo thứ tự
+## 6. Các phần triển khai B5 theo thứ tự
 
 `TASKS.md` sở hữu phân rã B4 nguyên tử. Chuỗi bên dưới là thứ tự thực thi B5:
-mỗi phạm vi triển khai triển khai bắt đầu bằng bằng chứng thất bại tập trung, nhận thay đổi
+mỗi phần triển khai bắt đầu bằng một kiểm thử tập trung chứng minh lỗi, sau đó nhận thay đổi
 được phê duyệt nhỏ nhất, chạy lại kiểm thử tập trung, rồi chạy bộ bị ảnh hưởng.
 
 1. **Đặc tả hóa hợp đồng đã phê duyệt.** Sau G1-G7 và các sửa SPEC bắt buộc,
@@ -235,9 +235,9 @@ mỗi phạm vi triển khai triển khai bắt đầu bằng bằng chứng th�
    tương ứng; xác nhận nội dung mẫu OTP chỉ được tạo khi gọi nhà cung cấp và
    không đi vào cơ sở dữ liệu, API,
    kiểm toán/log; thành công/thất bại nhạy cảm đồng bộ; xếp hàng/xử lý lọc không
-   nhạy cảm; DTO tạo/phát lại/xử lý tối thiểu; ID nguồn số nguyên; lũy đẳng mọi
+   nhạy cảm; DTO tạo/yêu cầu trùng/xử lý tối thiểu; ID nguồn số nguyên; khả năng xử lý lặp ở mọi
    trạng thái; và kết quả thử lại nhạy cảm/không nhạy cảm.
-2. **Tách gửi và chứa phản hồi.** Triển khai phân loại loại phía máy chủ và ánh
+2. **Tách gửi và chứa phản hồi.** Triển khai phân loại phía máy chủ và ánh
    xạ chuẩn. Yêu cầu xác thực nhạy cảm điền `{{otp}}` và
    `{{expiresInMinutes}}` trong bộ nhớ, gọi bộ điều hợp nhà cung cấp đã cấu hình
    đồng bộ: thành công lưu `SENT`/lần thử và thất bại lưu `FAILED`/lần thử an
@@ -246,7 +246,7 @@ mỗi phạm vi triển khai triển khai bắt đầu bằng bằng chứng th�
    tương ứng, rồi tạo nội dung từ mẫu và đưa vào hàng đợi; `process-pending` chỉ chọn chúng. Xác
    minh OTP thô và nội dung nhạy cảm đã tạo từ mẫu không bao giờ tới lưu vào cơ sở dữ liệu, API,
    kiểm toán hoặc log.
-3. **Căn chỉnh cấu trúc cơ sở dữ liệu/mẫu/lũy đẳng.** Áp dụng căn chỉnh dữ liệu mẫu mẫu chuẩn, sửa hợp
+3. **Căn chỉnh cấu trúc cơ sở dữ liệu/mẫu/lũy đẳng.** Áp dụng căn chỉnh dữ liệu mẫu chuẩn, sửa hợp
    đồng chỉ số nguyên, hành vi trùng lặp mọi trạng thái và lọc đang chờ không
    nhạy cảm trên SQL, tầng truy cập dữ liệu, mô hình và hàm hỗ trợ trong bộ nhớ. Không thêm
    `EMAIL_VERIFY` hoặc coi `DUE_OR_FINE_NOTICE` là chuẩn khi chưa phê duyệt.
@@ -322,7 +322,7 @@ mỗi phạm vi triển khai triển khai bắt đầu bằng bằng chứng th�
   sau khi kiểm tra khóa đối tượng/mảng đệ quy chuẩn hóa cùng che `safePayload`
   tương ứng.
 - [x] G2 chấp nhận lỗi xác thực/mẫu 4xx an toàn, bản tóm tắt gửi nhạy cảm
-  `201 SENT` và `201 FAILED`, bản tóm tắt phát lại `200` mọi trạng thái và
+  `201 SENT` và `201 FAILED`, bản tóm tắt `200` cho yêu cầu trùng ở mọi trạng thái và
   không đối tượng hoặc mảng.
 - [x] G3 chấp nhận factory nguồn ràng buộc, danh sách cho phép cố định, siêu dữ
   liệu kiểm toán người dùng null, cùng bảo vệ hàng đợi đệ quy chuẩn hóa/ánh xạ
@@ -340,7 +340,7 @@ mỗi phạm vi triển khai triển khai bắt đầu bằng bằng chứng th�
   được lập kế hoạch trong phạm vi triển khai này.
 - [x] Các mục `TASKS.md` lịch sử đã hoàn tất được giữ nguyên, với phần củng cố
   đang chờ mới chỉ sau phê duyệt B3.
-- [x] Phạm vi không frontend, chỉ nhà cung cấp mô phỏng, củng cố nhỏ nhất nhất
+- [x] Phạm vi không frontend, chỉ nhà cung cấp mô phỏng, củng cố tối thiểu
   quán là chấp nhận được.
 
 ## B4 hoàn tất; B5 đã triển khai; B6 và B7 hoàn tất
@@ -484,7 +484,7 @@ Kế hoạch thực thi chi tiết là
    làm yếu phát hiện khóa bí mật đệ quy, che dữ liệu, quyền sở hữu, lũy đẳng,
    DTO tối thiểu hoặc quy tắc `PROCESSING` bền vững.
 4. Chạy các hồi quy định nghĩa không an toàn cùng hồi quy làm sạch dữ liệu mẫu
-   khi chạy hiện có và toàn bộ bộ tuyến API FE10.
+   khi chạy hiện có và toàn bộ tuyến API FE10.
 5. Giữ thay đổi triển khai chưa commit cho đến khi bằng chứng L1-L4 liên tính
    năng đạt và Nhat cấp H2.
 
@@ -538,8 +538,8 @@ Chuỗi triển khai là chỉ bổ sung và ưu tiên backend:
 
 | Phạm vi triển khai | Kết quả | Chấp nhận chính |
 | --- | --- | --- |
-| FE10-I01 | Bản cập nhật cơ sở dữ liệu `ReadAt`, điền lùi, chỉ mục, cấu trúc cơ sở dữ liệu/mô hình chuẩn | AC-FE10-011 đến AC-FE10-014 |
-| FE10-I02 | Thao tác liệt kê/đếm/đọc do SQL sở hữu và phép chiếu thao tác an toàn | AC-FE10-011 đến AC-FE10-015 |
+| FE10-I01 | Bản cập nhật cơ sở dữ liệu `ReadAt`, cập nhật dữ liệu lịch sử, chỉ mục, cấu trúc cơ sở dữ liệu/mô hình chuẩn | AC-FE10-011 đến AC-FE10-014 |
+| FE10-I02 | Thao tác liệt kê/đếm/đọc do SQL xử lý và dữ liệu hiển thị an toàn | AC-FE10-011 đến AC-FE10-015 |
 | FE10-I03 | API đã xác thực, kiểm tra hợp lệ, `404` an toàn trước IDOR, OpenAPI | AC-FE10-011 đến AC-FE10-015 |
 | FE10-I04 | Phía máy khách API frontend và context hộp thư dùng chung | AC-FE10-012, AC-FE10-013, AC-FE10-016 |
 | FE10-I05 | Chuông khung ứng dụng, huy hiệu `99+`, phần xem trước năm mục chưa đọc, điều hướng an toàn | AC-FE10-015, AC-FE10-016 |
@@ -559,7 +559,7 @@ Chuỗi triển khai là chỉ bổ sung và ưu tiên backend:
 - H2 rà soát bản thay đổi cục bộ đầy đủ. H3 kiểm tra lại đặc tả, quyền sở hữu, loại
   trừ dữ liệu nhạy cảm, an toàn bản cập nhật cơ sở dữ liệu và bằng chứng môi trường thử nghiệm trước hợp nhất.
 
-### 15.4 Bản thay đổi cuối và trạng thái giao hàng
+### 15.4 Bản thay đổi cuối và trạng thái triển khai
 
 - Commit PR #75 `778e0a470d8a1083bf571a8007b3c058eee4bb22` chứa gói FE10-I01..I08
   được H2 phê duyệt cuối và biện pháp khắc phục H3 có giới hạn sau cập nhật nhánh chỉ
@@ -571,7 +571,7 @@ Chuỗi triển khai là chỉ bổ sung và ưu tiên backend:
   hợp nhất chính xác `30341279111` và môi trường thử nghiệm Azure tự động `30341540847` đã đạt,
   bao gồm kiểm tra trước bản cập nhật cơ sở dữ liệu, backend, frontend và kiểm tra nhanh.
 - Bằng chứng API/trình duyệt ba vai trò lịch sử, bằng chứng Azure SQL
-  `ReadAt`/chỉ mục, loại trừ nhạy cảm, phát lại đọc, HTTPS/CORS và dọn dẹp
+  `ReadAt`/chỉ mục, loại trừ dữ liệu nhạy cảm, gọi lại thao tác đọc, HTTPS/CORS và dọn dẹp
   probe/firewall tạm thời vẫn là bằng chứng hợp lệ cho hợp đồng không đổi.
 
 ### 15.5 Phụ lục triển khai H1
@@ -595,19 +595,19 @@ Sau đó người dùng phê duyệt phụ lục chênh lệch phần nghiệp v
 `add_change_password_otp_token_type.sql` đóng gói ở phần triển khai trước, tài liệu/kiểm
 thử mức sẵn sàng của nó và dữ liệu mẫu xác minh tài khoản tiếng Việt, đồng thời giữ
 kiểm tra trước FE10 và triển khai có thứ tự. Các cổng đầy đủ sau chênh lệch và
-mã đối chiếu nội dung/H2 mới là bắt buộc trước khi công bố.
+mã băm nội dung/H2 mới là bắt buộc trước khi công bố.
 
 Sau cập nhật nhánh đó, phần triển khai trước lại tiến thêm ba commit qua `main@db97f17`. Người dùng
 phê duyệt phụ lục chênh lệch phần nghiệp vụ cốt lõi H1 thứ hai ngày 2026-07-28. Đối soát giữ lý do
 hủy đặt chỗ mặc định tiếng Việt ở phần triển khai trước và kiểu tab trả/đặt chỗ đáp ứng, cùng
 mọi chỉnh sửa vòng hai FE07/FE08/FE10/FE12 khác ở phần triển khai trước, trong khi giữ phía máy khách
 hộp thư FE10 và kiểu thông báo theo phạm vi. Các cổng đầy đủ sau chênh lệch và
-mã đối chiếu nội dung/H2 mới vẫn bắt buộc trước công bố.
+mã băm nội dung/H2 mới vẫn bắt buộc trước công bố.
 
 Nhánh chính sau đó tiến qua `main@12faead` bằng cách chỉ xóa tệp đã ngừng dùng dưới
 `document/`. Người dùng đã phê duyệt phụ lục chênh lệch H1 thứ ba ngày
 2026-07-28. Không có chồng lấp đường dẫn hoặc hợp đồng LÕI với biện pháp khắc
-phục H3 FE10, và cập nhật nhánh hoàn tất không xung đột. Các cổng đầy đủ và mã đối chiếu nội dung
+phục H3 FE10, và cập nhật nhánh hoàn tất không xung đột. Các cổng đầy đủ và mã băm nội dung
 H2 mới vẫn bắt buộc; sau công bố, commit chính xác phải thay `main` hiện tại ở
 môi trường thử nghiệm Azure và được xác minh tại đó trước H3 lặp lại.
 
@@ -622,7 +622,7 @@ phê duyệt phụ lục chênh
 lệch H1 thứ tư ngày 2026-07-28. Đối soát giữ việc phần triển khai trước loại bỏ giao diện API/
 UI/kiểm thử chỉnh sửa người dùng Quản trị FE11 trong khi giữ FE10. CI main
 `30311801599` và triển khai Azure `30311973740` đã đạt; nhánh được cập nhật mà
-không xung đột, và các cổng đầy đủ cùng mã đối chiếu nội dung/H2 mới là bắt buộc.
+không xung đột, và các cổng đầy đủ cùng mã băm nội dung/H2 mới là bắt buộc.
 
 Xác thực mới trên mốc chuẩn chính xác đó đạt backend 69/69 bộ và 1084/1084 kiểm
 thử, frontend 259/259 cùng kiểm tra mã/bản dựng, triển khai 20/20, hệ thống 10/10, trạng
@@ -630,7 +630,7 @@ thái truy vết 3/3, truy vết FE10 14/16 (88%), Chromium 11/11, kiểm
 toán, chuẩn bị cấu trúc cơ sở dữ liệu Azure và vệ sinh phần thay đổi. Mốc kiểm tra lịch sử đó được thay thế
 bởi chuỗi cuối đã hoàn tất trong Phần 15.4.
 
-## 16. Kế hoạch mẫu kết quả FE07 v0.6.0
+## 16. Kế hoạch mẫu thông báo kết quả FE07 v0.6.0
 
 1. `SL-001`: hợp nhất quy trình phê duyệt kích hoạt.
 2. `SL-002` - kiểm thử trước khi sửa: kiểm tra cặp loại/mẫu/nguồn đã quy định,

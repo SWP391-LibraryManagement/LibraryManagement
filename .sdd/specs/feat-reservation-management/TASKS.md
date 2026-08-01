@@ -97,7 +97,7 @@ Azure staging `30675744992` đều đạt trên đúng commit.
   - Ánh xạ tới: AC-FE08-001 đến AC-FE08-013; NFR-FE08-UX-001/002.
   - Tệp: `frontend/src/page/reservation/*`, `frontend/src/api/libraryFeatureApi.js`, `frontend/test/reservationFrontend.test.js`.
   - Phụ thuộc: FE08-T028 đến FE08-T031.
-  - RED: thêm assertion tập trung cho nhãn `ACTIVE`/`NOTIFIED`/`FULFILLED`, hiển thị hàng đợi, phân trang, cô lập lỗi và làm mới sau hết hạn/hủy/xử lý.
+  - RED: thêm kiểm tra tập trung cho nhãn `ACTIVE`/`NOTIFIED`/`FULFILLED`, hiển thị hàng đợi, phân trang, cô lập lỗi và làm mới sau hết hạn/hủy/xử lý.
   - GREEN: frontend chỉ hiển thị trạng thái máy chủ chuẩn và không bao giờ cung cấp điều khiển hoàn tất/xóa cục bộ hoặc thử lại tự động.
   - Tiêu chí hoàn thành: tệp kiểm thử frontend tập trung tồn tại và lệnh của nó được ghi trong `TEST_PLAN.md`.
 
@@ -112,33 +112,33 @@ Azure staging `30675744992` đều đạt trên đúng commit.
   - Tiêu chí hoàn thành: SPEC, PLAN, TASKS, TEST_PLAN và CHANGELOG thống nhất rằng dấu thời gian thông báo là lịch sử bất biến và `CancelledAt` chỉ dành cho hủy; các tệp triển khai không đổi.
   - Trạng thái rà soát: tài liệu hoàn tất và Nhat xác nhận rà soát con người vào 2026-07-17.
 
-- [x] **FE08-T035 - Phê duyệt và truy vết hợp đồng ứng viên an toàn cho thành viên.**
+- [x] **FE08-T035 - Phê duyệt và truy vết hợp đồng danh sách bản sao có thể đặt chỗ an toàn cho Thành viên.**
   - Ánh xạ tới: FR-FE08-029, AC-FE08-015/016, NFR-FE08-SEC-004, NFR-FE08-PERF-003, Q-FE08-011.
-  - Tệp: `SPEC.md`, `PLAN.md`, `TASKS.md`, `CHANGELOG.md` FE08; thiết kế ứng viên và kế hoạch triển khai.
+  - Tệp: `SPEC.md`, `PLAN.md`, `TASKS.md`, `CHANGELOG.md` FE08; thiết kế danh sách bản sao có thể đặt chỗ và kế hoạch triển khai.
   - Tiêu chí hoàn thành: Phương án A và thiết kế viết được phê duyệt rõ ràng bởi con người; truy vấn, dữ liệu hiển thị, vai trò, thứ tự và mục tiêu không thực hiện là rõ ràng.
 
-- [x] **FE08-T036 - Triển khai và xác thực API ứng viên backend.**
+- [x] **FE08-T036 - Triển khai và kiểm tra API backend liệt kê bản sao có thể đặt chỗ.**
   - Ánh xạ tới: FR-FE08-029, AC-FE08-015, NFR-FE08-SEC-004, NFR-FE08-PERF-003.
   - Tệp: validator/tuyến API/bộ điều khiển/tầng dịch vụ/tầng truy cập dữ liệu FE08, OpenAPI, helper trong bộ nhớ, kiểm thử tuyến API và `backend/tests/sql/reservationCandidates.sqltest.js`.
   - RED: các ca vai trò, query, khóa an toàn, trạng thái, tìm kiếm, thứ tự, phân trang, số đếm đang hoạt động và không thay đổi thất bại trước khi tuyến API tồn tại.
   - GREEN: dữ liệu hiển thị `{ data, pagination }` chỉ thành viên đạt bộ Jest tập trung và SQL Server dùng một lần.
-  - Xác thực: hợp đồng backend ứng viên `23/23`; SQL tập trung `2/2`; SQL tổng hợp `9/9` bộ và `69/69` kiểm thử.
+  - Kết quả kiểm tra: hợp đồng backend liệt kê bản sao `23/23`; SQL tập trung `2/2`; SQL tổng hợp `9/9` bộ và `69/69` kiểm thử.
 
-- [x] **FE08-T037 - Thay `DEMO_RESERVABLE` bằng ứng viên máy chủ chuẩn.**
+- [x] **FE08-T037 - Thay `DEMO_RESERVABLE` bằng danh sách bản sao chuẩn từ máy chủ.**
   - Ánh xạ tới: FR-FE08-029, AC-FE08-015/016, NFR-FE08-PERF-003.
   - Tệp: `frontend/src/api/libraryFeatureApi.js`, `frontend/src/page/reservation/MyReservationsPage.jsx`, `frontend/src/utils/libraryFeatureViewModels.js`, `frontend/test/reservationFrontend.test.js`.
   - RED: kiểm thử nguồn thất bại khi trang import danh mục demo hoặc thiếu `reservationApi.listCandidates`.
   - GREEN: trạng thái tìm kiếm/trang máy chủ, tải/rỗng/lỗi, thay đổi `copyId` thực và làm mới sau thay đổi đạt mà không tạo ETA hay số đếm khả dụng.
   - Xác thực: frontend đầy đủ hiện tại `149/149`, lint PASS, build PASS và không còn tham chiếu `DEMO_RESERVABLE`.
 
-- [x] **FE08-T038 - Thêm chấp nhận trình duyệt cô lập cho chọn ứng viên.**
+- [x] **FE08-T038 - Thêm kiểm thử chấp nhận trình duyệt độc lập cho thao tác chọn bản sao.**
   - Ánh xạ tới: FR-FE08-029, AC-FE08-015/016.
   - Tệp: `tests/e2e/fe08-reservation-candidate-catalog.spec.js` và hỗ trợ E2E xác định chỉ khi cần.
   - Tiêu chí hoàn thành: danh mục thành viên, truy vấn tìm kiếm, dữ liệu an toàn, tạo đặt chỗ thực, làm mới chuẩn và tràn di động đạt trên cổng cô lập.
   - Xác thực: trình duyệt FE08 tập trung `1/1`; Playwright đầy đủ `4/4` trên `4185/3101`.
 
-- [x] **FE08-T039 - Đóng TD-028 bằng bằng chứng xác thực đầy đủ.**
-  - Ánh xạ tới: mọi ID ứng viên v0.4.4.
+- [x] **FE08-T039 - Đóng TD-028 dựa trên đầy đủ bằng chứng kiểm tra.**
+  - Ánh xạ tới: mọi ID yêu cầu liên quan đến danh sách bản sao v0.4.4.
   - Tệp: `TECH_DEBT.md`, rà soát xác thực tập trung, gói chấp nhận đầy đủ và bằng chứng PR.
   - Tiêu chí hoàn thành: cổng backend/frontend/bao phủ/tích hợp/SQL/E2E/truy vết/an toàn tập trung và đầy đủ đạt; TD-028 chuyển sang RESOLVED; H3 cuối vẫn nêu rõ.
   - Xác thực: bằng chứng được ghi tại `.sdd/reviews/fe08-reservation-candidate-catalog-validation-2026-07-19.md`; H3 và CI `main` sau hợp nhất vẫn là cổng con người.
@@ -158,7 +158,7 @@ Azure staging `30675744992` đều đạt trên đúng commit.
 - [x] `git diff --check` đạt.
 - [x] Nhat xác nhận rà soát con người của hợp đồng chuẩn hóa vào 2026-07-17.
 
-### 5.2 Xác thực ứng viên v0.4.4 đã hoàn thành
+### 5.2 Đã hoàn thành kiểm tra danh sách bản sao v0.4.4
 
 - [x] Kiểm thử tuyến API backend và SQL FE08-T036 đạt: backend tập trung `23/23`; SQL tổng hợp `9/9` bộ, `69/69` kiểm thử.
 - [x] Kiểm thử frontend hiện tại FE08-T037 `149/149`, lint và build đạt, không có tham chiếu `DEMO_RESERVABLE`.
@@ -220,7 +220,7 @@ Azure staging `30675744992` đều đạt trên đúng commit.
 
 - [x] **FE08-T040 - Commit trạng thái vòng đời và kiểm toán cùng nhau.**
   - Ánh xạ tới: BR-FE08-013, FR-FE08-001, FR-FE08-004, FR-FE08-021, NFR-FE08-TXN-001/002, NFR-FE08-LOG-001, NFR-FE08-UX-002.
-  - RED: kiểm thử tầng truy cập dữ liệu yêu cầu kiểm toán-trước-commit cho tạo/hủy/giữ/hết hạn; kiểm thử tầng dịch vụ/tuyến API yêu cầu hoàn tác, cảnh báo an toàn sau commit và tuần tự hóa cảnh báo nâng hết hạn; kiểm thử frontend từ chối xác nhận thành viên cache.
+  - RED: kiểm thử tầng truy cập dữ liệu yêu cầu ghi kiểm toán trước khi ghi nhận giao dịch tạo/hủy/giữ/hết hạn; kiểm thử tầng dịch vụ/API yêu cầu hoàn tác, cảnh báo an toàn sau khi giao dịch đã được ghi nhận và tuần tự hóa cảnh báo cho các lượt được chuyển lên do hết hạn; kiểm thử giao diện từ chối dùng danh tính Thành viên đã lưu đệm để xác nhận.
   - GREEN: ghi kiểm toán vòng đời tham gia giao dịch thay đổi; lỗi thông báo vẫn sau commit; kiểm toán lỗi không sẵn có trả `process-queue.notificationWarning` đơn lẻ hoặc một mục `expire-holds.notificationWarnings[]` an toàn cho mỗi lượt nâng bị ảnh hưởng; xác nhận nhân sự chỉ chứa ngữ cảnh bản sao cùng giải thích chọn lại máy chủ.
   - Xác minh: H2 ban đầu và phụ lục H2 đã đạt; commit `97aca62` và lượt chạy PR CI `30014066260` đã đạt. H2 mới sau đó phê duyệt commit khắc phục `b931e00`, và lượt chạy PR CI `30019439505` đã đạt. Phát hiện H3 vòng hai đã được khắc phục, rà soát lại và tích hợp; hoàn tất cuối được xác nhận qua PR #89, CI và Azure đúng commit.
 
@@ -228,20 +228,20 @@ Azure staging `30675744992` đều đạt trên đúng commit.
 
 - [x] **FE08-T041 - Thực thi truy cập một vai trò cho các luồng đặt chỗ thành viên.**
   - Ánh xạ tới: BR-FE08-018, FR-FE08-030, AC-FE08-017; BR-FE11-028.
-  - Thay bảo vệ thành viên-bất-kỳ-vai-trò tại tuyến API ứng viên/tạo/danh sách riêng/hủy bằng bảo vệ thành viên không phải nhân sự dùng chung.
+  - Thay bộ bảo vệ Thành viên-bất-kỳ-vai-trò tại các API liệt kê bản sao/tạo/danh sách riêng/hủy bằng bộ bảo vệ dùng chung dành cho Thành viên không có vai trò Thủ thư/Quản trị viên.
   - Chuyển hướng mảng vai trò cũ/không hợp lệ chứa cả Member và nhân sự khỏi tuyến API frontend thành viên trong khi giữ thao tác danh sách/hàng đợi nhân sự.
   - Xác minh các ca mảng tương thích phòng thủ `MEMBER + LIBRARIAN` và `MEMBER + ADMIN` mà không coi chúng là tài khoản đã lưu được hỗ trợ.
 
 - [x] **FE08-T042 - Kết nối bàn giao đặt chỗ sách được chọn FE01.**
   - Ánh xạ tới: FR-FE08-031, AC-FE08-018; BR-FE01-015/016, FR-FE01-014/018.
-  - Đọc deep link `bookId` FE01, phân giải tiêu đề công khai của nó và khởi tạo tìm kiếm ứng viên FE08 được bảo vệ.
-  - Giữ chọn `copyId` ứng viên và `POST /api/reservations` chính thức bên trong FE08; không mở rộng dữ liệu công khai FE01.
-  - Xác minh nhãn/tuyến API thao tác FE01 tập trung và khởi tạo ứng viên sách được chọn FE08.
+  - Đọc liên kết trực tiếp `bookId` từ FE01, phân giải tiêu đề công khai và khởi tạo tìm kiếm bản sao có thể đặt chỗ qua API FE08 được bảo vệ.
+  - Tiếp tục chọn bản sao bằng `copyId` và dùng `POST /api/reservations` chính thức trong FE08; không mở rộng dữ liệu công khai của FE01.
+  - Kiểm tra nhãn và API thao tác FE01 tập trung, cùng việc FE08 khởi tạo danh sách bản sao cho sách đã chọn.
 
 - [x] **FE08-T043 - Tách lượt đặt chỗ Thành viên hiện tại khỏi lịch sử.**
   - Ánh xạ tới: FR-FE08-010/032, AC-FE08-010/019, NFR-FE08-UX-001.
   - Giữ bản ghi danh sách riêng chuẩn, nhóm `ACTIVE`/`NOTIFIED` tách khỏi lịch sử kết thúc và hiển thị mọi trạng thái vòng đời thô với badge được hỗ trợ rõ ràng.
-  - Kết nối thao tác ứng viên với lượt đặt chỗ hiện tại khớp để bản sao được giữ nói `Đến lượt bạn` thay vì trông như đã hủy hoặc cũ.
+  - Kết nối thao tác của bản sao với lượt đặt chỗ hiện tại tương ứng để bản sao được giữ hiển thị `Đến lượt bạn` thay vì trông như đã hủy hoặc đã cũ.
   - Giữ thứ tự hàng đợi Thủ thư/Quản trị viên và quyền sở hữu chuyển trạng thái FE07.
 
 - [x] **FE08-T044 - Hiển thị cửa sổ nhận sách và kết nối bản sao được giữ tới FE07.**
@@ -252,7 +252,7 @@ Azure staging `30675744992` đều đạt trên đúng commit.
 
 - [x] **FE08-T045 - Ngăn đặt chỗ khi Thành viên hiện đang mượn cùng sách.**
   - Ánh xạ tới: BR-FE08-019, FR-FE08-034, AC-FE08-021; BR-FE07-032.
-  - Loại ứng viên cùng `BookId`, từ chối tạo trực tiếp bằng `BOOK_ALREADY_BORROWED` và xác thực lại mục hàng đợi cũ trong khi Thủ thư/Quản trị viên xử lý.
+  - Loại mọi bản sao cùng `BookId` khỏi danh sách, từ chối tạo trực tiếp bằng `BOOK_ALREADY_BORROWED` và kiểm tra lại mục hàng đợi cũ khi Thủ thư/Quản trị viên xử lý.
   - Phối hợp phê duyệt mượn FE07 và tạo/giữ FE08 qua khóa lưu hành Thành viên.
   - Xác minh nguồn tầng truy cập dữ liệu, ánh xạ tầng dịch vụ, hành vi tuyến API, hành vi hàng đợi và ánh xạ lỗi tiếng Việt.
   - Nguồn: được phê duyệt phần triển khai trước và triển khai trên `main` tại `e99daf5`; đây không phải khẳng định RED mới từ nhánh căn chỉnh quy tắc.

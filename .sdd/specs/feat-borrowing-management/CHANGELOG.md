@@ -9,7 +9,7 @@
 
 ## 2026-08-01 - Hoàn tất truy vết triển khai 100%
 
-- Gắn các nghĩa vụ thông báo kết quả, bàn giao hàng đợi và hướng dẫn về dữ liệu
+- Gắn các nghĩa vụ thông báo kết quả, chuyển dữ liệu hàng đợi và hướng dẫn về dữ liệu
   lỗi thời hoặc điều kiện chặn
   đã triển khai vào `FR-FE07-040`, `FR-FE07-041`, `FR-FE07-042` và
   `FR-FE07-044` vào đúng thành phần chịu trách nhiệm cho hành vi trong môi trường triển khai thực tế.
@@ -27,7 +27,7 @@
 - Ghi rõ Azure staging chưa thể chấp nhận do Azure SQL đang `Paused` sau khi hết quota;
   không xem đây là bằng chứng triển khai thành công.
 
-## 2026-07-29 - Chặn bàn giao hàng đợi cho lượt trả hỏng/thất lạc (v0.9.1)
+## 2026-07-29 - Chặn chuyển dữ liệu hàng đợi cho lượt trả hỏng/thất lạc (v0.9.1)
 
 - `reservationQueueAction.hasActiveQueue` chỉ còn `true` khi lượt trả là `RETURNED`,
   bản sao đã thành `AVAILABLE` và vẫn có hàng đợi `ACTIVE`.
@@ -64,7 +64,7 @@
 - Thực thi một quy trình `PENDING/REQUESTED` hoặc `BORROWED` đang hoạt động cho mỗi Thành viên và
   `BookId`, gồm kiểm tra tạo đồng thời chính thức giao dịch.
 - Từ chối một yêu cầu chứa nhiều bản sao vật lý của cùng một tiêu đề.
-- Ẩn mọi bản sao của tiêu đề đã hoạt động khỏi ứng viên của Thành viên đó.
+- Ẩn mọi bản sao của đầu sách đang có quy trình mượn khỏi danh sách dành cho Thành viên đó.
 - Ngăn hàng đang chờ trùng lặp cũ trở thành hai khoản mượn cùng tiêu đề đang hoạt động,
   đồng thời giữ đường từ chối của nhân sự.
 - Tách lỗi phê duyệt chủ sở hữu cũ khỏi ủy quyền tự phục vụ Thành viên.
@@ -73,7 +73,7 @@
 
 - Làm `PENDING + REQUESTED` thành yêu cầu độc quyền logic cho một bản sao vật lý
   mà không thêm trạng thái tồn kho hoặc cột schema mới.
-- Ẩn bản sao đã được yêu cầu khỏi ứng viên Thành viên và từ chối các lượt tạo cũ/đồng thời
+- Ẩn bản sao đã được yêu cầu khỏi danh sách bản sao Thành viên có thể chọn và từ chối các lượt tạo cũ/đồng thời
   một cách nguyên tử với `COPY_PENDING_REQUEST_CONFLICT`.
 - Kết nối bảo vệ thay đổi thủ công FE06 và lượt tải lại quyết định chuẩn Quản trị/Thủ thư FE11,
   gồm trạng thái bản sao hiện tại và trợ giúp từ chối rõ ràng hơn.
@@ -90,12 +90,12 @@
   Thủ thư/Quản trị viên giữ quyền sở hữu thu tiền.
 - Bằng chứng tích hợp mới và rà soát H2 vẫn bắt buộc trước commit/push.
 
-## 2026-07-27 - Tích hợp điều kiện hợp lệ đặt trước cùng sách (v0.7.8)
+## 2026-07-27 - Tích hợp điều kiện đặt chỗ cùng sách (v0.7.8)
 
 - Tích hợp tín hiệu khoản mượn hiện tại FE07 phần triển khai trước dùng bởi FE08 trong khi
   giữ bàn giao bản sao được giữ chính xác, hợp đồng một tài khoản/một vai trò,
   bằng chứng trả có khóa giao dịch và gia hạn độc lập múi giờ.
-- Giữ `FE08-T045` phần triển khai trước chính thức cho việc loại trừ đặt trước cùng sách
+- Giữ `FE08-T045` là phần triển khai trước chính thức cho việc loại trừ đặt chỗ cùng sách
   và giữ `FE07-T049` đến `FE07-T052` cho công việc căn chỉnh quy tắc của nhánh này.
 - Bằng chứng tích hợp mới được ghi nhận; phụ lục H2 vẫn bắt buộc trước khi
   hợp nhất đang mở có thể được commit hoặc push.
@@ -115,16 +115,16 @@
 - Công khai hạn trả và trả FE07 qua giao diện phạt Thành viên chỉ đọc để đối soát.
 - Giữ quyền sở hữu thu tiền của Thủ thư/Quản trị viên; Thành viên không thể tự đánh dấu khoản phạt đã thanh toán.
 
-## 2026-07-27 - Công khai khoản mượn hiện tại làm điều kiện hợp lệ đặt trước FE08
+## 2026-07-27 - Công khai khoản mượn hiện tại làm điều kiện đặt chỗ FE08
 
-- Xác định `BorrowDetails.Status = BORROWED` hiện tại cùng `BookId` của bản sao là tín hiệu liên tính năng chính thức cho việc loại trừ đặt trước cùng sách FE08.
-- Giữ chi tiết đã trả/mất/hỏng và lịch sử đặt trước kết thúc ngoài yếu tố chặn này.
-- Kết nối khóa lưu hành Thành viên FE07 với xác thực lại tạo/giữ đặt trước FE08.
+- Xác định `BorrowDetails.Status = BORROWED` hiện tại cùng `BookId` của bản sao là tín hiệu liên tính năng chính thức để FE08 loại trừ đặt chỗ cùng sách.
+- Giữ chi tiết đã trả/mất/hỏng và lịch sử đặt chỗ đã kết thúc ngoài yếu tố chặn này.
+- Kết nối khóa lưu hành Thành viên FE07 với việc FE08 xác thực lại khi tạo/giữ lượt đặt chỗ.
 
 ## 2026-07-27 - Chấp nhận bàn giao chính xác bản sao được giữ FE08
 
-- FE07 hiện đọc cả `bookId` và `copyId` từ thao tác đặt trước FE08 `NOTIFIED` của Thành viên.
-- Màn hình yêu cầu chỉ chọn trước bản sao chính xác khi danh mục ứng viên có nhận biết đặt trước được bảo vệ trả nó cho Thành viên hiện tại.
+- FE07 hiện đọc cả `bookId` và `copyId` từ lượt đặt chỗ FE08 `NOTIFIED` của Thành viên.
+- Màn hình yêu cầu chỉ chọn sẵn đúng bản sao khi danh sách được bảo vệ có xét trạng thái đặt chỗ trả bản sao đó cho Thành viên hiện tại.
 - Giữ tạo yêu cầu đang chờ thông thường, phê duyệt Thủ thư/Quản trị viên, xác thực lại backend và hoàn tất FE08 nguyên tử.
 
 ## 2026-07-27 - Đối soát main một vai trò với căn chỉnh quy tắc (v0.7.6)
@@ -158,7 +158,7 @@
 ## 2026-07-27 - Thực thi tự phục vụ thành viên không phải nhân sự
 
 - Thêm ủy quyền chỉ thành viên cho mô hình tài khoản chính xác một vai trò; Quản trị/Thủ thư không thể dùng tự phục vụ mượn thành viên.
-- `MEMBER + LIBRARIAN` và `MEMBER + ADMIN` không còn có thể mở hoặc gọi ứng viên mượn thành viên, tạo-yêu-cầu hay luồng lịch sử riêng.
+- `MEMBER + LIBRARIAN` và `MEMBER + ADMIN` không còn có thể mở hoặc gọi luồng chọn bản sao để mượn, tạo yêu cầu hay xem lịch sử riêng của Thành viên.
 - Giữ thao tác phê duyệt, từ chối, trả, lịch sử thành viên đã chọn và gia hạn nhân sự của Thủ thư/Quản trị viên.
 - Kết nối chuyển hướng tuyến API trực tiếp frontend với cùng ranh giới ủy quyền backend.
 - Xác thực: tuyến API backend FE07/FE08 tập trung đạt 94/94, frontend vai trò/điều hướng tập trung đạt 61/61, backend đầy đủ đạt 1018/1018, frontend đầy đủ đạt 227/227 và lint/build frontend cùng truy vết đều đạt.
@@ -166,7 +166,7 @@
 ## 2026-07-23 - Đối soát bất biến giao dịch phê duyệt và trả
 
 - Xác thực lại vai trò `MEMBER` hiện tại của chủ yêu cầu và tier hằng ngày 3/5 suy ra FE04 bên trong giao dịch phê duyệt.
-- Khôi phục thứ tự khóa thành viên -> bản sao -> yêu cầu/chi tiết -> đặt trước chuẩn và làm cho trả khóa bản sao, chi tiết và yêu cầu đặt trước trước thay đổi.
+- Khôi phục thứ tự khóa chuẩn: thành viên -> bản sao -> yêu cầu/chi tiết -> lượt đặt chỗ; thao tác trả khóa bản sao, chi tiết và lượt đặt chỗ trước khi thay đổi dữ liệu.
 - Thêm hồi quy tập trung cho vai trò bị loại bỏ, lượt đọc tier cũ, thứ tự khóa trả và kết quả giao dịch an toàn.
 - Thay phép tính lịch trả/gia hạn cục bộ máy chủ bằng helper thời gian nghiệp vụ `Asia/Ho_Chi_Minh` dùng chung, gồm hồi quy nửa đêm máy chủ UTC.
 - Yêu cầu đường trả trong bộ nhớ khớp SQL bằng cách từ chối bản sao vật lý không phải `BORROWED` với `BORROW_STATE_CONFLICT` trước thay đổi.
@@ -181,7 +181,7 @@
 - Thay cách trình bày mơ hồ `Quá hạn: Đúng hạn` bằng nhãn còn lại/hôm nay/quá hạn rõ ràng suy ra từ ngày nghiệp vụ `Asia/Ho_Chi_Minh`, đồng thời công khai số lần gia hạn chuẩn để hạn trả kéo dài có thể giải thích.
 - Giữ bảo vệ vai trò FE07, endpoint thay đổi chuẩn, xác thực lại/giao dịch phê duyệt, xác thực lý do từ chối, lịch sử thành viên và ranh giới quyền sở hữu FE06/FE08/FE09/FE10.
 - Thêm hồi quy frontend tập trung; FE07 tập trung 24/24, frontend đầy đủ 201/201, backend FE07 66/66, tích hợp Quản trị/vai trò 25/25, lint/build, truy vết và vệ sinh diff đạt. Rà soát con người vẫn đang mở.
-- Căn chỉnh assertion E2E luồng chính hệ thống với nhãn quá hạn rõ v0.7.3 (`Quá hạn 14 ngày`) thay vì văn bản `14 ngày` mơ hồ đã loại bỏ; bộ E2E Chromium đầy đủ đạt 4/4.
+- Căn chỉnh kiểm tra E2E của luồng chính hệ thống với nhãn quá hạn rõ ràng trong v0.7.3 (`Quá hạn 14 ngày`) thay vì văn bản `14 ngày` mơ hồ đã loại bỏ; bộ E2E Chromium đầy đủ đạt 4/4.
 
 ## 2026-07-22 - Kích hoạt hành động hàng Xử lý trả
 
@@ -203,7 +203,7 @@
 
 - Thay điều kiện tiên quyết phê duyệt FE04 bằng tài khoản hoạt động cùng ủy quyền vai trò `MEMBER`.
 - Giữ việc phê duyệt từng yêu cầu mượn bởi thủ thư/quản trị viên là kiểm soát lưu hành FE07.
-- Loại đánh giá sách khỏi phản hồi ứng viên yêu cầu mượn thành viên và UI xác nhận.
+- Loại đánh giá sách khỏi phản hồi danh sách bản sao có thể yêu cầu mượn và giao diện xác nhận của Thành viên.
 - Ổn định bố cục thẻ lịch sử mượn thành viên qua vùng thanh công cụ, bảng và phân trang.
 
 ## 2026-07-20 - Bản địa hóa giao diện tiếng Việt và kiểu chữ
@@ -239,12 +239,12 @@
 
 ## 2026-07-17 - Phê duyệt mốc cơ sở giai đoạn 1
 
-- Nhật phê duyệt hợp đồng mượn, trả, gia hạn, lịch sử và ưu tiên đặt trước FE07 đã chuẩn hóa là mốc cơ sở Giai đoạn 1; triển khai đối soát vẫn đang chờ.
+- Nhật phê duyệt hợp đồng mượn, trả, gia hạn, lịch sử và ưu tiên đặt chỗ FE07 đã chuẩn hóa làm mốc cơ sở Giai đoạn 1; triển khai đối soát vẫn đang chờ.
 
-## 2026-07-17 - Hợp đồng ưu tiên trả và đặt trước
+## 2026-07-17 - Hợp đồng ưu tiên trả và đặt chỗ
 
-- Làm lượt trả bình thường nguyên tử với xác thực lại yêu cầu đặt trước FE08 và thứ tự khóa dùng chung.
-- Làm rõ rằng bản sao trả về `AVAILABLE` vẫn không khả dụng cho mượn thông thường khi tồn tại yêu cầu hàng đợi đặt trước `ACTIVE`.
+- Xử lý lượt trả bình thường và xác thực lại lượt đặt chỗ FE08 trong cùng giao dịch theo thứ tự khóa dùng chung.
+- Làm rõ rằng bản sao trở về `AVAILABLE` vẫn không khả dụng cho mượn thông thường khi tồn tại lượt đặt chỗ `ACTIVE` trong hàng đợi.
 
 ## 2026-07-17 - Hợp đồng lịch sử mượn - v0.5.1
 
@@ -275,14 +275,14 @@
 - Yêu cầu `CreatedBy`, `ApprovedAt`, `ApprovedBy` và `BorrowDate` từng chi tiết; hạn trả là `BorrowDate + 14 calendar days`.
 - Chuẩn hóa ngày nghiệp vụ mượn/trả/quá hạn theo `Asia/Ho_Chi_Minh` và từ chối ngày trả tương lai.
 - Làm lý do từ chối bắt buộc trong siêu dữ liệu kiểm toán và thêm truy vết cho mọi BR/FR/AC mới.
-- Căn chỉnh khóa phê duyệt với FE06 bằng `member-scoped lock -> BookCopies -> BorrowRequests/BorrowDetails -> Reservations`; việc đếm đang hoạt động và kiểm tra có nhận biết đặt trước chỉ chạy sau khi các hàng liên quan bị khóa.
+- Căn chỉnh khóa phê duyệt với FE06 bằng `member-scoped lock -> BookCopies -> BorrowRequests/BorrowDetails -> Reservations`; việc đếm đang hoạt động và kiểm tra có xét trạng thái đặt chỗ chỉ chạy sau khi các bản ghi liên quan bị khóa.
 - Cập nhật `CONTEXT.md` từ giả định dự thảo Giai đoạn 1 đã bị thay thế sang quyết định rà soát/đối soát v0.5.0.
 
-## 2026-07-15 - Hợp đồng mượn có nhận biết đặt trước (v0.4.0)
+## 2026-07-15 - Hợp đồng mượn có xét trạng thái đặt chỗ (v0.4.0)
 
 - Phê duyệt FE07 là chủ sở hữu tạo và phê duyệt yêu cầu mượn cho cả bản sao thông thường và lượt giữ chỗ đã thông báo thuộc người yêu cầu.
-- Thêm quy tắc ưu tiên đặt trước chặn thao tác tạo/phê duyệt thông thường khi tồn tại mục hàng đợi `ACTIVE`.
-- Thêm hoàn tất phê duyệt nguyên tử cho lượt đặt trước `NOTIFIED` khớp, gồm yêu cầu kiểm toán và hoàn tác đặt trước.
+- Thêm quy tắc ưu tiên đặt chỗ chặn thao tác tạo/phê duyệt thông thường khi tồn tại mục hàng đợi `ACTIVE`.
+- Hoàn tất lượt đặt chỗ `NOTIFIED` khớp trong giao dịch phê duyệt, gồm yêu cầu kiểm toán và khả năng hoàn tác trạng thái đặt chỗ.
 - Thêm FE07-T029 và FE07-T030 có truy vết tới định danh BR/FR/AC mới.
 - Giữ giới hạn năm bản sao, thời hạn 14 ngày, một lần gia hạn, chính sách tất cả-hoặc-không, xử lý hàng đợi FE08 thủ công, endpoint hiện có và schema hiện có.
 
@@ -367,7 +367,7 @@
 
 - Triển khai màn hình yêu cầu mượn thành viên, lịch sử mượn, phê duyệt/từ chối yêu cầu mượn thủ thư, xử lý trả và chi tiết mượn thành viên.
 - Nối tất cả màn hình frontend với API backend bằng axios và React hooks.
-- Thêm caption bảng, phạm vi tiêu đề cột cột, nhãn có thể tiếp cận cho dữ liệu đầu vào ngày, select, nút phân trang và điều khiển icon.
+- Thêm caption bảng, phạm vi tiêu đề cột, nhãn có thể tiếp cận cho dữ liệu đầu vào ngày, select, nút phân trang và điều khiển icon.
 - Thêm hỗ trợ bàn phím cho hàng bảng có thể chọn (Enter/Space).
 - Thêm trạng thái tải, rỗng và lỗi trên mọi màn hình đã rà soát.
 - Xác thực: `npm.cmd --prefix frontend run lint`, `npm.cmd --prefix frontend run build`, `npm.cmd --prefix backend test`.
@@ -394,7 +394,7 @@
 
 - Sửa nhãn tiếng Việt và cải thiện bố cục danh sách/chi tiết yêu cầu cho màn hình rà soát thủ thư.
 - Thêm lọc trạng thái yêu cầu chuẩn và chỉ báo cập nhật gần nhất hiển thị.
-- Làm làm mới thủ công cung cấp phản hồi tải/thành công/lỗi và tải lại trạng thái API chuẩn sau phê duyệt hoặc từ chối.
+- Làm mới thủ công cung cấp phản hồi tải/thành công/lỗi và tải lại trạng thái API chuẩn sau phê duyệt hoặc từ chối.
 - Công khai hồ sơ thành viên, ID thành viên chuẩn, điện thoại, mã vạch, tác giả, vị trí và mọi bản sao được yêu cầu từ quan hệ cơ sở dữ liệu hiện có.
 - Sắp xếp ID yêu cầu thủ thư tăng dần, thêm phân trang tám hàng và tinh chỉnh thanh công cụ tóm tắt/lọc.
 - Thay phông chữ dự phòng của tiêu đề từng hiển thị sai một số dấu kết hợp tiếng Việt.

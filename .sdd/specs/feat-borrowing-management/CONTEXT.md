@@ -57,7 +57,7 @@ FE07 bao gồm:
 
 FE07 không bao gồm:
 
-- Quyền sở hữu hàng đợi đặt trước. Phần này thuộc FE08.
+- Quyền sở hữu hàng đợi đặt chỗ. Phần này thuộc FE08.
 - Quyền sở hữu tính tiền phạt. Phần này thuộc FE09.
 - Quyền sở hữu gửi thông báo. Phần này thuộc FE10.
 - Quản lý tài khoản/vai trò người dùng. Phần này thuộc FE11.
@@ -118,7 +118,7 @@ Các quyết định này được phản ánh trong `SPEC.md` v0.5.0 và phải
 - Việc mượn có thể làm hỏng logic phạt/báo cáo nếu hạn trả và ngày trả thiếu hoặc sai.
 - Thành viên có thể mượn vượt giới hạn cho phép nếu các bản sao đang mượn không được đếm chính xác.
 - Phê duyệt đồng thời có thể gán một bản sao vật lý cho nhiều thành viên nếu tính khả dụng không được kiểm tra lại tại thời điểm phê duyệt.
-- Gia hạn có thể xung đột với đặt trước nếu thành viên khác đang chờ sách.
+- Gia hạn có thể xung đột với lượt đặt chỗ nếu thành viên khác đang chờ sách.
 
 ---
 
@@ -129,7 +129,7 @@ Các quyết định này được phản ánh trong `SPEC.md` v0.5.0 và phải
 | FE02 Xác thực | Xác định tác nhân hiện tại. |
 | FE04 Quản lý thành viên | Xác nhận người dùng có phải thành viên đã được phê duyệt hay không. |
 | FE06 Quản lý tồn kho / bản sao sách | Sở hữu trạng thái bản sao vật lý. |
-| FE08 Quản lý đặt trước | Sở hữu trạng thái hàng đợi/giữ chỗ; FE07 thực thi ưu tiên, kiểm tra xung đột gia hạn và hoàn tất lượt giữ chỗ đã thông báo khớp trong khi phê duyệt. |
+| FE08 Quản lý đặt chỗ | Sở hữu trạng thái hàng đợi/giữ chỗ; FE07 thực thi ưu tiên, kiểm tra xung đột gia hạn và hoàn tất lượt giữ chỗ đã thông báo khớp trong khi phê duyệt. |
 | FE09 Quản lý phạt | Dùng dữ liệu quá hạn/trả và các khoản phạt dương chưa thanh toán chặn mượn/gia hạn. |
 | FE10 Quản lý thông báo | Gửi thông báo kết quả mượn, trả và gia hạn. |
 | FE11 Quản lý người dùng & vai trò | Cung cấp quyền theo vai trò. |
@@ -161,9 +161,9 @@ Các quyết định này được phản ánh trong `SPEC.md` v0.5.0 và phải
 
 ## 11. Bối cảnh đợt FE07-FE12 2026-07-29
 
-- FE07 tiếp tục sở hữu transaction mượn/trả/gia hạn và sự kiện nguồn.
-- FE10 chỉ nhận yêu cầu thông báo sau commit; lỗi thông báo không hoàn tác FE07.
-- FE07 chỉ công khai bàn giao hàng đợi chỉ đọc cho FE08; Librarian vẫn phải xác
+- FE07 tiếp tục chịu trách nhiệm giao dịch mượn/trả/gia hạn và các sự kiện nguồn.
+- FE10 chỉ nhận yêu cầu thông báo sau khi giao dịch được ghi nhận; lỗi thông báo không hoàn tác FE07.
+- FE07 chỉ công khai dữ liệu hàng đợi ở chế độ chỉ đọc cho FE08; Thủ thư vẫn phải xác
   nhận xử lý thủ công.
-- Timeline và điều kiện chặn copy chỉ trình bày state/timestamp/error code chuẩn.
-- Scope thuộc `SL-003`, phụ thuộc governance `SL-001` và template FE10 `SL-002`.
+- Mốc thời gian và điều kiện chặn bản sao chỉ hiển thị trạng thái, dấu thời gian và mã lỗi chuẩn.
+- Phạm vi thuộc `SL-003`, phụ thuộc quy tắc quản trị `SL-001` và mẫu FE10 `SL-002`.
