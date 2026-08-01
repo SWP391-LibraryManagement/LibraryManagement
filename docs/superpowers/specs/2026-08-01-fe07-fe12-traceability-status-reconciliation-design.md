@@ -45,4 +45,3 @@ tả với trạng thái hoàn tất tài liệu.
    `Hoàn thành`.
 3. `npm run test:traceability-state`, kiểm tra văn phong tài liệu,
    `npm run trace:enforce` và `git diff --check` đều đạt.
-
