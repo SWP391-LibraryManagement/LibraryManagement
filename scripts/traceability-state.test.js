@@ -44,6 +44,20 @@ function collectProductionRequirementTags() {
   return tags;
 }
 
+function collectTraceabilityMatrixRows(specText) {
+  const sectionMatch = String(specText).match(
+    /^## 16\. Ma trận truy vết\s*$([\s\S]*?)(?=^## 17\.|(?![\s\S]))/m,
+  );
+  assert.ok(sectionMatch, 'missing section 16 traceability matrix');
+
+  return sectionMatch[1]
+    .split(/\r?\n/)
+    .filter((line) => (
+      /^\|\s*(?:BR|FR|AC|NFR)-FE\d{2}-(?:[A-Z]+-)?\d{3}\b/.test(line)
+    ))
+    .map((line) => line.split('|').slice(1, -1).map((cell) => cell.trim()));
+}
+
 test('parses each supported implementation state', () => {
   assert.deepEqual(parseImplementationState('Implementation State: NOT_STARTED\n'), {
     state: 'NOT_STARTED',
@@ -94,6 +108,25 @@ test('FE07, FE08, FE10, and FE12 have complete production-source FR traceability
   }
 });
 
+test('FE07, FE08, FE10, and FE12 traceability matrices show current completion status', () => {
+  for (const featureDirectory of TARGET_FEATURE_DIRECTORIES) {
+    const spec = fs.readFileSync(
+      path.join(ROOT, '.sdd', 'specs', featureDirectory, 'SPEC.md'),
+      'utf8',
+    );
+    const rows = collectTraceabilityMatrixRows(spec);
+
+    assert.ok(rows.length > 0, `${featureDirectory} has no traceability matrix rows`);
+    for (const cells of rows) {
+      assert.equal(
+        cells.at(-1),
+        'Hoàn thành',
+        `${featureDirectory} ${cells[0]} has stale traceability status`,
+      );
+    }
+  }
+});
+
 test('FE07, FE08, FE10, and FE12 release headers preserve the deployed exact-head boundary', () => {
   const featureDirectories = [
     'feat-borrowing-management',
@@ -111,9 +144,12 @@ test('FE07, FE08, FE10, and FE12 release headers preserve the deployed exact-hea
       );
       const releaseHeader = source.split(/\r?\n---/)[0];
 
+      assert.match(releaseHeader, /Trạng thái: HOÀN THÀNH(?: \(`COMPLETE`\))?;/);
+      assert.match(releaseHeader, /PR #89 ĐÃ HỢP NHẤT/);
+      assert.match(releaseHeader, /CI VÀ AZURE/);
       assert.match(
         releaseHeader,
-        /Trạng thái: COMPLETE; PR #89 ĐÃ MERGE; CI VÀ AZURE DEPLOY EXACT-HEAD ĐẠT/,
+        /(?:ĐÃ CHẠY THÀNH CÔNG TRÊN ĐÚNG COMMIT|ĐÚNG COMMIT ĐẠT)/,
       );
       assert.doesNotMatch(
         releaseHeader,
@@ -129,7 +165,11 @@ test('FE07, FE08, FE10, and FE12 release headers preserve the deployed exact-hea
 
     assert.equal(parseImplementationState(taskHeader).state, 'COMPLETE');
     assert.match(taskHeader, /PR #89\s+thành `main@39092fb`/);
-    assert.match(taskHeader, /CI `30675444178` và\s+Azure staging\s+`30675744992`/);
+    assert.match(taskHeader, /CI `30675444178`/);
+    assert.match(
+      taskHeader,
+      /(?:Azure staging|môi trường thử nghiệm Azure)\s+`30675744992`/,
+    );
     assert.doesNotMatch(taskHeader, /đang chờ H2 mới và H3 lặp lại|V0\.6\.0 CHƯA KÍCH HOẠT/i);
   }
 });

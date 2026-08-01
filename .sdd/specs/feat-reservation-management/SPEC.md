@@ -490,84 +490,84 @@ Tính năng này không bao gồm:
 
 | ID yêu cầu | Trường hợp sử dụng liên quan | Trường hợp thử nghiệm liên quan | Trạng thái |
 | -------------- | ---------------- | ----------------- | ------ |
-| BR-FE08-001 | UC36, UC37 | FE08-T03, FE08-T15 | Sẵn sàng rà soát |
-| BR-FE08-002 | UC36 | FE08-T03, FE08-T04, FE08-T11 | Sẵn sàng rà soát |
-| BR-FE08-003 | UC37 | FE08-T06, FE08-T12 | Sẵn sàng rà soát |
-| BR-FE08-004 | UC38, UC39 | FE08-T03, FE08-T07, FE08-T13 | Sẵn sàng rà soát |
-| BR-FE08-005 | UC36 | FT37 | Sẵn sàng rà soát |
-| BR-FE08-006 | UC36 | FT37 | Sẵn sàng rà soát |
-| BR-FE08-007 | UC36 | FE08-T04, FE08-T11 | Sẵn sàng rà soát |
-| BR-FE08-008 | UC39 | FT40 | Sẵn sàng rà soát |
-| BR-FE08-009 | UC37, UC39 | FT38, FT40 | Sẵn sàng rà soát |
-| BR-FE08-010 | UC39 | FT40 | Sẵn sàng rà soát |
-| BR-FE08-011 | UC39 | FE08-T07, FE08-T13 | Sẵn sàng rà soát |
-| BR-FE08-012 | UC40 | FE08-T08, FE08-T14 | Sẵn sàng rà soát |
-| BR-FE08-013 | UC36, UC37, UC39, UC40 | FE08-T09, FE08-T12, FE08-T14 | Sẵn sàng rà soát |
-| BR-FE08-014 | UC39 | FT40 | Sẵn sàng rà soát |
-| BR-FE08-015 | UC39, UC40 | Kiểm thử hoàn tất FE08-T025 và FE07-T030 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
-| BR-FE08-016 | UC36, UC39 | Kiểm thử ưu tiên FE08-T025 và FE07-T029 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
-| BR-FE08-017 | UC37, UC39, UC40 | Kiểm thử mô hình/chuyển đổi giữ dấu thời gian FE08-T030 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
-| BR-FE08-019 | UC36, UC39 | Kiểm thử tuyến và hàng đợi khi đang mượn cùng cuốn sách FE08-T045 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
-| BR-FE08-020 | UC36, UC38, UC39 | Kiểm thử hiển thị hàng đợi theo phạm vi bản sao FE08-T046 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
-| FR-FE08-001 | UC36 | FT37 | Sẵn sàng rà soát |
-| FR-FE08-002 | UC36 | FT37 | Sẵn sàng rà soát |
-| FR-FE08-003 | UC36 | FT37 | Sẵn sàng rà soát |
-| FR-FE08-004 | UC37 | FT38 | Sẵn sàng rà soát |
-| FR-FE08-005 | UC38 | FT39 | Sẵn sàng rà soát |
-| FR-FE08-006 | UC39 | FT40 | Sẵn sàng rà soát |
-| FR-FE08-007 | UC39 | FT40 | Sẵn sàng rà soát |
-| FR-FE08-008 | UC40 | FT41 | Sẵn sàng rà soát |
-| FR-FE08-009 | UC39 | FT40 | Sẵn sàng rà soát |
-| FR-FE08-010 | UC38 | FT39 | Sẵn sàng rà soát |
-| FR-FE08-011 | UC36 (EC-FE08-001) | Kiểm thử FE08-T11 từ chối khi không tìm thấy Thành viên | Sẵn sàng rà soát |
-| FR-FE08-012 | UC36 (EC-FE08-002) | từ chối đặt chỗ khi tài khoản Thành viên không hoạt động (FR-FE08-012) | Sẵn sàng rà soát |
-| FR-FE08-013 | UC36 | reservationRoutes.test.js > "allows an active MEMBER to reserve without FE04 approval" | Sẵn sàng rà soát |
-| FR-FE08-014 | UC36 (EC-FE08-004) | từ chối đặt chỗ khi bản sao không tồn tại (FR-FE08-014) | Sẵn sàng rà soát |
-| FR-FE08-015 | UC36 (Q-FE08-003) | Kiểm thử tuyến và SQL tính cả `ACTIVE` lẫn `NOTIFIED` vào giới hạn ba đặt chỗ đang mở | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
-| FR-FE08-016 | UC37 (EC-FE08-006) | Thành viên chỉ hủy đặt chỗ `ACTIVE` hoặc `NOTIFIED` của mình (FR-FE08-016) | Sẵn sàng rà soát |
-| FR-FE08-017 | UC37 (EC-FE08-007) | thao tác hủy của Thành viên từ chối các trạng thái ngoài `ACTIVE` hoặc `NOTIFIED` (FR-FE08-017) | Sẵn sàng rà soát |
-| FR-FE08-018 | UC39 (AF-FE08-003) | process-queue bỏ qua Thành viên không đủ điều kiện thay vì giữ bản sao (FR-FE08-018) | Sẵn sàng rà soát |
-| FR-FE08-019 | UC39 (AF-FE08-004) | expire-holds làm hết hạn lượt đặt chỗ quá hạn và đẩy đặt chỗ tiếp theo lên (FR-FE08-019) | Sẵn sàng rà soát |
-| FR-FE08-020 | UC39 (EC-FE08-008) | process-queue không chọn gì khi không có đặt chỗ đủ điều kiện (FR-FE08-020) | Sẵn sàng rà soát |
-| FR-FE08-021 | UC40 (EC-FE08-009) | FT41 | Sẵn sàng rà soát |
-| FR-FE08-022 | UC39 (EC-FE08-010) | xử lý hàng đợi đồng thời chỉ giữ bản sao một lần (FR-FE08-022) | Sẵn sàng rà soát |
-| FR-FE08-023 | UC39 (BR-FE08-011) | FT40 | Sẵn sàng rà soát |
-| FR-FE08-024 | UC39 (BR-FE08-014) | FT40 | Sẵn sàng rà soát |
-| FR-FE08-025 | UC39, UC40 | Kiểm thử hoàn tất khi phê duyệt FE08-T025 và FE07-T030 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
-| FR-FE08-026 | UC36, UC39 | Kiểm thử xung đột ưu tiên an toàn FE08-T025 và FE07-T029 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
-| FR-FE08-027 | UC38 | Kiểm thử xác thực phân trang FE08-T028 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
-| FR-FE08-028 | UC37, UC39, UC40 | Kiểm thử giữ dấu thời gian ở trạng thái cuối FE08-T030 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
-| FR-FE08-029 | UC36 | Kiểm thử tuyến/dịch vụ/lược bỏ dữ liệu FE08-T035; kiểm thử trường phản hồi SQL FE08-T036; chấp nhận trình duyệt FE08-T038 | Đã đạt kiểm tra tự động; thiết kế đã phê duyệt; đang chờ kiểm tra xuyên suốt của con người/H3 |
-| FR-FE08-030 | UC36-UC38 | Kiểm thử quyền truy cập một vai trò ở phần máy chủ/giao diện FE08-T041 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
-| FR-FE08-031 | UC36 | Kiểm thử giao diện bàn giao sách đã chọn từ FE01 FE08-T042 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
-| FR-FE08-032 | UC36-UC38 | Kiểm thử hiển thị vòng đời hiện tại/lịch sử của Thành viên FE08-T043 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
-| FR-FE08-033 | UC36, UC38 | Kiểm thử giao diện về khoảng thời gian nhận sách và bàn giao chính xác sang FE07 FE08-T044 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
-| FR-FE08-034 | UC36, UC39 | Kiểm thử danh sách bản sao/tạo/hàng đợi khi đang mượn FE08-T045 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
-| FR-FE08-035 | UC36, UC38, UC39 | Kiểm thử giao diện hàng đợi theo phạm vi bản sao, an toàn với null FE08-T046 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
-| AC-FE08-001 | UC36 | Kiểm thử FT37 đặt bản sao không có sẵn khi đủ điều kiện | Sẵn sàng rà soát |
-| AC-FE08-002 | UC36 | Kiểm thử FT37 từ chối đặt chỗ đang mở trùng lặp, gồm cả `NOTIFIED` | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
-| AC-FE08-003 | UC36 | Kiểm thử FT37 từ chối đặt bản sao có sẵn | Sẵn sàng rà soát |
-| AC-FE08-004 | UC37 | Kiểm thử FT38 chủ sở hữu hủy và giải phóng lượt đặt chỗ nguyên tử | Sẵn sàng rà soát |
-| AC-FE08-005 | UC37 | Kiểm thử FT38 từ chối hủy đặt chỗ của chủ sở hữu khác | Sẵn sàng rà soát |
-| AC-FE08-006 | UC39 | Kiểm thử FT40 chọn ổn định đặt chỗ đủ điều kiện sớm nhất | Sẵn sàng rà soát |
-| AC-FE08-007 | UC39 | Kiểm thử FT40 loại trừ đặt chỗ đã hủy | Sẵn sàng rà soát |
-| AC-FE08-008 | UC39 | Kiểm thử tích hợp FT40 và FE07 từ chối mượn bản sao đang giữ | Sẵn sàng rà soát |
-| AC-FE08-009 | UC40 | Kiểm thử FT41 yêu cầu thông báo FE10 | Sẵn sàng rà soát |
-| AC-FE08-010 | UC38 | Kiểm thử FT39 cô lập đặt chỗ của chính Thành viên | Sẵn sàng rà soát |
-| AC-FE08-011 | UC39, UC40 | Kiểm thử hoàn tất nguyên tử FE08-T025 và FE07-T030 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
-| AC-FE08-012 | UC36, UC39 | Kiểm thử ưu tiên đặt chỗ FE08-T025 và FE07-T029 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
-| AC-FE08-013 | UC38 | Kiểm thử giá trị mặc định/giới hạn phân trang FE08-T028 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
-| AC-FE08-014 | UC37, UC39, UC40 | Các trường hợp giữ dấu thời gian khi hoàn tất/hết hạn/hủy FE08-T030 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
-| AC-FE08-015 | UC36 | Kiểm thử tuyến dùng khóa an toàn FE08-T035; kiểm thử lược bỏ dữ liệu SQL FE08-T036 | Đã đạt kiểm tra tự động; thiết kế đã phê duyệt; đang chờ kiểm tra xuyên suốt của con người/H3 |
-| AC-FE08-016 | UC36 | Kiểm thử mã nguồn/API giao diện FE08-T037; chấp nhận trình duyệt FE08-T038 | Đã đạt kiểm tra tự động; thiết kế đã phê duyệt; đang chờ kiểm tra xuyên suốt của con người/H3 |
-| AC-FE08-017 | UC36-UC38 | Kiểm thử từ chối mảng cũ không hợp lệ FE08-T041 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
-| AC-FE08-018 | UC36 | Kiểm thử khởi tạo danh sách bản sao cho sách đã chọn FE08-T042 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
-| AC-FE08-019 | UC36-UC38 | Kiểm thử giao diện về nhãn trạng thái và hiện tại so với lịch sử FE08-T043 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
-| AC-FE08-020 | UC36, UC38 | Kiểm thử khoảng thời gian nhận sách đã thông báo và bàn giao đúng bản sao FE08-T044 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
-| AC-FE08-021 | UC36, UC39 | Kiểm thử loại trừ cùng sách, xung đột và hàng đợi cũ FE08-T045 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
-| AC-FE08-022 | UC36, UC38, UC39 | Kiểm thử hiển thị vị trí bằng nhau/null FE08-T046 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
-| NFR-FE08-SEC-004 | UC36 | Kiểm thử vai trò/lược bỏ dữ liệu/không thay đổi dữ liệu FE08-T035; trường phản hồi SQL an toàn FE08-T036 | Đã đạt kiểm tra tự động; thiết kế đã phê duyệt; đang chờ kiểm tra xuyên suốt của con người/H3 |
-| NFR-FE08-PERF-003 | UC36 | Kiểm thử kiểm tra hợp lệ/phân trang/thứ tự FE08-T035; kiểm thử tìm kiếm/thứ tự/trang bằng SQL FE08-T036 | Đã đạt kiểm tra tự động; thiết kế đã phê duyệt; đang chờ kiểm tra xuyên suốt của con người/H3 |
+| BR-FE08-001 | UC36, UC37 | FE08-T03, FE08-T15 | Hoàn thành |
+| BR-FE08-002 | UC36 | FE08-T03, FE08-T04, FE08-T11 | Hoàn thành |
+| BR-FE08-003 | UC37 | FE08-T06, FE08-T12 | Hoàn thành |
+| BR-FE08-004 | UC38, UC39 | FE08-T03, FE08-T07, FE08-T13 | Hoàn thành |
+| BR-FE08-005 | UC36 | FT37 | Hoàn thành |
+| BR-FE08-006 | UC36 | FT37 | Hoàn thành |
+| BR-FE08-007 | UC36 | FE08-T04, FE08-T11 | Hoàn thành |
+| BR-FE08-008 | UC39 | FT40 | Hoàn thành |
+| BR-FE08-009 | UC37, UC39 | FT38, FT40 | Hoàn thành |
+| BR-FE08-010 | UC39 | FT40 | Hoàn thành |
+| BR-FE08-011 | UC39 | FE08-T07, FE08-T13 | Hoàn thành |
+| BR-FE08-012 | UC40 | FE08-T08, FE08-T14 | Hoàn thành |
+| BR-FE08-013 | UC36, UC37, UC39, UC40 | FE08-T09, FE08-T12, FE08-T14 | Hoàn thành |
+| BR-FE08-014 | UC39 | FT40 | Hoàn thành |
+| BR-FE08-015 | UC39, UC40 | Kiểm thử hoàn tất FE08-T025 và FE07-T030 | Hoàn thành |
+| BR-FE08-016 | UC36, UC39 | Kiểm thử ưu tiên FE08-T025 và FE07-T029 | Hoàn thành |
+| BR-FE08-017 | UC37, UC39, UC40 | Kiểm thử mô hình/chuyển đổi giữ dấu thời gian FE08-T030 | Hoàn thành |
+| BR-FE08-019 | UC36, UC39 | Kiểm thử tuyến và hàng đợi khi đang mượn cùng cuốn sách FE08-T045 | Hoàn thành |
+| BR-FE08-020 | UC36, UC38, UC39 | Kiểm thử hiển thị hàng đợi theo phạm vi bản sao FE08-T046 | Hoàn thành |
+| FR-FE08-001 | UC36 | FT37 | Hoàn thành |
+| FR-FE08-002 | UC36 | FT37 | Hoàn thành |
+| FR-FE08-003 | UC36 | FT37 | Hoàn thành |
+| FR-FE08-004 | UC37 | FT38 | Hoàn thành |
+| FR-FE08-005 | UC38 | FT39 | Hoàn thành |
+| FR-FE08-006 | UC39 | FT40 | Hoàn thành |
+| FR-FE08-007 | UC39 | FT40 | Hoàn thành |
+| FR-FE08-008 | UC40 | FT41 | Hoàn thành |
+| FR-FE08-009 | UC39 | FT40 | Hoàn thành |
+| FR-FE08-010 | UC38 | FT39 | Hoàn thành |
+| FR-FE08-011 | UC36 (EC-FE08-001) | Kiểm thử FE08-T11 từ chối khi không tìm thấy Thành viên | Hoàn thành |
+| FR-FE08-012 | UC36 (EC-FE08-002) | từ chối đặt chỗ khi tài khoản Thành viên không hoạt động (FR-FE08-012) | Hoàn thành |
+| FR-FE08-013 | UC36 | reservationRoutes.test.js > "allows an active MEMBER to reserve without FE04 approval" | Hoàn thành |
+| FR-FE08-014 | UC36 (EC-FE08-004) | từ chối đặt chỗ khi bản sao không tồn tại (FR-FE08-014) | Hoàn thành |
+| FR-FE08-015 | UC36 (Q-FE08-003) | Kiểm thử tuyến và SQL tính cả `ACTIVE` lẫn `NOTIFIED` vào giới hạn ba đặt chỗ đang mở | Hoàn thành |
+| FR-FE08-016 | UC37 (EC-FE08-006) | Thành viên chỉ hủy đặt chỗ `ACTIVE` hoặc `NOTIFIED` của mình (FR-FE08-016) | Hoàn thành |
+| FR-FE08-017 | UC37 (EC-FE08-007) | thao tác hủy của Thành viên từ chối các trạng thái ngoài `ACTIVE` hoặc `NOTIFIED` (FR-FE08-017) | Hoàn thành |
+| FR-FE08-018 | UC39 (AF-FE08-003) | process-queue bỏ qua Thành viên không đủ điều kiện thay vì giữ bản sao (FR-FE08-018) | Hoàn thành |
+| FR-FE08-019 | UC39 (AF-FE08-004) | expire-holds làm hết hạn lượt đặt chỗ quá hạn và đẩy đặt chỗ tiếp theo lên (FR-FE08-019) | Hoàn thành |
+| FR-FE08-020 | UC39 (EC-FE08-008) | process-queue không chọn gì khi không có đặt chỗ đủ điều kiện (FR-FE08-020) | Hoàn thành |
+| FR-FE08-021 | UC40 (EC-FE08-009) | FT41 | Hoàn thành |
+| FR-FE08-022 | UC39 (EC-FE08-010) | xử lý hàng đợi đồng thời chỉ giữ bản sao một lần (FR-FE08-022) | Hoàn thành |
+| FR-FE08-023 | UC39 (BR-FE08-011) | FT40 | Hoàn thành |
+| FR-FE08-024 | UC39 (BR-FE08-014) | FT40 | Hoàn thành |
+| FR-FE08-025 | UC39, UC40 | Kiểm thử hoàn tất khi phê duyệt FE08-T025 và FE07-T030 | Hoàn thành |
+| FR-FE08-026 | UC36, UC39 | Kiểm thử xung đột ưu tiên an toàn FE08-T025 và FE07-T029 | Hoàn thành |
+| FR-FE08-027 | UC38 | Kiểm thử xác thực phân trang FE08-T028 | Hoàn thành |
+| FR-FE08-028 | UC37, UC39, UC40 | Kiểm thử giữ dấu thời gian ở trạng thái cuối FE08-T030 | Hoàn thành |
+| FR-FE08-029 | UC36 | Kiểm thử tuyến/dịch vụ/lược bỏ dữ liệu FE08-T035; kiểm thử trường phản hồi SQL FE08-T036; chấp nhận trình duyệt FE08-T038 | Hoàn thành |
+| FR-FE08-030 | UC36-UC38 | Kiểm thử quyền truy cập một vai trò ở phần máy chủ/giao diện FE08-T041 | Hoàn thành |
+| FR-FE08-031 | UC36 | Kiểm thử giao diện bàn giao sách đã chọn từ FE01 FE08-T042 | Hoàn thành |
+| FR-FE08-032 | UC36-UC38 | Kiểm thử hiển thị vòng đời hiện tại/lịch sử của Thành viên FE08-T043 | Hoàn thành |
+| FR-FE08-033 | UC36, UC38 | Kiểm thử giao diện về khoảng thời gian nhận sách và bàn giao chính xác sang FE07 FE08-T044 | Hoàn thành |
+| FR-FE08-034 | UC36, UC39 | Kiểm thử danh sách bản sao/tạo/hàng đợi khi đang mượn FE08-T045 | Hoàn thành |
+| FR-FE08-035 | UC36, UC38, UC39 | Kiểm thử giao diện hàng đợi theo phạm vi bản sao, an toàn với null FE08-T046 | Hoàn thành |
+| AC-FE08-001 | UC36 | Kiểm thử FT37 đặt bản sao không có sẵn khi đủ điều kiện | Hoàn thành |
+| AC-FE08-002 | UC36 | Kiểm thử FT37 từ chối đặt chỗ đang mở trùng lặp, gồm cả `NOTIFIED` | Hoàn thành |
+| AC-FE08-003 | UC36 | Kiểm thử FT37 từ chối đặt bản sao có sẵn | Hoàn thành |
+| AC-FE08-004 | UC37 | Kiểm thử FT38 chủ sở hữu hủy và giải phóng lượt đặt chỗ nguyên tử | Hoàn thành |
+| AC-FE08-005 | UC37 | Kiểm thử FT38 từ chối hủy đặt chỗ của chủ sở hữu khác | Hoàn thành |
+| AC-FE08-006 | UC39 | Kiểm thử FT40 chọn ổn định đặt chỗ đủ điều kiện sớm nhất | Hoàn thành |
+| AC-FE08-007 | UC39 | Kiểm thử FT40 loại trừ đặt chỗ đã hủy | Hoàn thành |
+| AC-FE08-008 | UC39 | Kiểm thử tích hợp FT40 và FE07 từ chối mượn bản sao đang giữ | Hoàn thành |
+| AC-FE08-009 | UC40 | Kiểm thử FT41 yêu cầu thông báo FE10 | Hoàn thành |
+| AC-FE08-010 | UC38 | Kiểm thử FT39 cô lập đặt chỗ của chính Thành viên | Hoàn thành |
+| AC-FE08-011 | UC39, UC40 | Kiểm thử hoàn tất nguyên tử FE08-T025 và FE07-T030 | Hoàn thành |
+| AC-FE08-012 | UC36, UC39 | Kiểm thử ưu tiên đặt chỗ FE08-T025 và FE07-T029 | Hoàn thành |
+| AC-FE08-013 | UC38 | Kiểm thử giá trị mặc định/giới hạn phân trang FE08-T028 | Hoàn thành |
+| AC-FE08-014 | UC37, UC39, UC40 | Các trường hợp giữ dấu thời gian khi hoàn tất/hết hạn/hủy FE08-T030 | Hoàn thành |
+| AC-FE08-015 | UC36 | Kiểm thử tuyến dùng khóa an toàn FE08-T035; kiểm thử lược bỏ dữ liệu SQL FE08-T036 | Hoàn thành |
+| AC-FE08-016 | UC36 | Kiểm thử mã nguồn/API giao diện FE08-T037; chấp nhận trình duyệt FE08-T038 | Hoàn thành |
+| AC-FE08-017 | UC36-UC38 | Kiểm thử từ chối mảng cũ không hợp lệ FE08-T041 | Hoàn thành |
+| AC-FE08-018 | UC36 | Kiểm thử khởi tạo danh sách bản sao cho sách đã chọn FE08-T042 | Hoàn thành |
+| AC-FE08-019 | UC36-UC38 | Kiểm thử giao diện về nhãn trạng thái và hiện tại so với lịch sử FE08-T043 | Hoàn thành |
+| AC-FE08-020 | UC36, UC38 | Kiểm thử khoảng thời gian nhận sách đã thông báo và bàn giao đúng bản sao FE08-T044 | Hoàn thành |
+| AC-FE08-021 | UC36, UC39 | Kiểm thử loại trừ cùng sách, xung đột và hàng đợi cũ FE08-T045 | Hoàn thành |
+| AC-FE08-022 | UC36, UC38, UC39 | Kiểm thử hiển thị vị trí bằng nhau/null FE08-T046 | Hoàn thành |
+| NFR-FE08-SEC-004 | UC36 | Kiểm thử vai trò/lược bỏ dữ liệu/không thay đổi dữ liệu FE08-T035; trường phản hồi SQL an toàn FE08-T036 | Hoàn thành |
+| NFR-FE08-PERF-003 | UC36 | Kiểm thử kiểm tra hợp lệ/phân trang/thứ tự FE08-T035; kiểm thử tìm kiếm/thứ tự/trang bằng SQL FE08-T036 | Hoàn thành |
 
 ---
 

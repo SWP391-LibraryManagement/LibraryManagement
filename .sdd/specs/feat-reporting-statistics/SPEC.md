@@ -380,44 +380,44 @@ Tính năng này không bao gồm:
 
 | ID yêu cầu | Trường hợp sử dụng liên quan | Trường hợp thử nghiệm liên quan | Trạng thái |
 | -------------- | ---------------- | ----------------- | ------ |
-| BR-FE12-001 | UC58, UC59, UC60 | FT59, FT60, FT61 | Sẵn sàng để xem xét |
-| BR-FE12-002 | UC58, UC59, UC60 | FT59, FT60, FT61 | Sẵn sàng để xem xét |
-| BR-FE12-003 | UC58, UC59, UC60 | FT59, FT60, FT61 | Sẵn sàng để xem xét |
-| BR-FE12-004 | UC58 | FT59 | Sẵn sàng để xem xét |
-| BR-FE12-005 | UC59 | FT60 | Sẵn sàng để xem xét |
-| BR-FE12-006 | UC60 | FT61 | Sẵn sàng để xem xét |
-| BR-FE12-007 | UC60 | FT61 | Sẵn sàng để xem xét |
+| BR-FE12-001 | UC58, UC59, UC60 | FT59, FT60, FT61 | Hoàn thành |
+| BR-FE12-002 | UC58, UC59, UC60 | FT59, FT60, FT61 | Hoàn thành |
+| BR-FE12-003 | UC58, UC59, UC60 | FT59, FT60, FT61 | Hoàn thành |
+| BR-FE12-004 | UC58 | FT59 | Hoàn thành |
+| BR-FE12-005 | UC59 | FT60 | Hoàn thành |
+| BR-FE12-006 | UC60 | FT61 | Hoàn thành |
+| BR-FE12-007 | UC60 | FT61 | Hoàn thành |
 | BR-FE12-008 | UC58, UC59, UC60 | Ma trận khóa chính xác trong `reportRoutes.test.js` cùng kiểm tra ranh giới HTTP trên Chromium | Hoàn thành |
-| BR-FE12-009 | UC58, UC59, UC60 | FT59, FT60, FT61 | Sẵn sàng để xem xét |
-| BR-FE12-010 | UC58, UC59, UC60 | FT59, FT60, FT61 | Sẵn sàng để xem xét |
-| BR-FE12-011 | UC60 | FT61 | Sẵn sàng để xem xét |
-| BR-FE12-012 | UC58, UC59, UC60 | FT59, FT60, FT61 | Sẵn sàng để xem xét |
-| BR-FE12-013 | UC58, UC59, UC60 | `backend/tests/reportDeterministicPolicy.test.js` kiểm tra không có tuyến API/OpenAPI/giao diện xuất | Bằng chứng tự động; đang chờ con người đánh giá lại |
-| BR-FE12-014 | UC58, UC59, UC60 | Các trường hợp kiểm toán lượt xem thành công an toàn trong `backend/tests/reportService.test.js`, `backend/tests/reportRoutes.test.js` | Bằng chứng tự động; đang chờ con người đánh giá lại |
-| BR-FE12-015 | UC58, UC59, UC60 | Các trường hợp phân trang/thứ tự trong `backend/tests/reportDeterministicPolicy.test.js`, `backend/tests/reportRepository.test.js` | Bằng chứng tự động; đang chờ con người đánh giá lại |
-| BR-FE12-016 | UC58, UC59, UC60 | Các trường hợp kết hợp `q`/bộ lọc và tương đương trường người dùng trong `backend/tests/reportRoutes.test.js`, `backend/tests/reportInMemoryParity.test.js` | Bằng chứng tự động; đang chờ đánh giá H2 |
-| FR-FE12-001 | UC58 | FT59 | Sẵn sàng để xem xét |
-| FR-FE12-002 | UC59 | FT60 | Sẵn sàng để xem xét |
-| FR-FE12-003 | UC60 | FT61 | Sẵn sàng để xem xét |
-| FR-FE12-004 | UC58, UC59, UC60 | FT59, FT60, FT61 | Sẵn sàng để xem xét |
+| BR-FE12-009 | UC58, UC59, UC60 | FT59, FT60, FT61 | Hoàn thành |
+| BR-FE12-010 | UC58, UC59, UC60 | FT59, FT60, FT61 | Hoàn thành |
+| BR-FE12-011 | UC60 | FT61 | Hoàn thành |
+| BR-FE12-012 | UC58, UC59, UC60 | FT59, FT60, FT61 | Hoàn thành |
+| BR-FE12-013 | UC58, UC59, UC60 | `backend/tests/reportDeterministicPolicy.test.js` kiểm tra không có tuyến API/OpenAPI/giao diện xuất | Hoàn thành |
+| BR-FE12-014 | UC58, UC59, UC60 | Các trường hợp kiểm toán lượt xem thành công an toàn trong `backend/tests/reportService.test.js`, `backend/tests/reportRoutes.test.js` | Hoàn thành |
+| BR-FE12-015 | UC58, UC59, UC60 | Các trường hợp phân trang/thứ tự trong `backend/tests/reportDeterministicPolicy.test.js`, `backend/tests/reportRepository.test.js` | Hoàn thành |
+| BR-FE12-016 | UC58, UC59, UC60 | Các trường hợp kết hợp `q`/bộ lọc và tương đương trường người dùng trong `backend/tests/reportRoutes.test.js`, `backend/tests/reportInMemoryParity.test.js` | Hoàn thành |
+| FR-FE12-001 | UC58 | FT59 | Hoàn thành |
+| FR-FE12-002 | UC59 | FT60 | Hoàn thành |
+| FR-FE12-003 | UC60 | FT61 | Hoàn thành |
+| FR-FE12-004 | UC58, UC59, UC60 | FT59, FT60, FT61 | Hoàn thành |
 | FR-FE12-005 | UC58, UC59, UC60 | `reportRoutes.test.js` xác minh `UNSUPPORTED_REPORT_QUERY_PARAMETER` an toàn, không gọi tầng truy cập dữ liệu và giữ xác thực giá trị hiện có | Hoàn thành |
-| FR-FE12-006 | UC58, UC59, UC60 | FT59, FT60, FT61 | Sẵn sàng để xem xét |
-| FR-FE12-007 | UC58, UC59, UC60 | FT59, FT60, FT61 | Sẵn sàng để xem xét |
-| FR-FE12-008 | UC60 | FT61 | Sẵn sàng để xem xét |
-| FR-FE12-009 | UC58, UC59, UC60 | `backend/tests/reportService.test.js`, `backend/tests/reportRoutes.test.js` | Bằng chứng tự động; đang chờ xem xét lại con người |
-| FR-FE12-010 | UC58, UC59, UC60 | `backend/tests/reportDeterministicPolicy.test.js`, `backend/tests/reportRepository.test.js`, `backend/tests/reportContract.test.js` | Bằng chứng tự động; đang chờ xem xét lại con người |
-| FR-FE12-011 | UC58, UC59, UC60 | `backend/tests/reportRoutes.test.js`, `backend/tests/reportInMemoryParity.test.js`, `frontend/test/reportFrontend.test.js` | Bằng chứng tự động; Đang chờ xem xét H2 |
-| AC-FE12-001 | UC58 | FT59 | Sẵn sàng để xem xét |
-| AC-FE12-002 | UC59 | FT60 | Sẵn sàng để xem xét |
-| AC-FE12-003 | UC60 | FT61 | Sẵn sàng để xem xét |
-| AC-FE12-004 | UC58, UC59, UC60 | FT59, FT60, FT61 | Sẵn sàng để xem xét |
+| FR-FE12-006 | UC58, UC59, UC60 | FT59, FT60, FT61 | Hoàn thành |
+| FR-FE12-007 | UC58, UC59, UC60 | FT59, FT60, FT61 | Hoàn thành |
+| FR-FE12-008 | UC60 | FT61 | Hoàn thành |
+| FR-FE12-009 | UC58, UC59, UC60 | `backend/tests/reportService.test.js`, `backend/tests/reportRoutes.test.js` | Hoàn thành |
+| FR-FE12-010 | UC58, UC59, UC60 | `backend/tests/reportDeterministicPolicy.test.js`, `backend/tests/reportRepository.test.js`, `backend/tests/reportContract.test.js` | Hoàn thành |
+| FR-FE12-011 | UC58, UC59, UC60 | `backend/tests/reportRoutes.test.js`, `backend/tests/reportInMemoryParity.test.js`, `frontend/test/reportFrontend.test.js` | Hoàn thành |
+| AC-FE12-001 | UC58 | FT59 | Hoàn thành |
+| AC-FE12-002 | UC59 | FT60 | Hoàn thành |
+| AC-FE12-003 | UC60 | FT61 | Hoàn thành |
+| AC-FE12-004 | UC58, UC59, UC60 | FT59, FT60, FT61 | Hoàn thành |
 | AC-FE12-005 | UC58, UC59, UC60 | Ma trận tuyến API của ba API cùng kiểm tra HTTP thực với `?bogus=runtime-secret-value` | Hoàn thành |
-| AC-FE12-006 | UC58, UC59, UC60 | FT59, FT60, FT61 | Sẵn sàng để xem xét |
-| AC-FE12-007 | UC58, UC59, UC60 | FT59, FT60, FT61 | Sẵn sàng để xem xét |
-| AC-FE12-008 | UC60 | FT61 | Sẵn sàng để xem xét |
-| AC-FE12-009 | UC58, UC59, UC60 | `backend/tests/reportService.test.js`, `backend/tests/reportRoutes.test.js` | Bằng chứng tự động; đang chờ xem xét lại con người |
-| AC-FE12-010 | UC58, UC59, UC60 | `backend/tests/reportDeterministicPolicy.test.js`, `backend/tests/reportRepository.test.js`, `backend/tests/reportContract.test.js` | Bằng chứng tự động; đang chờ xem xét lại con người |
-| AC-FE12-011 | UC58, UC59, UC60 | `backend/tests/reportInMemoryParity.test.js` kiểm tra tương đương tìm kiếm/lịch sử/thứ tự người dùng; `frontend/test/reportFrontend.test.js` kiểm tra hành vi không hiện thông báo thành công dư thừa | Bằng chứng tự động; đang chờ đánh giá H2 |
+| AC-FE12-006 | UC58, UC59, UC60 | FT59, FT60, FT61 | Hoàn thành |
+| AC-FE12-007 | UC58, UC59, UC60 | FT59, FT60, FT61 | Hoàn thành |
+| AC-FE12-008 | UC60 | FT61 | Hoàn thành |
+| AC-FE12-009 | UC58, UC59, UC60 | `backend/tests/reportService.test.js`, `backend/tests/reportRoutes.test.js` | Hoàn thành |
+| AC-FE12-010 | UC58, UC59, UC60 | `backend/tests/reportDeterministicPolicy.test.js`, `backend/tests/reportRepository.test.js`, `backend/tests/reportContract.test.js` | Hoàn thành |
+| AC-FE12-011 | UC58, UC59, UC60 | `backend/tests/reportInMemoryParity.test.js` kiểm tra tương đương tìm kiếm/lịch sử/thứ tự người dùng; `frontend/test/reportFrontend.test.js` kiểm tra hành vi không hiện thông báo thành công dư thừa | Hoàn thành |
 
 ### 16.1 Tóm tắt độ bao phủ
 
