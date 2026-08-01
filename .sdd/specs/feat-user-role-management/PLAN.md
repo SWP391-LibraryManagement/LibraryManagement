@@ -592,3 +592,10 @@ sinh diff.
    tiếp đã ngừng trả `404` mà không tới service ghi.
 6. Chạy kiểm thử backend/frontend FE11 tập trung, parse OpenAPI, lint/build và
    truy vết; hoàn tất review trình duyệt/con người đã xác thực riêng.
+
+## 2026-08-01 Củng cố mutation metadata Quản trị
+
+1. Giữ role đơn hiện tại làm nguồn ủy quyền duy nhất.
+2. Truyền actor/IP/user-agent từ request đã xác thực, không từ body/query.
+3. Ghi ba action catalog allowlist trong cùng transaction với mutation.
+4. Ánh xạ update/deactivate không có hàng sang `404 ADMIN_RESOURCE_ITEM_NOT_FOUND` và không ghi audit thành công.

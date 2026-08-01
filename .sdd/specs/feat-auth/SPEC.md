@@ -1,12 +1,12 @@
 # SPEC.md - Xác thực FE02
 
-# Phiên bản: 0.6.19
+# Phiên bản: 0.6.20
 
 # Trạng thái: BASELINE ĐÃ PHÊ DUYỆT 2026-07-17 - ĐỐI SOÁT HỢP ĐỒNG ĐANG CHỜ RÀ SOÁT THỦ CÔNG
 
 # Chủ sở hữu: Dat
 
-# Cập nhật lần cuối: 2026-07-28
+# Cập nhật lần cuối: 2026-08-01
 
 # ID tính năng: FE02
 
@@ -335,7 +335,7 @@ Các yêu cầu sau đây chính thức hóa các nhánh xử lý lỗi và tìn
 - AC-FE02-021: Cho trước mã thông báo thiết lập không hợp lệ, hết hạn, đã sử dụng, bị thu hồi, không đủ điều kiện hoặc đã bị một yêu cầu đồng thời sử dụng, khi yêu cầu thiết lập được gửi thì FE02 từ chối mã đó và không lưu bất kỳ trạng thái kích hoạt một phần nào.
 - AC-FE02-022: Với trường hợp Khách hoàn tất tự đăng ký, khi giao dịch tài khoản được xác nhận, hệ thống gán chính xác vai trò `Member` thông qua `UserRoles` và không tạo vai trò Thủ thư/Quản trị viên.
 - AC-FE02-023: Cho trước một thao tác được bảo vệ, khi hệ thống đánh giá quyền thì máy chủ sử dụng các phép gán `UserRoles` hiện tại của người dùng và không tin cậy vai trò do máy khách cung cấp.
-- AC-FE02-024: Với endpoint xác thực được truy cập qua HTTP không mã hóa trong môi trường triển khai, khi yêu cầu đến, hệ thống phải chuyển hướng sang HTTPS hoặc từ chối trước khi xử lý thông tin xác thực hay mã thông báo.
+- AC-FE02-024: Với request `/api` hoặc `/api/*` truyền credential/token qua HTTP không mã hóa trong môi trường triển khai, khi yêu cầu đến, hệ thống phải chuyển hướng sang HTTPS hoặc từ chối trước khi parse body hoặc dispatch route; liveness/readiness và static asset ngoài namespace API không bị gate này chặn.
 - AC-FE02-025: Với mã thông báo làm mới hợp lệ và không có mã thông báo truy cập, khi máy khách yêu cầu làm mới, hệ thống trả về mã thông báo truy cập mới có thời hạn 15 phút và chính mã thông báo làm mới đã gửi.
 - AC-FE02-026: Cho trước thông tin xác thực chính xác của tài khoản tự đăng ký có email chưa được xác minh, khi người dùng đăng nhập thì không có mã thông báo nào được phát hành và máy khách mở `/verify-email` với email đã đăng ký; mật khẩu sai, tài khoản bị vô hiệu hóa và tài khoản thiết lập do quản trị viên tạo không đi vào luồng này.
 
@@ -489,7 +489,7 @@ stateDiagram-v2
 
 - NFR-FE02-SEC-001: Tất cả mật khẩu phải được băm bằng bcrypt với hệ số chi phí ≥ 10.
 - NFR-FE02-SEC-002: Mật khẩu văn bản thuần không bao giờ được ghi lại, lưu trữ hoặc truyền ngoại trừ qua HTTPS.
-- NFR-FE02-SEC-003: HTTPS phải được thực thi cho tất cả các điểm cuối xác thực; Các yêu cầu HTTP phải được chuyển hướng hoặc bị từ chối.
+- NFR-FE02-SEC-003: HTTPS phải được thực thi cho tất cả request `/api` và `/api/*` có thể mang credential hoặc token; request HTTP phải được chuyển hướng bằng canonical host đã cấu hình hoặc bị từ chối trước khi xử lý. `/`, `/health`, `/health/ready`, `/api-docs` và static assets giữ hợp đồng triển khai riêng.
 - NFR-FE02-SEC-004: Mã thông báo truy cập JWT phải hết hạn sau 15 phút và mã thông báo làm mới phải hết hạn sau 7 ngày.
 - NFR-FE02-SEC-005: Khóa tài khoản đã biết sau 5 lần nhập sai mật khẩu liên tiếp trong cửa sổ trượt 15 phút. Giới hạn yêu cầu trên toàn IP chưa được triển khai trong baseline mã hiện tại.
 - NFR-FE02-SEC-006: Khóa tài khoản phải xảy ra sau 5 lần nhập mật khẩu không thành công liên tiếp trong vòng 15 phút và kéo dài đúng 30 phút trừ khi việc mở khóa tự động xảy ra sau `lockedUntil`; Giai đoạn 1 không có hành động mở khóa quản trị viên.
@@ -506,7 +506,7 @@ stateDiagram-v2
 ### 12.2 Tính toàn vẹn giao dịch
 
 - NFR-FE02-TXN-001: Việc tạo mã thông báo xác minh và tạo người dùng phải là nguyên tử.
-- NFR-FE02-TXN-002: Đăng nhập và tạo session/token phải ở dạng nguyên tử.
+- NFR-FE02-TXN-002: Đăng nhập thành công phải commit việc đặt lại trạng thái đăng nhập, tạo refresh token và `AUTH_LOGIN_SUCCESS` trong cùng giao dịch; đăng xuất phải commit việc thu hồi refresh token hiện tại khi có và `AUTH_LOGOUT` trong cùng giao dịch. Lỗi audit bắt buộc làm rollback state transition tương ứng.
 - NFR-FE02-TXN-003: Thay đổi mật khẩu, sử dụng thông tin xác thực dùng một lần khi áp dụng và ghi log audit bắt buộc phải hoàn tất theo cách nguyên tử; việc thu hồi các thông tin xác thực refresh/session khác chưa được triển khai trong baseline mã hiện tại.
 - NFR-FE02-TXN-004: Việc đặt lại mật khẩu và vô hiệu hóa mã thông báo phải ở mức nguyên tử.
 - NFR-FE02-TXN-005: Việc hoàn tất thiết lập tài khoản phải cập nhật nguyên tử mật khẩu, trạng thái xác minh/tài khoản/khóa, trạng thái sử dụng/thu hồi mã thông báo và bản ghi audit thành công.
@@ -658,7 +658,7 @@ Các quyết định sau đây đã được phê duyệt trong gói đánh giá
 | AC-FE02-021 | Mã thông báo thiết lập không hợp lệ/hết hạn/đã dùng/bị thu hồi/không đủ điều kiện/được dùng đồng thời không thể gây kích hoạt một phần | FR-FE02-025 | BR-FE02-024, BR-FE02-025 | FT11 | Được chấp nhận; bằng chứng tự động được ghi lại |
 | AC-FE02-022 | Khách tự đăng ký chỉ được gán chính xác vai trò Thành viên qua UserRoles | FR-FE02-013 | BR-FE02-003, BR-FE02-015, Q-FE02-014 | `backend/tests/authRoutes.test.js`: đăng ký -> xác minh -> đăng nhập -> xác nhận vai trò qua `/me` | Được chấp nhận; bằng chứng tự động được ghi lại |
 | AC-FE02-023 | Phân quyền cho thao tác được bảo vệ sử dụng UserRoles hiện tại ở phía máy chủ và từ chối claim vai trò do máy khách cung cấp | FR-FE02-014 | BR-FE02-015 | `backend/tests/authRoutes.test.js` thay đổi vai trò đã lưu sau khi phát hành mã thông báo | Được chấp nhận; bằng chứng tự động được ghi lại |
-| AC-FE02-024 | Yêu cầu xác thực HTTP đã triển khai bị chuyển hướng hoặc bị từ chối trước khi xử lý thông tin xác thực | NFR-FE02-SEC-003 | BR-FE02-017 | `backend/tests/httpsEnforcement.test.js` (3/3) cộng với việc chấp nhận triển khai Giai đoạn 2 | Được chấp nhận; bằng chứng tự động và triển khai được ghi lại |
+| AC-FE02-024 | Request HTTP tới namespace API đã triển khai bị chuyển hướng hoặc từ chối trước khi xử lý credential/token; health/static exclusions vẫn hoạt động | NFR-FE02-SEC-003 | BR-FE02-017 | `backend/tests/httpsEnforcement.test.js` | PENDING FE02-T067 |
 | AC-FE02-025 | Trao đổi mã thông báo làm mới trả về mã thông báo truy cập mới và mã thông báo làm mới tương tự mà không yêu cầu mã thông báo truy cập | FR-FE02-026 | BR-FE02-010 | Các trường hợp mã thông báo làm mới `backend/tests/authRoutes.test.js` | Được chấp nhận; bằng chứng tự động được ghi lại |
 | AC-FE02-026 | Thông tin xác thực chính xác của tài khoản tự đăng ký đang chờ xử lý trả về yêu cầu xác minh và định tuyến máy khách đến `/verify-email`; trạng thái không hoạt động không đủ điều kiện vẫn nhận phản hồi chung | FR-FE02-027 | BR-FE02-004, BR-FE02-007, BR-FE02-025, BR-FE02-028 | `backend/tests/authRoutes.test.js`; `frontend/test/verificationRecoveryFrontend.test.js` | Được chấp nhận; bằng chứng tự động được ghi lại |
 

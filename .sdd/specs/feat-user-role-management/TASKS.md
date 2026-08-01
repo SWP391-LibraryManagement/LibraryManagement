@@ -677,3 +677,10 @@ lịch sử không được dùng làm bằng chứng hoàn tất.
   - Triển khai/kiểm thử tự động: đang thực hiện trong workspace hiện tại.
   - Còn lại: xác thực tập trung/đầy đủ cùng review trình duyệt/con người đã xác
     thực.
+
+## 2026-08-01 Củng cố mutation metadata Quản trị
+
+- [ ] **FE11-CAT01 - Làm mutation metadata Quản trị có audit nguyên tử.**
+  - Ánh xạ tới: BR-FE11-033, FR-FE11-043, AC-FE11-026, NFR-FE11-TXN-007, NFR-FE11-LOG-003; FE05-T019.
+  - DoD: ba mutation giữ role/endpoint/envelope, dùng một transaction cho nguồn + audit, update không tồn tại không trả thành công giả và projector audit chỉ chiếu metadata allowlist.
+  - Bằng chứng yêu cầu: RED-GREEN controller/service/repository/projector, backend đầy đủ/coverage, traceability, secret scan, system/E2E/deployment và review H2-P/H3-P.
