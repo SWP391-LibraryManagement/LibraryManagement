@@ -92,7 +92,8 @@ npm.cmd run trace:enforce
 
 ## 9. Ma trận kiểm thử đợt FE07-FE12
 
-- AC-FE07-033: approve/reject requester lũy đẳng và dữ liệu an toàn.
+- AC-FE07-033: thành phần gửi yêu cầu phê duyệt/từ chối không tạo bản ghi trùng
+  khi xử lý lặp và chỉ dùng dữ liệu an toàn.
 - AC-FE07-034: return bàn giao có/không hàng đợi, không thao tác thay đổi dữ liệu reservation.
 - AC-FE07-035: FE10 failure giữ commit FE07 và trả cảnh báo.
 - AC-FE07-036: timeline/state/timestamp/điều kiện chặn/lỗi thời màn hình máy tính dữ liệu hiển thị.

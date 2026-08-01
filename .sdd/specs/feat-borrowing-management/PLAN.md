@@ -256,10 +256,11 @@ Kế hoạch thực thi chi tiết là
 
 ## 15. Kế hoạch đợt liên hoàn v0.9.0
 
-1. `SL-001`: hợp nhất governance activation trước product work.
-2. `SL-002`: chờ FE10 canonical templates/action path.
-3. `SL-003`: RED/GREEN cho post-commit requester, queue bàn giao, timeline và
-   điều kiện chặn/lỗi thời guidance; FE07 là chức năng duy nhất chịu trách nhiệm cho phạm vi này.
+1. `SL-001`: hợp nhất phê duyệt kích hoạt trước khi sửa phần sản phẩm.
+2. `SL-002`: chờ FE10 chốt mẫu thông báo và đường dẫn thao tác theo quy định.
+3. `SL-003`: kiểm thử trước và sau khi sửa cho thành phần gửi yêu cầu sau
+   commit, hàng đợi bàn giao, dòng thời gian cùng hướng dẫn về điều kiện chặn và
+   dữ liệu lỗi thời; FE07 là chức năng duy nhất chịu trách nhiệm cho phạm vi này.
 4. `SL-006`: kiểm thử tích hợp và màn hình máy tính Chromium 1440x900.
 5. Giữ toàn bộ phần thay đổi của sản phẩm chưa được commit đến H2; H3 bắt buộc trước hợp nhất.
 

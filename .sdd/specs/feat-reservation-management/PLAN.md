@@ -217,7 +217,8 @@ Không bao gồm:
 1. Không thêm thay đổi mã môi trường triển khai thực tế, schema, API, vòng đời hay chính sách hàng đợi FE08 ngoài trình bày an toàn null theo FR-FE08-035.
 2. Giữ `FE08-T041` đến `FE08-T046` từ `main` và dùng `FE08-T047` cho xác minh chỉ hồi quy của đợt này.
 3. Thêm kiểm thử hợp đồng frontend thất bại cho vị trí hàng đợi Thành viên/nhân sự null, sau đó thực hiện sửa trình bày nhỏ nhất.
-4. Chạy lại kiểm thử requester đặt chỗ tập trung chứng minh FE08 tạo yêu cầu FE10 `RESERVATION_AVAILABLE -> RESERVATION_READY` chuẩn.
+4. Chạy lại kiểm thử tập trung cho thành phần gửi yêu cầu đặt chỗ, chứng minh
+   FE08 tạo yêu cầu FE10 `RESERVATION_AVAILABLE -> RESERVATION_READY` đúng quy định.
 5. Chạy lại `SIT-003` chứng minh giữ hàng đợi cộng tạo thông báo và `SIT-004` chứng minh ưu tiên FE08 vẫn chặn gia hạn FE07 mà không thay đổi.
 6. Coi mọi lỗi FE08 là điều kiện chặn cần chẩn đoán/quyết định đặc tả mới; không mở rộng đợt này một cách im lặng.
 

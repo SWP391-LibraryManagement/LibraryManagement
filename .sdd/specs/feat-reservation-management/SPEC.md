@@ -319,7 +319,7 @@ Tính năng này chỉ có thể bắt đầu khi:
 | copyId | integer | Có | Phải tham chiếu bản sao vật lý `BookCopies.CopyId`; mục tiêu đặt chỗ Giai đoạn 1 ở cấp bản sao. |
 | reservedAt | datetime | Có | Dùng để xác định thứ tự hàng đợi. |
 | status | string | Có | Các giá trị: `ACTIVE`, `NOTIFIED`, `FULFILLED`, `CANCELLED`, `EXPIRED`. |
-| queuePosition | integer | Không | Được tính để hiển thị theo `ReservedAt ASC, ReservationId ASC` trong các bản ghi `ACTIVE`; không lưu bền và được tính lại sau mỗi thao tác danh sách hoặc hàng đợi. |
+| queuePosition | integer | Không | Được tính để hiển thị theo `ReservedAt ASC, ReservationId ASC` trong các bản ghi `ACTIVE`; không lưu vào cơ sở dữ liệu và được tính lại sau mỗi thao tác danh sách hoặc hàng đợi. |
 | expiresAt | datetime | Bắt buộc sau thông báo đầu tiên | Máy chủ thiết lập `NotifiedAt + 2 calendar days`; sau đó giá trị bất biến và được giữ trong các bản ghi `NOTIFIED`, `FULFILLED`, `EXPIRED` hoặc đã được thông báo rồi hủy. Chỉ là null khi đặt chỗ chưa từng đạt `NOTIFIED`. |
 | notifiedAt | datetime | Bắt buộc sau thông báo đầu tiên | Dấu thời gian máy chủ của thông báo giữ chỗ ban đầu; bất biến và được giữ sau mọi lần chuyển sang trạng thái cuối. Chỉ là null khi đặt chỗ chưa từng đạt `NOTIFIED`. |
 | cancelledAt | datetime | Chỉ bắt buộc khi `status = CANCELLED` | Dấu thời gian máy chủ; máy khách không bao giờ được cung cấp. Phải là null ở mọi trạng thái không phải hủy. |

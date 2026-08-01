@@ -817,7 +817,7 @@ Các bước chi tiết, lệnh trước và sau khi sửa và ranh giới commi
 - H2 vòng 3 đã được phê duyệt nhưng bị thay thế trước khi dùng bởi
   `main@a240705`. Người dùng phê duyệt phụ lục chênh lệch H1 thứ tư; việc
   phần triển khai trước loại chỉnh sửa FE11 Admin, CI main chính xác `30311801599`, triển
-  khai Azure `30311973740` và việc cập nhật nhánh không xung đột được bảo toàn.
+  khai Azure `30311973740`; nhánh cũng đã được cập nhật thành công, không có xung đột.
   Ma trận đầy
   đủ và H2 mới vẫn bắt buộc.
 - Ma trận mới trên `main@a240705` đạt: backend 69/69 bộ và 1084/1084 kiểm thử;

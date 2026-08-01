@@ -397,7 +397,7 @@
 - Làm làm mới thủ công cung cấp phản hồi tải/thành công/lỗi và tải lại trạng thái API chuẩn sau phê duyệt hoặc từ chối.
 - Công khai hồ sơ thành viên, ID thành viên chuẩn, điện thoại, mã vạch, tác giả, vị trí và mọi bản sao được yêu cầu từ quan hệ cơ sở dữ liệu hiện có.
 - Sắp xếp ID yêu cầu thủ thư tăng dần, thêm phân trang tám hàng và tinh chỉnh thanh công cụ tóm tắt/lọc.
-- Thay font fallback tiêu đề từng hiển thị sai một số dấu kết hợp tiếng Việt.
+- Thay phông chữ dự phòng của tiêu đề từng hiển thị sai một số dấu kết hợp tiếng Việt.
 - Thêm tìm kiếm không phân biệt dấu qua mã yêu cầu, danh tính thành viên, sách, tác giả và mã vạch; kết quả tìm kiếm hiện cấp vào cùng phân trang được dùng bởi bộ lọc trạng thái chuẩn.
 - Thêm thao tác gửi Tìm kiếm rõ ràng có hỗ trợ phím Enter và tách dữ liệu đầu vào nháp khỏi truy vấn áp dụng để kết quả chỉ cập nhật sau xác nhận người dùng.
 - Xây lại không gian trả của thủ thư với tải khoản mượn đã phê duyệt chuẩn, phản hồi làm mới/tìm kiếm rõ ràng, trường thành viên/bản sao đầy đủ, phân trang và tải lại chuẩn sau thay đổi trả.

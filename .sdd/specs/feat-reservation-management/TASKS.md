@@ -270,7 +270,7 @@ Azure staging `30675744992` đều đạt trên đúng commit.
   - Phạm vi: chỉ bằng chứng hồi quy sau hiệu chỉnh trình bày an toàn null FE08-T046 có giới hạn.
   - Bằng chứng lịch sử với hợp nhất `e20fdc3` trước đó chỉ là mốc cơ sở.
   - Bằng chứng mới với hợp nhất `8d0059b` đang mở: RED/GREEN vị trí hàng đợi
-    `1/1`, backend FE09 `22/22`, frontend FE08/FE09 `17/17`, requester và
+    `1/1`, backend FE09 `22/22`, frontend FE08/FE09 `17/17`, thành phần gửi yêu cầu và
     bao phủ SIT trong cổng liên tính năng 7 bộ `295/295`, backend đầy đủ
     và bao phủ `1,052/1,052`, frontend `232/232` và chấp nhận Chromium
     `2/2`.

@@ -77,8 +77,8 @@
   môi trường thử nghiệm Azure `30307855616` đã đạt.
 - Người dùng sau đó phê duyệt đối soát chênh lệch H1 qua `main@12faead`. Thay
   đổi đến chỉ xóa tệp kết quả `document/` đã ngừng dùng, không chồng lấp đường dẫn
-  hay hợp đồng cốt lõi với biện pháp khắc phục này; việc cập nhật nhánh không
-  xung đột. Môi trường thử nghiệm Azure
+  hay hợp đồng cốt lõi với biện pháp khắc phục này; nhánh được cập nhật mà không
+  có xung đột. Môi trường thử nghiệm Azure
   môi trường thử nghiệm hiện tại phục vụ `main` đó, nên biện pháp khắc phục cần triển khai
   commit chính xác mới sau H2 và công bố.
 - Xác minh Azure trực tiếp bao phủ điều kiện hậu bản cập nhật cơ sở dữ liệu/chỉ mục, bảo toàn
@@ -105,7 +105,7 @@
   đưa vào vùng chờ, commit hoặc đẩy mã theo quyền đó. Sau đó người dùng phê duyệt
   `H1 drift addendum main@a240705`. Đối soát giữ việc phần triển khai trước loại bỏ thao tác
   chỉnh sửa Quản trị FE11, CI main chính xác `30311801599` và triển khai Azure
-  `30311973740`; việc cập nhật nhánh không xung đột và cần ma trận, mã đối chiếu
+  `30311973740`; nhánh được cập nhật mà không có xung đột và cần ma trận, mã đối chiếu
   nội dung cùng phê duyệt H2 mới.
 - Xác thực mới trên `main@a240705` đạt backend 69/69 bộ và 1084/1084 kiểm thử,
   frontend 259/259 cùng kiểm tra mã/bản dựng, triển khai 20/20, hệ thống 10/10, trạng

@@ -694,7 +694,7 @@ Tính năng này không bao gồm:
 | AC-FE07-021 | UC32 | Đã lên kế hoạch: yêu cầu kiểm tra ranh giới lý do từ chối | Đã lên kế hoạch |
 | AC-FE07-022 | UC30, UC34 | Đã lên kế hoạch: lịch sử xác thực filter/date/page/limit và trường hợp trật tự ổn định | Đã lên kế hoạch |
 | AC-FE07-023 | UC30 | borrowingTuyến APIs.test.js > "lịch sử thành viên hiển thị yêu cầu sở hữu bị từ chối mà không thay đổi trạng thái chi tiết"; borrowingFrontend.test.js > "lịch sử thành viên hiển thị các yêu cầu bị từ chối mà không gắn nhãn lại các chi tiết đang chờ xử lý" | Hoàn thành |
-| AC-FE07-024 | UC32, UC35 | borrowingFrontend.test.js > "các quyết định yêu cầu mượn hiển thị đầy đủ bối cảnh và đầu vào từ chối giúp tập trung vào các kết xuất" | Hoàn thành |
+| AC-FE07-024 | UC32, UC35 | borrowingFrontend.test.js > "các quyết định yêu cầu mượn hiển thị đầy đủ bối cảnh và ô nhập lý do từ chối được làm nổi bật" | Hoàn thành |
 | AC-FE07-025 | UC33 | borrowingFrontend.test.js > "tình trạng hoàn trả sử dụng ngày kinh doanh tại Châu Á Hồ Chí Minh và giải thích trạng thái"; "các hàng trả về bảo toàn siêu dữ liệu gia hạn chuẩn từ BorrowDetails" | Hoàn thành |
 | BR-FE07-001 | UC29-UC35 | Đã lên kế hoạch: ma trận phân quyền Khách/thao tác mượn được bảo vệ | Đã lên kế hoạch |
 | BR-FE07-002 | UC29 | Đã lên kế hoạch: danh tính yêu cầu thành viên là thử nghiệm gắn với mã thông báo | Đã lên kế hoạch |
