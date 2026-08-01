@@ -2,7 +2,7 @@
 
 # Phiên bản: 0.3.0
 
-# Trạng thái: COMPLETE; PR #89 ĐÃ MERGE; CI VÀ AZURE DEPLOY EXACT-HEAD ĐẠT
+# Trạng thái: HOÀN THÀNH (`COMPLETE`); PR #89 ĐÃ HỢP NHẤT; CI VÀ AZURE ĐÚNG COMMIT ĐẠT
 
 # Chủ sở hữu: Nhat
 
@@ -17,28 +17,28 @@
 Báo cáo và thống kê giúp thủ thư và quản trị viên hiểu hoạt động thư viện qua các
 bản tóm tắt chỉ đọc.
 
-Tính năng này phải tách báo cáo khỏi workflow nguồn:
+Tính năng này phải tách báo cáo khỏi quy trình nguồn:
 
 - FE12 đọc dữ liệu mượn, kho, người dùng, tư cách thành viên và tiền phạt.
 - FE12 không duyệt mượn, thay đổi trạng thái bản sao, quản lý người dùng hay
   tính tiền phạt.
 - Tính năng nguồn vẫn chịu trách nhiệm về tính đúng đắn của dữ liệu.
 
-FE12 là tính năng Standard Spec vì tổng hợp dữ liệu nghiệp vụ và cần bảo vệ theo
+FE12 là tính năng Đặc tả tiêu chuẩn vì tổng hợp dữ liệu nghiệp vụ và cần bảo vệ theo
 vai trò, nhưng chỉ đọc trong Giai đoạn 1.
 
 ---
 
-## 2. Workflow thực tế
+## 2. Quy trình thực tế
 
-Workflow báo cáo điển hình:
+Quy trình báo cáo điển hình:
 
 1. Thủ thư/quản trị viên mở báo cáo.
 2. Tác nhân chọn loại báo cáo: mượn, kho hoặc thống kê người dùng.
 3. Tác nhân chọn bộ lọc như khoảng ngày, trạng thái, thể loại hoặc vai trò nếu
    được hỗ trợ.
 4. Hệ thống xác thực bộ lọc.
-5. Hệ thống đọc dữ liệu nguồn và tính metric tổng hợp.
+5. Hệ thống đọc dữ liệu nguồn và tính chỉ số tổng hợp.
 6. Hệ thống hiển thị báo cáo mà không thay đổi bản ghi nguồn.
 
 ---
@@ -59,7 +59,7 @@ FE12 không bao gồm:
 - Quản lý người dùng/vai trò. Việc đó thuộc FE11.
 - Tính toán/thanh toán tiền phạt. Việc đó thuộc FE09.
 - Sửa dữ liệu nguồn từ báo cáo.
-- Dashboard BI phức tạp hoặc tích hợp phân tích bên ngoài.
+- Trang tổng quan BI phức tạp hoặc tích hợp phân tích bên ngoài.
 
 ---
 
@@ -74,16 +74,16 @@ SQL hiện tại gồm các bảng nguồn báo cáo:
 - `Reservations`
 - `Fines`
 
-Các vấn đề tiềm năng cần review:
+Các vấn đề tiềm năng cần rà soát:
 
-- Một số metric báo cáo cần giá trị trạng thái nhất quán giữa các tính năng.
+- Một số chỉ số báo cáo cần giá trị trạng thái nhất quán giữa các tính năng.
 - Lọc khoảng ngày cần nguồn ngày rõ ràng: ngày yêu cầu, ngày đến hạn, ngày trả,
   ngày thanh toán hoặc ngày tạo.
-- SQL hiện tại không lưu mọi timestamp audit/báo cáo cho từng thực thể.
-- Query báo cáo phải chỉ đọc và không trở thành logic workflow nghiệp vụ.
+- SQL hiện tại không lưu mọi timestamp kiểm toán/báo cáo cho từng thực thể.
+- Query báo cáo phải chỉ đọc và không trở thành logic quy trình nghiệp vụ.
 - Định dạng xuất chưa được xác định.
 
-Đây không phải blocker khi soạn thảo, nhưng phải giải quyết trước triển khai.
+Đây không phải trở ngại khi soạn thảo, nhưng phải giải quyết trước triển khai.
 
 ---
 
@@ -140,35 +140,36 @@ Cột chủ sở hữu phản ánh phân công lại đội hiện tại.
 
 | ID | Quyết định đã phê duyệt | Nguồn | Trạng thái |
 | -- | ----------------------- | ------ | ---------- |
-| Q-FE12-001 | Thủ thư và Quản trị có thể xem cả ba báo cáo; Member/Guest không thể xem báo cáo FE12 nào. | Gói review 2026-06-10; chuẩn hóa 2026-07-17 | APPROVED |
-| Q-FE12-002 | Metric mượn: lượt mượn hoạt động, lượt mượn quá hạn, số mượn theo kỳ, sách được mượn nhiều nhất. | Gói review 2026-06-10 | APPROVED |
-| Q-FE12-003 | Metric kho: tổng sách, tổng bản sao, bản sao theo trạng thái, sách ít/không còn sẵn có. | Gói review 2026-06-10 | APPROVED |
-| Q-FE12-004 | Thống kê người dùng: tổng thành viên, người dùng hoạt động/không hoạt động, thành viên mới theo kỳ. | Gói review 2026-06-10 | APPROVED |
-| Q-FE12-005 | Mọi xuất báo cáo hoàn toàn ngoài phạm vi Giai đoạn 1. | Gói review 2026-06-10; chuẩn hóa 2026-07-17 | APPROVED |
-| Q-FE12-006 | Truy cập báo cáo ghi audit cho lượt xem báo cáo của Quản trị/Thủ thư. | Gói review 2026-06-10 | APPROVED |
+| Q-FE12-001 | Thủ thư và Quản trị có thể xem cả ba báo cáo; Member/Guest không thể xem báo cáo FE12 nào. | Gói rà soát 2026-06-10; chuẩn hóa 2026-07-17 | APPROVED |
+| Q-FE12-002 | Chỉ số mượn: lượt mượn hoạt động, lượt mượn quá hạn, số mượn theo kỳ, sách được mượn nhiều nhất. | Gói rà soát 2026-06-10 | APPROVED |
+| Q-FE12-003 | Chỉ số kho: tổng sách, tổng bản sao, bản sao theo trạng thái, sách ít/không còn sẵn có. | Gói rà soát 2026-06-10 | APPROVED |
+| Q-FE12-004 | Thống kê người dùng: tổng thành viên, người dùng hoạt động/không hoạt động, thành viên mới theo kỳ. | Gói rà soát 2026-06-10 | APPROVED |
+| Q-FE12-005 | Mọi xuất báo cáo hoàn toàn ngoài phạm vi Giai đoạn 1. | Gói rà soát 2026-06-10; chuẩn hóa 2026-07-17 | APPROVED |
+| Q-FE12-006 | Truy cập báo cáo ghi kiểm toán cho lượt xem báo cáo của Quản trị/Thủ thư. | Gói rà soát 2026-06-10 | APPROVED |
 | Q-FE12-007 | ID không rõ có định dạng hợp lệ trả báo cáo rỗng, trạng thái nguồn không rõ nhóm thành `UNKNOWN` và hàng chi tiết dùng phân trang/thứ tự xác định. | Chuẩn hóa spec 2026-07-17 | APPROVED |
 
 ---
 
 ## 10. Ghi chú triển khai sau này
 
-- Không triển khai cho đến khi `SPEC.md` được review và phê duyệt.
-- Lát cắt base đã hoàn tất vẫn là bằng chứng lịch sử; phần theo dõi chuẩn hóa
+- Không triển khai cho đến khi `SPEC.md` được rà soát và phê duyệt.
+- Phạm vi nền đã hoàn tất vẫn là bằng chứng lịch sử; phần theo dõi chuẩn hóa
   được lên kế hoạch riêng sau khi bản sửa này được phê duyệt.
 - Giữ báo cáo chỉ đọc.
 - Xác thực bộ lọc phía máy chủ.
 - Tránh lộ chi tiết cá nhân trừ khi cần thiết và được ủy quyền.
 - Giữ phép tính báo cáo truy vết được tới trạng thái tính năng nguồn.
 
-## 11. Bối cảnh batch FE07-FE12 2026-07-29
+## 11. Bối cảnh đợt FE07-FE12 2026-07-29
 
-- FE12 cung cấp một operations summary chỉ đọc cho Librarian/Admin.
-- Dashboard không tự đếm từ các danh sách FE07/FE08 phân trang.
-- Một lần đọc service clock sinh cả `generatedAt` và `businessDate`.
-- `businessDate` được truyền cho báo cáo mượn và operations summary ở cả SQL
-  Server/Azure SQL lẫn in-memory repository; host clock không được ẩn trong
-  repository.
-- Prerequisite clock drift SIT-002/SIT-008, fail-fast và parity FE12-N12/N13
-  đã hoàn tất qua PR #81, merge thành `main@0d064b5`.
-- Operations summary tiếp tục từ FE12-N14; N15/N16 hoàn tất dashboard và bằng
-  chứng tích hợp. Không mở lại hoặc nhân đôi prerequisite đã merge.
+- FE12 cung cấp một tổng quan vận hành chỉ đọc cho Librarian/Admin.
+- Trang tổng quan không tự đếm từ các danh sách FE07/FE08 phân trang.
+- Một lần đọc tầng dịch vụ đồng hồ sinh cả `generatedAt` và `businessDate`.
+- `businessDate` được truyền cho báo cáo mượn và tổng quan vận hành ở cả SQL
+  Server/Azure SQL lẫn trong bộ nhớ tầng truy cập dữ liệu; đồng hồ máy chủ không được ẩn trong
+  tầng truy cập dữ liệu.
+- Điều kiện tiên quyết FE12-N12/N13 về sai lệch đồng hồ SIT-002/SIT-008, từ
+  chối ngay dữ liệu sai và giữ tính đồng nhất
+  đã hoàn tất qua PR #81, hợp nhất thành `main@0d064b5`.
+- Tổng quan vận hành tiếp tục từ FE12-N14; N15/N16 hoàn tất trang tổng quan và bằng
+  chứng tích hợp. Không mở lại hoặc nhân đôi điều kiện tiên quyết đã hợp nhất.

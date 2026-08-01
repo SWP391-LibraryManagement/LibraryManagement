@@ -2,7 +2,7 @@
 
 # Phiên bản: 0.3.0
 
-# Trạng thái: COMPLETE; PR #89 ĐÃ MERGE; CI VÀ AZURE DEPLOY EXACT-HEAD ĐẠT
+# Trạng thái: HOÀN THÀNH (`COMPLETE`); PR #89 ĐÃ HỢP NHẤT; CI VÀ AZURE ĐÚNG COMMIT ĐẠT
 
 # Chủ sở hữu: Nhat
 
@@ -13,32 +13,33 @@
 # Thư mục tính năng: `.sdd/specs/feat-reporting-statistics/`
 
 > Trạng thái phân phối hiện tại (2026-08-01): `COMPLETE` cho phạm vi Giai đoạn
-> 1, prerequisite ngày nghiệp vụ v0.2.1 đã merge qua PR #81, governance v0.3.0
-> đã merge qua PR #80 và operations summary đã merge qua PR #82. Batch liên
+> 1, điều kiện tiên quyết ngày nghiệp vụ v0.2.1 đã hợp nhất qua PR #81, phần phê
+> duyệt kích hoạt v0.3.0 đã hợp nhất qua PR #80 và tổng quan vận hành đã hợp nhất
+> qua PR #82. Đợt liên
 > hoàn sau đó đã được H3 phê duyệt và tích hợp vào `main` tại `ba29dc0`.
-> Closeout `6189b1a` đã merge qua PR #89 thành `main@39092fb`; CI
-> `30675444178` và Azure staging `30675744992` đều đạt exact-head.
+> Hoàn tất `6189b1a` đã hợp nhất qua PR #89 thành `main@39092fb`; CI
+> `30675444178` và môi trường thử nghiệm Azure `30675744992` đều đạt đúng commit.
 > `TASKS.md` và `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`
-> là nguồn có thẩm quyền về trạng thái triển khai hiện tại. Các nhãn `Not Started` cũ hơn,
+> là nguồn thông tin chính thức về trạng thái triển khai hiện tại. Các nhãn `Not Started` cũ hơn,
 > `PARTIAL`, `READY FOR REVIEW` hoặc đang chờ đánh giá được giữ lại bên dưới là
 > ảnh chụp nhanh lịch sử về kế hoạch/bằng chứng, không phải trạng thái phân phối hiện tại.
 
 > Nguồn chuẩn cho Báo cáo & Thống kê FE12. v0.1.5 giữ nguyên phạm vi báo cáo đã phê duyệt, đồng thời quy định rõ hành vi truy cập, bộ lọc trống, trạng thái không xác định, phân trang, kiểm toán và xuất; bắt buộc con người đánh giá lại.
 >
 > Bản sửa đổi v0.1.9 ghi nhận hành vi SQL `LIKE` tham số hóa hiện có cho
-> tìm kiếm báo cáo và yêu cầu các repository kiểm thử trong bộ nhớ giữ nguyên
+> tìm kiếm báo cáo và yêu cầu các tầng truy cập dữ liệu kiểm thử trong bộ nhớ giữ nguyên
 > hành vi đó thay vì coi ký tự đại diện là ký tự chữ.
 >
-> Bản sửa đổi v0.2.0 biến danh sách cho phép tham số truy vấn của từng endpoint thành ranh giới bắt buộc:
+> Bản sửa đổi v0.2.0 biến danh sách cho phép tham số truy vấn của từng API thành ranh giới bắt buộc:
 > mọi khóa không xác định đều trả về `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` an toàn trước khi
-> thực thi service hoặc repository báo cáo.
+> thực thi tầng dịch vụ hoặc tầng truy cập dữ liệu báo cáo.
 > Nhat đã phê duyệt bản sửa đổi bằng văn bản này vào 2026-07-27. Phê duyệt chỉ cho phép
 > chuẩn bị PLAN/TASKS; chưa được tuyên bố là đã triển khai cho đến khi
-> hoàn tất bằng chứng RED-GREEN và các cổng nghiệm thu.
+> hoàn tất bằng chứng trước và sau khi sửa và các cổng nghiệm thu.
 >
-> Bản sửa đổi v0.2.1 triển khai service-owned `businessDate`, fail-fast và
-> SQL/in-memory parity qua PR #81. Bản sửa đổi v0.3.0 tái sử dụng contract đó
-> cho operations summary; không mở lại hoặc nhân đôi prerequisite đã hoàn tất.
+> Bản sửa đổi v0.2.1 triển khai do tầng dịch vụ quản lý `businessDate`, từ chối ngay và
+> SQL/tính đồng nhất với bản trong bộ nhớ qua PR #81. Bản sửa đổi v0.3.0 tái sử dụng hợp đồng đó
+> cho tổng quan vận hành; không mở lại hoặc nhân đôi điều kiện tiên quyết đã hoàn tất.
 
 ---
 
@@ -92,7 +93,7 @@ Tính năng này chỉ có thể bắt đầu khi:
 - PRE-FE12-001: Tác nhân được xác thực.
 - PRE-FE12-002: Tác nhân có vai trò được phép xem báo cáo được yêu cầu.
 - PRE-FE12-003: Bảng nguồn báo cáo tồn tại và định nghĩa trạng thái được phê duyệt.
-- PRE-FE12-004: Mọi khóa truy vấn báo cáo được cung cấp đều nằm trong danh sách cho phép chính xác của endpoint ở Phần 11 và mọi giá trị đều đáp ứng quy tắc xác thực trong Phần 6 và 10.2.
+- PRE-FE12-004: Mọi khóa truy vấn báo cáo được cung cấp đều nằm trong danh sách cho phép chính xác của API ở Phần 11 và mọi giá trị đều đáp ứng quy tắc xác thực trong Phần 6 và 10.2.
 - PRE-FE12-005: Báo cáo ở dạng chỉ đọc và không cập nhật dữ liệu nguồn.
 
 ---
@@ -140,7 +141,7 @@ Tính năng này chỉ có thể bắt đầu khi:
 
 1. Tác nhân gửi khóa truy vấn không xác định hoặc phạm vi ngày, trạng thái, vai trò, ID, tìm kiếm hoặc giá trị phân trang không hợp lệ.
 2. Hệ thống từ chối khóa không xác định bằng `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` an toàn; giá trị sai định dạng, giá trị enum không được hỗ trợ và phạm vi không hợp lệ nhận phản hồi xác thực an toàn hiện có. ID dương đúng định dạng nhưng không có bản ghi nguồn khớp sẽ theo AF-FE12-003.
-3. Service và repository báo cáo không được thực thi.
+3. Tầng dịch vụ và tầng truy cập dữ liệu báo cáo không được thực thi.
 
 ### AF-FE12-003: Không có dữ liệu cho báo cáo
 
@@ -163,29 +164,29 @@ Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
 - BR-FE12-001: Báo cáo ở dạng chỉ đọc và không được sửa đổi dữ liệu nguồn.
 - BR-FE12-002: Khách và thành viên không thể truy cập báo cáo của nhân viên.
 - BR-FE12-003: Quyền truy cập báo cáo phải được bảo vệ theo vai trò trên máy chủ; cả Thủ thư và Quản trị viên đều có thể truy cập báo cáo mượn, tồn kho và thống kê người dùng, còn Thành viên và Khách không được truy cập.
-- BR-FE12-004: Báo cáo mượn phải dùng bản ghi mượn FE07 làm nguồn chuẩn. Các chỉ số theo kỳ mượn và sách được mượn nhiều nhất chỉ tính `BorrowDetails` ở trạng thái `BORROWED`, `RETURNED`, `LOST`, `DAMAGED` hoặc `OVERDUE`; `REQUESTED` chưa phải lượt mượn đã bàn giao nên không được tính. Mọi phép suy ra quá hạn phải dùng một ngày nghiệp vụ `Asia/Ho_Chi_Minh` do service tạo từ clock có kiểm soát và truyền tường minh xuống repository; repository không được tự đọc ngày hiện tại của host.
+- BR-FE12-004: Báo cáo mượn phải dùng bản ghi mượn FE07 làm nguồn chuẩn. Các chỉ số theo kỳ mượn và sách được mượn nhiều nhất chỉ tính `BorrowDetails` ở trạng thái `BORROWED`, `RETURNED`, `LOST`, `DAMAGED` hoặc `OVERDUE`; `REQUESTED` chưa phải lượt mượn đã bàn giao nên không được tính. Mọi phép suy ra quá hạn phải dùng một ngày nghiệp vụ `Asia/Ho_Chi_Minh` do tầng dịch vụ tạo từ đồng hồ có kiểm soát và truyền tường minh xuống tầng truy cập dữ liệu; tầng truy cập dữ liệu không được tự đọc ngày hiện tại của máy chủ.
 - BR-FE12-005: Báo cáo tồn kho phải dùng trạng thái FE06/BookCopies làm nguồn chuẩn.
 - BR-FE12-006: Thống kê người dùng phải dùng dữ liệu FE11/Users/Roles làm nguồn chuẩn.
 - BR-FE12-007: Thống kê tư cách thành viên, nếu hiển thị, phải dùng dữ liệu thành viên FE04 làm nguồn chuẩn.
-- BR-FE12-008: FE12 phải thực thi chính xác danh sách cho phép tham số truy vấn của endpoint trước khi chạy service hoặc repository báo cáo. Báo cáo mượn chỉ chấp nhận `q`, `fromDate`, `toDate`, `status`, `bookId`, `userId`, `page`, `limit`; báo cáo tồn kho chỉ chấp nhận `q`, `categoryId`, `bookId`, `status`, `location`, `page`, `limit`; báo cáo người dùng chỉ chấp nhận `q`, `roleId`, `status`, `membershipStatus`, `fromDate`, `toDate`, `page`, `limit`. Mọi khóa khác trả về `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` an toàn mà không phản chiếu giá trị của khóa. Sau đó phải xác thực cú pháp của khóa đã phê duyệt, tư cách thành viên trong enum, ngày, tìm kiếm, ID và phân trang trước khi thực thi truy vấn; ID bộ lọc dương, đúng định dạng nhưng không khớp bản ghi nguồn là hợp lệ và tạo báo cáo trống.
+- BR-FE12-008: FE12 phải thực thi chính xác danh sách cho phép tham số truy vấn của API trước khi chạy tầng dịch vụ hoặc tầng truy cập dữ liệu báo cáo. Báo cáo mượn chỉ chấp nhận `q`, `fromDate`, `toDate`, `status`, `bookId`, `userId`, `page`, `limit`; báo cáo tồn kho chỉ chấp nhận `q`, `categoryId`, `bookId`, `status`, `location`, `page`, `limit`; báo cáo người dùng chỉ chấp nhận `q`, `roleId`, `status`, `membershipStatus`, `fromDate`, `toDate`, `page`, `limit`. Mọi khóa khác trả về `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` an toàn mà không phản chiếu giá trị của khóa. Sau đó phải xác thực cú pháp của khóa đã phê duyệt, tư cách thành viên trong enum, ngày, tìm kiếm, ID và phân trang trước khi thực thi truy vấn; ID bộ lọc dương, đúng định dạng nhưng không khớp bản ghi nguồn là hợp lệ và tạo báo cáo trống.
 - BR-FE12-009: Bộ lọc phạm vi ngày phải dùng giá trị `YYYY-MM-DD` hợp lệ với ngày bắt đầu <= ngày kết thúc. Với thống kê người dùng, phạm vi ngày chỉ giới hạn `newMembersByPeriod` theo `Members.ApprovedAt` khác null; một lần phê duyệt lịch sử vẫn được tính kể cả khi trạng thái tư cách thành viên/tài khoản hiện tại sau đó trở thành không hoạt động, còn số lượng tổng/trạng thái/vai trò vẫn là toàn cục nhưng chịu các bộ lọc không theo ngày.
 - BR-FE12-010: Báo cáo phải dùng định nghĩa trạng thái đã phê duyệt từ các tính năng nguồn; trạng thái nguồn đã lưu nhưng không được nhận diện phải được nhóm vào `UNKNOWN` và vẫn tính trong tổng số có thể tái tạo.
 - BR-FE12-011: Số liệu thống kê người dùng không được để lộ dữ liệu cá nhân không cần thiết.
 - BR-FE12-012: Số lượng tổng hợp phải được tái tạo từ bản ghi nguồn.
-- BR-FE12-013: Xuất CSV, PDF, bảng tính và các định dạng báo cáo khác hoàn toàn nằm ngoài phạm vi Giai đoạn 1; FE12 không cung cấp endpoint hoặc điều khiển xuất.
+- BR-FE12-013: Xuất CSV, PDF, bảng tính và các định dạng báo cáo khác hoàn toàn nằm ngoài phạm vi Giai đoạn 1; FE12 không cung cấp API hoặc điều khiển xuất.
 - BR-FE12-014: Mỗi lần Thủ thư/Quản trị viên xem báo cáo thành công phải ghi một sự kiện kiểm toán an toàn, xác định tác nhân, loại báo cáo, dấu thời gian và kết quả thành công nhưng không chứa giá trị bộ lọc/truy vấn thô hay các hàng báo cáo đã trả về.
 - BR-FE12-015: Các hàng chi tiết sử dụng `page=1`, `limit=20`, với `page>=1` và `limit=1..100`; thứ tự ổn định là mượn `BorrowDate DESC, BorrowDetailId DESC`, hàng tồn kho `Title ASC, BookId ASC, CopyId ASC` và người dùng `UserId ASC`.
-- BR-FE12-016: Mỗi báo cáo chấp nhận `q` tùy chọn, đã trim và tối đa 200 ký tự. Môi trường production bind mẫu hiệu lực `%${q}%` làm giá trị SQL `LIKE` tham số hóa và không escape hoặc từ chối `%`, `_`, lớp/khoảng trong ngoặc vuông hay lớp ngoặc vuông phủ định; repository báo cáo trong bộ nhớ phải mô phỏng các ngữ nghĩa không phân biệt hoa thường đó. Tìm kiếm mượn khớp tiêu đề sách, mã vạch, tên người dùng, email hoặc ID người dùng; tìm kiếm tồn kho khớp tiêu đề, mã vạch, vị trí hoặc ID sách; tìm kiếm người dùng khớp ID người dùng, vai trò, trạng thái tài khoản hoặc trạng thái tư cách thành viên. Tìm kiếm và các bộ lọc đã chọn được áp dụng trước khi tổng hợp và phân trang.
+- BR-FE12-016: Mỗi báo cáo chấp nhận `q` tùy chọn, đã trim và tối đa 200 ký tự. Môi trường môi trường thực tế bind mẫu hiệu lực `%${q}%` làm giá trị SQL `LIKE` tham số hóa và không escape hoặc từ chối `%`, `_`, lớp/khoảng trong ngoặc vuông hay lớp ngoặc vuông phủ định; tầng truy cập dữ liệu báo cáo trong bộ nhớ phải mô phỏng các ngữ nghĩa không phân biệt hoa thường đó. Tìm kiếm mượn khớp tiêu đề sách, mã vạch, tên người dùng, email hoặc ID người dùng; tìm kiếm tồn kho khớp tiêu đề, mã vạch, vị trí hoặc ID sách; tìm kiếm người dùng khớp ID người dùng, vai trò, trạng thái tài khoản hoặc trạng thái tư cách thành viên. Tìm kiếm và các bộ lọc đã chọn được áp dụng trước khi tổng hợp và phân trang.
 
 ---
 
 ## 7. Yêu cầu chức năng
 
-- FR-FE12-001: Khi tác nhân được ủy quyền xem báo cáo mượn, hệ thống phải trả về chính xác các chỉ số mượn và trường dữ liệu hàng được định nghĩa trong Phần 10.3. Service phải đọc clock đúng một lần cho request, tạo `businessDate` dạng `YYYY-MM-DD` và truyền giá trị hợp lệ bắt buộc này cho cả SQL repository và repository in-memory.
+- FR-FE12-001: Khi tác nhân được ủy quyền xem báo cáo mượn, hệ thống phải trả về chính xác các chỉ số mượn và trường dữ liệu hàng được định nghĩa trong Phần 10.3. Tầng dịch vụ phải đọc đồng hồ đúng một lần cho yêu cầu, tạo `businessDate` dạng `YYYY-MM-DD` và truyền giá trị hợp lệ bắt buộc này cho cả tầng truy cập dữ liệu SQL và tầng truy cập dữ liệu trong bộ nhớ.
 - FR-FE12-002: Khi tác nhân được ủy quyền xem báo cáo tồn kho, hệ thống phải trả về chính xác các chỉ số tồn kho và trường dữ liệu hàng được định nghĩa trong Phần 10.3, đồng thời xác định sách sắp hết hàng có từ hai bản sao sẵn có hiệu lực trở xuống.
 - FR-FE12-003: Khi tác nhân được ủy quyền xem thống kê người dùng, hệ thống phải trả về chính xác các chỉ số và trường dữ liệu hàng của người dùng/thành viên được định nghĩa trong Phần 10.3, với bộ lọc ngày chỉ áp dụng cho mức tăng trưởng trong kỳ phê duyệt.
 - FR-FE12-004: Nếu tác nhân không được ủy quyền thì hệ thống sẽ từ chối quyền truy cập báo cáo.
-- FR-FE12-005: Nếu yêu cầu báo cáo chứa khóa truy vấn ngoài danh sách cho phép của endpoint đã chọn, hệ thống phải trả về `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` an toàn trước khi chạy service hoặc repository báo cáo. Nếu khóa được phê duyệt có cú pháp, tư cách thành viên trong enum, phạm vi ngày, độ dài tìm kiếm, ID, trang hoặc giới hạn không hợp lệ, hệ thống phải trả về lỗi xác thực an toàn hiện có trước khi thực thi truy vấn báo cáo.
+- FR-FE12-005: Nếu yêu cầu báo cáo chứa khóa truy vấn ngoài danh sách cho phép của API đã chọn, hệ thống phải trả về `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` an toàn trước khi chạy tầng dịch vụ hoặc tầng truy cập dữ liệu báo cáo. Nếu khóa được phê duyệt có cú pháp, tư cách thành viên trong enum, phạm vi ngày, độ dài tìm kiếm, ID, trang hoặc giới hạn không hợp lệ, hệ thống phải trả về lỗi xác thực an toàn hiện có trước khi thực thi truy vấn báo cáo.
 - FR-FE12-006: Nếu các bộ lọc hợp lệ không khớp dữ liệu nào, bao gồm ID nguồn không xác định nhưng đúng định dạng, hệ thống sẽ trả về số liệu tổng hợp bằng không và các hàng chi tiết trống.
 - FR-FE12-007: Khi báo cáo được tạo, hệ thống sẽ không cập nhật dữ liệu nguồn.
 - FR-FE12-008: Khi số liệu thống kê người dùng được tạo, hệ thống sẽ trả về dữ liệu tổng hợp theo mặc định thay vì chi tiết cá nhân thô.
@@ -197,11 +198,11 @@ Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
 
 ## 8. Tiêu chí chấp nhận
 
-- AC-FE12-001: Với Thủ thư hoặc Quản trị viên, khi xem báo cáo mượn, hệ thống hiển thị tổng số lượt mượn và số lượng theo trạng thái. Với cùng dữ liệu và `businessDate` cố định trước/sau hạn trả, SQL và in-memory phải phân loại `BORROWED`/`OVERDUE` giống nhau; thiếu, sai định dạng hoặc ngày bất khả thi phải fail-fast trước khi truy vấn.
+- AC-FE12-001: Với Thủ thư hoặc Quản trị viên, khi xem báo cáo mượn, hệ thống hiển thị tổng số lượt mượn và số lượng theo trạng thái. Với cùng dữ liệu và `businessDate` cố định trước/sau hạn trả, SQL và trong bộ nhớ phải phân loại `BORROWED`/`OVERDUE` giống nhau; thiếu, sai định dạng hoặc ngày bất khả thi phải từ chối ngay trước khi truy vấn.
 - AC-FE12-002: Với Thủ thư hoặc Quản trị viên, khi xem báo cáo tồn kho, hệ thống hiển thị số bản sao theo trạng thái và sách/danh mục tương ứng với bộ lọc, đồng thời các sách có 0-2 bản sao sẵn có xuất hiện trong danh sách sắp hết hàng. Bộ lọc trạng thái/vị trí chọn các sách và tổng số bản sao đã lọc tương ứng nhưng không che mất toàn bộ mức sẵn có của các sách đó khỏi phép tính sắp hết hàng.
 - AC-FE12-003: Với Thủ thư hoặc Quản trị viên, khi xem thống kê người dùng trong một phạm vi ngày, số lượng tổng/trạng thái/vai trò vẫn là toàn cục và `newMembersByPeriod` chỉ gồm các lần phê duyệt trong phạm vi đó.
 - AC-FE12-004: Với Khách hoặc Thành viên, khi yêu cầu báo cáo dành cho nhân viên, quyền truy cập bị từ chối.
-- AC-FE12-005: Với bất kỳ một trong ba endpoint báo cáo nhận `?bogus=1` hoặc khóa truy vấn không xác định khác, khi gửi yêu cầu, hệ thống trả về `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` an toàn và cả service lẫn repository báo cáo đều không chạy. Với khóa đã phê duyệt có giá trị sai định dạng/không được hỗ trợ hoặc phạm vi phân trang/ngày không hợp lệ, lỗi xác thực an toàn hiện có được trả về trước khi truy vấn.
+- AC-FE12-005: Với bất kỳ một trong ba API báo cáo nhận `?bogus=1` hoặc khóa truy vấn không xác định khác, khi gửi yêu cầu, hệ thống trả về `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` an toàn và cả tầng dịch vụ lẫn tầng truy cập dữ liệu báo cáo đều không chạy. Với khóa đã phê duyệt có giá trị sai định dạng/không được hỗ trợ hoặc phạm vi phân trang/ngày không hợp lệ, lỗi xác thực an toàn hiện có được trả về trước khi truy vấn.
 - AC-FE12-006: Với các bộ lọc hợp lệ không có dữ liệu khớp hoặc ID không xác định nhưng đúng định dạng, khi tạo báo cáo, hệ thống trả về số liệu tổng hợp bằng không và các hàng trống.
 - AC-FE12-007: Với một yêu cầu báo cáo, khi báo cáo hoàn tất, không có bản ghi nghiệp vụ nguồn nào bị sửa đổi.
 - AC-FE12-008: Dựa vào số liệu thống kê của người dùng, khi kết quả được trả về, các chi tiết hồ sơ cá nhân không cần thiết sẽ không bị lộ.
@@ -225,7 +226,7 @@ Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
 | EC-FE12-008 | Truy vấn báo cáo hết thời gian | Trả về lỗi an toàn và ghi nhật ký an toàn. |
 | EC-FE12-009 | Phạm vi ngày hợp lệ nhưng lớn | Trả về chỉ số tổng hợp và phân trang các hàng chi tiết bằng giá trị mặc định/giới hạn đã phê duyệt; không thay thế bằng phản hồi chỉ cảnh báo. |
 | EC-FE12-010 | Thiếu trường nguồn tùy chọn | Sử dụng dự phòng an toàn trong hiển thị báo cáo. |
-| EC-FE12-011 | Yêu cầu chứa một hoặc nhiều khóa truy vấn ngoài danh sách cho phép của endpoint đã chọn | Trả về `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` an toàn trước khi chạy service/repository; lỗi có thể xác định khóa nhưng không được phản chiếu giá trị của khóa. |
+| EC-FE12-011 | Yêu cầu chứa một hoặc nhiều khóa truy vấn ngoài danh sách cho phép của API đã chọn | Trả về `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` an toàn trước khi chạy tầng dịch vụ/tầng truy cập dữ liệu; lỗi có thể xác định khóa nhưng không được phản chiếu giá trị của khóa. |
 
 ---
 
@@ -238,7 +239,7 @@ Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
 | Users | Nguồn thống kê người dùng và số lượng thành viên/nhân viên. |
 | UserRoles | Nguồn thống kê người dùng theo vai trò. |
 | Roles | Cung cấp tên vai trò. |
-| Members | Nguồn đếm trạng thái tư cách thành viên tại runtime và các kỳ tăng trưởng theo `ApprovedAt`. |
+| Members | Nguồn đếm trạng thái tư cách thành viên tại khi chạy và các kỳ tăng trưởng theo `ApprovedAt`. |
 | Books | Nguồn siêu dữ liệu sách cho báo cáo tồn kho và mượn. |
 | Categories | Nguồn nhóm tồn kho. |
 | BookCopies | Nguồn để đếm trạng thái hàng tồn kho. |
@@ -257,7 +258,7 @@ Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
 | categoryId | integer | Không | Dùng cho báo cáo tồn kho. |
 | bookId | integer | Không | Dùng cho báo cáo mượn/tồn kho. |
 | userId | integer | Không | Bộ lọc chỉ dành cho nhân viên khi được phê duyệt. |
-| roleId | integer | Không | Dùng cho thống kê người dùng. |
+| vai tròId | integer | Không | Dùng cho thống kê người dùng. |
 | location | string | Không | Chỉ dùng cho báo cáo tồn kho; được xác thực theo hợp đồng bộ lọc tồn kho đã phê duyệt. |
 | page | integer | Không | Mặc định là 1; phải là số nguyên ít nhất bằng 1 đối với các hàng chi tiết. |
 | limit | integer | Không | Mặc định là 20; phải là số nguyên từ 1 đến 100. |
@@ -267,11 +268,11 @@ Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
 
 ### 10.3 Hợp đồng phản hồi báo cáo
 
-Cả ba endpoint báo cáo đều trả về `{ metrics, rows, page, limit, totalRows }`. `rows` là các bản ghi chi tiết sau khi lọc; `metrics` được tính từ toàn bộ tập nguồn đã lọc trước khi phân trang.
+Cả ba API báo cáo đều trả về `{ metrics, rows, page, limit, totalRows }`. `rows` là các bản ghi chi tiết sau khi lọc; `metrics` được tính từ toàn bộ tập nguồn đã lọc trước khi phân trang.
 
 | Báo cáo | Hợp đồng số liệu | Hợp đồng hàng chi tiết |
 | ------ | ---------------- | --------------------- |
-| Mượn | `activeLoans` đếm các chi tiết `BORROWED`; `overdueLoans` đếm các chi tiết `BORROWED` có hạn trả trước ngày nghiệp vụ `Asia/Ho_Chi_Minh` do service truyền xuống; `borrowCountByPeriod` nhóm các chi tiết lượt mượn thực tế đủ điều kiện theo `BorrowDate` (`YYYY-MM-DD`); `topBorrowedBooks` trả về tối đa 10 sách, sắp xếp theo số lượt mượn giảm dần, tiêu đề tăng dần, rồi `BookId` tăng dần. | `borrowDetailId`, `requestId`, `userId`, `bookId`, `copyId`, `status`, `borrowDate`, `dueDate`, `returnDate`. `OVERDUE` là trạng thái hiển thị suy ra cho một chi tiết `BORROWED` đã quá hạn. |
+| Mượn | `activeLoans` đếm các chi tiết `BORROWED`; `overdueLoans` đếm các chi tiết `BORROWED` có hạn trả trước ngày nghiệp vụ `Asia/Ho_Chi_Minh` do tầng dịch vụ truyền xuống; `borrowCountByPeriod` nhóm các chi tiết lượt mượn thực tế đủ điều kiện theo `BorrowDate` (`YYYY-MM-DD`); `topBorrowedBooks` trả về tối đa 10 sách, sắp xếp theo số lượt mượn giảm dần, tiêu đề tăng dần, rồi `BookId` tăng dần. | `borrowDetailId`, `requestId`, `userId`, `bookId`, `copyId`, `status`, `borrowDate`, `dueDate`, `returnDate`. `OVERDUE` là trạng thái hiển thị suy ra cho một chi tiết `BORROWED` đã quá hạn. |
 | Tồn kho | `totalBooks` đếm các sách riêng biệt trong phạm vi sách đã lọc; `totalCopies` đếm các bản sao đã lọc; `copiesByStatus` nhóm các bản sao đã lọc theo trạng thái FE06 được phê duyệt; `lowStockBooks` liệt kê các sách riêng biệt có 0..2 bản sao `AVAILABLE` hiệu lực, dùng toàn bộ mức sẵn có của từng sách đã chọn ngay cả khi bộ lọc trạng thái/vị trí thu hẹp các hàng. | `bookId`, `title`, `copyId`, `barcode`, `location`, `status`, `effectiveAvailability`. |
 | Người dùng | `totalMembers` đếm người dùng có vai trò `Member`; `usersByStatus` nhóm người dùng theo trạng thái FE02 đã phê duyệt; `usersByRole` nhóm người dùng theo vai trò FE11; `membershipByStatus` nhóm trạng thái thành viên FE04 chuẩn; `newMembersByPeriod` nhóm mọi `Members.ApprovedAt` lịch sử khác null theo `YYYY-MM-DD` trong phạm vi yêu cầu, bất kể trạng thái tư cách thành viên/tài khoản hiện tại. | `userId`, `status`, `roles`, `membershipStatus`, `createdAt`, `approvedAt`; không có địa chỉ hồ sơ, số điện thoại, mật khẩu, token hoặc trường cá nhân không cần thiết. |
 
@@ -281,16 +282,16 @@ Bộ lọc ngày cho báo cáo mượn áp dụng cho `BorrowDate`; bộ lọc n
 
 ## 11. Hợp đồng API / Giao diện
 
-> Các endpoint và cấu trúc request/response dưới đây là hợp đồng chuẩn của Giai đoạn 1 cho tính năng này.
+> Các API và cấu trúc yêu cầu/response dưới đây là hợp đồng chuẩn của Giai đoạn 1 cho tính năng này.
 
-| Phương thức | Endpoint | Tác nhân | Yêu cầu | Phản hồi | Ghi chú |
+| Phương thức | API | Tác nhân | Yêu cầu | Phản hồi | Ghi chú |
 | ------ | -------- | ----- | ------- | -------- | ----- |
 | GET | `/api/reports/borrowing` | Thủ thư/Quản trị viên | Query: `q?, fromDate?, toDate?, status?, bookId?, userId?, page=1, limit=20` | `BorrowingReportResponse` từ Phần 10.3 | Thứ tự hàng ổn định: `BorrowDate DESC, BorrowDetailId DESC`. |
 | GET | `/api/reports/inventory` | Thủ thư/Quản trị viên | Query: `q?, categoryId?, bookId?, status?, location?, page=1, limit=20` | `InventoryReportResponse` từ Phần 10.3 | Thứ tự hàng ổn định: `Title ASC, BookId ASC, CopyId ASC`. |
 | GET | `/api/reports/users` | Thủ thư/Quản trị viên | Query: `q?, roleId?, status?, membershipStatus?, fromDate?, toDate?, page=1, limit=20` | `UserReportResponse` từ Phần 10.3 | Thứ tự hàng ổn định: `UserId ASC`; không có chi tiết hồ sơ cá nhân thô. |
 
-Các trường truy vấn hiển thị cho mỗi endpoint là danh sách cho phép chính xác, không phải ví dụ.
-Trước mọi lệnh gọi service hoặc repository báo cáo, khóa không xác định sẽ trả về
+Các trường truy vấn hiển thị cho mỗi API là danh sách cho phép chính xác, không phải ví dụ.
+Trước mọi lệnh gọi tầng dịch vụ hoặc tầng truy cập dữ liệu báo cáo, khóa không xác định sẽ trả về
 `400 { error: { code: "UNSUPPORTED_REPORT_QUERY_PARAMETER", message: "Unsupported report query parameter." } }`.
 Lỗi an toàn có thể xác định khóa không được hỗ trợ trong chi tiết xác thực
 có cấu trúc nhưng không được phản chiếu giá trị của khóa.
@@ -301,10 +302,10 @@ có cấu trúc nhưng không được phản chiếu giá trị của khóa.
 
 ### 12.1 Bảo mật
 
-- NFR-FE12-SEC-001: Các endpoint báo cáo phải yêu cầu xác thực.
-- NFR-FE12-SEC-002: Các endpoint báo cáo phải thực thi quyền truy cập theo vai trò trên máy chủ.
+- NFR-FE12-SEC-001: Các API báo cáo phải yêu cầu xác thực.
+- NFR-FE12-SEC-002: Các API báo cáo phải thực thi quyền truy cập theo vai trò trên máy chủ.
 - NFR-FE12-SEC-003: Thống kê người dùng phải tránh làm lộ dữ liệu cá nhân không cần thiết.
-- NFR-FE12-SEC-004: Tên khóa truy vấn báo cáo phải khớp chính xác danh sách cho phép của endpoint và các giá trị đã phê duyệt phải được xác thực trước khi chạy service/repository, nhằm ngăn hành vi chưa được rà soát, injection và truy vấn quá mức. Giá trị SQL vẫn phải được tham số hóa.
+- NFR-FE12-SEC-004: Tên khóa truy vấn báo cáo phải khớp chính xác danh sách cho phép của API và các giá trị đã phê duyệt phải được xác thực trước khi chạy tầng dịch vụ/tầng truy cập dữ liệu, nhằm ngăn hành vi chưa được rà soát, truyền vào và truy vấn quá mức. Giá trị SQL vẫn phải được tham số hóa.
 
 ### 12.2 Tính toàn vẹn chỉ đọc
 
@@ -371,7 +372,7 @@ Tính năng này không bao gồm:
 | Q-FE12-008 | Các trạng thái nguồn liên tục không xác định được nhóm thành `UNKNOWN` và được giữ lại trong tổng số. | Chuẩn hóa đặc tả 2026-07-17 | APPROVED |
 | Q-FE12-009 | Các hàng chi tiết sử dụng phân trang xác định và thứ tự ổn định dành riêng cho báo cáo; phạm vi ngày hợp lệ lớn không trả về các lựa chọn thay thế chỉ mang tính cảnh báo. | Chuẩn hóa đặc tả 2026-07-17 | APPROVED |
 | Q-FE12-010 | Phản hồi báo cáo dùng chính xác các chỉ số và trường dữ liệu hàng trong Phần 10.3; danh sách sách được mượn nhiều nhất giới hạn ở 10 sách với quy tắc phân hạng hòa mang tính xác định. | Chuẩn hóa hợp đồng báo cáo 2026-07-17 | APPROVED |
-| Q-FE12-011 | Xử lý khóa truy vấn báo cáo không xác định như thế nào? | Nhat, 2026-07-27 | APPROVED: từ chối bằng `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` an toàn trước khi chạy service/repository báo cáo; danh sách cho phép của endpoint là chính xác. |
+| Q-FE12-011 | Xử lý khóa truy vấn báo cáo không xác định như thế nào? | Nhat, 2026-07-27 | APPROVED: từ chối bằng `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` an toàn trước khi chạy tầng dịch vụ/tầng truy cập dữ liệu báo cáo; danh sách cho phép của API là chính xác. |
 
 ---
 
@@ -391,7 +392,7 @@ Tính năng này không bao gồm:
 | BR-FE12-010 | UC58, UC59, UC60 | FT59, FT60, FT61 | Sẵn sàng để xem xét |
 | BR-FE12-011 | UC60 | FT61 | Sẵn sàng để xem xét |
 | BR-FE12-012 | UC58, UC59, UC60 | FT59, FT60, FT61 | Sẵn sàng để xem xét |
-| BR-FE12-013 | UC58, UC59, UC60 | `backend/tests/reportDeterministicPolicy.test.js` kiểm tra không có route/OpenAPI/giao diện xuất | Bằng chứng tự động; đang chờ con người đánh giá lại |
+| BR-FE12-013 | UC58, UC59, UC60 | `backend/tests/reportDeterministicPolicy.test.js` kiểm tra không có tuyến API/OpenAPI/giao diện xuất | Bằng chứng tự động; đang chờ con người đánh giá lại |
 | BR-FE12-014 | UC58, UC59, UC60 | Các trường hợp kiểm toán lượt xem thành công an toàn trong `backend/tests/reportService.test.js`, `backend/tests/reportRoutes.test.js` | Bằng chứng tự động; đang chờ con người đánh giá lại |
 | BR-FE12-015 | UC58, UC59, UC60 | Các trường hợp phân trang/thứ tự trong `backend/tests/reportDeterministicPolicy.test.js`, `backend/tests/reportRepository.test.js` | Bằng chứng tự động; đang chờ con người đánh giá lại |
 | BR-FE12-016 | UC58, UC59, UC60 | Các trường hợp kết hợp `q`/bộ lọc và tương đương trường người dùng trong `backend/tests/reportRoutes.test.js`, `backend/tests/reportInMemoryParity.test.js` | Bằng chứng tự động; đang chờ đánh giá H2 |
@@ -399,7 +400,7 @@ Tính năng này không bao gồm:
 | FR-FE12-002 | UC59 | FT60 | Sẵn sàng để xem xét |
 | FR-FE12-003 | UC60 | FT61 | Sẵn sàng để xem xét |
 | FR-FE12-004 | UC58, UC59, UC60 | FT59, FT60, FT61 | Sẵn sàng để xem xét |
-| FR-FE12-005 | UC58, UC59, UC60 | `reportRoutes.test.js` xác minh `UNSUPPORTED_REPORT_QUERY_PARAMETER` an toàn, không gọi repository và giữ xác thực giá trị hiện có | Hoàn thành |
+| FR-FE12-005 | UC58, UC59, UC60 | `reportRoutes.test.js` xác minh `UNSUPPORTED_REPORT_QUERY_PARAMETER` an toàn, không gọi tầng truy cập dữ liệu và giữ xác thực giá trị hiện có | Hoàn thành |
 | FR-FE12-006 | UC58, UC59, UC60 | FT59, FT60, FT61 | Sẵn sàng để xem xét |
 | FR-FE12-007 | UC58, UC59, UC60 | FT59, FT60, FT61 | Sẵn sàng để xem xét |
 | FR-FE12-008 | UC60 | FT61 | Sẵn sàng để xem xét |
@@ -410,13 +411,13 @@ Tính năng này không bao gồm:
 | AC-FE12-002 | UC59 | FT60 | Sẵn sàng để xem xét |
 | AC-FE12-003 | UC60 | FT61 | Sẵn sàng để xem xét |
 | AC-FE12-004 | UC58, UC59, UC60 | FT59, FT60, FT61 | Sẵn sàng để xem xét |
-| AC-FE12-005 | UC58, UC59, UC60 | Ma trận route của ba endpoint cùng kiểm tra HTTP thực với `?bogus=runtime-secret-value` | Hoàn thành |
+| AC-FE12-005 | UC58, UC59, UC60 | Ma trận tuyến API của ba API cùng kiểm tra HTTP thực với `?bogus=runtime-secret-value` | Hoàn thành |
 | AC-FE12-006 | UC58, UC59, UC60 | FT59, FT60, FT61 | Sẵn sàng để xem xét |
 | AC-FE12-007 | UC58, UC59, UC60 | FT59, FT60, FT61 | Sẵn sàng để xem xét |
 | AC-FE12-008 | UC60 | FT61 | Sẵn sàng để xem xét |
 | AC-FE12-009 | UC58, UC59, UC60 | `backend/tests/reportService.test.js`, `backend/tests/reportRoutes.test.js` | Bằng chứng tự động; đang chờ xem xét lại con người |
 | AC-FE12-010 | UC58, UC59, UC60 | `backend/tests/reportDeterministicPolicy.test.js`, `backend/tests/reportRepository.test.js`, `backend/tests/reportContract.test.js` | Bằng chứng tự động; đang chờ xem xét lại con người |
-| AC-FE12-011 | UC58, UC59, UC60 | `backend/tests/reportInMemoryParity.test.js` kiểm tra tương đương tìm kiếm/lịch sử/thứ tự người dùng; `frontend/test/reportFrontend.test.js` kiểm tra hành vi không có banner thành công | Bằng chứng tự động; đang chờ đánh giá H2 |
+| AC-FE12-011 | UC58, UC59, UC60 | `backend/tests/reportInMemoryParity.test.js` kiểm tra tương đương tìm kiếm/lịch sử/thứ tự người dùng; `frontend/test/reportFrontend.test.js` kiểm tra hành vi không hiện thông báo thành công dư thừa | Bằng chứng tự động; đang chờ đánh giá H2 |
 
 ### 16.1 Tóm tắt độ bao phủ
 
@@ -427,7 +428,7 @@ Tính năng này không bao gồm:
 | Tiêu chí chấp nhận (AC-FE12-*) | 11 | 11 | 100% |
 | **Tổng** | **38** | **38** | **100%** |
 
-> BR-FE12-013 được ánh xạ tới một kiểm tra hợp đồng ngoài phạm vi: chính việc không có endpoint và điều khiển xuất được xác minh mà không triển khai hành vi xuất.
+> BR-FE12-013 được ánh xạ tới một kiểm tra hợp đồng ngoài phạm vi: chính việc không có API và điều khiển xuất được xác minh mà không triển khai hành vi xuất.
 
 ---
 
@@ -449,20 +450,20 @@ Danh sách kiểm tra phê duyệt Giai đoạn 1 (hoàn tất vào 2026-06-10):
 
 ### Cổng danh sách cho phép tham số truy vấn v0.2.0
 
-- [x] Xác định danh sách cho phép tham số truy vấn chính xác cho từng endpoint báo cáo.
-- [x] Xác định `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` an toàn trước khi thực thi service/repository.
+- [x] Xác định danh sách cho phép tham số truy vấn chính xác cho từng API báo cáo.
+- [x] Xác định `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` an toàn trước khi thực thi tầng dịch vụ/tầng truy cập dữ liệu.
 - [x] Duy trì xác thực giá trị đã phê duyệt, báo cáo trống cho ID không xác định, SQL tham số hóa và hành vi chỉ đọc.
 - [x] Nhat đã trực tiếp đánh giá và phê duyệt bản SPEC v0.2.0 bằng văn bản vào 2026-07-27; PLAN/TASKS có thể tiếp tục, còn triển khai vẫn bị chặn trong khi chờ phê duyệt kế hoạch.
 
-## 18. Phụ lục operations summary và clock xác định v0.3.0
+## 18. Phụ lục tổng quan vận hành và đồng hồ xác định v0.3.0
 
-Batch: `BATCH-FE07-FE12-CONNECTED-DEMO-2026-07-29`.
+Đợt: `BATCH-FE07-FE12-CONNECTED-DEMO-2026-07-29`.
 
 ### 18.1 Quy tắc kinh doanh
 
-- BR-FE12-017: Operations summary là một snapshot chỉ đọc đã phân quyền, không
+- BR-FE12-017: Tổng quan vận hành là một bản tổng hợp chỉ đọc đã phân quyền, không
   được ghép từ danh sách phân trang ở frontend.
-- BR-FE12-018: Sáu KPI dùng trạng thái nguồn chính tắc: yêu cầu `PENDING`, chi
+- BR-FE12-018: Sáu KPI dùng các trạng thái nguồn đã được quy định: yêu cầu `PENDING`, chi
   tiết `BORROWED`, `BORROWED` quá hạn, reservation `ACTIVE|NOTIFIED`, bản sao
   khả dụng hiệu lực có `Books.Status = 'ACTIVE'` và
   `BookCopies.Status = 'AVAILABLE'`, cùng sách `ACTIVE` có 0..2 bản sao
@@ -470,35 +471,35 @@ Batch: `BATCH-FE07-FE12-CONNECTED-DEMO-2026-07-29`.
   `lowStockBooks`.
 - BR-FE12-019: KPI thiếu hoặc lỗi không được hiển thị thành số `0`.
 - BR-FE12-020: Mọi phép phân loại quá hạn FE12 phải dùng một `businessDate`
-  được service tạo từ clock có kiểm soát theo `Asia/Ho_Chi_Minh` và truyền rõ
-  cho SQL/in-memory repository; repository không được tự gọi `new Date()`.
+  được tầng dịch vụ tạo từ đồng hồ có kiểm soát theo `Asia/Ho_Chi_Minh` và truyền rõ
+  cho SQL/trong bộ nhớ tầng truy cập dữ liệu; tầng truy cập dữ liệu không được tự gọi `new Date()`.
 
 ### 18.2 Yêu cầu chức năng
 
 - FR-FE12-012: Cung cấp `GET /api/reports/operations-summary`.
-- FR-FE12-013: Endpoint chỉ cho `LIBRARIAN|ADMIN`, từ chối Member/Guest và có
-  allowlist query rỗng.
+- FR-FE12-013: API chỉ cho `LIBRARIAN|ADMIN`, từ chối Member/Guest và có
+  danh sách cho phép truy vấn rỗng.
 - FR-FE12-014: Trả sáu KPI cùng `generatedAt`; `generatedAt` và `businessDate`
-  được suy ra từ cùng một lần đọc clock. Service truyền `businessDate` rõ ràng
-  cho cả báo cáo mượn hiện hành và operations summary; SQL repository và
-  in-memory repository phải có cùng chữ ký/ngữ nghĩa.
-- FR-FE12-015: Dashboard dùng fixed drill-down tới FE07/FE08/các báo cáo FE12
+  được suy ra từ cùng một lần đọc đồng hồ. Tầng dịch vụ truyền `businessDate` rõ ràng
+  cho cả báo cáo mượn hiện hành và tổng quan vận hành; SQL tầng truy cập dữ liệu và
+  trong bộ nhớ tầng truy cập dữ liệu phải có cùng chữ ký/ngữ nghĩa.
+- FR-FE12-015: Trang tổng quan dùng liên kết xem chi tiết cố định tới FE07/FE08/các báo cáo FE12
   hiện có và không tự tính KPI.
 
 ### 18.3 Tiêu chí chấp nhận và truy vết
 
-- AC-FE12-012: Librarian/Admin nhận đúng sáu KPI snapshot và fixed drill-down,
+- AC-FE12-012: Librarian/Admin nhận đúng sáu KPI bản tổng hợp và liên kết xem chi tiết cố định,
   ánh xạ `AT-010`.
-- AC-FE12-013: Member/Guest không nhận dữ liệu operations summary, ánh xạ
+- AC-FE12-013: Member/Guest không nhận dữ liệu tổng quan vận hành, ánh xạ
   `AT-011`.
 - AC-FE12-014: KPI lỗi/thiếu hiển thị trạng thái không tải được, không phải
   `0`.
-- AC-FE12-015: Golden flow desktop 1440x900 phản ánh trạng thái đã commit, ánh
+- AC-FE12-015: Luồng chính trên màn hình 1440x900 phản ánh trạng thái đã commit, ánh
   xạ `AT-012`.
-- AC-FE12-016: Với clock service cố định trước/sau hạn trả, SQL contract,
-  in-memory projection và HTTP response phân loại quá hạn giống nhau, không phụ
-  thuộc ngày thật của host, ánh xạ `AT-013`.
+- AC-FE12-016: Với đồng hồ tầng dịch vụ cố định trước/sau hạn trả, hợp đồng SQL,
+  kết quả trong bộ nhớ và phản hồi HTTP phân loại quá hạn giống nhau, không phụ
+  thuộc ngày thật của máy chủ, ánh xạ `AT-013`.
 
-Triển khai phải đi qua `SL-005` và `SL-006`; finding baseline SIT-002/SIT-008
-chỉ được sửa bằng clock injection theo `BR-FE12-020`, không đổi expected state
-để che drift.
+Triển khai phải đi qua `SL-005` và `SL-006`; phát hiện mốc chuẩn SIT-002/SIT-008
+chỉ được sửa bằng đồng hồ truyền vào theo `BR-FE12-020`, không đổi trạng thái mong đợi
+để che sai lệch.
