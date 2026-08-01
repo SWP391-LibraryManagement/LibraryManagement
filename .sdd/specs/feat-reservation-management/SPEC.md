@@ -2,7 +2,7 @@
 
 # Phiên bản: 0.6.0
 
-# Trạng thái: COMPLETE; PR #89 ĐÃ MERGE; CI VÀ AZURE DEPLOY EXACT-HEAD ĐẠT
+# Trạng thái: HOÀN THÀNH; PR #89 ĐÃ HỢP NHẤT; CI VÀ AZURE ĐÃ CHẠY THÀNH CÔNG TRÊN ĐÚNG COMMIT
 
 # Chủ sở hữu: Nhat
 
@@ -12,14 +12,14 @@
 
 # Thư mục tính năng: `.sdd/specs/feat-reservation-management/`
 
-> Trạng thái bàn giao hiện tại (2026-08-01): `COMPLETE`; closeout PR #89,
-> CI `30675444178` và Azure exact-head `30675744992` đã đạt.
+> Trạng thái triển khai hiện tại (2026-08-01): `COMPLETE`. PR #89 đã hoàn tất;
+> CI `30675444178` và Azure `30675744992` đều đạt trên đúng commit.
 > `TASKS.md` và `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`
 > là nguồn chuẩn cho trạng thái triển khai hiện tại. Các nhãn cũ `Not Started`,
 > `PARTIAL`, `READY FOR REVIEW` hoặc đang chờ rà soát được giữ lại bên dưới chỉ là
-> ảnh chụp nhanh kế hoạch/bằng chứng lịch sử, không phải trạng thái bàn giao hiện tại.
+> bản ghi lịch sử về kế hoạch và bằng chứng, không phải trạng thái triển khai hiện tại.
 
-> Nguồn chuẩn cho Quản lý đặt chỗ FE08. Bản sửa đổi v0.4.4 bổ sung danh mục ứng viên đặt chỗ an toàn cho Thành viên đã được phê duyệt, đồng thời giữ nguyên hợp đồng thay đổi dữ liệu theo `CopyId` và lịch sử bất biến của các dấu thời gian ở trạng thái cuối. Phần triển khai, kiểm tra xuyên suốt, H3, merge và Azure exact-head đã đóng qua PR #89 và các lượt chạy `30675444178`/`30675744992`.
+> Đây là nguồn thông tin chính thức của FE08 Quản lý đặt chỗ. Bản sửa đổi v0.4.4 bổ sung danh mục ứng viên đặt chỗ an toàn cho Thành viên đã được phê duyệt, đồng thời giữ nguyên hợp đồng thay đổi dữ liệu theo `CopyId` và lịch sử bất biến của các dấu thời gian ở trạng thái cuối. Việc triển khai, kiểm tra xuyên suốt, H3, hợp nhất và kiểm tra Azure trên đúng commit đã hoàn tất qua PR #89 cùng các lượt chạy `30675444178`/`30675744992`.
 >
 > Bản sửa đổi v0.5.2 bảo đảm nhật ký kiểm toán vòng đời khi tạo/hủy/giữ/làm hết hạn
 > được ghi nguyên tử cùng thay đổi trạng thái tương ứng và loại bỏ thông tin Thành viên lưu đệm
@@ -55,7 +55,7 @@ Quản lý đặt chỗ
 
 ### 1.2 Bối cảnh nghiệp vụ
 
-Khi một cuốn sách hiện không có sẵn, các thành viên cần có một cách hợp lý để đặt trước và chờ có sách. Thủ thư cần xem và xử lý hàng đợi đặt trước để thành viên đủ điều kiện tiếp theo có thể được thông báo khi có bản sao.
+Khi một cuốn sách hiện không có sẵn, các thành viên cần có một cách hợp lý để đặt chỗ và chờ có sách. Thủ thư cần xem và xử lý hàng đợi đặt chỗ để thành viên đủ điều kiện tiếp theo có thể được thông báo khi có bản sao.
 
 Quản lý đặt chỗ bảo vệ sự công bằng và tránh nhầm lẫn khi nhiều thành viên muốn có cùng một cuốn sách.
 
@@ -63,12 +63,12 @@ Quản lý đặt chỗ bảo vệ sự công bằng và tránh nhầm lẫn khi
 
 Hệ thống sẽ:
 
-- Cho phép Thành viên đủ điều kiện đặt trước các bản sao vật lý không có sẵn.
+- Cho phép Thành viên đủ điều kiện đặt chỗ các bản sao vật lý không có sẵn.
 - Cho phép Thành viên tìm các bản sao vật lý không có sẵn thông qua danh mục đã lược bỏ dữ liệu nhạy cảm và được máy chủ bảo vệ.
-- Cho phép Thành viên hủy đặt chỗ `ACTIVE` hoặc lượt giữ `NOTIFIED` của chính mình.
+- Cho phép Thành viên hủy đặt chỗ `ACTIVE` hoặc lượt đặt chỗ `NOTIFIED` của chính mình.
 - Cho phép Thủ thư/Quản trị viên xem và xử lý hàng đợi đặt chỗ.
 - Cập nhật trạng thái đặt chỗ khi có bản sao hoặc khi việc đặt chỗ bị hủy.
-- Kích hoạt yêu cầu thông báo cho FE10 khi có sách đã được đặt trước.
+- Kích hoạt yêu cầu thông báo cho FE10 khi có sách đã được đặt chỗ.
 
 ### 1.4 Mức đặc tả
 
@@ -86,7 +86,7 @@ Hệ thống sẽ:
 | Thủ thư | Nhân viên thư viện | Xem danh sách đặt chỗ, xử lý hàng đợi đặt chỗ, giải phóng/làm hết hạn đặt chỗ khi được phép. |
 | Quản trị viên | Quản trị viên hệ thống | Có quyền của Thủ thư và có thể xem báo cáo/nhật ký kiểm toán đặt chỗ. |
 | Khách | Khách truy cập không được xác thực | Không có quyền đặt chỗ. |
-| Dịch vụ thông báo | Dịch vụ bên ngoài | Nhận yêu cầu thông báo khi có sách đã được đặt trước. |
+| Dịch vụ thông báo | Dịch vụ bên ngoài | Nhận yêu cầu thông báo khi có sách đã được đặt chỗ. |
 
 ---
 
@@ -105,10 +105,10 @@ Tính năng này chỉ có thể bắt đầu khi:
 
 ## 4. Luồng chính
 
-### MF-FE08-001: Đặt trước bản sao vật lý
+### MF-FE08-001: Đặt chỗ bản sao vật lý
 
 1. Thành viên mở trang chi tiết sách và chọn một bản sao vật lý không có sẵn.
-2. Thành viên chọn đặt trước bản sao đó.
+2. Thành viên chọn đặt chỗ bản sao đó.
 3. Hệ thống kiểm tra tính đủ điều kiện của Thành viên và giới hạn đặt chỗ.
 4. Hệ thống xác nhận bản sao đã chọn đang không có sẵn và không ở trạng thái `AVAILABLE`, `DAMAGED`, `LOST` hoặc không hoạt động.
 5. Hệ thống tạo bản ghi `Reservations` có trạng thái `ACTIVE` và ghi nhật ký kiểm toán vòng đời trong cùng một giao dịch.
@@ -118,7 +118,7 @@ Tính năng này chỉ có thể bắt đầu khi:
 ### MF-FE08-002: Hủy đặt chỗ
 
 1. Thành viên mở danh sách đặt chỗ của họ.
-2. Thành viên chọn một đặt chỗ `ACTIVE` hoặc lượt giữ `NOTIFIED`.
+2. Thành viên chọn một đặt chỗ `ACTIVE` hoặc lượt đặt chỗ `NOTIFIED`.
 3. Thành viên xác nhận hủy.
 4. Hệ thống đổi trạng thái đặt chỗ thành `CANCELLED`, giải phóng bản sao theo cách nguyên tử nếu đặt chỗ đang là `NOTIFIED` và ghi nhật ký kiểm toán vòng đời trong cùng giao dịch.
 
@@ -134,7 +134,7 @@ Tính năng này chỉ có thể bắt đầu khi:
 2. Hệ thống xác định đặt chỗ đang hoạt động đủ điều kiện sớm nhất.
 3. Nếu có đặt chỗ đủ điều kiện, trong cùng một giao dịch hệ thống đổi đặt chỗ thành `NOTIFIED`, đổi bản sao thành `RESERVED`, thiết lập `NotifiedAt` và `ExpiresAt`, ghi nhật ký kiểm toán vòng đời và giữ nguyên thứ tự hàng đợi.
 4. Sau khi giao dịch giữ chỗ được commit, hệ thống gửi một yêu cầu thông báo FE10 với `type = RESERVATION_AVAILABLE`, `templateKey = RESERVATION_READY` và `sourceFeature = FE08`.
-5. Nếu yêu cầu thông báo thất bại, lượt giữ vẫn được commit và lỗi được ghi vào nhật ký kiểm toán; nếu chính việc ghi nhật ký lỗi sau commit đó không khả dụng, phản hồi cho nhân viên phải chứa siêu dữ liệu cảnh báo `RESERVATION_NOTIFY_AUDIT_FAILED` an toàn. Giai đoạn 1 không có tiến trình thử lại tự động.
+5. Nếu yêu cầu thông báo thất bại, lượt đặt chỗ vẫn được commit và lỗi được ghi vào nhật ký kiểm toán; nếu chính việc ghi nhật ký lỗi sau commit đó không khả dụng, phản hồi cho nhân viên phải chứa siêu dữ liệu cảnh báo `RESERVATION_NOTIFY_AUDIT_FAILED` an toàn. Giai đoạn 1 không có tiến trình thử lại tự động.
 
 ### MF-FE08-005: Kích hoạt thông báo có sách
 
@@ -142,7 +142,7 @@ Tính năng này chỉ có thể bắt đầu khi:
 2. Hệ thống gửi một yêu cầu thông báo tới FE10.
 3. Khi FE10 được triển khai, Thành viên nhận thông tin sách đã có qua kênh được cấu hình.
 
-### MF-FE08-006: Hoàn tất lượt giữ qua FE07
+### MF-FE08-006: Hoàn tất lượt đặt chỗ qua FE07
 
 1. Thành viên được thông báo sẽ tạo yêu cầu mượn FE07 thông thường đối với bản sao vật lý được giữ.
 2. FE07 kiểm tra lại đặt chỗ `NOTIFIED` thuộc đúng Thành viên và bản sao đó.
@@ -156,7 +156,7 @@ Tính năng này chỉ có thể bắt đầu khi:
 
 ### AF-FE08-001: Bản sao sách đang có sẵn
 
-1. Thành viên cố gắng đặt trước một bản sao có sẵn.
+1. Thành viên cố gắng đặt chỗ một bản sao có sẵn.
 2. Hệ thống từ chối đặt chỗ và đề xuất mượn sách thay thế.
 
 ### AF-FE08-002: Đặt chỗ hiện hoạt trùng lặp
@@ -172,7 +172,7 @@ Tính năng này chỉ có thể bắt đầu khi:
 3. Hệ thống phát hiện thành viên không còn đủ điều kiện.
 4. Hệ thống bỏ qua đặt chỗ trong lần xử lý này, giữ trạng thái `ACTIVE` và không thay đổi bản sao. Một lần chạy thủ công sau có thể thử lại khi Thành viên đủ điều kiện trở lại.
 
-### AF-FE08-004: Hết hạn đặt trước
+### AF-FE08-004: Hết hạn đặt chỗ
 
 1. Thành viên được thông báo rằng sách đã có.
 2. Thành viên không mượn trong thời gian giữ chỗ.
@@ -192,9 +192,9 @@ Tính năng này chỉ có thể bắt đầu khi:
 - BR-FE08-008: Hàng đợi đặt chỗ phải dùng thứ tự ổn định `ReservedAt ASC, ReservationId ASC`; Giai đoạn 1 không có cơ chế ghi đè mức ưu tiên.
 - BR-FE08-009: Quá trình xử lý hàng đợi không được chọn đặt chỗ đã hủy.
 - BR-FE08-010: Quá trình xử lý hàng đợi không được chọn đặt chỗ đã hết hạn.
-- BR-FE08-011: Khi bản sao đã đặt trước được giữ cho một Thành viên, Thành viên khác không được mượn bản sao đó theo luồng thông thường.
+- BR-FE08-011: Khi bản sao đã đặt chỗ được giữ cho một Thành viên, Thành viên khác không được mượn bản sao đó theo luồng thông thường.
 - BR-FE08-012: Sau khi giao dịch giữ chỗ được commit, quá trình xử lý hàng đợi phải gửi một yêu cầu thông báo FE10 với `type = RESERVATION_AVAILABLE`, `templateKey = RESERVATION_READY` và `sourceFeature = FE08`.
-- BR-FE08-013: Các thay đổi trạng thái khi tạo, hủy, giữ và làm hết hạn đặt chỗ phải ghi nhật ký kiểm toán vòng đời trong cùng giao dịch cơ sở dữ liệu, để thay đổi dữ liệu và nhật ký kiểm toán không thể commit riêng lẻ. Việc ghi nhật ký lỗi FE10 sau commit không hoàn tác lượt giữ đã commit và phải đưa ra cảnh báo an toàn nếu không thể ghi nhật ký kiểm toán đó.
+- BR-FE08-013: Các thay đổi trạng thái khi tạo, hủy, giữ và làm hết hạn đặt chỗ phải ghi nhật ký kiểm toán vòng đời trong cùng giao dịch cơ sở dữ liệu, để thay đổi dữ liệu và nhật ký kiểm toán không thể commit riêng lẻ. Việc ghi nhật ký lỗi FE10 sau commit không hoàn tác lượt đặt chỗ đã commit và phải đưa ra cảnh báo an toàn nếu không thể ghi nhật ký kiểm toán đó.
 - BR-FE08-014: Đặt chỗ đang hoạt động hoặc bản sao đang được giữ cho Thành viên khác phải chặn gia hạn lượt mượn FE07 cho cùng bản sao/mục tiêu đặt chỗ.
 - BR-FE08-015: Chỉ việc FE07 phê duyệt cho đúng Thành viên và bản sao mới được chuyển đặt chỗ `NOTIFIED` sang `FULFILLED`.
 - BR-FE08-016: Một bản ghi hàng đợi `ACTIVE` tạo quyền ưu tiên đặt chỗ và chặn các hành động tạo/phê duyệt FE07 thông thường cho bản sao đó cho đến khi hàng đợi được xử lý hoặc đặt chỗ chuyển sang trạng thái cuối. Nếu FE07 trả bản sao trước, `BookCopies.Status` có thể là `AVAILABLE` trong khi quyền giữ `ACTIVE` vẫn được thực thi; FE08 vẫn chịu trách nhiệm chọn hàng đợi sau đó.
@@ -214,7 +214,7 @@ Tính năng này chỉ có thể bắt đầu khi:
 - FR-FE08-005: Khi Thủ thư/Quản trị viên xem các đặt chỗ, hệ thống phải trả về bản ghi đặt chỗ cùng thông tin Thành viên và sách/bản sao.
 - FR-FE08-006: Khi xử lý hàng đợi, hệ thống phải chọn đặt chỗ đang hoạt động đủ điều kiện sớm nhất.
 - FR-FE08-007: Khi một đặt chỗ được chọn từ hàng đợi, hệ thống phải làm cho bản sao đã đặt không còn khả dụng với các Thành viên khác theo chính sách.
-- FR-FE08-008: Khi sách đã đặt trước trở nên có sẵn, hệ thống phải kích hoạt yêu cầu thông báo cho FE10.
+- FR-FE08-008: Khi sách đã đặt chỗ trở nên có sẵn, hệ thống phải kích hoạt yêu cầu thông báo cho FE10.
 - FR-FE08-009: Khi đặt chỗ ở trạng thái đã hủy hoặc hết hạn, hệ thống phải loại đặt chỗ đó khỏi quá trình xử lý hàng đợi đang hoạt động.
 - FR-FE08-010: Khi Thành viên xem các đặt chỗ, hệ thống phải chỉ trả về bản ghi của Thành viên đó.
 
@@ -232,15 +232,15 @@ Tính năng này chỉ có thể bắt đầu khi:
 - FR-FE08-018: TRONG TRƯỜNG HỢP Thành viên trở nên không đủ điều kiện trước khi quá trình xử lý hàng đợi tới đặt chỗ `ACTIVE` của họ, hệ thống phải bỏ qua đặt chỗ đó trong lần chạy này, giữ trạng thái `ACTIVE` và không thay đổi bản sao. (Nguồn: AF-FE08-003, Q-FE08-006)
 - FR-FE08-019: NẾU Thành viên đã được thông báo không mượn sách trong thời gian giữ chỗ được phê duyệt, hệ thống phải đổi đặt chỗ thành `EXPIRED` và tiếp tục với đặt chỗ đủ điều kiện tiếp theo trong hàng đợi. (Nguồn: AF-FE08-004, Q-FE08-004)
 - FR-FE08-020: TRONG TRƯỜNG HỢP quá trình xử lý hàng đợi không tìm thấy đặt chỗ đang hoạt động đủ điều kiện, hệ thống phải không trả về lựa chọn nào, giữ nguyên trạng thái bản sao và không thay đổi trạng thái đặt chỗ. (Nguồn: EC-FE08-008, Q-FE08-007)
-- FR-FE08-021: NẾU yêu cầu thông báo FE10 thất bại sau khi lượt giữ đã được xác nhận, hệ thống phải giữ nguyên trạng thái `NOTIFIED`/`RESERVED` và ghi một mục kiểm toán `RESERVATION_NOTIFY_FAILED`; nếu việc ghi kiểm toán sau xác nhận đó cũng thất bại, `process-queue` phải trả về một `notificationWarning` ở cấp cao nhất, còn `expire-holds` phải trả về một mục tùy chọn trong `notificationWarnings[]` ở cấp cao nhất cho mỗi lần đẩy đặt chỗ bị ảnh hưởng. Khi nhận diện một lần đẩy do hết hạn, mỗi cảnh báo chỉ được chứa `reservationId` và `copyId`, cùng `code` và `message` an toàn; DTO của đặt chỗ được đẩy lên phải giữ nguyên, còn siêu dữ liệu cảnh báo không được chứa danh tính Thành viên hoặc chi tiết nhà cung cấp. Giai đoạn 1 không chạy tiến trình thử lại tự động. (Nguồn: EC-FE08-009, BR-FE08-012, BR-FE08-013, Q-FE08-008)
+- FR-FE08-021: NẾU yêu cầu thông báo FE10 thất bại sau khi lượt đặt chỗ đã được xác nhận, hệ thống phải giữ nguyên trạng thái `NOTIFIED`/`RESERVED` và ghi một mục kiểm toán `RESERVATION_NOTIFY_FAILED`; nếu việc ghi kiểm toán sau xác nhận đó cũng thất bại, `process-queue` phải trả về một `notificationWarning` ở cấp cao nhất, còn `expire-holds` phải trả về một mục tùy chọn trong `notificationWarnings[]` ở cấp cao nhất cho mỗi lần đẩy đặt chỗ bị ảnh hưởng. Khi nhận diện một lần đẩy do hết hạn, mỗi cảnh báo chỉ được chứa `reservationId` và `copyId`, cùng `code` và `message` an toàn; DTO của đặt chỗ được đẩy lên phải giữ nguyên, còn siêu dữ liệu cảnh báo không được chứa danh tính Thành viên hoặc chi tiết nhà cung cấp. Giai đoạn 1 không chạy tiến trình thử lại tự động. (Nguồn: EC-FE08-009, BR-FE08-012, BR-FE08-013, Q-FE08-008)
 - FR-FE08-022: NẾU nhiều tiến trình xử lý hàng đợi đồng thời cố chọn cùng một đặt chỗ, hệ thống phải chỉ cho phép một lần chọn thành công và yêu cầu lần xử lý sau đọc lại trạng thái hiện tại. (Nguồn: EC-FE08-010, NFR-FE08-TXN-001)
 - FR-FE08-023: TRONG TRƯỜNG HỢP một bản sao được giữ cho Thành viên từ hàng đợi đặt chỗ, hệ thống phải ngăn mọi Thành viên khác mượn bản sao đang giữ đó. (Nguồn: BR-FE08-011, AC-FE08-008)
 - FR-FE08-024: TRONG TRƯỜNG HỢP tồn tại đặt chỗ đang hoạt động hoặc bản sao được giữ cho Thành viên khác đối với một mục tiêu đặt chỗ, hệ thống phải chặn FE07 gia hạn lượt mượn cho bản sao/mục tiêu đặt chỗ đó. (Nguồn: BR-FE08-014)
 - FR-FE08-025: KHI FE07 phê duyệt yêu cầu mượn của chủ sở hữu đặt chỗ đã được thông báo, FE08 phải chuyển đặt chỗ khớp sang `FULFILLED` trong cùng một giao dịch.
-- FR-FE08-026: NẾU FE07 đánh giá một bản sao đang có hàng đợi hoạt động hoặc lượt giữ đã thông báo của Thành viên khác, trạng thái đặt chỗ FE08 phải chặn thao tác mượn thông thường mà không làm lộ chủ sở hữu đặt chỗ.
+- FR-FE08-026: NẾU FE07 đánh giá một bản sao đang có hàng đợi hoạt động hoặc lượt đặt chỗ đã thông báo của Thành viên khác, trạng thái đặt chỗ FE08 phải chặn thao tác mượn thông thường mà không làm lộ chủ sở hữu đặt chỗ.
 - FR-FE08-027: NẾU `page` hoặc `limit` được cung cấp cho danh sách đặt chỗ vi phạm giới hạn phân trang Giai đoạn 1, hệ thống phải từ chối yêu cầu mà không chuẩn hóa giá trị hoặc truy vấn đặt chỗ.
 - FR-FE08-028: KHI một đặt chỗ `NOTIFIED` chuyển thành `FULFILLED`, `EXPIRED` hoặc `CANCELLED`, hệ thống phải giữ nguyên `NotifiedAt` và `ExpiresAt` ban đầu; thao tác hủy phải thiết lập thêm `CancelledAt`, còn các trạng thái không phải hủy giữ `CancelledAt = null`.
-- FR-FE08-029: KHI Thành viên đã xác thực yêu cầu `GET /api/reservations/candidates`, hệ thống phải trả về danh mục có phân trang do máy chủ quản lý, gồm các bản sao vật lý của sách đang hoạt động có trạng thái `BORROWED` hoặc `RESERVED`; danh mục chỉ được hiển thị phép chiếu an toàn đã phê duyệt và `POST /api/reservations { copyId }` vẫn là nguồn có thẩm quyền cho mọi kiểm tra tại thời điểm thay đổi dữ liệu.
+- FR-FE08-029: KHI Thành viên đã xác thực yêu cầu `GET /api/reservations/candidates`, hệ thống phải trả về danh mục có phân trang do máy chủ quản lý, gồm các bản sao vật lý của sách đang hoạt động có trạng thái `BORROWED` hoặc `RESERVED`; danh mục chỉ được hiển thị phép chiếu an toàn đã phê duyệt và `POST /api/reservations { copyId }` vẫn là nguồn chính thức cho mọi kiểm tra tại thời điểm thay đổi dữ liệu.
 - FR-FE08-030: NẾU mảng vai trò tương thích là dữ liệu cũ không hợp lệ chứa `MEMBER` cùng `LIBRARIAN` hoặc `ADMIN` bất chấp `DEC-GEN-005`, hệ thống phải chủ động từ chối truy cập danh mục ứng viên đặt chỗ, tạo, danh sách của bản thân và hủy bởi chủ sở hữu bằng `403 ROLE_REQUIRED`; các tuyến hàng đợi/danh sách/xử lý dành cho nhân viên vẫn khả dụng theo các bộ bảo vệ vai trò hiện có. Đây không phải mô hình tài khoản đa vai trò được hỗ trợ.
 - FR-FE08-031: KHI tài khoản chỉ có vai trò `MEMBER` đi từ FE01 tới `/reservations/mine?bookId={bookId}`, giao diện phải phân giải cuốn sách công khai đó, khởi tạo tìm kiếm ứng viên FE08 được bảo vệ bằng tiêu đề sách và hiển thị các bản sao vật lý không có sẵn, nhưng không làm lộ mã định danh bản sao qua FE01.
 - FR-FE08-032: KHI Thành viên xem các đặt chỗ của mình sau thao tác tạo, hủy, hoàn tất qua FE07 hoặc xử lý hàng đợi của nhân viên, giao diện phải tách các bản ghi chuẩn `ACTIVE` và `NOTIFIED` khỏi lịch sử ở trạng thái cuối `FULFILLED`, `CANCELLED` và `EXPIRED`, hiển thị rõ nhãn của từng trạng thái vòng đời thô và giữ lịch sử trạng thái cuối mà không trình bày chúng như đặt chỗ hiện tại.
@@ -269,7 +269,7 @@ Tính năng này chỉ có thể bắt đầu khi:
 - AC-FE08-015: Khi Thành viên đọc danh mục ứng viên đặt chỗ, mỗi bản ghi chỉ chứa `copyId`, `bookId`, `title`, `authorName`, `copyStatus`, `activeReservationCount` và giá trị luận lý `hasActiveReservation` trong phạm vi Thành viên; không có mã vạch, vị trí, chủ sở hữu, email, dấu thời gian hoặc phiên bản.
 - AC-FE08-016: Khi trang đặt chỗ của Thành viên tải hoặc tìm kiếm ứng viên, trang phải dùng `GET /api/reservations/candidates` và không nhập, hiển thị hoặc dùng `DEMO_RESERVABLE` làm phương án dự phòng.
 - AC-FE08-017: Với một mảng vai trò tương thích cũ bị cố ý làm hỏng chứa `MEMBER + LIBRARIAN` hoặc `MEMBER + ADMIN`, khi tác nhân trực tiếp mở hoặc gọi danh mục ứng viên, tạo, danh sách của bản thân hoặc hủy đặt chỗ dành cho Thành viên, giao diện phải chuyển hướng tới trang chủ nhân viên và phần máy chủ phải trả về `403 ROLE_REQUIRED` mà không thay đổi trạng thái đặt chỗ; tài khoản được lưu trữ vẫn có đúng một vai trò.
-- AC-FE08-018: Với Thành viên chọn `Đặt chỗ sách này` trên HomePage, khi trang FE08 mở cùng `bookId` hợp lệ, danh mục ứng viên phải được lọc theo tiêu đề công khai của cuốn sách đã chọn và Thành viên phải chọn một ứng viên `copyId` có thẩm quyền trước khi tạo đặt chỗ.
+- AC-FE08-018: Với Thành viên chọn `Đặt chỗ sách này` trên HomePage, khi trang FE08 mở cùng `bookId` hợp lệ, danh mục ứng viên phải được lọc theo tiêu đề công khai của cuốn sách đã chọn và Thành viên phải chọn một ứng viên `copyId` chính thức trước khi tạo đặt chỗ.
 - AC-FE08-019: Với Thành viên có một đặt chỗ cũ đã hủy và một đặt chỗ mới `ACTIVE` hoặc `NOTIFIED` cho cùng sách/bản sao, khi trang tải lại trạng thái chuẩn, đặt chỗ đang mở phải xuất hiện trong phần đặt chỗ hiện tại với `Đang chờ` hoặc `Sẵn sàng nhận`, bản ghi đã hủy chỉ còn trong lịch sử, và hành động của ứng viên khớp phải hiển thị `Đang đặt chỗ` hoặc `Đến lượt bạn`.
 - AC-FE08-020: Với một đặt chỗ `NOTIFIED`, khi Thành viên xem đặt chỗ, trang phải nêu ngày bắt đầu và hạn chót nhận sách, đồng thời cung cấp hành động `Tạo yêu cầu mượn` cho đúng `bookId`/`copyId` đang được giữ; tài khoản Khách và nhân viên không có hành động dành cho Thành viên này.
 - AC-FE08-021: Với Thành viên hiện đang mượn một bản sao của một cuốn sách, khi hệ thống liệt kê ứng viên hoặc gửi yêu cầu cho bản sao khác của cùng cuốn sách, hệ thống phải không trả về ứng viên cùng sách và thao tác tạo phải thất bại với `BOOK_ALREADY_BORROWED`; nếu lượt mượn bắt đầu sau khi đã tạo đặt chỗ `ACTIVE`, quá trình xử lý hàng đợi của nhân viên phải bỏ qua đặt chỗ đó mà không thay đổi trạng thái đặt chỗ hoặc bản sao.
@@ -289,7 +289,7 @@ Tính năng này chỉ có thể bắt đầu khi:
 | EC-FE08-006 | Thành viên hủy đặt chỗ của người khác | Trả lại lỗi bị cấm. |
 | EC-FE08-007 | Đặt chỗ không ở trạng thái `ACTIVE`/`NOTIFIED` | Trả về `409 RESERVATION_NOT_ACTIVE` cùng trạng thái hiện tại; giữ nguyên trạng thái đặt chỗ và bản sao. |
 | EC-FE08-008 | Hàng đợi không có đặt chỗ đủ điều kiện | Không trả về lựa chọn; giữ nguyên bản sao và tất cả đặt chỗ. |
-| EC-FE08-009 | Dịch vụ thông báo không khả dụng | Giữ nguyên lượt giữ đã xác nhận và ghi `RESERVATION_NOTIFY_FAILED`; nếu không thể ghi nhật ký kiểm toán đó, trả về siêu dữ liệu cảnh báo `RESERVATION_NOTIFY_AUDIT_FAILED` an toàn; Giai đoạn 1 không chạy tiến trình thử lại tự động. |
+| EC-FE08-009 | Dịch vụ thông báo không khả dụng | Giữ nguyên lượt đặt chỗ đã xác nhận và ghi `RESERVATION_NOTIFY_FAILED`; nếu không thể ghi nhật ký kiểm toán đó, trả về siêu dữ liệu cảnh báo `RESERVATION_NOTIFY_AUDIT_FAILED` an toàn; Giai đoạn 1 không chạy tiến trình thử lại tự động. |
 | EC-FE08-010 | Xử lý hàng đợi đồng thời | Chỉ một lần chọn từ hàng đợi được phép thành công; hành động sau phải đọc lại trạng thái hiện tại. |
 | EC-FE08-011 | Thành viên đã mượn một bản sao khác của cùng cuốn sách | Ẩn mọi bản sao của cuốn sách đó khỏi danh mục ứng viên dành cho Thành viên; từ chối tạo trực tiếp bằng `409 BOOK_ALREADY_BORROWED`; bỏ qua bản ghi hàng đợi cũ mà không thay đổi dữ liệu. |
 
@@ -404,7 +404,7 @@ stateDiagram-v2
 | PATCH | `/api/reservations/{reservationId}/cancel` | Thành viên | Lý do tùy chọn | Đặt chỗ đã hủy | Chỉ đặt chỗ của chính mình. |
 | GET | `/api/reservations` | Thủ thư/Quản trị viên | Truy vấn: `bookId?, memberId?, status?, page?, limit?` | Danh sách đặt chỗ | Mặc định `page = 1`, `limit = 20`; sắp xếp theo `ReservedAt ASC, ReservationId ASC`. |
 | POST | `/api/reservations/process-queue` | Thủ thư/Quản trị viên | `{ copyId: number }` | Đặt chỗ đã chọn hoặc không có lựa chọn | Hành động thủ công Giai đoạn 1; bắt buộc có `copyId` và không chấp nhận `bookId`. |
-| POST | `/api/reservations/expire-holds` | Thủ thư/Quản trị viên | Không có body | `{ expiredCount, expired, promoted, notificationWarnings? }` | Làm hết hạn thủ công các lượt giữ `NOTIFIED` quá hạn và chuyển tiếp hàng đợi đủ điều kiện; mỗi cảnh báo tùy chọn phải chính xác là `{ reservationId, copyId, code, message }`, không làm thay đổi DTO đặt chỗ được đẩy lên; truy vết FR-FE08-019/021. |
+| POST | `/api/reservations/expire-holds` | Thủ thư/Quản trị viên | Không có body | `{ expiredCount, expired, promoted, notificationWarnings? }` | Làm hết hạn thủ công các lượt đặt chỗ `NOTIFIED` quá hạn và chuyển tiếp hàng đợi đủ điều kiện; mỗi cảnh báo tùy chọn phải chính xác là `{ reservationId, copyId, code, message }`, không làm thay đổi DTO đặt chỗ được đẩy lên; truy vết FR-FE08-019/021. |
 
 ---
 
@@ -416,11 +416,11 @@ stateDiagram-v2
 - NFR-FE08-SEC-002: Thành viên không được xem hoặc hủy đặt chỗ của Thành viên khác.
 - NFR-FE08-SEC-003: Quyền Thủ thư/Quản trị viên phải được kiểm tra ở máy chủ.
 - NFR-FE08-SEC-004: Việc đọc danh mục ứng viên phải yêu cầu vai trò `MEMBER` và không được làm lộ mã vạch, vị trí, chủ sở hữu đặt chỗ, email Thành viên, dấu thời gian đặt chỗ, rowversion hoặc siêu dữ liệu chỉ dành cho nhân viên khác.
-- NFR-FE08-UX-003: Danh sách ứng viên của Thành viên phải giữ hiển thị mọi bản sao `BORROWED` hoặc `RESERVED` đủ điều kiện, đánh dấu đặt chỗ `ACTIVE` do Thành viên sở hữu là `Đang đặt chỗ` và đặt chỗ `NOTIFIED` do Thành viên sở hữu là `Đến lượt bạn`, vô hiệu hóa thao tác tạo trùng lặp cho bản sao đó và không hiển thị các banner thông báo đồng bộ thành công thông thường.
+- NFR-FE08-UX-003: Danh sách ứng viên của Thành viên phải giữ hiển thị mọi bản sao `BORROWED` hoặc `RESERVED` đủ điều kiện, đánh dấu đặt chỗ `ACTIVE` do Thành viên sở hữu là `Đang đặt chỗ` và đặt chỗ `NOTIFIED` do Thành viên sở hữu là `Đến lượt bạn`, vô hiệu hóa thao tác tạo trùng lặp cho bản sao đó và không hiển thị các thông báo thông báo đồng bộ thành công thông thường.
 
 ### 12.2 Tính toàn vẹn giao dịch
 
-- NFR-FE08-TXN-001: Xử lý hàng đợi và hoàn tất qua FE07 phải cập nhật trạng thái đặt chỗ/bản sao theo cách nguyên tử; nhật ký kiểm toán vòng đời của hàng đợi phải commit hoặc rollback cùng thay đổi hàng đợi.
+- NFR-FE08-TXN-001: Xử lý hàng đợi và hoàn tất qua FE07 phải cập nhật trạng thái đặt chỗ/bản sao theo cách nguyên tử; nhật ký kiểm toán vòng đời của hàng đợi phải commit hoặc hoàn tác cùng thay đổi hàng đợi.
 - NFR-FE08-TXN-002: Tạo, hủy và hết hạn không được để trạng thái đặt chỗ/bản sao thiếu nhất quán với nhật ký kiểm toán vòng đời bắt buộc.
 
 ### 12.3 Hiệu năng
@@ -435,7 +435,7 @@ stateDiagram-v2
 
 ### 12.5 Khả năng sử dụng
 
-- NFR-FE08-UX-001: Hệ thống phải hiển thị trạng thái đặt chỗ chuẩn và trạng thái hết hạn lượt giữ cho Thành viên.
+- NFR-FE08-UX-001: Hệ thống phải hiển thị trạng thái đặt chỗ chuẩn và trạng thái hết hạn lượt đặt chỗ cho Thành viên.
 - NFR-FE08-UX-002: Thủ thư phải thấy thứ tự hàng đợi theo `ReservedAt ASC, ReservationId ASC` và giá trị `queuePosition` được tính. Bước xác nhận xử lý hàng đợi phải xác định bản sao và giải thích rằng máy chủ sẽ chọn lại Thành viên hiện đủ điều kiện đầu tiên; không được cam kết chọn Thành viên đã được lưu đệm.
 
 ---
@@ -479,7 +479,7 @@ Tính năng này không bao gồm:
 | Q-FE08-005 | Thủ thư xử lý hàng đợi thủ công trong Giai đoạn 1; kích hoạt tự động là công việc tương lai. | Gói rà soát 2026-06-10 | APPROVED |
 | Q-FE08-006 | Đặt chỗ đang hoạt động nhưng không đủ điều kiện bị bỏ qua trong lần chạy hiện tại, vẫn giữ `ACTIVE` và chỉ được thử lại trong một lần chạy thủ công sau. | Đánh giá chuẩn hóa của Nhat 2026-07-17 | APPROVED |
 | Q-FE08-007 | Khi không có đặt chỗ đủ điều kiện, quá trình xử lý hàng đợi không trả về lựa chọn và giữ nguyên trạng thái bản sao/đặt chỗ. | Đánh giá chuẩn hóa của Nhat 2026-07-17 | APPROVED |
-| Q-FE08-008 | Yêu cầu FE10 thất bại vẫn giữ lượt giữ đã xác nhận và ghi nhật ký kiểm toán lỗi; Giai đoạn 1 không có tiến trình thử lại tự động. | Đánh giá chuẩn hóa của Nhat 2026-07-17 | APPROVED |
+| Q-FE08-008 | Yêu cầu FE10 thất bại vẫn giữ lượt đặt chỗ đã xác nhận và ghi nhật ký kiểm toán lỗi; Giai đoạn 1 không có tiến trình thử lại tự động. | Đánh giá chuẩn hóa của Nhat 2026-07-17 | APPROVED |
 | Q-FE08-009 | `NotifiedAt` và `ExpiresAt` là lịch sử bất biến sau khi thông báo và được giữ sau khi hoàn tất, hết hạn hoặc hủy; `CancelledAt` chỉ thuộc các bản ghi đã hủy. | Chuẩn hóa đặc tả 2026-07-17 | APPROVED |
 | Q-FE08-010 | `queuePosition` được tính từ thứ tự hàng đợi chuẩn và `POST /api/reservations/process-queue` là điểm cuối xử lý hàng đợi duy nhất trong Giai đoạn 1. | Chuẩn hóa hợp đồng hàng đợi 2026-07-17 | APPROVED |
 | Q-FE08-011 | Việc chọn ứng viên dùng `GET /api/reservations/candidates` được bảo vệ và chỉ dành cho Thành viên; điểm cuối trả về một bản ghi an toàn cho mỗi bản sao vật lý đủ điều kiện cùng `hasActiveReservation` trong phạm vi Thành viên, vẫn hiển thị các bản sao đã được đặt chỗ nhưng vô hiệu hóa thao tác trùng lặp, giữ nguyên ranh giới FE01/FE06 và giữ hợp đồng `POST /api/reservations { copyId }`. | Người dùng phê duyệt `APPROVE TD-028 - Option A` và `APPROVE FE08 DESIGN`, 2026-07-19; làm rõ giao diện Thành viên 2026-07-21 | APPROVED |
@@ -492,80 +492,80 @@ Tính năng này không bao gồm:
 | -------------- | ---------------- | ----------------- | ------ |
 | BR-FE08-001 | UC36, UC37 | FE08-T03, FE08-T15 | Sẵn sàng rà soát |
 | BR-FE08-002 | UC36 | FE08-T03, FE08-T04, FE08-T11 | Sẵn sàng rà soát |
-| BR-FE08-003 | UC37 | FE08-T06, FE08-T12 | Sẵn sàng review |
-| BR-FE08-004 | UC38, UC39 | FE08-T03, FE08-T07, FE08-T13 | Sẵn sàng review |
-| BR-FE08-005 | UC36 | FT37 | Sẵn sàng review |
-| BR-FE08-006 | UC36 | FT37 | Sẵn sàng review |
-| BR-FE08-007 | UC36 | FE08-T04, FE08-T11 | Sẵn sàng review |
-| BR-FE08-008 | UC39 | FT40 | Sẵn sàng review |
-| BR-FE08-009 | UC37, UC39 | FT38, FT40 | Sẵn sàng review |
-| BR-FE08-010 | UC39 | FT40 | Sẵn sàng review |
-| BR-FE08-011 | UC39 | FE08-T07, FE08-T13 | Sẵn sàng review |
-| BR-FE08-012 | UC40 | FE08-T08, FE08-T14 | Sẵn sàng review |
-| BR-FE08-013 | UC36, UC37, UC39, UC40 | FE08-T09, FE08-T12, FE08-T14 | Sẵn sàng review |
-| BR-FE08-014 | UC39 | FT40 | Sẵn sàng review |
-| BR-FE08-015 | UC39, UC40 | Kiểm thử hoàn tất FE08-T025 và FE07-T030 | Đã đạt kiểm tra tự động; đang chờ review của con người |
-| BR-FE08-016 | UC36, UC39 | Kiểm thử ưu tiên FE08-T025 và FE07-T029 | Đã đạt kiểm tra tự động; đang chờ review của con người |
-| BR-FE08-017 | UC37, UC39, UC40 | Kiểm thử mô hình/chuyển đổi giữ dấu thời gian FE08-T030 | Đã đạt kiểm tra tự động; đang chờ review của con người |
-| BR-FE08-019 | UC36, UC39 | Kiểm thử tuyến và hàng đợi khi đang mượn cùng cuốn sách FE08-T045 | Đã đạt kiểm tra tự động; đang chờ review của con người |
-| BR-FE08-020 | UC36, UC38, UC39 | Kiểm thử hiển thị hàng đợi theo phạm vi bản sao FE08-T046 | Đã đạt kiểm tra tự động; đang chờ review của con người |
-| FR-FE08-001 | UC36 | FT37 | Sẵn sàng review |
-| FR-FE08-002 | UC36 | FT37 | Sẵn sàng review |
-| FR-FE08-003 | UC36 | FT37 | Sẵn sàng review |
-| FR-FE08-004 | UC37 | FT38 | Sẵn sàng review |
-| FR-FE08-005 | UC38 | FT39 | Sẵn sàng review |
-| FR-FE08-006 | UC39 | FT40 | Sẵn sàng review |
-| FR-FE08-007 | UC39 | FT40 | Sẵn sàng review |
-| FR-FE08-008 | UC40 | FT41 | Sẵn sàng review |
-| FR-FE08-009 | UC39 | FT40 | Sẵn sàng review |
-| FR-FE08-010 | UC38 | FT39 | Sẵn sàng review |
-| FR-FE08-011 | UC36 (EC-FE08-001) | Kiểm thử FE08-T11 từ chối khi không tìm thấy Thành viên | Sẵn sàng review |
-| FR-FE08-012 | UC36 (EC-FE08-002) | từ chối đặt chỗ khi tài khoản Thành viên không hoạt động (FR-FE08-012) | Sẵn sàng review |
-| FR-FE08-013 | UC36 | reservationRoutes.test.js > "allows an active MEMBER to reserve without FE04 approval" | Sẵn sàng review |
-| FR-FE08-014 | UC36 (EC-FE08-004) | từ chối đặt chỗ khi bản sao không tồn tại (FR-FE08-014) | Sẵn sàng review |
-| FR-FE08-015 | UC36 (Q-FE08-003) | Kiểm thử tuyến và SQL tính cả `ACTIVE` lẫn `NOTIFIED` vào giới hạn ba đặt chỗ đang mở | Đã đạt kiểm tra tự động; đang chờ review của con người |
-| FR-FE08-016 | UC37 (EC-FE08-006) | Thành viên chỉ hủy đặt chỗ `ACTIVE` hoặc `NOTIFIED` của mình (FR-FE08-016) | Sẵn sàng review |
-| FR-FE08-017 | UC37 (EC-FE08-007) | thao tác hủy của Thành viên từ chối các trạng thái ngoài `ACTIVE` hoặc `NOTIFIED` (FR-FE08-017) | Sẵn sàng review |
-| FR-FE08-018 | UC39 (AF-FE08-003) | process-queue bỏ qua Thành viên không đủ điều kiện thay vì giữ bản sao (FR-FE08-018) | Sẵn sàng review |
-| FR-FE08-019 | UC39 (AF-FE08-004) | expire-holds làm hết hạn lượt giữ quá hạn và đẩy đặt chỗ tiếp theo lên (FR-FE08-019) | Sẵn sàng review |
-| FR-FE08-020 | UC39 (EC-FE08-008) | process-queue không chọn gì khi không có đặt chỗ đủ điều kiện (FR-FE08-020) | Sẵn sàng review |
-| FR-FE08-021 | UC40 (EC-FE08-009) | FT41 | Sẵn sàng review |
-| FR-FE08-022 | UC39 (EC-FE08-010) | xử lý hàng đợi đồng thời chỉ giữ bản sao một lần (FR-FE08-022) | Sẵn sàng review |
-| FR-FE08-023 | UC39 (BR-FE08-011) | FT40 | Sẵn sàng review |
-| FR-FE08-024 | UC39 (BR-FE08-014) | FT40 | Sẵn sàng review |
-| FR-FE08-025 | UC39, UC40 | Kiểm thử hoàn tất khi phê duyệt FE08-T025 và FE07-T030 | Đã đạt kiểm tra tự động; đang chờ review của con người |
-| FR-FE08-026 | UC36, UC39 | Kiểm thử xung đột ưu tiên an toàn FE08-T025 và FE07-T029 | Đã đạt kiểm tra tự động; đang chờ review của con người |
-| FR-FE08-027 | UC38 | Kiểm thử xác thực phân trang FE08-T028 | Đã đạt kiểm tra tự động; đang chờ review của con người |
-| FR-FE08-028 | UC37, UC39, UC40 | Kiểm thử giữ dấu thời gian ở trạng thái cuối FE08-T030 | Đã đạt kiểm tra tự động; đang chờ review của con người |
+| BR-FE08-003 | UC37 | FE08-T06, FE08-T12 | Sẵn sàng rà soát |
+| BR-FE08-004 | UC38, UC39 | FE08-T03, FE08-T07, FE08-T13 | Sẵn sàng rà soát |
+| BR-FE08-005 | UC36 | FT37 | Sẵn sàng rà soát |
+| BR-FE08-006 | UC36 | FT37 | Sẵn sàng rà soát |
+| BR-FE08-007 | UC36 | FE08-T04, FE08-T11 | Sẵn sàng rà soát |
+| BR-FE08-008 | UC39 | FT40 | Sẵn sàng rà soát |
+| BR-FE08-009 | UC37, UC39 | FT38, FT40 | Sẵn sàng rà soát |
+| BR-FE08-010 | UC39 | FT40 | Sẵn sàng rà soát |
+| BR-FE08-011 | UC39 | FE08-T07, FE08-T13 | Sẵn sàng rà soát |
+| BR-FE08-012 | UC40 | FE08-T08, FE08-T14 | Sẵn sàng rà soát |
+| BR-FE08-013 | UC36, UC37, UC39, UC40 | FE08-T09, FE08-T12, FE08-T14 | Sẵn sàng rà soát |
+| BR-FE08-014 | UC39 | FT40 | Sẵn sàng rà soát |
+| BR-FE08-015 | UC39, UC40 | Kiểm thử hoàn tất FE08-T025 và FE07-T030 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
+| BR-FE08-016 | UC36, UC39 | Kiểm thử ưu tiên FE08-T025 và FE07-T029 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
+| BR-FE08-017 | UC37, UC39, UC40 | Kiểm thử mô hình/chuyển đổi giữ dấu thời gian FE08-T030 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
+| BR-FE08-019 | UC36, UC39 | Kiểm thử tuyến và hàng đợi khi đang mượn cùng cuốn sách FE08-T045 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
+| BR-FE08-020 | UC36, UC38, UC39 | Kiểm thử hiển thị hàng đợi theo phạm vi bản sao FE08-T046 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
+| FR-FE08-001 | UC36 | FT37 | Sẵn sàng rà soát |
+| FR-FE08-002 | UC36 | FT37 | Sẵn sàng rà soát |
+| FR-FE08-003 | UC36 | FT37 | Sẵn sàng rà soát |
+| FR-FE08-004 | UC37 | FT38 | Sẵn sàng rà soát |
+| FR-FE08-005 | UC38 | FT39 | Sẵn sàng rà soát |
+| FR-FE08-006 | UC39 | FT40 | Sẵn sàng rà soát |
+| FR-FE08-007 | UC39 | FT40 | Sẵn sàng rà soát |
+| FR-FE08-008 | UC40 | FT41 | Sẵn sàng rà soát |
+| FR-FE08-009 | UC39 | FT40 | Sẵn sàng rà soát |
+| FR-FE08-010 | UC38 | FT39 | Sẵn sàng rà soát |
+| FR-FE08-011 | UC36 (EC-FE08-001) | Kiểm thử FE08-T11 từ chối khi không tìm thấy Thành viên | Sẵn sàng rà soát |
+| FR-FE08-012 | UC36 (EC-FE08-002) | từ chối đặt chỗ khi tài khoản Thành viên không hoạt động (FR-FE08-012) | Sẵn sàng rà soát |
+| FR-FE08-013 | UC36 | reservationRoutes.test.js > "allows an active MEMBER to reserve without FE04 approval" | Sẵn sàng rà soát |
+| FR-FE08-014 | UC36 (EC-FE08-004) | từ chối đặt chỗ khi bản sao không tồn tại (FR-FE08-014) | Sẵn sàng rà soát |
+| FR-FE08-015 | UC36 (Q-FE08-003) | Kiểm thử tuyến và SQL tính cả `ACTIVE` lẫn `NOTIFIED` vào giới hạn ba đặt chỗ đang mở | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
+| FR-FE08-016 | UC37 (EC-FE08-006) | Thành viên chỉ hủy đặt chỗ `ACTIVE` hoặc `NOTIFIED` của mình (FR-FE08-016) | Sẵn sàng rà soát |
+| FR-FE08-017 | UC37 (EC-FE08-007) | thao tác hủy của Thành viên từ chối các trạng thái ngoài `ACTIVE` hoặc `NOTIFIED` (FR-FE08-017) | Sẵn sàng rà soát |
+| FR-FE08-018 | UC39 (AF-FE08-003) | process-queue bỏ qua Thành viên không đủ điều kiện thay vì giữ bản sao (FR-FE08-018) | Sẵn sàng rà soát |
+| FR-FE08-019 | UC39 (AF-FE08-004) | expire-holds làm hết hạn lượt đặt chỗ quá hạn và đẩy đặt chỗ tiếp theo lên (FR-FE08-019) | Sẵn sàng rà soát |
+| FR-FE08-020 | UC39 (EC-FE08-008) | process-queue không chọn gì khi không có đặt chỗ đủ điều kiện (FR-FE08-020) | Sẵn sàng rà soát |
+| FR-FE08-021 | UC40 (EC-FE08-009) | FT41 | Sẵn sàng rà soát |
+| FR-FE08-022 | UC39 (EC-FE08-010) | xử lý hàng đợi đồng thời chỉ giữ bản sao một lần (FR-FE08-022) | Sẵn sàng rà soát |
+| FR-FE08-023 | UC39 (BR-FE08-011) | FT40 | Sẵn sàng rà soát |
+| FR-FE08-024 | UC39 (BR-FE08-014) | FT40 | Sẵn sàng rà soát |
+| FR-FE08-025 | UC39, UC40 | Kiểm thử hoàn tất khi phê duyệt FE08-T025 và FE07-T030 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
+| FR-FE08-026 | UC36, UC39 | Kiểm thử xung đột ưu tiên an toàn FE08-T025 và FE07-T029 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
+| FR-FE08-027 | UC38 | Kiểm thử xác thực phân trang FE08-T028 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
+| FR-FE08-028 | UC37, UC39, UC40 | Kiểm thử giữ dấu thời gian ở trạng thái cuối FE08-T030 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
 | FR-FE08-029 | UC36 | Kiểm thử tuyến/dịch vụ/lược bỏ dữ liệu FE08-T035; kiểm thử phép chiếu SQL FE08-T036; chấp nhận trình duyệt FE08-T038 | Đã đạt kiểm tra tự động; thiết kế đã phê duyệt; đang chờ kiểm tra xuyên suốt của con người/H3 |
-| FR-FE08-030 | UC36-UC38 | Kiểm thử quyền truy cập một vai trò ở phần máy chủ/giao diện FE08-T041 | Đã đạt kiểm tra tự động; đang chờ review của con người |
-| FR-FE08-031 | UC36 | Kiểm thử giao diện bàn giao sách đã chọn từ FE01 FE08-T042 | Đã đạt kiểm tra tự động; đang chờ review của con người |
-| FR-FE08-032 | UC36-UC38 | Kiểm thử hiển thị vòng đời hiện tại/lịch sử của Thành viên FE08-T043 | Đã đạt kiểm tra tự động; đang chờ review của con người |
-| FR-FE08-033 | UC36, UC38 | Kiểm thử giao diện về khoảng thời gian nhận sách và bàn giao chính xác sang FE07 FE08-T044 | Đã đạt kiểm tra tự động; đang chờ review của con người |
-| FR-FE08-034 | UC36, UC39 | Kiểm thử ứng viên/tạo/hàng đợi khi đang mượn FE08-T045 | Đã đạt kiểm tra tự động; đang chờ review của con người |
-| FR-FE08-035 | UC36, UC38, UC39 | Kiểm thử giao diện hàng đợi theo phạm vi bản sao, an toàn với null FE08-T046 | Đã đạt kiểm tra tự động; đang chờ review của con người |
-| AC-FE08-001 | UC36 | Kiểm thử FT37 đặt bản sao không có sẵn khi đủ điều kiện | Sẵn sàng review |
-| AC-FE08-002 | UC36 | Kiểm thử FT37 từ chối đặt chỗ đang mở trùng lặp, gồm cả `NOTIFIED` | Đã đạt kiểm tra tự động; đang chờ review của con người |
-| AC-FE08-003 | UC36 | Kiểm thử FT37 từ chối đặt bản sao có sẵn | Sẵn sàng review |
-| AC-FE08-004 | UC37 | Kiểm thử FT38 chủ sở hữu hủy và giải phóng lượt giữ nguyên tử | Sẵn sàng review |
-| AC-FE08-005 | UC37 | Kiểm thử FT38 từ chối hủy đặt chỗ của chủ sở hữu khác | Sẵn sàng review |
-| AC-FE08-006 | UC39 | Kiểm thử FT40 chọn ổn định đặt chỗ đủ điều kiện sớm nhất | Sẵn sàng review |
-| AC-FE08-007 | UC39 | Kiểm thử FT40 loại trừ đặt chỗ đã hủy | Sẵn sàng review |
-| AC-FE08-008 | UC39 | Kiểm thử tích hợp FT40 và FE07 từ chối mượn bản sao đang giữ | Sẵn sàng review |
-| AC-FE08-009 | UC40 | Kiểm thử FT41 yêu cầu thông báo FE10 | Sẵn sàng review |
-| AC-FE08-010 | UC38 | Kiểm thử FT39 cô lập đặt chỗ của chính Thành viên | Sẵn sàng review |
-| AC-FE08-011 | UC39, UC40 | Kiểm thử hoàn tất nguyên tử FE08-T025 và FE07-T030 | Đã đạt kiểm tra tự động; đang chờ review của con người |
-| AC-FE08-012 | UC36, UC39 | Kiểm thử ưu tiên đặt chỗ FE08-T025 và FE07-T029 | Đã đạt kiểm tra tự động; đang chờ review của con người |
-| AC-FE08-013 | UC38 | Kiểm thử giá trị mặc định/giới hạn phân trang FE08-T028 | Đã đạt kiểm tra tự động; đang chờ review của con người |
-| AC-FE08-014 | UC37, UC39, UC40 | Các trường hợp giữ dấu thời gian khi hoàn tất/hết hạn/hủy FE08-T030 | Đã đạt kiểm tra tự động; đang chờ review của con người |
+| FR-FE08-030 | UC36-UC38 | Kiểm thử quyền truy cập một vai trò ở phần máy chủ/giao diện FE08-T041 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
+| FR-FE08-031 | UC36 | Kiểm thử giao diện bàn giao sách đã chọn từ FE01 FE08-T042 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
+| FR-FE08-032 | UC36-UC38 | Kiểm thử hiển thị vòng đời hiện tại/lịch sử của Thành viên FE08-T043 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
+| FR-FE08-033 | UC36, UC38 | Kiểm thử giao diện về khoảng thời gian nhận sách và bàn giao chính xác sang FE07 FE08-T044 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
+| FR-FE08-034 | UC36, UC39 | Kiểm thử ứng viên/tạo/hàng đợi khi đang mượn FE08-T045 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
+| FR-FE08-035 | UC36, UC38, UC39 | Kiểm thử giao diện hàng đợi theo phạm vi bản sao, an toàn với null FE08-T046 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
+| AC-FE08-001 | UC36 | Kiểm thử FT37 đặt bản sao không có sẵn khi đủ điều kiện | Sẵn sàng rà soát |
+| AC-FE08-002 | UC36 | Kiểm thử FT37 từ chối đặt chỗ đang mở trùng lặp, gồm cả `NOTIFIED` | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
+| AC-FE08-003 | UC36 | Kiểm thử FT37 từ chối đặt bản sao có sẵn | Sẵn sàng rà soát |
+| AC-FE08-004 | UC37 | Kiểm thử FT38 chủ sở hữu hủy và giải phóng lượt đặt chỗ nguyên tử | Sẵn sàng rà soát |
+| AC-FE08-005 | UC37 | Kiểm thử FT38 từ chối hủy đặt chỗ của chủ sở hữu khác | Sẵn sàng rà soát |
+| AC-FE08-006 | UC39 | Kiểm thử FT40 chọn ổn định đặt chỗ đủ điều kiện sớm nhất | Sẵn sàng rà soát |
+| AC-FE08-007 | UC39 | Kiểm thử FT40 loại trừ đặt chỗ đã hủy | Sẵn sàng rà soát |
+| AC-FE08-008 | UC39 | Kiểm thử tích hợp FT40 và FE07 từ chối mượn bản sao đang giữ | Sẵn sàng rà soát |
+| AC-FE08-009 | UC40 | Kiểm thử FT41 yêu cầu thông báo FE10 | Sẵn sàng rà soát |
+| AC-FE08-010 | UC38 | Kiểm thử FT39 cô lập đặt chỗ của chính Thành viên | Sẵn sàng rà soát |
+| AC-FE08-011 | UC39, UC40 | Kiểm thử hoàn tất nguyên tử FE08-T025 và FE07-T030 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
+| AC-FE08-012 | UC36, UC39 | Kiểm thử ưu tiên đặt chỗ FE08-T025 và FE07-T029 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
+| AC-FE08-013 | UC38 | Kiểm thử giá trị mặc định/giới hạn phân trang FE08-T028 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
+| AC-FE08-014 | UC37, UC39, UC40 | Các trường hợp giữ dấu thời gian khi hoàn tất/hết hạn/hủy FE08-T030 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
 | AC-FE08-015 | UC36 | Kiểm thử tuyến dùng khóa an toàn FE08-T035; kiểm thử lược bỏ dữ liệu SQL FE08-T036 | Đã đạt kiểm tra tự động; thiết kế đã phê duyệt; đang chờ kiểm tra xuyên suốt của con người/H3 |
 | AC-FE08-016 | UC36 | Kiểm thử mã nguồn/API giao diện FE08-T037; chấp nhận trình duyệt FE08-T038 | Đã đạt kiểm tra tự động; thiết kế đã phê duyệt; đang chờ kiểm tra xuyên suốt của con người/H3 |
-| AC-FE08-017 | UC36-UC38 | Kiểm thử từ chối mảng cũ không hợp lệ FE08-T041 | Đã đạt kiểm tra tự động; đang chờ review của con người |
-| AC-FE08-018 | UC36 | Kiểm thử khởi tạo ứng viên cho sách đã chọn FE08-T042 | Đã đạt kiểm tra tự động; đang chờ review của con người |
-| AC-FE08-019 | UC36-UC38 | Kiểm thử giao diện về nhãn trạng thái và hiện tại so với lịch sử FE08-T043 | Đã đạt kiểm tra tự động; đang chờ review của con người |
-| AC-FE08-020 | UC36, UC38 | Kiểm thử khoảng thời gian nhận sách đã thông báo và bàn giao đúng bản sao FE08-T044 | Đã đạt kiểm tra tự động; đang chờ review của con người |
-| AC-FE08-021 | UC36, UC39 | Kiểm thử loại trừ cùng sách, xung đột và hàng đợi cũ FE08-T045 | Đã đạt kiểm tra tự động; đang chờ review của con người |
-| AC-FE08-022 | UC36, UC38, UC39 | Kiểm thử hiển thị vị trí bằng nhau/null FE08-T046 | Đã đạt kiểm tra tự động; đang chờ review của con người |
+| AC-FE08-017 | UC36-UC38 | Kiểm thử từ chối mảng cũ không hợp lệ FE08-T041 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
+| AC-FE08-018 | UC36 | Kiểm thử khởi tạo ứng viên cho sách đã chọn FE08-T042 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
+| AC-FE08-019 | UC36-UC38 | Kiểm thử giao diện về nhãn trạng thái và hiện tại so với lịch sử FE08-T043 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
+| AC-FE08-020 | UC36, UC38 | Kiểm thử khoảng thời gian nhận sách đã thông báo và bàn giao đúng bản sao FE08-T044 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
+| AC-FE08-021 | UC36, UC39 | Kiểm thử loại trừ cùng sách, xung đột và hàng đợi cũ FE08-T045 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
+| AC-FE08-022 | UC36, UC38, UC39 | Kiểm thử hiển thị vị trí bằng nhau/null FE08-T046 | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
 | NFR-FE08-SEC-004 | UC36 | Kiểm thử vai trò/lược bỏ dữ liệu/không thay đổi dữ liệu FE08-T035; phép chiếu SQL an toàn FE08-T036 | Đã đạt kiểm tra tự động; thiết kế đã phê duyệt; đang chờ kiểm tra xuyên suốt của con người/H3 |
 | NFR-FE08-PERF-003 | UC36 | Kiểm thử kiểm tra hợp lệ/phân trang/thứ tự FE08-T035; kiểm thử tìm kiếm/thứ tự/trang bằng SQL FE08-T036 | Đã đạt kiểm tra tự động; thiết kế đã phê duyệt; đang chờ kiểm tra xuyên suốt của con người/H3 |
 
@@ -575,7 +575,7 @@ Tính năng này không bao gồm:
 
 Danh sách kiểm tra phê duyệt Giai đoạn 1 (hoàn thành ngày 2026-06-10):
 
-- [x] Mục tiêu đặt trước được xác nhận là bản sao vật lý được xác định bởi `CopyId`.
+- [x] Mục tiêu đặt chỗ được xác nhận là bản sao vật lý được xác định bởi `CopyId`.
 - [x] Tối đa ba đặt chỗ mở (`ACTIVE` cộng với `NOTIFIED`) được phê duyệt.
 - [x] Thời gian hết hạn/giữ chỗ đã được phê duyệt.
 - [x] Hành vi xử lý hàng đợi được phê duyệt.
@@ -583,7 +583,7 @@ Danh sách kiểm tra phê duyệt Giai đoạn 1 (hoàn thành ngày 2026-06-10
 - [x] Phụ thuộc FE07 đã được kiểm tra, đặc biệt là hành vi trả sách và gia hạn.
 - [x] Mọi tiêu chí chấp nhận đều có thể chuyển thành ca kiểm thử.
 
-### 17.1 Gate rà soát bản sửa đổi v0.4.2
+### 17.1 Cổng kiểm tra rà soát bản sửa đổi v0.4.2
 
 - [x] Xác nhận bản ghi hàng đợi không đủ điều kiện bị bỏ qua nhưng vẫn giữ `ACTIVE`.
 - [x] Xác nhận hành vi không có lựa chọn giữ nguyên trạng thái bản sao và đặt chỗ.
@@ -591,7 +591,7 @@ Danh sách kiểm tra phê duyệt Giai đoạn 1 (hoàn thành ngày 2026-06-10
 - [x] Xác nhận giá trị mặc định/giới hạn phân trang và thứ tự hàng đợi/danh sách ổn định.
 - [x] Xác nhận lỗi FE10 được ghi thành sự kiện kiểm toán mà không có tiến trình thử lại tự động.
 
-### 17.2 Gate danh mục ứng viên của bản sửa đổi v0.4.4
+### 17.2 Cổng kiểm tra danh mục ứng viên của bản sửa đổi v0.4.4
 
 - [x] Người dùng đã phê duyệt Phương án A được bảo vệ, chỉ dành cho Thành viên vào ngày 2026-07-19.
 - [x] Người dùng đã phê duyệt bằng văn bản thiết kế danh mục ứng viên vào ngày 2026-07-19.
@@ -601,33 +601,33 @@ Danh sách kiểm tra phê duyệt Giai đoạn 1 (hoàn thành ngày 2026-06-10
 
 ## 18. Phụ lục luồng demo liên hoàn FE07-FE12 v0.6.0
 
-Batch: `BATCH-FE07-FE12-CONNECTED-DEMO-2026-07-29`.
+Đợt: `BATCH-FE07-FE12-CONNECTED-DEMO-2026-07-29`.
 
 ### 18.1 Quy tắc kinh doanh
 
-- BR-FE08-021: Chỉ chủ sở hữu của reservation `NOTIFIED` mới thấy CTA tạo yêu
+- BR-FE08-021: Chỉ chủ sở hữu của lượt đặt chỗ `NOTIFIED` mới thấy nút hành động tạo yêu
   cầu mượn đúng bản sao đang được giữ.
-- BR-FE08-022: FE10 thất bại sau khi lượt giữ commit không rollback lượt giữ;
+- BR-FE08-022: FE10 thất bại sau khi lượt đặt chỗ commit không hoàn tác lượt đặt chỗ;
   API và UI phải trình bày cảnh báo trung thực.
 
 ### 18.2 Yêu cầu chức năng
 
-- FR-FE08-036: Reservation `NOTIFIED` của đúng owner hiển thị CTA truyền đúng
-  `copyId` sang FE07; mọi rule vẫn được server FE07 đánh giá lại.
+- FR-FE08-036: Lượt đặt chỗ `NOTIFIED` của đúng chủ sở hữu hiển thị nút hành động truyền đúng
+  `copyId` sang FE07; mọi quy tắc vẫn được máy chủ FE07 đánh giá lại.
 - FR-FE08-037: Màn nhân viên gom bằng chứng hàng đợi và thao tác thủ công “Giữ
   sách & thông báo”; UI không tự chọn người thắng.
-- FR-FE08-038: Kết quả xử lý có thể trả cảnh báo thông báo dạng enum/safe
-  message, không lộ provider detail.
-- FR-FE08-039: Xung đột trạng thái trả `409`; UI tải lại trạng thái chính tắc
+- FR-FE08-038: Kết quả xử lý có thể trả về cảnh báo thông báo an toàn dưới dạng
+  enum, không làm lộ chi tiết của nhà cung cấp.
+- FR-FE08-039: Xung đột trạng thái trả `409`; UI tải lại trạng thái chuẩn
   trước thao tác tiếp theo.
 
 ### 18.3 Tiêu chí chấp nhận và truy vết
 
 - AC-FE08-023: Xử lý hàng đợi chọn người hợp lệ đầu tiên, giữ đúng bản sao và
   yêu cầu FE10 một lần, ánh xạ `AT-005`.
-- AC-FE08-024: Owner `NOTIFIED` bàn giao đúng `copyId` cho FE07 và reservation
+- AC-FE08-024: Chủ sở hữu của lượt đặt chỗ `NOTIFIED` bàn giao đúng `copyId` cho FE07 và lượt đặt chỗ
   hoàn tất khi mượn được phê duyệt, ánh xạ `AT-007`.
-- AC-FE08-025: Race chỉ cho một transaction thắng; lỗi FE10 giữ transaction
+- AC-FE08-025: Khi có tranh chấp đồng thời, chỉ một giao dịch thành công; lỗi FE10 giữ giao dịch
   nguồn và hiển thị cảnh báo, ánh xạ `AT-008`, `AT-009`.
 
 Triển khai phải đi qua `SL-004` và `SL-006`; không tự động xử lý FE08 từ thao

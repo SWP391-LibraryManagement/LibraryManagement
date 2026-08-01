@@ -2,7 +2,7 @@
 
 # Phiên bản: 0.6.0
 
-# Trạng thái: COMPLETE; PR #89 ĐÃ MERGE; CI VÀ AZURE DEPLOY EXACT-HEAD ĐẠT
+# Trạng thái: HOÀN THÀNH; PR #89 ĐÃ HỢP NHẤT; CI VÀ AZURE ĐÃ CHẠY THÀNH CÔNG TRÊN ĐÚNG COMMIT
 
 # Chủ sở hữu: Nhat
 
@@ -103,7 +103,7 @@ Vấn đề tiềm năng cần rà soát:
 
 | Phụ thuộc | Lý do quan trọng |
 | ---------- | ---------------- |
-| FE02 Xác thực | Xác định actor hiện tại. |
+| FE02 Xác thực | Xác định tác nhân hiện tại. |
 | FE04 Quản lý thành viên | Xác nhận thành viên có đủ điều kiện đặt chỗ hay không. |
 | FE06 Quản lý tồn kho / bản sao sách | Cung cấp trạng thái bản sao sách. |
 | FE07 Quản lý mượn sách | Luồng trả có thể giải phóng bản sao vào hàng đợi đặt chỗ. |
@@ -123,23 +123,25 @@ Vấn đề tiềm năng cần rà soát:
 | Q-FE08-005 | Xử lý hàng đợi do thủ thư thực hiện thủ công trong Giai đoạn 1; kích hoạt tự động là công việc tương lai. | Gói rà soát 2026-06-10 | ĐÃ PHÊ DUYỆT |
 | Q-FE08-006 | Lượt đặt chỗ đang hoạt động không đủ điều kiện bị bỏ qua trong lần chạy hiện tại và vẫn hoạt động để thử lại thủ công sau. | Rà soát chuẩn hóa Nhat 2026-07-17 | ĐÃ PHÊ DUYỆT |
 | Q-FE08-007 | Không có mục hàng đợi hợp lệ thì không chọn gì và giữ trạng thái bản sao/đặt chỗ không đổi. | Rà soát chuẩn hóa Nhat 2026-07-17 | ĐÃ PHÊ DUYỆT |
-| Q-FE08-008 | Lỗi thông báo FE10 giữ lượt giữ chỗ đã commit và ghi audit thất bại; không có worker thử lại tự động trong Giai đoạn 1. | Rà soát chuẩn hóa Nhat 2026-07-17 | ĐÃ PHÊ DUYỆT |
+| Q-FE08-008 | Lỗi thông báo FE10 giữ lượt đặt chỗ chỗ đã commit và ghi kiểm toán thất bại; không có tiến trình xử lý nền thử lại tự động trong Giai đoạn 1. | Rà soát chuẩn hóa Nhat 2026-07-17 | ĐÃ PHÊ DUYỆT |
 | Q-FE08-009 | Dấu thời gian thông báo/hết hạn tồn tại qua chuyển đổi kết thúc; chỉ hàng đã hủy có `CancelledAt`. | Chuẩn hóa đặc tả 2026-07-17 | ĐÃ PHÊ DUYỆT |
-| Q-FE08-011 | Phương án A: một API ứng viên chỉ Thành viên được bảo vệ trả về hàng đã che bớt bảy trường cho mỗi bản sao `BORROWED`/`RESERVED` của sách đang hoạt động, gồm `hasActiveReservation` theo phạm vi thành viên; tìm kiếm và phân trang do máy chủ sở hữu, bản sao đã đặt chỗ vẫn hiển thị với thao tác trùng lặp bị vô hiệu hóa và `POST /api/reservations { copyId }` vẫn có thẩm quyền. | Phê duyệt thiết kế FE08 2026-07-19; làm rõ UI thành viên 2026-07-21 | ĐÃ PHÊ DUYỆT |
+| Q-FE08-011 | Phương án A: một API ứng viên chỉ Thành viên được bảo vệ trả về hàng đã che bớt bảy trường cho mỗi bản sao `BORROWED`/`RESERVED` của sách đang hoạt động, gồm `hasActiveReservation` theo phạm vi thành viên; tìm kiếm và phân trang do máy chủ sở hữu, bản sao đã đặt chỗ vẫn hiển thị với thao tác trùng lặp bị vô hiệu hóa và `POST /api/reservations { copyId }` vẫn chính thức. | Phê duyệt thiết kế FE08 2026-07-19; làm rõ UI thành viên 2026-07-21 | ĐÃ PHÊ DUYỆT |
 
 ---
 
 ## 10. Ghi chú cho việc triển khai sau này
 
-- `SPEC.md` v0.4.4 đã được phê duyệt làm mốc cơ sở; chuẩn hóa vòng đời và lát cắt ứng viên an toàn cho thành viên đã được xác thực tự động, tích hợp của con người vẫn đang chờ.
-- `PLAN.md` và `TASKS.md` ghi riêng lát cắt B7 lịch sử với các tác vụ đối soát v0.4.3/v0.4.4.
+- `SPEC.md` v0.4.4 đã được phê duyệt làm mốc cơ sở; chuẩn hóa vòng đời và phạm vi triển khai ứng viên an toàn cho thành viên đã được xác thực tự động, tích hợp của con người vẫn đang chờ.
+- `PLAN.md` và `TASKS.md` ghi riêng phạm vi triển khai B7 lịch sử với các tác vụ đối soát v0.4.3/v0.4.4.
 - Xử lý hàng đợi nên theo giao dịch.
 - Thành viên không bao giờ được hủy đặt chỗ của thành viên khác.
 
-## 11. Bối cảnh batch FE07-FE12 2026-07-29
+## 11. Bối cảnh đợt FE07-FE12 2026-07-29
 
-- FE08 tiếp tục sở hữu FIFO, lượt giữ, hết hạn và reservation state.
-- FE07 chỉ điều hướng nhân viên tới decision surface; không tự mutation FE08.
-- CTA mượn bản sao giữ dành riêng cho owner `NOTIFIED` và chỉ truyền `copyId`.
-- FE10 chạy sau commit; failure được trả thành safe warning, không rollback hold.
-- Scope thuộc `SL-004`, phụ thuộc `SL-001`, `SL-002` và handoff `SL-003`.
+- FE08 tiếp tục chịu trách nhiệm cho FIFO, lượt đặt chỗ, hết hạn và trạng thái đặt chỗ.
+- FE07 chỉ điều hướng nhân viên tới giao diện quyết định; không tự thay đổi dữ liệu FE08.
+- Nút hành động mượn bản sao đang được giữ chỉ dành cho chủ sở hữu `NOTIFIED`
+  và chỉ truyền `copyId`.
+- FE10 chạy sau khi commit; lỗi được trả về dưới dạng cảnh báo an toàn và không
+  hoàn tác trạng thái giữ bản sao.
+- Phạm vi thuộc `SL-004`, phụ thuộc `SL-001`, `SL-002` và bàn giao `SL-003`.
