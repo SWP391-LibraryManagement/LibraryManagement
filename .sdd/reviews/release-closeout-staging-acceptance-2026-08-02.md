@@ -2,9 +2,33 @@
 
 ## Decision
 
+**PASS — FE07 RETURN-DATE BUSINESS-TIME PERSISTENCE AND AUTHENTICATED STAGING ACCEPTANCE VERIFIED; CLEANUP CLEAN.** Deploy workflow `30722972056` deployed exact PR head `bf4dd2268c63a00620fc262f643768c2f434894c`. Final run `lms-acceptance-20260802-b22898eb` passed the complete cross-role scenario and final server-derived snapshot: two approved membership applications, one completed/returned borrow, one notified reservation, one three-day fine, five notifications, eight audit logs, and the expected reserved-copy state.
+
+Exact retained SQL history after cleanup is `FineId=8`, `UserId=126`, `BorrowDetailId=66`, `OverdueDays=3`, `Amount=15000`, `Status=CANCELLED`, `DueDate=2026-07-30`, `ReturnDate=2026-08-02`, and detail status `RETURNED`. Cleanup returned `CLEANED`: four retained but inactive synthetic users, zero active users/tokens/members, zero open loans/reservations, zero active fixture books/copies, and one inactive historical copy. Four login attempts and the retained old token returned `401`; the temporary runtime and helper returned `404/404`.
+
+The immediately preceding run `lms-acceptance-20260802-6706b9ab` had already passed `validatePostFlow`, but the harness then classified the four expected `403` authorization probes and the expected retired-route `404` as browser-console failures because authenticated probes ran inside `page.evaluate`. Cleanup for that run was also `CLEANED`. RED/GREEN changed only the ignored operator harness: RED was `11/12`, GREEN was `12/12`, authenticated API probes now use operator-side Node `fetch`, and the strict assertion for genuine browser errors remains unchanged. No product, schema, API, dependency, credential, or workflow change was introduced by the harness correction.
+
+This final decision supersedes the historical failed-run decision retained below. FE07-T061 now has its required deploy and clean L4 evidence and is eligible for H3 review; the task remains open until H3 because this run does not authorize merge or task closure.
+
+### Final accepted-run evidence
+
+| Evidence | Actual | Result |
+| --- | --- | --- |
+| Deploy | Workflow `30722972056`, exact SHA `bf4dd2268c63a00620fc262f643768c2f434894c` | PASS |
+| Harness regression | RED `11/12`; GREEN `12/12`; browser-error assertion retained | PASS |
+| Final live run | `lms-acceptance-20260802-b22898eb` | PASS |
+| Server-derived fine | `ReturnDate=2026-08-02`, `OverdueDays=3`, `Amount=15000` | PASS |
+| Cross-role results | applications `2`, borrows `1`, reservations `1`, fines `1`, notifications `5`, audit logs `8` | PASS |
+| Cleanup/auth | `CLEANED`; logins `401/401/401/401`; old token `401` | PASS |
+| Runtime residue | runtime/helper `404/404` | PASS |
+
+### Historical failed run and root cause
+
 **FAIL — FE07 RETURN-DATE BUSINESS-TIME PERSISTENCE DEFECT; CLEANUP CLEAN.** The FE12 borrowing-report readiness locator was repaired through RED/GREEN TDD and passed live. The scenario progressed through membership approval, Admin responsive navigation, borrow approval, reservation creation, exact three-day aging, return mutation, fine calculation, exact-copy queue processing, Member B notification, the canonical `Tổng bản ghi` KPI, Admin audit loading, and every planned negative-authorization check.
 
 The final server-derived snapshot then failed the exact fine invariant. The run expected a three-day fine, but the retained SQL history records `OverdueDays=2`, `Amount=10000`, `DueDate=2026-07-30`, and `ReturnDate=2026-08-01`; cleanup subsequently changed the fine status to `CANCELLED`. At execution time the current `Asia/Ho_Chi_Minh` business date was `2026-08-02`, and the return UI showed `Quá hạn 3 ngày`. FE07 computed the correct business date but passed the raw UTC `clock()` value to a `sql.Date` parameter, persisting the prior calendar date. FE09 then correctly calculated two days from that persisted value. This is a product persistence defect, not a harness locator defect. Mandatory cleanup, credential/token revocation, and post-run infrastructure checks passed. No live-acceptance task is closed, and no rerun remains under this H1.
+
+> Historical-scope note: unless a later subsection explicitly says otherwise, the remaining matrices preserve evidence from run `lms-acceptance-20260802-3ea0d609` and do not override the final PASS decision above.
 
 ## Baseline and deployed targets
 
