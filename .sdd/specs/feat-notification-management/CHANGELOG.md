@@ -1,5 +1,15 @@
 # CHANGELOG.md - FE10 Quản lý thông báo
 
+## 2026-08-01 - Đóng truy vết triển khai 100%
+
+- Gắn projection/action path, shell inbox, bốn template kết quả FE07 và replay
+  idempotent đã triển khai vào `FR-FE10-015` đến `FR-FE10-020` tại đúng ranh
+  giới production.
+- Đổi metadata triển khai sang `COMPLETE`; không thay đổi template, kênh gửi,
+  nội dung lưu bền, API, schema hoặc ranh giới dữ liệu nhạy cảm.
+- Sau reset quota, Azure runtime hiện `Running`/`Online` và smoke bản đang deploy
+  đạt; closeout candidate chưa deploy nên chưa thể dùng kết quả này để nghiệm thu.
+
 ## 2026-07-29 - Đồng bộ trạng thái phát hành hậu merge (v0.6.1)
 
 - Xác nhận phạm vi FE10 đã merge vào `main` và CI hậu merge đạt.

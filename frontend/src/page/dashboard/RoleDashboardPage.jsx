@@ -107,6 +107,7 @@ function DashboardContent({ audience, summary, onNavigate }) {
     return <EmptyState icon={BookMarked} title="Chưa có dữ liệu tổng quan" />;
   }
 
+  // @spec FR-FE12-015 - staff cards render the FE12 snapshot and use fixed approved drill-down paths.
   const isMember = audience === 'member';
   const cards = isMember
     ? [

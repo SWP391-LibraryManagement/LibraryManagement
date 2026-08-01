@@ -29,7 +29,7 @@ jobs:
       - name: Root dependency audit
         run: npm audit --audit-level=high
 
-      - name: Spec traceability gate (FR @spec coverage >= 70% for implemented features)
+      - name: Spec traceability gate (COMPLETE = 100%, PARTIAL >= 70%)
         run: npm run trace:enforce
 
       - name: Install backend dependencies

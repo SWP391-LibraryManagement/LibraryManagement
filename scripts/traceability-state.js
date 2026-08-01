@@ -24,4 +24,15 @@ function shouldEnforce(state) {
   return state === 'PARTIAL' || state === 'COMPLETE';
 }
 
-module.exports = { IMPLEMENTATION_STATES, parseImplementationState, shouldEnforce };
+function requiredCoverage(state, partialMinimum) {
+  if (state === 'COMPLETE') return 100;
+  if (state === 'PARTIAL') return partialMinimum;
+  return null;
+}
+
+module.exports = {
+  IMPLEMENTATION_STATES,
+  parseImplementationState,
+  requiredCoverage,
+  shouldEnforce,
+};

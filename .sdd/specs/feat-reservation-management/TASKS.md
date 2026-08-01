@@ -1,7 +1,7 @@
 # TASKS.md - FE08 Quản lý đặt chỗ
 
-Trạng thái: ĐÃ MERGE VÀO MAIN; CI HẬU MERGE ĐẠT; AZURE STAGING BỊ CHẶN DO AZURE SQL PAUSED/QUOTA
-Implementation State: PARTIAL
+Trạng thái: ĐÃ MERGE VÀO MAIN; CI HẬU MERGE ĐẠT; AZURE RUNTIME ĐÃ PHỤC HỒI; CLOSEOUT CANDIDATE CHƯA DEPLOY
+Implementation State: COMPLETE
 
 Chủ sở hữu: Nhat
 
@@ -11,8 +11,9 @@ Trạng thái quy trình hiện tại: Mốc cơ sở Giai đoạn 2 vẫn hoàn
 hữu `FE08-T041` đến `FE08-T046`; tác vụ chỉ hồi quy căn chỉnh quy tắc là
 `FE08-T047`. Đối soát FE07-FE12 đã merge qua PR #63 thành `29b4eb0` sau H3
 và CI. Batch liên hoàn v0.6.0 được H3 phê duyệt ở head `08e472f` và tích hợp
-vào `main` qua `ba29dc0`. CI hậu merge đã đạt; Azure staging vẫn chưa thể
-nghiệm thu vì Azure SQL đang `Paused`/hết quota, không phải finding mã nguồn.
+vào `main` qua `ba29dc0`. CI hậu merge đã đạt. Sau reset quota ngày 2026-08-01,
+Azure runtime hiện `Running`/`Online` và smoke trên bản đã deploy đạt; closeout
+candidate này chưa deploy và vẫn chờ H3, không phải finding mã nguồn.
 
 ---
 

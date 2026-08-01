@@ -1,5 +1,15 @@
 # CHANGELOG.md - FE08 Quản lý đặt chỗ
 
+## 2026-08-01 - Đóng truy vết triển khai 100%
+
+- Gắn hành vi giữ bản sao, CTA đúng owner/copy, quyết định xử lý thủ công và cảnh
+  báo an toàn đã triển khai vào `FR-FE08-007`, `FR-FE08-036`, `FR-FE08-037`
+  và `FR-FE08-038` tại đúng ranh giới production.
+- Đổi metadata triển khai sang `COMPLETE`; không thay đổi FIFO, API, schema hoặc
+  quyền sở hữu trạng thái FE08.
+- Sau reset quota, Azure runtime hiện `Running`/`Online` và smoke bản đang deploy
+  đạt; closeout candidate chưa deploy nên chưa thể dùng kết quả này để nghiệm thu.
+
 ## 2026-07-29 - Đồng bộ trạng thái phát hành hậu merge (v0.6.2)
 
 - Xác nhận phạm vi FE08 đã merge vào `main` và CI hậu merge đạt.

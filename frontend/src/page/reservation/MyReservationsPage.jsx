@@ -293,6 +293,7 @@ export default function MyReservationsPage() {
               <td data-label="Trạng thái"><Badge status={memberReservationBadgeStatus(item.rawStatus)}>{getStatusLabel(item.status)}</Badge>{item.status === 'Ready to pick up' && item.deadline && <div className="field-hint">Lấy trước {fmtDate(item.deadline)}</div>}</td>
               <td data-label="Thao tác" style={{ textAlign: 'right' }}>
                 <div className="row-flex" style={{ justifyContent: 'flex-end', gap: 8 }}>
+                  {/* @spec FR-FE08-036 - only the NOTIFIED owner receives the exact-copy FE07 CTA. */}
                   {item.rawStatus === 'NOTIFIED' && item.bookId && (
                     <Link className="btn btn-primary btn-sm" to={`/borrowing/new?bookId=${item.bookId}&copyId=${item.copyId}`}>
                       <BookOpen size={14} /> Tạo yêu cầu mượn

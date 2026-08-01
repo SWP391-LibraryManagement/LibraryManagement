@@ -1,5 +1,15 @@
 # CHANGELOG.md - FE07 Quản lý mượn sách
 
+## 2026-08-01 - Đóng truy vết triển khai 100%
+
+- Gắn các nghĩa vụ thông báo kết quả, handoff hàng đợi và hướng dẫn stale/blocker
+  đã triển khai vào `FR-FE07-040`, `FR-FE07-041`, `FR-FE07-042` và
+  `FR-FE07-044` tại đúng ranh giới production sở hữu hành vi.
+- Đổi metadata triển khai sang `COMPLETE`; không thay đổi API, schema, trạng thái
+  nghiệp vụ hoặc hành vi quan sát được.
+- Sau reset quota, Azure runtime hiện `Running`/`Online` và smoke bản đang deploy
+  đạt; closeout candidate chưa deploy nên chưa thể dùng kết quả này để nghiệm thu.
+
 ## 2026-07-29 - Đồng bộ trạng thái phát hành hậu merge (v0.9.2)
 
 - Xác nhận phạm vi FE07 đã merge vào `main` và CI hậu merge đạt.

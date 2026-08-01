@@ -1,4 +1,4 @@
-// @spec NFR-FE07-UX-001
+// @spec FR-FE07-044, NFR-FE07-UX-001 - stale/blocker codes provide truthful reload or next-action guidance.
 const BORROWING_ERROR_MESSAGES = {
   MEMBER_ROLE_REQUIRED: 'Chỉ tài khoản thành viên mới gửi được yêu cầu mượn sách. Hãy đăng nhập bằng tài khoản thành viên.',
   STAFF_ROLE_REQUIRED: 'Chỉ thủ thư hoặc quản trị viên mới được thực hiện thao tác này.',

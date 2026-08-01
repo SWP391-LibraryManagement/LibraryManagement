@@ -6,6 +6,7 @@ const INBOX_TYPES = Object.freeze([
   'FINE_NOTICE',
 ]);
 
+// @spec FR-FE10-015, FR-FE10-019, FR-FE10-020 - eligible inbox rows receive server-owned fixed action paths only.
 const ACTION_MAPPINGS = Object.freeze([
   {
     type: 'GENERAL_SYSTEM',

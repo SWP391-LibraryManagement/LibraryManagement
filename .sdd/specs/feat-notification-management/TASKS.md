@@ -1,7 +1,7 @@
 # TASKS.md - FE10 Quản lý thông báo
 
-Trạng thái: ĐÃ MERGE VÀO MAIN; CI HẬU MERGE ĐẠT; AZURE STAGING BỊ CHẶN DO AZURE SQL PAUSED/QUOTA
-Implementation State: PARTIAL
+Trạng thái: ĐÃ MERGE VÀO MAIN; CI HẬU MERGE ĐẠT; AZURE RUNTIME ĐÃ PHỤC HỒI; CLOSEOUT CANDIDATE CHƯA DEPLOY
+Implementation State: COMPLETE
 Cổng giao hàng: V0.6.0 ĐÃ KÍCH HOẠT, H3 PHÊ DUYỆT VÀ TÍCH HỢP
 
 Chi tiết v0.5.0 hiện tại: FE10-I01..I08, biện pháp khắc phục hash migration và
@@ -22,8 +22,9 @@ Cập nhật: 2026-07-29
 Trạng thái quy trình hiện tại: baseline Giai đoạn 2/G1-G12, hộp thư v0.5.0
 qua PR #75 và template kết quả FE07 v0.6.0 đều đã hoàn tất. Batch v0.6.0 được
 H3 phê duyệt ở head `08e472f` và tích hợp vào `main` qua `ba29dc0`; CI hậu
-merge đã đạt. Azure staging hiện bị chặn vì Azure SQL đang `Paused`/hết quota,
-không phải finding FE10.
+merge đã đạt. Sau reset quota ngày 2026-08-01, Azure runtime hiện
+`Running`/`Online` và smoke trên bản đã deploy đạt; closeout candidate này chưa
+deploy và vẫn chờ H3, không phải finding FE10.
 
 ---
 

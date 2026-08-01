@@ -1,5 +1,14 @@
 # CHANGELOG.md - FE12 Báo cáo và thống kê
 
+## 2026-08-01 - Đóng truy vết triển khai 100%
+
+- Gắn dashboard dùng snapshot FE12 và fixed drill-down đã triển khai vào
+  `FR-FE12-015` tại đúng ranh giới production.
+- Đổi metadata triển khai sang `COMPLETE`; không thay đổi KPI, query, API,
+  repository, clock nghiệp vụ hoặc quyền truy cập báo cáo.
+- Sau reset quota, Azure runtime hiện `Running`/`Online` và smoke bản đang deploy
+  đạt; closeout candidate chưa deploy nên chưa thể dùng kết quả này để nghiệm thu.
+
 ## 2026-07-29 - Đồng bộ trạng thái phát hành hậu merge (v0.3.1)
 
 - Xác nhận phạm vi FE12 đã merge vào `main` và CI hậu merge đạt.
