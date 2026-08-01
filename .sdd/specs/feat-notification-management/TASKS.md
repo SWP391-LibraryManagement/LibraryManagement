@@ -1,7 +1,7 @@
 # TASKS.md - FE10 Quản lý thông báo
 
 Trạng thái: HOÀN THÀNH; PR #89 ĐÃ HỢP NHẤT; CI VÀ AZURE ĐÃ CHẠY THÀNH CÔNG TRÊN ĐÚNG COMMIT
-Trạng thái triển khai: COMPLETE
+Implementation State: COMPLETE
 Cổng giao hàng: V0.6.0 ĐÃ KÍCH HOẠT, H3 PHÊ DUYỆT VÀ TÍCH HỢP
 
 Chi tiết v0.5.0 hiện tại: FE10-I01..I08, biện pháp khắc phục mã băm bản cập nhật

@@ -1,7 +1,7 @@
 # TASKS.md - FE07 Quản lý mượn sách
 
 Trạng thái: HOÀN THÀNH; PR #89 ĐÃ HỢP NHẤT; CI VÀ AZURE ĐÃ CHẠY THÀNH CÔNG TRÊN ĐÚNG COMMIT
-Trạng thái triển khai: COMPLETE
+Implementation State: COMPLETE
 
 Phạm vi mở rộng v0.8.0/v0.9.0 đã được triển khai và kiểm tra tự động;
 quy trình rà soát H2/H3 và hợp nhất cũng đã hoàn tất. Giai đoạn 2 trước đó vẫn hoàn tất.

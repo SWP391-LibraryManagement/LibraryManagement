@@ -1,7 +1,7 @@
 # TASKS.md - FE12 Báo cáo và thống kê
 
 Trạng thái: HOÀN THÀNH (`COMPLETE`); PR #89 ĐÃ HỢP NHẤT; CI VÀ AZURE ĐÚNG COMMIT ĐẠT
-Trạng thái triển khai: HOÀN THÀNH (`COMPLETE`)
+Implementation State: COMPLETE
 
 Chủ sở hữu: Nhat
 

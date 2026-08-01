@@ -1,7 +1,7 @@
 # TASKS.md - FE08 Quản lý đặt chỗ
 
 Trạng thái: HOÀN THÀNH; PR #89 ĐÃ HỢP NHẤT; CI VÀ AZURE ĐÃ CHẠY THÀNH CÔNG TRÊN ĐÚNG COMMIT
-Trạng thái triển khai: COMPLETE
+Implementation State: COMPLETE
 
 Chủ sở hữu: Nhat
 
