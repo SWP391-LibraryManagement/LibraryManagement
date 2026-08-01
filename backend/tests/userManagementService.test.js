@@ -32,7 +32,6 @@ function makeHarness({
     accountSetupRepository: dependencies.accountSetupRepository,
     notificationRequester,
     clock: () => currentNow,
-    exposeDebugTokens: true,
   });
 
   return {

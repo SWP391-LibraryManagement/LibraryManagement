@@ -98,10 +98,9 @@ async function markTokenUsed(tokenId, transaction) {
     `);
 }
 
-async function revokeToken(tokenId) {
-  const pool = await getPool();
-  await pool
-    .request()
+async function revokeToken(tokenId, transaction) {
+  const request = transaction ? new sql.Request(transaction) : (await getPool()).request();
+  await request
     .input('TokenId', sql.Int, tokenId)
     .query(`
       UPDATE AuthTokens

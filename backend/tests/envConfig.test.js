@@ -2,6 +2,8 @@ describe('authentication expiry environment configuration', () => {
   const originalMinutes = process.env.EMAIL_VERIFICATION_TTL_MINUTES;
   const originalHours = process.env.EMAIL_VERIFICATION_TTL_HOURS;
   const originalLockoutMinutes = process.env.LOGIN_LOCKOUT_MINUTES;
+  const originalBcryptCost = process.env.BCRYPT_COST;
+  const originalNodeEnv = process.env.NODE_ENV;
   const workerEnvNames = [
     'NOTIFICATION_WORKER_ENABLED',
     'NOTIFICATION_WORKER_INTERVAL_MS',
@@ -28,6 +30,18 @@ describe('authentication expiry environment configuration', () => {
       delete process.env.LOGIN_LOCKOUT_MINUTES;
     } else {
       process.env.LOGIN_LOCKOUT_MINUTES = originalLockoutMinutes;
+    }
+
+    if (originalBcryptCost === undefined) {
+      delete process.env.BCRYPT_COST;
+    } else {
+      process.env.BCRYPT_COST = originalBcryptCost;
+    }
+
+    if (originalNodeEnv === undefined) {
+      delete process.env.NODE_ENV;
+    } else {
+      process.env.NODE_ENV = originalNodeEnv;
     }
 
     for (const name of workerEnvNames) {
@@ -73,6 +87,46 @@ describe('authentication expiry environment configuration', () => {
     const env = require('../src/config/env');
 
     expect(env.lockoutMinutes).toBe(30);
+  });
+
+  test('defaults bcrypt cost to 10 outside test environments', () => {
+    process.env.NODE_ENV = 'production';
+    delete process.env.BCRYPT_COST;
+
+    const env = require('../src/config/env');
+
+    expect(env.bcryptCost).toBe(10);
+  });
+
+  test.each(['4', '9'])(
+    'rejects insecure production bcrypt cost %s',
+    (value) => {
+      process.env.NODE_ENV = 'production';
+      process.env.BCRYPT_COST = value;
+
+      expect(() => require('../src/config/env')).toThrow(
+        'BCRYPT_COST must be an integer >= 10 outside test environments'
+      );
+    }
+  );
+
+  test.each(['0', '3', '4.5'])(
+    'rejects invalid test bcrypt cost %s',
+    (value) => {
+      process.env.NODE_ENV = 'test';
+      process.env.BCRYPT_COST = value;
+
+      expect(() => require('../src/config/env')).toThrow();
+    }
+  );
+
+  test('allows bcrypt cost 4 in the test environment', () => {
+    process.env.NODE_ENV = 'test';
+    process.env.BCRYPT_COST = '4';
+
+    const env = require('../src/config/env');
+
+    expect(env.bcryptCost).toBe(4);
   });
 
   test('uses safe disabled notification worker defaults', () => {

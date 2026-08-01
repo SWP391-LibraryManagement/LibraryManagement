@@ -1,9 +1,9 @@
 const http = require('http');
 const { randomBytes } = require('crypto');
 
+process.env.NODE_ENV = 'test';
 process.env.BCRYPT_COST = process.env.BCRYPT_COST || '4';
 process.env.JWT_SECRET = randomBytes(32).toString('hex');
-process.env.AUTH_EXPOSE_TEST_TOKENS = 'true';
 
 const {
   createVerifiedActor,

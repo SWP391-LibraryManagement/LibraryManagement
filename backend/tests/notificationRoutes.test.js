@@ -4,7 +4,6 @@ const path = require('path');
 
 process.env.BCRYPT_COST = '4';
 process.env.JWT_SECRET = crypto.randomBytes(32).toString('hex');
-process.env.AUTH_EXPOSE_TEST_TOKENS = 'true';
 
 const request = require('supertest');
 const { createApp } = require('../src/app');

@@ -22,10 +22,14 @@ function configuredRedirectHost() {
   return /^[A-Za-z0-9.-]+(?::[0-9]{1,5})?$/.test(host) ? host : null;
 }
 
+function isApiRequest(req) {
+  return req.path === '/api' || req.path.startsWith('/api/');
+}
+
 // @spec AC-FE02-024, BR-FE02-017, NFR-FE02-SEC-003
 function createHttpsEnforcementMiddleware({ enabled = isEnabled(), redirect = process.env.HTTPS_REDIRECT === 'true' } = {}) {
   return (req, res, next) => {
-    if (!enabled || !req.path.startsWith('/api/auth/') || requestProtocol(req) === 'https') {
+    if (!enabled || !isApiRequest(req) || requestProtocol(req) === 'https') {
       return next();
     }
 
@@ -39,7 +43,7 @@ function createHttpsEnforcementMiddleware({ enabled = isEnabled(), redirect = pr
     return res.status(400).json({
       error: {
         code: 'HTTPS_REQUIRED',
-        message: 'HTTPS is required for authentication requests.',
+        message: 'HTTPS is required for API requests.',
       },
     });
   };

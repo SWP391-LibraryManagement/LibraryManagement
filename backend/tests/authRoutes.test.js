@@ -1,6 +1,5 @@
 process.env.BCRYPT_COST = '4';
 process.env.JWT_SECRET = require('crypto').randomBytes(32).toString('hex');
-process.env.AUTH_EXPOSE_TEST_TOKENS = 'true';
 
 const request = require('supertest');
 const bcrypt = require('bcrypt');
@@ -825,7 +824,7 @@ describe('FE02 auth vertical slice', () => {
       .expect(401);
     expect(dependencies.state.users[0].passwordHash).toBe(originalPasswordHash);
 
-    await request(app)
+    const otpResponse = await request(app)
       .post('/api/auth/change-password/request-otp')
       .set('Authorization', authorization)
       .send({
@@ -834,6 +833,12 @@ describe('FE02 auth vertical slice', () => {
         confirmNewPassword: 'NewPassword1!',
       })
       .expect(200);
+    expect(otpResponse.body).toEqual({
+      message: 'OTP đã được gửi đến email của bạn.',
+      maskedEmail: 'o***e@example.test',
+    });
+    expect(Object.keys(otpResponse.body).sort()).toEqual(['maskedEmail', 'message']);
+    expect(otpResponse.body).not.toHaveProperty('debugOtp');
     const validOtp = capturedOtp(app);
     const otpToken = dependencies.state.tokens.at(-1);
 
@@ -1523,6 +1528,105 @@ describe('FE02 auth vertical slice', () => {
       lastLoginAt: null,
     });
     expect(dependencies.state.tokens.filter((token) => token.tokenType === 'REFRESH')).toHaveLength(0);
+  });
+
+  test('login rolls back session state when required success audit fails', async () => {
+    const { app, dependencies } = makeTestApp();
+    await registerAndVerify(app, 'login-audit-rollback@example.test');
+    dependencies.state.users[0].failedLoginCount = 2;
+    dependencies.state.users[0].lastLoginAt = null;
+    const originalCreate = dependencies.auditLogRepository.create;
+    jest.spyOn(dependencies.auditLogRepository, 'create').mockImplementation(async (entry) => {
+      if (entry.action === 'AUTH_LOGIN_SUCCESS') throw new Error('login audit failed');
+      return originalCreate(entry);
+    });
+
+    const response = await login(app, 'login-audit-rollback@example.test');
+
+    expect(response.status).toBe(500);
+    expect(response.body.error).toEqual({
+      code: 'INTERNAL_ERROR',
+      message: 'Internal server error.',
+    });
+    expect(dependencies.state.tokens.filter((token) => token.tokenType === 'REFRESH')).toHaveLength(0);
+    expect(dependencies.state.users[0].failedLoginCount).toBe(2);
+    expect(dependencies.state.users[0].lastLoginAt).toBeNull();
+    expect(
+      dependencies.state.auditLogs.filter((entry) => entry.action === 'AUTH_LOGIN_SUCCESS')
+    ).toHaveLength(0);
+  });
+
+  test('successful login records one required audit with request context', async () => {
+    const { app, dependencies } = makeTestApp();
+    await registerAndVerify(app, 'login-audit-context@example.test');
+
+    await request(app)
+      .post('/api/auth/login')
+      .set('User-Agent', 'login-audit-agent')
+      .send({ email: 'login-audit-context@example.test', password: 'Password1!' })
+      .expect(200);
+
+    expect(
+      dependencies.state.auditLogs.filter((entry) => entry.action === 'AUTH_LOGIN_SUCCESS')
+    ).toEqual([
+      expect.objectContaining({
+        userId: dependencies.state.users[0].userId,
+        targetType: 'USER',
+        targetId: dependencies.state.users[0].userId,
+        ipAddress: expect.any(String),
+        userAgent: 'login-audit-agent',
+      }),
+    ]);
+  });
+
+  test('logout rolls back refresh-token revoke when required audit fails', async () => {
+    const { app, dependencies } = makeTestApp();
+    await registerAndVerify(app, 'logout-audit-rollback@example.test');
+    const loginResponse = await login(app, 'logout-audit-rollback@example.test');
+    const refreshTokenId = dependencies.state.tokens.find(
+      (token) => token.tokenType === 'REFRESH'
+    ).tokenId;
+    const originalCreate = dependencies.auditLogRepository.create;
+    jest.spyOn(dependencies.auditLogRepository, 'create').mockImplementation(async (entry) => {
+      if (entry.action === 'AUTH_LOGOUT') throw new Error('logout audit failed');
+      return originalCreate(entry);
+    });
+
+    const response = await request(app)
+      .post('/api/auth/logout')
+      .send({ refreshToken: loginResponse.body.refreshToken });
+
+    expect(response.status).toBe(500);
+    expect(response.body.error).toEqual({
+      code: 'INTERNAL_ERROR',
+      message: 'Internal server error.',
+    });
+    expect(dependencies.state.tokens.find((token) => token.tokenId === refreshTokenId).revokedAt)
+      .toBeNull();
+    await request(app)
+      .get('/api/auth/me')
+      .set('Authorization', `Bearer ${loginResponse.body.accessToken}`)
+      .expect(200);
+  });
+
+  test('logout stays idempotent and writes one required audit when the token is absent', async () => {
+    const { app, dependencies } = makeTestApp();
+
+    await request(app)
+      .post('/api/auth/logout')
+      .set('User-Agent', 'logout-idempotent-agent')
+      .send({ refreshToken: 'missing-refresh-token' })
+      .expect(200, { message: 'Logged out' });
+
+    expect(dependencies.state.auditLogs.filter((entry) => entry.action === 'AUTH_LOGOUT')).toEqual([
+      expect.objectContaining({
+        userId: null,
+        targetType: 'USER',
+        targetId: null,
+        ipAddress: expect.any(String),
+        userAgent: 'logout-idempotent-agent',
+      }),
+    ]);
   });
 
   test('concurrent deactivation cannot accrue a failed login or create a session', async () => {

@@ -64,7 +64,6 @@ function createAuthService({
   debugLogger = process.env.NODE_ENV !== 'production' && process.env.AUTH_DEBUG_LOGGING === 'true'
     ? console.debug
     : null,
-  exposeDebugTokens = process.env.AUTH_EXPOSE_TEST_TOKENS === 'true' || process.env.NODE_ENV === 'test',
 } = {}) {
   if (!userRepository) {
     userRepository = require('../repositories/userRepository');
@@ -97,7 +96,7 @@ function createAuthService({
 
   // --- Internal helpers ---
 
-  /** Ghi audit log, bỏ qua lỗi để không ảnh hưởng luồng chính */
+  /** Ghi audit best effort theo mặc định; audit bắt buộc sẽ truyền lỗi cho transaction rollback. */
   async function writeAudit(context, action, extra = {}) {
     if (!auditLogRepository || typeof auditLogRepository.create !== 'function') {
       return;
@@ -594,21 +593,23 @@ function createAuthService({
       if (!prepared) {
         throw errors.unauthorized('INVALID_CREDENTIALS', 'Invalid email or password.');
       }
-      return createStoredToken(
+      const storedToken = await createStoredToken(
         user.userId,
         'REFRESH',
         addDays(clock(), env.refreshTokenTtlDays),
         context,
         transaction
       );
+      await writeAudit(context, 'AUTH_LOGIN_SUCCESS', {
+        userId: user.userId,
+        targetId: user.userId,
+        metadata: { identifier, reason: 'AUTHENTICATED' },
+        transaction,
+        required: true,
+      });
+      return storedToken;
     });
     const { roles, accessToken, expiresIn } = await issueAccessTokenForUser(user, storedRefreshToken.record.tokenId);
-
-    await writeAudit(context, 'AUTH_LOGIN_SUCCESS', {
-      userId: user.userId,
-      targetId: user.userId,
-      metadata: { identifier, reason: 'AUTHENTICATED' },
-    });
 
     return {
       userId: user.userId,
@@ -644,16 +645,19 @@ function createAuthService({
     const refreshTokenHash = hashToken(String(input.refreshToken || '').trim());
     const tokenRecord = await authTokenRepository.findActiveTokenByHash('REFRESH', refreshTokenHash);
 
-    if (tokenRecord) {
-      const revoke = typeof authTokenRepository.revokeToken === 'function'
-        ? authTokenRepository.revokeToken
-        : authTokenRepository.markTokenUsed;
-      await revoke(tokenRecord.tokenId);
-    }
-
-    await writeAudit(context, 'AUTH_LOGOUT', {
-      userId: context.userId || tokenRecord?.userId || null,
-      targetId: context.userId || tokenRecord?.userId || null,
+    await authTransactionRepository.withTransaction(async (transaction) => {
+      if (tokenRecord) {
+        const revoke = typeof authTokenRepository.revokeToken === 'function'
+          ? authTokenRepository.revokeToken
+          : authTokenRepository.markTokenUsed;
+        await revoke(tokenRecord.tokenId, transaction);
+      }
+      await writeAudit(context, 'AUTH_LOGOUT', {
+        userId: context.userId || tokenRecord?.userId || null,
+        targetId: context.userId || tokenRecord?.userId || null,
+        transaction,
+        required: true,
+      });
     });
 
     return { message: 'Logged out' };
@@ -698,10 +702,10 @@ function createAuthService({
 
     await writeAudit(context, 'AUTH_CHANGE_PASSWORD_OTP_REQUESTED', { userId: user.userId, targetId: user.userId });
 
-    const response = { message: 'OTP đã được gửi đến email của bạn.', maskedEmail: maskEmail(user.email) };
-    if (exposeDebugTokens) response.debugOtp = otp;
-
-    return response;
+    return {
+      message: 'OTP đã được gửi đến email của bạn.',
+      maskedEmail: maskEmail(user.email),
+    };
   }
 
   async function confirmChangePassword(input, context = {}) {

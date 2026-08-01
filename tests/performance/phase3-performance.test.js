@@ -36,11 +36,19 @@ test('performance result exposes repeatable Phase 3 metrics and limitations', ()
   assert.ok(result.limitations.some((item) => /SMTP/i.test(item)));
 });
 
-test('performance runs can override the E2E bcrypt cost without slowing normal browser tests', () => {
+test('the E2E server declares its test environment before loading the backend harness', () => {
   const serverSource = readFileSync(
     path.resolve(__dirname, '../e2e/support/systemTestServer.js'),
     'utf8'
   );
 
+  const nodeEnvAssignment = serverSource.indexOf("process.env.NODE_ENV = 'test';");
+  const harnessImport = serverSource.indexOf(
+    "require('../../../backend/tests/helpers/systemIntegrationHarness')"
+  );
+
+  assert.ok(nodeEnvAssignment >= 0);
+  assert.ok(nodeEnvAssignment < harnessImport);
   assert.match(serverSource, /process\.env\.BCRYPT_COST = process\.env\.BCRYPT_COST \|\| '4';/);
+  assert.doesNotMatch(serverSource, /AUTH_EXPOSE_TEST_TOKENS/);
 });
