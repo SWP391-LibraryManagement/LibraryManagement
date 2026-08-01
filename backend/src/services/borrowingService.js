@@ -598,6 +598,7 @@ function createBorrowingService({
 
     const approvedRequest = approvalResult.borrowRequest;
 
+    // @spec FR-FE07-040 - an approved request creates an idempotent FE10 result notification.
     const notificationWarning = await requestBorrowingResultNotification({
       templateKey: 'BORROW_REQUEST_APPROVED',
       userId: approvedRequest.userId,
@@ -648,6 +649,7 @@ function createBorrowingService({
       throw errors.conflict('BORROW_REQUEST_NOT_PENDING', 'Only pending borrow requests can be rejected.');
     }
 
+    // @spec FR-FE07-040 - a rejected request creates an idempotent FE10 result notification.
     const notificationWarning = await requestBorrowingResultNotification({
       templateKey: 'BORROW_REQUEST_REJECTED',
       userId: rejectedRequest.userId,
@@ -762,6 +764,7 @@ function createBorrowingService({
 
     const { authoritativeReturn, ...publicBorrowDetail } = returnedDetail;
     const overdueDays = authoritativeReturn.overdueDays;
+    // @spec FR-FE07-041, FR-FE07-042 - return notification is non-blocking and the FE08 handoff is fixed/read-only.
     const notificationWarning = await requestBorrowingResultNotification({
       templateKey: 'BORROW_RETURNED',
       userId: authoritativeReturn.userId,
@@ -894,6 +897,7 @@ function createBorrowingService({
 
     const renewedDetail = renewalResult.borrowDetail;
 
+    // @spec FR-FE07-041 - a successful renewal creates a non-blocking FE10 result notification.
     const notificationWarning = await requestBorrowingResultNotification({
       templateKey: 'BORROW_RENEWED',
       userId: borrowDetail.userId,

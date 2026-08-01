@@ -24,6 +24,7 @@ const supportedTypes = [
   'GENERAL_SYSTEM',
 ];
 
+// @spec FR-FE10-017 - FE10 accepts the four canonical FE07 result templates owned by FE07.
 const canonicalTemplateKeys = {
   ACCOUNT_VERIFICATION: new Set(['ACCOUNT_VERIFICATION']),
   PASSWORD_RESET: new Set(['PASSWORD_RESET']),
@@ -560,6 +561,7 @@ function createNotificationService({
       );
     }
 
+    // @spec FR-FE10-018 - replay an existing source key before insert and after a unique-key race.
     if (idempotencyKey) {
       const existing = await notificationRepository.findByIdempotencyKey(idempotencyKey);
 

@@ -645,7 +645,8 @@ async function findNextActiveReservationForCopy(copyId, excludedReservationIds =
   return mapReservation(result.recordset[0]);
 }
 
-// @spec FR-FE08-022 — the hold uses the same member -> copy -> reservation lock order as creation,
+// @spec FR-FE08-007, FR-FE08-022 — the winning hold makes the physical copy unavailable by setting RESERVED
+// and uses the same member -> copy -> reservation lock order as creation,
 // updating the reservation to NOTIFIED only WHERE it is still ACTIVE; a concurrent second attempt
 // re-reads the state and gets null, so at most one selection succeeds
 // (EC-FE08-010, NFR-FE08-TXN-001, INV-FE08-004).

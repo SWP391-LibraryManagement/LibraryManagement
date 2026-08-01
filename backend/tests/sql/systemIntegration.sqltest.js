@@ -169,9 +169,19 @@ async function captureDerivedIds(seed) {
         SELECT NotificationId
         FROM Notifications
         WHERE SourceFeature = 'FE07'
-          AND SourceEntityType = 'BORROWING'
+          AND SourceEntityType = 'BorrowRequest'
           AND SourceEntityId = @RequestId
       `);
+    pushUnique(seed.notificationIds, notifications.recordset.map((row) => row.NotificationId));
+  }
+
+  // Capture every notification owned by the disposable test users so cleanup
+  // remains safe even when a source projection changes its entity type.
+  for (const userId of seed.userIds) {
+    const notifications = await pool
+      .request()
+      .input('UserId', sql.Int, userId)
+      .query('SELECT NotificationId FROM Notifications WHERE UserId = @UserId');
     pushUnique(seed.notificationIds, notifications.recordset.map((row) => row.NotificationId));
   }
 
@@ -400,6 +410,7 @@ test('[SIT-SQL-001] FE07 return is visible to FE09 and FE12 through shared SQL s
     .query(`
       SELECT
         n.NotificationId,
+        n.NotificationType,
         n.Status,
         n.SourceFeature,
         n.SourceEntityType,
@@ -408,17 +419,18 @@ test('[SIT-SQL-001] FE07 return is visible to FE09 and FE12 through shared SQL s
       FROM Notifications n
       LEFT JOIN NotificationTemplates nt ON n.TemplateId = nt.TemplateId
       WHERE n.SourceFeature = 'FE07'
-        AND n.SourceEntityType = 'BORROWING'
+        AND n.SourceEntityType = 'BorrowRequest'
         AND n.SourceEntityId = @RequestId
     `);
   pushUnique(activeSeed.notificationIds, notifications.recordset.map((row) => row.NotificationId));
   expect(notifications.recordset).toHaveLength(1);
   expect(notifications.recordset[0]).toMatchObject({
+    NotificationType: 'GENERAL_SYSTEM',
     Status: 'PENDING',
     SourceFeature: 'FE07',
-    SourceEntityType: 'BORROWING',
+    SourceEntityType: 'BorrowRequest',
     SourceEntityId: requestId,
-    TemplateCode: 'DUE_DATE_REMINDER',
+    TemplateCode: 'BORROW_REQUEST_APPROVED',
   });
 
   await pool
@@ -523,7 +535,7 @@ test('[SIT-SQL-001] FE07 return is visible to FE09 and FE12 through shared SQL s
   );
   expect(JSON.parse(notificationAudit.Metadata)).toMatchObject({
     sourceFeature: 'FE07',
-    sourceEntityType: 'BORROWING',
+    sourceEntityType: 'BorrowRequest',
     sourceEntityId: requestId,
   });
 });

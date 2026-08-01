@@ -25,7 +25,11 @@
 
 const fs = require('fs');
 const path = require('path');
-const { parseImplementationState, shouldEnforce } = require('./traceability-state');
+const {
+  parseImplementationState,
+  requiredCoverage,
+  shouldEnforce,
+} = require('./traceability-state');
 
 const ROOT = path.resolve(__dirname, '..');
 const SPECS_DIR = path.join(ROOT, '.sdd', 'specs');
@@ -107,33 +111,42 @@ for (const feat of features) {
   const metadata = taskMetadata(featDir);
   const status = metadata.state;
   const active = shouldEnforce(metadata.state);
+  const required = requiredCoverage(metadata.state, MIN);
   const missing = frs.filter((id) => !taggedIds.has(id));
 
-  rows.push({ feat, total: frs.length, covered: covered.length, pct, status, active, missing });
-  if (enforce && active && pct < MIN) failed = true;
+  rows.push({ feat, total: frs.length, covered: covered.length, pct, required, status, active, missing });
+  if (enforce && active && pct < required) failed = true;
 }
 
 // 3. Print report.
 const pad = (s, n) => String(s).padEnd(n);
 console.log('\nTraceability coverage (FR ids tagged with @spec in source)\n');
-console.log(pad('Feature', 32) + pad('FR', 5) + pad('Tagged', 8) + pad('Coverage', 10) + 'Implementation state');
-console.log('-'.repeat(78));
+console.log(
+  pad('Feature', 32)
+    + pad('FR', 5)
+    + pad('Tagged', 8)
+    + pad('Coverage', 10)
+    + pad('Required', 10)
+    + 'Implementation state'
+);
+console.log('-'.repeat(88));
 for (const r of rows) {
-  const mark = !r.active ? '·' : r.pct >= MIN ? '✓' : '✗';
+  const mark = !r.active ? '·' : r.pct >= r.required ? '✓' : '✗';
   console.log(
     pad(`${mark} ${r.feat}`, 32) +
       pad(r.total, 5) +
       pad(r.covered, 8) +
       pad(`${r.pct}%`, 10) +
+      pad(r.required === null ? 'n/a' : `${r.required}%`, 10) +
       r.status
   );
 }
-console.log('-'.repeat(78));
+console.log('-'.repeat(88));
 
 const activeRows = rows.filter((r) => r.active);
-const below = activeRows.filter((r) => r.pct < MIN);
+const below = activeRows.filter((r) => r.pct < r.required);
 console.log(
-  `\nImplemented features: ${activeRows.length} | below ${MIN}%: ${below.length} | not started: ${
+  `\nImplemented features: ${activeRows.length} | below required coverage: ${below.length} | not started: ${
     rows.length - activeRows.length
   }`
 );
@@ -145,7 +158,7 @@ if (below.length) {
 }
 console.log(
   enforce
-    ? `\nMode: ENFORCE (min ${MIN}%). ${failed ? 'FAIL' : 'PASS'}`
+    ? `\nMode: ENFORCE (COMPLETE = 100%, PARTIAL >= ${MIN}%). ${failed ? 'FAIL' : 'PASS'}`
     : '\nMode: report-only (pass --enforce to gate CI).'
 );
 

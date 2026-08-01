@@ -1,7 +1,7 @@
 # TASKS.md - FE12 Báo cáo và thống kê
 
-Trạng thái: ĐÃ MERGE VÀO MAIN; CI HẬU MERGE ĐẠT; AZURE STAGING BỊ CHẶN DO AZURE SQL PAUSED/QUOTA
-Implementation State: PARTIAL
+Trạng thái: ĐÃ MERGE VÀO MAIN; CI HẬU MERGE ĐẠT; AZURE RUNTIME ĐÃ PHỤC HỒI; CLOSEOUT CANDIDATE CHƯA DEPLOY
+Implementation State: COMPLETE
 
 Chủ sở hữu: Nhat
 
@@ -12,8 +12,9 @@ FE07-FE12 đã merge qua PR #63 thành `29b4eb0`; prerequisite v0.2.1 đã merge
 qua PR #81 thành `main@0d064b5`. Governance activation v0.3.0 đã merge qua
 PR #80 thành `cd865e3`, operations summary đã merge qua PR #82 thành
 `2645a00`, và batch liên hoàn được H3 phê duyệt ở head `08e472f` rồi tích hợp
-qua `ba29dc0`. CI hậu merge đã đạt. Azure staging vẫn bị chặn vì Azure SQL
-đang `Paused`/hết quota, không phải finding mã nguồn.
+qua `ba29dc0`. CI hậu merge đã đạt. Sau reset quota ngày 2026-08-01, Azure
+runtime hiện `Running`/`Online` và smoke trên bản đã deploy đạt; closeout
+candidate này chưa deploy và vẫn chờ H3, không phải finding mã nguồn.
 
 ---
 

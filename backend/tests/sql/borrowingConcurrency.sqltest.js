@@ -84,6 +84,19 @@ async function findExistingBookId() {
   return result.recordset[0].BookId;
 }
 
+async function findExistingBookIds(count) {
+  const result = await pool
+    .request()
+    .input('Count', sql.Int, count)
+    .query("SELECT TOP (@Count) BookId FROM Books WHERE Status = 'ACTIVE' ORDER BY BookId ASC");
+
+  if (result.recordset.length < count) {
+    throw new Error(`FE07 SQL test requires at least ${count} ACTIVE Book rows.`);
+  }
+
+  return result.recordset.map((row) => row.BookId);
+}
+
 async function insertCopies(seed, bookId, count) {
   const copyIds = [];
 
@@ -91,7 +104,7 @@ async function insertCopies(seed, bookId, count) {
     const result = await pool
       .request()
       .input('BookId', sql.Int, bookId)
-      .input('Barcode', sql.NVarChar(100), `${seed.key}-copy-${index}`)
+      .input('Barcode', sql.NVarChar(100), `${seed.key}-copy-${seed.copyIds.length + index}`)
       .input('Location', sql.NVarChar(100), 'FE07 SQL test')
       .query(`
         INSERT INTO BookCopies (BookId, Barcode, Status, Location)
@@ -864,8 +877,13 @@ test('concurrent SQL approvals for different copies stop at five active borrowed
     const borrowerUserId = await insertUser(seed, 'borrower');
     const actorUserId = await insertUser(seed, 'actor');
     await insertMember(borrowerUserId, actorUserId);
-    const bookId = await findExistingBookId();
-    const copyIds = await insertCopies(seed, bookId, 6);
+    // BR-FE07-034 permits only one active workflow per BookId, so use six
+    // distinct books to isolate the five-copy race from the same-book blocker.
+    const bookIds = await findExistingBookIds(6);
+    const copyIds = [];
+    for (const bookId of bookIds) {
+      copyIds.push(...await insertCopies(seed, bookId, 1));
+    }
 
     for (const copyId of copyIds.slice(0, 4)) {
       const activeRequestId = await insertBorrowRequest(seed, {
@@ -1001,17 +1019,18 @@ test('concurrent SQL renewals update one borrowed detail only once', async () =>
     const originalDetail = await borrowingRepository.findBorrowDetailById(borrowDetailId);
     const expectedDueDate = new Date(originalDetail.dueDate);
     expectedDueDate.setDate(expectedDueDate.getDate() + 14);
+    const testToday = '2026-07-14';
     const renewalResults = await Promise.all([
       borrowingRepository.renewBorrowDetail({
         borrowDetailId,
         userId: borrowerUserId,
-        today: new Date(),
+        today: testToday,
         newDueDate: expectedDueDate,
       }),
       borrowingRepository.renewBorrowDetail({
         borrowDetailId,
         userId: borrowerUserId,
-        today: new Date(),
+        today: testToday,
         newDueDate: expectedDueDate,
       }),
     ]);
@@ -1372,8 +1391,8 @@ test.each([
     const borrowerUserId = await insertUser(seed, `b-${expectedOutcome}`);
     const actorUserId = await insertUser(seed, `a-${expectedOutcome}`);
     await insertMember(borrowerUserId, actorUserId);
-    const bookId = await findExistingBookId();
-    const copyIds = await insertCopies(seed, bookId, blocker === 'overdue active loan' ? 2 : 1);
+    const bookIds = await findExistingBookIds(blocker === 'overdue active loan' ? 2 : 1);
+    const copyIds = await insertCopies(seed, bookIds[0], 1);
     const requestId = await insertBorrowRequest(seed, { userId: borrowerUserId, createdBy: borrowerUserId });
     const requestedDetailId = await insertBorrowDetail(seed, {
       requestId,
@@ -1405,13 +1424,15 @@ test.each([
         createdBy: actorUserId,
         status: 'APPROVED',
       });
+      const [overdueCopyId] = await insertCopies(seed, bookIds[1], 1);
+      copyIds.push(overdueCopyId);
       await insertBorrowDetail(seed, {
         requestId: activeRequestId,
-        copyId: copyIds[1],
+        copyId: overdueCopyId,
         status: 'BORROWED',
         dueDate: new Date('2026-07-12T00:00:00.000Z'),
       });
-      await setCopyStatus(copyIds[1], 'BORROWED');
+      await setCopyStatus(overdueCopyId, 'BORROWED');
     }
 
     await expect(approve(requestId, actorUserId)).resolves.toEqual({ outcome: expectedOutcome });
@@ -1469,12 +1490,13 @@ test('SQL renewal audit failure rolls back due date, renewal count, and audit ro
     await setCopyStatus(copyId, 'BORROWED');
     const before = await borrowingRepository.findBorrowDetailById(borrowDetailId);
     const failingAuditLogRepository = { create: jest.fn(async () => { throw new Error('SQL renew audit failure'); }) };
+    const testToday = '2026-07-14';
 
     await expect(
       borrowingRepository.renewBorrowDetail({
         borrowDetailId,
         userId: borrowerUserId,
-        today: new Date(),
+        today: testToday,
         newDueDate: new Date('2026-07-27T00:00:00.000Z'),
         auditLogRepository: failingAuditLogRepository,
         auditEntry: { userId: actorUserId, action: 'BORROW_DETAIL_RENEW', targetType: 'BORROW_DETAIL', targetId: borrowDetailId },

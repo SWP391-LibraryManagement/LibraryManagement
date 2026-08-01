@@ -14,6 +14,7 @@ import { Toast } from '../component/shared/Feedback';
 import { openNotificationInboxItem } from '../utils/notificationInboxViewModel';
 
 const NotificationInboxContext = createContext(null);
+// @spec FR-FE10-016 - authenticated roles receive the canonical inbox refresh/read workflow.
 const INBOX_POLL_INTERVAL_MS = 60000;
 const INBOX_ROLES = ['MEMBER', 'LIBRARIAN', 'ADMIN'];
 

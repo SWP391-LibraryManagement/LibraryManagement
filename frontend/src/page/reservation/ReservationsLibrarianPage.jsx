@@ -216,6 +216,7 @@ export default function ReservationsLibrarianPage() {
     document.getElementById(`reservation-tab-${nextKey}`)?.focus();
   }
 
+  // @spec FR-FE08-037, FR-FE08-038 - staff explicitly triggers queue processing and receives only safe warning data.
   async function confirmNotify() {
     if (!notifyTarget || notifying) return;
     setNotifying(true);
