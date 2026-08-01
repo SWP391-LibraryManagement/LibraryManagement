@@ -112,6 +112,9 @@ const projectorCases = [
   { actions: ['NOTIFICATION_REQUEST_CREATE'], metadata: { type: 'DUE_DATE_REMINDER', channel: 'EMAIL', sourceFeature: 'FE07', sourceEntityType: 'BorrowRequest', sourceEntityId: 3 }, expected: { type: 'DUE_DATE_REMINDER', channel: 'EMAIL', sourceFeature: 'FE07', sourceEntityType: 'BorrowRequest', sourceEntityId: 3 } },
   { actions: ['NOTIFICATION_RETRY'], metadata: { fromStatus: 'FAILED', toStatus: 'PENDING' }, expected: { previousStatus: 'FAILED', newStatus: 'PENDING' } },
   { actions: ['NOTIFICATION_PROCESS_PENDING'], metadata: { processed: 4, failed: 1 }, expected: { processed: 4, failed: 1 } },
+  { actions: ['CATALOG_METADATA_CREATE'], metadata: { resource: 'authors', name: 'omit' }, expected: { resource: 'authors' } },
+  { actions: ['CATALOG_METADATA_UPDATE'], metadata: { resource: 'publishers', changedFields: ['name', 'token'] }, expected: { resource: 'publishers', changedFields: ['name'] } },
+  { actions: ['CATALOG_METADATA_DEACTIVATE'], metadata: { resource: 'categories', newStatus: 'INACTIVE', reason: 'omit' }, expected: { resource: 'categories', newStatus: 'INACTIVE' } },
 ];
 
 for (const fixture of projectorCases) {

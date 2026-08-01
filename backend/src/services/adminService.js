@@ -6,6 +6,12 @@ const errors = require('../utils/safeErrors');
 const { formatBusinessDate } = require('../utils/libraryBusinessTime');
 
 const RESOURCE_NAMES = new Set(['authors', 'publishers', 'categories']);
+const RESOURCE_TARGET_TYPES = Object.freeze({
+  authors: 'AUTHOR',
+  publishers: 'PUBLISHER',
+  categories: 'CATEGORY',
+});
+const CATALOG_METADATA_CHANGED_FIELDS = new Set(['name']);
 const BORROW_STATUSES = new Set(['REQUESTED', 'BORROWED', 'RETURNED', 'OVERDUE', 'LOST', 'DAMAGED']);
 const REQUEST_STATUSES = new Set(['PENDING', 'APPROVED', 'REJECTED', 'COMPLETED', 'CANCELLED']);
 const INVALID_AUDIT_VALUE = Symbol('INVALID_AUDIT_VALUE');
@@ -164,6 +170,13 @@ function readChangedFields(value, allowedFields) {
     if (allowedFields.has(field) && !projected.includes(field)) projected.push(field);
   }
   return projected;
+}
+
+function readCatalogResource(value) {
+  const resource = readText(value, { max: 20 });
+  return resource !== INVALID_AUDIT_VALUE && RESOURCE_NAMES.has(resource)
+    ? resource
+    : INVALID_AUDIT_VALUE;
 }
 
 function hasProvidedText(value) {
@@ -405,6 +418,24 @@ function projectAuditDetails(action, rawMetadata) {
         failed: readNonNegativeNumber(metadata.failed),
       });
       break;
+    case 'CATALOG_METADATA_CREATE':
+      projected = buildAuditDetails({ resource: readCatalogResource(metadata.resource) });
+      break;
+    case 'CATALOG_METADATA_UPDATE':
+      projected = buildAuditDetails({
+        resource: readCatalogResource(metadata.resource),
+        changedFields: readChangedFields(
+          metadata.changedFields,
+          CATALOG_METADATA_CHANGED_FIELDS
+        ),
+      });
+      break;
+    case 'CATALOG_METADATA_DEACTIVATE':
+      projected = buildAuditDetails({
+        resource: readCatalogResource(metadata.resource),
+        newStatus: readText(metadata.newStatus, { max: 20 }),
+      });
+      break;
     default:
       return {};
   }
@@ -475,6 +506,19 @@ function normalizeName(body = {}) {
   return name;
 }
 
+async function writeCatalogAudit({ resource, targetId, action, metadata, context, transaction }) {
+  await auditLogRepository.create({
+    userId: context.actorId,
+    action,
+    targetType: RESOURCE_TARGET_TYPES[resource],
+    targetId,
+    metadata,
+    ipAddress: context.ip || null,
+    userAgent: context.userAgent || null,
+    transaction,
+  });
+}
+
 // @spec FR-FE11-032, BR-FE11-017, AC-FE11-017
 function getPermissions() {
   return {
@@ -516,27 +560,71 @@ async function listResource(resource, filters = {}) {
   return { data: await adminRepository.listResource(normalizedResource, { q: cleanText(filters.q, 100) }) };
 }
 
-async function createResource(resource, body = {}) {
+// @spec NFR-FE05-TXN-001, NFR-FE05-LOG-001, NFR-FE11-TXN-007, NFR-FE11-LOG-003
+async function createResource(resource, body = {}, context = {}) {
   const normalizedResource = normalizeResource(resource);
-  return { data: await adminRepository.createResource(normalizedResource, normalizeName(body)) };
+  const name = normalizeName(body);
+  return adminRepository.withTransaction(async (transaction) => {
+    const data = await adminRepository.createResource(normalizedResource, name, transaction);
+    await writeCatalogAudit({
+      resource: normalizedResource,
+      targetId: data.id,
+      action: 'CATALOG_METADATA_CREATE',
+      metadata: { resource: normalizedResource },
+      context,
+      transaction,
+    });
+    return { data };
+  });
 }
 
-async function updateResource(resource, idInput, body = {}) {
+// @spec FR-FE11-043, NFR-FE11-TXN-007, NFR-FE11-LOG-003
+async function updateResource(resource, idInput, body = {}, context = {}) {
   const normalizedResource = normalizeResource(resource);
   const id = positiveInt(idInput);
-  return { data: await adminRepository.updateResource(normalizedResource, id, normalizeName(body)) };
+  const name = normalizeName(body);
+  return adminRepository.withTransaction(async (transaction) => {
+    const data = await adminRepository.updateResource(normalizedResource, id, name, transaction);
+    if (!data) {
+      throw errors.notFound('ADMIN_RESOURCE_ITEM_NOT_FOUND', 'Item not found.');
+    }
+    await writeCatalogAudit({
+      resource: normalizedResource,
+      targetId: data.id,
+      action: 'CATALOG_METADATA_UPDATE',
+      metadata: { resource: normalizedResource, changedFields: ['name'] },
+      context,
+      transaction,
+    });
+    return { data };
+  });
 }
 
-async function deactivateResource(resource, idInput) {
+// @spec FR-FE11-043, NFR-FE11-TXN-007, NFR-FE11-LOG-003
+async function deactivateResource(resource, idInput, context = {}) {
   const normalizedResource = normalizeResource(resource);
   const id = positiveInt(idInput);
 
   try {
-    const affectedRows = await adminRepository.deactivateResource(normalizedResource, id);
-    if (!affectedRows) {
-      throw errors.notFound('ADMIN_RESOURCE_ITEM_NOT_FOUND', 'Item not found.');
-    }
-    return { deactivated: true, data: { id, status: 'INACTIVE' } };
+    return await adminRepository.withTransaction(async (transaction) => {
+      const affectedRows = await adminRepository.deactivateResource(
+        normalizedResource,
+        id,
+        transaction
+      );
+      if (!affectedRows) {
+        throw errors.notFound('ADMIN_RESOURCE_ITEM_NOT_FOUND', 'Item not found.');
+      }
+      await writeCatalogAudit({
+        resource: normalizedResource,
+        targetId: id,
+        action: 'CATALOG_METADATA_DEACTIVATE',
+        metadata: { resource: normalizedResource, newStatus: 'INACTIVE' },
+        context,
+        transaction,
+      });
+      return { deactivated: true, data: { id, status: 'INACTIVE' } };
+    });
   } catch (error) {
     if (error.number === 547) {
       throw errors.conflict('RESOURCE_IN_USE', 'This item is being used and cannot be deactivated.');

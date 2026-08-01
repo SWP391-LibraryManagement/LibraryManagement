@@ -1,5 +1,13 @@
 const adminService = require('../services/adminService');
 
+function auditContext(req) {
+  return {
+    actorId: req.user.userId,
+    ip: req.ip,
+    userAgent: req.get('user-agent'),
+  };
+}
+
 function createAdminController(service = adminService) {
   return {
     permissions: async (req, res, next) => {
@@ -41,21 +49,32 @@ function createAdminController(service = adminService) {
     },
     createResource: async (req, res, next) => {
       try {
-        return res.status(201).json(await service.createResource(req.params.resource, req.body));
+        return res.status(201).json(
+          await service.createResource(req.params.resource, req.body, auditContext(req))
+        );
       } catch (error) {
         return next(error);
       }
     },
     updateResource: async (req, res, next) => {
       try {
-        return res.status(200).json(await service.updateResource(req.params.resource, req.params.id, req.body));
+        return res.status(200).json(
+          await service.updateResource(
+            req.params.resource,
+            req.params.id,
+            req.body,
+            auditContext(req)
+          )
+        );
       } catch (error) {
         return next(error);
       }
     },
     deactivateResource: async (req, res, next) => {
       try {
-        return res.status(200).json(await service.deactivateResource(req.params.resource, req.params.id));
+        return res.status(200).json(
+          await service.deactivateResource(req.params.resource, req.params.id, auditContext(req))
+        );
       } catch (error) {
         return next(error);
       }

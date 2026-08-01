@@ -50,3 +50,35 @@ test.each(['LIBRARIAN', 'MEMBER'])(
     expect(adminService.listResource).not.toHaveBeenCalled();
   }
 );
+
+test('Admin metadata mutations pass trusted request audit context', async () => {
+  const adminService = {
+    createResource: jest.fn(async () => ({ data: { id: 1, name: 'Author' } })),
+    updateResource: jest.fn(async () => ({ data: { id: 1, name: 'Updated' } })),
+    deactivateResource: jest.fn(async () => ({ deactivated: true, data: { id: 1, status: 'INACTIVE' } })),
+  };
+  const app = makeApp('ADMIN', adminService);
+
+  await request(app)
+    .post('/api/admin/library/authors')
+    .set('Authorization', 'Bearer admin-token')
+    .set('User-Agent', 'catalog-audit-test')
+    .send({ name: 'Author' })
+    .expect(201);
+  await request(app)
+    .put('/api/admin/library/authors/1')
+    .set('Authorization', 'Bearer admin-token')
+    .set('User-Agent', 'catalog-audit-test')
+    .send({ name: 'Updated' })
+    .expect(200);
+  await request(app)
+    .patch('/api/admin/library/authors/1/deactivate')
+    .set('Authorization', 'Bearer admin-token')
+    .set('User-Agent', 'catalog-audit-test')
+    .expect(200);
+
+  const context = { actorId: 7, ip: expect.any(String), userAgent: 'catalog-audit-test' };
+  expect(adminService.createResource).toHaveBeenCalledWith('authors', { name: 'Author' }, context);
+  expect(adminService.updateResource).toHaveBeenCalledWith('authors', '1', { name: 'Updated' }, context);
+  expect(adminService.deactivateResource).toHaveBeenCalledWith('authors', '1', context);
+});

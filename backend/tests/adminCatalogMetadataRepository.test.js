@@ -1,10 +1,25 @@
 const mockQuery = jest.fn();
 const mockInput = jest.fn(() => ({ input: mockInput, query: mockQuery }));
 const mockRequest = jest.fn(() => ({ input: mockInput, query: mockQuery }));
+const mockSqlRequest = jest.fn(() => ({ input: mockInput, query: mockQuery }));
+const mockTransactionBegin = jest.fn();
+const mockTransactionCommit = jest.fn();
+const mockTransactionRollback = jest.fn();
+const mockTransaction = {
+  begin: mockTransactionBegin,
+  commit: mockTransactionCommit,
+  rollback: mockTransactionRollback,
+};
+const mockSqlTransaction = jest.fn(() => mockTransaction);
 
 jest.mock('../src/config/db', () => ({
   getPool: jest.fn(async () => ({ request: mockRequest })),
-  sql: { NVarChar: jest.fn((length) => `NVARCHAR(${length})`) },
+  sql: {
+    Int: 'INT',
+    NVarChar: jest.fn((length) => `NVARCHAR(${length})`),
+    Request: mockSqlRequest,
+    Transaction: mockSqlTransaction,
+  },
 }));
 
 const adminRepository = require('../src/repositories/adminRepository');
@@ -12,8 +27,15 @@ const adminRepository = require('../src/repositories/adminRepository');
 describe('admin catalog metadata persistence', () => {
   beforeEach(() => {
     mockQuery.mockReset();
-    mockInput.mockClear();
-    mockRequest.mockClear();
+    [
+      mockInput,
+      mockRequest,
+      mockSqlRequest,
+      mockTransactionBegin,
+      mockTransactionCommit,
+      mockTransactionRollback,
+      mockSqlTransaction,
+    ].forEach((mock) => mock.mockClear());
   });
 
   test.each(['authors', 'publishers', 'categories'])('%s list reads persisted CreatedAt', async (resource) => {
@@ -46,6 +68,42 @@ describe('admin catalog metadata persistence', () => {
 
     expect(mockQuery.mock.calls[0][0]).toContain("SET Status = 'INACTIVE'");
     expect(mockQuery.mock.calls[0][0]).not.toContain('DELETE FROM');
+  });
+
+  test('update returns null when SQL Server updates no resource row', async () => {
+    mockQuery.mockResolvedValueOnce({ recordset: [] });
+
+    await expect(adminRepository.updateResource('authors', 999, 'Missing')).resolves.toBeNull();
+    expect(mockQuery.mock.calls[0][0]).toContain('OUTPUT INSERTED.AuthorId AS id');
+  });
+
+  test('metadata mutations use the supplied SQL transaction request', async () => {
+    const transaction = { id: 'tx' };
+    mockQuery.mockResolvedValueOnce({
+      recordset: [{ id: 7, name: 'Transactional', status: 'ACTIVE', createdAt: new Date() }],
+    });
+
+    await adminRepository.createResource('authors', 'Transactional', transaction);
+
+    expect(mockSqlRequest).toHaveBeenCalledWith(transaction);
+    expect(mockRequest).not.toHaveBeenCalled();
+  });
+
+  test('withTransaction rolls back when its work rejects', async () => {
+    const failure = new Error('audit failed');
+
+    await expect(adminRepository.withTransaction(async () => { throw failure; }))
+      .rejects.toBe(failure);
+    expect(mockTransactionBegin).toHaveBeenCalledTimes(1);
+    expect(mockTransactionRollback).toHaveBeenCalledTimes(1);
+    expect(mockTransactionCommit).not.toHaveBeenCalled();
+  });
+
+  test('withTransaction commits and returns successful work', async () => {
+    await expect(adminRepository.withTransaction(async () => 'committed')).resolves.toBe('committed');
+    expect(mockTransactionBegin).toHaveBeenCalledTimes(1);
+    expect(mockTransactionCommit).toHaveBeenCalledTimes(1);
+    expect(mockTransactionRollback).not.toHaveBeenCalled();
   });
 
   test('admin borrowing read model derives overdue instead of expecting a persisted status', async () => {
