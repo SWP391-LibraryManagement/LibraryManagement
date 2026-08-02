@@ -135,6 +135,32 @@ test('repairs legacy multiple mappings by replacing all of them with one role', 
 
   await expect(invoke()).resolves.toMatchObject({ outcome: 'REPLACED' });
   expect(calls.find(({ query }) => query.includes('DELETE FROM UserRoles')).inputs.UserId).toBe(7);
+  expect(calls.filter(({ query }) => query.includes('INSERT INTO UserRoles'))).toHaveLength(1);
+});
+
+// @spec FR-FE11-026, FR-FE11-027
+test('repairs a legacy account with zero mappings by inserting exactly one selected role', async () => {
+  const calls = useTransactionResults([
+    ACTIVE_ADMIN,
+    TARGET_USER,
+    LIBRARIAN_ROLE,
+    [],
+    [],
+    [],
+    [],
+  ]);
+
+  await expect(invoke()).resolves.toEqual({
+    outcome: 'REPLACED',
+    role: { roleId: 2, roleName: 'LIBRARIAN' },
+  });
+  expect(calls.filter(({ query }) => query.includes('DELETE FROM UserRoles'))).toHaveLength(1);
+  expect(calls.filter(({ query }) => query.includes('INSERT INTO UserRoles'))).toHaveLength(1);
+  const auditCall = calls.find(({ query }) => query.includes('INSERT INTO AuditLogs'));
+  expect(JSON.parse(auditCall.inputs.Metadata)).toEqual({
+    previousRoles: [],
+    role: { roleId: 2, roleName: 'LIBRARIAN' },
+  });
 });
 
 test('blocks removing MEMBER while borrowing workflows are still active', async () => {
@@ -168,7 +194,7 @@ test('returns unchanged without audit when the account already has exactly the s
     outcome: 'UNCHANGED',
     role: { roleId: 2, roleName: 'LIBRARIAN' },
   });
-  expect(calls.some(({ query }) => query.includes('AuditLogs'))).toBe(false);
+  expect(calls.some(({ query }) => /DELETE FROM UserRoles|INSERT INTO UserRoles|UPDATE AuthTokens|INSERT INTO AuditLogs/.test(query))).toBe(false);
   expect(sql.Transaction.instances.at(-1).commitCount).toBe(1);
 });
 

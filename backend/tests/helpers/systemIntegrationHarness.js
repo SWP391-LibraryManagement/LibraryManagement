@@ -7,6 +7,7 @@ const { createFineManagementService } = require('../../src/services/fineManageme
 const { createNotificationService } = require('../../src/services/notificationService');
 const { createReportService } = require('../../src/services/reportService');
 const { createMembershipService } = require('../../src/services/membershipService');
+const { getPermissions } = require('../../src/services/adminService');
 const errors = require('../../src/utils/safeErrors');
 const { makeInMemoryAuthDependencies } = require('./inMemoryAuthRepositories');
 const { makeInMemoryBorrowingDependencies } = require('./inMemoryBorrowingRepositories');
@@ -125,6 +126,7 @@ function createSystemAdminService(authState, borrowingDependencies) {
   }
 
   return {
+    getPermissions,
     async getDashboard() {
       const totalMembers = [...authState.rolesByUserId.values()]
         .filter((roles) => roles.includes('MEMBER')).length;

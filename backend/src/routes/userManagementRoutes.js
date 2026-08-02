@@ -18,6 +18,8 @@ function createUserManagementRoutes({ authService, userManagementService } = {})
   const authenticate = createAuthenticate(authService);
   const requireAdmin = [authenticate, requireRole('ADMIN')];
 
+  // @spec FR-FE11-004, FR-FE11-007, FR-FE11-010, FR-FE11-020 — FE11 intentionally
+  // registers no existing-user profile/work-field PUT route; FE03 owns personal profile edits.
   // @spec FR-FE11-015
   router.get('/', ...requireAdmin, listUsersValidators, controller.listUsers);
   router.get('/roles', requireAdmin, controller.listRoles);

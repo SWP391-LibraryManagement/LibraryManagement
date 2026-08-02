@@ -3,17 +3,48 @@
 Trạng thái: ĐÃ TRIỂN KHAI - XÁC THỰC TỰ ĐỘNG CỤC BỘ HOÀN TẤT
 Implementation State: PARTIAL
 
-Ngày: 2026-07-28
+Ngày: 2026-08-02
 
-Phần mở rộng hiện tại: FE11-AGB01 triển khai Q-FE11-029 bằng cách giới hạn thay
-đổi Quản trị đối với người dùng hiện có vào thay vai trò và vô hiệu hóa đủ điều
-kiện; chấp nhận trình duyệt đã xác thực và con người vẫn mở.
+Phần mở rộng hiện tại: closeout PR B đối soát Core FE11, mở ma trận quyền chỉ
+đọc bên trong Quản lý người dùng/vai trò và giữ tám mục sidebar. Bằng chứng
+exact-SHA staging hậu merge cùng chuyển `COMPLETE` vẫn thuộc PR D.
 
 Phần mở rộng đồng thời: phạm vi sản phẩm/kiểm thử nguồn FE11-UXR09 được triển
 khai qua API FE04 chuẩn; trình duyệt đáp ứng, Azure Staging và chấp nhận con
 người vẫn mở.
 
 Chủ sở hữu: Dung
+
+## Nhiệm vụ closeout PR B ngày 2026-08-02
+
+- [x] **FE11-CLB01 - Khóa ledger Core và quyết định BD-003/004/005.**
+  - Ánh xạ: CF-001..CF-004; FR-FE11-025..027/030/032.
+  - Bằng chứng: SPEC v0.6.15 và plan PR B được duyệt trên baseline `042d6190`.
+
+- [x] **FE11-CLB02 - Sửa khả năng tiếp cận ma trận quyền bằng RED-GREEN.**
+  - Giữ đúng tám mục sidebar; thêm toggle `Xem/Ẩn ma trận quyền` vào Quản lý
+    người dùng và tái sử dụng API/component chỉ đọc hiện có.
+  - Bằng chứng: static RED 25/26, Chromium RED 0/1; GREEN 26/26 và Chromium 1/1.
+
+- [x] **FE11-CLB03 - Hoàn tất Core characterization và source trace.**
+  - Bao phủ route hồ sơ đã ngừng, duplicate/stale 409 an toàn, actor/lifecycle,
+    no-op, zero/multiple mapping và unique-index.
+  - Bằng chứng: 9/9 suite tập trung, 186/186; FE11 source trace 43/43.
+
+- [x] **FE11-CLB04 - Chứng minh Core trên SQL Server disposable fail-closed.**
+  - Target duy nhất: `LibraryManagement_FE11_PRB_20260802`; 9/9 mutable, không
+    skip; fixture/trigger/login tạm được dọn và database được drop.
+
+- [x] **FE11-CLB05 - Hoàn tất gói L1-L4 cục bộ để trình H2.**
+  - Gồm full backend/coverage, frontend/test/lint/build, E2E/system/deployment,
+    trace/secrets/OpenAPI/import, audit dependency và kiểm tra diff/scope.
+  - Bằng chứng: backend 1180/1180, frontend 273/273, E2E 12/12, system
+    11/11, deployment 20/20; coverage/lint/build/trace/secrets/audit đều đạt.
+
+- [ ] **FE11-CLB06 - Ghi exact-SHA post-merge staging acceptance và đóng FE11.**
+  - Chỉ PR D được check nhiệm vụ này sau khi PR B merge/deploy đúng SHA, smoke
+    desktop/mobile và cleanup đều đạt; khi đó mới chuyển `Implementation State`
+    từ `PARTIAL` sang `COMPLETE`.
 
 ## Nhiệm vụ thiết lập tài khoản
 
