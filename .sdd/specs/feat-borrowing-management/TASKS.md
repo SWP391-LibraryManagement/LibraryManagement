@@ -1,6 +1,6 @@
 # TASKS.md - FE07 Quản lý mượn sách
 
-Trạng thái: HOÀN THÀNH; PR #89 ĐÃ HỢP NHẤT; CI VÀ AZURE ĐÃ CHẠY THÀNH CÔNG TRÊN ĐÚNG COMMIT
+Trạng thái: HOÀN THÀNH; PR #96 ĐÃ HỢP NHẤT; CI VÀ AZURE ĐÃ CHẠY THÀNH CÔNG TRÊN ĐÚNG COMMIT
 Implementation State: COMPLETE
 
 Phạm vi mở rộng v0.8.0/v0.9.0 đã được triển khai và kiểm tra tự động;
@@ -8,7 +8,7 @@ quy trình rà soát H2/H3 và hợp nhất cũng đã hoàn tất. Giai đoạn
 
 Chủ sở hữu: Nhat
 
-Cập nhật: 2026-08-01
+Cập nhật: 2026-08-02
 
 Trạng thái quy trình hiện tại: Mốc cơ sở Giai đoạn 2 vẫn hoàn tất. Đối soát
 FE07-FE12 đã hợp nhất qua PR #63 thành `29b4eb0` sau H3 và CI. Đợt liên hoàn
@@ -18,6 +18,9 @@ hợp nhất qua PR #89 thành `main@39092fb`; CI `30675444178` và Azure stagin
 `30675744992` đều đạt trên đúng commit. App Service ở trạng thái `Running`, SQL
 ở trạng thái `Online`; các kiểm tra nhanh cho frontend, health, mức sẵn sàng,
 danh mục, CORS và tuyến được bảo vệ đều đạt.
+Khắc phục ngày trả nghiệp vụ được H3 phê duyệt và hợp nhất qua PR #96
+thành `main@e4bdfd8`; CI `30725685264` và Azure staging `30725829869` đều
+đạt trên đúng merge commit.
 
 ---
 
@@ -378,9 +381,9 @@ Các tác vụ đã chọn bên dưới mô tả việc triển khai đã hoàn 
 
 Phần thay đổi của sản phẩm vẫn giữ chưa được commit cho tới khi H2 phê duyệt.
 
-## 2026-08-02 - Khắc phục lưu ngày trả nghiệp vụ v0.9.1
+## 2026-08-02 - Khắc phục lưu ngày trả nghiệp vụ
 
-- [ ] **FE07-T061 - Lưu ngày trả mặc định theo ngày nghiệp vụ Việt Nam tại biên SQL.**
+- [x] **FE07-T061 - Lưu ngày trả mặc định theo ngày nghiệp vụ Việt Nam tại biên SQL.**
   - Ánh xạ: AC-FE07-006/008, FR-FE07-021, NFR-FE07-TIME-001; hợp đồng dữ liệu/API `returnDate`.
   - RED: tại `2026-07-22T17:30:00.000Z`, chứng minh tầng dịch vụ đang truyền ngày UTC thô vào `sql.Date` thay vì ngày nghiệp vụ `2026-07-23`, dù `fineCandidate` trong bộ nhớ vẫn hiển thị đúng một ngày quá hạn.
   - GREEN: truyền chuỗi ngày nghiệp vụ chuẩn `YYYY-MM-DD` đã được FE07 suy ra vào repository; không đổi schema, API, xác thực ngày trả rõ ràng, audit, FE08 handoff hoặc phép tính FE09.
@@ -389,4 +392,4 @@ Phần thay đổi của sản phẩm vẫn giữ chưa được commit cho tớ
   - Bằng chứng L1-L3: RED nhận `2026-07-22T17:30:00.000Z` thay vì `2026-07-23`; GREEN tập trung FE07/FE09/repository `114/114`, system `11/11`, backend/coverage `1.175/1.175`, trace FE07 `100%`, secrets `5/5` và vệ sinh diff đạt.
   - H2 ngày 2026-08-02: phê duyệt đúng diff FE07/evidence để commit, push và mở Draft PR; không cấp quyền merge hoặc đóng FE07-T061.
   - Bằng chứng deploy/L4: workflow `30722972056` triển khai đúng SHA `bf4dd2268c63a00620fc262f643768c2f434894c`; run `lms-acceptance-20260802-b22898eb` đạt toàn bộ luồng liên vai trò. SQL exact-ID sau cleanup ghi `BorrowDetailId=66`, `ReturnDate=2026-08-02`, `OverdueDays=3`, `Amount=15000`; cleanup `CLEANED`, bốn login và token cũ đều `401`, runtime/helper `404/404`.
-  - Trạng thái: đã đủ bằng chứng để vào H3; vẫn giữ tác vụ mở vì H3/merge/đóng tác vụ chưa được phê duyệt.
+  - H3/đóng tác vụ: Standards và Spec đều không còn finding trên head `7660a6e`; PR #96 hợp nhất thành `e4bdfd8`. CI `main` `30725685264` và deploy staging `30725829869` đạt trên đúng merge commit; frontend `/login`, backend `/health` và public catalog đều trả `200`. FE07-T061 đã đóng.
