@@ -1,6 +1,6 @@
 # Thiết kế sửa bố cục lịch sử mượn FE07
 
-Trạng thái: ĐÃ ĐƯỢC NHẤT TRÍ Ở MỨC THIẾT KẾ; CHỜ REVIEW TỆP
+Trạng thái: ĐÃ ĐƯỢC NGƯỜI DÙNG DUYỆT; SẴN SÀNG LẬP KẾ HOẠCH
 
 Ngày: 2026-08-03
 
@@ -130,13 +130,15 @@ Tổng bằng 100%. Ở min-width 1180px, cột Hành trình rộng khoảng 354
 
 Tại viewport tối đa 640px:
 
+- operational-table dùng chung đã chuyển từng hàng thành bố cục thẻ dọc;
+- member-history-table bỏ min-width 1180px để thẻ vừa chiều rộng viewport;
 - borrow-journey chuyển từ hàng ngang sang cột dọc;
 - bỏ min-width ngang 320px;
 - marker và connector nằm dọc bên trái;
 - mỗi bước vẫn hiển thị đầy đủ label và time;
 - thứ tự DOM, aria-label và aria-current giữ nguyên.
 
-Table wrapper tiếp tục cuộn ngang vì bảng có nhiều cột. Document body không được có horizontal overflow.
+Table wrapper tiếp tục là ranh giới overflow an toàn nhưng không cần cuộn ngang với dữ liệu thông thường sau khi bảng đã chuyển thành thẻ. Document body không được có horizontal overflow.
 
 ### 5.3 Badge trạng thái
 
@@ -247,4 +249,4 @@ Rollback chỉ cần hoàn tác CSS/test của nhánh; không có dữ liệu, s
 
 ## 11. Cổng tiếp theo
 
-Design approval trong hội thoại cho phép tạo tệp thiết kế này. Tệp phải được người dùng review trước khi writing-plans tạo implementation plan. Không sửa code/CSS trước cổng review đó.
+Tệp thiết kế đã được người dùng duyệt trong hội thoại. writing-plans được phép tạo implementation plan; không sửa code/CSS trước khi người dùng chọn cách thực thi kế hoạch.
