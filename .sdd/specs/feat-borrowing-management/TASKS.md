@@ -18,7 +18,7 @@ hợp nhất qua PR #89 thành `main@39092fb`; CI `30675444178` và Azure stagin
 `30675744992` đều đạt trên đúng commit. App Service ở trạng thái `Running`, SQL
 ở trạng thái `Online`; các kiểm tra nhanh cho frontend, health, mức sẵn sàng,
 danh mục, CORS và tuyến được bảo vệ đều đạt.
-Khắc phục ngày trả nghiệp vụ v0.9.1 được H3 phê duyệt và hợp nhất qua PR #96
+Khắc phục ngày trả nghiệp vụ được H3 phê duyệt và hợp nhất qua PR #96
 thành `main@e4bdfd8`; CI `30725685264` và Azure staging `30725829869` đều
 đạt trên đúng merge commit.
 
@@ -381,7 +381,7 @@ Các tác vụ đã chọn bên dưới mô tả việc triển khai đã hoàn 
 
 Phần thay đổi của sản phẩm vẫn giữ chưa được commit cho tới khi H2 phê duyệt.
 
-## 2026-08-02 - Khắc phục lưu ngày trả nghiệp vụ v0.9.1
+## 2026-08-02 - Khắc phục lưu ngày trả nghiệp vụ
 
 - [x] **FE07-T061 - Lưu ngày trả mặc định theo ngày nghiệp vụ Việt Nam tại biên SQL.**
   - Ánh xạ: AC-FE07-006/008, FR-FE07-021, NFR-FE07-TIME-001; hợp đồng dữ liệu/API `returnDate`.
