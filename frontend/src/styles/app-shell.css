@@ -485,7 +485,7 @@
 }
 .badge-green,  .badge-returned, .badge-available, .badge-active, .badge-ready, .badge-paid, .badge-completed   { color: var(--st-green); background: var(--st-green-bg); }
 .badge-amber,  .badge-pending,  .badge-waiting,   .badge-borrowed                            { color: var(--st-amber); background: var(--st-amber-bg); }
-.badge-red,    .badge-overdue,  .badge-expired,   .badge-unpaid, .badge-inactive, .badge-rejected { color: var(--st-red);   background: var(--st-red-bg); }
+.badge-red,    .badge-overdue,  .badge-expired,   .badge-unpaid, .badge-inactive, .badge-rejected, .badge-damaged, .badge-lost { color: var(--st-red);   background: var(--st-red-bg); }
 .badge-blue,   .badge-info, .badge-approved                                                    { color: var(--st-blue);  background: var(--st-blue-bg); }
 .badge-gray,   .badge-default, .badge-cancelled                                                 { color: var(--st-gray);  background: var(--st-gray-bg); }
 
@@ -1162,13 +1162,15 @@
 .member-history-card { display: grid; gap: 16px; min-width: 0; padding: 20px; overflow: hidden; }
 .member-history-card .data-toolbar { margin: 0; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
 .member-history-card .lib-table-wrap { max-width: 100%; border-radius: var(--lib-radius-sm); }
-.member-history-table { min-width: 820px; table-layout: fixed; }
-.member-history-table th:first-child { width: 38%; }
-.member-history-table th:nth-child(2),
-.member-history-table th:nth-child(3),
-.member-history-table th:nth-child(4) { width: 12%; }
-.member-history-table th:nth-child(5) { width: 14%; }
-.member-history-table th:nth-child(6) { width: 12%; }
+.member-history-table { min-width: 1180px; table-layout: fixed; }
+.member-history-table th:first-child { width: 24%; }
+.member-history-table th:nth-child(2) { width: 30%; }
+.member-history-table th:nth-child(3) { width: 9%; }
+.member-history-table th:nth-child(4) { width: 9%; }
+.member-history-table th:nth-child(5) { width: 9%; }
+.member-history-table th:nth-child(6) { width: 10%; }
+.member-history-table th:nth-child(7) { width: 9%; }
+.member-history-table td:nth-child(2) { min-width: 0; overflow: hidden; }
 .member-history-table td:first-child .row-flex { min-width: 0; }
 .member-history-table td:first-child .stack-sm { min-width: 0; overflow-wrap: anywhere; }
 .member-history-card .pagination { padding: 0; margin: 0; border-top: 0; }
