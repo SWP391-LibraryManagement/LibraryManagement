@@ -84,6 +84,7 @@ test('baseline, models, and SQL bindings use canonical FE11 widths', () => {
   expect(notificationRepository).toMatch(/RecipientEmail'[\s\S]{0,80}NVarChar\(255\)/);
 });
 
+// @spec FR-FE11-027, BR-FE11-028
 test('single-role baseline and migration enforce one UserRoles row per account safely', () => {
   const baseline = read('database/Librarymanagement.sql');
   const migration = read('database/migrations/2026-07-27-fe11-single-role-per-account.sql');

@@ -6,7 +6,7 @@ async function rollbackWith(transaction, outcome, extra = {}) {
 }
 
 // @spec BR-FE11-007..010, BR-FE11-030, FR-FE11-012, FR-FE11-014, FR-FE11-041
-// @spec FR-FE11-017, FR-FE11-024
+// @spec FR-FE11-017, FR-FE11-024, FR-FE11-025, FR-FE11-026, FR-FE11-027
 async function replaceUserRole({
   adminUserId,
   userId,

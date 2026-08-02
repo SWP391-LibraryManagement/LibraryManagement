@@ -1,5 +1,18 @@
 # CHANGELOG.md - FE11 Quản lý người dùng và vai trò
 
+## 2026-08-02 - Closeout PR B Core và ma trận quyền nhúng (v0.6.15)
+
+- Đối soát CF-001..CF-004 theo BD-003/004/005: same-role no-op, thay vai trò
+  nguyên tử đúng một mapping và ma trận quyền chỉ đọc không tạo sidebar thứ chín.
+- Thêm toggle `Xem/Ẩn ma trận quyền` trong Quản lý người dùng, chế độ heading
+  nhúng và wiring E2E tới policy production chỉ đọc.
+- Bổ sung characterization route/core, zero-mapping và source tag để FE11 đạt
+  43/43; focused backend đạt 186/186.
+- Thêm suite SQL disposable fail-closed đạt 9/9, cleanup `CLEANED`, runner tạm
+  được drop và database `LibraryManagement_FE11_PRB_20260802` được drop.
+- Chưa ghi merge SHA, CI/deploy run hoặc trạng thái `COMPLETE`; các bằng chứng
+  exact-SHA hậu merge vẫn thuộc PR D.
+
 ## 2026-08-02 - Hoàn tất audit nguyên tử cho metadata Quản trị
 
 - Hoàn tất `FE11-CAT01`, `AC-FE11-026` và `FR-FE11-043` trong phạm vi metadata qua commit `e64c636`, PR #95, CI sau merge `30711057582` và staging deployment `30711210037` trên `e01585a`.

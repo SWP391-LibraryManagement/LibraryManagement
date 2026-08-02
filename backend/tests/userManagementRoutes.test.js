@@ -2,6 +2,7 @@ process.env.JWT_SECRET = require('crypto').randomBytes(32).toString('hex');
 
 const request = require('supertest');
 const { createApp } = require('../src/app');
+const errors = require('../src/utils/safeErrors');
 
 function makeApp({ roles = ['ADMIN'], userManagementService } = {}) {
   const authService = {
@@ -406,16 +407,68 @@ describe('FE11 user management routes', () => {
     expect(userManagementService.resendSetup).not.toHaveBeenCalled();
   });
 
-  test('PUT /api/users/:userId is not exposed for managed-user profile editing', async () => {
-    const userManagementService = {};
+  // @spec FR-FE11-004, FR-FE11-007, FR-FE11-010, FR-FE11-020
+  test.each([
+    ['personal', { fullName: 'Updated User', phone: '0900000000', address: 'Updated address' }],
+    ['work-field', { department: 'Reference', specialization: 'Research' }],
+    ['mixed', { fullName: 'Updated User', department: 'Reference' }],
+  ])('PUT /api/users/:userId stays retired for %s payloads without service work', async (_, payload) => {
+    const userManagementService = {
+      updateUser: jest.fn(),
+      updateManagedUser: jest.fn(),
+    };
     const app = makeApp({ userManagementService });
 
     const response = await request(app)
       .put('/api/users/7')
       .set('Authorization', 'Bearer token')
-      .send({ fullName: 'Updated User' });
+      .send(payload);
 
     expect(response.status).toBe(404);
+    expect(response.body).toEqual({
+      error: { code: 'NOT_FOUND', message: 'Resource not found.' },
+    });
+    expect(userManagementService.updateUser).not.toHaveBeenCalled();
+    expect(userManagementService.updateManagedUser).not.toHaveBeenCalled();
+  });
+
+  // @spec AC-FE11-005, AC-FE11-023
+  test.each([
+    [
+      'duplicate account',
+      'post',
+      '/api/users',
+      { email: 'duplicate@example.test', fullName: 'Duplicate User', type: 'member' },
+      'createUser',
+      'EMAIL_ALREADY_EXISTS',
+      'A user with this email already exists.',
+    ],
+    [
+      'stale deactivation',
+      'patch',
+      '/api/users/7/status',
+      { status: 'INACTIVE', expectedUpdatedAt: '2026-07-19T08:00:00.000Z' },
+      'updateStatus',
+      'STALE_USER_STATE',
+      'The user changed before this request was applied.',
+    ],
+  ])('maps %s to a safe 409 envelope', async (_, method, url, payload, serviceMethod, code, message) => {
+    const userManagementService = {
+      [serviceMethod]: jest.fn(async () => {
+        throw errors.conflict(code, message);
+      }),
+    };
+    const app = makeApp({ userManagementService });
+
+    const response = await request(app)
+      [method](url)
+      .set('Authorization', 'Bearer token')
+      .send(payload);
+
+    expect(response.status).toBe(409);
+    expect(response.body).toEqual({ error: { code, message } });
+    expect(JSON.stringify(response.body)).not.toMatch(/password|token|session|stack/i);
+    expect(userManagementService[serviceMethod]).toHaveBeenCalledTimes(1);
   });
 
   test('PATCH /api/users/:userId/status passes normalized optimistic deactivation data', async () => {

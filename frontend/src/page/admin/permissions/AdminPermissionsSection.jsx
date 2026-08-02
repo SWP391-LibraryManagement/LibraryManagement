@@ -51,7 +51,7 @@ function getModuleLabel(module) {
   return MODULE_LABELS[module?.moduleKey] || 'Chức năng chưa xác định';
 }
 
-export function AdminPermissionsSection() {
+export function AdminPermissionsSection({ embedded = false }) {
   const permissionGuard = useRef(createLatestRequestGuard());
   const statisticsGuard = useRef(createLatestRequestGuard());
   const [permissionPolicy, setPermissionPolicy] = useState({ roles: [], permissions: [] });
@@ -114,15 +114,34 @@ export function AdminPermissionsSection() {
     () => buildPermissionModuleCoverage(permissionPolicy.roles, permissionPolicy.permissions),
     [permissionPolicy.permissions, permissionPolicy.roles],
   );
+  const refreshing = permissionsLoading || statisticsLoading;
+  const refreshAll = () => { loadPermissions(); loadUserStatistics(); };
 
   return (
     <section className="admin-permissions">
-      <AdminPageHeader
-        eyebrow="Chính sách truy cập chỉ đọc"
-        title="Phân quyền"
-        refreshing={permissionsLoading || statisticsLoading}
-        onRefresh={() => { loadPermissions(); loadUserStatistics(); }}
-      />
+      {embedded ? (
+        <header className="admin-page-header admin-page-header--embedded">
+          <div>
+            <p className="admin-page-eyebrow">Chính sách truy cập chỉ đọc</p>
+            <h2>Ma trận quyền</h2>
+          </div>
+          <div className="admin-page-header__actions">
+            <AdminActionButton
+              icon={RefreshCw}
+              label={refreshing ? 'Đang làm mới' : 'Làm mới'}
+              disabled={refreshing}
+              onClick={refreshAll}
+            />
+          </div>
+        </header>
+      ) : (
+        <AdminPageHeader
+          eyebrow="Chính sách truy cập chỉ đọc"
+          title="Phân quyền"
+          refreshing={refreshing}
+          onRefresh={refreshAll}
+        />
+      )}
 
       <p className="admin-permissions__explanation">
         Mỗi tài khoản có đúng một vai trò. Quyền hiệu lực được xác định trực tiếp từ vai trò đó; dữ liệu dưới đây chỉ dùng để quan sát, không chỉnh sửa tại màn hình này.

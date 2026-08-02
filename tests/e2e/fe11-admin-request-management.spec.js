@@ -112,6 +112,22 @@ test('[E2E-FE11-ACC01] Admin Request Management preserves pagination, detail, ex
   await expect(adminNavigation.getByRole('button', { name: 'Duyệt hội viên', exact: true })).toBeVisible();
   await expect(adminNavigation.getByRole('button', { name: 'Phân quyền', exact: true })).toHaveCount(0);
 
+  const desktopPermissionResponse = page.waitForResponse((response) => {
+    const url = new URL(response.url());
+    return response.request().method() === 'GET' && url.pathname === '/api/admin/permissions';
+  });
+  await page.getByRole('button', { name: 'Xem ma trận quyền', exact: true }).click();
+  expect((await desktopPermissionResponse).status()).toBe(200);
+  await expect(page.getByRole('heading', { name: 'Ma trận quyền', exact: true })).toBeVisible();
+  await expect(page.getByText('Mỗi tài khoản có đúng một vai trò', { exact: false })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Ẩn ma trận quyền', exact: true })).toBeVisible();
+  expect(await page.evaluate(
+    () => document.documentElement.scrollWidth > document.documentElement.clientWidth
+  )).toBe(false);
+  await page.screenshot({ path: 'output/playwright/admin-permission-matrix-1280.png', fullPage: true });
+  await page.getByRole('button', { name: 'Ẩn ma trận quyền', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Ma trận quyền', exact: true })).toHaveCount(0);
+
   await page.route('**/api/admin/audit-logs**', async (route) => {
     await route.fulfill({
       status: 200,
@@ -176,10 +192,18 @@ test('[E2E-FE11-ACC01] Admin Request Management preserves pagination, detail, ex
   await expect(page.getByRole('button', { name: 'Chỉnh sửa', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Phân quyền', exact: true }).first()).toBeVisible();
   await expect(page.getByRole('button', { name: 'Vô hiệu hóa', exact: true }).first()).toBeVisible();
+  const mobilePermissionResponse = page.waitForResponse((response) => {
+    const url = new URL(response.url());
+    return response.request().method() === 'GET' && url.pathname === '/api/admin/permissions';
+  });
+  await page.getByRole('button', { name: 'Xem ma trận quyền', exact: true }).click();
+  expect((await mobilePermissionResponse).status()).toBe(200);
+  await expect(page.getByRole('heading', { name: 'Ma trận quyền', exact: true })).toBeVisible();
   expect(await page.evaluate(
     () => document.documentElement.scrollWidth > document.documentElement.clientWidth
   )).toBe(false);
   await page.screenshot({ path: 'output/playwright/admin-user-management-390.png', fullPage: true });
+  await page.getByRole('button', { name: 'Ẩn ma trận quyền', exact: true }).click();
   await page.setViewportSize({ width: 1366, height: 768 });
 
   const approved = await request.patch(
