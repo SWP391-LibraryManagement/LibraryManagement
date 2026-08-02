@@ -422,7 +422,7 @@ function createUserManagementService({
     };
   }
 
-  // @spec FR-FE11-018, FR-FE11-019
+  // @spec FR-FE11-018, FR-FE11-019, FR-FE11-023
   async function updateStatus(userId, input, context = {}) {
     const parsedUserId = parsePositiveId(userId, 'INVALID_USER_ID', 'User id is invalid.');
     const status = String(input.status || '').trim().toUpperCase();
@@ -478,7 +478,7 @@ function createUserManagementService({
     return userRepository.getManagedUserById(parsedUserId);
   }
 
-  // @spec FR-FE11-012, FR-FE11-014, FR-FE11-017, FR-FE11-024
+  // @spec FR-FE11-012, FR-FE11-014, FR-FE11-017, FR-FE11-024, FR-FE11-025
   async function replaceRole(userId, input, context = {}) {
     const parsedAdminUserId = parsePositiveId(
       context.adminUserId,

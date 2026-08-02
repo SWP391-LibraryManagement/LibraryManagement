@@ -177,7 +177,11 @@ test('FE11 create flow remains separate from role and deactivation actions', asy
 });
 
 test('FE11 permissions keep policy and statistics independent with explicit decisions', async () => {
-  const source = await readAdminFile('permissions/AdminPermissionsSection.jsx');
+  const [source, usersSection, navigation] = await Promise.all([
+    readAdminFile('permissions/AdminPermissionsSection.jsx'),
+    readAdminFile('users/AdminUsersSection.jsx'),
+    readAdminFile('adminNavigation.js'),
+  ]);
 
   assert.match(source, /adminApi\.permissions\(\)/);
   assert.match(source, /reportApi\.users\(\)/);
@@ -190,6 +194,12 @@ test('FE11 permissions keep policy and statistics independent with explicit deci
   assert.match(source, /Mỗi tài khoản có đúng một vai trò/);
   assert.match(source, /permission-decision \$\{decision\.tone\}/);
   assert.doesNotMatch(source, /const permissionRows =|const permissionModules =/);
+  assert.match(source, /AdminPermissionsSection\(\{ embedded = false \}\)/);
+  assert.match(source, /<h2>Ma trận quyền<\/h2>/);
+  assert.match(usersSection, /import \{ AdminPermissionsSection \} from ['"]\.\.\/permissions\/AdminPermissionsSection['"]/);
+  assert.match(usersSection, /label=\{showPermissionMatrix \? ['"]Ẩn ma trận quyền['"] : ['"]Xem ma trận quyền['"]\}/);
+  assert.match(usersSection, /<AdminPermissionsSection embedded \/>/);
+  assert.doesNotMatch(navigation, /id:\s*['"]permissions['"]/);
 });
 
 test('FE11 audit renders a paginated read-only list without search or filter controls', async () => {

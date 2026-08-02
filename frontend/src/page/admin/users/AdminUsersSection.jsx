@@ -29,6 +29,7 @@ import { AdminEmptyState } from '../components/AdminEmptyState';
 import { AdminFilterBar } from '../components/AdminFilterBar';
 import { AdminPageHeader } from '../components/AdminPageHeader';
 import { AdminPagination } from '../components/AdminPagination';
+import { AdminPermissionsSection } from '../permissions/AdminPermissionsSection';
 import { RoleBadge, StatusBadge } from './UserBadges';
 import { UserDetailDrawer } from './UserDetailDrawer';
 import { UserEditorModal } from './UserEditorModal';
@@ -87,6 +88,7 @@ export function AdminUsersSection({
   const [rolesError, setRolesError] = useState('');
   const [rolesLoading, setRolesLoading] = useState(false);
   const [roleSyncBlocked, setRoleSyncBlocked] = useState(false);
+  const [showPermissionMatrix, setShowPermissionMatrix] = useState(false);
 
   const notify = useCallback((type, message) => {
     onToast?.({ type, message });
@@ -364,6 +366,8 @@ export function AdminUsersSection({
         ? 'Tài khoản này đã ngừng hoạt động.'
         : '';
 
+  // @spec FR-FE11-004, FR-FE11-007, FR-FE11-010, FR-FE11-032 — keep existing-user
+  // profile fields out of FE11 while exposing the approved read-only permission view.
   return (
     <section className="admin-users">
       <AdminPageHeader
@@ -371,8 +375,19 @@ export function AdminUsersSection({
         title="Quản lý người dùng"
         refreshing={loading}
         onRefresh={() => refreshUserDirectory(pagination.page, { announce: true })}
-        primaryAction={<AdminActionButton icon={Plus} label="Thêm người dùng" tone="primary" onClick={openCreateModal} />}
+        primaryAction={(
+          <>
+            <AdminActionButton
+              icon={Shield}
+              label={showPermissionMatrix ? 'Ẩn ma trận quyền' : 'Xem ma trận quyền'}
+              onClick={() => setShowPermissionMatrix((visible) => !visible)}
+            />
+            <AdminActionButton icon={Plus} label="Thêm người dùng" tone="primary" onClick={openCreateModal} />
+          </>
+        )}
       />
+
+      {showPermissionMatrix ? <AdminPermissionsSection embedded /> : null}
 
       <section className="admin-user-stats" aria-label="Thống kê người dùng">
         {statCards.map(({ label, value, icon: Icon }) => (

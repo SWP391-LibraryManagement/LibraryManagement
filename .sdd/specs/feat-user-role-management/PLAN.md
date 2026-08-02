@@ -2,11 +2,11 @@
 
 Trạng thái: ĐÃ TRIỂN KHAI - XÁC THỰC TỰ ĐỘNG CỤC BỘ HOÀN TẤT
 
-Ngày: 2026-07-28
+Ngày: 2026-08-02
 
-Phần mở rộng hiện tại: Q-FE11-029 loại bỏ việc sửa hồ sơ người dùng hiện có khỏi
-FE11; Quản trị vẫn thay vai trò và vô hiệu hóa khi đủ điều kiện. Xác thực tự
-động cục bộ và chấp nhận trên trình duyệt/con người được theo dõi bên dưới.
+Phần mở rộng hiện tại: closeout PR B giữ Q-FE11-029, đối soát Core FE11 và mở
+ma trận quyền chỉ đọc bên trong Quản lý người dùng/vai trò mà không thêm mục
+sidebar thứ chín. Exact-SHA staging hậu merge được theo dõi ở PR D.
 
 Phần mở rộng đồng thời: Rà soát tư cách thành viên trong Admin Console đã triển
 khai theo quyền sở hữu FE04 chuẩn và đã kiểm thử hồi quy cục bộ; trình duyệt đáp
@@ -599,3 +599,21 @@ sinh diff.
 2. Truyền actor/IP/user-agent từ request đã xác thực, không từ body/query.
 3. Ghi ba action catalog allowlist trong cùng transaction với mutation.
 4. Ánh xạ update/deactivate không có hàng sang `404 ADMIN_RESOURCE_ITEM_NOT_FOUND` và không ghi audit thành công.
+
+## 2026-08-02 Closeout PR B - Core FE11 và ma trận quyền nhúng
+
+1. Khóa quyết định `BD-003`: chọn lại vai trò hiện tại là no-op lũy đẳng, trả
+   DTO an toàn chuẩn và không ghi audit thay vai trò.
+2. Khóa quyết định `BD-004`: mọi thay đổi vai trò thay nguyên tử toàn bộ mapping
+   và để lại đúng một vai trò; zero/multiple legacy mapping được chuẩn hóa qua
+   cùng lệnh thay thế, `UX_UserRoles_UserId` tiếp tục là invariant schema.
+3. Khóa quyết định `BD-005`: sidebar giữ đúng tám mục; ma trận quyền chỉ đọc
+   được mount theo yêu cầu từ Quản lý người dùng/vai trò bằng toggle rõ ràng.
+4. Thực hiện RED-GREEN cho static contract và Chromium, sau đó characterization
+   Core trước khi thêm source tag; hành vi đã đúng được ghi `BASELINE-PASS`.
+5. Chạy suite SQL fail-closed trên database disposable chính xác, chứng minh
+   actor/duplicate/lifecycle/role/audit/token/index/rollback và cleanup/drop.
+6. Chạy đầy đủ L1-L4, trình toàn bộ diff uncommitted ở H2; không commit/push/PR
+   trước khi H2 được duyệt.
+7. Sau H2/H3 và merge, PR D mới ghi exact-SHA staging acceptance và chuyển
+   `Implementation State: COMPLETE` nếu mọi gate còn lại đạt.

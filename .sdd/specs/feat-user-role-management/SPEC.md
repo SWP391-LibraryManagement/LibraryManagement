@@ -1,20 +1,20 @@
 # SPEC.md - FE11 Quản lý vai trò và người dùng
 
-# Phiên bản: 0.6.14
+# Phiên bản: 0.6.15
 
 # Trạng thái: ĐÃ TRIỂN KHAI RANH GIỚI QUẢN TRỊ TÀI KHOẢN QUẢN TRỊ - ĐANG CHỜ CON NGƯỜI RÀ SOÁT
 
 # Chủ sở hữu: Dung
 
-# Cập nhật lần cuối: 2026-08-01
+# Cập nhật lần cuối: 2026-08-02
 
 # ID tính năng: FE11
 
 # Thư mục tính năng: `.sdd/specs/feat-user-role-management/`
 
-> Trạng thái bàn giao: phần triển khai tự động cục bộ hiện đã cập nhật đến
-> bản sửa đổi chỉnh sửa hồ sơ được quản lý ngày 2026-07-25. Nghiệm thu trên trình duyệt/của con người vẫn
-> đang chờ tại những vị trí được ghi trong `TASKS.md`.
+> Trạng thái bàn giao PR B: Core FE11 và ma trận quyền nhúng đã có bằng chứng
+> tự động, SQL disposable và trình duyệt cục bộ. Exact-SHA staging hậu merge,
+> review tích hợp và chuyển `Implementation State: COMPLETE` vẫn đang chờ PR D.
 
 > Bản sửa đổi thay thế được phê duyệt ngày 2026-07-28 (`Q-FE11-029`): đối với
 > tài khoản hiện có, Quản trị viên có thể xem chi tiết an toàn nhưng chỉ được
@@ -48,6 +48,17 @@
 > vô hiệu hóa tài khoản bị chặn khi còn yêu cầu đang chờ hoặc lượt mượn đang hoạt động.
 > Chi tiết Yêu cầu của Quản trị viên hiển thị các điều kiện chặn phê duyệt đã biết và chỉ vô hiệu hóa
 > thao tác phê duyệt; thao tác từ chối vẫn khả dụng cho yêu cầu cũ không hợp lệ.
+
+---
+
+## 0.1 Đối soát xung đột closeout PR B
+
+| ID | Quyết định đã phê duyệt | Kết quả đối soát |
+| --- | --- | --- |
+| CF-001 / BD-003 | Chọn lại vai trò duy nhất hiện tại là no-op lũy đẳng, trả DTO an toàn chuẩn và không ghi audit thay vai trò. | Giữ nguyên yêu cầu chuẩn FR-FE11-025; sửa hàng truy vết lỗi thời “bị từ chối”. |
+| CF-002 / BD-004 | Thay vai trò nguyên tử toàn bộ ánh xạ để còn đúng một vai trò được duyệt; không phục hồi gán/thu hồi độc lập. | FR-FE11-026/027 dùng ngữ nghĩa chuẩn hóa zero/multiple mapping và bất biến `UX_UserRoles_UserId`. |
+| CF-003 / BD-005 | Giữ đúng tám mục sidebar Admin và mở ma trận quyền chỉ đọc từ bề mặt Quản lý người dùng/vai trò hiện có. | FR-FE11-032 dùng nút `Xem ma trận quyền`/`Ẩn ma trận quyền`; không có mục sidebar thứ chín. |
+| CF-004 | Chỉ thêm truy vết khi mã nguồn và kiểm thử thật chứng minh đúng yêu cầu. | Characterization Core 186/186 và SQL disposable 9/9 đạt; nguồn FE11 đạt 43/43 nhưng trạng thái vẫn `PARTIAL`. |
 
 ---
 
@@ -337,7 +348,7 @@ Dùng các ID ổn định này cho nhiệm vụ và kiểm thử.
 - FR-FE11-014: Khi Quản trị viên thay thế vai trò, hệ thống phải khóa ánh xạ bị ảnh hưởng, đánh giá số Quản trị viên đang hoạt động còn lại trong cùng giao dịch và từ chối mọi thay đổi khiến không còn người giữ vai trò Quản trị viên đang hoạt động.
 - FR-FE11-030: Khi Quản trị viên mở bảng điều khiển, hệ thống phải hiển thị tám mục thanh bên đã phê duyệt với Rà soát tư cách thành viên sau Tất cả người dùng; ẩn các mục điều hướng Quyền / Xác nhận thanh toán / Xác nhận mượn đã bị loại; dùng khung ứng dụng chung của Thành viên/Thủ thư; và giữ thao tác Thư viện Quản trị trong bảng điều khiển Quản trị mà không chuyển tới tuyến Thủ thư.
 - FR-FE11-031: Khi Quản trị viên mở Bảng điều khiển, hệ thống phải hiển thị chế độ xem vận hành chỉ đọc gồm năm thẻ và ba biểu đồ đã phê duyệt từ các chủ sở hữu tính năng đã phê duyệt, gồm số Thành viên đang hoạt động chuẩn, số tác giả, sách thực tế đã mượn và lượt trả trong ngày nghiệp vụ hiện tại của Việt Nam; chọn thẻ tóm tắt phải mở mô-đun Quản trị viên sở hữu thẻ với bộ lọc tương ứng.
-- FR-FE11-032: Khi quản trị viên mở Quyền, hệ thống sẽ hiển thị tóm tắt vai trò và ma trận quyền cho Quản trị viên, Thủ thư và Thành viên.
+- FR-FE11-032: Khi Quản trị viên mở ma trận quyền chỉ đọc từ bề mặt Quản lý người dùng/vai trò, hệ thống phải hiển thị tóm tắt vai trò và ma trận quyền cho Quản trị viên, Thủ thư và Thành viên mà không thêm mục Quyền thứ chín vào sidebar.
 - FR-FE11-033: Khi Quản trị viên mở Nhật ký kiểm toán, hệ thống phải hiển thị các mục kiểm toán chỉ đọc được phân trang mà không có điều khiển tìm kiếm hay lọc hiển thị.
 - FR-FE11-034: Khi Quản trị viên mở Quản lý yêu cầu, hệ thống phải liệt kê bản ghi yêu cầu với điều khiển tìm kiếm/lọc/xuất DOCX và xem chi tiết; tệp xuất phải gồm mọi trang máy chủ khớp các bộ lọc đã cố định và chỉ chứa phép chiếu yêu cầu đã phê duyệt.
 - FR-FE11-035: NẾU yêu cầu đã ở `COMPLETED`, hệ thống phải tắt điều khiển chỉnh sửa/thao tác và chỉ cho phép xem.
@@ -673,25 +684,25 @@ Các quyết định sau đã được phê duyệt trong gói đánh giá Giai 
 | AC-FE11-002 | Quản trị viên truy cập chi tiết người dùng -> trả về UserManagementView an toàn và các bản tóm tắt đã phê duyệt, loại trừ trường nhạy cảm | FR-FE11-002 | BR-FE11-001, BR-FE11-018, BR-FE11-026 | FE11-U01..U06; fe11-safe-user-list-detail-validation-2026-07-18.md | COMPLETE (B7) |
 | AC-FE11-003 | Dữ liệu người dùng hợp lệ -> commit người dùng không hoạt động/vai trò/token thiết lập/nhật ký kiểm toán và yêu cầu một lần phân phối thiết lập an toàn | FR-FE11-003 | BR-FE11-002, BR-FE11-004, BR-FE11-005, BR-FE11-007, BR-FE11-021..024 | Bằng chứng nguồn/phân phối FE11-S01..S07 hiện có cùng phần gia cố tác nhân/tuyến FE11-LIFE02 đang chờ | PARTIAL |
 | AC-FE11-004 | Thao tác với người dùng hiện có chỉ cung cấp thay thế vai trò/vô hiệu hóa; không có Chỉnh sửa và PUT hồ sơ đã ngừng sử dụng trả về 404 | FR-FE11-004, FR-FE11-007 | BR-FE11-014, BR-FE11-015 | `frontend/test/userManagementFrontend.test.js`; `frontend/test/adminConsoleStructure.test.js`; `backend/tests/userManagementRoutes.test.js` | COMPLETE (TỰ ĐỘNG CỤC BỘ); TRÌNH DUYỆT/CON NGƯỜI ĐANG CHỜ |
-| AC-FE11-005 | Gửi email trùng khi tạo người dùng -> hệ thống từ chối kèm thông báo lỗi | FR-FE11-005 | BR-FE11-004 | Các trường hợp giao dịch/service/tuyến thiết lập tài khoản FE11-LIFE02 | Chưa bắt đầu |
+| AC-FE11-005 | Gửi email trùng khi tạo người dùng -> hệ thống từ chối kèm thông báo lỗi | FR-FE11-005 | BR-FE11-004 | `accountSetupRepository.test.js`; `userManagementService.test.js`; `userManagementRoutes.test.js`; `fe11Core.sqltest.js` | COMPLETE (TỰ ĐỘNG/SQL CỤC BỘ); STAGING HẬU MERGE ĐANG CHỜ |
 | AC-FE11-006 | Quản trị viên tạo người dùng -> không hiển thị mật khẩu/token/liên kết; tài khoản vẫn không hoạt động đến khi hoàn tất thiết lập FE02 | FR-FE11-006 | BR-FE11-005, BR-FE11-013, BR-FE11-023 | FE11-S01..S07; auth-account-setup-boundary-validation-review-2026-07-15.md | COMPLETE (B7) |
-| AC-FE11-007 | Người dùng ACTIVE/LOCKED bị quản trị viên vô hiệu hóa -> trạng thái thay đổi thành INACTIVE; đang chờ kích hoạt bị từ chối | FR-FE11-008 | BR-FE11-003, BR-FE11-006, BR-FE11-010 | Trường hợp vô hiệu hóa nguyên tử FE11-LIFE04 | Chưa bắt đầu |
+| AC-FE11-007 | Người dùng ACTIVE/LOCKED bị quản trị viên vô hiệu hóa -> trạng thái thay đổi thành INACTIVE; đang chờ kích hoạt bị từ chối | FR-FE11-008 | BR-FE11-003, BR-FE11-006, BR-FE11-010 | `userLifecycleRepository.test.js`; `userManagementService.test.js`; `fe11Core.sqltest.js` | COMPLETE (TỰ ĐỘNG/SQL CỤC BỘ); STAGING HẬU MERGE ĐANG CHỜ |
 | AC-FE11-008 | Quản trị viên cố thay đổi email người dùng hiện có qua tuyến hồ sơ đã ngừng sử dụng -> 404 và không thay đổi dữ liệu | FR-FE11-020 | BR-FE11-014 | `backend/tests/userManagementRoutes.test.js` | COMPLETE (TỰ ĐỘNG CỤC BỘ); TRÌNH DUYỆT/CON NGƯỜI ĐANG CHỜ |
-| AC-FE11-009 | Người dùng có phiên hoạt động bị quản trị viên vô hiệu hóa -> phiên bị vô hiệu | FR-FE11-008 | BR-FE11-006 | Các trường hợp rollback thông tin xác thực refresh FE11-LIFE04 | Chưa bắt đầu |
-| AC-FE11-010 | Dữ liệu thủ thư hợp lệ -> commit thủ thư không hoạt động/vai trò/token thiết lập/nhật ký kiểm toán và yêu cầu một lần phân phối thiết lập an toàn | FR-FE11-009 | BR-FE11-002, BR-FE11-004, BR-FE11-005, BR-FE11-007, BR-FE11-015, BR-FE11-021..024 | Bằng chứng nguồn/phân phối FE11-S01..S07 hiện có cùng phần gia cố trường/tác nhân FE11-LIFE02 đang chờ | PARTIAL |
+| AC-FE11-009 | Người dùng có phiên hoạt động bị quản trị viên vô hiệu hóa -> phiên bị vô hiệu | FR-FE11-008 | BR-FE11-006 | `userLifecycleRepository.test.js`; `fe11Core.sqltest.js` | COMPLETE (TỰ ĐỘNG/SQL CỤC BỘ); STAGING HẬU MERGE ĐANG CHỜ |
+| AC-FE11-010 | Dữ liệu thủ thư hợp lệ -> commit thủ thư không hoạt động/vai trò/token thiết lập/nhật ký kiểm toán và yêu cầu một lần phân phối thiết lập an toàn | FR-FE11-009 | BR-FE11-002, BR-FE11-004, BR-FE11-005, BR-FE11-007, BR-FE11-015, BR-FE11-021..024 | `accountSetupRepository.test.js`; `userManagementService.test.js`; bằng chứng FE11-S01..S07 | COMPLETE (TỰ ĐỘNG CỤC BỘ); STAGING HẬU MERGE ĐANG CHỜ |
 | AC-FE11-011 | Mục tiêu Thủ thư cung cấp cùng các thao tác chỉ gồm vai trò/vô hiệu hóa và không có trình chỉnh sửa trường công việc | FR-FE11-004, FR-FE11-007 | BR-FE11-014, BR-FE11-015 | `frontend/test/userManagementFrontend.test.js` | COMPLETE (TỰ ĐỘNG CỤC BỘ); TRÌNH DUYỆT/CON NGƯỜI ĐANG CHỜ |
-| AC-FE11-012 | Tài khoản thủ thư đang hoạt động bị quản trị viên vô hiệu hóa -> trạng thái đổi thành INACTIVE và các phiên bị vô hiệu | FR-FE11-011 | BR-FE11-003, BR-FE11-006, BR-FE11-010, BR-FE11-015 | Các trường hợp vô hiệu hóa Thủ thư FE11-LIFE04 | Chưa bắt đầu |
-| AC-FE11-013 | Vai trò Thành viên được thay bằng Thủ thư -> commit chính xác một ánh xạ và nhật ký kiểm toán | FR-FE11-012 | BR-FE11-007, BR-FE11-008, BR-FE11-010 | Kiểm thử FE11-SR01 và bản ghi xác thực có giới hạn | ĐÃ TRIỂN KHAI; đang chờ con người đánh giá |
-| AC-FE11-014 | Quản trị viên không phải người cuối cùng được thay bằng Thành viên -> vẫn còn chính xác một ánh xạ | FR-FE11-013 | BR-FE11-007, BR-FE11-010 | Kiểm thử FE11-SR01 và bản ghi xác thực có giới hạn | ĐÃ TRIỂN KHAI; đang chờ con người đánh giá |
-| AC-FE11-015 | Thay thế vai trò của Quản trị viên đang hoạt động cuối cùng -> bị từ chối, không thay đổi dữ liệu | FR-FE11-014 | BR-FE11-009, BR-FE11-010 | Kiểm thử FE11-SR01 và bản ghi xác thực có giới hạn | ĐÃ TRIỂN KHAI; đang chờ con người đánh giá |
+| AC-FE11-012 | Tài khoản thủ thư đang hoạt động bị quản trị viên vô hiệu hóa -> trạng thái đổi thành INACTIVE và các phiên bị vô hiệu | FR-FE11-011 | BR-FE11-003, BR-FE11-006, BR-FE11-010, BR-FE11-015 | `userLifecycleRepository.test.js`; `fe11Core.sqltest.js` | COMPLETE (TỰ ĐỘNG/SQL CỤC BỘ); STAGING HẬU MERGE ĐANG CHỜ |
+| AC-FE11-013 | Vai trò Thành viên được thay bằng Thủ thư -> commit chính xác một ánh xạ và nhật ký kiểm toán | FR-FE11-012 | BR-FE11-007, BR-FE11-008, BR-FE11-010 | `userRoleRepository.test.js`; `userManagementService.test.js`; `fe11Core.sqltest.js` | COMPLETE (TỰ ĐỘNG/SQL CỤC BỘ); STAGING HẬU MERGE ĐANG CHỜ |
+| AC-FE11-014 | Quản trị viên không phải người cuối cùng được thay bằng Thành viên -> vẫn còn chính xác một ánh xạ | FR-FE11-013 | BR-FE11-007, BR-FE11-010 | `userRoleRepository.test.js`; `fe11SchemaMigration.test.js`; `fe11Core.sqltest.js` | COMPLETE (TỰ ĐỘNG/SQL CỤC BỘ); STAGING HẬU MERGE ĐANG CHỜ |
+| AC-FE11-015 | Thay thế vai trò của Quản trị viên đang hoạt động cuối cùng -> bị từ chối, không thay đổi dữ liệu | FR-FE11-014 | BR-FE11-009, BR-FE11-010 | `userRoleRepository.test.js`; `userManagementService.test.js` | COMPLETE (TỰ ĐỘNG CỤC BỘ); STAGING HẬU MERGE ĐANG CHỜ |
 | AC-FE11-016 | Giao diện Quản trị viên hiển thị chính xác tám phần đã phê duyệt, Đánh giá tư cách thành viên đứng sau Tất cả người dùng, ẩn quy trình đã xóa và giữ quản lý danh mục trong khu vực Quản trị viên | FR-FE11-030 | BR-FE11-016 | `frontend/test/userManagementFrontend.test.js`, `frontend/test/adminConsoleStructure.test.js`, `frontend/test/membershipFrontend.test.js` | COMPLETE (MÃ NGUỒN/TỰ ĐỘNG CỤC BỘ); TRÌNH DUYỆT THÍCH ỨNG/AZURE/CON NGƯỜI ĐANG CHỜ |
-| AC-FE11-017 | Giao diện quyền hiển thị số lượng vai trò và ma trận quyền chỉ đọc từ dữ liệu FE11 | FR-FE11-032 | BR-FE11-017 | Trường hợp tích hợp giao diện quyền theo kế hoạch | Chưa bắt đầu |
+| AC-FE11-017 | Bề mặt Quản lý người dùng/vai trò mở được ma trận quyền chỉ đọc, giữ đúng tám mục sidebar và hiển thị dữ liệu FE11 | FR-FE11-032 | BR-FE11-017 | `adminPermissionService.test.js`; `adminPermissionRoutes.test.js`; `userManagementFrontend.test.js`; `fe11-admin-request-management.spec.js` | COMPLETE (TỰ ĐỘNG/TRÌNH DUYỆT CỤC BỘ); STAGING HẬU MERGE ĐANG CHỜ |
 | AC-FE11-018 | Giao diện nhật ký kiểm toán là danh sách chỉ đọc có phân trang, không có điều khiển tìm kiếm/lọc và che các trường nhạy cảm | FR-FE11-033 | BR-FE11-018, BR-FE11-026 | FE11-AUD01; `frontend/test/userManagementFrontend.test.js`; lô hiệu chỉnh 2026-07-22 | COMPLETE |
 | AC-FE11-019 | Yêu cầu đang chờ xử lý chỉ hiển thị các hành động đã được phê duyệt; yêu cầu đã hoàn thành vẫn ở chế độ chỉ xem | FR-FE11-034, FR-FE11-035 | BR-FE11-019 | FE11-REQ02/REQ03; fe11-finalization-wave-b-validation-2026-07-19.md | SẴN SÀNG ĐỂ ĐÁNH GIÁ |
 | AC-FE11-020 | Lỗi phân phối thiết lập khiến tài khoản đã cam kết không hoạt động và không hiển thị thông tin xác thực | FR-FE11-037 | BR-FE11-023, BR-FE11-024 | FE11-S01..S07; auth-account-setup-boundary-validation-review-2026-07-15.md | COMPLETE (B7) |
 | AC-FE11-021 | Quản trị viên đủ điều kiện gửi lại sẽ xoay token/event/key thiết lập sau thời gian chờ | FR-FE11-036 | BR-FE11-021, BR-FE11-022, BR-FE11-025 | Bằng chứng xoay/phân phối FE11-S01..S07 hiện có cùng phần xác thực lại actor FE11-LIFE02 đang chờ | PARTIAL |
 | AC-FE11-022 | Gửi lại không đủ điều kiện/bị giới hạn thời gian chờ sẽ bị từ chối mà không tạo thông tin xác thực | FR-FE11-038 | BR-FE11-023, BR-FE11-025 | FE11-S01..S07; auth-account-setup-boundary-validation-review-2026-07-15.md | COMPLETE (B7) |
-| AC-FE11-023 | expectedUpdatedAt cũ khi vô hiệu hóa -> 409 STALE_USER_STATE và không lưu thay đổi/bản kiểm toán thành công | FR-FE11-023 | BR-FE11-027 | Các trường hợp thay đổi dùng trạng thái cũ FE11-LIFE04 | Chưa bắt đầu |
+| AC-FE11-023 | expectedUpdatedAt cũ khi vô hiệu hóa -> 409 STALE_USER_STATE và không lưu thay đổi/bản kiểm toán thành công | FR-FE11-023 | BR-FE11-027 | `userManagementRoutes.test.js`; `userManagementService.test.js`; `userLifecycleRepository.test.js`; `fe11Core.sqltest.js` | COMPLETE (TỰ ĐỘNG/SQL CỤC BỘ); STAGING HẬU MERGE ĐANG CHỜ |
 | AC-FE11-025 | Dashboard giữ nguyên năm thẻ/ba biểu đồ, dùng đúng chủ sở hữu chuẩn và các thẻ mở mô-đun đã lọc tương ứng | FR-FE11-031 | BR-FE11-020, BR-FE11-032 | `backend/tests/adminDashboardRepository.test.js`, `frontend/test/adminConsoleStructure.test.js` | TỰ ĐỘNG CỤC BỘ; CON NGƯỜI ĐANG ĐÁNH GIÁ |
 | AC-FE11-026 | Chỉ Quản trị viên truy cập quản lý tác giả/nhà xuất bản/danh mục; mutation được phép ghi audit nguyên tử và ID không tồn tại trả 404; Thủ thư vẫn dùng lựa chọn chỉ đọc của FE05 | FR-FE11-043 | BR-FE11-033 | `backend/tests/adminLibraryRoleBoundary.test.js`; `backend/tests/adminCatalogMetadataService.test.js`; `backend/tests/adminCatalogMetadataRepository.test.js`; `backend/tests/adminAuditLogService.test.js` | COMPLETE - FE11-CAT01; PR #95; CI `30711057582`; staging `30711210037` |
 
@@ -700,23 +711,23 @@ Các quyết định sau đã được phê duyệt trong gói đánh giá Giai 
 | ID FR | Hành vi không mong muốn | BR liên quan | Liên quan EC / AF / Q | Trường hợp thử nghiệm | Trạng thái |
 | ----- | ----------------- | ---------- | ------------------- | --------- | ------ |
 | FR-FE11-015 | Người không phải Quản trị viên cố truy cập quản lý người dùng -> bị từ chối với lỗi phân quyền | BR-FE11-001, BR-FE11-011, BR-FE11-012 | - | FE11-U01..U06 và FE11-R01..R05 phân quyền Quản trị viên trước tiên ở tuyến | COMPLETE (B7) |
-| FR-FE11-016 | Hành động nhắm tới ID người dùng không tồn tại -> lỗi không tìm thấy | BR-FE11-010 | EC-FE11-002 | Bằng chứng chi tiết/vai trò hiện có cùng các trường hợp cập nhật công việc/vô hiệu hóa FE11-LIFE03/LIFE04 | PARTIAL |
-| FR-FE11-017 | ID Quản trị viên thực hiện không tồn tại -> lỗi không tìm thấy, không hành động | BR-FE11-001 | EC-FE11-001 | Bằng chứng vai trò hiện có cùng các trường hợp tạo/gửi lại/cập nhật công việc/vô hiệu hóa FE11-LIFE02..LIFE04 | PARTIAL |
-| FR-FE11-018 | Quản trị viên cố vô hiệu hóa tài khoản của mình -> bị từ chối | BR-FE11-003 | Q-FE11-001, EC-FE11-006 | Trường hợp tự vô hiệu hóa FE11-LIFE04 | Chưa bắt đầu |
-| FR-FE11-019 | Vô hiệu hóa người dùng có lượt mượn đang hoạt động -> bị chặn, báo cáo số lượng | BR-FE11-003 | AF-FE11-002, Q-FE11-002 | Trường hợp bảo vệ lượt mượn FE11-LIFE04 | Chưa bắt đầu |
+| FR-FE11-016 | Hành động nhắm tới ID người dùng không tồn tại -> lỗi không tìm thấy | BR-FE11-010 | EC-FE11-002 | `userManagementRoutes.test.js`; `userManagementService.test.js`; kiểm thử repository FE11 | COMPLETE (TỰ ĐỘNG CỤC BỘ); STAGING HẬU MERGE ĐANG CHỜ |
+| FR-FE11-017 | ID Quản trị viên thực hiện không tồn tại -> lỗi không tìm thấy, không hành động | BR-FE11-001 | EC-FE11-001 | `accountSetupRepository.test.js`; `userManagementService.test.js`; `userLifecycleRepository.test.js`; `userRoleRepository.test.js`; `fe11Core.sqltest.js` | COMPLETE (TỰ ĐỘNG/SQL CỤC BỘ); STAGING HẬU MERGE ĐANG CHỜ |
+| FR-FE11-018 | Quản trị viên cố vô hiệu hóa tài khoản của mình -> bị từ chối | BR-FE11-003 | Q-FE11-001, EC-FE11-006 | `userLifecycleRepository.test.js`; `userManagementService.test.js`; `fe11Core.sqltest.js` | COMPLETE (TỰ ĐỘNG/SQL CỤC BỘ); STAGING HẬU MERGE ĐANG CHỜ |
+| FR-FE11-019 | Vô hiệu hóa người dùng có lượt mượn đang hoạt động -> bị chặn, báo cáo số lượng | BR-FE11-003 | AF-FE11-002, Q-FE11-002 | `userLifecycleRepository.test.js`; `userManagementService.test.js`; `fe11Core.sqltest.js` | COMPLETE (TỰ ĐỘNG/SQL CỤC BỘ); STAGING HẬU MERGE ĐANG CHỜ |
 | FR-FE11-020 | Quản trị viên gọi tuyến hồ sơ tài khoản hiện có đã ngừng sử dụng -> 404 và không thay đổi dữ liệu | BR-FE11-014 | Q-FE11-029 | `backend/tests/userManagementRoutes.test.js` | COMPLETE (TỰ ĐỘNG CỤC BỘ); TRÌNH DUYỆT/CON NGƯỜI ĐANG CHỜ |
-| FR-FE11-021 | Email tạo tài khoản sai định dạng/chứa payload injection/quá dài -> được làm sạch và bị từ chối | BR-FE11-004 | EC-FE11-003, EC-FE11-004 | Các trường hợp biên và độ dài FE11-LIFE01/LIFE02 | Chưa bắt đầu |
+| FR-FE11-021 | Email tạo tài khoản sai định dạng/chứa payload injection/quá dài -> được làm sạch và bị từ chối | BR-FE11-004 | EC-FE11-003, EC-FE11-004 | `userManagementRoutes.test.js`; `userManagementService.test.js` | COMPLETE (TỰ ĐỘNG CỤC BỘ); STAGING HẬU MERGE ĐANG CHỜ |
 | FR-FE11-022 | Lỗi DB khi tạo người dùng -> rollback, không có bản ghi một phần | BR-FE11-010 | EC-FE11-008 | Phạm vi rollback khi tạo tài khoản FE11-S01..S07 | COMPLETE (B7) |
-| FR-FE11-023 | expectedUpdatedAt cũ khi vô hiệu hóa -> 409 STALE_USER_STATE, không cập nhật một phần | BR-FE11-027 | EC-FE11-007 | Các trường hợp phiên bản có hiệu lực FE11-LIFE04 | Chưa bắt đầu |
+| FR-FE11-023 | expectedUpdatedAt cũ khi vô hiệu hóa -> 409 STALE_USER_STATE, không cập nhật một phần | BR-FE11-027 | EC-FE11-007 | `userManagementRoutes.test.js`; `userManagementService.test.js`; `userLifecycleRepository.test.js`; `fe11Core.sqltest.js` | COMPLETE (TỰ ĐỘNG/SQL CỤC BỘ); STAGING HẬU MERGE ĐANG CHỜ |
 | FR-FE11-024 | Gán vai trò không tồn tại -> lỗi không tìm thấy, ánh xạ không đổi | BR-FE11-007 | EC-FE11-010 | FE11-R01..R05 bao phủ kết quả vai trò xác định | COMPLETE (B7) |
-| FR-FE11-025 | Gán vai trò người dùng đã giữ -> bị từ chối | BR-FE11-008 | EC-FE11-011 | FE11-R01..R05 bao phủ kết quả vai trò xác định | COMPLETE (B7) |
-| FR-FE11-026 | Thu hồi vai trò người dùng không giữ -> lỗi không tìm thấy | BR-FE11-007 | EC-FE11-012 | FE11-R01..R05 bao phủ kết quả vai trò xác định | COMPLETE (B7) |
-| FR-FE11-027 | Thu hồi sẽ khiến người dùng không còn vai trò -> bị từ chối | BR-FE11-007 | EC-FE11-013 | FE11-R01..R05 bao phủ kết quả vai trò xác định | COMPLETE (B7) |
+| FR-FE11-025 | Chọn lại vai trò duy nhất hiện tại -> trả DTO an toàn chuẩn như no-op lũy đẳng, không thay mapping/token/audit | BR-FE11-008 | EC-FE11-011, BD-003 | `userRoleRepository.test.js`; `userManagementService.test.js`; `fe11Core.sqltest.js` | COMPLETE (TỰ ĐỘNG/SQL CỤC BỘ); STAGING HẬU MERGE ĐANG CHỜ |
+| FR-FE11-026 | Tài khoản legacy có zero/multiple mapping -> thao tác thay thế hợp lệ chuẩn hóa thành đúng một mapping trong giao dịch | BR-FE11-007 | EC-FE11-012, BD-004 | `userRoleRepository.test.js`; `fe11Core.sqltest.js` | COMPLETE (TỰ ĐỘNG/SQL CỤC BỘ); STAGING HẬU MERGE ĐANG CHỜ |
+| FR-FE11-027 | Thay thế vai trò phải để lại đúng một mapping và `UX_UserRoles_UserId` từ chối mapping thứ hai | BR-FE11-007 | EC-FE11-013, BD-004 | `userRoleRepository.test.js`; `fe11SchemaMigration.test.js`; `fe11Core.sqltest.js` | COMPLETE (TỰ ĐỘNG/SQL CỤC BỘ); STAGING HẬU MERGE ĐANG CHỜ |
 | FR-FE11-028 | Bất kỳ payload hồ sơ nào được gửi tới đường dẫn PUT FE11 đã ngừng sử dụng -> 404 và không ghi repository | BR-FE11-014, BR-FE11-015 | EC-FE11-014, Q-FE11-029 | `backend/tests/userManagementRoutes.test.js` | COMPLETE (TỰ ĐỘNG CỤC BỘ) |
 | FR-FE11-029 | Token thiết lập mật khẩu đã hết hạn/đã dùng -> bị từ chối, đăng nhập không được kích hoạt | BR-FE11-013 | phần trường token 10.2 | FE11-S01..S07 bao phủ token thiết lập không hợp lệ, hết hạn, đã dùng, đã thu hồi và không đủ điều kiện | COMPLETE (B7) |
 | FR-FE11-030 | Hiển thị khung Quản trị viên gồm tám mục đã phê duyệt, ẩn mục đã xóa, Đánh giá tư cách thành viên đứng sau Tất cả người dùng và các hành động Thư viện của Quản trị viên vẫn ở khu vực Quản trị viên | BR-FE11-016 | Q-FE11-011, Q-FE11-026, EC-FE11-016 | `frontend/test/userManagementFrontend.test.js`, `frontend/test/adminConsoleStructure.test.js`, `frontend/test/membershipFrontend.test.js` | COMPLETE (MÃ NGUỒN/TỰ ĐỘNG CỤC BỘ); TRÌNH DUYỆT THÍCH ỨNG/AZURE/CON NGƯỜI ĐANG CHỜ |
 | FR-FE11-031 | Dashboard Quản trị viên hiển thị bản tóm tắt vai trò/quy trình chuẩn và mở các mô-đun đã lọc của đúng chủ sở hữu | BR-FE11-020, BR-FE11-032 | Q-FE11-012, MF-FE11-010 | `backend/tests/adminDashboardRepository.test.js`, `frontend/test/adminConsoleStructure.test.js` | TỰ ĐỘNG CỤC BỘ; CON NGƯỜI ĐANG ĐÁNH GIÁ |
-| FR-FE11-032 | Hiển thị tóm tắt vai trò và ma trận quyền | BR-FE11-017 | MF-FE11-011 | Trường hợp tích hợp giao diện quyền theo kế hoạch | Chưa bắt đầu |
+| FR-FE11-032 | Bề mặt Quản lý người dùng/vai trò mở ma trận quyền chỉ đọc mà không thêm mục sidebar thứ chín | BR-FE11-017 | MF-FE11-011, BD-005 | `adminPermissionService.test.js`; `adminPermissionRoutes.test.js`; `userManagementFrontend.test.js`; `fe11-admin-request-management.spec.js` | COMPLETE (TỰ ĐỘNG/TRÌNH DUYỆT CỤC BỘ); STAGING HẬU MERGE ĐANG CHỜ |
 | FR-FE11-033 | Nhật ký kiểm toán là danh sách chỉ đọc có phân trang, không có điều khiển tìm kiếm/lọc trên UI và đã che dữ liệu nhạy cảm | BR-FE11-018, BR-FE11-026 | EC-FE11-018 | FE11-AUD01; `frontend/test/userManagementFrontend.test.js`; lô hiệu chỉnh 2026-07-22 | COMPLETE |
 | FR-FE11-034 | Danh sách/chi tiết Quản lý yêu cầu hỗ trợ tìm kiếm/lọc/xuất/xem | BR-FE11-019 | MF-FE11-013 | FE11-REQ01/REQ02; xác thực Wave B | SẴN SÀNG ĐỂ ĐÁNH GIÁ |
 | FR-FE11-035 | Hành động trên yêu cầu đã hoàn tất bị vô hiệu hóa/từ chối | BR-FE11-019 | Q-FE11-013, EC-FE11-017 | FE11-REQ03; xác thực Wave B | SẴN SÀNG ĐỂ ĐÁNH GIÁ |

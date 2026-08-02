@@ -67,7 +67,7 @@ async function lockUserRoles(transaction, userId) {
   return result.recordset.map((row) => String(row.RoleName).toUpperCase());
 }
 
-// @spec BR-FE11-003, BR-FE11-006, BR-FE11-027, BR-FE11-030, FR-FE11-008, FR-FE11-011, FR-FE11-041
+// @spec BR-FE11-003, BR-FE11-006, BR-FE11-027, BR-FE11-030, FR-FE11-008, FR-FE11-011, FR-FE11-023, FR-FE11-041
 async function deactivateManagedUser({
   adminUserId,
   userId,
