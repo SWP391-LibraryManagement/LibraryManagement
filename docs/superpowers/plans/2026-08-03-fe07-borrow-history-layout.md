@@ -275,6 +275,8 @@ Sau khi Librarian đã kiểm tra dashboard cuối cùng và ngay trước `expe
     await expectBorrowingJourneyFits(page, viewport.width, viewport.height);
   }
 
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await expectNoHorizontalOverflow(page);
   const desktopTableOverflow = await page.locator('.member-history-card .lib-table-wrap').evaluate(
     (element) => ({
       overflowX: getComputedStyle(element).overflowX,
