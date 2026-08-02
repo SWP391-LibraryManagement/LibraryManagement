@@ -37,6 +37,14 @@ test('staging deployment follows successful main CI and packages the reviewed st
     workflow,
     /Copy-Item backend\/scripts\/stagingBorrowCandidates\.js deploy\/backend\/scripts\//
   );
+  assert.match(
+    workflow,
+    /deploy-backend:[\s\S]*?uses:\s*actions\/setup-node@v7[\s\S]*?node-version:\s*22[\s\S]*?name: Prepare backend deployment package/
+  );
+  assert.match(
+    workflow,
+    /name: Install backend production dependencies[\s\S]*?working-directory:\s*deploy\/backend[\s\S]*?npm ci --omit=dev/
+  );
   assert.doesNotMatch(workflow, /run:\s*.*staging:borrow-candidates/);
 });
 
@@ -85,6 +93,8 @@ test('operator guide matches migration-gated CI deployment and canonical schema 
   assert.match(guide, /FE10_INBOX_MIGRATION_SHA256/);
   assert.match(guide, /exact migration file hash/i);
   assert.match(guide, /table count `21`/);
+  assert.match(guide, /SCM_DO_BUILD_DURING_DEPLOYMENT=false/);
+  assert.doesNotMatch(guide, /SCM_DO_BUILD_DURING_DEPLOYMENT=true/);
 
   const operatorMigrationList = guide.match(/```text\s+([\s\S]*?)```/)?.[1] || '';
   assert.doesNotMatch(
