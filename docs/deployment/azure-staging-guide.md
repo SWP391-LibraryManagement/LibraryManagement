@@ -291,7 +291,8 @@ gh variable set FE10_BORROWING_RESULT_TEMPLATES_SHA256 `
 Deployment then proceeds in a fixed order: preflight, backend, frontend, fail-closed smoke, and
 browser verification. The backend package runs `npm ci --omit=dev` inside `deploy/backend`
 before OneDeploy so production dependencies are included in the artifact; the App Service
-`SCM_DO_BUILD_DURING_DEPLOYMENT` setting is not treated as the dependency-install gate. Verify
+`SCM_DO_BUILD_DURING_DEPLOYMENT=false` setting keeps OneDeploy from invoking a second Oryx build
+over the self-contained artifact and is not treated as the dependency-install gate. Verify
 backend `/health`, `/health/ready`, and anonymous inbox `401` before
 checking the frontend bell/page or custom-domain browser behavior.
 
@@ -312,7 +313,7 @@ az webapp config appsettings set `
     DB_PORT=1433 `
     DB_ENCRYPT=true `
     DB_TRUST_SERVER_CERTIFICATE=false `
-    SCM_DO_BUILD_DURING_DEPLOYMENT=true
+    SCM_DO_BUILD_DURING_DEPLOYMENT=false
 ```
 
 `TRUST_PROXY=true` is required on Azure App Service because TLS terminates at

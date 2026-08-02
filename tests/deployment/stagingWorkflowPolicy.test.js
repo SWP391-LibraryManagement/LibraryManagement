@@ -89,6 +89,8 @@ test('operator guide matches migration-gated CI deployment and canonical schema 
   assert.match(guide, /FE10_INBOX_MIGRATION_SHA256/);
   assert.match(guide, /exact migration file hash/i);
   assert.match(guide, /table count `21`/);
+  assert.match(guide, /SCM_DO_BUILD_DURING_DEPLOYMENT=false/);
+  assert.doesNotMatch(guide, /SCM_DO_BUILD_DURING_DEPLOYMENT=true/);
 
   const operatorMigrationList = guide.match(/```text\s+([\s\S]*?)```/)?.[1] || '';
   assert.doesNotMatch(
