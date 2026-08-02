@@ -267,7 +267,7 @@ Kế hoạch thực thi chi tiết là
 Lệnh tập trung: `borrowingRoutes`, `borrowingRepository`, frontend journey/error
 tests; sau đó toàn bộ kiểm thử backend/frontend, E2E, traceability và `git diff --check`.
 
-## 16. Khắc phục lưu ngày trả nghiệp vụ v0.9.1
+## 16. Khắc phục lưu ngày trả nghiệp vụ
 
 1. Dùng ca trả mặc định tại `2026-07-22T17:30:00.000Z` để chứng minh biên tầng dịch vụ-repository đang nhận ngày UTC `2026-07-22` thay vì ngày nghiệp vụ Việt Nam `2026-07-23`.
 2. Giữ SPEC, API, schema và repository SQL không đổi; truyền `returnBusinessDate` chuẩn `YYYY-MM-DD` đã có vào tham số `sql.Date` thay cho đối tượng `clock()` thô.

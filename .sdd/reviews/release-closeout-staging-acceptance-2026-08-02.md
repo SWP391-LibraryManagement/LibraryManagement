@@ -16,6 +16,8 @@ H3 completed on exact head `7660a6ee4f78bd87e436590f2a992d581517bff7` with zero 
 
 The pre-H3 sentence above is retained as the immutable gate state at acceptance-run time; this addendum supersedes only its statement that H3/merge/task closure remained outstanding.
 
+Version-label clarification: the return-date business-persistence remediation is unversioned. The phrase “approved v0.9.1 remediation” in the immutable historical block below is superseded metadata; `v0.9.1` remains assigned to the 2026-07-29 damaged/lost-return queue-handoff correction recorded in the FE07 changelog.
+
 ### Final accepted-run evidence
 
 | Evidence | Actual | Result |
