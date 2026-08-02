@@ -1,12 +1,12 @@
 # SPEC.md - FE01 Công Khai / Duyệt Sách
 
-# Phiên bản: 0.4.0
+# Phiên bản: 0.5.0
 
-# Trạng thái: ĐÃ PHÊ DUYỆT - BASELINE 2026-07-17; PHỤ LỤC RESPONSIVE ĐƯỢC H3 PHÊ DUYỆT, ĐÃ MERGE PR #59; HOÀN THIỆN HOMEPAGE ĐÃ TRIỂN KHAI CỤC BỘ, ĐANG CHỜ CON NGƯỜI CHẤP NHẬN
+# Trạng thái: BASELINE VÀ TRIỂN KHAI CỤC BỘ CIRCULATION ACTION v0.5.0 HOÀN THÀNH; CHỜ DUYỆT H2
 
 # Chủ sở hữu: Dung
 
-# Cập nhật lần cuối: 2026-07-27
+# Cập nhật lần cuối: 2026-08-03
 
 # ID chức năng: FE01
 
@@ -423,3 +423,41 @@ Danh sách kiểm tra phê duyệt Giai đoạn 1 (hoàn thành vào 2026-06-10)
 - [x] Hành vi đối với sách bị ẩn/ngừng kích hoạt đã được phê duyệt cùng FE05.
 - [x] Hợp đồng API đã được phê duyệt trong SPEC.md hoặc được sao chép sang tệp hợp đồng API dùng chung chuyên biệt nếu nhóm đưa tệp đó trở lại.
 - [x] Mọi tiêu chí chấp nhận đều có thể chuyển thành test.
+
+---
+
+## 18. Phụ lục hành động lưu thông trung thực v0.5.0
+
+### 18.1 Quy tắc nghiệp vụ
+
+- BR-FE01-018: Tình trạng vật lý `availabilityStatus` không được dùng làm quyết định
+  tiếp tục của Thành viên khi bản sao đang có yêu cầu FE07 hoặc lượt giữ FE08 mở.
+
+### 18.2 Yêu cầu chức năng
+
+- FR-FE01-019: Danh sách và chi tiết sách công khai phải bổ sung trường an toàn
+  `circulationAction` với đúng bốn giá trị `BORROW`, `RESERVE`, `WAIT`,
+  `UNAVAILABLE`; trường này không được làm lộ bản sao, chủ lượt giữ, vị trí hàng đợi
+  hoặc danh tính Thành viên.
+- FR-FE01-020: Hành động sách của Thành viên trên HomePage phải chỉ dùng
+  `circulationAction`; Thủ thư/Quản trị viên tiếp tục dùng `availabilityStatus` và
+  route quản lý hiện có.
+
+### 18.3 Tiêu chí chấp nhận
+
+- AC-FE01-019: Bản sao `AVAILABLE` đang có lượt giữ FE08 mở không tạo hành động
+  mượn trực tiếp cho Thành viên.
+- AC-FE01-020: Bản sao `AVAILABLE` không có yêu cầu/lượt giữ mở tạo `BORROW` và
+  cùng tiêu đề xuất hiện trong danh mục ứng viên FE07.
+- AC-FE01-021: Khi không có bản sao mượn ngay nhưng có bản sao `BORROWED` hoặc
+  `RESERVED` hợp lệ cho FE08, hành động là `RESERVE`.
+- AC-FE01-022: Khi chỉ còn trạng thái chờ xử lý, hành động `WAIT` bị vô hiệu hóa;
+  khi không có đường tiếp tục, `UNAVAILABLE` bị vô hiệu hóa.
+
+### 18.4 Truy vết triển khai cục bộ
+
+| ID yêu cầu | Use case liên quan | Test dự kiến | Trạng thái |
+| --- | --- | --- | --- |
+| BR-FE01-018; FR-FE01-019; AC-FE01-019..022 | UC01-UC04 | `publicBrowseRepository.test.js`; `bookAvailabilityRepository.test.js`; `bookRoutes.test.js`; `publicBrowseRoutes.test.js` | FE01-T015 GREEN: backend tập trung `62/62` |
+| FR-FE01-020; AC-FE01-019..022 | UC01-UC04 | `homeBookActions.test.js`; `publicBrowseFrontend.test.js` | FE01-T016 GREEN: frontend tập trung `22/22` |
+| AC-FE01-019..022 | UC01-UC04 | `fe01-fe07-borrow-candidate-flow.spec.js` | Chromium có kiểm soát `4/4`; chờ duyệt H2 qua FE01-T017 |

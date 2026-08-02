@@ -21,6 +21,7 @@ export default function BorrowRequestPage() {
   const [selected, setSelected] = useState(null);
   const [copyId, setCopyId] = useState('');
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState('');
   const [noticeType, setNoticeType] = useState('info');
@@ -32,6 +33,7 @@ export default function BorrowRequestPage() {
     borrowingApi.listCandidates()
       .then((data) => {
         if (!active) return;
+        setLoadFailed(false);
         const nextBooks = data.books || [];
         const requestedBook = Number.isInteger(requestedBookId) && requestedBookId > 0
           ? nextBooks.find((book) => Number(book.bookId) === requestedBookId)
@@ -58,6 +60,7 @@ export default function BorrowRequestPage() {
         setCopyId('');
         setNotice(error.message);
         setNoticeType('error');
+        setLoadFailed(true);
       })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
@@ -132,7 +135,17 @@ export default function BorrowRequestPage() {
                 <span className="badge badge-available">{book.copies.length} bản</span>
               </button>
             ))}
-            {!loading && results.length === 0 && <EmptyState icon={BookOpen} title="Không tìm thấy sách có thể mượn">Hãy thử tên sách hoặc tác giả khác.</EmptyState>}
+            {/* @spec FR-FE07-045 */}
+            {!loading && !loadFailed && books.length === 0 && (
+              <EmptyState icon={BookOpen} title="Hiện không có bản sao đủ điều kiện mượn">
+                Sách đang được mượn, giữ chỗ hoặc chờ xử lý sẽ không xuất hiện tại đây.
+              </EmptyState>
+            )}
+            {!loading && !loadFailed && books.length > 0 && results.length === 0 && (
+              <EmptyState icon={BookOpen} title="Không tìm thấy sách phù hợp">
+                Hãy thử tên sách hoặc tác giả khác.
+              </EmptyState>
+            )}
             {loading && <EmptyState icon={BookOpen} title="Đang tải danh sách sách..." />}
           </div>
         </div>

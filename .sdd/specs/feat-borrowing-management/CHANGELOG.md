@@ -1,5 +1,24 @@
 # CHANGELOG.md - FE07 Quản lý mượn sách
 
+## 2026-08-03 - Hoàn tất triển khai cục bộ candidate/fixture v0.10.0
+
+- Phân biệt server-empty, search-empty và lỗi API; lỗi API không còn đồng thời hiển
+  thị thông báo empty hợp lệ. Frontend FE07 tập trung đạt `31/31`.
+- Thêm operator script `status`/`reset` staging-only cho đúng hai fixture: tham số
+  hóa, transaction, rollback, từ chối trạng thái bất thường và audit cùng transaction.
+  Script tập trung đạt `14/14`; sai DB thoát mã `1` trước khi mở pool.
+- Workflow chỉ đóng gói riêng script, không tự chạy. Full gate đạt backend
+  `1.196/1.196`, frontend `281/281`, deployment `20/20`, secrets `5/5`, Chromium
+  `4/4`; trace FE07 đạt `45/46` (`98%`, trạng thái `PARTIAL`) và gate enforce đạt.
+  FE07-T064 vẫn mở cho live submit-one/remain-one sau H3/deploy.
+
+## 2026-08-03 - H1 candidate shell và fixture staging v0.10.0
+
+- Mở FE07-T062..064 cho empty state trung thực và công cụ fixture staging thủ công.
+- Giữ nguyên endpoint/điều kiện ứng viên FE07 và toàn bộ hành vi hàng đợi FE08.
+- Quy định reset chỉ sở hữu hai fixture synthetic, bắt buộc staging/flag/transaction/audit;
+  thay đổi sản phẩm giữ chưa commit tới H2 và không mutate staging trước H3.
+
 ## 2026-08-02 - Xác nhận ngày trả nghiệp vụ trên Azure staging
 
 - Workflow `30722972056` triển khai đúng SHA `bf4dd2268c63a00620fc262f643768c2f434894c`.

@@ -1,7 +1,7 @@
 # Borrow Candidate Staging Flow Design
 
 **Date:** 2026-08-03
-**Status:** REVIEW REQUESTED
+**Status:** APPROVED
 **Owner:** Nhat
 **Delivery mode:** Hybrid SDD, Standard depth
 **Branch:** `fix/borrow-candidate-staging-flow`
@@ -113,9 +113,13 @@ Add `backend/scripts/stagingBorrowCandidates.js` with two modes:
 
 The script uses stable synthetic identifiers, for example:
 
-- ISBN prefix: `STAGING-BORROW-DEMO-`
+- ISBN ownership prefix: `STAGING-BORROW-DEMO`
 - Barcode prefix: `STG-BORROW-DEMO-`
 - Location: `STAGING-DEMO`
+
+`Books.ISBN` is `NVARCHAR(20)`, so the two concrete fixture ISBNs are
+`STAGING-BORROW-DEMO1` and `STAGING-BORROW-DEMO2`. This preserves a shared
+reserved prefix without requiring a schema change.
 
 Reset behavior:
 
@@ -129,6 +133,8 @@ Reset behavior:
 8. Insert an audit marker and commit atomically.
 
 The script is never invoked automatically by application startup or production deployment.
+The staging deployment package includes only this reviewed operator script under `scripts/` so it
+can be invoked from the deployed backend console; packaging it does not execute it.
 
 ## 6. Errors and Safety
 

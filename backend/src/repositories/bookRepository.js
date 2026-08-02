@@ -100,7 +100,59 @@ function listSelect() {
         AND SUM(CASE WHEN bc.Status = 'AVAILABLE' THEN 1 ELSE 0 END) > 0
       THEN 'AVAILABLE'
       ELSE 'UNAVAILABLE'
-    END AS availabilityStatus
+    END AS availabilityStatus,
+    CASE
+      WHEN b.Status = 'ACTIVE' AND EXISTS (
+        SELECT 1
+        FROM BookCopies borrowCopy
+        WHERE borrowCopy.BookId = b.BookId
+          AND borrowCopy.Status = 'AVAILABLE'
+          AND NOT EXISTS (
+            SELECT 1
+            FROM BorrowDetails pendingDetail
+            INNER JOIN BorrowRequests pendingRequest
+              ON pendingRequest.RequestId = pendingDetail.RequestId
+            WHERE pendingDetail.CopyId = borrowCopy.CopyId
+              AND pendingDetail.Status = 'REQUESTED'
+              AND pendingRequest.Status = 'PENDING'
+          )
+          AND NOT EXISTS (
+            SELECT 1
+            FROM Reservations openReservation
+            WHERE openReservation.CopyId = borrowCopy.CopyId
+              AND openReservation.Status IN ('ACTIVE', 'NOTIFIED')
+          )
+      ) THEN 'BORROW'
+      WHEN b.Status = 'ACTIVE' AND EXISTS (
+        SELECT 1
+        FROM BookCopies reserveCopy
+        WHERE reserveCopy.BookId = b.BookId
+          AND reserveCopy.Status IN ('BORROWED', 'RESERVED')
+      ) THEN 'RESERVE'
+      WHEN b.Status = 'ACTIVE' AND EXISTS (
+        SELECT 1
+        FROM BookCopies waitingCopy
+        WHERE waitingCopy.BookId = b.BookId
+          AND (
+            EXISTS (
+              SELECT 1
+              FROM BorrowDetails waitingDetail
+              INNER JOIN BorrowRequests waitingRequest
+                ON waitingRequest.RequestId = waitingDetail.RequestId
+              WHERE waitingDetail.CopyId = waitingCopy.CopyId
+                AND waitingDetail.Status = 'REQUESTED'
+                AND waitingRequest.Status = 'PENDING'
+            )
+            OR EXISTS (
+              SELECT 1
+              FROM Reservations waitingReservation
+              WHERE waitingReservation.CopyId = waitingCopy.CopyId
+                AND waitingReservation.Status IN ('ACTIVE', 'NOTIFIED')
+            )
+          )
+      ) THEN 'WAIT'
+      ELSE 'UNAVAILABLE'
+    END AS circulationAction
   `;
 }
 
@@ -143,7 +195,7 @@ async function listBooks(filters, { publicOnly = false } = {}) {
   };
 }
 
-// @spec FR-FE01-002, FR-FE01-008, FR-FE01-009, FR-FE01-011, FR-FE01-013
+// @spec FR-FE01-002, FR-FE01-008, FR-FE01-009, FR-FE01-011, FR-FE01-013, FR-FE01-019
 function getHomeBooks(filters = {}) {
   return listBooks(filters, { publicOnly: true });
 }

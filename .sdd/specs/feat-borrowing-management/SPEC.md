@@ -1,12 +1,12 @@
 # SPEC.md - FE07 Quản lý mượn
 
-# Phiên bản: 0.9.0
+# Phiên bản: 0.10.0
 
-# Trạng thái: HOÀN THÀNH; PR #89 ĐÃ HỢP NHẤT; CI VÀ AZURE ĐÃ CHẠY THÀNH CÔNG TRÊN ĐÚNG COMMIT
+# Trạng thái: BASELINE VÀ TRIỂN KHAI CỤC BỘ CANDIDATE/STAGING v0.10.0 HOÀN THÀNH; CHỜ H2 VÀ LIVE ACCEPTANCE SAU H3
 
 # Chủ sở hữu: Nhat
 
-# Cập nhật lần cuối: 2026-08-01
+# Cập nhật lần cuối: 2026-08-03
 
 # ID tính năng: FE07
 
@@ -856,3 +856,38 @@ Danh sách kiểm tra phê duyệt giai đoạn 1 (hoàn thành trên 2026-06-10
 
 Triển khai phải đi qua `SL-003` và `SL-006` của kế hoạch đợt; product code
 giữ chưa được commit đến H2.
+
+## 19. Phụ lục candidate và fixture staging v0.10.0
+
+### 19.1 Quy tắc nghiệp vụ
+
+- BR-FE07-038: Điều kiện ứng viên FE07 vẫn do máy chủ quyết định; danh mục máy chủ
+  rỗng không được trình bày như một lần tìm kiếm cục bộ không khớp.
+- BR-FE07-039: Fixture mượn trên staging chỉ được thay đổi bản ghi tổng hợp có ISBN
+  tiền tố `STAGING-BORROW-DEMO`, barcode tiền tố `STG-BORROW-DEMO-` và vị trí
+  `STAGING-DEMO`, dưới cổng staging rõ ràng, transaction và audit.
+
+### 19.2 Yêu cầu chức năng
+
+- FR-FE07-045: `BorrowRequestPage` phải phân biệt không có ứng viên do máy chủ trả
+  về với không có kết quả khớp từ tìm kiếm tiêu đề/tác giả cục bộ; lỗi API vẫn là lỗi.
+- FR-FE07-046: Công cụ thủ công `status`/`reset` phải phục hồi hai tiêu đề synthetic
+  riêng biệt, từ chối DB/flag/trạng thái không hợp lệ, bảo toàn dữ liệu ngoài fixture
+  và không bao giờ tự chạy khi khởi động hoặc deploy.
+
+### 19.3 Tiêu chí chấp nhận và truy vết
+
+- AC-FE07-037: Thông báo server-empty và search-empty khác nhau; lỗi API không dùng
+  thông báo empty hợp lệ. Ánh xạ FE07-T062.
+- AC-FE07-038: Reset từ chối sai DB, thiếu flag, request hỗn hợp hoặc trạng thái bất
+  ngờ và rollback toàn bộ. Ánh xạ FE07-T063.
+- AC-FE07-039: Mọi chuyển trạng thái fixture có audit marker; hàng ngoài fixture bất
+  biến. Ánh xạ FE07-T063.
+- AC-FE07-040: Sau reset có hai ứng viên khác tiêu đề; gửi một yêu cầu vẫn để lại ứng
+  viên thứ hai. Ánh xạ FE07-T064.
+
+| ID yêu cầu | Test/bằng chứng | Trạng thái |
+| --- | --- | --- |
+| BR-FE07-038; FR-FE07-045; AC-FE07-037 | `borrowingFrontend.test.js`; `fe01-fe07-borrow-candidate-flow.spec.js` | Frontend `31/31`; Chromium có kiểm soát `4/4` |
+| BR-FE07-039; FR-FE07-046; AC-FE07-038/039 | `stagingBorrowCandidates.test.js`; `stagingWorkflowPolicy.test.js` | Script tập trung `14/14`; workflow chỉ đóng gói và không tự chạy |
+| AC-FE07-040 | Controlled Chromium và live staging submit-one/remain-one | Controlled GREEN; live staging giữ mở đến sau H3/deploy |

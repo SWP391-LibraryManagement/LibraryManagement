@@ -890,7 +890,7 @@ components:
     PublicBookSummary:
       type: object
       additionalProperties: false
-      required: [bookId, title, availabilityStatus]
+      required: [bookId, title, availabilityStatus, circulationAction]
       properties:
         bookId: { type: integer, minimum: 1 }
         title: { type: string }
@@ -901,6 +901,7 @@ components:
         description: { type: string, nullable: true }
         coverUrl: { type: string, nullable: true }
         availabilityStatus: { type: string, enum: [AVAILABLE, UNAVAILABLE] }
+        circulationAction: { type: string, enum: [BORROW, RESERVE, WAIT, UNAVAILABLE] }
     PublicBookListResponse:
       type: object
       additionalProperties: false

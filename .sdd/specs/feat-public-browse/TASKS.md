@@ -1,11 +1,11 @@
 # TASKS.md - FE01 Công khai / Duyệt sách
 
-Trạng thái: HOÀN THÀNH - ĐÃ GHI NHẬN BẰNG CHỨNG KẾT THÚC GIAI ĐOẠN 2; PHẦN TIẾP NỐI RESPONSIVE ĐÃ ĐƯỢC MERGE TRONG PR #59; PHẦN HOÀN THIỆN HOMEPAGE CỤC BỘ ĐÃ ĐƯỢC XÁC THỰC
+Trạng thái: BASELINE VÀ TRIỂN KHAI CỤC BỘ v0.5.0 HOÀN THÀNH; CHỜ DUYỆT H2
 Implementation State: COMPLETE
 
 Người phụ trách: Dung
 
-Cập nhật: 2026-07-26
+Cập nhật: 2026-08-03
 
 Trạng thái quy trình: HOÀN THÀNH đối với phạm vi Giai đoạn 2 đã phê duyệt; PR #59 đã merge phần tiếp nối HomePage responsive sau review H3. FE01-T009 đến FE01-T013 đã hoàn thành cục bộ với bằng chứng tự động; nghiệm thu thủ công về giao diện, điều hướng và khả năng hiển thị theo vai trò vẫn là review cấp bản phát hành.
 
@@ -179,3 +179,20 @@ Trạng thái quy trình: HOÀN THÀNH đối với phạm vi Giai đoạn 2 đ�
 - [x] Căn chỉnh cách diễn đạt tác nhân/API FE01 cho thao tác đọc của Khách, Thành viên, Thủ thư và Quản trị viên.
 - [x] Kết nối hành động sách công khai với vai trò tài khoản duy nhất của FE11; giữ xử lý phòng vệ cho mảng vai trò legacy lỗi thời.
 - [x] Thêm độ bao phủ hồi quy frontend phòng vệ cho mảng tương thích legacy `MEMBER + LIBRARIAN` và `MEMBER + ADMIN` không hợp lệ.
+
+## 2026-08-03 - Hành động lưu thông trung thực v0.5.0
+
+- [x] **FE01-T015 - RED/GREEN read model và hợp đồng công khai.**
+  - Ánh xạ: BR-FE01-018, FR-FE01-019, AC-FE01-019..022.
+  - Tệp: repository/service sách, OpenAPI, repository/route contract tests và helper trong bộ nhớ.
+  - DoD: bốn giá trị đúng thứ tự ưu tiên, fallback fail-closed, không lộ dữ liệu bản sao/lượt giữ.
+- [x] **FE01-T016 - RED/GREEN hành động HomePage theo vai trò.**
+  - Ánh xạ: FR-FE01-020, AC-FE01-019..022.
+  - Tệp: `homeBookActions.js`, `HomePage.jsx` và test frontend tập trung.
+  - DoD: Thành viên dùng `circulationAction`; `WAIT`/`UNAVAILABLE` không điều hướng; Khách/nhân viên giữ hành vi đã phê duyệt.
+- [ ] **FE01-T017 - Truy vết, hồi quy và acceptance liên FE01/FE07.**
+  - Ánh xạ: AC-BCSF-001..004, AC-BCSF-008.
+  - Tệp: đặc tả FE01, API contract và `fe01-fe07-borrow-candidate-flow.spec.js`.
+  - DoD: các gate backend/frontend/Chromium/trace đạt và diff được trình H2 trước commit.
+  - Bằng chứng cục bộ: backend `1.196/1.196`, frontend `281/281`, Chromium `4/4`,
+    deployment `20/20`, secrets `5/5`; giữ mở cho tới khi người dùng duyệt H2.

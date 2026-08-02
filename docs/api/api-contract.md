@@ -2,7 +2,7 @@
 
 Status: PHASE 1 BASELINE; FE07-FE12 CONNECTED DEMO H1 APPROVED - AWAITING H3/MERGE
 Date: 2026-06-10
-Last Updated: 2026-07-29
+Last Updated: 2026-08-03
 
 ## Scope
 
@@ -799,3 +799,24 @@ date explicitly to both SQL and in-memory report repositories.
 `availableCopies` counts only rows where `Books.Status = 'ACTIVE'` and
 `BookCopies.Status = 'AVAILABLE'`; `lowStockBooks` counts only active books with
 0..2 available copies.
+
+## FE01 Public Circulation Continuation
+
+`GET /api/books` and `GET /api/books/{bookId}` retain the existing public-safe
+summary and add the required `circulationAction` field.
+
+| Field | Values | Consumer |
+| --- | --- | --- |
+| `availabilityStatus` | `AVAILABLE`, `UNAVAILABLE` | Existing physical high-level presentation, especially staff |
+| `circulationAction` | `BORROW`, `RESERVE`, `WAIT`, `UNAVAILABLE` | Member continuation only |
+
+`BORROW` means at least one active-book copy is `AVAILABLE` without an open
+`PENDING + REQUESTED` FE07 claim or `ACTIVE`/`NOTIFIED` FE08 claim. `RESERVE`
+means no copy is immediately borrowable but a `BORROWED`/`RESERVED` copy can
+enter FE08. `WAIT` means only open-claim/queue-processing state remains.
+`UNAVAILABLE` is the fail-closed fallback.
+
+The field is title-level. Public responses must not include `copyId`, barcode,
+location, reservation owner, queue position, Member identity, copy counts or
+raw workflow rows. The change is additive; no route, query allowlist, schema,
+status enum, borrowing limit or candidate endpoint changes.
