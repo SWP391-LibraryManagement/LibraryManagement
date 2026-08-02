@@ -720,7 +720,7 @@ function createBorrowingService({
       borrowDetailId,
       detailStatus,
       copyStatus,
-      returnDate,
+      returnDate: returnBusinessDate,
       auditLogRepository,
       buildReturnEvidence: ({
         requestId,

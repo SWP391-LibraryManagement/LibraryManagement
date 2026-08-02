@@ -1,5 +1,13 @@
 # CHANGELOG.md - FE07 Quản lý mượn sách
 
+## 2026-08-02 - Xác nhận ngày trả nghiệp vụ trên Azure staging
+
+- Workflow `30722972056` triển khai đúng SHA `bf4dd2268c63a00620fc262f643768c2f434894c`.
+- Run `lms-acceptance-20260802-b22898eb` đạt toàn bộ luồng có đăng nhập liên vai trò; SQL exact-ID xác nhận `BorrowDetailId=66`, `ReturnDate=2026-08-02`, `OverdueDays=3` và `Amount=15000`.
+- Cleanup trả về `CLEANED`: không còn tài khoản, token, khoản mượn, đặt trước, sách hoặc bản sao fixture hoạt động; bốn login và token cũ đều bị từ chối, runtime/helper tạm trả `404/404`.
+- Sửa observer của harness bị ignore bằng RED `11/12` và GREEN `12/12` để các probe `403/404` chủ động không tạo false positive trên browser console; vẫn giữ kiểm tra nghiêm cho lỗi UI thật và không thay đổi product code.
+- FE07-T061 đã đủ bằng chứng deploy/L4 để vào H3 nhưng chưa đóng vì chưa có phê duyệt H3/merge.
+
 ## 2026-08-01 - Chuẩn hóa văn phong tiếng Việt
 
 - Làm tự nhiên cách diễn đạt và thống nhất các thuật ngữ về mượn sách, hạn trả,

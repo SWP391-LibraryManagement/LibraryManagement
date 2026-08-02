@@ -377,3 +377,16 @@ Các tác vụ đã chọn bên dưới mô tả việc triển khai đã hoàn 
     269/269 cùng lint/build đều đạt.
 
 Phần thay đổi của sản phẩm vẫn giữ chưa được commit cho tới khi H2 phê duyệt.
+
+## 2026-08-02 - Khắc phục lưu ngày trả nghiệp vụ v0.9.1
+
+- [ ] **FE07-T061 - Lưu ngày trả mặc định theo ngày nghiệp vụ Việt Nam tại biên SQL.**
+  - Ánh xạ: AC-FE07-006/008, FR-FE07-021, NFR-FE07-TIME-001; hợp đồng dữ liệu/API `returnDate`.
+  - RED: tại `2026-07-22T17:30:00.000Z`, chứng minh tầng dịch vụ đang truyền ngày UTC thô vào `sql.Date` thay vì ngày nghiệp vụ `2026-07-23`, dù `fineCandidate` trong bộ nhớ vẫn hiển thị đúng một ngày quá hạn.
+  - GREEN: truyền chuỗi ngày nghiệp vụ chuẩn `YYYY-MM-DD` đã được FE07 suy ra vào repository; không đổi schema, API, xác thực ngày trả rõ ràng, audit, FE08 handoff hoặc phép tính FE09.
+  - Xác minh bắt buộc: FE07/FE09 tập trung dưới `TZ=UTC`, repository contract, backend đầy đủ, truy vết, secrets và vệ sinh diff; SQL dùng một lần nếu đã có cơ sở dữ liệu không phải staging được cấu hình.
+  - Điều kiện đóng: H2 đã phê duyệt exact local diff; sau khi bản sửa được deploy đúng SHA, một lượt staging acceptance sạch phải chứng minh fine ba ngày/15.000 VND và cleanup `CLEANED`, sau đó mới đủ điều kiện H3/đóng tác vụ.
+  - Bằng chứng L1-L3: RED nhận `2026-07-22T17:30:00.000Z` thay vì `2026-07-23`; GREEN tập trung FE07/FE09/repository `114/114`, system `11/11`, backend/coverage `1.175/1.175`, trace FE07 `100%`, secrets `5/5` và vệ sinh diff đạt.
+  - H2 ngày 2026-08-02: phê duyệt đúng diff FE07/evidence để commit, push và mở Draft PR; không cấp quyền merge hoặc đóng FE07-T061.
+  - Bằng chứng deploy/L4: workflow `30722972056` triển khai đúng SHA `bf4dd2268c63a00620fc262f643768c2f434894c`; run `lms-acceptance-20260802-b22898eb` đạt toàn bộ luồng liên vai trò. SQL exact-ID sau cleanup ghi `BorrowDetailId=66`, `ReturnDate=2026-08-02`, `OverdueDays=3`, `Amount=15000`; cleanup `CLEANED`, bốn login và token cũ đều `401`, runtime/helper `404/404`.
+  - Trạng thái: đã đủ bằng chứng để vào H3; vẫn giữ tác vụ mở vì H3/merge/đóng tác vụ chưa được phê duyệt.

@@ -266,3 +266,15 @@ Kế hoạch thực thi chi tiết là
 
 Lệnh tập trung: `borrowingRoutes`, `borrowingRepository`, frontend journey/error
 tests; sau đó toàn bộ kiểm thử backend/frontend, E2E, traceability và `git diff --check`.
+
+## 16. Khắc phục lưu ngày trả nghiệp vụ v0.9.1
+
+1. Dùng ca trả mặc định tại `2026-07-22T17:30:00.000Z` để chứng minh biên tầng dịch vụ-repository đang nhận ngày UTC `2026-07-22` thay vì ngày nghiệp vụ Việt Nam `2026-07-23`.
+2. Giữ SPEC, API, schema và repository SQL không đổi; truyền `returnBusinessDate` chuẩn `YYYY-MM-DD` đã có vào tham số `sql.Date` thay cho đối tượng `clock()` thô.
+3. Giữ ngày trả rõ ràng, bằng chứng giao dịch/kiểm toán, FE08 handoff và FE09 tính từ ngày trả đã commit như hiện tại.
+4. Chạy RED/GREEN tập trung, ma trận `TZ=UTC`, repository/FE09, backend đầy đủ, traceability, secrets và vệ sinh diff; chỉ chạy SQL thay đổi trên cơ sở dữ liệu dùng một lần không phải staging đã được cấu hình.
+5. H2 ngày 2026-08-02 phê duyệt đúng diff FE07/evidence để commit, push và mở Draft PR. Giữ FE07-T061 mở; sau khi có bản deploy đúng SHA, L4 yêu cầu một lượt staging acceptance sạch và H3 vẫn bắt buộc trước merge.
+
+Kế hoạch thực thi chi tiết: `docs/superpowers/plans/2026-08-02-fe07-return-date-business-persistence.md`.
+
+Bằng chứng H1 cục bộ: RED chứng minh đối số persistence là ngày UTC thô; GREEN đổi đúng một đối số production. FE07/FE09/repository `114/114`, system `11/11`, backend/coverage `1.175/1.175`, trace FE07 `100%`, secrets `5/5` và vệ sinh diff đạt. SQL dùng một lần không chạy vì chưa có cấu hình. H2 đã cấp cho publication scope; L4 staging, FE07-T061 và H3 vẫn mở.

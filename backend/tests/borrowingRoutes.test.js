@@ -897,7 +897,7 @@ describe('FE07 borrowing management', () => {
     });
   });
 
-  test('return fine candidate uses the Vietnam business date across UTC midnight', async () => {
+  test('default return persists the Vietnam business date across UTC midnight', async () => {
     const { app, authDependencies, borrowingDependencies } = makeTestApp({
       clock: () => new Date('2026-07-22T17:30:00.000Z'),
     });
@@ -931,6 +931,12 @@ describe('FE07 borrowing management', () => {
     );
     storedDetail.borrowDate = new Date('2026-07-01T00:00:00.000Z');
     storedDetail.dueDate = new Date('2026-07-22T00:00:00.000Z');
+    let persistedReturnDate;
+    const originalReturn = borrowingDependencies.borrowingRepository.returnBorrowDetail;
+    borrowingDependencies.borrowingRepository.returnBorrowDetail = async (input) => {
+      persistedReturnDate = input.returnDate;
+      return originalReturn.call(borrowingDependencies.borrowingRepository, input);
+    };
 
     const response = await request(app)
       .patch(`/api/borrow-details/${borrowDetailId}/return`)
@@ -938,6 +944,8 @@ describe('FE07 borrowing management', () => {
       .send({ condition: 'NORMAL' })
       .expect(200);
 
+    expect(persistedReturnDate).toBe('2026-07-23');
+    expect(storedDetail.returnDate).toBe('2026-07-23');
     expect(response.body.fineCandidate).toMatchObject({
       borrowDetailId,
       overdueDays: 1,
