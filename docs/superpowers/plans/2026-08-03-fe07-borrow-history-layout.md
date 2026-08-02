@@ -214,15 +214,24 @@ test('FE07 history timeline becomes vertical inside the stacked mobile table', a
 });
 ```
 
+Đồng thời thêm assertion sau vào test desktop của Task 1 để tabpanel không truyền min-content 1180px lên grid card:
+
+```js
+  assert.match(
+    styles,
+    /\.member-history-card \[role="tabpanel"\]\s*\{[^}]*min-width:\s*0;/s,
+  );
+```
+
 - [ ] **Step 2: Chạy source-contract mobile và xác nhận RED**
 
 Run:
 
 ```powershell
-node --test --test-name-pattern="vertical inside the stacked mobile table" frontend/test/borrowingFrontend.test.js
+node --test --test-name-pattern="allocates all seven desktop columns|vertical inside the stacked mobile table" frontend/test/borrowingFrontend.test.js
 ```
 
-Expected: FAIL tại assertion `.member-history-table { min-width: 0; }` hoặc `.borrow-journey { flex-direction: column; ... }` vì baseline chưa có responsive override.
+Expected: FAIL tại assertion tabpanel `min-width: 0`, `.member-history-table { min-width: 0; }` hoặc `.borrow-journey { flex-direction: column; ... }` vì baseline chưa có containment/responsive override.
 
 - [ ] **Step 3: Thêm helper Playwright đo timeline trong ô**
 
@@ -313,9 +322,15 @@ npx playwright test tests/e2e/fe07-fe12-connected-demo-flow.spec.js --project=ch
 
 Expected: connected story dựng được timeline đủ `4` bước; test FAIL tại `toHaveCSS('flex-direction', 'column')` hoặc mobile table overflow. Các desktop bounding-box assertions phải qua sau Task 1. Lưu exact failure trước khi sửa CSS.
 
-- [ ] **Step 6: Triển khai mobile override tối thiểu trong breakpoint hiện có**
+- [ ] **Step 6: Triển khai containment cho tabpanel và mobile override tối thiểu**
 
-Trong block `@media (max-width: 640px)` của `frontend/src/styles/app-shell.css`, thêm trước `.app-content`:
+Gần các rule `.member-history-card`, thêm rule global để grid item co về đúng chiều rộng card và trao overflow cho `.lib-table-wrap`:
+
+```css
+.member-history-card [role="tabpanel"] { min-width: 0; }
+```
+
+Sau đó, trong block `@media (max-width: 640px)` của `frontend/src/styles/app-shell.css`, thêm trước `.app-content`:
 
 ```css
   .member-history-table { min-width: 0; }
@@ -350,7 +365,7 @@ Không đổi generic `.operational-table` responsive rules; chỉ override lị
 Run:
 
 ```powershell
-node --test --test-name-pattern="vertical inside the stacked mobile table" frontend/test/borrowingFrontend.test.js
+node --test --test-name-pattern="allocates all seven desktop columns|vertical inside the stacked mobile table" frontend/test/borrowingFrontend.test.js
 npx playwright test tests/e2e/fe07-fe12-connected-demo-flow.spec.js --project=chromium --reporter=list
 ```
 
