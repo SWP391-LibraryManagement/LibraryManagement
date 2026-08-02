@@ -1162,6 +1162,7 @@
 .member-history-card { display: grid; gap: 16px; min-width: 0; padding: 20px; overflow: hidden; }
 .member-history-card .data-toolbar { margin: 0; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
 .member-history-card .lib-table-wrap { max-width: 100%; border-radius: var(--lib-radius-sm); }
+.member-history-card [role="tabpanel"] { min-width: 0; }
 .member-history-table { min-width: 1180px; table-layout: fixed; }
 .member-history-table th:first-child { width: 24%; }
 .member-history-table th:nth-child(2) { width: 30%; }
@@ -1238,6 +1239,29 @@
   .member-borrow-stats { grid-template-columns: 1fr 1fr; }
   .member-borrow-toolbar { grid-template-columns: 1fr; }
   .member-borrow-toolbar > .muted { text-align: left; }
+  .member-history-table { min-width: 0; }
+  .borrow-journey {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    min-width: 0;
+    width: 100%;
+  }
+  .borrow-journey__step {
+    flex: none;
+    width: 100%;
+    padding: 0 0 18px 26px;
+  }
+  .borrow-journey__step:last-child { padding-bottom: 0; }
+  .borrow-journey__step:not(:last-child)::after {
+    top: 14px;
+    right: auto;
+    bottom: 0;
+    left: 7px;
+    width: 2px;
+    height: auto;
+  }
+  .borrow-journey__marker { top: 0; left: 0; transform: none; }
   .app-content { padding: 20px 16px 44px; }
   .app-topbar { padding: 0 14px; }
   .app-user-copy { display: none; }

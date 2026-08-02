@@ -41,6 +41,32 @@ function expectNoHorizontalOverflow(page) {
   )).resolves.toBe(true);
 }
 
+async function expectBorrowingJourneyFits(page, width, height) {
+  await page.setViewportSize({ width, height });
+  const historyRow = page.locator('.member-history-table tbody tr')
+    .filter({ hasText: 'Clean Code' })
+    .first();
+  const journeyCell = historyRow.locator('td[data-label="Hành trình"]');
+  const journey = journeyCell.locator('.borrow-journey');
+  const borrowDateCell = historyRow.locator('td[data-label="Ngày mượn"]');
+
+  await expect(journey).toBeVisible();
+  const [journeyBox, journeyCellBox, borrowDateBox] = await Promise.all([
+    journey.boundingBox(),
+    journeyCell.boundingBox(),
+    borrowDateCell.boundingBox(),
+  ]);
+  expect(journeyBox).not.toBeNull();
+  expect(journeyCellBox).not.toBeNull();
+  expect(borrowDateBox).not.toBeNull();
+  expect(journeyBox.x).toBeGreaterThanOrEqual(journeyCellBox.x - 1);
+  expect(journeyBox.x + journeyBox.width)
+    .toBeLessThanOrEqual(journeyCellBox.x + journeyCellBox.width + 1);
+  expect(journeyCellBox.x + journeyCellBox.width)
+    .toBeLessThanOrEqual(borrowDateBox.x + 1);
+  await expectNoHorizontalOverflow(page);
+}
+
 // @spec SL-006, FR-FE07-042, FR-FE08-038, BR-FE10-023, FR-FE12-012
 test('[E2E-CONNECTED-001] FE07 FE08 FE10 FE12 complete one truthful circulation story', async ({
   page,
@@ -215,5 +241,45 @@ test('[E2E-CONNECTED-001] FE07 FE08 FE10 FE12 complete one truthful circulation 
     path: 'output/playwright/connected-flow/03-fe12-final-operations-summary.png',
     fullPage: true,
   });
+
+  await clearSession(page);
+  await login(page, memberAEmail, password);
+  await page.goto(`${FRONTEND_URL}/borrowing/history`);
+  const completedJourney = page.getByRole('list', { name: /Hành trình Clean Code/i }).first();
+  await expect(completedJourney.locator('.borrow-journey__step')).toHaveCount(4);
+
+  for (const viewport of [
+    { width: 1440, height: 900 },
+    { width: 1366, height: 768 },
+    { width: 1280, height: 720 },
+  ]) {
+    await expectBorrowingJourneyFits(page, viewport.width, viewport.height);
+  }
+
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await expectNoHorizontalOverflow(page);
+  const desktopTableOverflow = await page.locator('.member-history-card .lib-table-wrap').evaluate(
+    (element) => ({
+      overflowX: getComputedStyle(element).overflowX,
+      clientWidth: element.clientWidth,
+      scrollWidth: element.scrollWidth,
+    }),
+  );
+  expect(desktopTableOverflow.overflowX).toBe('auto');
+  expect(desktopTableOverflow.scrollWidth).toBeGreaterThan(desktopTableOverflow.clientWidth);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobileJourney = page.getByRole('list', { name: /Hành trình Clean Code/i }).first();
+  await expect(mobileJourney).toHaveCSS('flex-direction', 'column');
+  await expectNoHorizontalOverflow(page);
+  const mobileTableOverflow = await page.locator('.member-history-card .lib-table-wrap').evaluate(
+    (element) => ({ clientWidth: element.clientWidth, scrollWidth: element.scrollWidth }),
+  );
+  expect(mobileTableOverflow.scrollWidth).toBeLessThanOrEqual(mobileTableOverflow.clientWidth);
+  await page.screenshot({
+    path: 'output/playwright/connected-flow/01b-fe07-mobile-timeline.png',
+    fullPage: true,
+  });
+
   expect(browserErrors).toEqual([]);
 });

@@ -484,7 +484,36 @@ test('FE07 history allocates all seven desktop columns and visible terminal badg
   );
   assert.match(
     styles,
+    /\.member-history-card \[role="tabpanel"\]\s*\{[^}]*min-width:\s*0;/s,
+  );
+  assert.match(
+    styles,
     /\.badge-red,[^{]*\.badge-damaged,[^{]*\.badge-lost[^{]*\{[^}]*color:\s*var\(--st-red\);[^}]*background:\s*var\(--st-red-bg\);/s,
+  );
+});
+
+test('FE07 history timeline becomes vertical inside the stacked mobile table', async () => {
+  const styles = await readFile(new URL('../src/styles/app-shell.css', import.meta.url), 'utf8');
+  const mobileStart = styles.indexOf('@media (max-width: 640px)');
+
+  assert.notEqual(mobileStart, -1, 'Missing max-width: 640px breakpoint');
+  const mobileStyles = styles.slice(mobileStart);
+  assert.match(mobileStyles, /\.member-history-table\s*\{[^}]*min-width:\s*0;/s);
+  assert.match(
+    mobileStyles,
+    /\.borrow-journey\s*\{[^}]*flex-direction:\s*column;[^}]*min-width:\s*0;[^}]*width:\s*100%;/s,
+  );
+  assert.match(
+    mobileStyles,
+    /\.borrow-journey__step\s*\{[^}]*flex:\s*none;[^}]*width:\s*100%;[^}]*padding:\s*0 0 18px 26px;/s,
+  );
+  assert.match(
+    mobileStyles,
+    /\.borrow-journey__step:not\(:last-child\)::after\s*\{[^}]*bottom:\s*0;[^}]*left:\s*7px;[^}]*width:\s*2px;[^}]*height:\s*auto;/s,
+  );
+  assert.match(
+    mobileStyles,
+    /\.borrow-journey__marker\s*\{[^}]*top:\s*0;[^}]*left:\s*0;[^}]*transform:\s*none;/s,
   );
 });
 
