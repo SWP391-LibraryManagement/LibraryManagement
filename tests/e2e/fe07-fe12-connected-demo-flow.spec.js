@@ -272,10 +272,15 @@ test('[E2E-CONNECTED-001] FE07 FE08 FE10 FE12 complete one truthful circulation 
   const mobileJourney = page.getByRole('list', { name: /Hành trình Clean Code/i }).first();
   await expect(mobileJourney).toHaveCSS('flex-direction', 'column');
   await expectNoHorizontalOverflow(page);
+  const mobileHistoryCardBox = await page.locator('.member-history-card').boundingBox();
+  expect(mobileHistoryCardBox).not.toBeNull();
+  expect(mobileHistoryCardBox.x).toBeGreaterThanOrEqual(0);
+  expect(mobileHistoryCardBox.x + mobileHistoryCardBox.width).toBeLessThanOrEqual(391);
   const mobileTableOverflow = await page.locator('.member-history-card .lib-table-wrap').evaluate(
     (element) => ({ clientWidth: element.clientWidth, scrollWidth: element.scrollWidth }),
   );
   expect(mobileTableOverflow.scrollWidth).toBeLessThanOrEqual(mobileTableOverflow.clientWidth);
+  await expect(page.locator('.app-sidebar')).not.toBeInViewport();
   await page.screenshot({
     path: 'output/playwright/connected-flow/01b-fe07-mobile-timeline.png',
     fullPage: true,
