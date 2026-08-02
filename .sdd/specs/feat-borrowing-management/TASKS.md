@@ -1,14 +1,14 @@
 # TASKS.md - FE07 Quản lý mượn sách
 
-Trạng thái: HOÀN THÀNH; PR #96 ĐÃ HỢP NHẤT; CI VÀ AZURE ĐÃ CHẠY THÀNH CÔNG TRÊN ĐÚNG COMMIT
-Implementation State: COMPLETE
+Trạng thái: v0.10.0 ĐÃ QUA H2 BAN ĐẦU VÀ CI PR #102; CHỜ H2 BỔ SUNG SAU KHẮC PHỤC H3 VÀ LIVE ACCEPTANCE
+Implementation State: PARTIAL
 
 Phạm vi mở rộng v0.8.0/v0.9.0 đã được triển khai và kiểm tra tự động;
 quy trình rà soát H2/H3 và hợp nhất cũng đã hoàn tất. Giai đoạn 2 trước đó vẫn hoàn tất.
 
 Chủ sở hữu: Nhat
 
-Cập nhật: 2026-08-02
+Cập nhật: 2026-08-03
 
 Trạng thái quy trình hiện tại: Mốc cơ sở Giai đoạn 2 vẫn hoàn tất. Đối soát
 FE07-FE12 đã hợp nhất qua PR #63 thành `29b4eb0` sau H3 và CI. Đợt liên hoàn
@@ -393,3 +393,21 @@ Phần thay đổi của sản phẩm vẫn giữ chưa được commit cho tớ
   - H2 ngày 2026-08-02: phê duyệt đúng diff FE07/evidence để commit, push và mở Draft PR; không cấp quyền merge hoặc đóng FE07-T061.
   - Bằng chứng deploy/L4: workflow `30722972056` triển khai đúng SHA `bf4dd2268c63a00620fc262f643768c2f434894c`; run `lms-acceptance-20260802-b22898eb` đạt toàn bộ luồng liên vai trò. SQL exact-ID sau cleanup ghi `BorrowDetailId=66`, `ReturnDate=2026-08-02`, `OverdueDays=3`, `Amount=15000`; cleanup `CLEANED`, bốn login và token cũ đều `401`, runtime/helper `404/404`.
   - H3/đóng tác vụ: Standards và Spec đều không còn finding trên head `7660a6e`; PR #96 hợp nhất thành `e4bdfd8`. CI `main` `30725685264` và deploy staging `30725829869` đạt trên đúng merge commit; frontend `/login`, backend `/health` và public catalog đều trả `200`. FE07-T061 đã đóng.
+
+## 2026-08-03 - Candidate shell và fixture staging v0.10.0
+
+- [x] **FE07-T062 - RED/GREEN trạng thái rỗng ứng viên trung thực.**
+  - Ánh xạ: BR-FE07-038, FR-FE07-045, AC-FE07-037, AC-BCSF-005.
+  - DoD: server-empty, search-empty và lỗi API có ba cách trình bày không nhập nhằng.
+- [x] **FE07-T063 - RED/GREEN công cụ staging có cổng bảo vệ.**
+  - Ánh xạ: BR-FE07-039, FR-FE07-046, AC-FE07-038/039, AC-BCSF-006/007.
+  - DoD: status chỉ đọc; reset staging-only, fixture-only, tham số hóa, transaction,
+    audit, lũy đẳng và rollback; workflow chỉ đóng gói, không tự chạy.
+- [ ] **FE07-T064 - Hồi quy và acceptance submit-one/remain-one.**
+  - Ánh xạ: AC-FE07-040, AC-BCSF-008.
+  - DoD: gate FE07/FE08/Chromium/trace đạt; live staging chỉ chạy sau H3 và chứng minh
+    hai tiêu đề, gửi một yêu cầu, còn tiêu đề thứ hai cùng bất biến ngoài fixture.
+  - Bằng chứng ban đầu: frontend `31/31`, script `14/14`, FE07/FE08 backend `133/133`,
+    Chromium `4/4`; H2 ban đầu và CI PR #102 đã đạt. Khắc phục H3 nâng script lên
+    `19/19`, gồm phục hồi/audit title drift để luôn giữ hai tiêu đề khác nhau; trace
+    FE07 lên `46/46`. Giữ mở cho H2 bổ sung và live staging sau H3/deploy.

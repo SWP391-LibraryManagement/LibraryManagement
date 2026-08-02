@@ -33,6 +33,11 @@ test('staging deployment follows successful main CI and packages the reviewed st
     workflow,
     /Copy-Item [^\r\n]*database\/migrations\/2026-07-29-fe10-borrowing-result-templates\.sql[^\r\n]*deploy\/backend\/database\/migrations\//
   );
+  assert.match(
+    workflow,
+    /Copy-Item backend\/scripts\/stagingBorrowCandidates\.js deploy\/backend\/scripts\//
+  );
+  assert.doesNotMatch(workflow, /run:\s*.*staging:borrow-candidates/);
 });
 
 test('automatic and manual staging deployment require the fail-closed smoke check', () => {

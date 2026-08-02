@@ -531,6 +531,46 @@ npm.cmd run smoke:staging
 The smoke script is read-only and checks frontend HTML, API health, allowed/blocked CORS, and
 anonymous rejection from `/api/auth/me`.
 
+## Guarded Borrow Candidate Demo Fixtures
+
+The backend staging artifact packages `scripts/stagingBorrowCandidates.js` for
+manual operator use. Deployment and application startup never invoke it.
+
+Fixture ownership is limited to:
+
+- ISBNs `STAGING-BORROW-DEMO1` and `STAGING-BORROW-DEMO2` (ownership prefix
+  `STAGING-BORROW-DEMO`, respecting the 20-character ISBN column);
+- barcode prefix `STG-BORROW-DEMO-`; and
+- location `STAGING-DEMO`.
+
+From the deployed backend root, inspect read-only state first:
+
+```bash
+npm run staging:borrow-candidates -- status
+```
+
+`status` requires `DB_NAME=LibraryManagementStaging` but no mutation flag. It
+prints synthetic identifiers, counts and statuses only.
+
+Reset requires a configured synthetic Member email plus an explicit flag in the
+current operator session:
+
+```bash
+test -n "$STAGING_DEMO_MEMBER_EMAIL" || { echo 'STAGING_DEMO_MEMBER_EMAIL is required.' >&2; exit 1; }
+export STAGING_DEMO_ALLOW_MUTATION=true
+npm run staging:borrow-candidates -- reset
+unset STAGING_DEMO_ALLOW_MUTATION
+unset STAGING_DEMO_MEMBER_EMAIL
+```
+
+Never persist `STAGING_DEMO_ALLOW_MUTATION=true` in App Service settings. Reset
+must stop without mutation for the wrong database, missing flag, missing active
+Admin, ineligible Member, mixed tagged/untagged request, damaged/lost fixture or
+any unexpected state. It uses parameterized SQL and one transaction, preserves
+unrelated rows, leaves audit markers and restores exactly two distinct available
+fixture titles. A non-zero exit requires manual review; do not bypass the guard
+with ad hoc bulk SQL.
+
 ## Rollback
 
 - Backend: redeploy the last known-good commit or use App Service deployment history.

@@ -9,6 +9,7 @@ const DEFAULT_COVER =
 const BOOK_STATUSES = new Set(['ACTIVE', 'INACTIVE']);
 const SORT_FIELDS = new Set(['title', 'publishYear', 'createdAt']);
 const SORT_ORDERS = new Set(['asc', 'desc']);
+const CIRCULATION_ACTIONS = new Set(['BORROW', 'RESERVE', 'WAIT', 'UNAVAILABLE']);
 const MAX_BOOK_COVER_BYTES = 2 * 1024 * 1024;
 const ALLOWED_BOOK_COVER_TYPES = {
   'image/jpeg': new Set(['.jpg', '.jpeg']),
@@ -152,6 +153,12 @@ function availabilityStatus(book) {
     : 'UNAVAILABLE';
 }
 
+function circulationAction(book) {
+  return CIRCULATION_ACTIONS.has(book?.circulationAction)
+    ? book.circulationAction
+    : 'UNAVAILABLE';
+}
+
 function nullableValue(value) {
   if (value === undefined || value === null || value === '') return null;
   return value;
@@ -169,6 +176,7 @@ function mapPublicBook(book) {
     description: nullableValue(book.description),
     coverUrl: nullableValue(book.cover || book.coverUrl),
     availabilityStatus: availability,
+    circulationAction: circulationAction(book),
   };
 }
 
@@ -336,7 +344,7 @@ function createBookService({
     return result.book || result;
   }
 
-  // @spec FR-FE01-003, FR-FE01-004, FR-FE01-008, FR-FE01-010, FR-FE01-013
+  // @spec FR-FE01-003, FR-FE01-004, FR-FE01-008, FR-FE01-010, FR-FE01-013, FR-FE01-019
   // @spec FR-FE05-001 FR-FE05-002 FR-FE05-009 FR-FE05-010 FR-FE05-020 FR-FE05-024
   async function getHomeBooks(filters = {}) {
     const normalized = normalizeListFilters(filters);
@@ -350,7 +358,7 @@ function createBookService({
     return listResponse(await bookRepository.getManagementBooks(normalized), normalized, { staff: true });
   }
 
-  // @spec FR-FE01-005, FR-FE01-006, FR-FE01-008, FR-FE01-009, FR-FE01-010, FR-FE01-012, FR-FE01-013
+  // @spec FR-FE01-005, FR-FE01-006, FR-FE01-008, FR-FE01-009, FR-FE01-010, FR-FE01-012, FR-FE01-013, FR-FE01-019
   // @spec FR-FE05-003 FR-FE05-014 FR-FE05-019 FR-FE05-020
   async function getBookById(bookId, { staff = false } = {}) {
     const id = normalizePositiveInt(bookId, 'bookId', { required: true });

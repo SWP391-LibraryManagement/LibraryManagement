@@ -24,6 +24,16 @@ test('zero available copies and inactive parents cannot be reported as AVAILABLE
   }
 });
 
+// @spec BR-FE01-018, FR-FE01-019, AC-FE01-019, AC-FE01-021, AC-FE01-022
+test('circulation reads preserve physical availability and add a fail-closed action', () => {
+  expect(repositorySource).toMatch(/AS\s+availabilityStatus/i);
+  expect(repositorySource).toMatch(/AS\s+circulationAction/i);
+  expect(repositorySource).toMatch(/THEN\s+'BORROW'/i);
+  expect(repositorySource).toMatch(/THEN\s+'RESERVE'/i);
+  expect(repositorySource).toMatch(/THEN\s+'WAIT'/i);
+  expect(repositorySource).toMatch(/ELSE\s+'UNAVAILABLE'[\s\S]*AS\s+circulationAction/i);
+});
+
 // @spec BR-FE05-016, BR-FE05-017, AC-FE05-004, AC-FE05-014, AC-FE05-015
 test('management reads expose version and deterministic sort with BookId tie-breaker', () => {
   expect(repositorySource).toMatch(/(?:RowVersion|Version)\s+AS\s+version/i);

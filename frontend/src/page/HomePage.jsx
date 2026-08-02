@@ -248,14 +248,15 @@ const BookInfoPanel = ({ book, action, canViewAvailability, showRoleAction, deta
       </button>
       <button
         onClick={onAction}
+        disabled={showRoleAction && action.disabled}
         style={{
           width: '100%', padding: '12px', borderRadius: 8, marginTop: 10,
           border: '1.5px solid #8B6B4A', background: 'transparent',
-          color: '#8B6B4A', cursor: 'pointer', fontSize: 14, fontWeight: 700,
+          color: '#8B6B4A', cursor: action.disabled ? 'not-allowed' : 'pointer', fontSize: 14, fontWeight: 700,
           transition: 'all 0.2s', fontFamily: 'var(--sans)',
         }}
-        onMouseEnter={e => { e.currentTarget.style.background = '#8B6B4A'; e.currentTarget.style.color = '#FAF7F2'; }}
-        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#8B6B4A'; }}
+        onMouseEnter={e => { if (!action.disabled) { e.currentTarget.style.background = '#8B6B4A'; e.currentTarget.style.color = '#FAF7F2'; } }}
+        onMouseLeave={e => { if (!action.disabled) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#8B6B4A'; } }}
       >
         {showRoleAction ? action.label : 'Đăng nhập để tiếp tục'}
       </button>
@@ -326,13 +327,13 @@ const BookDetailsModal = ({ book, action, canViewAvailability, showRoleAction, o
                 Không khả dụng
               </button>
             )}
-            <button onClick={onAction} style={{
+            <button onClick={onAction} disabled={showRoleAction && action.disabled} style={{
               padding: '10px', borderRadius: 8, border: '1.5px solid rgba(78,52,46,0.25)',
-              background: 'transparent', color: '#7A5C44', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+              background: 'transparent', color: '#7A5C44', cursor: action.disabled ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 600,
               fontFamily: 'var(--sans)', transition: 'all 0.2s',
             }}
-              onMouseEnter={e => { e.currentTarget.style.background = '#EDE0CE'; e.currentTarget.style.borderColor = '#8B6B4A'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(78,52,46,0.25)'; }}
+              onMouseEnter={e => { if (!action.disabled) { e.currentTarget.style.background = '#EDE0CE'; e.currentTarget.style.borderColor = '#8B6B4A'; } }}
+              onMouseLeave={e => { if (!action.disabled) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(78,52,46,0.25)'; } }}
             >
               {showRoleAction ? action.label : 'Đăng nhập để tiếp tục'}
             </button>
@@ -527,6 +528,7 @@ const HomePage = () => {
 
   const handleBookAction = (book) => {
     const action = getHomeBookAction({ book, isLoggedIn, roles: authUser?.roles || [] });
+    if (action.disabled || !action.path) return;
     setShowDetails(false);
     setSelectedBook(null);
     navigate(action.path);
@@ -1082,7 +1084,9 @@ const HomePage = () => {
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(175px, 1fr))', gap: 22, alignItems: 'stretch' }}>
-              {searchResults.map(book => (
+              {searchResults.map(book => {
+                const bookAction = getHomeBookAction({ book, isLoggedIn, roles: authUser?.roles || [] });
+                return (
                 <div key={book.bookId} className="home-book-card home-book-card--search" style={{
                   background: '#FAF7F2', borderRadius: 12, overflow: 'hidden',
                   border: '1px solid rgba(78,52,46,0.07)', boxShadow: '0 2px 10px rgba(78,52,46,0.05)',
@@ -1109,12 +1113,15 @@ const HomePage = () => {
                     <p style={{ fontSize: 10, color: '#C78A3B', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 4px', minHeight: 13, ...textClamp(1) }}>{getCategoryLabel(book.categoryName || 'Chưa phân loại')}</p>
                     <h3 style={{ fontFamily: 'var(--heading)', fontSize: 14, fontWeight: 600, color: '#2C1A0E', margin: '0 0 3px', lineHeight: 1.3, minHeight: 36, ...textClamp(2) }}>{book.title}</h3>
                     <p style={{ fontSize: 12, color: '#7A5C44', margin: '0 0 8px', minHeight: 16, ...textClamp(1) }}>{book.authorName || 'Không rõ tác giả'}</p>
-                    <button onClick={e => { e.stopPropagation(); handleBookAction(book); }}
-                      style={{ marginTop: 'auto', width: '100%', padding: '7px 0', borderRadius: 6, border: '1.5px solid #C78A3B', background: canViewAvailability && book.availabilityStatus === 'AVAILABLE' ? '#C78A3B' : 'transparent', color: canViewAvailability && book.availabilityStatus === 'AVAILABLE' ? '#FFF' : '#8B6B4A', cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'var(--sans)', transition: 'all 0.2s' }}
-                    >{showRoleBookAction ? getHomeBookAction({ book, isLoggedIn, roles: authUser?.roles || [] }).label : 'Đăng nhập để tiếp tục'}</button>
+                    <button
+                      onClick={e => { e.stopPropagation(); handleBookAction(book); }}
+                      disabled={showRoleBookAction && bookAction.disabled}
+                      style={{ marginTop: 'auto', width: '100%', padding: '7px 0', borderRadius: 6, border: '1.5px solid #C78A3B', background: canViewAvailability && book.availabilityStatus === 'AVAILABLE' ? '#C78A3B' : 'transparent', color: canViewAvailability && book.availabilityStatus === 'AVAILABLE' ? '#FFF' : '#8B6B4A', cursor: bookAction.disabled ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'var(--sans)', transition: 'all 0.2s' }}
+                    >{showRoleBookAction ? bookAction.label : 'Đăng nhập để tiếp tục'}</button>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </section>

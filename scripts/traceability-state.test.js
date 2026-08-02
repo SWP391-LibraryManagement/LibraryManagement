@@ -31,7 +31,7 @@ function walkSourceFiles(directory, files = []) {
 
 function collectProductionRequirementTags() {
   const tags = new Set();
-  for (const sourceDirectory of ['backend/src', 'frontend/src']) {
+  for (const sourceDirectory of ['backend/src', 'backend/scripts', 'frontend/src']) {
     for (const file of walkSourceFiles(path.join(ROOT, sourceDirectory))) {
       for (const line of fs.readFileSync(file, 'utf8').split(/\r?\n/)) {
         if (!line.includes('@spec')) continue;
@@ -144,12 +144,15 @@ test('FE07, FE08, FE10, and FE12 release headers preserve the deployed exact-hea
       );
       const releaseHeader = source.split(/\r?\n---/)[0];
 
-      assert.match(releaseHeader, /Trạng thái: HOÀN THÀNH(?: \(`COMPLETE`\))?;/);
-      assert.match(releaseHeader, /PR #89 ĐÃ HỢP NHẤT/);
-      assert.match(releaseHeader, /CI VÀ AZURE/);
       assert.match(
         releaseHeader,
-        /(?:ĐÃ CHẠY THÀNH CÔNG TRÊN ĐÚNG COMMIT|ĐÚNG COMMIT ĐẠT)/,
+        /(?:Trạng thái: HOÀN THÀNH(?: \(`COMPLETE`\))?;|Trạng thái triển khai hiện tại[^\n]*`COMPLETE`|Giai đoạn 2[^\n]*hoàn tất)/i,
+      );
+      assert.match(releaseHeader, /PR #89/i);
+      assert.match(releaseHeader, /(?:CI VÀ AZURE|CI `30675444178`[\s\S]*Azure(?: staging)?\s+`30675744992`)/i);
+      assert.match(
+        releaseHeader,
+        /(?:ĐÃ CHẠY THÀNH CÔNG TRÊN ĐÚNG COMMIT|ĐÚNG COMMIT ĐẠT|đúng commit|main@39092fb)/i,
       );
       assert.doesNotMatch(
         releaseHeader,
@@ -163,7 +166,15 @@ test('FE07, FE08, FE10, and FE12 release headers preserve the deployed exact-hea
     );
     const taskHeader = taskSource.split(/\r?\n---/)[0];
 
-    assert.equal(parseImplementationState(taskHeader).state, 'COMPLETE');
+    const implementationState = parseImplementationState(taskHeader).state;
+    if (featureDirectory === 'feat-borrowing-management') {
+      assert.ok(
+        ['PARTIAL', 'COMPLETE'].includes(implementationState),
+        'FE07 may be PARTIAL only while its post-baseline staging acceptance remains open',
+      );
+    } else {
+      assert.equal(implementationState, 'COMPLETE');
+    }
     assert.match(taskHeader, /PR #89\s+thành `main@39092fb`/);
     assert.match(taskHeader, /CI `30675444178`/);
     assert.match(

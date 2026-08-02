@@ -101,3 +101,31 @@ test('public availability is derived read-only from active available copies', as
   expect(capture.query).toMatch(/THEN\s+'AVAILABLE'[\s\S]{0,160}ELSE\s+'UNAVAILABLE'/i);
   expect(capture.query).not.toMatch(/(?:INSERT\s+INTO|UPDATE|DELETE\s+FROM)\s+(?:Books|BookCopies)/i);
 });
+
+// @spec BR-FE01-018, FR-FE01-019, AC-FE01-019, AC-FE01-020, AC-FE01-021, AC-FE01-022
+test('public circulation action is read-only and uses FE07/FE08 claim precedence', async () => {
+  const capture = capturePublicQuery([]);
+
+  await bookRepository.getHomeBooks({
+    q: '',
+    page: 1,
+    limit: 20,
+    sort: 'title',
+    order: 'asc',
+  });
+
+  expect(capture.query).toMatch(
+    /THEN\s+'BORROW'[\s\S]*THEN\s+'RESERVE'[\s\S]*THEN\s+'WAIT'[\s\S]*ELSE\s+'UNAVAILABLE'[\s\S]*AS\s+circulationAction/i
+  );
+  expect(capture.query).toMatch(/pendingRequest\.Status\s*=\s*'PENDING'/i);
+  expect(capture.query).toMatch(/pendingDetail\.Status\s*=\s*'REQUESTED'/i);
+  expect(capture.query).toMatch(
+    /openReservation\.Status\s+IN\s*\('ACTIVE',\s*'NOTIFIED'\)/i
+  );
+  expect(capture.query).toMatch(
+    /reserveCopy\.Status\s+IN\s*\('BORROWED',\s*'RESERVED'\)/i
+  );
+  expect(capture.query).not.toMatch(
+    /(?:INSERT\s+INTO|UPDATE|DELETE\s+FROM)\s+(?:BorrowRequests|BorrowDetails|Reservations|BookCopies)/i
+  );
+});

@@ -1,12 +1,12 @@
 # PLAN.md - FE01 Công Khai / Duyệt Sách
 
-Phiên bản: 0.3.7
+Phiên bản: 0.5.0
 
-Trạng thái: HOÀN THÀNH - BẰNG CHỨNG KẾT THÚC GIAI ĐOẠN 2 ĐÃ ĐƯỢC GHI NHẬN
+Trạng thái: v0.5.0 ĐÃ QUA H2 BAN ĐẦU VÀ CI PR #102; CHỜ H2 BỔ SUNG SAU KHẮC PHỤC H3
 
 Chủ sở hữu: Dung
 
-Cập nhật: 2026-07-26
+Cập nhật: 2026-08-03
 
 Trạng thái quy trình: HOÀN THÀNH đối với phạm vi Giai đoạn 2 đã được phê duyệt; H3, merge và CI `main` chính xác sau merge được ghi nhận trong `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. Các tuyên bố gate đang chờ/còn mở được giữ lại bên dưới là snapshot triển khai lịch sử đã được bằng chứng đó thay thế.
 
@@ -140,3 +140,21 @@ Envelope phản hồi phải tuân theo quy ước API dùng chung đã được
 - [x] Bằng chứng backend tập trung 9/9 và tình trạng có sẵn SQL dùng một lần của FE01 đã được ghi nhận cho baseline.
 - [x] Bằng chứng Homepage hiện tại đạt: frontend duyệt sách công khai 14/14, frontend tập trung kết hợp 39/39, truy vết 18/18, lint, build production và kiểm tra diff.
 - [ ] Dung và Nhat review DTO an toàn cho công khai cuối cùng và ranh giới không mutation trước khi merge.
+
+## 12. Đợt circulation action v0.5.0 (H1 2026-08-03)
+
+1. FE01-T015 bắt đầu bằng RED cho SQL/read model, phép chiếu public-safe và OpenAPI;
+   GREEN bổ sung `circulationAction` nhưng giữ nguyên `availabilityStatus`.
+2. FE01-T016 bắt đầu bằng RED cho bốn hành động Thành viên; GREEN vô hiệu hóa
+   `WAIT`/`UNAVAILABLE`, giữ Khách và route quản lý nhân viên hiện có.
+3. FE01-T017 chạy hồi quy FE07/FE08, Chromium có kiểm soát, truy vết và bằng chứng
+   H2. Không commit/push trước H2; không merge/deploy trước H3.
+4. Không đổi route, schema, enum, giới hạn hoặc phép lọc ứng viên FE07/FE08.
+
+Gate tập trung:
+
+```powershell
+npm.cmd --prefix backend test -- --runTestsByPath tests/publicBrowseRepository.test.js tests/bookAvailabilityRepository.test.js tests/bookRoutes.test.js tests/publicBrowseRoutes.test.js
+node --test frontend/test/homeBookActions.test.js frontend/test/publicBrowseFrontend.test.js
+npm.cmd run trace:enforce
+```

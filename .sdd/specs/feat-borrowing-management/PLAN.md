@@ -1,10 +1,10 @@
 # PLAN.md - FE07 Quản lý mượn sách
 
-Trạng thái: HOÀN THÀNH; PR #89 ĐÃ HỢP NHẤT; CI VÀ AZURE ĐÃ CHẠY THÀNH CÔNG TRÊN ĐÚNG COMMIT
+Trạng thái: v0.10.0 ĐÃ QUA H2 BAN ĐẦU VÀ CI PR #102; CHỜ H2 BỔ SUNG SAU KHẮC PHỤC H3 VÀ LIVE ACCEPTANCE
 
 Chủ sở hữu: Nhat
 
-Cập nhật: 2026-08-01
+Cập nhật: 2026-08-03
 
 Trạng thái quy trình: Giai đoạn 2 đã hoàn tất. Nhat phê duyệt phụ lục H2
 `8d0059b` vào 2026-07-27. Phần thay đổi đã được rà soát được lưu trong commit
@@ -278,3 +278,21 @@ tests; sau đó toàn bộ kiểm thử backend/frontend, E2E, traceability và 
 Kế hoạch thực thi chi tiết: `docs/superpowers/plans/2026-08-02-fe07-return-date-business-persistence.md`.
 
 Bằng chứng H1 cục bộ: RED chứng minh đối số persistence là ngày UTC thô; GREEN đổi đúng một đối số production. FE07/FE09/repository `114/114`, system `11/11`, backend/coverage `1.175/1.175`, trace FE07 `100%`, secrets `5/5` và vệ sinh diff đạt. SQL dùng một lần không chạy vì chưa có cấu hình. H2 đã cấp cho publication scope; L4 staging, FE07-T061 và H3 vẫn mở.
+
+## 2026-08-03 - Đợt candidate shell và fixture staging v0.10.0
+
+1. FE07-T062 RED/GREEN hai trạng thái empty của trang tạo yêu cầu; không đổi API.
+2. FE07-T063 RED/GREEN script `status`/`reset`: `DB_NAME` chính xác, flag mutation
+   rõ ràng, SQL tham số hóa, khóa transaction, fixture-only, audit và rollback.
+3. Workflow staging chỉ đóng gói đúng script operator đã review; không gọi script.
+4. FE07-T064 chạy hồi quy FE07/FE08, Playwright có kiểm soát và live acceptance chỉ
+   sau H3/deploy. Không tự xử lý hàng đợi FE08 và không sửa dữ liệu ngoài fixture.
+
+Gate tập trung:
+
+```powershell
+node --test frontend/test/borrowingFrontend.test.js
+npm.cmd --prefix backend test -- --runTestsByPath tests/stagingBorrowCandidates.test.js
+node --test tests/deployment/stagingWorkflowPolicy.test.js
+npm.cmd run trace:enforce
+```

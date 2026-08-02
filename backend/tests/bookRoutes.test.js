@@ -266,6 +266,7 @@ describe('FE05 book management v0.5.1 RED contract', () => {
       'description',
       'coverUrl',
       'availabilityStatus',
+      'circulationAction',
     ]);
     expect(memberResponse.status).toBe(200);
     expect(listItems(memberResponse.body).map((book) => book.title)).toEqual(['Sapiens']);
@@ -299,6 +300,7 @@ describe('FE05 book management v0.5.1 RED contract', () => {
       bookId: 1,
       title: 'Clean Code',
       availabilityStatus: 'AVAILABLE',
+      circulationAction: 'BORROW',
     });
     expect(Object.keys(responseBook(publicActive.body))).toEqual([
       'bookId',
@@ -310,11 +312,17 @@ describe('FE05 book management v0.5.1 RED contract', () => {
       'description',
       'coverUrl',
       'availabilityStatus',
+      'circulationAction',
     ]);
     const serialized = JSON.stringify(publicActive.body);
     expect(serialized).not.toContain('isbn');
     expect(serialized).not.toContain('book-v1');
     expect(serialized).not.toContain('staff-only acquisition note');
+    expect(serialized).not.toContain('copyId');
+    expect(serialized).not.toContain('reservationId');
+    expect(serialized).not.toContain('queuePosition');
+    expect(serialized).not.toContain('availableCopies');
+    expect(serialized).not.toContain('totalCopies');
 
     await request(app).get('/api/books/3').expect(404);
 
@@ -367,6 +375,7 @@ describe('FE05 book management v0.5.1 RED contract', () => {
       description: null,
       coverUrl: null,
       availabilityStatus: 'UNAVAILABLE',
+      circulationAction: 'UNAVAILABLE',
     };
 
     expect(listItems(listResponse.body)).toEqual([expected]);

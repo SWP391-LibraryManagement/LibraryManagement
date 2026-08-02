@@ -81,6 +81,34 @@ test('FE07 API-backed pages use empty canonical state after load failures', asyn
   }
 });
 
+test('FE07 distinguishes a server-empty candidate catalog from a local search miss', async () => {
+  const source = await readFile(
+    new URL('../src/page/borrowing/BorrowRequestPage.jsx', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(
+    source,
+    /books\.length === 0[\s\S]*Hiện không có bản sao đủ điều kiện mượn/
+  );
+  assert.match(
+    source,
+    /Sách đang được mượn, giữ chỗ hoặc chờ xử lý sẽ không xuất hiện tại đây/
+  );
+  assert.match(
+    source,
+    /books\.length > 0 && results\.length === 0[\s\S]*Không tìm thấy sách phù hợp/
+  );
+  assert.match(source, /Hãy thử tên sách hoặc tác giả khác/);
+  assert.match(source, /\.catch\(\(error\) => \{[\s\S]*setNoticeType\('error'\)/);
+  assert.match(source, /const \[loadFailed, setLoadFailed\] = useState\(false\)/);
+  assert.match(source, /\.catch\(\(error\) => \{[\s\S]*setLoadFailed\(true\)/);
+  assert.match(
+    source,
+    /!loading && !loadFailed && books\.length === 0/
+  );
+});
+
 test('FE07 mutations always call the backend instead of simulating demo success', async () => {
   const history = await readFile(new URL('../src/page/borrowing/BorrowingHistoryPage.jsx', import.meta.url), 'utf8');
   const requests = await readFile(new URL('../src/page/borrowing/BorrowRequestsAdminPage.jsx', import.meta.url), 'utf8');

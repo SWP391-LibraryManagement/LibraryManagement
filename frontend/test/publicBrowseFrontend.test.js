@@ -62,10 +62,21 @@ test('FE01 hides availability badges but exposes the owning action to Member', a
   assert.match(source, /@spec FR-FE01-018/);
   assert.match(source, /canViewAvailability && book\.availabilityStatus !== 'AVAILABLE'/);
   assert.match(source, /showRoleAction \? action\.label : 'Đăng nhập để tiếp tục'/);
-  assert.match(source, /showRoleBookAction \? getHomeBookAction\(\{ book, isLoggedIn, roles: authUser\?\.roles \|\| \[\] \}\)\.label : 'Đăng nhập để tiếp tục'/);
+  assert.match(source, /showRoleBookAction \? bookAction\.label : 'Đăng nhập để tiếp tục'/);
   assert.match(source, /canViewAvailability=\{canViewAvailability\}/);
   assert.match(source, /showRoleAction=\{showRoleBookAction\}/);
   assert.doesNotMatch(source, />Tiếp tục</);
+});
+
+test('FE01 disables every waiting or unavailable Member action surface', async () => {
+  const source = await readFile(new URL('../src/page/HomePage.jsx', import.meta.url), 'utf8');
+
+  assert.match(source, /if \(action\.disabled \|\| !action\.path\) return/);
+  assert.match(source, /disabled=\{showRoleAction && action\.disabled\}/);
+  assert.match(source, /disabled=\{showRoleBookAction && bookAction\.disabled\}/);
+  assert.match(source, /const bookAction = getHomeBookAction/);
+  assert.match(source, /cursor: action\.disabled \? 'not-allowed' : 'pointer'/);
+  assert.match(source, /cursor: bookAction\.disabled \? 'not-allowed' : 'pointer'/);
 });
 
 test('FE01 footer presents responsive library contact information without legacy link columns', async () => {

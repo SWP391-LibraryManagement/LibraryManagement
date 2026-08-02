@@ -89,7 +89,12 @@ describe('FE01 public browse contract', () => {
     const publicBookSchema = openApiDocument.components.schemas.PublicBookSummary;
 
     expect(publicBookSchema.additionalProperties).toBe(false);
-    expect(publicBookSchema.required).toEqual(['bookId', 'title', 'availabilityStatus']);
+    expect(publicBookSchema.required).toEqual([
+      'bookId',
+      'title',
+      'availabilityStatus',
+      'circulationAction',
+    ]);
     expect(Object.keys(publicBookSchema.properties)).toEqual([
       'bookId',
       'title',
@@ -100,7 +105,12 @@ describe('FE01 public browse contract', () => {
       'description',
       'coverUrl',
       'availabilityStatus',
+      'circulationAction',
     ]);
+    expect(publicBookSchema.properties.circulationAction).toEqual({
+      type: 'string',
+      enum: ['BORROW', 'RESERVE', 'WAIT', 'UNAVAILABLE'],
+    });
   });
 
   test('OpenAPI keeps the unauthenticated detail response public-safe', () => {

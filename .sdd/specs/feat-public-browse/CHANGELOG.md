@@ -1,5 +1,24 @@
 # CHANGELOG.md - FE01 Công khai / Duyệt sách
 
+## 2026-08-03 - Hoàn tất triển khai cục bộ circulation action v0.5.0
+
+- Bổ sung `circulationAction` public-safe với thứ tự `BORROW`/`RESERVE`/`WAIT`/
+  `UNAVAILABLE`, fallback fail-closed và giữ nguyên `availabilityStatus`.
+- HomePage của Thành viên chỉ điều hướng với `BORROW`/`RESERVE`; hai trạng thái còn
+  lại bị vô hiệu hóa trên mọi bề mặt. Backend tập trung đạt `62/62`, frontend tập
+  trung đạt `22/22`, Chromium liên FE01/FE07 đạt `4/4`.
+- Full gate ban đầu đạt backend `1.196/1.196`, frontend `281/281`, deployment
+  `20/20`, secrets `5/5` và trace FE01 `20/20` (`100%`). H2 ban đầu đã duyệt;
+  commit `867240c`, PR #102 và CI `30764070455` đã đạt. FE01-T017 giữ mở vì
+  diff khắc phục H3 đang chờ H2 bổ sung.
+
+## 2026-08-03 - H1 hành động lưu thông trung thực v0.5.0
+
+- Phê duyệt trường public-safe `circulationAction = BORROW | RESERVE | WAIT | UNAVAILABLE`
+  để hành động Thành viên không còn suy diễn từ tình trạng vật lý.
+- Giữ nguyên `availabilityStatus`, route, schema, enum và quyền sở hữu FE07/FE08.
+- Mở FE01-T015..017 theo RED/GREEN; thay đổi sản phẩm giữ chưa commit tới H2.
+
 ## 2026-07-27 - Hành động sách rõ ràng cho Thành viên
 
 - Thay nhãn `Tiếp tục` mơ hồ của Thành viên bằng `Mượn sách này` cho sách có sẵn và `Đặt chỗ sách này` cho sách không có sẵn trong thẻ tìm kiếm, bảng thông tin và modal chi tiết.

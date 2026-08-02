@@ -35,6 +35,7 @@ const ROOT = path.resolve(__dirname, '..');
 const SPECS_DIR = path.join(ROOT, '.sdd', 'specs');
 const CODE_DIRS = [
   path.join(ROOT, 'backend', 'src'),
+  path.join(ROOT, 'backend', 'scripts'),
   path.join(ROOT, 'frontend', 'src'),
 ];
 

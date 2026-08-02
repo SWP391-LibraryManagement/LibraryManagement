@@ -83,6 +83,7 @@ function makeInMemoryBookDependencies(authDependencies, initialState = {}) {
   const publishers = clone(initialState.publishers || DEFAULT_PUBLISHERS);
   const books = clone(initialState.books || DEFAULT_BOOKS);
   const copies = clone(initialState.copies || DEFAULT_COPIES);
+  const borrowRequests = clone(initialState.borrowRequests || []);
   const borrowDetails = clone(
     initialState.borrowDetails || [{ borrowDetailId: 1, copyId: 3, status: 'BORROWED' }]
   );
@@ -110,6 +111,36 @@ function makeInMemoryBookDependencies(authDependencies, initialState = {}) {
     const availabilityStatus = book.status === 'ACTIVE' && availableCopies > 0
       ? 'AVAILABLE'
       : 'UNAVAILABLE';
+    const pendingClaim = (copyId) => borrowDetails.some((detail) => {
+      if (detail.copyId !== copyId || detail.status !== 'REQUESTED') return false;
+      return borrowRequests.some(
+        (request) => request.requestId === detail.requestId && request.status === 'PENDING'
+      );
+    });
+    const openReservation = (copyId) => reservations.some(
+      (reservation) => reservation.copyId === copyId
+        && ['ACTIVE', 'NOTIFIED'].includes(reservation.status)
+    );
+    const hasBorrowableCopy = relatedCopies.some(
+      (copy) => copy.status === 'AVAILABLE'
+        && !pendingClaim(copy.copyId)
+        && !openReservation(copy.copyId)
+    );
+    const hasReservableCopy = relatedCopies.some(
+      (copy) => ['BORROWED', 'RESERVED'].includes(copy.status)
+    );
+    const hasWaitingCopy = relatedCopies.some(
+      (copy) => pendingClaim(copy.copyId) || openReservation(copy.copyId)
+    );
+    const circulationAction = book.status !== 'ACTIVE'
+      ? 'UNAVAILABLE'
+      : hasBorrowableCopy
+        ? 'BORROW'
+        : hasReservableCopy
+          ? 'RESERVE'
+          : hasWaitingCopy
+            ? 'WAIT'
+            : 'UNAVAILABLE';
 
     return clone({
       ...book,
@@ -121,6 +152,7 @@ function makeInMemoryBookDependencies(authDependencies, initialState = {}) {
       lockedCopies,
       available: availabilityStatus === 'AVAILABLE',
       availabilityStatus,
+      circulationAction,
     });
   }
 
@@ -174,6 +206,7 @@ function makeInMemoryBookDependencies(authDependencies, initialState = {}) {
     return clone({
       books,
       copies,
+      borrowRequests,
       borrowDetails,
       reservations,
       auditLogs: authDependencies.state.auditLogs,
@@ -185,6 +218,7 @@ function makeInMemoryBookDependencies(authDependencies, initialState = {}) {
   function restore(snapshot) {
     books.splice(0, books.length, ...snapshot.books);
     copies.splice(0, copies.length, ...snapshot.copies);
+    borrowRequests.splice(0, borrowRequests.length, ...snapshot.borrowRequests);
     borrowDetails.splice(0, borrowDetails.length, ...snapshot.borrowDetails);
     reservations.splice(0, reservations.length, ...snapshot.reservations);
     authDependencies.state.auditLogs.splice(
@@ -339,7 +373,7 @@ function makeInMemoryBookDependencies(authDependencies, initialState = {}) {
     auditLogRepository,
     control,
     snapshot,
-    state: { books, copies, borrowDetails, reservations },
+    state: { books, copies, borrowRequests, borrowDetails, reservations },
   };
 }
 

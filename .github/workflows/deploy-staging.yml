@@ -133,6 +133,8 @@ jobs:
           Copy-Item backend/src deploy/backend/src -Recurse
           New-Item -ItemType Directory -Force deploy/backend/database/migrations | Out-Null
           Copy-Item database/migrations/2026-07-22-library-metadata-compatibility.sql,database/migrations/add_change_password_otp_token_type.sql,database/migrations/2026-07-29-fe10-borrowing-result-templates.sql deploy/backend/database/migrations/
+          New-Item -ItemType Directory -Force deploy/backend/scripts | Out-Null
+          Copy-Item backend/scripts/stagingBorrowCandidates.js deploy/backend/scripts/
 
       - name: Deploy backend
         uses: azure/webapps-deploy@v3
