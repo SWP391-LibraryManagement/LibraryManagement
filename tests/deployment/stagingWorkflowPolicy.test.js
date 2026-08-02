@@ -39,6 +39,10 @@ test('staging deployment follows successful main CI and packages the reviewed st
   );
   assert.match(
     workflow,
+    /deploy-backend:[\s\S]*?uses:\s*actions\/setup-node@v7[\s\S]*?node-version:\s*22[\s\S]*?name: Prepare backend deployment package/
+  );
+  assert.match(
+    workflow,
     /name: Install backend production dependencies[\s\S]*?working-directory:\s*deploy\/backend[\s\S]*?npm ci --omit=dev/
   );
   assert.doesNotMatch(workflow, /run:\s*.*staging:borrow-candidates/);
