@@ -862,5 +862,17 @@ Các bước chi tiết, lệnh trước và sau khi sửa và ranh giới commi
     toàn khi chạy lại; tích hợp hệ thống đạt 11/11; kiểm thử liên hoàn Chromium
     đạt 1/1, chứng minh bốn thông báo không trùng, đường dẫn thao tác cố định và
     không lộ lý do từ chối.
+- [ ] **FE10-I13 - Sửa dữ liệu Unicode staging và ngăn migration FE10 tái diễn lỗi encoding.**
+  - Trạng thái: KẾ HOẠCH ĐÃ DUYỆT - CHỜ TRIỂN KHAI/H2/H3/STAGING.
+  - Ánh xạ tới: BR-FE10-010/014/015/018, FR-FE10-017/019,
+    AC-FE10-017/019.
+  - Tệp: migration repair FE10, workflow/runbook staging, kiểm thử migration/deployment,
+    TASKS/CHANGELOG FE10.
+  - Tiêu chí hoàn thành: bốn template và notification history FE07 được lưu đúng Unicode;
+    migration chạy hai lần an toàn; mọi lệnh `sqlcmd` dùng UTF-8 code page 65001; Books 34-40
+    và BookCopies 60-64 staging được sửa bằng exact preimage guards; SQL/API/browser checks đạt;
+    temporary firewall rule đã được xóa.
+  - Thiết kế: `docs/superpowers/specs/2026-08-03-staging-unicode-data-repair-design.md`.
+  - Kế hoạch: `docs/superpowers/plans/2026-08-03-staging-unicode-data-repair.md`.
 
 Không thêm bảng/kênh; phần thay đổi của sản phẩm vẫn giữ chưa được commit tới khi H2 phê duyệt.
