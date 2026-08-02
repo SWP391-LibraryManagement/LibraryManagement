@@ -22,6 +22,32 @@ This final decision supersedes the historical failed-run decision retained below
 | Cleanup/auth | `CLEANED`; logins `401/401/401/401`; old token `401` | PASS |
 | Runtime residue | runtime/helper `404/404` | PASS |
 
+### Final accepted-run authenticated role matrix
+
+The following rows are the durable, redacted role/route/API/state evidence for final run `lms-acceptance-20260802-b22898eb`.
+
+| Actor | UI route | API method/path | Expected state | Actual state | Result | Artifact |
+| --- | --- | --- | --- | --- | --- | --- |
+| Member A | `/login`, `/membership`, `/borrowing/new` | `POST /api/auth/login`; `POST /api/membership/applications`; `POST /api/borrow-requests` | Approved membership; request created and ultimately returned | Application approved; final snapshot contained Member A borrow `COMPLETED / RETURNED` | PASS | Redacted `acceptance_passed` event and final SQL snapshot |
+| Member B | `/login`, `/membership`, `/reservations/mine` | `POST /api/auth/login`; `POST /api/membership/applications`; `POST /api/reservations` | Approved membership; reservation promoted and notification visible | Application approved; reservation `NOTIFIED`; notification badge visible | PASS | Redacted `acceptance_passed` event |
+| Librarian | `/librarian/borrow-requests`, `/librarian/returns`, `/librarian/fines`, `/librarian/reservations`, `/reports/borrowing` | `PATCH /api/borrow-requests/{id}/approve`; `PATCH /api/borrow-details/{id}/return`; `POST /api/fines/calculate`; `POST /api/reservations/process-queue`; `GET /api/reports/borrowing` | Approve loan; persist a three-day overdue return; calculate `15000`; notify exact-copy queue head; load report | Borrow returned with `ReturnDate=2026-08-02`; fine `OverdueDays=3`, `Amount=15000`; exact copy `RESERVED`; report KPI loaded | PASS | Redacted final SQL snapshot and `acceptance_passed` event |
+| Admin | `/admin/users`, audit view | `PATCH /api/membership/applications/{id}/approve`; `GET /api/users`; `GET /api/admin/audit-logs`; retired `PUT /api/users/{id}` | Approve both applications; preserve responsive navigation; load redacted audit data; retired route returns `404` without mutation | Two applications approved; four viewports had no overflow; audit loaded without forbidden fields; retired route returned `404` and before/after payloads matched | PASS | Redacted authorization and responsive assertions |
+
+### Final accepted-run cross-role scenario matrix
+
+| Actor/phase | UI route | API method/path or operation | Expected state | Actual state | Result | Artifact |
+| --- | --- | --- | --- | --- | --- | --- |
+| Operator preflight | N/A — operator-only | Public smoke and read-only Kudu checks | Correct staging targets; safe Node/SQL transport; no old runtime/helper | App and SQL ready; deployed `mssql` available; runtime/helper `404/404` | PASS | Redacted `transport_preflight_passed` event |
+| Operator fixture seed | N/A — operator-only | Parameterized exact-ID Kudu/SQL fixture seed | Four synthetic users and one run-specific book/copy | Seed completed with an exact run manifest | PASS | Redacted `fixture_seeded` event |
+| Members A/B and Admin membership | `/membership`, `/admin/users` | `POST /api/membership/applications`; `PATCH /api/membership/applications/{id}/approve` | Two approved membership applications | Final snapshot contained two approved applications | PASS | Redacted `acceptance_passed` event |
+| Member A and Librarian borrow | `/borrowing/new`, `/librarian/borrow-requests` | `POST /api/borrow-requests`; `PATCH /api/borrow-requests/{id}/approve` | Run-specific copy borrowed for Member A | Final snapshot contained one request `COMPLETED` with detail `RETURNED` after the full flow | PASS | Redacted `acceptance_passed` event and final SQL snapshot |
+| Member B reservation | `/reservations/mine` | `POST /api/reservations` | Active reservation for the same run-specific copy | Reservation created and later reached `NOTIFIED` | PASS | Redacted `acceptance_passed` event |
+| Operator business-date aging | N/A — operator-only | Parameterized SQL `DueDate=@dueDate`, where `dueDate=2026-07-30` was derived from the `Asia/Ho_Chi_Minh` date | Exact three-day overdue boundary | UI displayed `Quá hạn 3 ngày`; retained SQL stored `DueDate=2026-07-30` | PASS | Redacted `borrow_aged` event and retained SQL history |
+| Librarian return, fine, and queue | `/librarian/returns`, `/librarian/fines`, `/librarian/reservations` | `PATCH /api/borrow-details/{id}/return`; `POST /api/fines/calculate`; `POST /api/reservations/process-queue` | Return on `2026-08-02`; fine `3 × 5000`; exact-copy reservation notified | `ReturnDate=2026-08-02`, `OverdueDays=3`, `Amount=15000`; reservation `NOTIFIED`; copy `RESERVED` | PASS | Redacted final SQL snapshot |
+| Librarian/Admin/unauthenticated authorization | `/reports/borrowing`, Admin audit view | `GET /api/reports/borrowing`; `GET /api/admin/audit-logs`; protected user/queue probes; retired `PUT /api/users/{id}` | Report/audit load; planned `401/403/404`; no retired-route mutation | KPI and audit loaded; unauthenticated audit `401`; Member/Librarian probes `403`; retired route `404` with equal before/after payloads | PASS | Redacted method/path/status assertions |
+| Operator final invariant | N/A — operator-only | Exact-manifest SQL inspect | Applications `2`, borrows `1`, reservations `1`, fines `1`, notifications at least `3`, audit logs at least `1` | Applications `2`, borrows `1`, reservations `1`, fines `1`, notifications `5`, audit logs `8` | PASS | Redacted `acceptance_passed` event |
+| Operator cleanup and revocation | Login plus public catalog verification | Exact-manifest cleanup; `POST /api/auth/login`; `GET /api/auth/me`; public catalog read | No active synthetic state or token; fixture absent publicly; runtime/helper removed | `CLEANED`; four logins and old token `401`; public fixture absent; runtime/helper `404/404` | PASS | Redacted `cleanup_verified` and `post_cleanup_auth_verified` events |
+
 ### Historical failed run and root cause
 
 **FAIL — FE07 RETURN-DATE BUSINESS-TIME PERSISTENCE DEFECT; CLEANUP CLEAN.** The FE12 borrowing-report readiness locator was repaired through RED/GREEN TDD and passed live. The scenario progressed through membership approval, Admin responsive navigation, borrow approval, reservation creation, exact three-day aging, return mutation, fine calculation, exact-copy queue processing, Member B notification, the canonical `Tổng bản ghi` KPI, Admin audit loading, and every planned negative-authorization check.

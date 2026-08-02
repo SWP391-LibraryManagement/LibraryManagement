@@ -165,13 +165,13 @@ Expected: current branch contains the baseline; only approved plan documents may
 - [ ] **Step 2: Confirm the live Azure targets without reading secret values**
 
 ```powershell
-az account show --query "{subscription:id,tenant:tenantId,user:user.name}" -o json
+az account show --query "{subscription:id,tenant:tenantId}" -o json
 az webapp show --resource-group rg-library-staging --name app-library-api-staging-nhat714 --query "{state:state,host:defaultHostName,httpsOnly:httpsOnly}" -o json
 az sql db show --resource-group rg-library-staging --server sql-library-staging-ea-nhat714 --name LibraryManagementStaging --query "{status:status,name:name}" -o json
 az webapp config appsettings list --resource-group rg-library-staging --name app-library-api-staging-nhat714 --query "[?starts_with(name,'DB_')].name" -o tsv
 ```
 
-Expected: web app `Running`, exact host, `httpsOnly=true`, database `Online`, and the required DB setting names exist. Do not remove the query projection; raw app settings would expose secrets.
+Expected: the intended subscription/tenant IDs, web app `Running`, exact host, `httpsOnly=true`, database `Online`, and the required DB setting names exist. Do not add Azure account identity fields or remove the query projections; either change would expose PII or secrets.
 
 - [ ] **Step 3: Confirm the deployed SHA and public smoke**
 
@@ -329,7 +329,10 @@ inspect:
 age:
   require BorrowDetailId belongs to Member A and manifest CopyId
   require Status='BORROWED'
-  set only DueDate=DATEADD(day,-3,CONVERT(date,GETDATE())) and UpdatedAt=GETDATE()
+  require dueDate is a valid YYYY-MM-DD value derived by the operator harness
+    from the current Asia/Ho_Chi_Minh business date minus three calendar days
+  bind dueDate as a parameterized sql.Date value
+  set only DueDate=@dueDate and UpdatedAt=GETDATE()
 
 cleanup (one transaction):
   CANCEL active/notified Reservations for manifest users/copy
