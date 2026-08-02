@@ -693,7 +693,7 @@ Các quyết định sau đã được phê duyệt trong gói đánh giá Giai 
 | AC-FE11-022 | Gửi lại không đủ điều kiện/bị giới hạn thời gian chờ sẽ bị từ chối mà không tạo thông tin xác thực | FR-FE11-038 | BR-FE11-023, BR-FE11-025 | FE11-S01..S07; auth-account-setup-boundary-validation-review-2026-07-15.md | COMPLETE (B7) |
 | AC-FE11-023 | expectedUpdatedAt cũ khi vô hiệu hóa -> 409 STALE_USER_STATE và không lưu thay đổi/bản kiểm toán thành công | FR-FE11-023 | BR-FE11-027 | Các trường hợp thay đổi dùng trạng thái cũ FE11-LIFE04 | Chưa bắt đầu |
 | AC-FE11-025 | Dashboard giữ nguyên năm thẻ/ba biểu đồ, dùng đúng chủ sở hữu chuẩn và các thẻ mở mô-đun đã lọc tương ứng | FR-FE11-031 | BR-FE11-020, BR-FE11-032 | `backend/tests/adminDashboardRepository.test.js`, `frontend/test/adminConsoleStructure.test.js` | TỰ ĐỘNG CỤC BỘ; CON NGƯỜI ĐANG ĐÁNH GIÁ |
-| AC-FE11-026 | Chỉ Quản trị viên truy cập quản lý tác giả/nhà xuất bản/danh mục; mutation được phép ghi audit nguyên tử và ID không tồn tại trả 404; Thủ thư vẫn dùng lựa chọn chỉ đọc của FE05 | FR-FE11-043 | BR-FE11-033 | `backend/tests/adminLibraryRoleBoundary.test.js`; `backend/tests/adminCatalogMetadataService.test.js`; `backend/tests/adminCatalogMetadataRepository.test.js`; `backend/tests/adminAuditLogService.test.js` | PARTIAL: ROLE BOUNDARY COMPLETE; FE11-CAT01 PENDING |
+| AC-FE11-026 | Chỉ Quản trị viên truy cập quản lý tác giả/nhà xuất bản/danh mục; mutation được phép ghi audit nguyên tử và ID không tồn tại trả 404; Thủ thư vẫn dùng lựa chọn chỉ đọc của FE05 | FR-FE11-043 | BR-FE11-033 | `backend/tests/adminLibraryRoleBoundary.test.js`; `backend/tests/adminCatalogMetadataService.test.js`; `backend/tests/adminCatalogMetadataRepository.test.js`; `backend/tests/adminAuditLogService.test.js` | COMPLETE - FE11-CAT01; PR #95; CI `30711057582`; staging `30711210037` |
 
 ### Từ yêu cầu hành vi không mong muốn FE11 đến nguồn và kiểm thử
 
@@ -722,7 +722,7 @@ Các quyết định sau đã được phê duyệt trong gói đánh giá Giai 
 | FR-FE11-035 | Hành động trên yêu cầu đã hoàn tất bị vô hiệu hóa/từ chối | BR-FE11-019 | Q-FE11-013, EC-FE11-017 | FE11-REQ03; xác thực Wave B | SẴN SÀNG ĐỂ ĐÁNH GIÁ |
 | FR-FE11-037 | Lỗi phân phối thiết lập FE10 giữ nguyên trạng thái nguồn không hoạt động và trả về trạng thái an toàn | BR-FE11-023, BR-FE11-024 | EC-FE11-019, Q-FE11-015 | FE11-S01..S07 bao phủ lỗi phân phối an toàn và điều kiện/thời gian chờ gửi lại | COMPLETE (B7) |
 | FR-FE11-038 | Gửi lại thiết lập không đủ điều kiện hoặc bị giới hạn thời gian chờ không tạo thông tin xác thực | BR-FE11-025 | EC-FE11-020, EC-FE11-021, Q-FE11-016 | FE11-S01..S07 bao phủ lỗi phân phối an toàn và điều kiện/thời gian chờ gửi lại | COMPLETE (B7) |
-| FR-FE11-043 | Ranh giới role metadata và mutation/audit nguyên tử | BR-FE11-033 | AC-FE11-026 | FE11-CAT01 và các kiểm thử metadata Admin tập trung | PARTIAL: ROLE BOUNDARY COMPLETE; FE11-CAT01 PENDING |
+| FR-FE11-043 | Ranh giới role metadata và mutation/audit nguyên tử | BR-FE11-033 | AC-FE11-026 | FE11-CAT01 và các kiểm thử metadata Admin tập trung | COMPLETE - FE11-CAT01; PR #95; CI `30711057582`; staging `30711210037` |
 
 ### Tóm tắt độ bao phủ (FE11)
 

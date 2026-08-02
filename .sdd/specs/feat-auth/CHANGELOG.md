@@ -1,5 +1,10 @@
 # CHANGELOG.md - Xác thực FE02
 
+## 2026-08-02 - Hoàn tất lô củng cố runtime và session-audit FE02
+
+- Hoàn tất `FE02-T067` qua commit `3a87ee8`, PR #95, CI sau merge `30711057582` và staging deployment `30711210037` trên `e01585a`.
+- Giữ audit login attempt/failure/lock/auto-unlock ngoài tuyên bố hoàn tất của lô này.
+
 ## 2026-08-01 - Kích hoạt củng cố runtime và session-audit FE02 (v0.6.20)
 
 - Làm rõ bcrypt floor, cấm debug OTP, HTTPS namespace API và transaction audit cho đăng nhập thành công/đăng xuất.

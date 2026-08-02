@@ -1,37 +1,28 @@
 # Plan
 
-Current phase: Phase 3 - Polish and Delivery baseline integrated; PR #59 governance/localization reconciliation is merged with H3 recorded, while the later current-main release decision remains open.
+Current phase: full project closeout for `v1.0.3`, delivered through four bounded PRs under the approved 2026-08-02 design.
 
-Published release: `v1.0.2` at `c988af1`. PR #59 merged the reconciliation as
-`eed2688`; current `main` is `a8729f9` after twelve later commits. CI
-`29824756487` and staging deployment `29824944954` pass for that SHA. The later
-batch, security audit, and desktop/mobile visual acceptance have review
-evidence; `v1.0.3` remains an explicit human release decision.
+Published release remains `v1.0.2` at `c988af1f605e32f7207ad51c4657ea07656941b0`. The closeout starts from `main@161cc28ddd8fed522a90d8bcbcd0daf6b0e51b27`; CI `30726791185` and staging deployment `30726924615` pass for that exact pre-batch baseline. PR D alone may authorize and publish `v1.0.3` after exact post-merge verification.
 
-Phase 2 Core Development is complete for the approved FE01-FE12 scope. Product reconciliation and human H3 were merged through PR #40/#41, FE02/FE10 OTP follow-up was merged through PR #42-#44, all twelve feature packages declare `Implementation State: COMPLETE`, and the enforced traceability gate reports 100% FR coverage.
+The enforced baseline is truthful rather than uniformly complete: FE02 is `PARTIAL` with 27/27 FR tags, FE04 is `PARTIAL` with 14/14, FE11 is `PARTIAL` with 35/43, and the other nine feature packages are `COMPLETE` at 100%.
 
-## Completed Delivery
+## Closeout delivery
 
-- FE01-FE12 contracts, implementation, tests, and traceability are complete.
-- PR #48 integrated the Phase 3 package; PR #49 integrated post-merge evidence.
-- Main CI and the SQL-aware Azure staging workflow passed for the Phase 3 merge.
-- Final report, release document, rehearsal record, presentation deck, and
-  four-layer validation packet are tracked.
-- Route-level code splitting resolved the previous entry-bundle advisory.
-- PR #58 Vietnamese UI localization and strict bearer-header verification are merged in `cce59d0`; PR #59 commits `962ceb1` and `daaeea6` are merged through H3 as `eed2688`. The later current-main product commits have green CI but still need one final release evidence update.
+1. PR A — publish PR #95 documentation closeouts, revalidate the controlled React Router audit exception, and refresh release truth without product changes.
+2. PR B — reconcile and complete FE11 Core account lifecycle, exactly-one-role replacement, permission surface, guards, tests, and traceability.
+3. PR C — execute FE04 role-based acceptance and FE02 remaining reconciliation without closing unsupported human evidence.
+4. PR D — run final cross-feature/SQL/browser/security gates, merge under H3, verify the exact resulting SHA, and publish `v1.0.3` only when every release condition passes.
 
 ## External Submission Items
 
-- Demonstration video/link: not published in the repository.
+- Demonstration video/link: `WAIVED — NOT REQUIRED` by Nhat on 2026-08-02; no link or artifact will be fabricated.
 - Authenticated Azure Admin/Member/Librarian observation: PASS in live run
   `c6e0c46421f0`, including protected reads and borrow request/approval/return.
 - Real SMTP inbox delivery: PASS in live run `c6e0c46421f0`; notification `8`
   was accepted by the provider and observed through Gmail IMAP search.
 
-The demonstration video remains an explicit evidence boundary. The observed
-provider checks do not silently reopen Phase 3 or invalidate the verified
-public staging release; sanitized details are recorded in the Phase 3 evidence
-packet.
+The video waiver is a final project decision, not missing evidence. It does not waive code, security, traceability, browser, SQL, H2, H3, deployment, or exact-SHA release gates.
 
-Any future product work requires a separately approved Phase 4 scope, SPEC,
-plan, tasks, and validation contract.
+Product changes outside the approved PR B/PR C boundaries require a separate
+decision and SDD package. After `v1.0.3` closeout, new product scope requires a
+separately approved Phase 4 scope, SPEC, plan, tasks, and validation contract.

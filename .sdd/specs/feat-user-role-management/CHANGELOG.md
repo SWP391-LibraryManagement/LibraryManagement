@@ -1,5 +1,10 @@
 # CHANGELOG.md - FE11 Quản lý người dùng và vai trò
 
+## 2026-08-02 - Hoàn tất audit nguyên tử cho metadata Quản trị
+
+- Hoàn tất `FE11-CAT01`, `AC-FE11-026` và `FR-FE11-043` trong phạm vi metadata qua commit `e64c636`, PR #95, CI sau merge `30711057582` và staging deployment `30711210037` trên `e01585a`.
+- Không thay đổi trạng thái các lát cắt FE11 UX, personal-data hoặc nghiệm thu con người còn mở.
+
 ## 2026-08-01 - Kích hoạt audit nguyên tử cho metadata Quản trị (v0.6.14)
 
 - Khóa action/target allowlist, context tác nhân, transaction và lỗi not-found cho `/api/admin/library/*`.

@@ -11,19 +11,22 @@
 > Priority: **P1** = should fix before the feature is considered "done" / Full-Spec compliant.
 > **P2** = improvement or follow-up; not blocking. **Risk** notes money/security/data sensitivity.
 
-Last Updated: 2026-07-19
+Last Updated: 2026-08-02
 
-> Traceability note: all twelve Phase 2 feature packages declare `Implementation State: COMPLETE`
-> and report 100% FR `@spec` coverage. The CI workflow runs `npm run trace:enforce`, which parses
-> implementation state explicitly rather than inferring delivery from specification approval text.
+> Traceability note: the enforced 2026-08-02 baseline passes its configured thresholds, but it is not an all-COMPLETE result. FE02 is `PARTIAL` with 27/27 FR tags, FE04 is `PARTIAL` with 14/14, FE11 is `PARTIAL` with 35/43, and the other nine feature packages are `COMPLETE` at 100%. Coverage and implementation state are separate claims.
 
 ---
 
 ## Open debt
 
-No release-blocking P1 debt remains for the approved FE01-FE12 Phase 1 reconciliation scope.
-Non-blocking operational and future-scope limitations remain documented in `README.md` and
-`document/FinalRelease.md`.
+| ID | Priority | Feature | Open gap | Planned resolution |
+| --- | --- | --- | --- | --- |
+| TD-029 | P1 | FE11 | Account lifecycle, active-actor revalidation, atomic deactivation/session revoke/audit, stale/self/active-loan/pending-activation guards, exactly-one-role replacement, and remaining permission/traceability evidence are not fully reconciled. | PR B in the approved `v1.0.3` closeout design. |
+| TD-030 | P1 | FE04 / FE02 | FE04 role-based acceptance and remaining FE02 reconciliation/human evidence are still open; 100% FR tag coverage does not close them. | PR C in the approved `v1.0.3` closeout design. |
+| TD-031 | P1 | Release | Final cross-feature, SQL, browser, security, H3, exact post-merge CI/deploy/smoke, tag, and GitHub release evidence do not yet exist for `v1.0.3`. | PR D; fail closed on any SHA or gate mismatch. |
+| TD-032 | P2 | Infrastructure | CI has no shared disposable SQL Server service, avatar storage on App Service is not production-durable, and student-credit staging has no production SLA. | Preserve as explicit operational limitations unless separately funded and approved. |
+
+PR #95 already resolved the bounded FE02-T067, FE05-T019, and FE11-CAT01 slices. PR A publishes those records; it does not resolve TD-029 through TD-032.
 
 ---
 

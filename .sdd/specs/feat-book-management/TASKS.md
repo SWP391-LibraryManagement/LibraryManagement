@@ -196,8 +196,7 @@ Trạng thái quy trình: đã hoàn tất cho phạm vi Giai đoạn 2 đã ph�
 
 ## 2026-08-01 Củng cố mutation dữ liệu tham chiếu catalog
 
-- [ ] **FE05-T019 - Ghi audit nguyên tử cho mutation dữ liệu tham chiếu catalog.**
+- [x] **FE05-T019 - Ghi audit nguyên tử cho mutation dữ liệu tham chiếu catalog.**
   - Ánh xạ tới: NFR-FE05-TXN-001, NFR-FE05-LOG-001; tích hợp FE11 `BR-FE11-033`, `FR-FE11-043`, `AC-FE11-026`.
-  - RED: actor context, ba action audit allowlist, update/deactivate không tồn tại và rollback audit.
-  - GREEN: mutation và audit dùng một transaction SQL tham số hóa; update không có hàng trả null để service ánh xạ `404`.
-  - Ranh giới: không đổi schema, endpoint, role, envelope thành công hoặc quyền sở hữu trạng thái bản sao FE06.
+  - Bằng chứng: commit `e64c636`, PR #95, foundation checks thành công, CI sau merge `30711057582` và staging deployment `30711210037` trên `e01585a`; controller/service/repository/projector RED-GREEN, backend đầy đủ/coverage, traceability, secret scan, system/E2E/deployment đạt.
+  - Ranh giới: mutation và audit dùng một transaction SQL tham số hóa; update/deactivate không tồn tại không trả thành công giả; không đổi schema, endpoint, role, envelope hoặc quyền sở hữu trạng thái bản sao FE06.

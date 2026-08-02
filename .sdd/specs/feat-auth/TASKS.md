@@ -320,8 +320,7 @@ Bằng chứng này chỉ đóng nhóm nhiệm vụ UX Xác thực/OTP. Phần g
 
 ## Giai đoạn 9: Củng cố runtime và session-audit 2026-08-01
 
-- [ ] **FE02-T067 - Củng cố bcrypt, OTP response, HTTPS và audit session nguyên tử.**
+- [x] **FE02-T067 - Củng cố bcrypt, OTP response, HTTPS và audit session nguyên tử.**
   - Ánh xạ tới: BR-FE02-005, BR-FE02-011, BR-FE02-016, BR-FE02-017, BR-FE02-020; AC-FE02-024; NFR-FE02-SEC-001/003/015, NFR-FE02-TXN-002, NFR-FE02-LOG-001/002.
-  - RED: production bcrypt dưới 10, `debugOtp`, HTTP API ngoài auth, trusted proxy/health exclusions, login/logout audit rollback và audit context.
-  - GREEN: fail-fast config, xóa debug response, gate `/api`, transaction audit bắt buộc cho login success/logout và revoke nhận transaction.
-  - Ranh giới: audit login attempt/failure/lock/auto-unlock vẫn là follow-up riêng; không tuyên bố đã chuyển chúng sang fail-closed.
+  - Bằng chứng: commit `3a87ee8`, PR #95, foundation checks thành công, CI sau merge `30711057582` và staging deployment `30711210037` trên `e01585a`; kiểm thử auth/config/HTTPS tập trung, backend đầy đủ, coverage, system/E2E/deployment, traceability và secret scan đạt trong lô đã duyệt.
+  - Ranh giới: hoàn tất fail-fast bcrypt, loại debug OTP, HTTPS `/api`, audit nguyên tử cho đăng nhập thành công/đăng xuất; audit login attempt/failure/lock/auto-unlock vẫn ngoài phạm vi và không được suy diễn là fail-closed.
