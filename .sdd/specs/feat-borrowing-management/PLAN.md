@@ -1,6 +1,6 @@
 # PLAN.md - FE07 Quản lý mượn sách
 
-Trạng thái: BASELINE VÀ TRIỂN KHAI CỤC BỘ v0.10.0 HOÀN THÀNH; CHỜ H2 VÀ LIVE ACCEPTANCE SAU H3
+Trạng thái: v0.10.0 ĐÃ QUA H2 BAN ĐẦU VÀ CI PR #102; CHỜ H2 BỔ SUNG SAU KHẮC PHỤC H3 VÀ LIVE ACCEPTANCE
 
 Chủ sở hữu: Nhat
 

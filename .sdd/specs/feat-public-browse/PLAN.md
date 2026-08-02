@@ -2,7 +2,7 @@
 
 Phiên bản: 0.5.0
 
-Trạng thái: BASELINE VÀ TRIỂN KHAI CỤC BỘ v0.5.0 HOÀN THÀNH; CHỜ DUYỆT H2
+Trạng thái: v0.5.0 ĐÃ QUA H2 BAN ĐẦU VÀ CI PR #102; CHỜ H2 BỔ SUNG SAU KHẮC PHỤC H3
 
 Chủ sở hữu: Dung
 

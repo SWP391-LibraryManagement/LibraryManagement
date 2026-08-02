@@ -7,9 +7,10 @@
 - HomePage của Thành viên chỉ điều hướng với `BORROW`/`RESERVE`; hai trạng thái còn
   lại bị vô hiệu hóa trên mọi bề mặt. Backend tập trung đạt `62/62`, frontend tập
   trung đạt `22/22`, Chromium liên FE01/FE07 đạt `4/4`.
-- Full gate hiện tại đạt backend `1.196/1.196`, frontend `281/281`, deployment
-  `20/20`, secrets `5/5` và trace FE01 `20/20` (`100%`); chưa commit/push và
-  FE01-T017 vẫn chờ duyệt H2.
+- Full gate ban đầu đạt backend `1.196/1.196`, frontend `281/281`, deployment
+  `20/20`, secrets `5/5` và trace FE01 `20/20` (`100%`). H2 ban đầu đã duyệt;
+  commit `867240c`, PR #102 và CI `30764070455` đã đạt. FE01-T017 giữ mở vì
+  diff khắc phục H3 đang chờ H2 bổ sung.
 
 ## 2026-08-03 - H1 hành động lưu thông trung thực v0.5.0
 

@@ -2,7 +2,7 @@
 
 # Phiên bản: 0.10.0
 
-# Trạng thái: BASELINE VÀ TRIỂN KHAI CỤC BỘ CANDIDATE/STAGING v0.10.0 HOÀN THÀNH; CHỜ H2 VÀ LIVE ACCEPTANCE SAU H3
+# Trạng thái: CANDIDATE/STAGING v0.10.0 ĐÃ QUA H2 BAN ĐẦU VÀ CI PR #102; CHỜ H2 BỔ SUNG SAU KHẮC PHỤC H3 VÀ LIVE ACCEPTANCE
 
 # Chủ sở hữu: Nhat
 
@@ -889,5 +889,5 @@ giữ chưa được commit đến H2.
 | ID yêu cầu | Test/bằng chứng | Trạng thái |
 | --- | --- | --- |
 | BR-FE07-038; FR-FE07-045; AC-FE07-037 | `borrowingFrontend.test.js`; `fe01-fe07-borrow-candidate-flow.spec.js` | Frontend `31/31`; Chromium có kiểm soát `4/4` |
-| BR-FE07-039; FR-FE07-046; AC-FE07-038/039 | `stagingBorrowCandidates.test.js`; `stagingWorkflowPolicy.test.js` | Script tập trung `14/14`; workflow chỉ đóng gói và không tự chạy |
+| BR-FE07-039; FR-FE07-046; AC-FE07-038/039 | `stagingBorrowCandidates.test.js`; `stagingWorkflowPolicy.test.js` | Script tập trung `19/19`, gồm ngày nghiệp vụ, title drift, idempotence, audit, bất biến ngoài fixture và rollback; workflow chỉ đóng gói và không tự chạy |
 | AC-FE07-040 | Controlled Chromium và live staging submit-one/remain-one | Controlled GREEN; live staging giữ mở đến sau H3/deploy |

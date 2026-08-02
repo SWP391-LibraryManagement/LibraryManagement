@@ -2,7 +2,7 @@
 
 # Phiên bản: 0.5.0
 
-# Trạng thái: BASELINE VÀ TRIỂN KHAI CỤC BỘ CIRCULATION ACTION v0.5.0 HOÀN THÀNH; CHỜ DUYỆT H2
+# Trạng thái: CIRCULATION ACTION v0.5.0 ĐÃ QUA H2 BAN ĐẦU VÀ CI PR #102; CHỜ H2 BỔ SUNG SAU KHẮC PHỤC H3
 
 # Chủ sở hữu: Dung
 
@@ -460,4 +460,4 @@ Danh sách kiểm tra phê duyệt Giai đoạn 1 (hoàn thành vào 2026-06-10)
 | --- | --- | --- | --- |
 | BR-FE01-018; FR-FE01-019; AC-FE01-019..022 | UC01-UC04 | `publicBrowseRepository.test.js`; `bookAvailabilityRepository.test.js`; `bookRoutes.test.js`; `publicBrowseRoutes.test.js` | FE01-T015 GREEN: backend tập trung `62/62` |
 | FR-FE01-020; AC-FE01-019..022 | UC01-UC04 | `homeBookActions.test.js`; `publicBrowseFrontend.test.js` | FE01-T016 GREEN: frontend tập trung `22/22` |
-| AC-FE01-019..022 | UC01-UC04 | `fe01-fe07-borrow-candidate-flow.spec.js` | Chromium có kiểm soát `4/4`; chờ duyệt H2 qua FE01-T017 |
+| AC-FE01-019..022 | UC01-UC04 | `fe01-fe07-borrow-candidate-flow.spec.js` | Chromium có kiểm soát `4/4`; H2 ban đầu và CI PR #102 đã đạt, chờ H2 bổ sung cho diff khắc phục H3 |

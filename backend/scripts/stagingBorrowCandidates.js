@@ -6,6 +6,10 @@ require('dotenv').config({
 });
 
 const defaultDb = require('../src/config/db');
+const {
+  businessDateUtcBounds,
+  formatBusinessDate,
+} = require('../src/utils/libraryBusinessTime');
 
 // @spec BR-FE07-039, FR-FE07-046
 const FIXTURES = Object.freeze([
@@ -77,6 +81,15 @@ DECLARE @Transitions TABLE (
   FixtureIsbn NVARCHAR(20) NULL,
   FromStatus NVARCHAR(20) NULL,
   ToStatus NVARCHAR(20) NULL
+);
+
+DECLARE @TitleTransitions TABLE (
+  Action NVARCHAR(255) NOT NULL,
+  TargetType NVARCHAR(100) NOT NULL,
+  TargetId INT NOT NULL,
+  FixtureIsbn NVARCHAR(20) NOT NULL,
+  FromTitle NVARCHAR(255) NOT NULL,
+  ToTitle NVARCHAR(255) NOT NULL
 );
 
 SELECT TOP (1) @ActorUserId = u.UserId
@@ -189,7 +202,8 @@ IF EXISTS (
   INNER JOIN BookCopies bc WITH (HOLDLOCK) ON bc.CopyId = bd.CopyId
   INNER JOIN Books b WITH (HOLDLOCK) ON b.BookId = bc.BookId
   WHERE br.UserId = @MemberUserId
-    AND CAST(br.RequestDate AS DATE) = @BusinessDate
+    AND br.RequestDate >= @BusinessDayStartUtc
+    AND br.RequestDate < @BusinessDayEndUtc
     AND br.Status <> 'REJECTED'
     AND b.ISBN NOT IN (@Fixture1Isbn, @Fixture2Isbn)
 )
@@ -281,6 +295,26 @@ BEGIN
 END
 ELSE
   SELECT @Fixture2BookId = BookId FROM Books WHERE ISBN = @Fixture2Isbn;
+
+INSERT INTO @TitleTransitions
+SELECT 'STAGING_FIXTURE_BOOK_TITLE_RESTORE', 'BOOK', b.BookId, b.ISBN, b.Title,
+       CASE WHEN b.ISBN = @Fixture1Isbn THEN @Fixture1Title ELSE @Fixture2Title END
+FROM Books b
+WHERE b.BookId IN (@Fixture1BookId, @Fixture2BookId)
+  AND CONVERT(VARBINARY(510), b.Title) <> CONVERT(
+    VARBINARY(510),
+    CASE WHEN b.ISBN = @Fixture1Isbn THEN @Fixture1Title ELSE @Fixture2Title END
+  );
+
+UPDATE Books
+SET Title = CASE WHEN ISBN = @Fixture1Isbn THEN @Fixture1Title ELSE @Fixture2Title END,
+    UpdatedBy = @ActorUserId,
+    UpdatedAt = GETDATE()
+WHERE BookId IN (@Fixture1BookId, @Fixture2BookId)
+  AND CONVERT(VARBINARY(510), Title) <> CONVERT(
+    VARBINARY(510),
+    CASE WHEN ISBN = @Fixture1Isbn THEN @Fixture1Title ELSE @Fixture2Title END
+  );
 
 IF NOT EXISTS (SELECT 1 FROM BookCopies WHERE Barcode = @Fixture1Barcode)
 BEGIN
@@ -449,6 +483,19 @@ SELECT @ActorUserId, transition.Action, transition.TargetType, transition.Target
 FROM @Transitions transition;
 
 INSERT INTO AuditLogs (UserId, Action, TargetType, TargetId, Metadata)
+SELECT @ActorUserId, transition.Action, transition.TargetType, transition.TargetId,
+       (
+         SELECT @Marker AS marker,
+                'reset' AS mode,
+                transition.FixtureIsbn AS fixtureIsbn,
+                'Title' AS field,
+                transition.FromTitle AS fromValue,
+                transition.ToTitle AS toValue
+         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+       )
+FROM @TitleTransitions transition;
+
+INSERT INTO AuditLogs (UserId, Action, TargetType, TargetId, Metadata)
 VALUES (
   @ActorUserId,
   'STAGING_BORROW_DEMO_RESET',
@@ -458,14 +505,20 @@ VALUES (
     SELECT @Marker AS marker,
            'reset' AS mode,
            @BusinessDate AS businessDate,
-           (SELECT COUNT(*) FROM @Transitions) AS transitionCount
+           (
+             (SELECT COUNT(*) FROM @Transitions)
+             + (SELECT COUNT(*) FROM @TitleTransitions)
+           ) AS transitionCount
     FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
   )
 );
 
 SELECT
   2 AS FixtureCount,
-  (SELECT COUNT(*) FROM @Transitions) AS TransitionCount,
+  (
+    (SELECT COUNT(*) FROM @Transitions)
+    + (SELECT COUNT(*) FROM @TitleTransitions)
+  ) AS TransitionCount,
   @BusinessDate AS BusinessDate;
 `;
 
@@ -491,14 +544,7 @@ function getMemberEmail(env) {
 }
 
 function getBusinessDate(now = new Date()) {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Ho_Chi_Minh',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(now);
-  const values = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
-  return [values.year, values.month, values.day].join('-');
+  return formatBusinessDate(now);
 }
 
 async function inspectFixtures({ pool, sql }) {
@@ -528,9 +574,15 @@ async function resetFixtures({ pool, sql, env = process.env, now = new Date() })
   await transaction.begin();
 
   try {
+    const {
+      start: businessDayStartUtc,
+      end: businessDayEndUtc,
+    } = businessDateUtcBounds(now);
     const request = new sql.Request(transaction)
       .input('MemberEmail', sql.NVarChar(255), memberEmail)
       .input('BusinessDate', sql.Date, getBusinessDate(now))
+      .input('BusinessDayStartUtc', sql.DateTime, businessDayStartUtc)
+      .input('BusinessDayEndUtc', sql.DateTime, businessDayEndUtc)
       .input('Fixture1Title', sql.NVarChar(255), FIXTURES[0].title)
       .input('Fixture1Isbn', sql.NVarChar(20), FIXTURES[0].isbn)
       .input('Fixture1Barcode', sql.NVarChar(100), FIXTURES[0].barcode)

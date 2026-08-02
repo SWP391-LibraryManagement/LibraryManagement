@@ -1,6 +1,6 @@
 # TASKS.md - FE01 Công khai / Duyệt sách
 
-Trạng thái: BASELINE VÀ TRIỂN KHAI CỤC BỘ v0.5.0 HOÀN THÀNH; CHỜ DUYỆT H2
+Trạng thái: v0.5.0 ĐÃ QUA H2 BAN ĐẦU VÀ CI PR #102; CHỜ H2 BỔ SUNG SAU KHẮC PHỤC H3
 Implementation State: COMPLETE
 
 Người phụ trách: Dung
@@ -194,5 +194,6 @@ Trạng thái quy trình: HOÀN THÀNH đối với phạm vi Giai đoạn 2 đ�
   - Ánh xạ: AC-BCSF-001..004, AC-BCSF-008.
   - Tệp: đặc tả FE01, API contract và `fe01-fe07-borrow-candidate-flow.spec.js`.
   - DoD: các gate backend/frontend/Chromium/trace đạt và diff được trình H2 trước commit.
-  - Bằng chứng cục bộ: backend `1.196/1.196`, frontend `281/281`, Chromium `4/4`,
-    deployment `20/20`, secrets `5/5`; giữ mở cho tới khi người dùng duyệt H2.
+  - Bằng chứng cục bộ sau khắc phục H3: backend `1.200/1.200`, frontend `281/281`, Chromium `4/4`,
+    deployment `20/20`, secrets `5/5`; H2 ban đầu đã duyệt và CI PR #102 đã đạt.
+    Giữ mở vì khắc phục H3 đang chờ H2 bổ sung và live acceptance vẫn thuộc FE07-T064.

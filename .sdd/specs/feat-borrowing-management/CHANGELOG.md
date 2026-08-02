@@ -6,10 +6,15 @@
   thị thông báo empty hợp lệ. Frontend FE07 tập trung đạt `31/31`.
 - Thêm operator script `status`/`reset` staging-only cho đúng hai fixture: tham số
   hóa, transaction, rollback, từ chối trạng thái bất thường và audit cùng transaction.
-  Script tập trung đạt `14/14`; sai DB thoát mã `1` trước khi mở pool.
-- Workflow chỉ đóng gói riêng script, không tự chạy. Full gate đạt backend
-  `1.196/1.196`, frontend `281/281`, deployment `20/20`, secrets `5/5`, Chromium
-  `4/4`; trace FE07 đạt `45/46` (`98%`, trạng thái `PARTIAL`) và gate enforce đạt.
+  H3 đã sửa cửa sổ ngày nghiệp vụ sang `[start, end)` UTC dùng helper FE07 chung và
+  bổ sung stateful fake cho idempotence, transition, audit, bất biến ngoài fixture cùng
+  rollback. Reset cũng phục hồi/audit title drift để luôn giữ hai tiêu đề khác nhau;
+  script tập trung đạt `19/19`. Sai DB thoát mã `1` trước khi mở pool.
+- Workflow chỉ đóng gói riêng script, không tự chạy. Full gate sau khắc phục H3 đạt backend
+  `1.200/1.200`, frontend `281/281`, deployment `20/20`, secrets `5/5`, Chromium
+  `4/4`; checker đã bao gồm operator script được deploy nên trace FE07 đạt `46/46`
+  (`100%`) và bộ test trạng thái truy vết đạt `7/7`. H2 ban đầu, commit `867240c`,
+  PR #102 và CI `30764070455` đã đạt; diff khắc phục H3 chờ H2 bổ sung.
   FE07-T064 vẫn mở cho live submit-one/remain-one sau H3/deploy.
 
 ## 2026-08-03 - H1 candidate shell và fixture staging v0.10.0

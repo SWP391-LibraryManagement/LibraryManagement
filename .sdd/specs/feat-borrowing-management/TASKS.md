@@ -1,6 +1,6 @@
 # TASKS.md - FE07 Quản lý mượn sách
 
-Trạng thái: BASELINE VÀ TRIỂN KHAI CỤC BỘ v0.10.0 HOÀN THÀNH; CHỜ H2/H3 LIVE ACCEPTANCE
+Trạng thái: v0.10.0 ĐÃ QUA H2 BAN ĐẦU VÀ CI PR #102; CHỜ H2 BỔ SUNG SAU KHẮC PHỤC H3 VÀ LIVE ACCEPTANCE
 Implementation State: PARTIAL
 
 Phạm vi mở rộng v0.8.0/v0.9.0 đã được triển khai và kiểm tra tự động;
@@ -407,5 +407,7 @@ Phần thay đổi của sản phẩm vẫn giữ chưa được commit cho tớ
   - Ánh xạ: AC-FE07-040, AC-BCSF-008.
   - DoD: gate FE07/FE08/Chromium/trace đạt; live staging chỉ chạy sau H3 và chứng minh
     hai tiêu đề, gửi một yêu cầu, còn tiêu đề thứ hai cùng bất biến ngoài fixture.
-  - Bằng chứng cục bộ: frontend `31/31`, script `14/14`, FE07/FE08 backend `133/133`,
-    Chromium `4/4`; giữ mở đúng thiết kế cho live staging sau H3/deploy.
+  - Bằng chứng ban đầu: frontend `31/31`, script `14/14`, FE07/FE08 backend `133/133`,
+    Chromium `4/4`; H2 ban đầu và CI PR #102 đã đạt. Khắc phục H3 nâng script lên
+    `19/19`, gồm phục hồi/audit title drift để luôn giữ hai tiêu đề khác nhau; trace
+    FE07 lên `46/46`. Giữ mở cho H2 bổ sung và live staging sau H3/deploy.
