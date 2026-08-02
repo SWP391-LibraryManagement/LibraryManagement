@@ -9,13 +9,13 @@ documentation, and review.
 
 ## Project Status
 
-- Phase 2 Core Development: the approved FE01-FE12 scope is integrated, subject to the documented release limitations below.
-- Current phase: Phase 3 - Polish and Delivery is integrated on `main`; PR #59 governance/localization reconciliation was merged as `eed2688` after its H3 review. The current release decision still covers the later post-merge product commits.
-- Published source release: `v1.0.2` at `c988af1`. Current `origin/main` is `a8729f9`; CI `29824756487` and staging deployment `29824944954` pass for that SHA. The post-PR #59 batch, dependency audit, and desktop/mobile visuals are reviewed; a future `v1.0.3` still requires an explicit release decision.
-- Canonical Phase 2 evidence: PR #40/#41 for full reconciliation and PR #42-#44 for the FE02/FE10 OTP follow-up.
-- Deferred operational items remain explicit and do not become implied product claims during Phase 3.
-- Historical application-baseline CI `29712597463` and staging workflow `29712612188` remain recorded for `cce59d0`.
-- Current-main CI `29824756487` passes 923 backend tests across 54 suites, 178 frontend tests, coverage, lint, build, deployment checks, and 4/4 browser E2E; staging workflow `29824944954` passes frontend/backend deployment and smoke checks. Dedicated localized desktop/mobile visual review passed on 2026-07-21; demonstration-video publication remains pending.
+- Full closeout is active as four bounded PRs: PR A Shell truth, PR B FE11 Core, PR C FE04 acceptance/FE02 reconciliation, and PR D final release evidence.
+- Pre-batch baseline: `origin/main@161cc28ddd8fed522a90d8bcbcd0daf6b0e51b27` after PR #97; CI `30726791185` and staging deployment `30726924615` pass for that exact SHA.
+- Published source release remains `v1.0.2` at `c988af1f605e32f7207ad51c4657ea07656941b0`. `v1.0.3` is not authorized until PR D passes H3, merge, exact post-merge CI/deploy, smoke, and acceptance gates.
+- Current enforced traceability baseline passes: FE02 is `PARTIAL` at 27/27 FR tags, FE04 is `PARTIAL` at 14/14, FE11 is `PARTIAL` at 35/43, and the other nine packages are `COMPLETE` at 100%.
+- PR #95 already proves the bounded FE02 runtime/session-audit and FE05/FE11 catalog metadata slices; PR A publishes those three documentation closeouts without changing product behavior.
+- The React Router High audit remains a controlled, fail-closed RSC-only exception for pinned `7.18.1`; root and backend production audits have no High/Critical vulnerability. React Router `8.3.0` is the patched major and requires a separately approved migration.
+- Demonstration video: `WAIVED — NOT REQUIRED` by Nhat on 2026-08-02; no URL or artifact will be fabricated.
 
 ## Implemented Scope
 
@@ -32,7 +32,7 @@ The production-aligned FE01-FE12 reconciliation baseline is merged and accepted.
 | FE07 Borrowing | Member requests, staff approval/rejection, return, renewal, member history | Accepted in PR #40 |
 | FE08 Reservation | Member reservation lifecycle and staff queue/hold processing | Accepted; TD-028 Option A complete |
 | FE09 Fine | Server-side overdue calculation, collection, paid/waive/cancel, owner/staff access | Accepted server boundary; legacy frontend remains non-authoritative |
-| FE10 Notification | Safe templates, sensitive delivery boundaries, queue processing, retry, audit | Accepted backend boundary; inbox UI remains deferred |
+| FE10 Notification | Safe templates, sensitive delivery boundaries, queue processing, retry, audit, personal inbox | Accepted and integrated; a separate `IN_APP` channel and global staff log remain outside scope |
 | FE11 User & Role | Admin users, role actions, lifecycle, permissions, and audit surfaces | Accepted approved Phase 1 scope |
 | FE12 Reporting | Borrowing, inventory, and user aggregate reports | Accepted in PR #40 |
 
@@ -160,11 +160,10 @@ the [system integration runbook](docs/testing/system-integration-demo-runbook.md
 
 The observed baselines are intentionally separated by evidence source:
 
-- remote CI run `29824756487` for current `main@a8729f9`: 923 backend tests across 54 suites and 178 frontend tests;
-- current-main coverage: statements 92.61%, branches 81.55%, functions 96.68%, and lines 92.54%;
-- Playwright system golden path: 4/4 passing in current-main CI;
-- traceability: all twelve feature specs currently report 100% FR tag coverage; implementation completion remains a separate gate;
-- dependency audit: local synchronized baseline passes root, backend, and frontend `npm audit --audit-level=high`; CI now enforces the same high-severity gate.
+- remote CI run `30726791185` passes for the pre-batch baseline `main@161cc28ddd8fed522a90d8bcbcd0daf6b0e51b27`;
+- staging deployment `30726924615` passes for the same exact SHA, including the documented frontend, health, schema-readiness, SQL catalog, CORS allow/deny, and protected-route smoke;
+- traceability gate: FE02 27/27 and FE04 14/14 remain `PARTIAL`; FE11 is 35/43 and `PARTIAL`; the other nine feature packages are `COMPLETE` at 100%;
+- dependency audit: root and backend report no High/Critical finding; the frontend guard accepts only pinned React Router `GHSA-qwww-vcr4-c8h2` under the documented Declarative Mode exception and fails closed on drift.
 
 Evidence:
 
@@ -225,9 +224,9 @@ delivery. Sanitized evidence is recorded in
 
 - FE09 legacy React UI can use local browser records for classroom continuity; release evidence uses
   the production-aligned server API instead.
-- FE10 notification inbox UI is not part of the completed acceptance scope.
+- FE10 personal inbox is integrated; a separate `IN_APP` delivery channel and global staff notification log remain outside the approved scope.
 - The current Vietnamese localization reconciliation passed dedicated human desktop/mobile visual acceptance on 2026-07-21.
-- The demonstration video/link is not published.
+- Demonstration video is `WAIVED — NOT REQUIRED` by project decision dated 2026-08-02; no external link is expected.
 - SQL integration is local/manual because CI does not host a shared disposable SQL Server service.
 - Deployed authentication transport must set `NODE_ENV=production`; set `TRUST_PROXY=true` only behind a trusted TLS-terminating proxy, and optionally set `HTTPS_REDIRECT=true` with a validated `HTTPS_CANONICAL_HOST` to redirect plain HTTP auth requests.
 - Route-level code splitting reduced the initial JavaScript entry from 999,203 to 320,688 bytes; further total-byte optimization is optional.

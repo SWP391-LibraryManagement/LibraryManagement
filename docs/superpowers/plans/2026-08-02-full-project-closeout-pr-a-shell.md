@@ -17,6 +17,7 @@
 - PR #97 merged head: `5276b29756762a723a7abff4941cf4e1adb965b1`; merge commit: `161cc28ddd8fed522a90d8bcbcd0daf6b0e51b27`.
 - Current-baseline CI `30726791185` and staging deployment `30726924615` both succeeded on `161cc28ddd8fed522a90d8bcbcd0daf6b0e51b27`.
 - Published release remains `v1.0.2` at `c988af1f605e32f7207ad51c4657ea07656941b0`.
+- `GHSA-qwww-vcr4-c8h2` now reports `react-router@8.3.0` as the first patched version. React Router v8 is a major migration that removes `react-router-dom` and raises the Node/React baselines, so dependency/code changes remain outside PR A.
 - Demonstration video decision is `WAIVED — NOT REQUIRED`, approved by Nhat on 2026-08-02. Do not create a link or artifact.
 - Close only `FE02-T067`, `FE05-T019`, and `FE11-CAT01` from PR #95 evidence.
 - Preserve `FE02-T049`, FE04 open acceptance tasks, `FE09-B7`, FE11 Core/UX/lifecycle/personal-data/human-acceptance tasks, and every unrelated checkbox.
@@ -40,6 +41,8 @@
 - `TECH_DEBT.md`: replace the false all-COMPLETE statement and empty open-debt claim with measured FE02/FE04/FE11 gaps.
 - `docs/release/final-submission-checklist-2026-07-20.md`: refresh the candidate baseline, release boundary, current evidence, and video decision.
 - `docs/release/phase3-final-report.md`: preserve the historical Phase 3 snapshot and add an explicit 2026-08-02 closeout refresh.
+- `docs/superpowers/plans/2026-08-02-full-project-closeout-pr-a-shell.md`: keep the executable security commands and expected advisory metadata aligned with the fail-closed revalidation result.
+- `docs/superpowers/specs/2026-08-02-full-project-closeout-v1.0.3-design.md`: record the completed written H1 approval without changing any approved decision or boundary.
 
 ---
 
@@ -234,11 +237,11 @@ COMPLETE - FE11-CAT01; PR #95; CI `30711057582`; staging `30711210037`
 Run:
 
 ```powershell
-npm.cmd --prefix frontend ls react-router react-router-dom --depth=0
+npm.cmd --prefix frontend ls react-router react-router-dom
 npm.cmd --prefix frontend run audit:high
 ```
 
-Expected: both packages resolve to `7.18.1`; the guard exits `0` and reports only accepted `GHSA-qwww-vcr4-c8h2` under the Declarative Mode constraint.
+Expected: `react-router-dom@7.18.1` resolves with nested `react-router@7.18.1`; the guard exits `0` and reports only accepted `GHSA-qwww-vcr4-c8h2` under the Declarative Mode constraint.
 
 - [ ] **Step 2: Inspect the raw high-severity audit and advisory**
 
@@ -252,7 +255,7 @@ $prAAudit.vulnerabilities.PSObject.Properties | ForEach-Object { [PSCustomObject
 gh api /advisories/GHSA-qwww-vcr4-c8h2
 ```
 
-Expected: raw audit contains only the two controlled `react-router` and `react-router-dom` High findings for this advisory; there is no Critical or unrelated High. The advisory still has affected range `>= 7.12.0, < 8.3.0`, no first patched version in the official response, and `updated_at=2026-07-24T16:44:43Z` unless upstream has changed it.
+Expected: raw audit contains only the two controlled `react-router` and `react-router-dom` High findings for this advisory; there is no Critical or unrelated High. The advisory has affected range `>= 7.12.0, < 8.3.0`, `first_patched_version=8.3.0`, and `updated_at=2026-07-24T16:44:43Z` unless upstream has changed it. Official v8 documentation also confirms Node 22.22+, React/ReactDOM 19.2.7+, and removal of `react-router-dom`, which makes the upgrade a separately approved migration rather than a PR A lockfile edit.
 
 Stop and redesign the exception if the advisory, package set, severity, range, or patched-version metadata changed.
 
@@ -276,15 +279,16 @@ Append:
 
 - Owner: project frontend maintainer (Nhat).
 - Installed versions: `react-router@7.18.1`, `react-router-dom@7.18.1`.
-- Advisory: `GHSA-qwww-vcr4-c8h2`; upstream updated at `2026-07-24T16:44:43Z`; affected range `>= 7.12.0, < 8.3.0`. The official response currently reports `first_patched_version: null`; `8.3.0` is the first version excluded by the affected range.
+- Advisory: `GHSA-qwww-vcr4-c8h2`; upstream updated at `2026-07-24T16:44:43Z`; affected range `>= 7.12.0, < 8.3.0`; the official response now reports `first_patched_version: 8.3.0` for `react-router`.
+- Migration boundary: React Router v8 requires Node 22.22+ and React/ReactDOM 19.2.7+, and removes `react-router-dom`. This repository's manifests allow React/ReactDOM from `^19.2.6` and the lockfile currently resolves `19.2.7`, but source still imports the removed `react-router-dom` package and the new Node baseline still requires full toolchain validation. Upgrading to 8.3.0 is therefore a dedicated dependency/code/regression batch outside documentation-only PR A.
 - Full audit result: only the two controlled React Router package findings are High; no other High or Critical finding is accepted.
-- Runtime scope proof: `frontend/src/main.jsx` and `frontend/src/App.jsx` use Declarative `BrowserRouter`, `Routes`, and `Route`; the blocked RSC, Framework/Data Router, server-action scan returned no match.
+- Runtime scope proof: `frontend/src/main.jsx` and `frontend/src/App.jsx` use Declarative `BrowserRouter`, `Routes`, and `Route`; the blocked RSC and Framework/Data Router API scan returned no match.
 - Enforcement proof: `npm --prefix frontend run audit:high` passed and still fails closed on version drift, another High/Critical advisory, missing `BrowserRouter`, or a blocked API.
 
 ## Next review and removal triggers
 
 - Review on every React Router dependency change, every advisory update, or by 2026-08-16, whichever happens first.
-- Remove this exception when a stable compatible version outside the affected range is available and its dedicated regression batch passes frontend tests, lint, build, audit, Playwright, and staging acceptance.
+- Replace this exception through a separately approved React Router v8 migration that removes `react-router-dom`, meets the new runtime/React baselines, and passes frontend tests, lint, build, raw audit, Playwright, CI, and staging acceptance.
 - Invalidate the exception immediately if RSC, Framework Mode, Data Router, server actions, or a second High/Critical finding enters the frontend.
 ```
 
@@ -446,14 +450,14 @@ Keep all historical counts labeled historical. Do not turn old local-only remedi
 
 **Files:**
 
-- Validate: the fourteen files in the File responsibility map.
+- Validate: the sixteen files in the File responsibility map, including the fail-closed plan correction and written H1 status update.
 
 **Interfaces:**
 
 - Consumes: Tasks 2-4 documentation diff.
 - Produces: a complete, uncommitted, reviewable PR A diff for L1-L4 and H2.
 
-- [ ] **Step 1: Prove the diff contains only the approved fourteen documentation files**
+- [ ] **Step 1: Prove the diff contains only the approved sixteen documentation files**
 
 Run:
 
@@ -479,10 +483,12 @@ TECH_DEBT.md
 docs/release/final-submission-checklist-2026-07-20.md
 docs/release/phase3-final-report.md
 docs/security/react-router-rsc-audit-exception-2026-07-25.md
+docs/superpowers/plans/2026-08-02-full-project-closeout-pr-a-shell.md
+docs/superpowers/specs/2026-08-02-full-project-closeout-v1.0.3-design.md
 plan.md
 ```
 
-The committed design and plan files are reviewed as branch history, not counted as Task 2-4 implementation edits.
+The committed design/plan history, fail-closed plan correction, and written H1 status update are all included in H2 review.
 
 - [ ] **Step 2: Run documentation, traceability, and secret gates**
 
@@ -569,12 +575,12 @@ Do not commit, push, open a PR, or merge until Nhat explicitly approves H2 for t
 Run:
 
 ```powershell
-git add .sdd/specs/feat-auth/CHANGELOG.md .sdd/specs/feat-auth/SPEC.md .sdd/specs/feat-auth/TASKS.md .sdd/specs/feat-book-management/CHANGELOG.md .sdd/specs/feat-book-management/TASKS.md .sdd/specs/feat-user-role-management/CHANGELOG.md .sdd/specs/feat-user-role-management/SPEC.md .sdd/specs/feat-user-role-management/TASKS.md README.md TECH_DEBT.md docs/release/final-submission-checklist-2026-07-20.md docs/release/phase3-final-report.md docs/security/react-router-rsc-audit-exception-2026-07-25.md plan.md
+git add .sdd/specs/feat-auth/CHANGELOG.md .sdd/specs/feat-auth/SPEC.md .sdd/specs/feat-auth/TASKS.md .sdd/specs/feat-book-management/CHANGELOG.md .sdd/specs/feat-book-management/TASKS.md .sdd/specs/feat-user-role-management/CHANGELOG.md .sdd/specs/feat-user-role-management/SPEC.md .sdd/specs/feat-user-role-management/TASKS.md README.md TECH_DEBT.md docs/release/final-submission-checklist-2026-07-20.md docs/release/phase3-final-report.md docs/security/react-router-rsc-audit-exception-2026-07-25.md docs/superpowers/plans/2026-08-02-full-project-closeout-pr-a-shell.md docs/superpowers/specs/2026-08-02-full-project-closeout-v1.0.3-design.md plan.md
 git diff --cached --check
 git commit -m "docs: reconcile PR A closeout evidence"
 ```
 
-Expected: the staged scope is exactly the fourteen implementation documents and the commit succeeds. The earlier design/plan commits remain separate.
+Expected: the staged scope is exactly the sixteen H2-reviewed documents and the commit succeeds. The earlier design/plan commits remain separate.
 
 - [ ] **Step 2: Push and open PR A**
 

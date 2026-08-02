@@ -7,7 +7,7 @@
 - Delivery method: Hybrid SDD + ADD, evidence-first bounded PR chain
 - Depth: Full for Core auth/permissions/state transitions; Light for Shell closeout/release records
 - Business approver: Nhat
-- H1 status: delivery direction approved in chat on 2026-08-02; this written contract awaits the required final review before its exact decisions/file boundaries become active
+- H1 status: written contract approved by Nhat in chat on 2026-08-02; its decisions and file boundaries are active for plan execution
 
 ## 1. Outcome
 
@@ -163,12 +163,14 @@ Owned files:
 - `README.md`, `plan.md`, `TECH_DEBT.md`
 - `docs/release/final-submission-checklist-2026-07-20.md`
 - `docs/release/phase3-final-report.md`
+- `docs/superpowers/specs/2026-08-02-full-project-closeout-v1.0.3-design.md` and `docs/superpowers/plans/2026-08-02-full-project-closeout-pr-a-shell.md`, limited to written H1 status and fail-closed evidence corrections discovered during execution
 
 Rules:
 
 - close only FE02-T067, FE05-T019 and FE11-CAT01 from PR #95 evidence;
 - preserve FE02-T049, FE04, FE09-B7 and FE11 UX/lifecycle/human acceptance as open;
 - record BD-001 video waiver;
+- keep governance self-edits limited to approval status, executable validation commands and observed immutable/advisory metadata; do not change an approved business decision or product boundary;
 - do not change product code, dependencies, lockfiles, workflows, API, schema or requirement meaning;
 - preserve the root checkout's existing dirty files byte-for-byte.
 
@@ -234,7 +236,7 @@ Rules:
 
 | Slice | G0 | G1 | G2 | G3 | G4 | G5 | G6 | G7 | Blocker | Owner | Next evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| SL-A | passed | not-applicable | passed | ready | not-applicable | not-started | not-applicable | not-started | Written spec/plan review | Integration lead | Exact PR95/run revalidation and docs diff |
+| SL-A | passed | not-applicable | passed | passed | not-applicable | not-started | not-applicable | not-started | Complete docs diff and H2 review | Integration lead | L1-L4 packet and explicit H2 decision |
 | SL-B | passed | passed | passed | ready | not-started | not-started | not-started | not-started | RED contracts and exact implementation plan | FE11 owner | Requirement-to-test ledger |
 | SL-C | passed | passed | passed | ready | not-started | not-started | not-started | not-started | Staging/test-account acceptance setup | FE04/FE02 owners | Focused RED or evidence-only PASS |
 | SL-D | passed | not-applicable | passed | ready | not-started | not-started | not-started | not-started | PRs A-C merged and deployed | Project lead | Final exact-SHA release packet |

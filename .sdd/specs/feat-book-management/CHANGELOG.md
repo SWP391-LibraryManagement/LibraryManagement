@@ -1,5 +1,10 @@
 # CHANGELOG.md - FE05 Quản lý sách
 
+## 2026-08-02 - Hoàn tất audit nguyên tử cho dữ liệu tham chiếu catalog
+
+- Hoàn tất `FE05-T019` qua commit `e64c636`, PR #95, CI sau merge `30711057582` và staging deployment `30711210037` trên `e01585a`.
+- Giữ nguyên schema, endpoint, role, response envelope và soft-deactivation hiện có.
+
 ## 2026-08-01 - Kích hoạt củng cố audit dữ liệu tham chiếu catalog (v0.6.11)
 
 - Làm rõ mutation tác giả/nhà xuất bản/thể loại của Quản trị viên chịu ranh giới transaction/audit FE05 hiện có.

@@ -25,8 +25,9 @@ SHA after H2, H3, and exact post-merge CI.
 
 The approved Node.js/Express, React/Bootstrap, SQL Server, and REST stack is
 unchanged. Runtime boundaries are React on Azure Static Web Apps, Express on
-Azure App Service, and Azure SQL. All 12 feature packages remain at 100% FR
-traceability; route guards and backend authorization remain authoritative.
+Azure App Service, and Azure SQL. The historical PR #48 snapshot recorded all
+12 feature packages at 100% FR traceability; the 2026-08-02 closeout refresh
+below supersedes that count. Route guards and backend authorization remain authoritative.
 
 ## Evidence summary
 
@@ -46,22 +47,15 @@ backend and 151 frontend test counts are not the current reconciliation totals.
 | Authenticated Azure | Live run `c6e0c46421f0` passed Admin/Member/Librarian login, protected reads, borrow request, approval, and return. |
 | SMTP delivery | Notification `8` was `SENT` in one attempt; provider acceptance and Gmail IMAP message search passed. |
 
-Later evidence is tracked separately: remote application-baseline CI `29712597463`
-passed 917 backend tests and 171 frontend tests for `cce59d0`; PR #59 merged the
-H3-reviewed reconciliation as `eed2688`. Current `main@a8729f9` passes CI
-`29824756487` with 923 backend tests, 178 frontend tests, coverage, lint, build,
-deployment checks, and 4/4 browser E2E; staging deployment `29824944954` also
-passes. The project reviewer confirmed dedicated localized desktop/mobile
-visual acceptance on 2026-07-21. A final release decision for the later product
-batch remains human-owned, and demonstration-video publication remains open.
+## Full-project closeout refresh — 2026-08-02
 
-A subsequent local H2 closeout review found two contained `390px` presentation
-issues outside the original document-overflow guard: a clipped FE08 reservation
-badge and missing FE11 Admin topbar spacing. Mobile-only CSS fixes now pass the
-new bounding-box regressions, 178/178 frontend tests, lint/build, and all 4/4
-browser flows. Corrected screenshots are retained under `output/playwright/`;
-this local remediation is not represented by the published `v1.0.2` tag or the
-current remote `main` evidence above.
+The current pre-batch baseline is `main@161cc28ddd8fed522a90d8bcbcd0daf6b0e51b27` after PR #97. CI `30726791185` and staging deployment `30726924615` pass for that exact SHA. The staging smoke covers frontend, health, schema readiness, SQL catalog, allowed and blocked CORS, and an anonymous protected route.
+
+The enforced traceability baseline passes while preserving implementation truth: FE02 is `PARTIAL` at 27/27 FR tags, FE04 is `PARTIAL` at 14/14, FE11 is `PARTIAL` at 35/43, and the other nine feature packages are `COMPLETE` at 100%. PR #95 already proves FE02-T067, FE05-T019, and FE11-CAT01; PR A publishes only those bounded documentation closeouts.
+
+The remaining work is governed by the approved four-PR design: PR B FE11 Core, PR C FE04 acceptance and FE02 reconciliation, and PR D final integration/release evidence. `v1.0.3` is not authorized by this interim report. Demonstration video is `WAIVED — NOT REQUIRED` by Nhat on 2026-08-02; no link or artifact will be fabricated.
+
+Historical localized desktop/mobile acceptance passed on 2026-07-21. The later responsive corrections are integrated in the current pre-batch candidate and covered by its exact CI/deployment evidence, but they remain outside published `v1.0.2` until the final closeout release decision.
 
 ## Live SQL and migration result
 
