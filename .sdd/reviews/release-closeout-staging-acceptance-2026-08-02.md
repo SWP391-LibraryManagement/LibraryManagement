@@ -48,15 +48,19 @@ The following rows are the durable, redacted role/route/API/state evidence for f
 | Operator final invariant | N/A — operator-only | Exact-manifest SQL inspect | Applications `2`, borrows `1`, reservations `1`, fines `1`, notifications at least `3`, audit logs at least `1` | Applications `2`, borrows `1`, reservations `1`, fines `1`, notifications `5`, audit logs `8` | PASS | Redacted `acceptance_passed` event |
 | Operator cleanup and revocation | Login plus public catalog verification | Exact-manifest cleanup; `POST /api/auth/login`; `GET /api/auth/me`; public catalog read | No active synthetic state or token; fixture absent publicly; runtime/helper removed | `CLEANED`; four logins and old token `401`; public fixture absent; runtime/helper `404/404` | PASS | Redacted `cleanup_verified` and `post_cleanup_auth_verified` events |
 
-### Historical failed run and root cause
+## Historical failed-run evidence (superseded)
+
+Every subsection in this block preserves the state and evidence of failed run `lms-acceptance-20260802-3ea0d609` and its immediate remediation checkpoint. The final decision and final-run matrices above supersede this entire block. Statements below such as “remains undeployed”, “requires a newly reviewed H1”, “acceptance incomplete”, or “H3 remains open” describe only that historical checkpoint and are not the current release state.
+
+### Failed-run decision and root cause
 
 **FAIL — FE07 RETURN-DATE BUSINESS-TIME PERSISTENCE DEFECT; CLEANUP CLEAN.** The FE12 borrowing-report readiness locator was repaired through RED/GREEN TDD and passed live. The scenario progressed through membership approval, Admin responsive navigation, borrow approval, reservation creation, exact three-day aging, return mutation, fine calculation, exact-copy queue processing, Member B notification, the canonical `Tổng bản ghi` KPI, Admin audit loading, and every planned negative-authorization check.
 
 The final server-derived snapshot then failed the exact fine invariant. The run expected a three-day fine, but the retained SQL history records `OverdueDays=2`, `Amount=10000`, `DueDate=2026-07-30`, and `ReturnDate=2026-08-01`; cleanup subsequently changed the fine status to `CANCELLED`. At execution time the current `Asia/Ho_Chi_Minh` business date was `2026-08-02`, and the return UI showed `Quá hạn 3 ngày`. FE07 computed the correct business date but passed the raw UTC `clock()` value to a `sql.Date` parameter, persisting the prior calendar date. FE09 then correctly calculated two days from that persisted value. This is a product persistence defect, not a harness locator defect. Mandatory cleanup, credential/token revocation, and post-run infrastructure checks passed. No live-acceptance task is closed, and no rerun remains under this H1.
 
-> Historical-scope note: unless a later subsection explicitly says otherwise, the remaining matrices preserve evidence from run `lms-acceptance-20260802-3ea0d609` and do not override the final PASS decision above.
+> Historical-scope note: the remaining subsections preserve immutable failed-run and pre-rerun evidence; they do not override the final PASS decision or final accepted-run matrices above.
 
-## Baseline and deployed targets
+### Baseline and deployed targets
 
 | Evidence | Actual | Result |
 | --- | --- | --- |
@@ -69,7 +73,7 @@ The final server-derived snapshot then failed the exact fine invariant. The run 
 | Kudu/Node transport | credential-free SCM URL; Oryx Node `v22.22.2`; deployed `mssql` available | PASS |
 | Remote residue | runtime and external cleanup helper both `404` before and after the run | PASS |
 
-## Synthetic fixture contract
+### Synthetic fixture contract
 
 Run `lms-acceptance-20260802-3ea0d609` created exactly four synthetic `.invalid` users, book `30`, and copy `54`. Passwords remained runtime-random and in memory; fixture SQL remained parameterized and exact-ID scoped.
 
@@ -82,7 +86,7 @@ The ignored FE12 borrowing-report readiness change had no product/dependency dif
 
 No password, hash, token, cookie, authorization header, publishing credential, connection string, or full synthetic email is retained in this record.
 
-## Authenticated role matrix
+### Authenticated role matrix
 
 | Actor | UI route | API method/path | Expected state | Actual state | Result | Artifact |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -91,7 +95,7 @@ No password, hash, token, cookie, authorization header, publishing credential, c
 | Librarian | `/login`, `/librarian/borrow-requests`, `/librarian/returns`, `/librarian/fines`, `/librarian/reservations`, `/reports/borrowing` | auth, borrow approval, return, fine workflow, queue processing, report read | Borrow approved, overdue return completed, three-day fine calculated, reservation notified, report visible | UI workflow, exact-copy queue processing, notification, and report KPI completed; persisted fine was calculated from the wrong stored return date | FAIL | Redacted final invariant and SQL history |
 | Admin | `/login`, `/admin/users` | auth, membership review, audit read, retired-route check | Approve both members, pass responsive navigation, load audit, and prove retired route does not mutate | Membership, responsive navigation, audit loading, and retired-route no-mutation check completed | PASS to reached boundary | Redacted process order/statuses |
 
-## Cross-role scenario matrix
+### Cross-role scenario matrix
 
 | Actor/phase | UI route | API or operation | Expected state | Actual state | Result | Artifact |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -112,7 +116,7 @@ Runtime and root-cause evidence:
 - `borrowingService.returnBorrow` computes `returnBusinessDate`, but passes raw `returnDate` from `clock()` to the repository. `borrowingRepository.returnBorrowDetail` binds that value as `sql.Date`, losing the Vietnam-side next calendar date at the UTC boundary.
 - `fineManagementService.calculateFineFromBorrowDetail` correctly uses persisted `detail.returnDate` as its reference date. FE09 therefore exposed, rather than caused, the FE07 persistence error.
 
-## Desktop/mobile UX matrix
+### Desktop/mobile UX matrix
 
 | Surface | Viewports | Actual | Result |
 | --- | --- | --- | --- |
@@ -122,7 +126,7 @@ Runtime and root-cause evidence:
 | Authenticated Azure audit loading/API secret-field allowlist | live audit route plus Admin API response | Audit loaded without product error; forbidden secret-field names absent | PASS |
 | Authenticated Azure audit density/filter detail | planned complete UI checks | Not fully asserted by this harness | NOT RUN |
 
-## Negative authorization matrix
+### Negative authorization matrix
 
 | Request | Expected | Actual | Result |
 | --- | --- | --- | --- |
@@ -131,7 +135,7 @@ Runtime and root-cause evidence:
 | Librarian user-directory access | `403` | `403` | PASS |
 | Admin retired `PUT /api/users/{id}` | `404` and no mutation | `404`; before/after profile payloads equal | PASS |
 
-## Server-derived invariant evidence
+### Server-derived invariant evidence
 
 The final inspect ran but failed before the whole snapshot could be accepted. Assertions are reported only where execution proved them; later assertions are not inferred from UI milestones.
 
@@ -152,7 +156,7 @@ Cleanup verification for the exact manifest returned:
 | Active run-specific books/copies | `0 / 0` |
 | Retained run-specific copies | `1` inactive historical row |
 
-## Cleanup and token revocation evidence
+### Cleanup and token revocation evidence
 
 | Target | Cleanup | Verification | Result |
 | --- | --- | --- | --- |
@@ -163,7 +167,7 @@ Cleanup verification for the exact manifest returned:
 | Local run state | in-memory clearing and manifest removal | run artifact count `0` | CLEANED |
 | App/API after cleanup | read-only state and public requests | App `Running`, SQL `Online`, `/health=200`, `/api/books=200` | PASS |
 
-## FE07 product-remediation H1 local evidence
+### FE07 product-remediation H1 local evidence
 
 - The approved v0.9.1 remediation keeps the FE07 SPEC, API, schema, repository SQL, FE08 handoff, and FE09 calculation behavior unchanged. The Core fix is limited to passing the already-derived `returnBusinessDate` into the existing parameterized `sql.Date` repository input.
 - Baseline FE07 route/repository verification passed `85/85`. RED then failed exactly at the persistence boundary: expected `2026-07-23`, received raw `2026-07-22T17:30:00.000Z`; the old `fineCandidate` assertion still passed and therefore reproduced the prior test gap.
@@ -172,7 +176,7 @@ Cleanup verification for the exact manifest returned:
 - Coverage passed at statements `91.98%`, branches `81.28%`, functions `97.08%`, and lines `91.94%`. Traceability enforcement passed with FE07 `44/44` (`100%`), tracked-secret tests passed `5/5`, and diff hygiene passed.
 - Disposable SQL was not run because the named non-staging DB configuration and mutation flag were absent. H2 later approved the exact FE07 remediation/evidence diff for commit, push, and Draft PR, but the product change remains undeployed and no new live staging attempt was executed. FE07-T061, L4, H3, and merge remain open.
 
-## Task closeout decision table
+### Task closeout decision table
 
 | Task | Decision | Reason |
 | --- | --- | --- |
@@ -185,7 +189,7 @@ Cleanup verification for the exact manifest returned:
 | FE11-UXR09 | Keep open | FE04 integration passed to the reached boundary, but FE04-ADM05 is not eligible |
 | FE11-PDO04 | Keep open | Live retired-route no-mutation check passed, but scenario closeout and H2 remain unavailable |
 
-## Residual risks and owners
+### Residual risks and owners
 
 - **FE07 default return-date persistence — borrowing backend owner:** add a UTC/Vietnam-boundary regression that asserts the persisted SQL date, then pass the canonical `returnBusinessDate` to repository persistence without changing explicit-return-date behavior, audit evidence, or fine-candidate semantics. This product remediation requires a newly reviewed H1.
 - **FE09 downstream calculation — fine owner:** keep calculation anchored to the persisted return date; do not mask the FE07 defect by changing FE09 to ignore committed borrowing history.
