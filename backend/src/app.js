@@ -23,6 +23,7 @@ const bookRoutes = require('./routes/bookRoutes');
 const errorHandler = require('./middleware/errorHandler');
 const { createHttpsEnforcementMiddleware } = require('./middleware/httpsEnforcement');
 const { defaultAuthService } = require('./services/authService');
+const { defaultCaptchaService } = require('./services/captchaService');
 const { defaultBorrowingService } = require('./services/borrowingService');
 const { defaultNotificationService } = require('./services/notificationService');
 const { defaultReportService } = require('./services/reportService');
@@ -54,6 +55,7 @@ function corsOptionsFromEnvironment() {
 
 function createApp({
   authService = defaultAuthService,
+  captchaService = defaultCaptchaService,
   borrowingService = defaultBorrowingService,
   notificationService = defaultNotificationService,
   reportService = defaultReportService,
@@ -138,7 +140,7 @@ function createApp({
     }
   });
 
-  app.use('/api/auth', createAuthRoutes(authService));
+  app.use('/api/auth', createAuthRoutes({ authService, captchaService }));
   app.use('/api', createBorrowingRoutes({ authService, borrowingService }));
   app.use('/api/notifications', createNotificationRoutes({ authService, notificationService }));
   app.use('/api/reports', createReportRoutes({ authService, reportService }));

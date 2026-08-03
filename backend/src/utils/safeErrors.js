@@ -28,6 +28,10 @@ function internal(code = 'INTERNAL_ERROR', message = 'Internal server error.') {
   return new AppException(500, code, message);
 }
 
+function serviceUnavailable(code, message, details) {
+  return new AppException(503, code, message, details);
+}
+
 module.exports = {
   badRequest,
   unauthorized,
@@ -36,4 +40,5 @@ module.exports = {
   conflict,
   tooManyRequests,
   internal,
+  serviceUnavailable,
 };

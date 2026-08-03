@@ -1,7 +1,13 @@
 process.env.BCRYPT_COST = '4';
+process.env.JWT_SECRET = process.env.JWT_SECRET || require('crypto').randomBytes(32).toString('hex');
 
 const request = require('supertest');
 const { createApp } = require('../src/app');
+const { createAcceptingCaptchaService } = require('./helpers/captchaTestService');
+
+function captchaPayload() {
+  return { captchaToken: 'test-captcha-token', captchaAnswer: 'TEST' };
+}
 
 function withProductionHttps(overrides = {}) {
   process.env.NODE_ENV = 'production';
@@ -36,6 +42,7 @@ test('deployed plain-HTTP auth requests are rejected before the auth service see
     withProductionHttps();
     let authCalled = false;
     const app = createApp({
+      captchaService: createAcceptingCaptchaService(),
       authService: {
         login: async () => {
           authCalled = true;
@@ -101,6 +108,7 @@ test('trusted HTTPS termination via X-Forwarded-Proto allows the auth request to
     withProductionHttps({ TRUST_PROXY: 'true' });
     let authCalled = false;
     const app = createApp({
+      captchaService: createAcceptingCaptchaService(),
       authService: {
         login: async () => {
           authCalled = true;
@@ -112,7 +120,7 @@ test('trusted HTTPS termination via X-Forwarded-Proto allows the auth request to
     const response = await request(app)
       .post('/api/auth/login')
       .set('X-Forwarded-Proto', 'https')
-      .send({ email: 'member@example.test', password: 'Password1!' });
+      .send({ email: 'member@example.test', password: 'Password1!', ...captchaPayload() });
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual({ ok: true });

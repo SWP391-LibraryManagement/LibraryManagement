@@ -27,6 +27,11 @@ export async function registerAccount(payload) {
   }
 }
 
+export async function getCaptcha() {
+  const response = await api.get('/auth/captcha');
+  return response.data;
+}
+
 export async function verifyEmail(email, otp) {
   try {
     const response = await api.post('/auth/verify-email', { email, otp });
@@ -38,9 +43,9 @@ export async function verifyEmail(email, otp) {
   }
 }
 
-export async function loginAccount({ email, password }) {
+export async function loginAccount({ email, password, captchaToken, captchaAnswer }) {
   try {
-    const response = await api.post('/auth/login', { email, password });
+    const response = await api.post('/auth/login', { email, password, captchaToken, captchaAnswer });
     return response.data;
   } catch (error) {
     throw new Error(getLoginErrorMessage(error), {

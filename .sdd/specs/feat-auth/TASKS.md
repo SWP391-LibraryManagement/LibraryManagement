@@ -1,9 +1,21 @@
 # TASKS.md - Xác thực FE02
 
-Trạng thái: COMPLETE - H3 HỒI CỨU ĐÃ ĐƯỢC PHÊ DUYỆT
+## Giai đoạn 10: CAPTCHA đăng nhập và đăng ký
+
+- [x] **FE02-T069 - Bắt buộc CAPTCHA ảnh chữ cho đăng nhập và đăng ký.**
+  - Ánh xạ tới: BR-FE02-029; FR-FE02-028..030; AC-FE02-027; EC-FE02-019.
+  - Ghi chú: phần triển khai ban đầu đã kích hoạt giao diện/API CAPTCHA nhưng các blocker bảo mật và traceability của H3 được khắc phục trong FE02-T070.
+
+- [x] **FE02-T070 - Khắc phục blocker bảo mật và traceability CAPTCHA của H3.**
+  - Ánh xạ tới: BR-FE02-029; FR-FE02-028..030; AC-FE02-027; EC-FE02-019; SAFE-003; SAFE-005.
+  - Tệp: `backend/src/services/captchaService.js`, `backend/src/utils/captchaRenderer.js`, `backend/src/app.js`, `backend/src/controllers/authController.js`, `backend/src/routes/authRoutes.js`, `backend/src/middleware/captchaMiddleware.js`, `backend/src/utils/safeErrors.js`, test backend liên quan, `tests/e2e/support/`, hai form frontend, test frontend và toàn bộ tài liệu CAPTCHA FE02.
+  - DoD: token công khai là định danh opaque ngẫu nhiên; challenge process-local TTL 5 phút, tối đa 5.000 bản ghi và dùng một lần; SVG không chứa text/đáp án; route không có bypass theo môi trường; test không liên quan inject fake service rõ ràng; E2E answer chỉ tồn tại dưới `/__e2e__/`; submit bị vô hiệu hóa khi chưa có challenge; traceability dùng `EC-FE02-019` duy nhất.
+  - Bằng chứng local: RED-GREEN cho service, route, E2E và trạng thái submit đã được quan sát; focused CAPTCHA service/route hiện đạt 9/9. Full L1-L4, exact-head CI và H3 integration vẫn là cổng bắt buộc trước merge.
+
+Trạng thái: IMPLEMENTED - H2 APPROVED; PENDING EXACT-HEAD CI/H3
 Implementation State: COMPLETE
-Ghi chú baseline: Baseline triển khai và nhiệm vụ đối soát FE02-T049 đã hoàn tất; PR C vẫn cần cổng tích hợp H2 vòng 2, CI exact-head và H3 cuối.
-Ngày: 2026-08-03
+Ghi chú baseline: Baseline FE02 trước CAPTCHA vẫn hoàn tất; trạng thái trên chỉ áp dụng cho amendment PR #111.
+Ngày: 2026-08-04
 Chủ sở hữu: Dat
 
 ## Quy tắc thực hiện nhiệm vụ

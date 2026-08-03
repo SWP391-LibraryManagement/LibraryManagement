@@ -1,5 +1,19 @@
 # CHANGELOG.md - Xác thực FE02
 
+## 2026-08-04 - Khắc phục bảo mật CAPTCHA dùng một lần
+
+- Thay token CAPTCHA tự chứa dữ liệu bằng token opaque ngẫu nhiên 32 byte và kho challenge process-local giới hạn 5.000 bản ghi, TTL 5 phút.
+- Tiêu thụ challenge đã xác định ở lần xác minh đầu tiên; đáp án sai, sai định dạng, hết hạn và replay đều không dispatch auth service.
+- Render CAPTCHA bằng SVG path không chứa `<text>`, đáp án hoặc metadata bộ xác minh; loại bỏ phụ thuộc CAPTCHA vào khóa ký JWT.
+- Loại bypass theo `NODE_ENV`, bổ sung dependency injection rõ ràng cho test và giữ endpoint đáp án E2E chỉ trong test-control server.
+- Vô hiệu hóa submit đăng nhập/đăng ký khi chưa có challenge, giữ dữ liệu biểu mẫu và đồng bộ `EC-FE02-019`, `AC-FE02-027`, FE02-T070 cùng tài liệu liên quan.
+- Trạng thái amendment: full local gate và H2 đã hoàn tất; exact-head CI và H3 PR #111 vẫn bắt buộc trước merge.
+
+## 2026-08-03 - Kích hoạt CAPTCHA ảnh chữ cho đăng nhập và đăng ký
+
+- Bổ sung lần đầu hợp đồng CAPTCHA 4–6 chữ cái và xác thực phía server trước luồng đăng ký/đăng nhập.
+- Thiết kế token ban đầu đã được thay thế bởi bản khắc phục bảo mật ngày 2026-08-04; không thêm migration, dependency hoặc thay đổi các luồng OTP/phiên khác.
+
 ## 2026-08-03 - Sửa username suy ra khi tự đăng ký
 
 - Khi request đăng ký không gửi `username`, suy ra username tất định từ phần local trước `@` của email đã chuẩn hóa.

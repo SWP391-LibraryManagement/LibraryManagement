@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 const ALLOWED_ADVISORY = 'https://github.com/advisories/GHSA-qwww-vcr4-c8h2';
 const ALLOWED_PACKAGES = new Set(['react-router', 'react-router-dom']);
-const ALLOWED_VERSION = '7.18.1';
+const ALLOWED_VERSION = '7.18.2';
 const BLOCKED_RSC_APIS = [
   'createBrowserRouter',
   'RouterProvider',
@@ -115,7 +115,7 @@ function main() {
   }
 
   console.log(
-    'Accepted GHSA-qwww-vcr4-c8h2 for react-router@7.18.1: '
+    'Accepted GHSA-qwww-vcr4-c8h2 for react-router@7.18.2: '
     + 'the advisory affects unstable RSC APIs, while this frontend uses Declarative Mode only.'
   );
 }

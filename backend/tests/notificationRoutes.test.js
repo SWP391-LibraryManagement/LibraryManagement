@@ -9,6 +9,7 @@ const request = require('supertest');
 const { createApp } = require('../src/app');
 const { createAuthService } = require('../src/services/authService');
 const { createNotificationService } = require('../src/services/notificationService');
+const { createAcceptingCaptchaService } = require('./helpers/captchaTestService');
 const { makeInMemoryAuthDependencies } = require('./helpers/inMemoryAuthRepositories');
 const {
   makeInMemoryNotificationDependencies,
@@ -37,7 +38,11 @@ function makeTestApp() {
       },
     },
   });
-  const app = createApp({ authService, notificationService });
+  const app = createApp({
+    authService,
+    notificationService,
+    captchaService: createAcceptingCaptchaService(),
+  });
 
   return {
     app,

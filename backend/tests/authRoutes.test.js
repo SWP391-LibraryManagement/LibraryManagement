@@ -6,6 +6,7 @@ const bcrypt = require('bcrypt');
 const { createApp } = require('../src/app');
 const { createAuthService } = require('../src/services/authService');
 const { hashToken, generateRandomToken } = require('../src/utils/tokenUtils');
+const { createAcceptingCaptchaService } = require('./helpers/captchaTestService');
 const { makeInMemoryAuthDependencies } = require('./helpers/inMemoryAuthRepositories');
 
 const FIXED_NOW = new Date('2026-07-15T02:00:00.000Z');
@@ -13,7 +14,7 @@ const FIXED_NOW = new Date('2026-07-15T02:00:00.000Z');
 function makeTestApp({ clock, dependencyOptions, debugLogger } = {}) {
   const dependencies = makeInMemoryAuthDependencies(dependencyOptions);
   const authService = createAuthService({ ...dependencies, clock, debugLogger });
-  const app = createApp({ authService });
+  const app = createApp({ authService, captchaService: createAcceptingCaptchaService() });
   app.locals.authTestDependencies = dependencies;
 
   return { app, authService, dependencies };

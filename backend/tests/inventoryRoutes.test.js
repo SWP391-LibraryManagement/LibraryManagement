@@ -5,6 +5,7 @@ const request = require('supertest');
 const { createApp } = require('../src/app');
 const { createAuthService } = require('../src/services/authService');
 const { createInventoryService } = require('../src/services/inventoryService');
+const { createAcceptingCaptchaService } = require('./helpers/captchaTestService');
 const { makeInMemoryAuthDependencies } = require('./helpers/inMemoryAuthRepositories');
 const {
   makeInMemoryInventoryDependencies,
@@ -18,7 +19,11 @@ function makeTestApp(initialState = {}) {
     inventoryRepository: inventoryDependencies.inventoryRepository,
     auditLogRepository: inventoryDependencies.auditLogRepository,
   });
-  const app = createApp({ authService, inventoryService });
+  const app = createApp({
+    authService,
+    inventoryService,
+    captchaService: createAcceptingCaptchaService(),
+  });
 
   return { app, authDependencies, inventoryDependencies };
 }

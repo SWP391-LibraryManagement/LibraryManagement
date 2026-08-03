@@ -12,10 +12,40 @@ const {
   syncFineSourceFromBorrowing,
   syncReservationClaims,
 } = require('../../../backend/tests/helpers/systemIntegrationHarness');
+const {
+  createCaptchaService,
+} = require('../../../backend/src/services/captchaService');
 
 const HOST = '127.0.0.1';
 const PORT = Number(process.env.E2E_BACKEND_PORT || 3100);
-let setup = makeSystemIntegrationApp();
+const E2E_SEED_CAPTCHA = {
+  captchaToken: '__e2e_seed_captcha__',
+  captchaAnswer: 'SEED',
+};
+let latestCaptchaAnswer = null;
+
+function makeE2eSetup() {
+  latestCaptchaAnswer = null;
+  const realCaptchaService = createCaptchaService({
+    onChallengeIssued({ answer }) {
+      latestCaptchaAnswer = answer;
+    },
+  });
+  const captchaService = {
+    createChallenge: realCaptchaService.createChallenge,
+    verifyChallenge(token, answer) {
+      if (
+        token === E2E_SEED_CAPTCHA.captchaToken
+        && answer === E2E_SEED_CAPTCHA.captchaAnswer
+      ) return true;
+      return realCaptchaService.verifyChallenge(token, answer);
+    },
+  };
+
+  return makeSystemIntegrationApp({ captchaService });
+}
+
+let setup = makeE2eSetup();
 let failNextNotificationRead = false;
 
 function sendJson(res, statusCode, payload) {
@@ -288,12 +318,22 @@ async function handleControl(req, res, pathname) {
       return;
     }
 
-    setup = makeSystemIntegrationApp();
+    setup = makeE2eSetup();
     failNextNotificationRead = false;
 
-    const member = await createVerifiedActor({ setup, email: memberEmail, password });
+    const member = await createVerifiedActor({
+      setup,
+      email: memberEmail,
+      password,
+      captcha: E2E_SEED_CAPTCHA,
+    });
     const memberB = memberBEmail
-      ? await createVerifiedActor({ setup, email: memberBEmail, password })
+      ? await createVerifiedActor({
+          setup,
+          email: memberBEmail,
+          password,
+          captcha: E2E_SEED_CAPTCHA,
+        })
       : null;
     const librarian = await createVerifiedActor({
       setup,
@@ -301,6 +341,7 @@ async function handleControl(req, res, pathname) {
       password,
       role: 'LIBRARIAN',
       approveMember: false,
+      captcha: E2E_SEED_CAPTCHA,
     });
     const admin = adminEmail
       ? await createVerifiedActor({
@@ -309,6 +350,7 @@ async function handleControl(req, res, pathname) {
           password,
           role: 'ADMIN',
           approveMember: false,
+          captcha: E2E_SEED_CAPTCHA,
         })
       : null;
     const profiles = setup.dependencies.authDependencies.state.profiles;
@@ -338,6 +380,15 @@ async function handleControl(req, res, pathname) {
       bookId: 1,
       ...(admin ? { adminUserId: admin.userId } : {}),
     });
+    return;
+  }
+
+  if (req.method === 'GET' && pathname === '/__e2e__/captcha-answer') {
+    if (!latestCaptchaAnswer) {
+      sendJson(res, 404, { error: 'No CAPTCHA answer has been issued.' });
+      return;
+    }
+    sendJson(res, 200, { answer: latestCaptchaAnswer });
     return;
   }
 

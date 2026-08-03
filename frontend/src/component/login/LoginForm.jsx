@@ -19,6 +19,7 @@ import {
   Lock
 } from '@mui/icons-material';
 import { validateLoginFields } from '../../utils/authUx';
+import CaptchaField from '../auth/CaptchaField';
 
 export default function LoginForm({
   onSubmit,
@@ -27,13 +28,15 @@ export default function LoginForm({
   onInputChange,
   feedback,
   isSubmitting = false,
-  isLocked = false
+  isLocked = false,
+  captchaRefreshKey = 0,
 }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
+  const [captcha, setCaptcha] = useState({ captchaToken: '', captchaAnswer: '' });
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -41,9 +44,13 @@ export default function LoginForm({
 
     const nextErrors = validateLoginFields({ email, password });
     setFieldErrors(nextErrors);
+    if (!captcha.captchaToken || !captcha.captchaAnswer) {
+      setFieldErrors((current) => ({ ...current, captcha: 'Vui lòng nhập mã CAPTCHA.' }));
+      return;
+    }
     if (Object.keys(nextErrors).length > 0 || !onSubmit) return;
 
-    onSubmit(email.trim(), password, rememberMe);
+    onSubmit(email.trim(), password, rememberMe, captcha);
   };
 
   const handleEmailChange = (value) => {
@@ -135,6 +142,16 @@ export default function LoginForm({
         }}
       />
 
+      <CaptchaField
+        disabled={isSubmitting || isLocked}
+        refreshKey={captchaRefreshKey}
+        onChange={(nextCaptcha) => {
+          setCaptcha(nextCaptcha);
+          setFieldErrors((current) => ({ ...current, captcha: '' }));
+        }}
+      />
+      {fieldErrors.captcha && <Alert severity="error">{fieldErrors.captcha}</Alert>}
+
       {feedback?.message && (
         <Alert severity={feedback.severity || 'info'}>
           {feedback.message}
@@ -181,7 +198,7 @@ export default function LoginForm({
       <button
         type="submit"
         className="login-button"
-        disabled={isSubmitting || isLocked}
+        disabled={isSubmitting || isLocked || !captcha.captchaToken}
       >
         {isSubmitting ? 'Đang đăng nhập...' : 'Đăng nhập'}
       </button>

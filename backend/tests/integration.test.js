@@ -13,6 +13,7 @@ const { makeInMemoryBorrowingDependencies } = require('./helpers/inMemoryBorrowi
 const { makeInMemoryReservationDependencies } = require('./helpers/inMemoryReservationRepositories');
 const { makeInMemoryNotificationDependencies } = require('./helpers/inMemoryNotificationRepositories');
 const { makeInMemoryReportDependencies } = require('./helpers/inMemoryReportRepositories');
+const { createAcceptingCaptchaService } = require('./helpers/captchaTestService');
 const {
   authHeader,
   createVerifiedActor,
@@ -57,6 +58,7 @@ function makeTestApp() {
 
   const app = createApp({
     authService,
+    captchaService: createAcceptingCaptchaService(),
     borrowingService,
     reservationService,
     notificationService,
