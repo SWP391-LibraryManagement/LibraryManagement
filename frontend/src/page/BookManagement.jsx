@@ -550,6 +550,7 @@ export default function BookManagement() {
   async function confirmStatusFromUpdate() {
     if (!pendingStatusFromUpdate) return;
     const { bookId, activating, version } = pendingStatusFromUpdate;
+    const targetStatus = activating ? 'ACTIVE' : 'INACTIVE';
     try {
       setSaving(true);
       const result = await apiRequest(`/books/${bookId}/${activating ? 'reactivate' : 'deactivate'}`, {
@@ -561,15 +562,18 @@ export default function BookManagement() {
             : 'Ngừng hoạt động từ biểu mẫu cập nhật thông tin sách.',
         }),
       });
-      // @spec FR-FE05-029 - preserve the current list context after mutating one book.
+      // @spec FR-FE05-029 - keep the changed book visible under its committed status.
+      setStatusFilter(targetStatus);
+      setAppliedStatusFilter(targetStatus);
+      setPage(1);
       const nextBooks = await loadBooks({
-        status: appliedStatusFilter,
+        status: targetStatus,
         categoryId: appliedCategoryFilter,
         q: appliedSearchQuery,
-        pageNumber: page,
+        pageNumber: 1,
       });
       const refreshedBook = nextBooks.find((book) => Number(book.id) === Number(bookId));
-      if (!refreshedBook) setSelectedBookId('');
+      setSelectedBookId(refreshedBook ? String(bookId) : '');
       setDetailBook(refreshedBook || result.book);
       showToast(activating
         ? 'Đã kích hoạt lại sách và tải lại trạng thái chuẩn.'
@@ -588,6 +592,8 @@ export default function BookManagement() {
       return;
     }
 
+    const activating = selectedBook.status === 'INACTIVE';
+    const targetStatus = activating ? 'ACTIVE' : 'INACTIVE';
     const reason = selectedBook.status === 'INACTIVE'
       ? 'Kích hoạt lại từ giao diện quản lý sách.'
       : 'Ngừng hoạt động từ giao diện quản lý sách.';
@@ -595,7 +601,7 @@ export default function BookManagement() {
     try {
       setSaving(true);
       const body = JSON.stringify({ reason });
-      if (selectedBook.status === 'INACTIVE') {
+      if (activating) {
         await apiRequest(`/books/${selectedBook.id}/reactivate`, {
           method: 'PATCH',
           headers: { 'If-Match': selectedBook.version },
@@ -608,21 +614,25 @@ export default function BookManagement() {
           body,
         });
       }
-      // @spec FR-FE05-029 - preserve the current list context after mutating one book.
+      // @spec FR-FE05-029 - keep the changed book visible under its committed status.
+      setStatusFilter(targetStatus);
+      setAppliedStatusFilter(targetStatus);
+      setPage(1);
       const nextBooks = await loadBooks({
-        status: appliedStatusFilter,
+        status: targetStatus,
         categoryId: appliedCategoryFilter,
         q: appliedSearchQuery,
-        pageNumber: page,
+        pageNumber: 1,
       });
       const refreshedBook = nextBooks.find((book) => Number(book.id) === Number(selectedBook.id));
       if (!refreshedBook) {
         setSelectedBookId('');
         setDetailBook(null);
       } else {
+        setSelectedBookId(String(selectedBook.id));
         setDetailBook(refreshedBook);
       }
-      showToast(selectedBook.status === 'INACTIVE'
+      showToast(activating
         ? 'Đã kích hoạt lại sách và tải lại trạng thái chuẩn.'
         : 'Đã ngừng hoạt động sách. Sách không còn hiển thị trong tra cứu công khai.');
       setPendingStatusChange(null);

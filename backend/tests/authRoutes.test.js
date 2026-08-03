@@ -79,6 +79,27 @@ async function login(app, email = 'member@example.test', password = 'Password1!'
 }
 
 describe('FE02 auth vertical slice', () => {
+  // @spec BR-FE02-001 FR-FE02-001 AC-FE02-001
+  test('registration without an explicit username derives the exact email local part', async () => {
+    const { app, dependencies } = makeTestApp();
+
+    const response = await request(app)
+      .post('/api/auth/register')
+      .send({
+        email: 'dt98466558630@gmail.com',
+        password: 'Password1!',
+        confirmPassword: 'Password1!',
+        fullName: 'Trần Hoàng Dũng',
+      });
+
+    expect(response.status).toBe(201);
+    expect(dependencies.state.users).toHaveLength(1);
+    expect(dependencies.state.users[0]).toMatchObject({
+      email: 'dt98466558630@gmail.com',
+      username: 'dt98466558630',
+    });
+  });
+
   // @spec BR-FE02-020 BR-FE02-021 FR-FE02-002 FR-FE02-022 AC-FE02-001
   test('registration requests one FE10 verification OTP delivery using the persisted token ID', async () => {
     const { app, dependencies } = makeTestApp();

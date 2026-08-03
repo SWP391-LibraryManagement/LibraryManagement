@@ -1,5 +1,11 @@
 # CHANGELOG.md - Xác thực FE02
 
+## 2026-08-03 - Sửa username suy ra khi tự đăng ký
+
+- Khi request đăng ký không gửi `username`, suy ra username tất định từ phần local trước `@` của email đã chuẩn hóa.
+- Loại bỏ hậu tố hex ngẫu nhiên khi suy ra username; giữ nguyên cơ chế xung đột username `409` và không thay đổi các bản ghi cũ.
+- Thêm kiểm thử hồi quy cho email `dt98466558630@gmail.com` phải lưu username `dt98466558630`.
+
 ## 2026-08-03 - Candidate đối soát FE02-T043 cho H3 hồi cứu
 
 - Xác minh commit `241907d`, PR #60 head `50e9091`, merge `c052b50`, exact-head CI `29875668029`, post-merge CI `29875885463` và staging `29876046500` đều tồn tại/thành công.

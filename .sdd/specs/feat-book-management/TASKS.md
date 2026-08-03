@@ -187,10 +187,10 @@ Trạng thái quy trình: đã hoàn tất cho phạm vi Giai đoạn 2 đã ph�
 
 ## Điều chỉnh danh sách trạng thái một sách 2026-07-28
 
-- [~] **FE05-T018 - Giữ ngữ cảnh danh sách và kết xuất trạng thái chính xác sau lệnh trạng thái một sách.**
+- [x] **FE05-T018 - Giữ ngữ cảnh danh sách và kết xuất trạng thái chính xác sau lệnh trạng thái một sách.**
   - Ánh xạ tới: BR-FE05-011, FR-FE05-029, FR-FE05-032, AC-FE05-020, AC-FE05-023.
   - Giữ khả dụng chỉ đọc trong projection chi tiết và chỉ mutation `bookId` chuẩn đã chọn.
-  - Giữ ngữ cảnh search/category/status/page đã áp dụng và tải lại danh sách chuẩn đó sau cả biểu mẫu cập nhật lẫn lệnh trạng thái độc lập.
+  - Giữ ngữ cảnh search/category; chuyển status sang trạng thái đích, đặt lại trang 1 và tải lại danh sách chuẩn sau cả biểu mẫu cập nhật lẫn lệnh trạng thái độc lập.
   - Kết xuất cột trạng thái danh sách quản lý từ `Books.Status` chuẩn, không phải `availabilityStatus`.
   - Xác minh kiểm thử frontend tập trung, toàn bộ kiểm thử frontend, lint/build, traceability và vệ sinh diff trước khi rà soát thủ công.
 
@@ -200,3 +200,10 @@ Trạng thái quy trình: đã hoàn tất cho phạm vi Giai đoạn 2 đã ph�
   - Ánh xạ tới: NFR-FE05-TXN-001, NFR-FE05-LOG-001; tích hợp FE11 `BR-FE11-033`, `FR-FE11-043`, `AC-FE11-026`.
   - Bằng chứng: commit `e64c636`, PR #95, foundation checks thành công, CI sau merge `30711057582` và staging deployment `30711210037` trên `e01585a`; controller/service/repository/projector RED-GREEN, backend đầy đủ/coverage, traceability, secret scan, system/E2E/deployment đạt.
   - Ranh giới: mutation và audit dùng một transaction SQL tham số hóa; update/deactivate không tồn tại không trả thành công giả; không đổi schema, endpoint, role, envelope hoặc quyền sở hữu trạng thái bản sao FE06.
+
+## 2026-08-03 Hồi quy hiển thị sau khi đổi trạng thái
+
+- [x] **FE05-T020 - Đồng bộ bộ lọc với trạng thái sách vừa commit.**
+  - Ánh xạ tới: FR-FE05-029, AC-FE05-020, NFR-FE05-UX-004.
+  - RED: kiểm thử frontend tái hiện hai điểm vào vẫn tải lại bộ lọc trạng thái cũ khiến sách vừa cập nhật có vẻ không đổi hoặc biến mất.
+  - GREEN: cả hai điểm vào chuyển bộ lọc sang trạng thái đích, đặt lại trang 1, tải dữ liệu chuẩn và chọn lại đúng `bookId` khi có trong kết quả.

@@ -1,6 +1,6 @@
 # SPEC.md - Xác thực FE02
 
-# Phiên bản: 0.6.22
+# Phiên bản: 0.6.23
 
 # Trạng thái: COMPLETE - H3 HỒI CỨU ĐÃ ĐƯỢC PHÊ DUYỆT
 
@@ -243,7 +243,7 @@ Tính năng này chỉ có thể bắt đầu khi:
 
 Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
 
-- BR-FE02-001: Khách phải cung cấp email hợp lệ và duy nhất, mật khẩu cùng phần xác nhận để đăng ký; tên người dùng được cung cấp hoặc do hệ thống suy ra cũng phải là duy nhất.
+- BR-FE02-001: Khách phải cung cấp email hợp lệ và duy nhất, mật khẩu cùng phần xác nhận để đăng ký; tên người dùng được cung cấp hoặc do hệ thống suy ra cũng phải là duy nhất. Khi request không cung cấp username, hệ thống suy ra username tất định từ phần local trước `@` của email đã chuẩn hóa, không nối hậu tố ngẫu nhiên; xung đột username được trả về theo quy tắc trùng lặp hiện hành.
 - BR-FE02-002: Khách không thể truy cập các chức năng dành cho Thành viên/Thủ thư/Quản trị viên nếu chưa đăng nhập.
 - BR-FE02-003: Chỉ có thể tạo người dùng trong quy trình đăng ký; người dùng khác không thể được tạo bởi các tác nhân khác trong tính năng này.
 - BR-FE02-004: Tài khoản người dùng đã đăng ký phải được xác minh qua email trước khi được kích hoạt.
@@ -386,7 +386,7 @@ Các yêu cầu sau đây chính thức hóa các nhánh xử lý lỗi và tìn
 | ----- | ---- | -------- | ------------------ |
 | userId | số nguyên | Có | Khóa chính. |
 | email | chuỗi | Có | Định dạng email duy nhất, hợp lệ, tối đa 255 ký tự. |
-| username | chuỗi | Không | Trường đăng nhập thay thế duy nhất, dài 3..50 ký tự khi được cung cấp; nếu không, giá trị được suy ra từ email. |
+| username | chuỗi | Không | Trường đăng nhập thay thế duy nhất, dài 3..50 ký tự khi được cung cấp; nếu không, giá trị được suy ra tất định từ phần local trước `@` của email đã chuẩn hóa và không có hậu tố ngẫu nhiên. |
 | passwordHash | chuỗi | Có | băm bcrypt, không bao giờ là văn bản gốc. Trước khi thiết lập, FE11 lưu trữ hàm băm bcrypt không thể sử dụng được của giá trị ngẫu nhiên do máy chủ tạo ra bị loại bỏ; giữ chỗ theo nghĩa đen cố định bị cấm. |
 | fullName | chuỗi | Không | Tên hiển thị của người dùng. |
 | phoneNumber | chuỗi | Không | Số điện thoại của người dùng. |
