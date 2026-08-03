@@ -1,7 +1,7 @@
 # Kế hoạch kiểm thử FE04 - Quản lý thành viên
 
 Phiên bản: 0.2.2
-Trạng thái: COMPLETE - PHẠM VI CỐT LÕI; ADMIN EXTENSION H2 PASS, MANUAL PENDING
+Trạng thái: COMPLETE - PHẠM VI CỐT LÕI VÀ ADMIN EXTENSION
 Cập nhật lần cuối: 2026-08-03
 
 Đặc tả nguồn: `.sdd/specs/feat-membership-management/SPEC.md`
@@ -51,13 +51,13 @@ ID tính năng: `BR-FE04-*`, `FR-FE04-*`, `AC-FE04-*`
 - Harness amendment: 14/14 contract PASS; hai script tạm `node --check` PASS; preflight trước và sau cleanup PASS.
 - Azure Staging `850b01b`, run `lms-fe04-acceptance-20260803-90ac1d5b`: anonymous 401, Member 403, Librarian/Admin 200; application A `REJECTED`, application B `APPROVED`; 1440/1366/1280/390 không overflow; cleanup active token/user/member/pending = 0, login/token cũ bị từ chối và runtime/helper = 404/404.
 - Suite liên tính năng FE04/FE07/FE08/FE10/FE12: 6 suite, 162/162 PASS.
-- L1 PR C hiện tại: backend 75 suite/1202 test PASS; system integration 11/11; coverage 91.98% statement, 81.28% branch, 97.08% function, 91.94% line; frontend 281/281, lint/build PASS; Playwright 16/16; deployment 20/20; secret/audit/trace/diff gates PASS.
+- L1 amendment trước H2 vòng 2: backend 75 suite/1202 test PASS; frontend 281/281, lint/build PASS; Playwright 16/16; deployment 20/20; secret/audit/trace/diff gates PASS. Bằng chứng system integration 11/11 và coverage 91.98% statement, 81.28% branch, 97.08% function, 91.94% line thuộc L1 đầy đủ trước H2 vòng 1.
 
 ## 6. Khoảng trống
 
 - Bằng chứng SQL Server disposable đã hoàn tất: migration FE04 chạy hai lần, toàn bộ sáu mutable case vượt qua và việc dọn dẹp database/login được ghi tại `.sdd/reviews/full-reconciliation-live-sql-validation-2026-07-19.md`.
-- L1 đầy đủ đã đạt trên candidate hiện tại; phải chạy lại nếu diff thay đổi sau H2 review.
-- Chủ sở hữu Dat/FE07/FE08 và người rà soát thủ công cuối cùng vẫn phải xác nhận điều kiện và tính phù hợp của hệ thống.
+- L1 amendment đã chạy lại sau H3 vòng 1; mọi gate tối thiểu trước H2 vòng 2 đều đạt.
+- H3/manual-owner acceptance đã xác nhận điều kiện và tính phù hợp của hệ thống tại PR #107; chỉ còn cổng tích hợp PR C (H2 vòng 2, CI và H3 cuối).
 
 ## 7. Lệnh/bằng chứng bắt buộc trước khi merge
 
@@ -73,11 +73,11 @@ git diff --check
 
 ## 8. Mục tiêu tích hợp rà soát thành viên trong Admin Console
 
-Trạng thái candidate (2026-08-03): nguồn/local browser/Azure Staging/L1/H2 vòng 1 đều đạt trên exact SHA `850b01b`; nghiệm thu thủ công/xác nhận owner vẫn mở.
+Trạng thái hoàn tất (2026-08-03): nguồn/local browser/Azure Staging/L1/H2 vòng 1 và H3/manual-owner acceptance đều đạt trên exact SHA `850b01b`.
 
 - Điều hướng Admin chính xác tám mục, có Membership Review sau All Users và không có Permissions.
 - Tham số danh sách FE04 chuẩn `q`, `status`, `page`, `limit=10`; không có alias `/api/admin/membership`.
 - Hành động review chỉ với trạng thái đang chờ, lý do từ chối 1..500, tải lại có thẩm quyền sau thành công/conflict và cảnh báo `FAILED` FE10 an toàn.
 - Bảng Admin trên 1440px và thẻ tại/dưới 1440px; không tràn tài liệu ở 1440/1366/1280/390.
 - Từ chối Admin đã xác thực thực tế, thành viên bị từ chối nộp lại đơn và phê duyệt trong `tests/e2e/fe04-admin-membership-review.spec.js` cùng độ bao phủ hồi quy `/membership` và FE11 hiện có.
-- Rà soát thủ công cuối cùng vẫn tách biệt với acceptance staging tự động đã đạt.
+- Rà soát thủ công/owner đã chấp nhận acceptance staging và bằng chứng responsive tại H3 vòng 1 PR #107.

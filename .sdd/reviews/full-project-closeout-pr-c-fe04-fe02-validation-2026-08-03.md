@@ -2,11 +2,11 @@
 
 Date: 2026-08-03
 
-Status: IN PROGRESS - H2 ROUND 1 PASS; FE04 MANUAL AND FE02 H3 OPEN
+Status: IN PROGRESS - H2 ROUND 2 PASS; EXACT-HEAD CI AND FINAL H3 REQUIRED
 
 ## Scope
 
-This record tracks PR C evidence for FE04 staging acceptance and FE02 closeout reconciliation. It does not mark FE04 or FE02 complete while required acceptance and H2/H3 gates remain open.
+This record tracks PR C evidence for FE04 staging acceptance and FE02 closeout reconciliation. FE04 and FE02 are complete at feature scope after H3 round 1; H2 round 2, exact-head CI and final H3 remain separate PR integration gates.
 
 ## Exact baseline
 
@@ -148,7 +148,7 @@ The written amendment was committed as `2272ed654e10ba0536ea803380e04c551011eb7f
 - FE10 contract: membership notification requester failure is non-blocking after the FE04 decision commits.
 - FE12 contract: membership status is read for reporting/filtering; FE12 does not own FE04 transitions.
 
-## FE02-T049 reconciliation candidate
+## FE02-T049 reconciliation candidate (historical checkpoint)
 
 - Implementation commit: [`241907d09760055022393bdc9176da85bbeff3f4`](https://github.com/SWP391-LibraryManagement/LibraryManagement/commit/241907d09760055022393bdc9176da85bbeff3f4), `fix: harden login validation feedback`.
 - Historical PR: [#60](https://github.com/SWP391-LibraryManagement/LibraryManagement/pull/60), head `50e9091362777d3892d5d4e048a21118326b2dd9`, merge commit `c052b5051deb1e29b66cde2668bca612cc27dc35`.
@@ -158,7 +158,7 @@ The written amendment was committed as `2272ed654e10ba0536ea803380e04c551011eb7f
 - GitHub currently returns an empty `reviews` array for PR #60. No historical H3 record is claimed.
 - Source-to-requirement review remains consistent: backend login validation accepts identifiers through 255 characters and rejects invalid boundaries; frontend field validation handles blank/overlength values, prevents duplicate pending submissions and maps stable safe error codes without account enumeration or raw backend messages.
 - Current focused evidence: backend auth/HTTPS 3 suites, 68/68 PASS; frontend auth UX/login 17/17 PASS.
-- Proposed resolution: H3 round 1 on PR C performs a current retrospective Standards + Spec review of T043 and explicitly decides whether that review may resolve CG-FE02-003. Until a real permalink exists, FE02-T049 remains unchecked and FE02 remains `PARTIAL`.
+- At this checkpoint, the proposed resolution was a current retrospective Standards + Spec review in H3 round 1. That resolution was later accepted at PR #107 comment `5162255705`; no historical H3 is claimed.
 
 ## L1 full-gate evidence before H2 round 1
 
@@ -181,8 +181,38 @@ The written amendment was committed as `2272ed654e10ba0536ea803380e04c551011eb7f
 - H2 authorizes the mechanical status updates recording H2, the reviewed documentation commit, branch push, Draft PR publication and ready-for-review transition after exact-head checks pass.
 - H2 does not approve FE04 manual acceptance, FE02 retrospective H3 resolution, merge or final completion.
 
+## H3 round 1
+
+- Decision permalink: [PR #107 comment `5162255705`](https://github.com/SWP391-LibraryManagement/LibraryManagement/pull/107#issuecomment-5162255705).
+- Reviewed exact head: `5130850b14fd96aa5d90bd30a662ec2f22390a2a`; exact-head CI `30783858342` passed `foundation-checks` before the decision.
+- Decision 1: FE02-T043 commit/PR/CI/deploy history is accepted as accurate.
+- Decision 2: Current FE02-T043 implementation is accepted as conforming to Standards and FE02 Spec.
+- Decision 3: The current retrospective H3 may resolve `CG-FE02-003`; no historical H3 is claimed.
+- Decision 4: FE04 staging, L1, cleanup, responsive and manual/owner evidence is sufficient to mark FE04 complete.
+- Result: FE02-T049 and CG-FE02-003 are closed; FE02 and FE04 move to `COMPLETE` in this minimal documentation amendment.
+- Boundary: the amended head requires L1 rerun, H2 round 2, exact-head CI and final H3 before merge.
+
+## L1 amendment rerun before H2 round 2
+
+- `trace:enforce`: PASS; FE02 27/27 and FE04 14/14 are `COMPLETE` at 100% coverage; no feature is below its required threshold.
+- Secret scanner: 5/5 contract tests PASS and tracked-tree scan PASS.
+- Frontend high-audit guard: PASS with only the pinned, non-applicable React Router RSC advisory accepted.
+- Backend full: 75/75 suites and 1202/1202 tests PASS.
+- Frontend full: 281/281 tests PASS; ESLint PASS; Vite production build PASS.
+- Playwright Chromium: 16/16 PASS with clean process exit.
+- Deployment contracts: 20/20 PASS.
+- `git diff --check`: PASS; the staging harness remains ignored and untracked.
+
+## H2 round 2
+
+- Decision: APPROVED by Nhat in Codex chat on 2026-08-03.
+- Reviewed diff fingerprint: `fab52b79aa47c724fb44c3f5b687e5822cb62bad`.
+- Reviewed scope: exactly 12 durable FE04/FE02/PR C documentation files; no product code, test source, workflow, dependency, lockfile or tracked harness changes.
+- H2 authorizes only this mechanical decision record, the reviewed documentation commit and branch push.
+- H2 does not authorize merge; exact-head CI and final H3 remain mandatory.
+
 ## Open gates
 
-- FE04 staging/browser/cleanup, full L1 and H2 evidence are present, but FE04 remains PARTIAL until explicit manual acceptance/owner confirmation passes.
-- Dat/FE07/FE08 human owner confirmation remains open; automated cross-feature evidence is present.
-- FE02-T049 and CG-FE02-003 remain open; no FE02 completion state changed across these attempts.
+- FE04 and FE02 feature scopes are complete according to H3 round 1.
+- H2 round 2 approved the final amendment fingerprint and its mechanical decision record.
+- Exact-head CI and final H3 are required before merge.

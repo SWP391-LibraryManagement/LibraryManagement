@@ -1,7 +1,7 @@
 # Kế hoạch kiểm thử FE02 - Xác thực
 
-Phiên bản: 0.3.16
-Trạng thái: ĐANG ĐỐI SOÁT - ĐÃ GHI NHẬN BẰNG CHỨNG BASELINE; CÁC KHOẢNG TRỐNG ĐANG MỞ
+Phiên bản: 0.3.17
+Trạng thái: COMPLETE - H3 HỒI CỨU ĐÃ ĐƯỢC PHÊ DUYỆT
 Cập nhật lần cuối: 2026-08-03
 
 Đặc tả nguồn: `.sdd/specs/feat-auth/SPEC.md`
@@ -63,7 +63,7 @@ Hành vi đăng ký, xác minh email, đăng nhập, làm mới token/đăng xu�
 - FE02-T043 ghi lại snapshot lịch sử gồm 924/924 kiểm thử backend đầy đủ và 209/209 kiểm thử frontend đầy đủ; phần FE02/FE10 tập trung trong lịch sử vượt qua 170/170 trước khi các kiểm thử hồi quy xác thực về sau được thêm vào. Các số liệu này không phải kết quả xác minh hiện tại cho đợt đối soát đang mở.
 - Candidate lịch sử T043: commit `241907d`, PR #60 head `50e9091`, merge `c052b50`; exact-head CI `29875668029`, post-merge CI `29875885463` và staging `29876046500` đều thành công; PR #60 không có GitHub review record.
 - Focused current rerun 2026-08-03: backend `authRoutes`, `authUtils`, `httpsEnforcement` đạt 3 suite/68 kiểm thử; frontend `authUxFrontend` + `loginFrontend` đạt 17/17.
-- L1 PR C hiện tại: backend 75 suite/1202 test PASS và coverage gate đạt; frontend 281/281, lint/build PASS; Playwright 16/16; deployment 20/20; secret/audit/trace/diff gates PASS.
+- L1 amendment trước H2 vòng 2: backend 75 suite/1202 test PASS; frontend 281/281, lint/build PASS; Playwright 16/16; deployment 20/20; secret/audit/trace/diff gates PASS.
 - Traceability: tất cả 27 ID FR của FE02 có độ bao phủ `@spec` (**100%**) khi chạy `npm run trace:enforce`.
 - Bằng chứng hiệu năng: `npm.cmd run phase3:performance` ngày 2026-07-27 vượt qua NFR-FE02-PERF-001/004 trong môi trường cục bộ xác định đã ghi nhận: 30 mẫu đăng nhập hợp lệ có p95 `61.46 ms` và 50 mẫu `/api/auth/me` có p95 `1.52 ms`, với chi phí bcrypt 10; kiểm thử harness vượt qua 3/3 và các giới hạn SQL/mạng vẫn được ghi nhận.
 
@@ -71,11 +71,11 @@ Hành vi đăng ký, xác minh email, đăng nhập, làm mới token/đăng xu�
 
 - Các ngưỡng độ bao phủ toàn cục của Jest đã cấu hình đều đạt đối với statement, branch, function và line.
 - Nghiệm thu thủ công, tích hợp PR và CI chính xác sau merge trên `main` đã vượt qua cho ranh giới gửi FE10 được inject; việc gửi SMTP thực sau đó được quan sát là PASS trong lần chạy `c6e0c46421f0`.
-- Liên kết một H3 hồi cứu hiện tại có permalink thật cho FE02-T043; không tồn tại H3 lịch sử để backdate.
+- H3 hồi cứu hiện tại đã được liên kết tại PR #107 comment `5162255705`; không tồn tại H3 lịch sử để backdate.
 
-Chủ sở hữu khoảng trống:
+Chủ sở hữu cổng tích hợp còn lại:
 
-- FE02-T049: liên kết H3 và phê duyệt đối soát thủ công.
+- PR C: H2 vòng 2, exact-head CI và H3 cuối trước merge; FE02-T049 không còn mở.
 
 ## 7. Lệnh/bằng chứng bắt buộc trước khi merge
 

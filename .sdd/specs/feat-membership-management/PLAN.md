@@ -1,6 +1,6 @@
 # PLAN.md - Quản lý thành viên FE04
 
-Trạng thái: COMPLETE - PHẠM VI CỐT LÕI; ADMIN EXTENSION H2 PASS, MANUAL PENDING
+Trạng thái: COMPLETE - PHẠM VI CỐT LÕI VÀ ADMIN EXTENSION
 
 Chủ sở hữu: Dat
 
@@ -8,7 +8,7 @@ Cập nhật: 2026-08-03
 
 Trạng thái quy trình: COMPLETE cho phạm vi Giai đoạn 2 đã phê duyệt; H3, merge và CI `main` chính xác sau merge được ghi tại `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. Các phát biểu cổng đang chờ/mở bên dưới là snapshot thực thi lịch sử đã được bằng chứng đó thay thế.
 
-Trạng thái mở rộng: `FE04-ADM01..ADM04`, L1 đầy đủ và H2 vòng 1 đã đạt; Playwright local thoát sạch và Azure Staging run `lms-fe04-acceptance-20260803-90ac1d5b` đã vượt qua reject -> resubmit -> approve, bốn viewport, phân quyền và cleanup. `FE04-ADM05` vẫn chờ nghiệm thu thủ công/xác nhận owner.
+Trạng thái mở rộng: `FE04-ADM01..ADM05` và `FE04-CONV-001..002` đã hoàn tất. Playwright local, Azure Staging run `lms-fe04-acceptance-20260803-90ac1d5b`, L1, H2 vòng 1 và H3/manual-owner acceptance đều đạt; xem [H3 round 1](https://github.com/SWP391-LibraryManagement/LibraryManagement/pull/107#issuecomment-5162255705).
 
 > **Dành cho agent triển khai:** Thực hiện `TASKS.md` theo thứ tự. Mỗi nhiệm vụ hành vi bắt đầu bằng kiểm thử tập trung thất bại, thêm phần triển khai nhỏ nhất thỏa đặc tả đã phê duyệt và kết thúc bằng cổng xác thực được liệt kê.
 
@@ -52,7 +52,7 @@ Bảng sai lệch dưới đây ghi nhận baseline trước đối soát. Bản
 - Unique index chỉ lọc các đơn đang chờ có trong baseline/model/ADR và migration idempotent; kiểm thử hợp đồng SQL static vượt qua.
 - Thực thi SQL đồng thời/rollback có thể thay đổi, nghiệm thu thủ công và xác nhận integration FE07/FE08
   là các cổng lịch sử trước khi chốt; bằng chứng chốt Giai đoạn 2 đã ghi nhận thay thế mốc này.
-- Phần mở rộng Admin Console đã phê duyệt tách biệt với phạm vi cốt lõi đã hoàn tất; local browser, Azure Staging acceptance, L1 đầy đủ và H2 vòng 1 đã đạt, còn nghiệm thu thủ công/xác nhận owner là cổng phát hành mở.
+- Phần mở rộng Admin Console đã phê duyệt tách biệt với phạm vi cốt lõi và đã hoàn tất qua local browser, Azure Staging acceptance, L1, H2 vòng 1 và H3/manual-owner acceptance.
 
 ## 4. Phạm vi
 

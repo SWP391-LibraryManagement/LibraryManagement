@@ -7,6 +7,12 @@
 - Rà soát lại đường dẫn requirement -> validator/UI -> focused tests cho validation login và feedback an toàn; current focused rerun đạt backend 68/68 và frontend 17/17.
 - Giữ FE02-T049, CG-FE02-003 và Implementation State `PARTIAL` cho đến khi PR C nhận H3 hồi cứu có permalink thật và phê duyệt thủ công.
 
+## 2026-08-03 - H3 hồi cứu hoàn tất đối soát FE02
+
+- H3 vòng 1 PR #107 chấp nhận lịch sử T043, Standards/Spec hiện tại và quyền dùng review hồi cứu để đóng `CG-FE02-003` tại permalink `#issuecomment-5162255705`.
+- Giữ rõ PR #60 không có review H3 lịch sử; không backdate hoặc dựng bằng chứng.
+- Đóng FE02-T049, chuyển Implementation State FE02 sang `COMPLETE`; H2 vòng 2, CI exact-head và H3 cuối còn là cổng tích hợp PR C.
+
 ## 2026-08-02 - Hoàn tất lô củng cố runtime và session-audit FE02
 
 - Hoàn tất `FE02-T067` qua commit `3a87ee8`, PR #95, CI sau merge `30711057582` và staging deployment `30711210037` trên `e01585a`.

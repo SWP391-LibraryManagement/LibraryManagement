@@ -382,7 +382,7 @@ Chỉ sau staging PASS và cleanup PASS:
 
 SPEC/PLAN/TEST_PLAN/CHANGELOG phải bỏ câu nói staging/clean exit chưa tồn tại và thay bằng bằng chứng exact; không đổi requirement.
 
-- [~] **Step 3: Xác nhận chủ sở hữu liên tính năng**
+- [x] **Step 3: Xác nhận chủ sở hữu liên tính năng**
 
 Chạy tập trung FE07/FE08/FE10/FE12 có sử dụng membership state và ghi kết quả vào validation record. Xác nhận:
 
@@ -429,7 +429,7 @@ Trong validation record:
 
 Trước H3 vòng 1, FE02-T049 vẫn [~] và CG-FE02-003 vẫn OPEN.
 
-- [ ] **Step 2: Sau H2 đầu tiên, publish PR C và yêu cầu H3 vòng 1**
+- [x] **Step 2: Sau H2 đầu tiên, publish PR C và yêu cầu H3 vòng 1**
 
 H3 vòng 1 phải trả lời rõ:
 
@@ -440,7 +440,7 @@ H3 vòng 1 phải trả lời rõ:
 
 Lưu permalink review/comment H3 vòng 1. Nếu reviewer không chấp nhận cách đối soát hồi cứu, FE02-T049 giữ mở và PR C không được tuyên bố hoàn tất mục tiêu FE02.
 
-- [ ] **Step 3: Amendment tài liệu tối thiểu sau H3 vòng 1**
+- [x] **Step 3: Amendment tài liệu tối thiểu sau H3 vòng 1**
 
 Chỉ khi H3 vòng 1 chấp nhận:
 
@@ -522,7 +522,7 @@ H2 lần 1 phê duyệt candidate để commit/push và yêu cầu H3 vòng 1; k
 
 ### Task 7: Publish, H3 vòng 1, amendment và H3 cuối
 
-- [ ] **Step 1: Commit/push sau H2 lần 1**
+- [x] **Step 1: Commit/push sau H2 lần 1**
 
 ~~~powershell
 git add .sdd/specs/feat-membership-management .sdd/specs/feat-auth .sdd/reviews/full-project-closeout-pr-c-fe04-fe02-validation-2026-08-03.md docs/superpowers/plans/2026-08-03-full-project-closeout-pr-c-fe04-fe02.md
@@ -534,7 +534,7 @@ git push -u origin feat/full-project-closeout-pr-c-fe04-fe02
 
 Không dùng git add -A. Xác minh tmp và artifact không được stage.
 
-- [ ] **Step 2: Tạo Draft PR và chờ CI**
+- [x] **Step 2: Tạo Draft PR và chờ CI**
 
 ~~~powershell
 gh pr create --base main --head feat/full-project-closeout-pr-c-fe04-fe02 --draft --title "docs: close FE04 acceptance and reconcile FE02" --body-file tmp/pr-c-body.md
@@ -551,7 +551,7 @@ PR body phải nêu:
 
 Body tạm phải được tạo bằng apply_patch dưới tmp và xóa sau khi PR được tạo; không commit tmp/pr-c-body.md.
 
-- [ ] **Step 3: H3 vòng 1 và amendment**
+- [x] **Step 3: H3 vòng 1 và amendment**
 
 Sau CI xanh, chuyển PR ready và yêu cầu review Standards + Spec trên exact head. Khi có permalink H3 vòng 1 chấp nhận, thực hiện đúng amendment Task 5 Step 3.
 
@@ -573,9 +573,10 @@ git diff --check
 Trình H2 lần 2 cho amendment, sau đó commit riêng:
 
 ~~~powershell
-git add .sdd/specs/feat-auth .sdd/reviews/full-project-closeout-pr-c-fe04-fe02-validation-2026-08-03.md
+git add .sdd/specs/feat-membership-management .sdd/specs/feat-auth .sdd/reviews/full-project-closeout-pr-c-fe04-fe02-validation-2026-08-03.md docs/superpowers/plans/2026-08-03-full-project-closeout-pr-c-fe04-fe02.md
 git diff --cached --check
-git commit -m "docs: link FE02 retrospective H3 closeout"
+git diff --cached --name-only
+git commit -m "docs: record PR C H3 round 1 closeout"
 git push
 ~~~
 
@@ -651,7 +652,7 @@ Dừng ngay, cleanup nếu cần, và báo người dùng khi:
 - Không còn remote runtime/helper hoặc local artifact.
 - FE04 TASKS/SPEC/PLAN/TEST_PLAN/CHANGELOG và validation record nhất quán; FE04 COMPLETE chỉ sau H2/manual approval.
 - FE02-T043 có historical integration evidence và current retrospective H3 permalink thật.
-- FE02-T049/CG-FE02-003 chỉ COMPLETE/RESOLVED sau amendment và H3 cuối.
+- FE02-T049/CG-FE02-003 chỉ COMPLETE/RESOLVED sau H3 vòng 1 và amendment; PR C chỉ được merge sau H2 vòng 2, exact-head CI và H3 cuối.
 - Full gates pass, diff chỉ gồm tài liệu đã liệt kê, không secret.
 - PR C merge, post-merge CI/deploy/smoke exact SHA xanh.
 

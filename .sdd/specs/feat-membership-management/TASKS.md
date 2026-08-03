@@ -1,7 +1,7 @@
 # TASKS.md - Quản lý thành viên FE04
 
-Trạng thái: COMPLETE - PHẠM VI CỐT LÕI; ADMIN EXTENSION H2 PASS, MANUAL PENDING
-Implementation State: PARTIAL
+Trạng thái: COMPLETE - PHẠM VI CỐT LÕI VÀ ADMIN EXTENSION
+Implementation State: COMPLETE
 
 Chủ sở hữu: Dat
 
@@ -9,7 +9,7 @@ Cập nhật: 2026-08-03
 
 Trạng thái quy trình: COMPLETE cho phạm vi Giai đoạn 2 đã phê duyệt; H3, merge và CI `main` chính xác sau merge được ghi tại `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. Các phát biểu cổng đang chờ/mở bên dưới là snapshot thực thi lịch sử đã được bằng chứng đó thay thế.
 
-Trạng thái mở rộng: `FE04-ADM01..ADM04`, L1 đầy đủ và H2 vòng 1 đã đạt; Azure Staging run `lms-fe04-acceptance-20260803-90ac1d5b` đã cleanup sạch; `FE04-ADM05` và `FE04-CONV-002` vẫn chờ nghiệm thu thủ công/xác nhận owner.
+Trạng thái mở rộng: `FE04-ADM01..ADM05` và `FE04-CONV-001..002` đã hoàn tất; Azure Staging run `lms-fe04-acceptance-20260803-90ac1d5b` cleanup sạch; H3/manual-owner acceptance được ghi tại [PR #107](https://github.com/SWP391-LibraryManagement/LibraryManagement/pull/107#issuecomment-5162255705).
 
 ---
 
@@ -141,7 +141,7 @@ Trạng thái mở rộng: `FE04-ADM01..ADM04`, L1 đầy đủ và H2 vòng 1 �
 - [x] Backend, SQL, frontend, traceability và kiểm tra diff tập trung vượt qua.
 - [x] Toàn bộ suite cổng merge không-SQL đã cấu hình vượt qua cục bộ; chạy lại sau thay đổi SQL/fan-in.
 - [x] Không thêm secret, thông tin xác thực thông báo thô hoặc dữ liệu cá nhân thực.
-- [ ] Dat và chủ sở hữu liên tính năng FE07/FE08 xác nhận hợp đồng điều kiện chuẩn.
+- [x] Dat và chủ sở hữu liên tính năng FE07/FE08 xác nhận hợp đồng điều kiện chuẩn qua H3/manual-owner acceptance PR #107.
 ## batch khắc phục 2026-07-22
 
 - [x] Sử dụng phản hồi trung lập cho việc từ chối thành viên đã hoàn tất.
@@ -162,9 +162,9 @@ Trạng thái mở rộng: `FE04-ADM01..ADM04`, L1 đầy đủ và H2 vòng 1 �
   - Phụ thuộc: FE04-ADM03.
   - Bằng chứng: local Playwright FE04 + FE11 đạt 2/2 và thoát sạch; staging run `lms-fe04-acceptance-20260803-90ac1d5b` đạt reject -> resubmit -> approve, sidebar tám mục và không tràn ở 1440/1366/1280/390.
   - DoD: từ chối FE04 thực, nộp lại đơn và phê duyệt vượt qua trong shell Admin; bằng chứng bảng/thẻ và không tràn vượt qua; lệnh tập trung thoát sạch.
-- [~] **FE04-ADM05 - Vượt qua L1-L4, H2, Azure Staging và nghiệm thu thủ công.**
+- [x] **FE04-ADM05 - Vượt qua L1-L4, H2, Azure Staging và nghiệm thu thủ công.**
   - Phụ thuộc: FE04-ADM01..FE04-ADM04.
-  - Bằng chứng candidate: L1 đầy đủ, Azure Staging, kiểm tra HTTP/auth/responsive/cleanup và H2 vòng 1 đã đạt; đang chờ phê duyệt thủ công desktop/mobile và xác nhận owner.
+  - Bằng chứng: L1 đầy đủ, Azure Staging, kiểm tra HTTP/auth/responsive/cleanup, H2 vòng 1 và H3/manual-owner acceptance đã đạt.
   - DoD: kiểm thử tập trung/đầy đủ, lint/build/trace/browser, commit đã rà soát, lần triển khai, kiểm tra HTTP và phê duyệt thủ công desktop/mobile đã xác thực rõ ràng được ghi nhận.
 
 ## Giai đoạn 3: Hội tụ
@@ -174,7 +174,7 @@ Trạng thái mở rộng: `FE04-ADM01..ADM04`, L1 đầy đủ và H2 vòng 1 �
   - Bằng chứng: FE04 + FE11 Playwright tập trung đạt 2/2 và tiến trình thoát sạch trong 31,5 giây; staging acceptance độc lập cũng đạt bốn viewport.
   - DoD: chạy lại spec trình duyệt FE04 và FE11 tập trung với kết thúc sạch, đồng thời lưu bằng chứng screenshot/overflow.
 
-- [~] **FE04-CONV-002 - Hoàn tất nghiệm thu FE04 bên ngoài và bằng chứng phát hành.**
+- [x] **FE04-CONV-002 - Hoàn tất nghiệm thu FE04 bên ngoài và bằng chứng phát hành.**
   - Ánh xạ tới: mọi tiêu chí nghiệm thu FE04, FE04-ADM05 và Định nghĩa hoàn tất.
-  - Bằng chứng candidate: exact CI/deploy `850b01b`, staging acceptance, cleanup, L1 đầy đủ và H2 vòng 1 đạt; suite liên tính năng đạt 162/162. Xác nhận chủ sở hữu và phê duyệt thủ công vẫn mở.
+  - Bằng chứng: exact CI/deploy `850b01b`, staging acceptance, cleanup, L1 đầy đủ, H2 vòng 1 và H3/manual-owner acceptance đạt; suite liên tính năng đạt 162/162.
   - DoD: ghi SHA đã triển khai, kiểm tra HTTP, quyết định người rà soát và phê duyệt rõ ràng trước khi đánh dấu FE04 hoàn tất.

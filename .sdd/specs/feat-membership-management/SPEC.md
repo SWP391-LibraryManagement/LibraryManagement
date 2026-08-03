@@ -1,6 +1,6 @@
 # SPEC.md - Quản lý thành viên FE04
 
-# Phiên bản: 0.3.5
+# Phiên bản: 0.3.6
 
 # Trạng thái: ĐÃ PHÊ DUYỆT - BASELINE 2026-07-17
 
@@ -14,8 +14,9 @@
 
 > Trạng thái phân phối hiện tại (2026-08-03): `COMPLETE` cho phạm vi cốt lõi đã phê duyệt;
 > phần mở rộng Admin Console đã vượt qua kiểm thử local và acceptance Azure Staging trên
-> `850b01b` và H2 vòng 1 đã được phê duyệt. Feature vẫn `PARTIAL` cho đến khi nghiệm thu
-> thủ công/xác nhận owner được phê duyệt. `TASKS.md` và hồ sơ validation PR C là nguồn có thẩm quyền về trạng thái này.
+> `850b01b`, H2 vòng 1 và H3 vòng 1 đã được phê duyệt. Nghiệm thu thủ công/xác nhận
+> owner FE04 được chấp nhận tại [PR #107 H3 round 1](https://github.com/SWP391-LibraryManagement/LibraryManagement/pull/107#issuecomment-5162255705).
+> Implementation State là `COMPLETE`; amendment PR C vẫn cần H2 vòng 2, CI exact-head và H3 cuối trước merge.
 
 > Nguồn sự thật cho Quản lý thành viên FE04. Bản sửa đổi v0.2.2 đồng bộ quy trình đã được phê duyệt với baseline mã hiện tại mà không mở rộng phạm vi triển khai.
 
@@ -24,8 +25,8 @@
 > Phần cốt lõi của Giai đoạn 2 đã hoàn tất. Lớp bổ sung cho Bảng điều khiển quản trị đã được phê duyệt và triển khai
 > cho `FR-FE04-014` và `AC-FE04-013`; kiểm thử trình duyệt local thoát sạch và run staging
 > `lms-fe04-acceptance-20260803-90ac1d5b` đã chứng minh từ chối, nộp lại, phê duyệt,
-> phân quyền server, bốn viewport và cleanup. Nghiệm thu thủ công/xác nhận owner vẫn là cổng phát hành,
-> không phải hành vi sản phẩm FE04 còn thiếu. Mức truy vết nguồn hiện tại là `14/14 FR`.
+> phân quyền server, bốn viewport và cleanup. H3 vòng 1 đã chấp nhận bằng chứng thủ công/owner;
+> không còn hành vi FE04 nào thiếu trong phạm vi đã phê duyệt. Mức truy vết nguồn hiện tại là `14/14 FR`.
 
 ---
 
@@ -368,52 +369,52 @@ Tính năng này không bao gồm:
 
 | ID yêu cầu | Trường hợp sử dụng liên quan | Trường hợp thử nghiệm liên quan | Trạng thái |
 | -------------- | ---------------- | ----------------- | ------ |
-| BR-FE04-001 | UC13 | Ranh giới vai trò Thành viên trong `membershipRoutes.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
-| BR-FE04-002 | UC13 | Xác thực tài khoản đang hoạt động/vai trò trong `membershipRoutes.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
-| BR-FE04-003 | UC13 | Các ca chỉ có một đơn chờ xử lý trong `membershipRoutes.test.js`; `membershipConcurrency.sqltest.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
-| BR-FE04-004 | UC13 | Chặn thành viên đã được phê duyệt trong `membershipRoutes.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
-| BR-FE04-005 | UC13 | Tạo trạng thái chờ trong `membershipRoutes.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
-| BR-FE04-006 | UC14 | Phân quyền phê duyệt của nhân viên trong `membershipRoutes.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
-| BR-FE04-007 | UC15 | Phân quyền từ chối của nhân viên trong `membershipRoutes.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
-| BR-FE04-008 | UC14, UC15 | Cơ chế bảo vệ trạng thái kết thúc trong `membershipRoutes.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
-| BR-FE04-009 | UC14 | Dấu thời gian phê duyệt dùng chung trong `membershipRoutes.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
-| BR-FE04-010 | UC15 | Giới hạn lý do từ chối trong `membershipRoutes.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
-| BR-FE04-011 | UC16 | Quyền sở hữu trạng thái/quyền riêng tư trong `membershipRoutes.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
-| BR-FE04-012 | UC16, UC29, UC36 | Tích hợp điều kiện FE07/FE08 và bằng chứng SQL | Kiểm thử tự động đạt; đang chờ review thủ công |
-| BR-FE04-013 | UC14, UC15 | Các xác nhận audit ở route/SQL | Kiểm thử tự động đạt; đang chờ review thủ công |
-| BR-FE04-014 | UC13, UC16, UC29, UC36 | Các ca phép chiếu `Members` chuẩn | Kiểm thử tự động đạt; đang chờ review thủ công |
-| BR-FE04-015 | UC13, UC14, UC15 | Các ca audit nguyên tử trong `membershipRoutes.test.js`; `membershipConcurrency.sqltest.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
-| BR-FE04-016 | UC13 | Kiểm thử lịch sử đăng ký lại của người bị từ chối | Kiểm thử tự động đạt; đang chờ review thủ công |
-| BR-FE04-017 | UC16 | Các ca trạng thái không hết hạn trong Giai đoạn 1 | Kiểm thử tự động đạt; đang chờ review thủ công |
-| BR-FE04-018 | UC14, UC15 | Kiểm thử requester `MEMBERSHIP_RESULT` không chặn | Kiểm thử tự động đạt; đang chờ review thủ công |
-| BR-FE04-019 | UC13 | Xác thực hồ sơ đầy đủ và các ca không ghi khi từ chối | Kiểm thử tự động đạt; đang chờ review thủ công |
-| FR-FE04-001 | UC13 | Luồng đăng ký thành công | Kiểm thử tự động đạt; đang chờ review thủ công |
-| FR-FE04-002 | UC13 | Xung đột đơn chờ xử lý trùng lặp | Kiểm thử tự động đạt; đang chờ review thủ công |
-| FR-FE04-003 | UC13 | Chặn thành viên đã được phê duyệt | Kiểm thử tự động đạt; đang chờ review thủ công |
-| FR-FE04-004 | UC14 | Các ca siêu dữ liệu/audit khi phê duyệt | Kiểm thử tự động đạt; đang chờ review thủ công |
-| FR-FE04-005 | UC15 | Các ca siêu dữ liệu/audit khi từ chối | Kiểm thử tự động đạt; đang chờ review thủ công |
-| FR-FE04-006 | UC14, UC15 | Cơ chế bảo vệ vai trò | Kiểm thử tự động đạt; đang chờ review thủ công |
-| FR-FE04-007 | UC16 | Trạng thái cá nhân chuẩn | Kiểm thử tự động đạt; đang chờ review thủ công |
-| FR-FE04-008 | UC14, UC15 | Chuyển đổi trạng thái kết thúc không hợp lệ | Kiểm thử tự động đạt; đang chờ review thủ công |
-| FR-FE04-009 | UC29, UC36 | Người dùng đang hoạt động + điều kiện chuẩn đã phê duyệt | Kiểm thử tự động đạt; đang chờ review thủ công |
-| FR-FE04-010 | UC13 | Phép chiếu/lịch sử khi đăng ký lại | Kiểm thử tự động đạt; đang chờ review thủ công |
-| FR-FE04-011 | UC14, UC15 | Các ca review đơn đăng ký/thành viên/audit nguyên tử | Kiểm thử tự động đạt; đang chờ review thủ công |
-| FR-FE04-012 | UC14, UC15 | Lỗi FE10 vẫn giữ nguyên quyết định | Kiểm thử tự động đạt; đang chờ review thủ công |
-| FR-FE04-013 | UC13 | Thực thi hồ sơ đầy đủ và hướng dẫn Thành viên | Kiểm thử tự động đạt; đang chờ review thủ công |
-| FR-FE04-014 | UC14, UC15 | Hợp đồng nguồn/trình duyệt FE04 nhúng trong Bảng điều khiển quản trị | Local, Azure Staging và H2 đạt; đang chờ review thủ công/xác nhận owner |
-| AC-FE04-001 | UC13 | Luồng đăng ký thành công | Kiểm thử tự động đạt; đang chờ review thủ công |
-| AC-FE04-002 | UC13 | Từ chối đơn chờ xử lý trùng lặp | Kiểm thử tự động đạt; đang chờ review thủ công |
-| AC-FE04-003 | UC14 | Phê duyệt + thông báo | Kiểm thử tự động đạt; đang chờ review thủ công |
-| AC-FE04-004 | UC15 | Từ chối + thông báo | Kiểm thử tự động đạt; đang chờ review thủ công |
-| AC-FE04-005 | UC14, UC15 | Review không được phân quyền | Kiểm thử tự động đạt; đang chờ review thủ công |
-| AC-FE04-006 | UC14, UC15 | Chuyển trạng thái không hợp lệ | Kiểm thử tự động đạt; đang chờ review thủ công |
-| AC-FE04-007 | UC16 | Quyền riêng tư của trạng thái cá nhân | Kiểm thử tự động đạt; đang chờ review thủ công |
-| AC-FE04-008 | UC13, UC16 | Ranh giới xác thực/vai trò | Kiểm thử tự động đạt; đang chờ review thủ công |
-| AC-FE04-009 | UC13 | Đăng ký lại sau khi bị từ chối | Kiểm thử tự động đạt; đang chờ review thủ công |
-| AC-FE04-010 | UC14, UC15 | Lỗi thông báo vẫn giữ nguyên quyết định | Kiểm thử tự động đạt; đang chờ review thủ công |
-| AC-FE04-011 | UC29, UC36 | Tài khoản đang hoạt động + điều kiện chuẩn đã phê duyệt | Kiểm thử tự động đạt; đang chờ review thủ công |
-| AC-FE04-012 | UC13 | Từ chối hồ sơ chưa đầy đủ và luồng khôi phục qua `/profile` | Kiểm thử tự động đạt; đang chờ review thủ công |
-| AC-FE04-013 | UC14, UC15 | Các ca điều hướng, review, xung đột, thông báo và đáp ứng trong Bảng điều khiển quản trị | Local, Azure Staging và H2 đạt; đang chờ review thủ công/xác nhận owner |
+| BR-FE04-001 | UC13 | Ranh giới vai trò Thành viên trong `membershipRoutes.test.js` | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| BR-FE04-002 | UC13 | Xác thực tài khoản đang hoạt động/vai trò trong `membershipRoutes.test.js` | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| BR-FE04-003 | UC13 | Các ca chỉ có một đơn chờ xử lý trong `membershipRoutes.test.js`; `membershipConcurrency.sqltest.js` | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| BR-FE04-004 | UC13 | Chặn thành viên đã được phê duyệt trong `membershipRoutes.test.js` | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| BR-FE04-005 | UC13 | Tạo trạng thái chờ trong `membershipRoutes.test.js` | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| BR-FE04-006 | UC14 | Phân quyền phê duyệt của nhân viên trong `membershipRoutes.test.js` | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| BR-FE04-007 | UC15 | Phân quyền từ chối của nhân viên trong `membershipRoutes.test.js` | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| BR-FE04-008 | UC14, UC15 | Cơ chế bảo vệ trạng thái kết thúc trong `membershipRoutes.test.js` | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| BR-FE04-009 | UC14 | Dấu thời gian phê duyệt dùng chung trong `membershipRoutes.test.js` | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| BR-FE04-010 | UC15 | Giới hạn lý do từ chối trong `membershipRoutes.test.js` | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| BR-FE04-011 | UC16 | Quyền sở hữu trạng thái/quyền riêng tư trong `membershipRoutes.test.js` | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| BR-FE04-012 | UC16, UC29, UC36 | Tích hợp điều kiện FE07/FE08 và bằng chứng SQL | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| BR-FE04-013 | UC14, UC15 | Các xác nhận audit ở route/SQL | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| BR-FE04-014 | UC13, UC16, UC29, UC36 | Các ca phép chiếu `Members` chuẩn | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| BR-FE04-015 | UC13, UC14, UC15 | Các ca audit nguyên tử trong `membershipRoutes.test.js`; `membershipConcurrency.sqltest.js` | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| BR-FE04-016 | UC13 | Kiểm thử lịch sử đăng ký lại của người bị từ chối | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| BR-FE04-017 | UC16 | Các ca trạng thái không hết hạn trong Giai đoạn 1 | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| BR-FE04-018 | UC14, UC15 | Kiểm thử requester `MEMBERSHIP_RESULT` không chặn | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| BR-FE04-019 | UC13 | Xác thực hồ sơ đầy đủ và các ca không ghi khi từ chối | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| FR-FE04-001 | UC13 | Luồng đăng ký thành công | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| FR-FE04-002 | UC13 | Xung đột đơn chờ xử lý trùng lặp | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| FR-FE04-003 | UC13 | Chặn thành viên đã được phê duyệt | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| FR-FE04-004 | UC14 | Các ca siêu dữ liệu/audit khi phê duyệt | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| FR-FE04-005 | UC15 | Các ca siêu dữ liệu/audit khi từ chối | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| FR-FE04-006 | UC14, UC15 | Cơ chế bảo vệ vai trò | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| FR-FE04-007 | UC16 | Trạng thái cá nhân chuẩn | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| FR-FE04-008 | UC14, UC15 | Chuyển đổi trạng thái kết thúc không hợp lệ | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| FR-FE04-009 | UC29, UC36 | Người dùng đang hoạt động + điều kiện chuẩn đã phê duyệt | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| FR-FE04-010 | UC13 | Phép chiếu/lịch sử khi đăng ký lại | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| FR-FE04-011 | UC14, UC15 | Các ca review đơn đăng ký/thành viên/audit nguyên tử | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| FR-FE04-012 | UC14, UC15 | Lỗi FE10 vẫn giữ nguyên quyết định | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| FR-FE04-013 | UC13 | Thực thi hồ sơ đầy đủ và hướng dẫn Thành viên | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| FR-FE04-014 | UC14, UC15 | Hợp đồng nguồn/trình duyệt FE04 nhúng trong Bảng điều khiển quản trị | Hoàn tất; local, Azure Staging, H2 và H3/manual acceptance đã đạt |
+| AC-FE04-001 | UC13 | Luồng đăng ký thành công | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| AC-FE04-002 | UC13 | Từ chối đơn chờ xử lý trùng lặp | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| AC-FE04-003 | UC14 | Phê duyệt + thông báo | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| AC-FE04-004 | UC15 | Từ chối + thông báo | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| AC-FE04-005 | UC14, UC15 | Review không được phân quyền | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| AC-FE04-006 | UC14, UC15 | Chuyển trạng thái không hợp lệ | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| AC-FE04-007 | UC16 | Quyền riêng tư của trạng thái cá nhân | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| AC-FE04-008 | UC13, UC16 | Ranh giới xác thực/vai trò | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| AC-FE04-009 | UC13 | Đăng ký lại sau khi bị từ chối | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| AC-FE04-010 | UC14, UC15 | Lỗi thông báo vẫn giữ nguyên quyết định | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| AC-FE04-011 | UC29, UC36 | Tài khoản đang hoạt động + điều kiện chuẩn đã phê duyệt | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| AC-FE04-012 | UC13 | Từ chối hồ sơ chưa đầy đủ và luồng khôi phục qua `/profile` | Hoàn tất; kiểm thử tự động và H3/manual acceptance đã đạt |
+| AC-FE04-013 | UC14, UC15 | Các ca điều hướng, review, xung đột, thông báo và đáp ứng trong Bảng điều khiển quản trị | Hoàn tất; local, Azure Staging, H2 và H3/manual acceptance đã đạt |
 
 ### 16.1 Tóm tắt độ bao phủ
 
