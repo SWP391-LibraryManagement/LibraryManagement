@@ -863,7 +863,7 @@ Các bước chi tiết, lệnh trước và sau khi sửa và ranh giới commi
     đạt 1/1, chứng minh bốn thông báo không trùng, đường dẫn thao tác cố định và
     không lộ lý do từ chối.
 - [ ] **FE10-I13 - Sửa dữ liệu Unicode staging và ngăn migration FE10 tái diễn lỗi encoding.**
-  - Trạng thái: KẾ HOẠCH ĐÃ DUYỆT - CHỜ TRIỂN KHAI/H2/H3/STAGING.
+  - Trạng thái: H2 ĐÃ DUYỆT - CHỜ COMMIT/PR/CI/H3/STAGING.
   - Ánh xạ tới: BR-FE10-010/014/015/018, FR-FE10-017/019,
     AC-FE10-017/019.
   - Tệp: migration repair FE10, workflow/runbook staging, kiểm thử migration/deployment,

@@ -150,3 +150,42 @@ test('account setup template migration is canonical, transactional, and repeatab
   expect(migration).toMatch(/THROW/i);
   expect(migration).not.toMatch(/\bDELETE\b/i);
 });
+
+test('FE10 Unicode repair migration is exact, transactional, scoped, and repeatable', () => {
+  const root = path.join(__dirname, '..', '..');
+  const migrationPath = path.join(
+    root,
+    'database',
+    'migrations',
+    '2026-08-03-fe10-unicode-repair.sql'
+  );
+  const migration = fs.readFileSync(migrationPath, 'utf8');
+
+  expect(migration).toMatch(/SET XACT_ABORT ON/i);
+  expect(migration).toMatch(/BEGIN TRANSACTION/i);
+  expect(migration).toMatch(/COMMIT TRANSACTION/i);
+  expect(migration).toMatch(/ROLLBACK TRANSACTION/i);
+  expect(migration).toMatch(/THROW/i);
+  expect(migration).toMatch(/UPDATE nt[\s\S]*FROM dbo\.NotificationTemplates AS nt/i);
+  expect(migration).toMatch(/UPDATE n[\s\S]*FROM dbo\.Notifications AS n/i);
+  expect(migration).toMatch(/n\.SourceFeature = 'FE07'/i);
+  expect(migration).toMatch(
+    /n\.TemplateKey IN \([\s\S]*BORROW_REQUEST_APPROVED[\s\S]*BORROW_REQUEST_REJECTED[\s\S]*BORROW_RENEWED[\s\S]*BORROW_RETURNED/i
+  );
+  expect(migration).toMatch(/Latin1_General_100_BIN2/i);
+  expect(migration).not.toMatch(/\bDELETE\b/i);
+
+  for (const text of [
+    "N'Yêu cầu mượn đã được duyệt'",
+    "N'Yêu cầu mượn #{{requestId}} đã được duyệt. Hạn trả: {{dueDate}}.'",
+    "N'Yêu cầu mượn đã bị từ chối'",
+    "N'Khoản mượn đã được gia hạn'",
+    "N'Đã ghi nhận trả sách'",
+    "N'Khoản mượn #{{borrowDetailId}} đã được ghi nhận trả với trạng thái {{returnStatus}}.'",
+    "N'YÃªu cáº§u mÆ°á»£n Ä‘Ã£ Ä‘Æ°á»£c duyá»‡t'",
+    "N'Khoáº£n mÆ°á»£n Ä‘Ã£ Ä‘Æ°á»£c gia háº¡n'",
+    "N'ÄÃ£ ghi nháº­n tráº£ sÃ¡ch'",
+  ]) {
+    expect(migration).toContain(text);
+  }
+});
