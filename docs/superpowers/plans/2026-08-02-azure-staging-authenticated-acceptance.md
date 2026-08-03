@@ -29,6 +29,15 @@ Server, PowerShell trên Windows.
 - thao tác ghi giai đoạn và khai thác tạm thời yêu cầu sự chấp thuận H1 của người dùng đối với kế hoạch này trước khi thực hiện.
 - Không cam kết thay đổi bằng chứng/nhiệm vụ được tạo ra trước khi xem xét H2 kết hợp.
 
+## Sửa đổi vệ sinh dữ liệu — 2026-08-04
+
+- Khối terminalize bên dưới được giữ làm bằng chứng lịch sử của các lần chạy 2026-08-02; không dùng lại cho lần chạy mới.
+- Lần chạy mới đặt ISBN tổng hợp thành `ACC-` cộng tám ký tự hex cuối của run ID, ví dụ `ACC-2e3a025d`, thay vì `NULL`.
+- Cleanup mới dùng `npm.cmd --prefix backend run cleanup:staging-acceptance` để dry-run và chỉ thêm `--execute` sau khi xác minh đúng `4 users / 1 book / 1 copy` cho mỗi run.
+- Cleanup hard-delete graph exact-run trong transaction trên `LibraryManagementStaging`; không chuyển `Books`, `BookCopies` hoặc `Users` sang `INACTIVE` để giữ lại trong giao diện quản lý.
+- Mọi sai lệch identity, khóa ngoại ngoài dự kiến hoặc residue sau xóa phải rollback và trả lỗi.
+- Đối chiếu staging sau merge xác nhận các hàng 2026-08-02 đã lưu full run ID trong username/email (`acc_member_a_<runId>`, `member-a.<runId>@lms.invalid`), khác với block `<suffix>` được lập kế hoạch ở dưới. Operator được theo dữ liệu persisted thực tế; block cũ được giữ nguyên làm bằng chứng kế hoạch lịch sử.
+
 ---
 
 ## Trạng thái thực thi — 2026-08-02
