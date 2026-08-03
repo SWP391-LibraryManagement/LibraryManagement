@@ -56,6 +56,43 @@ test('automatic and manual staging deployment require the fail-closed smoke chec
   assert.match(workflow, /name: Verify staging endpoints[\s\S]*?run: npm run smoke:staging/);
 });
 
+test('staging deployment skips stale workflow heads before every Azure write', () => {
+  assert.match(workflow, /concurrency:[\s\S]*?group:\s*library-staging[\s\S]*?cancel-in-progress:\s*false/);
+  assert.equal(
+    (workflow.match(/name: Verify deployment head is current main/g) || []).length,
+    3
+  );
+  assert.equal((workflow.match(/git rev-parse HEAD/g) || []).length, 3);
+  assert.equal(
+    (workflow.match(/git ls-remote origin refs\/heads\/main/g) || []).length,
+    3
+  );
+  assert.match(
+    workflow,
+    /preflight:[\s\S]*?outputs:[\s\S]*?should_deploy:[\s\S]*?steps\.deployment-head\.outputs\.should_deploy/
+  );
+  assert.match(
+    workflow,
+    /deploy-backend:[\s\S]*?outputs:[\s\S]*?deployed:[\s\S]*?steps\.deployment-head\.outputs\.should_deploy/
+  );
+  assert.match(
+    workflow,
+    /name: Deploy backend[\s\S]*?if:\s*steps\.deployment-head\.outputs\.should_deploy == 'true'/
+  );
+  assert.match(
+    workflow,
+    /deploy-frontend:[\s\S]*?if:\s*needs\.deploy-backend\.outputs\.deployed == 'true'/
+  );
+  assert.match(
+    workflow,
+    /name: Deploy frontend[\s\S]*?if:\s*steps\.deployment-head\.outputs\.should_deploy == 'true'/
+  );
+  assert.match(
+    workflow,
+    /smoke-test:[\s\S]*?if:\s*needs\.deploy-backend\.outputs\.deployed == 'true' && needs\.deploy-frontend\.outputs\.deployed == 'true'/
+  );
+});
+
 test('FE10 staging deploy is ordered behind exact-head migration proof for automatic and manual runs', () => {
   assert.match(workflow, /fe10_inbox_migration_confirmed:/);
   assert.match(workflow, /fe10_inbox_migration_confirmed:[\s\S]*?required:\s*true[\s\S]*?type:\s*boolean/);

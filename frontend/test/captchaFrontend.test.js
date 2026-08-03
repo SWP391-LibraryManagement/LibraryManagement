@@ -35,3 +35,30 @@ test('auth submission stays disabled until a CAPTCHA challenge is available', as
   assert.match(captcha, /Không tải được CAPTCHA\. Vui lòng thử lại\./);
   assert.match(captcha, /type="button"/);
 });
+
+test('CAPTCHA loading retries once without discarding a usable manual-refresh fallback', async () => {
+  const captcha = await readFile(
+    new URL('../src/component/auth/CaptchaField.jsx', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(captcha, /import \{ loadCaptchaWithRetry \}/);
+  assert.match(
+    captcha,
+    /const loadCaptcha = async \(\{ retry = false, discardCurrent = false \} = \{\}\)/
+  );
+  assert.match(captcha, /const hasFallback = Boolean\(challenge\) && !discardCurrent/);
+  assert.match(captcha, /loadCaptchaWithRetry\(getCaptcha, \{ attempts: retry \? 2 : 1 \}\)/);
+  assert.match(
+    captcha,
+    /if \(discardCurrent\) \{[\s\S]*?setChallenge\(null\)[\s\S]*?captchaToken: '', captchaAnswer: ''/
+  );
+  assert.match(
+    captcha,
+    /catch \{[\s\S]*?if \(!hasFallback\) \{[\s\S]*?captchaToken: '', captchaAnswer: ''/
+  );
+  assert.match(
+    captcha,
+    /loadCaptcha\(\{ retry: true, discardCurrent: refreshKey > 0 \}\)/
+  );
+});

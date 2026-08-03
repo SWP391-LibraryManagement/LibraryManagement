@@ -1,6 +1,18 @@
 # PLAN.md - Xác thực FE02
 
-## Kế hoạch khắc phục bảo mật CAPTCHA FE02 (2026-08-04)
+## Kế hoạch ổn định CAPTCHA và staging FE02 (2026-08-04)
+
+- Giữ viewport SVG 180x54 và tính khoảng cách glyph theo độ dài để cả challenge 4-6 chữ cái luôn hiển thị đầy đủ, kể cả ở hai biên xoay.
+- Frontend thử lại đúng một lần khi tải ban đầu thất bại; thao tác đổi mã thủ công chỉ gọi một lần và không xóa challenge còn dùng được nếu request thay thế thất bại.
+- Workflow staging giữ concurrency tuần tự và so sánh SHA checkout với remote `main` tại preflight, backend và frontend; run cũ không được đi tới bước ghi Azure.
+- Smoke test gọi `GET /api/auth/captcha`, xác minh response công khai an toàn và fail-closed nếu route thiếu, token/image/expiry sai hoặc có trường làm lộ verifier.
+- Không đổi token, TTL, capacity, storage, API shape, dependency hoặc luồng xác thực ngoài CAPTCHA.
+
+Trạng thái: H2 APPROVED - PENDING EXACT-HEAD CI/H3
+Ngày: 2026-08-04
+Chủ sở hữu: Dat
+
+## Kế hoạch khắc phục bảo mật CAPTCHA FE02 đã merge trong PR #111 (2026-08-04)
 
 - Dùng `crypto` có sẵn của Node.js để sinh challenge 4-6 chữ cái và token ngẫu nhiên opaque 32 byte; không tái sử dụng `JWT_SECRET`, không thêm dependency, database hoặc migration.
 - Một CAPTCHA service được inject giữ tối đa 5.000 challenge trong `Map` theo tiến trình, TTL 5 phút và tiêu thụ challenge đã xác định ngay lần xác minh đầu tiên, đúng hoặc sai.
@@ -8,10 +20,6 @@
 - Frontend dùng `CaptchaField` hiện có trong hai biểu mẫu, vô hiệu hóa submit khi chưa có token, giữ dữ liệu đã nhập và tải challenge mới sau lỗi tải hoặc `CAPTCHA_INVALID`.
 - Các test không liên quan CAPTCHA inject fake service rõ ràng; browser E2E lấy đáp án qua control endpoint `/__e2e__/` chỉ tồn tại trong test server.
 - Ranh giới vận hành hiện tại là một instance: backend restart làm mất challenge đang mở; trước khi scale nhiều instance phải dùng shared TTL store hoặc provider được phê duyệt.
-
-Trạng thái: IMPLEMENTED - H2 APPROVED; PENDING EXACT-HEAD CI/H3
-Ngày: 2026-08-04
-Chủ sở hữu: Dat
 
 ## 1. Mục đích
 

@@ -9,6 +9,12 @@ async function startFixture({
   protectedStatus = 401,
   catalogStatus = 200,
   readinessStatus = 200,
+  captchaStatus = 200,
+  captchaPayload = {
+    image: 'data:image/svg+xml;base64,PHN2Zy8+',
+    captchaToken: 'A'.repeat(43),
+    expiresIn: 300,
+  },
 } = {}) {
   let allowedOrigin = '';
   const server = http.createServer((req, res) => {
@@ -34,6 +40,11 @@ async function startFixture({
           catalogMetadata: readinessStatus === 200 ? 'ok' : 'not_ready',
         },
       }));
+      return;
+    }
+    if (req.url === '/api/auth/captcha') {
+      res.writeHead(captchaStatus, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(captchaPayload));
       return;
     }
     if (req.url === '/api/books?page=1&limit=1') {
@@ -67,6 +78,7 @@ test('passes for healthy frontend, API, SQL catalog, strict CORS, and protected 
     assert.deepEqual(result.checks, [
       'frontend',
       'health',
+      'captcha',
       'schema-readiness',
       'sql-catalog',
       'allowed-cors',
@@ -77,6 +89,59 @@ test('passes for healthy frontend, API, SQL catalog, strict CORS, and protected 
     await fixture.close();
   }
 });
+
+test('fails when the deployed CAPTCHA route is missing', async () => {
+  const fixture = await startFixture({
+    captchaStatus: 404,
+    captchaPayload: { error: { code: 'NOT_FOUND' } },
+  });
+  try {
+    await assert.rejects(
+      runStagingSmoke({ frontendUrl: fixture.baseUrl, apiUrl: fixture.baseUrl }),
+      /CAPTCHA route check failed with HTTP 404/i
+    );
+  } finally {
+    await fixture.close();
+  }
+});
+
+for (const [name, captchaPayload] of [
+  ['non-SVG image', { image: 'not-an-svg', captchaToken: 'A'.repeat(43), expiresIn: 300 }],
+  ['malformed token', {
+    image: 'data:image/svg+xml;base64,PHN2Zy8+',
+    captchaToken: 'short',
+    expiresIn: 300,
+  }],
+  ['wrong expiry', {
+    image: 'data:image/svg+xml;base64,PHN2Zy8+',
+    captchaToken: 'A'.repeat(43),
+    expiresIn: 60,
+  }],
+  ['answer-bearing field', {
+    image: 'data:image/svg+xml;base64,PHN2Zy8+',
+    captchaToken: 'A'.repeat(43),
+    expiresIn: 300,
+    captchaAnswer: 'ABCD',
+  }],
+  ['nested verifier field', {
+    image: 'data:image/svg+xml;base64,PHN2Zy8+',
+    captchaToken: 'A'.repeat(43),
+    expiresIn: 300,
+    metadata: { answerDigest: 'not-public' },
+  }],
+]) {
+  test(`fails when the CAPTCHA response contains ${name}`, async () => {
+    const fixture = await startFixture({ captchaPayload });
+    try {
+      await assert.rejects(
+        runStagingSmoke({ frontendUrl: fixture.baseUrl, apiUrl: fixture.baseUrl }),
+        /CAPTCHA route check failed/i
+      );
+    } finally {
+      await fixture.close();
+    }
+  });
+}
 
 test('fails when the deployed catalog metadata schema is outdated', async () => {
   const fixture = await startFixture({ readinessStatus: 503 });

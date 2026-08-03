@@ -12,6 +12,15 @@ function normalizeUrl(value, name) {
   return parsed.origin;
 }
 
+function containsCaptchaVerifierField(value) {
+  if (!value || typeof value !== 'object') return false;
+  if (Array.isArray(value)) return value.some(containsCaptchaVerifierField);
+
+  return Object.entries(value).some(([key, nestedValue]) => (
+    /answer|digest|hash/i.test(key) || containsCaptchaVerifierField(nestedValue)
+  ));
+}
+
 async function request(fetchImpl, checkName, url, options, timeoutMs, attempts, retryDelayMs) {
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     const controller = new AbortController();
@@ -77,6 +86,31 @@ async function runStagingSmoke({
     throw new Error(`API health check failed with HTTP ${healthResponse.status}.`);
   }
   checks.push('health');
+
+  const captchaResponse = await request(
+    fetchImpl,
+    'CAPTCHA route',
+    `${api}/api/auth/captcha`,
+    {},
+    timeoutMs,
+    requestAttempts,
+    retryDelayMs
+  );
+  const captcha = await captchaResponse.json().catch(() => ({}));
+  const captchaObject = captcha && typeof captcha === 'object' && !Array.isArray(captcha);
+  const exposesVerifier = captchaObject && containsCaptchaVerifierField(captcha);
+  if (
+    captchaResponse.status !== 200
+    || !captchaObject
+    || typeof captcha.image !== 'string'
+    || !captcha.image.startsWith('data:image/svg+xml;base64,')
+    || !/^[A-Za-z0-9_-]{43}$/.test(captcha.captchaToken)
+    || captcha.expiresIn !== 300
+    || exposesVerifier
+  ) {
+    throw new Error(`CAPTCHA route check failed with HTTP ${captchaResponse.status}.`);
+  }
+  checks.push('captcha');
 
   const readinessResponse = await request(
     fetchImpl,

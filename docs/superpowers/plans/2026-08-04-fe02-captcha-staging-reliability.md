@@ -441,14 +441,14 @@ Request multiple challenges and inspect only image bounds/response structure; ne
 
 ## Completion Evidence Checklist
 
-- [ ] Six-letter glyph bounds fail before and pass after the renderer change.
-- [ ] Initial CAPTCHA loading retries once and stops.
-- [ ] Manual replacement failure preserves a usable challenge.
-- [ ] Parent-rejected challenges are discarded before replacement.
-- [ ] Stale workflow runs skip all Azure writes.
-- [ ] Staging smoke fails when CAPTCHA is missing or unsafe.
-- [ ] FE02 specification and `FE02-T071` match implementation.
-- [ ] Full local gates pass with fresh evidence.
-- [ ] H2 approves the complete implementation diff before commit.
+- [x] Six-letter glyph bounds fail before and pass after the renderer change.
+- [x] Initial CAPTCHA loading retries once and stops.
+- [x] Manual replacement failure preserves a usable challenge.
+- [x] Parent-rejected challenges are discarded before replacement.
+- [x] Stale workflow runs skip all Azure writes.
+- [x] Staging smoke fails when CAPTCHA is missing or unsafe.
+- [x] FE02 specification and `FE02-T071` match implementation.
+- [x] Full local gates pass with fresh evidence.
+- [x] H2 approves the complete implementation diff before commit.
 - [ ] Exact-head CI and H3 pass before merge.
 - [ ] Exact post-merge staging serves the CAPTCHA route reliably.
