@@ -1,5 +1,20 @@
 # CHANGELOG.md - Quản lý thành viên FE04
 
+## 2026-08-03 - Candidate chốt Azure Staging cho Admin Membership Review
+
+- Ghi nhận local Playwright FE04 + FE11 đạt 2/2 và thoát sạch, thay thế giới hạn teardown Windows cũ.
+- Ghi nhận Azure Staging run `lms-fe04-acceptance-20260803-90ac1d5b` trên `850b01b` đạt phân quyền 401/403/200, từ chối -> nộp lại -> phê duyệt, bốn viewport và terminal conflict.
+- Xác minh cleanup active token/user/member/pending application bằng 0, ba login và token cũ bị từ chối, runtime/helper 404/404; không lưu PII/secret/artifact thô.
+- Ghi nhận suite liên tính năng FE04/FE07/FE08/FE10/FE12 đạt 162/162 và làm rõ FE07 dùng tier 5/3 trong khi FE08 không bị trạng thái FE04 chặn.
+- Ghi nhận H2 vòng 1 được duyệt trên fingerprint `8cef30463f1e4cd2f4ee80862cca282c297f902a`; `FE04-T009` hoàn tất.
+- Giữ Implementation State `PARTIAL`; `FE04-ADM05` và `FE04-CONV-002` vẫn chờ nghiệm thu thủ công/xác nhận owner.
+
+## 2026-08-03 - H3/manual-owner acceptance hoàn tất FE04
+
+- H3 vòng 1 PR #107 chấp nhận bằng chứng staging, L1, cleanup, responsive và manual/owner tại permalink `#issuecomment-5162255705`.
+- Đóng `FE04-ADM05`, `FE04-CONV-002` và chuyển Implementation State FE04 sang `COMPLETE`.
+- Giữ H2 vòng 2, exact-head CI và H3 cuối là cổng tích hợp của amendment PR C, không phải khoảng trống hành vi FE04.
+
 ## 2026-07-25 - Kiểm tra lại trạng thái FE04
 
 - Kiểm tra lại nguồn FE04 hiện tại, kiểm thử tập trung, traceability và các nhiệm vụ mở rộng; không tìm thấy sai lệch hợp đồng/mã nguồn mới.

@@ -1,9 +1,9 @@
 # TASKS.md - Xác thực FE02
 
-Trạng thái: ĐANG ĐỐI SOÁT - ĐÃ THEO DÕI CÁC KHOẢNG TRỐNG SO VỚI CONTEXT
-Implementation State: PARTIAL
-Ghi chú baseline: Baseline triển khai đã phê duyệt đã hoàn tất; nhiệm vụ đối soát FE02-T049 vẫn đang mở để liên kết H3 và phê duyệt thủ công.
-Ngày: 2026-07-23
+Trạng thái: COMPLETE - H3 HỒI CỨU ĐÃ ĐƯỢC PHÊ DUYỆT
+Implementation State: COMPLETE
+Ghi chú baseline: Baseline triển khai và nhiệm vụ đối soát FE02-T049 đã hoàn tất; PR C vẫn cần cổng tích hợp H2 vòng 2, CI exact-head và H3 cuối.
+Ngày: 2026-08-03
 Chủ sở hữu: Dat
 
 ## Quy tắc thực hiện nhiệm vụ
@@ -223,10 +223,11 @@ Bằng chứng này chỉ đóng nhóm nhiệm vụ UX Xác thực/OTP. Phần g
   - DoD: tạo thông tin xác thực khi đăng ký, đăng nhập/tạo phiên, thay đổi mật khẩu/tiêu thụ OTP, đặt lại mật khẩu/tiêu thụ token và trạng thái audit bắt buộc phải commit hoặc rollback theo hợp đồng đã phê duyệt, với kiểm thử hồi quy lỗi tập trung hoặc ngoại lệ hữu hạn được phê duyệt rõ ràng.
   - Bằng chứng: thao tác thay đổi FE02 hiện dùng chung transaction SQL cho bốn ranh giới NFR-FE02-TXN-001..004; kiểm thử hồi quy lỗi in-memory tập trung chứng minh rollback khi tạo token xác minh, tạo phiên refresh, audit thay đổi mật khẩu bắt buộc và vô hiệu hóa token đặt lại. Kiểm thử FE02 tập trung vượt qua 47/47 vào 2026-07-27.
 
-- [ ] **FE02-T049 - Hoàn tất rà soát và chốt đối soát.**
+- [x] **FE02-T049 - Hoàn tất rà soát và chốt đối soát.**
   - Ánh xạ tới: Định nghĩa hoàn tất; CG-FE02-003; SPEC.md v0.6.16.
   - Phụ thuộc: FE02-T045 đến FE02-T048, FE02-T050 đến FE02-T052.
   - DoD: cổng tự động vượt qua, phần chốt H3 FE02-T043 được liên kết, mọi khoảng trống tuân thủ được đóng hoặc hoãn rõ ràng và rà soát thủ công phê duyệt các tạo phẩm đã đối soát.
+  - Bằng chứng: T043 commit `241907d`, PR #60, exact-head CI `29875668029`, post-merge CI `29875885463` và staging `29876046500` đã được xác minh; GitHub không có review lịch sử. Focused current auth đạt backend 68/68 và frontend 17/17. H3 hồi cứu/phê duyệt thủ công được liên kết tại PR #107 comment `5162255705`.
 
 ## Giai đoạn 1: Hội tụ
 

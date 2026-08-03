@@ -1,7 +1,7 @@
 # PLAN.md - Xác thực FE02
 
-Trạng thái: ĐANG ĐỐI SOÁT - ĐÃ ĐỒNG BỘ CONTEXT; ĐANG CHỜ RÀ SOÁT THỦ CÔNG
-Ngày: 2026-07-28
+Trạng thái: COMPLETE - H3 HỒI CỨU ĐÃ ĐƯỢC PHÊ DUYỆT
+Ngày: 2026-08-03
 Chủ sở hữu: Dat
 
 ## 1. Mục đích
@@ -228,8 +228,10 @@ Baseline triển khai đã phê duyệt vẫn được ghi nhận. Việc thực
 khóa theo cửa sổ trượt chính xác, tạo OTP an toàn, bằng chứng rollback giao dịch,
 chốt chặn hủy kích hoạt ở trạng thái cuối cho việc xác minh email nguyên tử,
 đăng ký trùng lặp đồng thời có tính xác định và thao tác ghi trạng thái hiện tại khi đăng nhập đã được đóng.
-Việc đối soát vẫn đang mở cho đến khi phần chốt H3 FE02-T043 được liên kết và
-hoàn tất rà soát thủ công SPEC v0.6.16. Các mục tiêu hiệu năng về đăng nhập hợp lệ
+PR C đã xác minh FE02-T043 commit `241907d`, PR #60, exact-head CI `29875668029`,
+post-merge CI `29875885463` và staging `29876046500`; PR #60 không có review record lịch sử.
+H3 hồi cứu hiện tại đã được chấp nhận tại [PR #107](https://github.com/SWP391-LibraryManagement/LibraryManagement/pull/107#issuecomment-5162255705),
+đóng đối soát thủ công SPEC v0.6.22. Các mục tiêu hiệu năng về đăng nhập hợp lệ
 và xác thực token có bằng chứng cục bộ có thể lặp lại trong FE02-T048.
 
 ## 17. Công việc tiếp theo về khả dụng của định danh đăng ký

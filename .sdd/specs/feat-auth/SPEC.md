@@ -1,26 +1,27 @@
 # SPEC.md - Xác thực FE02
 
-# Phiên bản: 0.6.20
+# Phiên bản: 0.6.22
 
-# Trạng thái: BASELINE ĐÃ PHÊ DUYỆT 2026-07-17 - ĐỐI SOÁT HỢP ĐỒNG ĐANG CHỜ RÀ SOÁT THỦ CÔNG
+# Trạng thái: COMPLETE - H3 HỒI CỨU ĐÃ ĐƯỢC PHÊ DUYỆT
 
 # Chủ sở hữu: Dat
 
-# Cập nhật lần cuối: 2026-08-01
+# Cập nhật lần cuối: 2026-08-03
 
 # ID tính năng: FE02
 
 # Thư mục tính năng: `.sdd/specs/feat-auth/`
 
-> Trạng thái phân phối được ghi nhận (2026-07-23): `COMPLETE` chỉ áp dụng cho baseline Giai đoạn 1 đã được phê duyệt.
+> Trạng thái phân phối được ghi nhận (2026-08-03): `COMPLETE` chỉ áp dụng cho baseline Giai đoạn 1 đã được phê duyệt.
 > `TASKS.md` và `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`
 > là nguồn có thẩm quyền về trạng thái triển khai hiện tại. Mục 16 ghi nhận
 > bằng chứng nghiệm thu hiện có và các khoảng trống còn lại về tính tuân thủ của kho mã nguồn.
-> Việc đối soát hợp đồng vẫn ở trạng thái `OPEN` cho đến khi công việc FE02-T049 về rà soát thủ công/chốt H3
-> hoàn tất hoặc được phê duyệt rõ ràng để hoãn lại. Bằng chứng hiệu năng của FE02-T048
-> được ghi nhận trong danh sách nhiệm vụ và kế hoạch kiểm thử của tính năng.
+> FE02-T049 và đối soát hợp đồng đã hoàn tất bằng H3 hồi cứu hiện tại tại
+> [PR #107](https://github.com/SWP391-LibraryManagement/LibraryManagement/pull/107#issuecomment-5162255705),
+> đồng thời giữ rõ rằng PR #60 không có H3 lịch sử. Implementation State là `COMPLETE`;
+> amendment PR C vẫn cần H2 vòng 2, CI exact-head và H3 cuối trước merge.
 
-> Nguồn sự thật cho Xác thực FE02. Phiên bản 0.6.16 đồng bộ các luồng thay đổi mật khẩu, bước kiểm tra yêu cầu được bảo vệ, cơ chế khôi phục phiên ở giao diện người dùng, ranh giới giao dịch và các tạo phẩm lập kế hoạch FE02 hiện có với `CONTEXT.md` mà không thay đổi hành vi nghiệp vụ đã được phê duyệt. Commit tăng cường bảo mật đăng nhập đã được tích hợp vào `main`; không tìm thấy bằng chứng chốt H3 riêng cho FE02-T043, vì vậy vẫn còn một khoảng trống về bằng chứng quản trị. Đặc tả này được chủ đích viết chi tiết vì FE02 là nền tảng cho mọi cơ chế kiểm soát truy cập và bảo mật của hệ thống.
+> Nguồn sự thật cho Xác thực FE02. Phiên bản 0.6.22 đóng đối soát FE02-T043 bằng H3 hồi cứu hiện tại có permalink thật, sau khi xác minh commit `241907d`, PR #60 và CI/deploy lịch sử. Không có H3 lịch sử nào được backdate hoặc suy diễn. Đặc tả này được chủ đích viết chi tiết vì FE02 là nền tảng cho mọi cơ chế kiểm soát truy cập và bảo mật của hệ thống.
 >
 > Các quyết định trong đặc tả này đã được xem xét và phê duyệt trên 2026-06-10. Xem `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`.
 >
@@ -684,12 +685,13 @@ Các quyết định sau đây đã được phê duyệt trong gói đánh giá
 - **Tổng BR**: 28 (BR-FE02-001 đến BR-FE02-028) - tất cả BR được ánh xạ trực tiếp hoặc thông qua truy vết AC/NFR.
 - **Tổng số bài kiểm tra**: 7 (FT05 đến FT11) - căn chỉnh với bảng bài tập
 
-### Khoảng trống về mức độ phù hợp hiện tại (2026-07-27)
+### Khoảng trống về mức độ phù hợp hiện tại (2026-08-03)
 
-- CG-FE02-003: FE02-T043 đã được tích hợp vào `main`, nhưng không tìm thấy bản ghi chốt H3 riêng cho phần triển khai đó trong tài liệu tính năng/review.
+- Không còn khoảng trống tuân thủ FE02 trong phạm vi đã phê duyệt. H2 vòng 2, CI exact-head và H3 cuối của PR C là cổng tích hợp, không phải khoảng trống hành vi FE02.
 
 ### Các khoảng trống về mức độ phù hợp đã giải quyết (2026-07-27)
 
+- CG-FE02-003: Được giải quyết bởi H3 hồi cứu hiện tại tại [PR #107](https://github.com/SWP391-LibraryManagement/LibraryManagement/pull/107#issuecomment-5162255705). FE02-T043 đã được xác minh qua commit `241907d`, PR #60 và ba run CI/deploy lịch sử; PR #60 vẫn được ghi trung thực là không có review H3 lịch sử.
 - CG-FE02-005: Được giải quyết bởi FE02-T048. Bộ đo hiệu năng tất định đã ghi tài liệu đo 30 mẫu đăng nhập hợp lệ và 50 mẫu `/api/auth/me` với chi phí bcrypt là 10; lần chạy lại 2026-07-27 ghi nhận p95 lần lượt là `61.46 ms` và `1.52 ms`, nằm trong giới hạn NFR-FE02-PERF-001/004.
 
 ### Truy xuất nguồn gốc bài tập bên ngoài (ID Excel UC)
@@ -729,9 +731,9 @@ Kiểm tra đối chiếu 2026-07-23:
 
 - [x] Căn chỉnh các mặc định của kho lưu trữ và triển khai với hợp đồng khóa 30 phút chính xác đã được phê duyệt.
 - [x] Thêm bằng chứng hồi quy AC-FE02-023 rõ ràng cho ủy quyền `UserRoles` phía máy chủ.
-- [ ] Ghi lại hoặc liên kết phần đóng tích hợp FE02-T043 H3 chuyên dụng.
+- [x] Liên kết phần đóng tích hợp FE02-T043 bằng H3 hồi cứu hiện tại tại PR #107; không tuyên bố tồn tại H3 lịch sử.
 - [x] Thêm bằng chứng hồi quy `CHANGE_PASSWORD_OTP` request/confirm chuyên dụng cho AC-FE02-012 và AC-FE02-013.
 - [x] Từ chối các yêu cầu được bảo vệ khi người dùng hiện tại vẫn tồn tại không còn là `ACTIVE` nữa, có bằng chứng hồi quy phiên được liên kết.
 - [x] Đồng bộ các yêu cầu giao diện được bảo vệ của FE02 với hợp đồng đã phê duyệt: chỉ thử lại một lần và xóa trạng thái khi khôi phục thất bại.
 - [x] Chứng minh tính nguyên tử bắt buộc giữa người dùng/mã thông báo/audit hoặc ghi lại một ngoại lệ có giới hạn đã được phê duyệt.
-- [ ] Rà soát thủ công và phê duyệt bản đối soát hợp đồng phiên bản 0.6.16.
+- [x] Rà soát thủ công và phê duyệt bản đối soát hợp đồng qua H3 vòng 1 PR #107.
