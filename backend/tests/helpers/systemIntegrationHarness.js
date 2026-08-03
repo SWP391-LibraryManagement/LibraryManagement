@@ -16,6 +16,7 @@ const { makeInMemoryFineDependencies } = require('./inMemoryFineRepositories');
 const { makeInMemoryNotificationDependencies } = require('./inMemoryNotificationRepositories');
 const { makeInMemoryReportDependencies } = require('./inMemoryReportRepositories');
 const { makeInMemoryMembershipDependencies } = require('./inMemoryMembershipRepositories');
+const { createAcceptingCaptchaService } = require('./captchaTestService');
 
 const FIXED_NOW = new Date('2026-07-14T00:00:00.000Z');
 
@@ -267,7 +268,10 @@ function createSystemUserManagementService(authState) {
   };
 }
 
-function makeSystemIntegrationApp({ borrowingNotificationError = null } = {}) {
+function makeSystemIntegrationApp({
+  borrowingNotificationError = null,
+  captchaService = createAcceptingCaptchaService(),
+} = {}) {
   const authDependencies = makeInMemoryAuthDependencies();
   const borrowingDependencies = makeInMemoryBorrowingDependencies(authDependencies.state);
   const reservationDependencies = makeInMemoryReservationDependencies(authDependencies.state);
@@ -335,6 +339,7 @@ function makeSystemIntegrationApp({ borrowingNotificationError = null } = {}) {
   });
   const services = {
     authService,
+    captchaService,
     borrowingService,
     reservationService,
     fineManagementService,
@@ -369,12 +374,14 @@ async function createVerifiedActor({
   role = 'MEMBER',
   approveMember = true,
   completeProfile = false,
+  captcha = {},
 }) {
   const registered = await request(setup.app).post('/api/auth/register').send({
     email,
     password,
     confirmPassword: password,
     fullName: email.split('@')[0],
+    ...captcha,
   });
   if (registered.status !== 201) {
     throw new Error(`Registration failed for ${email}.`);
@@ -406,7 +413,11 @@ async function createVerifiedActor({
     setup.dependencies.reservationDependencies.approveMember(userId);
   }
 
-  const login = await request(setup.app).post('/api/auth/login').send({ email, password });
+  const login = await request(setup.app).post('/api/auth/login').send({
+    email,
+    password,
+    ...captcha,
+  });
   if (login.status !== 200) {
     throw new Error(`Login failed for ${email}.`);
   }

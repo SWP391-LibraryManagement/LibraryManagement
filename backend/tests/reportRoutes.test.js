@@ -6,6 +6,7 @@ const { createApp } = require('../src/app');
 const { createAuthService } = require('../src/services/authService');
 const { createBorrowingService } = require('../src/services/borrowingService');
 const { createReportService } = require('../src/services/reportService');
+const { createAcceptingCaptchaService } = require('./helpers/captchaTestService');
 const { makeInMemoryAuthDependencies } = require('./helpers/inMemoryAuthRepositories');
 const { makeInMemoryBorrowingDependencies } = require('./helpers/inMemoryBorrowingRepositories');
 const { makeInMemoryReportDependencies } = require('./helpers/inMemoryReportRepositories');
@@ -29,7 +30,12 @@ function makeTestApp({ reportClock } = {}) {
     auditLogRepository: authDependencies.auditLogRepository,
     clock: reportClock,
   });
-  const app = createApp({ authService, borrowingService, reportService });
+  const app = createApp({
+    authService,
+    borrowingService,
+    reportService,
+    captchaService: createAcceptingCaptchaService(),
+  });
 
   return { app, authDependencies, borrowingDependencies, reportDependencies };
 }

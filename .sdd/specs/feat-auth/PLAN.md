@@ -1,14 +1,16 @@
 # PLAN.md - Xác thực FE02
 
-## Kế hoạch CAPTCHA FE02 (2026-08-03)
+## Kế hoạch khắc phục bảo mật CAPTCHA FE02 (2026-08-04)
 
-- Tái sử dụng `crypto` có sẵn của Node.js: sinh 4–6 chữ cái, render SVG data URI và ký token HMAC bằng `JWT_SECRET`; không thêm dependency, database hoặc migration.
-- `GET /api/auth/captcha` chỉ phát hành ảnh/token có hạn 5 phút. `register` và `login` xác thực CAPTCHA ở validator trước controller/service để sai CAPTCHA không đụng trạng thái auth.
-- Frontend dùng một `CaptchaField` tái sử dụng trong hai biểu mẫu; tải lỗi hoặc `CAPTCHA_INVALID` sẽ tạo thử thách mới và giữ các trường khác.
-- Xác minh: unit test token/tamper/expiry, route test giữ service không bị gọi khi CAPTCHA sai, frontend test kiểm tra payload và refresh; sau đó chạy focused backend/frontend test và build.
+- Dùng `crypto` có sẵn của Node.js để sinh challenge 4-6 chữ cái và token ngẫu nhiên opaque 32 byte; không tái sử dụng `JWT_SECRET`, không thêm dependency, database hoặc migration.
+- Một CAPTCHA service được inject giữ tối đa 5.000 challenge trong `Map` theo tiến trình, TTL 5 phút và tiêu thụ challenge đã xác định ngay lần xác minh đầu tiên, đúng hoặc sai.
+- `GET /api/auth/captcha` render SVG bằng các path segment ngẫu nhiên, không chứa `<text>`, đáp án hoặc metadata làm lộ bộ xác minh. `register` và `login` luôn xác thực trước khi dispatch auth service, không có bypass theo `NODE_ENV`.
+- Frontend dùng `CaptchaField` hiện có trong hai biểu mẫu, vô hiệu hóa submit khi chưa có token, giữ dữ liệu đã nhập và tải challenge mới sau lỗi tải hoặc `CAPTCHA_INVALID`.
+- Các test không liên quan CAPTCHA inject fake service rõ ràng; browser E2E lấy đáp án qua control endpoint `/__e2e__/` chỉ tồn tại trong test server.
+- Ranh giới vận hành hiện tại là một instance: backend restart làm mất challenge đang mở; trước khi scale nhiều instance phải dùng shared TTL store hoặc provider được phê duyệt.
 
-Trạng thái: COMPLETE - H3 HỒI CỨU ĐÃ ĐƯỢC PHÊ DUYỆT
-Ngày: 2026-08-03
+Trạng thái: IMPLEMENTED - H2 APPROVED; PENDING EXACT-HEAD CI/H3
+Ngày: 2026-08-04
 Chủ sở hữu: Dat
 
 ## 1. Mục đích
@@ -91,6 +93,7 @@ Triển khai các endpoint FE02 chuẩn trong Mục 11 của `SPEC.md`:
 
 | Phương thức | Endpoint | Mục đích |
 | --- | --- | --- |
+| GET | `/api/auth/captcha` | Phát hành SVG path cùng token opaque dùng một lần, hết hạn sau 5 phút. |
 | POST | `/api/auth/register` | Đăng ký tài khoản và tạo OTP xác minh. |
 | POST | `/api/auth/verify-email` | Xác minh email bằng OTP/email hoặc token cũ. |
 | POST | `/api/auth/resend-verification` | Gửi lại OTP xác minh một cách an toàn. |
@@ -149,6 +152,7 @@ Phần tăng cường UX Xác thực/OTP đã phê duyệt được triển khai
 
 ### Kiểm thử unit
 
+- Phát hành token CAPTCHA opaque, SVG không chứa text/đáp án, expiry, capacity và tiêu thụ sau lần thử đúng, sai hoặc sai định dạng.
 - Xác thực chính sách mật khẩu.
 - Các hàm hỗ trợ tạo/hash/hết hạn token.
 - Các đường dẫn đăng ký/đăng nhập/đặt lại/thay đổi mật khẩu của auth service bằng repository mock.
@@ -156,6 +160,8 @@ Phần tăng cường UX Xác thực/OTP đã phê duyệt được triển khai
 
 ### Kiểm thử integration
 
+- Route đăng ký/đăng nhập từ chối CAPTCHA thiếu, sai, hết hạn hoặc replay trước auth service, kể cả khi `NODE_ENV=test`.
+- Browser E2E giải challenge qua test-control server mà không thêm endpoint debug vào production app.
 - Đăng ký -> xác minh -> đăng nhập.
 - Đăng nhập thất bại do sai mật khẩu.
 - Đăng nhập thất bại với tài khoản không hoạt động/chưa xác minh.
@@ -181,6 +187,8 @@ Phần tăng cường UX Xác thực/OTP đã phê duyệt được triển khai
 | SQL injection | Chỉ sử dụng truy vấn có tham số của `mssql`. |
 | CORS quá rộng | Giữ CORS production có thể cấu hình; không hardcode chính sách production cho phép quá rộng. |
 | Chỉ kiểm tra xác thực ở frontend | Thực thi mọi hành động được bảo vệ ở server. |
+| Challenge mất khi process restart | Frontend tải challenge mới; không có trạng thái xác thực nào được thay đổi trước khi CAPTCHA hợp lệ. |
+| Scale nhiều instance làm challenge không dùng chung | Giữ kiến trúc một instance hiện tại; yêu cầu shared TTL store/provider được phê duyệt trước khi scale. |
 
 ## 11. Cổng xác thực
 
@@ -191,7 +199,7 @@ Trước khi FE02 được xem là hoàn tất:
 - Build frontend vượt qua nếu có tích hợp frontend.
 - Không commit mật khẩu/token/secret thô.
 - Response API khớp với hợp đồng FE02 chuẩn trong Mục 11 của `SPEC.md`.
-- Ma trận truy vết từ AC-FE02-001 đến AC-FE02-026 trong `SPEC.md` vẫn được đáp ứng, với mọi khoảng trống tuân thủ đã ghi nhận được đóng rõ ràng hoặc được phê duyệt để hoãn.
+- Ma trận truy vết từ AC-FE02-001 đến AC-FE02-027 trong `SPEC.md` vẫn được đáp ứng, với mọi khoảng trống tuân thủ đã ghi nhận được đóng rõ ràng hoặc được phê duyệt để hoãn.
 - Hoàn tất phê duyệt của người rà soát đối với mã xác thực nhạy cảm về bảo mật.
 
 ## 12. Trạng thái B7 của UX Xác thực/OTP

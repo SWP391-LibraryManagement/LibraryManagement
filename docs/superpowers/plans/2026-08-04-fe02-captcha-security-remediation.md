@@ -66,7 +66,7 @@
 - `createChallenge()` returns `{ image, captchaToken, expiresIn }`.
 - `verifyChallenge()` returns a boolean and always consumes an existing challenge before comparison.
 
-- [ ] **Step 1: Write failing service and renderer tests**
+- [x] **Step 1: Write failing service and renderer tests**
 
 Create `backend/tests/captchaService.test.js` with concrete tests for opacity, rendering, one-time use, expiry, incorrect-attempt consumption, and bounded capacity:
 
@@ -157,7 +157,7 @@ test('renders SVG paths without answer text or text nodes', () => {
 });
 ```
 
-- [ ] **Step 2: Run the focused test to verify RED**
+- [x] **Step 2: Run the focused test to verify RED**
 
 Run:
 
@@ -168,7 +168,7 @@ npm.cmd test -- --runTestsByPath tests/captchaService.test.js
 
 Expected: FAIL because `services/captchaService.js` and `utils/captchaRenderer.js` do not exist.
 
-- [ ] **Step 3: Add the safe capacity error**
+- [x] **Step 3: Add the safe capacity error**
 
 Add to `backend/src/utils/safeErrors.js`:
 
@@ -180,7 +180,7 @@ function serviceUnavailable(code, message, details) {
 
 Export `serviceUnavailable` beside the existing helpers.
 
-- [ ] **Step 4: Implement the path renderer**
+- [x] **Step 4: Implement the path renderer**
 
 Create `backend/src/utils/captchaRenderer.js` with a complete 14-segment alphabet for the approved letters:
 
@@ -245,7 +245,7 @@ The final code must keep `GLYPHS` values as arrays so multi-character segment
 names (`g1`, `g2`) remain unambiguous, and it must contain no answer-bearing
 metadata.
 
-- [ ] **Step 5: Implement the bounded one-time service**
+- [x] **Step 5: Implement the bounded one-time service**
 
 Create `backend/src/services/captchaService.js`:
 
@@ -329,7 +329,7 @@ const defaultCaptchaService = createCaptchaService();
 module.exports = { createCaptchaService, defaultCaptchaService };
 ```
 
-- [ ] **Step 6: Run the focused test to verify GREEN**
+- [x] **Step 6: Run the focused test to verify GREEN**
 
 Run:
 
@@ -340,17 +340,22 @@ npm.cmd test -- --runTestsByPath tests/captchaService.test.js
 
 Expected: PASS with five tests and no warning/error output.
 
-- [ ] **Step 7: Remove the obsolete signed-payload implementation**
+- [x] **Step 7: Identify the obsolete signed-payload references**
 
-Delete `backend/src/utils/captchaUtils.js` and `backend/tests/captchaUtils.test.js` only after the new focused suite is GREEN. Run:
+Keep `backend/src/utils/captchaUtils.js` and `backend/tests/captchaUtils.test.js`
+until the Task 2 route tests have demonstrated the real `NODE_ENV=test` bypass.
+Run:
 
 ```powershell
 rg -n "captchaUtils|createCaptcha\(|verifyCaptcha\(" src tests
 ```
 
-Expected: only route/controller references waiting for Task 2, with no remaining test dependency on the deleted module.
+Expected: route/controller and the obsolete test still reference the old module.
+Delete both old files during Task 2 Step 5, when controller/middleware wiring is
+switched to the injected service, so the Task 2 RED failure proves behavior
+rather than a broken import.
 
-- [ ] **Step 8: Preserve the uncommitted checkpoint for H2**
+- [x] **Step 8: Preserve the uncommitted checkpoint for H2**
 
 Run:
 
@@ -389,7 +394,7 @@ Expected: only Task 1 files are changed; do not commit yet because repository H2
 - Produces: `createApp({ captchaService })` explicit dependency seam.
 - Produces: `createAcceptingCaptchaService()` only under `backend/tests/helpers/`.
 
-- [ ] **Step 1: Write failing route tests**
+- [x] **Step 1: Write failing route tests**
 
 Create `backend/tests/captchaRoutes.test.js`:
 
@@ -449,7 +454,7 @@ test('a valid login CAPTCHA dispatches once and replay is rejected', async () =>
 });
 ```
 
-- [ ] **Step 2: Run route tests to verify RED**
+- [x] **Step 2: Run route tests to verify RED**
 
 Run:
 
@@ -460,7 +465,7 @@ npm.cmd test -- --runTestsByPath tests/captchaRoutes.test.js
 
 Expected: FAIL because `createApp` does not accept/share `captchaService` and the middleware still bypasses under `NODE_ENV=test`.
 
-- [ ] **Step 3: Add the explicit non-CAPTCHA test service**
+- [x] **Step 3: Add the explicit non-CAPTCHA test service**
 
 Create `backend/tests/helpers/captchaTestService.js`:
 
@@ -485,7 +490,7 @@ module.exports = { createAcceptingCaptchaService };
 
 This helper must never be imported by `backend/src/`.
 
-- [ ] **Step 4: Replace environment bypass with injected verification**
+- [x] **Step 4: Replace environment bypass with injected verification**
 
 Change `backend/src/middleware/captchaMiddleware.js` to:
 
@@ -511,7 +516,7 @@ module.exports = { createCaptchaValidator };
 
 No branch may read `NODE_ENV` or accept a `required` flag.
 
-- [ ] **Step 5: Share one service across app, routes, controller, and middleware**
+- [x] **Step 5: Share one service across app, routes, controller, and middleware**
 
 Update signatures and calls exactly as follows:
 
@@ -588,7 +593,7 @@ function createAuthRoutes({ authService, captchaService }) {
 Keep the existing `register`, `verifyEmail`, `login`, token, password, and `me`
 handler properties byte-for-byte after this exact edit.
 
-- [ ] **Step 6: Inject the explicit test service into unrelated auth-flow suites**
+- [x] **Step 6: Inject the explicit test service into unrelated auth-flow suites**
 
 In every test setup file listed in this task, import:
 
@@ -657,7 +662,7 @@ challenge path:
 +  });
 ```
 
-- [ ] **Step 7: Run focused and affected backend tests to verify GREEN**
+- [x] **Step 7: Run focused and affected backend tests to verify GREEN**
 
 Run:
 
@@ -668,7 +673,7 @@ npm.cmd test -- --runTestsByPath tests/captchaService.test.js tests/captchaRoute
 
 Expected: all listed suites PASS; the dedicated route suite proves no `NODE_ENV=test` bypass.
 
-- [ ] **Step 8: Verify no production test bypass remains**
+- [x] **Step 8: Verify no production test bypass remains**
 
 Run:
 
@@ -678,7 +683,7 @@ rg -n "NODE_ENV.*captcha|captcha.*NODE_ENV|required.*captcha|createAcceptingCapt
 
 Expected: no environment-derived CAPTCHA bypass in `src`; `createAcceptingCaptchaService` appears only under `backend/tests/`.
 
-- [ ] **Step 9: Preserve the uncommitted checkpoint for H2**
+- [x] **Step 9: Preserve the uncommitted checkpoint for H2**
 
 Run `git diff --check` and `git status --short`. Do not commit.
 
@@ -695,7 +700,7 @@ Run `git diff --check` and `git status --short`. Do not commit.
 - Consumes: `makeSystemIntegrationApp({ captchaService })` from Task 2.
 - Produces: test-only `GET /__e2e__/captcha-answer` response `{ answer }`.
 
-- [ ] **Step 1: Write the failing E2E helper expectation**
+- [x] **Step 1: Write the failing E2E helper expectation**
 
 Change `tests/e2e/support/solveCaptcha.js` first so it no longer decodes SVG:
 
@@ -721,7 +726,7 @@ async function solveCaptcha(page) {
 module.exports = { solveCaptcha };
 ```
 
-- [ ] **Step 2: Run one browser flow to verify RED**
+- [x] **Step 2: Run one browser flow to verify RED**
 
 Run:
 
@@ -731,7 +736,7 @@ npx.cmd playwright test tests/e2e/system-golden-path.spec.js --project=chromium
 
 Expected: FAIL because `/__e2e__/captcha-answer` does not exist.
 
-- [ ] **Step 3: Instrument only the E2E server**
+- [x] **Step 3: Instrument only the E2E server**
 
 In `tests/e2e/support/systemTestServer.js`, import `createCaptchaService` and
 replace direct `makeSystemIntegrationApp()` calls with:
@@ -790,7 +795,7 @@ test server and is never accepted by the production default service.
 
 Do not add this endpoint to `backend/src/app.js`, OpenAPI, or production routes.
 
-- [ ] **Step 4: Re-run the browser flow to verify GREEN**
+- [x] **Step 4: Re-run the browser flow to verify GREEN**
 
 Run:
 
@@ -800,7 +805,7 @@ npx.cmd playwright test tests/e2e/system-golden-path.spec.js --project=chromium
 
 Expected: PASS; the helper contains no SVG decode or answer extraction.
 
-- [ ] **Step 5: Prove the production response contains no test answer**
+- [x] **Step 5: Prove the production response contains no test answer**
 
 Run:
 
@@ -811,7 +816,7 @@ rg -n "captcha-answer|latestCaptchaAnswer|onChallengeIssued" backend/src tests/e
 Expected: test-answer symbols exist only under `tests/e2e`; `onChallengeIssued`
 exists in the injectable service but no production caller supplies it.
 
-- [ ] **Step 6: Preserve the uncommitted checkpoint for H2**
+- [x] **Step 6: Preserve the uncommitted checkpoint for H2**
 
 Run `git diff --check` and keep the diff uncommitted.
 
@@ -828,7 +833,7 @@ Run `git diff --check` and keep the diff uncommitted.
 - Consumes: existing child-to-parent CAPTCHA state `{ captchaToken, captchaAnswer }`.
 - Produces: fail-safe submit disabled state without clearing existing form fields.
 
-- [ ] **Step 1: Add failing frontend contract assertions**
+- [x] **Step 1: Add failing frontend contract assertions**
 
 Extend `frontend/test/captchaFrontend.test.js`:
 
@@ -848,7 +853,7 @@ test('auth submission stays disabled until a CAPTCHA challenge is available', as
 });
 ```
 
-- [ ] **Step 2: Run frontend tests to verify RED**
+- [x] **Step 2: Run frontend tests to verify RED**
 
 Run:
 
@@ -859,7 +864,7 @@ node --test --test-name-pattern="auth submission stays disabled" test/captchaFro
 
 Expected: FAIL because both submit buttons ignore `captcha.captchaToken`.
 
-- [ ] **Step 3: Implement the minimal disabled-state wiring**
+- [x] **Step 3: Implement the minimal disabled-state wiring**
 
 Change the login submit button in `LoginForm.jsx` to:
 
@@ -876,7 +881,7 @@ disabled={isBusy || (!verificationStep && !captcha.captchaToken)}
 Do not clear `email`, `password`, registration fields, or OTP state when the
 CAPTCHA token is reset.
 
-- [ ] **Step 4: Run frontend tests and lint to verify GREEN**
+- [x] **Step 4: Run frontend tests and lint to verify GREEN**
 
 Run:
 
@@ -888,7 +893,7 @@ npm.cmd run lint
 
 Expected: all frontend tests PASS and ESLint exits 0.
 
-- [ ] **Step 5: Preserve the uncommitted checkpoint for H2**
+- [x] **Step 5: Preserve the uncommitted checkpoint for H2**
 
 Run `git diff --check` and keep the diff uncommitted.
 
@@ -912,7 +917,7 @@ Run `git diff --check` and keep the diff uncommitted.
 - Consumes: verified behavior and test paths from Tasks 1-4.
 - Produces: unique stable IDs and complete rule-to-code-to-test traceability.
 
-- [ ] **Step 1: Run traceability before documentation changes**
+- [x] **Step 1: Run traceability before documentation changes**
 
 Run:
 
@@ -924,7 +929,7 @@ Expected: it may pass because the current checker does not detect the omitted
 CAPTCHA rows; preserve this result as evidence that the H3 manual finding is a
 real coverage gap rather than a current CI failure.
 
-- [ ] **Step 2: Correct the authoritative CAPTCHA contract**
+- [x] **Step 2: Correct the authoritative CAPTCHA contract**
 
 Replace the top CAPTCHA block in `SPEC.md` with these exact Vietnamese obligations:
 
@@ -939,7 +944,7 @@ Replace the top CAPTCHA block in `SPEC.md` with these exact Vietnamese obligatio
 
 Keep the final document in Vietnamese to match the existing source of truth.
 
-- [ ] **Step 3: Repair the traceability tables and counts**
+- [x] **Step 3: Repair the traceability tables and counts**
 
 Add an `AC-FE02-027` row after `AC-FE02-026` mapping:
 
@@ -961,7 +966,7 @@ Remove every claim that CAPTCHA H3 has already passed. Preserve historical H3
 statements that refer to older FE02 baselines and clearly distinguish them from
 PR #111.
 
-- [ ] **Step 4: Reopen and close the remediation task accurately**
+- [x] **Step 4: Reopen and close the remediation task accurately**
 
 Add `FE02-T070 - Remediate CAPTCHA H3 security and traceability blockers` to
 `TASKS.md`, mapped to the four blockers and the files/tests in this plan. Mark
@@ -978,7 +983,7 @@ Update the remaining FE02 documents so they consistently state:
 - no database/runtime dependency;
 - single-instance boundary and restart behavior.
 
-- [ ] **Step 5: Run documentation gates**
+- [x] **Step 5: Run documentation gates**
 
 Run:
 
@@ -991,7 +996,7 @@ rg -n "EC-FE02-018.*CAPTCHA|answerHash|JWT_SECRET.*CAPTCHA|H3.*CAPTCHA.*APPROVED
 Expected: traceability exits 0; no duplicate CAPTCHA `EC-FE02-018`, client
 `answerHash`, JWT secret reuse, or premature CAPTCHA H3 approval remains.
 
-- [ ] **Step 6: Preserve the complete uncommitted diff for H2**
+- [x] **Step 6: Preserve the complete uncommitted diff for H2**
 
 Run:
 
@@ -1016,7 +1021,7 @@ implementation/spec remediation remains uncommitted for H2 review.
 - Consumes: complete uncommitted remediation diff and focused RED-GREEN evidence.
 - Produces: one H2-authorized implementation commit, exact-head CI evidence, H3 decision, guarded merge, and post-merge CI evidence.
 
-- [ ] **Step 1: Run the complete local validation gate**
+- [x] **Step 1: Run the complete local validation gate**
 
 Run from the repository root, stopping on the first deterministic failure:
 
@@ -1042,7 +1047,7 @@ Expected: every command exits 0. Record exact test counts and any browser test
 count from fresh output. A deterministic failure gets at most three total fix
 attempts; a suspected E2E flake may be rerun once with evidence.
 
-- [ ] **Step 2: Perform H2 review on the complete uncommitted diff**
+- [x] **Step 2: Perform H2 review on the complete uncommitted diff**
 
 Review against:
 
@@ -1131,19 +1136,19 @@ Expected: post-merge `foundation-checks` succeeds for the exact merge SHA.
 
 ## Completion Evidence Checklist
 
-- [ ] Design approved and linked.
-- [ ] Plan approved and execution mode selected.
-- [ ] Focused tests observed RED before production changes.
-- [ ] Focused tests observed GREEN after each minimal change.
-- [ ] Public token is opaque; SVG contains no answer text/verifier.
-- [ ] Correct and incorrect attempts both consume challenges.
-- [ ] Capacity and restart/expiry behavior are documented.
-- [ ] Login/register routes fail closed in `NODE_ENV=test` unless an explicit test service is injected.
-- [ ] Production code imports no accepting test service or E2E answer endpoint.
-- [ ] Login/register submit is disabled while no challenge token exists.
-- [ ] `EC-FE02-019` is unique; `AC-FE02-027` and summary counts are complete.
-- [ ] Full L1 automated gate passes with fresh counts.
-- [ ] H2 explicitly approves the complete uncommitted diff before commit.
+- [x] Design approved and linked.
+- [x] Plan approved and execution mode selected.
+- [x] Focused tests observed RED before production changes.
+- [x] Focused tests observed GREEN after each minimal change.
+- [x] Public token is opaque; SVG contains no answer text/verifier.
+- [x] Correct and incorrect attempts both consume challenges.
+- [x] Capacity and restart/expiry behavior are documented.
+- [x] Login/register routes fail closed in `NODE_ENV=test` unless an explicit test service is injected.
+- [x] Production code imports no accepting test service or E2E answer endpoint.
+- [x] Login/register submit is disabled while no challenge token exists.
+- [x] `EC-FE02-019` is unique; `AC-FE02-027` and summary counts are complete.
+- [x] Full L1 automated gate passes with fresh counts.
+- [x] H2 explicitly approves the complete uncommitted diff before commit.
 - [ ] Exact-head CI passes after push/update-branch.
 - [ ] H3 Standards and Spec reviews have no blockers.
 - [ ] Exact-head guarded merge succeeds.

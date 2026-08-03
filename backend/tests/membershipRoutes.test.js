@@ -5,6 +5,7 @@ const request = require('supertest');
 const { createApp } = require('../src/app');
 const { createAuthService } = require('../src/services/authService');
 const { createMembershipService } = require('../src/services/membershipService');
+const { createAcceptingCaptchaService } = require('./helpers/captchaTestService');
 const { makeInMemoryAuthDependencies } = require('./helpers/inMemoryAuthRepositories');
 const { makeInMemoryMembershipDependencies } = require('./helpers/inMemoryMembershipRepositories');
 
@@ -20,7 +21,11 @@ function makeTestApp({ membershipOptions, auditLogRepository, notificationReques
     auditLogRepository: auditLogRepository || authDependencies.auditLogRepository,
     notificationRequester,
   });
-  const app = createApp({ authService, membershipService });
+  const app = createApp({
+    authService,
+    membershipService,
+    captchaService: createAcceptingCaptchaService(),
+  });
 
   return { app, authDependencies, membershipDependencies };
 }

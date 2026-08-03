@@ -1,12 +1,15 @@
 const { defaultAuthService } = require('../services/authService');
-const { createCaptcha } = require('../utils/captchaUtils');
+const { defaultCaptchaService } = require('../services/captchaService');
 
-function createAuthController(authService = defaultAuthService) {
+function createAuthController({
+  authService = defaultAuthService,
+  captchaService = defaultCaptchaService,
+} = {}) {
   return {
     captcha: async (_req, res, next) => {
       try {
         // @spec FR-FE02-028
-        return res.status(200).json(createCaptcha());
+        return res.status(200).json(captchaService.createChallenge());
       } catch (error) {
         return next(error);
       }

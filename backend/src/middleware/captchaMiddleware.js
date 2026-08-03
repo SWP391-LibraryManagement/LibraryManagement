@@ -1,10 +1,12 @@
 const errors = require('../utils/safeErrors');
-const { verifyCaptcha } = require('../utils/captchaUtils');
 
-function createCaptchaValidator({ required = process.env.NODE_ENV !== 'test' } = {}) {
+function createCaptchaValidator(captchaService) {
   return (req, _res, next) => {
-    // @spec FR-FE02-029
-    if (!required || verifyCaptcha(req.body?.captchaToken, req.body?.captchaAnswer)) return next();
+    // @spec FR-FE02-029, FR-FE02-030
+    if (captchaService.verifyChallenge(
+      req.body?.captchaToken,
+      req.body?.captchaAnswer
+    )) return next();
     return next(errors.badRequest('CAPTCHA_INVALID', 'Captcha is invalid or expired.'));
   };
 }

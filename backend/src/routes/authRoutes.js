@@ -16,11 +16,11 @@ const {
   resetPasswordValidators,
 } = require('../validators/authValidators');
 
-function createAuthRoutes(authService) {
+function createAuthRoutes({ authService, captchaService }) {
   const router = express.Router();
-  const controller = createAuthController(authService);
+  const controller = createAuthController({ authService, captchaService });
   const authenticate = createAuthenticate(authService);
-  const captchaValidator = createCaptchaValidator();
+  const captchaValidator = createCaptchaValidator(captchaService);
 
   router.get('/captcha', controller.captcha);
   router.post('/register', captchaValidator, registerValidators, controller.register);

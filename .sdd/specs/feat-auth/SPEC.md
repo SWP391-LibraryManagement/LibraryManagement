@@ -2,26 +2,26 @@
 
 ## CAPTCHA đăng nhập và đăng ký
 
-- BR-FE02-029: Trước khi tạo tài khoản hoặc xác thực thông tin đăng nhập, Khách phải giải CAPTCHA gồm 4–6 chữ cái Latin do máy chủ phát hành. Đáp án và thời hạn chỉ được xác thực ở máy chủ; CAPTCHA không làm thay đổi trạng thái tài khoản, OTP hay audit đăng nhập khi sai.
-- FR-FE02-028: Hệ thống phải phát hành `GET /api/auth/captcha` trả về ảnh CAPTCHA dạng SVG và `captchaToken` có chữ ký, hết hạn sau 5 phút. Ảnh hiển thị đáp án, còn token không chứa đáp án thô.
-- FR-FE02-029: Khi Khách gửi `POST /api/auth/register` hoặc `POST /api/auth/login`, hệ thống phải yêu cầu `captchaToken` và `captchaAnswer`, so sánh không phân biệt hoa/thường sau khi trim, và chỉ dispatch service đăng ký/đăng nhập khi CAPTCHA hợp lệ.
-- FR-FE02-030: Nếu CAPTCHA thiếu, hết hạn, bị sửa hoặc không đúng, hệ thống phải trả `400 CAPTCHA_INVALID`; giao diện giữ dữ liệu biểu mẫu, hiển thị lỗi tiếng Việt và tải CAPTCHA mới.
-- AC-FE02-027: Với CAPTCHA còn hạn và đáp án đúng, đăng ký/đăng nhập tiếp tục theo luồng hiện có. Với đáp án sai, token hết hạn hoặc token bị thay đổi, API trả `400 CAPTCHA_INVALID` và không tạo người dùng, OTP, refresh token, bản ghi login failure hay audit đăng nhập.
-- EC-FE02-018: Khi API CAPTCHA không tải được, giao diện vô hiệu hóa nút gửi và cho phép người dùng tải lại CAPTCHA; không gửi dữ liệu xác thực khi chưa có thử thách hợp lệ.
+- BR-FE02-029: Trước khi tạo tài khoản hoặc xác thực thông tin đăng nhập, Khách phải giải CAPTCHA gồm 4-6 chữ cái Latin do máy chủ phát hành. Máy chủ phải giữ bộ xác minh đáp án, thời hạn và trạng thái đã sử dụng; token công khai phải là giá trị ngẫu nhiên opaque và chỉ hợp lệ cho một lần xác minh.
+- FR-FE02-028: `GET /api/auth/captcha` phải trả về ảnh SVG không chứa text hoặc metadata làm lộ đáp án, cùng `captchaToken` ngẫu nhiên opaque hết hạn sau 5 phút. Bộ nhớ challenge trong tiến trình phải giới hạn tối đa 5.000 bản ghi cho kiến trúc một instance đã phê duyệt.
+- FR-FE02-029: `POST /api/auth/register` và `POST /api/auth/login` phải yêu cầu và tiêu thụ `captchaToken` cùng `captchaAnswer` trước khi dispatch service, so sánh đáp án sau trim và không phân biệt hoa thường.
+- FR-FE02-030: CAPTCHA thiếu, hết hạn, không tồn tại, đã dùng, bị replay hoặc sai phải trả `400 CAPTCHA_INVALID`; khi kho challenge đầy, hệ thống phải fail-closed và không dispatch service xác thực. Giao diện phải giữ dữ liệu biểu mẫu, hiển thị lỗi tiếng Việt và tải challenge mới sau `CAPTCHA_INVALID`.
+- AC-FE02-027: Challenge đúng và còn hạn chỉ cho phép luồng đăng ký/đăng nhập hiện có tiếp tục đúng một lần. Challenge sai hoặc replay không được tạo người dùng, OTP, phiên, bản ghi login failure hoặc audit xác thực.
+- EC-FE02-019: Khi API CAPTCHA không tải được, nút gửi đăng nhập/đăng ký bị vô hiệu hóa, dữ liệu biểu mẫu hiện có được giữ nguyên và người dùng có thể yêu cầu challenge mới.
 
 | Phương thức | Endpoint | Tác nhân | Request | Response | Ghi chú |
 | --- | --- | --- | --- | --- | --- |
-| GET | `/api/auth/captcha` | Khách | Không có | `{ image: string, captchaToken: string, expiresIn: 300 }` | `image` là SVG data URI; token ký HMAC không chứa đáp án thô. |
+| GET | `/api/auth/captcha` | Khách | Không có | `{ image: string, captchaToken: string, expiresIn: 300 }` | `image` là SVG data URI không chứa text/metadata đáp án; token là định danh opaque dùng một lần. |
 | POST | `/api/auth/register` | Khách | Payload đăng ký hiện có cộng `{ captchaToken: string, captchaAnswer: string }` | Hợp đồng hiện có | Từ chối `400 CAPTCHA_INVALID` trước khi tạo bất kỳ trạng thái nào. |
 | POST | `/api/auth/login` | Khách | `{ email: string, password: string, captchaToken: string, captchaAnswer: string }` | Hợp đồng hiện có | Từ chối `400 CAPTCHA_INVALID` trước khi kiểm tra mật khẩu hoặc ghi nhận thất bại đăng nhập. |
 
-# Phiên bản: 0.6.23
+# Phiên bản: 0.6.24
 
-# Trạng thái: COMPLETE - H3 HỒI CỨU ĐÃ ĐƯỢC PHÊ DUYỆT
+# Trạng thái: IMPLEMENTED - H2 APPROVED; PENDING EXACT-HEAD CI/H3
 
 # Chủ sở hữu: Dat
 
-# Cập nhật lần cuối: 2026-08-03
+# Cập nhật lần cuối: 2026-08-04
 
 # ID tính năng: FE02
 
@@ -379,6 +379,7 @@ Các yêu cầu sau đây chính thức hóa các nhánh xử lý lỗi và tìn
 | EC-FE02-016 | Hai yêu cầu hoàn tất thiết lập đồng thời dùng cùng một mã thông báo | Chính xác một giao dịch thành công; giao dịch còn lại nhận lỗi thông tin xác thực không hợp lệ/đã sử dụng an toàn. |
 | EC-FE02-017 | Thông tin xác thực đặt lại mật khẩu nhắm mục tiêu tài khoản không hoạt động | Từ chối thiết lập lại; không kích hoạt. Kích hoạt tài khoản yêu cầu `ACCOUNT_SETUP`. |
 | EC-FE02-018 | Người dùng đóng đăng ký trước khi hoàn tất xác minh email, sau đó gửi thông tin đăng nhập chính xác | Trả lại `403 EMAIL_VERIFICATION_REQUIRED` mà không cần phiên và mở `/verify-email` bằng email đã đăng ký. |
+| EC-FE02-019 | API CAPTCHA không tải được hoặc challenge đã mất sau khi backend khởi động lại | Vô hiệu hóa nút gửi đăng nhập/đăng ký, giữ nguyên dữ liệu biểu mẫu và cho phép người dùng yêu cầu challenge mới. |
 
 ---
 
@@ -484,10 +485,11 @@ stateDiagram-v2
 
 | Phương thức | Endpoint | Tác nhân | Yêu cầu | Phản hồi | Ghi chú |
 | ------ | -------- | ----- | ------- | -------- | ----- |
-| POST | `/api/auth/register` | Khách | `{ email: string, username?: string, password: string, confirmPassword: string, fullName?: string, phoneNumber?: string }` | `{ userId: number, email: string, message: "Verification email sent" }` | Kiểm tra tính duy nhất của tên người dùng được cung cấp/suy ra và email trước khi tạo hoặc gửi OTP xác minh sáu chữ số; giá trị trùng lặp trả về xung đột `409` tương ứng. |
+| GET | `/api/auth/captcha` | Khách | Không có | `{ image: string, captchaToken: string, expiresIn: 300 }` | Token ngẫu nhiên opaque dùng một lần; SVG chỉ chứa path, không chứa text/metadata đáp án. Kho challenge trong tiến trình giới hạn 5.000 bản ghi. |
+| POST | `/api/auth/register` | Khách | `{ email: string, username?: string, password: string, confirmPassword: string, fullName?: string, phoneNumber?: string, captchaToken: string, captchaAnswer: string }` | `{ userId: number, email: string, message: "Verification email sent" }` | Tiêu thụ CAPTCHA trước validator/service xác thực; sau đó kiểm tra tính duy nhất của username/email trước khi tạo hoặc gửi OTP. |
 | POST | `/api/auth/verify-email` | Khách | `{ email: string, otp: string }` hoặc `{ token: string }` | `{ message: "Account verified. You can now login." }` | Luồng OTP chính cộng với khả năng tương thích mã thông báo cũ. |
 | POST | `/api/auth/resend-verification` | Khách | `{ email: string }` | `{ message: "Verification email sent" }` | Chỉ gửi lại cho tài khoản tự đăng ký đủ điều kiện đang chờ xử lý; các trạng thái khác vẫn nhận cùng một phản hồi công khai. |
-| POST | `/api/auth/login` | Khách | `{ email: string, password: string }` | Thành công: `{ userId: number, email: string, roles: string[], accessToken: string, refreshToken: string, expiresIn: 900 }`; đang chờ xác minh: `403 { error: { code: "EMAIL_VERIFICATION_REQUIRED", message: string, details: { email: string } } }` | Trường `email` cũ chấp nhận địa chỉ email hoặc tên người dùng. Phản hồi khôi phục 403 chỉ được trả về sau khi xác minh mật khẩu chính xác cho tài khoản tự đăng ký đủ điều kiện và không bao giờ tạo phiên. |
+| POST | `/api/auth/login` | Khách | `{ email: string, password: string, captchaToken: string, captchaAnswer: string }` | Thành công: `{ userId: number, email: string, roles: string[], accessToken: string, refreshToken: string, expiresIn: 900 }`; đang chờ xác minh: `403 { error: { code: "EMAIL_VERIFICATION_REQUIRED", message: string, details: { email: string } } }` | Tiêu thụ CAPTCHA trước khi kiểm tra thông tin xác thực hoặc ghi login failure. Trường `email` cũ chấp nhận địa chỉ email hoặc tên người dùng. |
 | POST | `/api/auth/logout` | Máy khách gửi mã thông báo làm mới | `{ refreshToken: string }` | `{ message: "Logged out" }` | Thu hồi thông tin xác thực làm mới đang hoạt động đã gửi; thông tin xác thực không xác định/đã thu hồi vẫn cho kết quả đăng xuất an toàn có tính lặp lại. |
 | POST | `/api/auth/refresh-token` | Máy khách gửi mã thông báo làm mới hợp lệ | `{ refreshToken: string }` | `{ accessToken: string, refreshToken: string, expiresIn: 900 }` | Không yêu cầu mã thông báo truy cập; trả về mã thông báo truy cập mới và chính mã thông báo làm mới đã gửi. |
 | POST | `/api/auth/change-password` | Đã xác thực | `{ currentPassword: string, newPassword: string }` | `{ message: "Password changed" }` | Yêu cầu xác minh mật khẩu hiện tại. |
@@ -677,6 +679,7 @@ Các quyết định sau đây đã được phê duyệt trong gói đánh giá
 | AC-FE02-024 | Request HTTP tới namespace API đã triển khai bị chuyển hướng hoặc từ chối trước khi xử lý credential/token; health/static exclusions vẫn hoạt động | NFR-FE02-SEC-003 | BR-FE02-017 | `backend/tests/httpsEnforcement.test.js` | COMPLETE - PR #95; CI `30711057582`; staging `30711210037` |
 | AC-FE02-025 | Trao đổi mã thông báo làm mới trả về mã thông báo truy cập mới và mã thông báo làm mới tương tự mà không yêu cầu mã thông báo truy cập | FR-FE02-026 | BR-FE02-010 | Các trường hợp mã thông báo làm mới `backend/tests/authRoutes.test.js` | Được chấp nhận; bằng chứng tự động được ghi lại |
 | AC-FE02-026 | Thông tin xác thực chính xác của tài khoản tự đăng ký đang chờ xử lý trả về yêu cầu xác minh và định tuyến máy khách đến `/verify-email`; trạng thái không hoạt động không đủ điều kiện vẫn nhận phản hồi chung | FR-FE02-027 | BR-FE02-004, BR-FE02-007, BR-FE02-025, BR-FE02-028 | `backend/tests/authRoutes.test.js`; `frontend/test/verificationRecoveryFrontend.test.js` | Được chấp nhận; bằng chứng tự động được ghi lại |
+| AC-FE02-027 | CAPTCHA opaque dùng một lần cho phép đúng một lần dispatch đăng nhập/đăng ký hợp lệ; challenge sai, hết hạn, replay hoặc không khả dụng bị chặn trước thay đổi trạng thái xác thực | FR-FE02-028, FR-FE02-029, FR-FE02-030 | BR-FE02-029 | `backend/tests/captchaService.test.js`; `backend/tests/captchaRoutes.test.js`; `frontend/test/captchaFrontend.test.js`; browser E2E | COMPLETE - pending H2/H3 integration evidence |
 
 ### Yêu cầu chức năng về hành vi không mong muốn FE02 liên kết với nguồn và kiểm thử
 
@@ -692,17 +695,18 @@ Các quyết định sau đây đã được phê duyệt trong gói đánh giá
 | FR-FE02-023 | Bảo toàn trạng thái nguồn và ngữ nghĩa công khai an toàn khi requester gắn với FE02 hoặc nhà cung cấp gửi thất bại | EC-FE02-009 | BR-FE02-022, Q-FE02-012 | FT05, FT10 | Được chấp nhận; bằng chứng tự động được ghi lại |
 | FR-FE02-025 | Từ chối hoàn thành thiết lập không hợp lệ hoặc mất đồng thời mà không có trạng thái một phần | EC-FE02-016, EC-FE02-017 | BR-FE02-024, BR-FE02-025, Q-FE02-013 | FT11 | Được chấp nhận; bằng chứng tự động được ghi lại |
 | FR-FE02-026 | Dùng mã thông báo làm mới hợp lệ để cấp mã thông báo truy cập mới và từ chối thông tin xác thực làm mới đã hết hạn/đã dùng/bị thu hồi | Q-FE02-002, Q-FE02-016 | BR-FE02-010 | Các trường hợp mã thông báo làm mới `backend/tests/authRoutes.test.js` | Được chấp nhận; bằng chứng tự động được ghi lại |
+| FR-FE02-030 | Từ chối CAPTCHA thiếu, hết hạn, không tồn tại, đã dùng, replay hoặc sai trước khi dispatch service xác thực | EC-FE02-019 | BR-FE02-029 | `backend/tests/captchaService.test.js`; `backend/tests/captchaRoutes.test.js`; `frontend/test/captchaFrontend.test.js` | COMPLETE - pending H2/H3 integration evidence |
 
 ### Tóm tắt độ bao phủ (FE02)
-- **Tổng AC**: 26 (AC-FE02-001 đến AC-FE02-026) - tất cả được ánh xạ.
-- **Tổng FR**: 27 (FR-FE02-001 đến FR-FE02-027) - tất cả được ánh xạ.
-- **EARS FR** không mong muốn: 9 (FR-FE02-015 đến FR-FE02-021, FR-FE02-023, FR-FE02-025) = 36% tổng FR.
-- **Tổng BR**: 28 (BR-FE02-001 đến BR-FE02-028) - tất cả BR được ánh xạ trực tiếp hoặc thông qua truy vết AC/NFR.
+- **Tổng AC**: 27 (AC-FE02-001 đến AC-FE02-027) - tất cả được ánh xạ.
+- **Tổng FR**: 30 (FR-FE02-001 đến FR-FE02-030) - tất cả được ánh xạ.
+- **EARS FR** không mong muốn: 10 (FR-FE02-015 đến FR-FE02-021, FR-FE02-023, FR-FE02-025, FR-FE02-030) = 33.3% tổng FR.
+- **Tổng BR**: 29 (BR-FE02-001 đến BR-FE02-029) - tất cả BR được ánh xạ trực tiếp hoặc thông qua truy vết AC/NFR.
 - **Tổng số bài kiểm tra**: 7 (FT05 đến FT11) - căn chỉnh với bảng bài tập
 
 ### Khoảng trống về mức độ phù hợp hiện tại (2026-08-03)
 
-- Không còn khoảng trống tuân thủ FE02 trong phạm vi đã phê duyệt. H2 vòng 2, CI exact-head và H3 cuối của PR C là cổng tích hợp, không phải khoảng trống hành vi FE02.
+- Không còn khoảng trống hành vi FE02 đã biết trong diff cục bộ của CAPTCHA. H2, CI exact-head và H3 của PR #111 vẫn là các cổng tích hợp bắt buộc trước merge.
 
 ### Các khoảng trống về mức độ phù hợp đã giải quyết (2026-07-27)
 
@@ -713,8 +717,8 @@ Các quyết định sau đây đã được phê duyệt trong gói đánh giá
 
 | Bài tập UC ID | Trường hợp sử dụng Excel | Luồng chính / Yêu cầu liên quan | Kiểm tra liên quan |
 | ---------------- | -------------- | ------------------------------- | ------------ |
-| UC05 | Đăng ký tài khoản | MF-FE02-001, MF-FE02-002; FR-FE02-001 đến FR-FE02-003 | FT05 |
-| UC06 | Đăng nhập | MF-FE02-003, MF-FE02-004, MF-FE02-009; FR-FE02-004 đến FR-FE02-006, FR-FE02-008, FR-FE02-009, FR-FE02-027 | FT06, FT07; hồi quy đăng ký bị gián đoạn |
+| UC05 | Đăng ký tài khoản | MF-FE02-001, MF-FE02-002; FR-FE02-001 đến FR-FE02-003, FR-FE02-028 đến FR-FE02-030 | FT05; hồi quy CAPTCHA dùng một lần |
+| UC06 | Đăng nhập | MF-FE02-003, MF-FE02-004, MF-FE02-009; FR-FE02-004 đến FR-FE02-006, FR-FE02-008, FR-FE02-009, FR-FE02-027 đến FR-FE02-030 | FT06, FT07; hồi quy đăng ký bị gián đoạn; hồi quy CAPTCHA dùng một lần |
 | UC07 | Đăng xuất | MF-FE02-005; FR-FE02-007 | FT08 |
 | UC08 | Đổi mật khẩu | MF-FE02-006; FR-FE02-010 | Đường dẫn trực tiếp FT09 và hồi quy OTP chuyên dụng |
 | UC09 | Quên mật khẩu | MF-FE02-007; FR-FE02-011 | FT10 |

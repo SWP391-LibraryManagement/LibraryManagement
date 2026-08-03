@@ -215,3 +215,17 @@ Approval of this design authorizes only the files and behavior described here.
 Any SQL persistence, external provider, public debug response, production test
 bypass, or change to non-CAPTCHA authentication behavior requires a new design
 decision.
+
+## 12. Local Implementation Evidence
+
+The approved design has been implemented locally in the isolated PR #111
+worktree. Focused RED-GREEN evidence covers opaque issuance, path rendering,
+one-time consumption including malformed answers, route enforcement, browser
+answer control, and fail-safe submit state.
+
+The fresh local gate on 2026-08-04 passed backend tests and coverage (78 suites,
+1,221 tests), system integration (11 tests), frontend tests (285 tests), lint,
+production build, browser E2E (16 tests), deployment tests (20 tests), secret
+and dependency audits, traceability, import health, and diff checks. H2 was
+approved by the human reviewer. Exact-head CI and H3 integration review remain
+required before merge; this section does not claim H3 completion.

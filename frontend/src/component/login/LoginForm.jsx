@@ -198,7 +198,7 @@ export default function LoginForm({
       <button
         type="submit"
         className="login-button"
-        disabled={isSubmitting || isLocked}
+        disabled={isSubmitting || isLocked || !captcha.captchaToken}
       >
         {isSubmitting ? 'Đang đăng nhập...' : 'Đăng nhập'}
       </button>

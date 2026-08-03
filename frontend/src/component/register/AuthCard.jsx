@@ -256,7 +256,12 @@ export default function AuthCard({
             )}
 
             {!(verificationStep && verificationSuccess) && (
-              <Button type="submit" variant="contained" className="register-submit-btn" disabled={isBusy}>
+              <Button
+                type="submit"
+                variant="contained"
+                className="register-submit-btn"
+                disabled={isBusy || (!verificationStep && !captcha.captchaToken)}
+              >
                 {verificationStep
                   ? (isVerifying ? 'Đang xác thực...' : 'Xác thực email')
                   : (isSubmitting ? 'Đang tạo tài khoản...' : 'Tạo tài khoản')}

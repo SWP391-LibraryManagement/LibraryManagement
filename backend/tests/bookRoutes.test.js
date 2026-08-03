@@ -2,6 +2,7 @@ process.env.BCRYPT_COST = '4';
 process.env.JWT_SECRET = require('crypto').randomBytes(32).toString('hex');
 
 const request = require('supertest');
+const { createAcceptingCaptchaService } = require('./helpers/captchaTestService');
 const { makeInMemoryAuthDependencies } = require('./helpers/inMemoryAuthRepositories');
 const { makeInMemoryBookDependencies } = require('./helpers/inMemoryBookRepositories');
 
@@ -27,7 +28,10 @@ function makeTestApp(initialState = {}) {
 
   const { createApp } = require('../src/app');
   const { defaultAuthService } = require('../src/services/authService');
-  const app = createApp({ authService: defaultAuthService });
+  const app = createApp({
+    authService: defaultAuthService,
+    captchaService: createAcceptingCaptchaService(),
+  });
 
   return { app, authDependencies, bookDependencies, bookCoverStorage };
 }

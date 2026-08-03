@@ -3,12 +3,10 @@ process.env.JWT_SECRET = process.env.JWT_SECRET || require('crypto').randomBytes
 
 const request = require('supertest');
 const { createApp } = require('../src/app');
-const { createCaptcha } = require('../src/utils/captchaUtils');
+const { createAcceptingCaptchaService } = require('./helpers/captchaTestService');
 
 function captchaPayload() {
-  const { captchaToken, image } = createCaptcha();
-  const answer = Buffer.from(image.split(',')[1], 'base64').toString('utf8').match(/<text[^>]*>([A-Z]+)<\/text>/)[1];
-  return { captchaToken, captchaAnswer: answer };
+  return { captchaToken: 'test-captcha-token', captchaAnswer: 'TEST' };
 }
 
 function withProductionHttps(overrides = {}) {
@@ -44,6 +42,7 @@ test('deployed plain-HTTP auth requests are rejected before the auth service see
     withProductionHttps();
     let authCalled = false;
     const app = createApp({
+      captchaService: createAcceptingCaptchaService(),
       authService: {
         login: async () => {
           authCalled = true;
@@ -109,6 +108,7 @@ test('trusted HTTPS termination via X-Forwarded-Proto allows the auth request to
     withProductionHttps({ TRUST_PROXY: 'true' });
     let authCalled = false;
     const app = createApp({
+      captchaService: createAcceptingCaptchaService(),
       authService: {
         login: async () => {
           authCalled = true;
