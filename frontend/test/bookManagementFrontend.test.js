@@ -101,18 +101,17 @@ test('book update exposes catalog status without sending status through metadata
   assert.doesNotMatch(page, /function makePayload[\s\S]*?status:\s*form\.status[\s\S]*?\n\s*}/);
 });
 
-// @spec FR-FE05-029, AC-FE05-020
-test('single-book status update preserves the current canonical list context', async () => {
+// @spec FR-FE05-029, AC-FE05-020, NFR-FE05-UX-004
+test('single-book status update reloads the target status so the changed book stays visible', async () => {
   const { page } = await sources();
 
   assert.match(page, /const statusChanged = updateForm\.status !== selectedBook\.status/);
-  assert.ok((page.match(/status: appliedStatusFilter/g) || []).length >= 2);
+  assert.match(page, /const targetStatus = activating \? 'ACTIVE' : 'INACTIVE'/);
+  assert.ok((page.match(/setAppliedStatusFilter\(targetStatus\)/g) || []).length >= 2);
+  assert.ok((page.match(/status: targetStatus/g) || []).length >= 2);
   assert.ok((page.match(/categoryId: appliedCategoryFilter/g) || []).length >= 2);
   assert.ok((page.match(/q: appliedSearchQuery/g) || []).length >= 2);
-  assert.ok((page.match(/pageNumber: page/g) || []).length >= 2);
-  assert.doesNotMatch(page, /setAppliedStatusFilter\(''\)/);
-  assert.doesNotMatch(page, /loadBooks\(\{ status: '', pageNumber: 1 \}\)/);
-  assert.doesNotMatch(page, /setAppliedStatusFilter\(targetStatus\)/);
+  assert.ok((page.match(/pageNumber: 1/g) || []).length >= 2);
 });
 
 // @spec BR-FE05-011, FR-FE05-032, AC-FE05-023

@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE05 Quản lý sách
 
+## 2026-08-03 - Giữ sách vừa đổi trạng thái hiển thị (v0.6.12)
+
+- Sửa cả luồng đổi trạng thái từ biểu mẫu cập nhật và lệnh trạng thái riêng để chuyển bộ lọc sang trạng thái đã commit, đặt lại trang 1 và tải lại dữ liệu chuẩn.
+- Giữ nguyên tìm kiếm, thể loại, `If-Match`, bước xác nhận và các endpoint trạng thái riêng.
+- Bổ sung kiểm thử hồi quy cho hai điểm vào để tránh giao diện tiếp tục hiển thị trạng thái cũ hoặc làm cuốn sách vừa cập nhật biến mất.
+
 ## 2026-08-02 - Hoàn tất audit nguyên tử cho dữ liệu tham chiếu catalog
 
 - Hoàn tất `FE05-T019` qua commit `e64c636`, PR #95, CI sau merge `30711057582` và staging deployment `30711210037` trên `e01585a`.
