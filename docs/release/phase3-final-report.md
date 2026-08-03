@@ -41,7 +41,7 @@ Bảng bên dưới lưu giữ ảnh chụp nhanh PR #48 Giai đoạn 3 lịch s
 | Tiện ích triển khai | Các kiểm thử 8/8 đã vượt qua. |
 | Tích hợp hệ thống | Các kiểm thử 10/10 đã vượt qua. |
 | Diễn tập trình duyệt | 4/4 luồng Playwright đạt trong 24,4 giây trên các cổng tùy chỉnh. |
-| Gói giao diện người dùng | Mục nhập ban đầu giảm từ 999.203 xuống 320.688 byte (-67,9%); 57 tệp JavaScript theo tuyến. |
+| Gói giao diện người dùng | Mục nhập ban đầu giảm từ 999.203 xuống 320.688 byte (-67,9%); 57 asset theo cấp route. |
 | Thời gian xác thực cục bộ | Đăng nhập p95 66,95 ms; `/auth/me` p95 1,45 ms với bcrypt với hệ số 10. |
 | Môi trường tiền sản xuất Azure | Giao diện người dùng, sức khỏe, danh mục SQL, CORS cho phép/từ chối chính xác và vượt qua kiểm tra tuyến đường được bảo vệ ẩn danh. |
 | Azure đã được xác thực | `c6e0c46421f0` chạy trực tiếp đã vượt qua thông tin đăng nhập quản trị viên/thành viên/thủ thư, các lần đọc được bảo vệ, yêu cầu mượn, phê duyệt và trả sách. |
@@ -70,7 +70,7 @@ tường lửa tạm thời đã bị xóa và chính sách kết nối SQL đư
 
 Bề mặt môi trường tiền sản xuất công khai, luồng vai trò Azure đã được xác thực và phân phối hộp thư
 đến SMTP thực được coi là đã vượt qua. Cuộc chạy trực tiếp sử dụng dữ liệu kiểm thử tổng hợp tạm
-thời; việc dọn dẹp không trả về xác thực, sách và thông báo cố định. Bộ lưu trữ hình đại diện bền
+thời; việc dọn dẹp trả về 0 fixture xác thực, sách và thông báo. Bộ lưu trữ hình đại diện bền
 bỉ, SQL CI dùng chung và SLA sản xuất vẫn còn những hạn chế được ghi nhận.
 
 Sự cố SMTP được bắt nguồn từ cấu trúc cấu hình `SMTP_USER` không đúng định dạng. Cài đặt App

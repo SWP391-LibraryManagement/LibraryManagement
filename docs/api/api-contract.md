@@ -461,7 +461,7 @@ Phản hồi `201`:
 
 Ghi chú:
 
-- Người dùng, hồ sơ, vai trò, mã thông báo thiết lập đã băm và cam kết kiểm tra nguyên tử trước khi phân phối FE10.
+- Người dùng, hồ sơ, vai trò, mã thông báo thiết lập đã băm và bản ghi kiểm toán được cam kết nguyên tử trước khi phân phối FE10.
 - Ủy quyền xác thực/quản trị viên và đầu vào chuẩn hóa được xác thực trước lệnh gọi kho lưu trữ; `email` tối đa là 255 và `fullName` tối đa là 100.
 - Giao dịch nguồn xác nhận lại Quản trị viên đang hoạt động và thực hiện kiểm tra tính duy nhất email/username được chuẩn hóa có thẩm quyền trước khi chèn.
 - Email được chuẩn hóa trùng lặp sẽ trả về `409 EMAIL_ALREADY_EXISTS`, không tồn tại trạng thái nguồn một phần và không yêu cầu gửi FE10.
@@ -493,7 +493,7 @@ Quy tắc:
 
 - Chỉ những tài khoản do quản trị viên tạo chưa hoàn chỉnh mới đủ điều kiện.
 - Giao dịch nguồn xác nhận lại Quản trị viên đang hoạt động trước khi khóa lịch sử thiết lập mục tiêu.
-- FE11 thu hồi mã thông báo thiết lập hoạt động trước đó và tạo token/event/key. mới 24 giờ
+- FE11 thu hồi mã thông báo thiết lập đang hoạt động trước đó và tạo token/event/key mới có thời hạn 24 giờ.
 - Thời gian hồi chiêu phía máy chủ là 60 giây áp dụng cho mỗi tài khoản mục tiêu.
 - Các tài khoản đang hoạt động, bị khóa, tự đăng ký không hoạt động, đã thiết lập xong hoặc bị giới hạn thời gian hồi chiêu đều bị từ chối mà không cấp thông tin xác thực.
 

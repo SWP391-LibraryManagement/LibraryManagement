@@ -58,7 +58,7 @@ Sử dụng các loại mối quan hệ này khi đọc ma trận bên dưới.
 | Loại | Ý nghĩa | Ví dụ |
 | --- | --- | --- |
 | Phụ thuộc xác thực/vai trò | Một chức năng yêu cầu kiểm tra danh tính hoặc vai trò được xác thực. | FE07 yêu cầu vai trò xác thực FE02 và FE11 để phê duyệt lượt mượn. |
-| Sự phụ thuộc của chủ sở hữu dữ liệu | Một chức năng sở hữu dữ liệu mà chức năng khác đọc. | FE06 sở hữu trạng thái sao chép được sử dụng bởi FE07 và FE08. |
+| Sự phụ thuộc của chủ sở hữu dữ liệu | Một chức năng sở hữu dữ liệu mà chức năng khác đọc. | FE06 sở hữu trạng thái bản sao sách được sử dụng bởi FE07 và FE08. |
 | Sự phụ thuộc đủ điều kiện | Một chức năng quyết định liệu người dùng có được phép làm điều gì đó hay không. | Phê duyệt thành viên FE04 ảnh hưởng đến việc vay FE07 và đặt chỗ FE08. |
 | Trình kích hoạt quy trình làm việc | Một chức năng tạo event/hành động cho chức năng khác. | Phê duyệt lượt mượn FE07 kích hoạt thông báo ngày đến hạn của FE10. |
 | Nguồn báo cáo | Một chức năng tạo ra các bản ghi được tổng hợp theo báo cáo. | FE07 mượn hồ sơ cung cấp báo cáo FE12. |

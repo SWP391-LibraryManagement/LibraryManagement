@@ -160,7 +160,7 @@ xóa cơ sở dữ liệu đó.
 3. Nếu cần có quyền truy cập của nhà điều hành, hãy thêm một quy tắc tường lửa tạm thời chính xác cho quyền truy cập hiện tại của nhà điều hành
    IP. Đừng mở rộng phạm vi.
 4. Xác nhận cơ sở dữ liệu được kết nối là `LibraryManagementStaging`.
-5. Thực thi thông qua Trình soạn thảo truy vấn Azure, SSMS hoặc `sqlcmd`: sử dụng lược đồ được tạo một lần cho một khoảng trống
+5. Thực thi thông qua Azure Query Editor, SSMS hoặc `sqlcmd`: sử dụng lược đồ được tạo một lần cho một khoảng trống
 cơ sở dữ liệu hoặc thực hiện các quá trình di chuyển do nhà điều hành sở hữu sau đây một lần và theo
 thứ tự cho cơ sở dữ liệu đã được điều chỉnh trước hiện có:
 
