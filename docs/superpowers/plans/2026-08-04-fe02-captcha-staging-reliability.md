@@ -454,3 +454,5 @@ Request multiple challenges and inspect only image bounds/response structure; ne
 - [ ] Exact post-merge staging serves the CAPTCHA route reliably.
 - [x] H3 blockers are reproduced and remediated with RED-GREEN.
 - [x] H2 re-approves the uncommitted H3 remediation diff.
+- [x] H3 round 2 public-shape blocker is reproduced and remediated with RED-GREEN.
+- [x] H2 re-approves the uncommitted H3 round 2 diff.

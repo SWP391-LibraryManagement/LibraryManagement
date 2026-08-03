@@ -5,10 +5,11 @@
 - Co khoảng cách glyph theo độ dài để challenge 6 chữ cái không bị cắt trong viewport SVG 180x54; test kiểm tra hai biên xoay cùng stroke.
 - Thêm retry đúng một lần cho tải CAPTCHA ban đầu và giữ challenge còn dùng được khi thao tác đổi mã thủ công thất bại.
 - Chặn run staging cũ trước preflight/backend/frontend Azure write bằng so sánh SHA với remote `main`; không dùng hủy concurrency vô điều kiện vì thứ tự khởi chạy không chứng minh độ mới của commit.
-- Bổ sung smoke check bắt buộc `GET /api/auth/captcha` trả image/token/expiry đúng hợp đồng và không có trường answer/digest/hash.
+- Bổ sung smoke check bắt buộc `GET /api/auth/captcha` trả đúng ba trường công khai `image`, `captchaToken`, `expiresIn`; mọi trường bổ sung đều bị từ chối fail-closed.
 - Ghi nhận nguyên nhân staging: run `30847497053` của SHA cũ `908f067` chạy sau run `30855663766` của merge SHA `1f0905f` và ghi đè deployment CAPTCHA.
 - H3 remediation bổ sung lần kiểm tra remote `main` ngay trước từng Azure action và chỉ retry lỗi CAPTCHA tạm thời; HTTP cố định như `404` không retry.
-- Trạng thái FE02-T071: commit `c80c1d8` đã đạt H2 và exact-head CI `30858849852`; remediation cho hai blocker H3 đã đạt relevant/full gates cục bộ và H2 re-review trước commit, đang chờ exact-head CI/H3 mới.
+- H3 round 2 trên head `9ff8555` đạt exact-head CI `30860111663`; Standards không có finding, Spec phát hiện smoke blacklist không chặn tên trường lạ như `solution`. RED-GREEN chuyển sang whitelist đúng ba trường công khai và H2 đã phê duyệt diff trước commit.
+- Trạng thái FE02-T071: H3 REMEDIATION ROUND 2 H2 APPROVED - PENDING EXACT-HEAD CI/H3.
 
 ## 2026-08-04 - Khắc phục bảo mật CAPTCHA dùng một lần
 

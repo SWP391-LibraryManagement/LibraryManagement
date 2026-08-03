@@ -116,6 +116,7 @@ valid only when its checked-out SHA is still current `main`.
 The smoke script shall call `GET /api/auth/captcha` and require:
 
 - HTTP 200;
+- exactly the three public fields `image`, `captchaToken`, and `expiresIn`;
 - an SVG data URI in `image`;
 - an opaque base64url `captchaToken` of the approved public shape;
 - `expiresIn: 300`;
@@ -204,3 +205,15 @@ package/build work and directly before each Azure action. CAPTCHA retry now
 allows only network/no-response failures, HTTP 408, 425, 429, and 5xx; a 404 is
 attempted once. RED-GREEN and affected full gates pass, but the remediation
 received H2 re-review approval before its implementation commit.
+
+## 11. H3 Remediation Round 2
+
+Exact-head CI `30860111663` passed on PR #115 head `9ff8555`. H3 Standards found
+no violation. H3 Spec found that the smoke check rejected only field names
+matching `answer|digest|hash`, so an unexpected public field such as `solution`
+could pass despite the approved three-field response contract.
+
+RED reproduced the gap with a fixture containing `solution`. The minimal GREEN
+change replaces the name blacklist with an exact whitelist of `image`,
+`captchaToken`, and `expiresIn`; focused smoke tests pass `14/14`. H2 re-review
+approved the complete round 2 diff before its implementation commit.

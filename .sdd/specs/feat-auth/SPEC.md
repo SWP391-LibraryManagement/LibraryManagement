@@ -3,7 +3,7 @@
 ## CAPTCHA đăng nhập và đăng ký
 
 - BR-FE02-029: Trước khi tạo tài khoản hoặc xác thực thông tin đăng nhập, Khách phải giải CAPTCHA gồm 4-6 chữ cái Latin do máy chủ phát hành. Máy chủ phải giữ bộ xác minh đáp án, thời hạn và trạng thái đã sử dụng; token công khai phải là giá trị ngẫu nhiên opaque và chỉ hợp lệ cho một lần xác minh.
-- FR-FE02-028: `GET /api/auth/captcha` phải trả về ảnh SVG không chứa text hoặc metadata làm lộ đáp án, cùng `captchaToken` ngẫu nhiên opaque hết hạn sau 5 phút. Cả 4-6 glyph phải hiển thị đầy đủ trong viewport SVG 180x54. Bộ nhớ challenge trong tiến trình phải giới hạn tối đa 5.000 bản ghi cho kiến trúc một instance đã phê duyệt.
+- FR-FE02-028: `GET /api/auth/captcha` phải trả đúng ba trường công khai `image`, `captchaToken`, `expiresIn`; không được trả thêm trường công khai khác. `image` là ảnh SVG không chứa text hoặc metadata làm lộ đáp án, `captchaToken` là giá trị ngẫu nhiên opaque hết hạn sau 5 phút và `expiresIn` bằng `300`. Cả 4-6 glyph phải hiển thị đầy đủ trong viewport SVG 180x54. Bộ nhớ challenge trong tiến trình phải giới hạn tối đa 5.000 bản ghi cho kiến trúc một instance đã phê duyệt.
 - FR-FE02-029: `POST /api/auth/register` và `POST /api/auth/login` phải yêu cầu và tiêu thụ `captchaToken` cùng `captchaAnswer` trước khi dispatch service, so sánh đáp án sau trim và không phân biệt hoa thường.
 - FR-FE02-030: CAPTCHA thiếu, hết hạn, không tồn tại, đã dùng, bị replay hoặc sai phải trả `400 CAPTCHA_INVALID`; khi kho challenge đầy, hệ thống phải fail-closed và không dispatch service xác thực. Giao diện phải giữ dữ liệu biểu mẫu, hiển thị lỗi tiếng Việt, thử lại đúng một lần khi lần tải ban đầu thất bại do lỗi mạng/timeout hoặc HTTP `408`/`425`/`429`/`5xx`, không retry lỗi HTTP cố định khác, giữ challenge còn dùng được nếu thao tác đổi mã thủ công thất bại và tải challenge mới sau `CAPTCHA_INVALID`.
 - AC-FE02-027: Challenge đúng và còn hạn chỉ cho phép luồng đăng ký/đăng nhập hiện có tiếp tục đúng một lần. Challenge sai hoặc replay không được tạo người dùng, OTP, phiên, bản ghi login failure hoặc audit xác thực.
@@ -15,9 +15,9 @@
 | POST | `/api/auth/register` | Khách | Payload đăng ký hiện có cộng `{ captchaToken: string, captchaAnswer: string }` | Hợp đồng hiện có | Từ chối `400 CAPTCHA_INVALID` trước khi tạo bất kỳ trạng thái nào. |
 | POST | `/api/auth/login` | Khách | `{ email: string, password: string, captchaToken: string, captchaAnswer: string }` | Hợp đồng hiện có | Từ chối `400 CAPTCHA_INVALID` trước khi kiểm tra mật khẩu hoặc ghi nhận thất bại đăng nhập. |
 
-# Phiên bản: 0.6.25
+# Phiên bản: 0.6.26
 
-# Trạng thái: FE02-T071 H3 REMEDIATION H2 APPROVED - PENDING EXACT-HEAD CI/H3
+# Trạng thái: FE02-T071 H3 REMEDIATION ROUND 2 H2 APPROVED - PENDING EXACT-HEAD CI/H3
 
 # Chủ sở hữu: Dat
 
@@ -679,7 +679,7 @@ Các quyết định sau đây đã được phê duyệt trong gói đánh giá
 | AC-FE02-024 | Request HTTP tới namespace API đã triển khai bị chuyển hướng hoặc từ chối trước khi xử lý credential/token; health/static exclusions vẫn hoạt động | NFR-FE02-SEC-003 | BR-FE02-017 | `backend/tests/httpsEnforcement.test.js` | COMPLETE - PR #95; CI `30711057582`; staging `30711210037` |
 | AC-FE02-025 | Trao đổi mã thông báo làm mới trả về mã thông báo truy cập mới và mã thông báo làm mới tương tự mà không yêu cầu mã thông báo truy cập | FR-FE02-026 | BR-FE02-010 | Các trường hợp mã thông báo làm mới `backend/tests/authRoutes.test.js` | Được chấp nhận; bằng chứng tự động được ghi lại |
 | AC-FE02-026 | Thông tin xác thực chính xác của tài khoản tự đăng ký đang chờ xử lý trả về yêu cầu xác minh và định tuyến máy khách đến `/verify-email`; trạng thái không hoạt động không đủ điều kiện vẫn nhận phản hồi chung | FR-FE02-027 | BR-FE02-004, BR-FE02-007, BR-FE02-025, BR-FE02-028 | `backend/tests/authRoutes.test.js`; `frontend/test/verificationRecoveryFrontend.test.js` | Được chấp nhận; bằng chứng tự động được ghi lại |
-| AC-FE02-027 | CAPTCHA opaque dùng một lần cho phép đúng một lần dispatch đăng nhập/đăng ký hợp lệ; challenge sai, hết hạn, replay hoặc không khả dụng bị chặn trước thay đổi trạng thái xác thực | FR-FE02-028, FR-FE02-029, FR-FE02-030 | BR-FE02-029 | `backend/tests/captchaService.test.js`; `backend/tests/captchaRoutes.test.js`; `frontend/test/captchaFrontend.test.js`; `frontend/test/captchaRecovery.test.js`; browser E2E | COMPLETE IN PR #111; FE02-T071 H3 REMEDIATION H2 APPROVED - PENDING EXACT-HEAD CI/H3 |
+| AC-FE02-027 | CAPTCHA opaque dùng một lần cho phép đúng một lần dispatch đăng nhập/đăng ký hợp lệ; challenge sai, hết hạn, replay hoặc không khả dụng bị chặn trước thay đổi trạng thái xác thực | FR-FE02-028, FR-FE02-029, FR-FE02-030 | BR-FE02-029 | `backend/tests/captchaService.test.js`; `backend/tests/captchaRoutes.test.js`; `frontend/test/captchaFrontend.test.js`; `frontend/test/captchaRecovery.test.js`; browser E2E | COMPLETE IN PR #111; FE02-T071 H3 REMEDIATION ROUND 2 H2 APPROVED - PENDING EXACT-HEAD CI/H3 |
 
 ### Yêu cầu chức năng về hành vi không mong muốn FE02 liên kết với nguồn và kiểm thử
 
@@ -695,7 +695,7 @@ Các quyết định sau đây đã được phê duyệt trong gói đánh giá
 | FR-FE02-023 | Bảo toàn trạng thái nguồn và ngữ nghĩa công khai an toàn khi requester gắn với FE02 hoặc nhà cung cấp gửi thất bại | EC-FE02-009 | BR-FE02-022, Q-FE02-012 | FT05, FT10 | Được chấp nhận; bằng chứng tự động được ghi lại |
 | FR-FE02-025 | Từ chối hoàn thành thiết lập không hợp lệ hoặc mất đồng thời mà không có trạng thái một phần | EC-FE02-016, EC-FE02-017 | BR-FE02-024, BR-FE02-025, Q-FE02-013 | FT11 | Được chấp nhận; bằng chứng tự động được ghi lại |
 | FR-FE02-026 | Dùng mã thông báo làm mới hợp lệ để cấp mã thông báo truy cập mới và từ chối thông tin xác thực làm mới đã hết hạn/đã dùng/bị thu hồi | Q-FE02-002, Q-FE02-016 | BR-FE02-010 | Các trường hợp mã thông báo làm mới `backend/tests/authRoutes.test.js` | Được chấp nhận; bằng chứng tự động được ghi lại |
-| FR-FE02-030 | Từ chối CAPTCHA thiếu, hết hạn, không tồn tại, đã dùng, replay hoặc sai trước khi dispatch service xác thực; chỉ retry lỗi tải tạm thời và không xóa challenge còn dùng được | EC-FE02-019 | BR-FE02-029 | `backend/tests/captchaService.test.js`; `backend/tests/captchaRoutes.test.js`; `frontend/test/captchaFrontend.test.js`; `frontend/test/captchaRecovery.test.js` | FE02-T071 H3 REMEDIATION H2 APPROVED - PENDING EXACT-HEAD CI/H3 |
+| FR-FE02-030 | Từ chối CAPTCHA thiếu, hết hạn, không tồn tại, đã dùng, replay hoặc sai trước khi dispatch service xác thực; chỉ retry lỗi tải tạm thời và không xóa challenge còn dùng được | EC-FE02-019 | BR-FE02-029 | `backend/tests/captchaService.test.js`; `backend/tests/captchaRoutes.test.js`; `frontend/test/captchaFrontend.test.js`; `frontend/test/captchaRecovery.test.js` | FE02-T071 H3 REMEDIATION ROUND 2 H2 APPROVED - PENDING EXACT-HEAD CI/H3 |
 
 ### Tóm tắt độ bao phủ (FE02)
 - **Tổng AC**: 27 (AC-FE02-001 đến AC-FE02-027) - tất cả được ánh xạ.

@@ -5,10 +5,10 @@
 - Giữ viewport SVG 180x54 và tính khoảng cách glyph theo độ dài để cả challenge 4-6 chữ cái luôn hiển thị đầy đủ, kể cả ở hai biên xoay.
 - Frontend thử lại đúng một lần chỉ với lỗi mạng/timeout hoặc HTTP `408`/`425`/`429`/`5xx`; thao tác đổi mã thủ công chỉ gọi một lần và không xóa challenge còn dùng được nếu request thay thế thất bại.
 - Workflow staging giữ concurrency tuần tự, so sánh SHA checkout với remote `main` tại preflight/backend/frontend và kiểm tra lại ngay trước mỗi Azure action; run cũ không được đi tới bước ghi Azure.
-- Smoke test gọi `GET /api/auth/captcha`, xác minh response công khai an toàn và fail-closed nếu route thiếu, token/image/expiry sai hoặc có trường làm lộ verifier.
+- Smoke test gọi `GET /api/auth/captcha`, chỉ chấp nhận đúng ba trường công khai `image`, `captchaToken`, `expiresIn` và fail-closed nếu route thiếu, giá trị sai hoặc có bất kỳ trường bổ sung nào.
 - Không đổi token, TTL, capacity, storage, API shape, dependency hoặc luồng xác thực ngoài CAPTCHA.
 
-Trạng thái: H3 REMEDIATION H2 APPROVED - PENDING EXACT-HEAD CI/H3
+Trạng thái: H3 REMEDIATION ROUND 2 H2 APPROVED - PENDING EXACT-HEAD CI/H3
 Ngày: 2026-08-04
 Chủ sở hữu: Dat
 

@@ -129,6 +129,12 @@ for (const [name, captchaPayload] of [
     expiresIn: 300,
     metadata: { answerDigest: 'not-public' },
   }],
+  ['unexpected public field', {
+    image: 'data:image/svg+xml;base64,PHN2Zy8+',
+    captchaToken: 'A'.repeat(43),
+    expiresIn: 300,
+    solution: 'ABCD',
+  }],
 ]) {
   test(`fails when the CAPTCHA response contains ${name}`, async () => {
     const fixture = await startFixture({ captchaPayload });

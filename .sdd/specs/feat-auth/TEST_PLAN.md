@@ -9,10 +9,10 @@
 - Browser E2E lấy đáp án qua endpoint `/__e2e__/captcha-answer` của test server; production Express app không có endpoint trả đáp án hoặc fake CAPTCHA service.
 - Renderer test biến đổi endpoint của path tại hai biên xoay và chứng minh cả 6 glyph cùng stroke nằm trong viewport 180px.
 - Frontend utility test chứng minh lần tải ban đầu thử tối đa 2 lần với lỗi tạm thời nhưng chỉ 1 lần với HTTP `404`; source-contract test chứng minh đổi mã thủ công không xóa challenge còn dùng được khi request thay thế thất bại.
-- Deployment policy test chứng minh preflight/backend/frontend đều so sánh SHA với remote `main`, đồng thời backend/frontend kiểm tra lại ngay trước Azure action; smoke test từ chối route CAPTCHA thiếu hoặc response công khai không an toàn.
+- Deployment policy test chứng minh preflight/backend/frontend đều so sánh SHA với remote `main`, đồng thời backend/frontend kiểm tra lại ngay trước Azure action; smoke test từ chối route CAPTCHA thiếu, giá trị sai hoặc bất kỳ trường ngoài `image`, `captchaToken`, `expiresIn`.
 
-Phiên bản: 0.3.19
-Trạng thái: FE02-T071 H3 REMEDIATION H2 APPROVED - PENDING EXACT-HEAD CI/H3
+Phiên bản: 0.3.20
+Trạng thái: FE02-T071 H3 REMEDIATION ROUND 2 H2 APPROVED - PENDING EXACT-HEAD CI/H3
 Cập nhật lần cuối: 2026-08-04
 
 Đặc tả nguồn: `.sdd/specs/feat-auth/SPEC.md`
