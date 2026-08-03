@@ -120,6 +120,7 @@ Expected staged paths before commit: chỉ `M docs/deployment/azure-staging-guid
 - Modify: `.sdd/specs/feat-auth/TASKS.md`
 - Modify: `.sdd/specs/feat-book-management/CHANGELOG.md`
 - Modify: `.sdd/specs/feat-book-management/TASKS.md`
+- Modify: `.sdd/specs/feat-borrowing-management/CHANGELOG.md`
 - Modify: `.sdd/specs/feat-user-role-management/CHANGELOG.md`
 - Modify: `.sdd/specs/feat-user-role-management/SPEC.md`
 - Modify: `.sdd/specs/feat-user-role-management/TASKS.md`
@@ -135,14 +136,14 @@ Expected staged paths before commit: chỉ `M docs/deployment/azure-staging-guid
 Run:
 
 ```powershell
-git diff -- .sdd/specs/feat-auth/CHANGELOG.md .sdd/specs/feat-auth/SPEC.md .sdd/specs/feat-auth/TASKS.md .sdd/specs/feat-book-management/CHANGELOG.md .sdd/specs/feat-book-management/TASKS.md .sdd/specs/feat-user-role-management/CHANGELOG.md .sdd/specs/feat-user-role-management/SPEC.md .sdd/specs/feat-user-role-management/TASKS.md
+git diff -- .sdd/specs/feat-auth/CHANGELOG.md .sdd/specs/feat-auth/SPEC.md .sdd/specs/feat-auth/TASKS.md .sdd/specs/feat-book-management/CHANGELOG.md .sdd/specs/feat-book-management/TASKS.md .sdd/specs/feat-borrowing-management/CHANGELOG.md .sdd/specs/feat-user-role-management/CHANGELOG.md .sdd/specs/feat-user-role-management/SPEC.md .sdd/specs/feat-user-role-management/TASKS.md
 ```
 
 Expected: chỉ thay đổi tài liệu; không có ID mới, xóa ID, đổi enum, đổi role hoặc mở rộng acceptance criteria.
 
 - [ ] **Step 2: Sửa từng lỗi dịch làm đổi nghĩa**
 
-Áp dụng các quy tắc cụ thể sau cho cả tám file:
+Áp dụng các quy tắc cụ thể sau cho cả chín file:
 
 ```text
 Giữ nguyên: BR-*, FR-*, AC-*, NFR-*, TD-*, enum, endpoint, field, role MEMBER/LIBRARIAN/ADMIN.
@@ -171,12 +172,12 @@ Run:
 
 ```powershell
 git diff --check -- .sdd/specs/feat-auth .sdd/specs/feat-book-management .sdd/specs/feat-user-role-management
-git add -- .sdd/specs/feat-auth/CHANGELOG.md .sdd/specs/feat-auth/SPEC.md .sdd/specs/feat-auth/TASKS.md .sdd/specs/feat-book-management/CHANGELOG.md .sdd/specs/feat-book-management/TASKS.md .sdd/specs/feat-user-role-management/CHANGELOG.md .sdd/specs/feat-user-role-management/SPEC.md .sdd/specs/feat-user-role-management/TASKS.md
+git add -- .sdd/specs/feat-auth/CHANGELOG.md .sdd/specs/feat-auth/SPEC.md .sdd/specs/feat-auth/TASKS.md .sdd/specs/feat-book-management/CHANGELOG.md .sdd/specs/feat-book-management/TASKS.md .sdd/specs/feat-borrowing-management/CHANGELOG.md .sdd/specs/feat-user-role-management/CHANGELOG.md .sdd/specs/feat-user-role-management/SPEC.md .sdd/specs/feat-user-role-management/TASKS.md
 git diff --cached --name-status
 git commit -m "docs: reconcile Vietnamese feature specifications"
 ```
 
-Expected staged paths before commit: đúng tám file được liệt kê trong task này.
+Expected staged paths before commit: đúng chín file được liệt kê trong task này.
 
 ---
 
