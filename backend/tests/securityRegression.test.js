@@ -13,6 +13,7 @@ jest.mock('../src/controllers/bookController', () => {
     updateBook: ok,
     deactivateBook: ok,
     reactivateBook: ok,
+    deleteBook: ok,
   };
 });
 

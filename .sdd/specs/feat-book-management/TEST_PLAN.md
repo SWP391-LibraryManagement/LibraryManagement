@@ -36,7 +36,8 @@ Quản lý danh mục sách cho nhân sự được phân quyền, gồm tạo, 
 - `PUT /books/:bookId`: luồng cập nhật hợp lệ, không tìm thấy, trường không hợp lệ.
 - `PATCH /books/:bookId/deactivate`: lý do, `If-Match` khớp, không tìm thấy, xung đột.
 - `PATCH /books/:bookId/reactivate`: lý do, `If-Match` khớp, chuyển trạng thái không hợp lệ, xung đột.
-- Kiểm tra vai trò: người không phải quản lý không thể tạo/cập nhật/ngừng kích hoạt.
+- `DELETE /books/:bookId`: xóa đúng sách không có bản sao, audit nguyên tử, `If-Match`, lý do và từ chối `BOOK_HAS_DEPENDENCIES`.
+- Kiểm tra vai trò: người không phải quản lý không thể tạo/cập nhật/đổi trạng thái/xóa.
 - Tạo/cập nhật multipart: `metadata` được tuần tự hóa, `cover` tùy chọn, bù trừ khi dữ liệu cũ/lỗi, và tương thích JSON.
 
 ## 4. Luồng chấp nhận E2E / thủ công
@@ -46,7 +47,8 @@ Quản lý danh mục sách cho nhân sự được phân quyền, gồm tạo, 
 - Thủ thư/quản trị viên ngừng kích hoạt và kích hoạt lại một sách, có xác nhận và lý do.
 - Duyệt công khai chỉ phản ánh dữ liệu danh mục đang hoạt động.
 - Nhân sự chọn và xem trước ảnh bìa cục bộ khi tạo/cập nhật; ảnh do hệ thống quản lý đã lưu hiển thị trên giao diện nhân sự và công khai.
-- Nhân sự thay đổi trạng thái danh mục trong biểu mẫu cập nhật; danh sách chuyển sang trạng thái mới và tải lại thay vì ẩn bản ghi vừa cập nhật theo bộ lọc cũ.
+- Nhân sự thay đổi trạng thái danh mục trong biểu mẫu cập nhật; danh sách tải lại tất cả trạng thái và mỗi hàng giữ trạng thái chuẩn riêng.
+- Nhân sự xóa vĩnh viễn một sách chưa có bản sao; sách có bản sao bị chặn và dữ liệu liên quan giữ nguyên.
 
 ## 5. Bằng chứng hiện có
 

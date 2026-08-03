@@ -421,7 +421,7 @@ describe('FE05 book management v0.5.1 RED contract', () => {
   });
 
   // @spec AC-FE05-009, BR-FE05-002 through BR-FE05-004, FR-FE05-015
-  test('guest and member cannot create, update, deactivate, or reactivate books', async () => {
+  test('guest and member cannot create, update, change status, or delete books', async () => {
     const { app, authDependencies } = makeTestApp();
     const member = await createVerifiedUser({
       app,
@@ -452,6 +452,17 @@ describe('FE05 book management v0.5.1 RED contract', () => {
       .patch('/api/books/3/reactivate')
       .set('Authorization', memberAuth)
       .set('If-Match', 'book-v3')
+      .send({ reason: 'Forbidden' })
+      .expect(403);
+    await request(app)
+      .delete('/api/books/1')
+      .set('If-Match', 'book-v1')
+      .send({ reason: 'Forbidden' })
+      .expect(401);
+    await request(app)
+      .delete('/api/books/1')
+      .set('Authorization', memberAuth)
+      .set('If-Match', 'book-v1')
       .send({ reason: 'Forbidden' })
       .expect(403);
   });
@@ -622,6 +633,7 @@ describe('FE05 book management v0.5.1 RED contract', () => {
     ['PUT', '/api/books/1', { ...VALID_BOOK, isbn: '9780132350884' }],
     ['PATCH', '/api/books/1/deactivate', { reason: 'Catalog retirement' }],
     ['PATCH', '/api/books/3/reactivate', { reason: 'Catalog restored' }],
+    ['DELETE', '/api/books/1', { reason: 'Catalog removal' }],
   ])('%s %s rejects missing and stale If-Match without mutation', async (method, endpoint, body) => {
     for (const version of [undefined, 'stale-book-version']) {
       const { app, staff, bookDependencies } = await makeStaffSetup();
@@ -707,6 +719,56 @@ describe('FE05 book management v0.5.1 RED contract', () => {
     expect(bookDependencies.state.borrowDetails).toEqual(before.borrowDetails);
     expect(bookDependencies.state.reservations).toEqual(before.reservations);
     expect(authDependencies.state.auditLogs.at(-1)).toMatchObject({ action: 'BOOK_REACTIVATE' });
+  });
+
+  // @spec BR-FE05-023, FR-FE05-033, AC-FE05-024
+  test('hard delete removes only the selected dependency-free book and writes audit', async () => {
+    const { app, staff, authDependencies, bookDependencies, bookCoverStorage } = await makeStaffSetup();
+    const createResponse = await request(app)
+      .post('/api/books')
+      .set('Authorization', authHeader(staff.accessToken))
+      .send({
+        ...VALID_BOOK,
+        title: 'Temporary catalog record',
+        isbn: '9780000000099',
+        coverUrl: '/uploads/book-covers/temporary.png',
+      })
+      .expect(201);
+    const created = responseBook(createResponse.body);
+    const otherBooksBefore = bookDependencies.state.books.filter((book) => book.id !== created.id);
+
+    const response = await request(app)
+      .delete(`/api/books/${created.id}`)
+      .set('Authorization', authHeader(staff.accessToken))
+      .set('If-Match', created.version)
+      .send({ reason: 'Duplicate catalog record' });
+
+    expect(response.status).toBe(200);
+    expect(responseBook(response.body)).toMatchObject({ id: created.id });
+    expect(bookDependencies.state.books).toEqual(otherBooksBefore);
+    expect(authDependencies.state.auditLogs.at(-1)).toMatchObject({
+      action: 'BOOK_DELETE',
+      targetId: created.id,
+      metadata: expect.objectContaining({ reason: 'Duplicate catalog record' }),
+    });
+    expect(bookCoverStorage.deleteBookCoverFile)
+      .toHaveBeenCalledWith('/uploads/book-covers/temporary.png');
+  });
+
+  // @spec BR-FE05-023, FR-FE05-033, AC-FE05-024
+  test('hard delete rejects a book with copies and preserves all related data', async () => {
+    const { app, staff, bookDependencies } = await makeStaffSetup();
+    const before = bookDependencies.snapshot();
+
+    const response = await request(app)
+      .delete('/api/books/1')
+      .set('Authorization', authHeader(staff.accessToken))
+      .set('If-Match', 'book-v1')
+      .send({ reason: 'Attempt to remove referenced book' });
+
+    expect(response.status).toBe(409);
+    expect(response.body.error.code).toBe('BOOK_HAS_DEPENDENCIES');
+    expectStateUnchanged(bookDependencies, before);
   });
 
   // @spec AC-FE05-016, BR-FE05-018, FR-FE05-025

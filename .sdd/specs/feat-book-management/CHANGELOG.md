@@ -1,5 +1,10 @@
 # CHANGELOG.md - FE05 Quản lý sách
 
+## 2026-08-03 - Xóa vật lý có bảo vệ và hiển thị trạng thái độc lập (v0.6.13)
+
+- Sau lệnh trạng thái, hiển thị tất cả trạng thái từ dữ liệu chuẩn để các sách không bị tác động không có vẻ đổi theo sách được chọn.
+- Thêm xóa vật lý riêng cho sách chưa có bản sao, với `If-Match`, xác nhận, lý do và audit nguyên tử.
+- Từ chối xóa sách có bản sao/lịch sử bằng `409 BOOK_HAS_DEPENDENCIES` để bảo toàn dữ liệu nghiệp vụ.
 ## 2026-08-04 - Vệ sinh dữ liệu catalog staging và danh sách nhiều trạng thái (v0.6.13)
 
 - Sau lệnh trạng thái một sách, giữ tìm kiếm/thể loại nhưng chuyển bộ lọc trạng thái sang `Tất cả trạng thái` để các hàng không bị ảnh hưởng vẫn hiển thị trạng thái riêng.

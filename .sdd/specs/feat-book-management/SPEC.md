@@ -192,7 +192,7 @@ Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
 - BR-FE05-011: Tính khả dụng công khai khác với khả năng hiển thị trong danh mục; `Books.Status` kiểm soát sách hoạt động/không hoạt động có được hiển thị trong danh mục hay không, còn `BookCopies.Status` do FE06 sở hữu cung cấp nguồn tính khả dụng chỉ đọc.
 - BR-FE05-012: FE05 không được tạo hoặc tự chuyển đổi `BookCopies.Status`; thay đổi vòng đời bản sao thuộc FE06, FE07 hoặc FE08 theo quy trình của tính năng sở hữu.
 - BR-FE05-013: Đối với một cuốn sách `ACTIVE`, tính khả dụng công khai là `AVAILABLE` chỉ khi có ít nhất một bản sao liên quan có `BookCopies.Status = AVAILABLE`; nếu không thì đó là `UNAVAILABLE`. Một cuốn sách `INACTIVE` không bao giờ được hiển thị công khai hoặc có thể mượn được bất kể trạng thái bản sao.
-- BR-FE05-014: `Books.Status` có chính xác hai trạng thái, `ACTIVE` và `INACTIVE`; các chuyển tiếp hợp lệ được tạo -> `ACTIVE`, `ACTIVE -> INACTIVE`, và `INACTIVE -> ACTIVE`. Việc xóa vật lý bị cấm trong Giai đoạn 1.
+- BR-FE05-014: `Books.Status` có chính xác hai trạng thái, `ACTIVE` và `INACTIVE`; các chuyển tiếp hợp lệ được tạo -> `ACTIVE`, `ACTIVE -> INACTIVE`, và `INACTIVE -> ACTIVE`.
 - BR-FE05-015: Vô hiệu hóa/kích hoạt lại chỉ thay đổi `Books.Status`; FE05 không bao giờ ghi lại các hàng bản sao, khoản mượn, đặt chỗ hoặc lịch sử liên quan.
 - BR-FE05-016: Mỗi lần cập nhật/vô hiệu hóa/kích hoạt lại sách hiện có đều yêu cầu `If-Match` chứa SQL `rowversion` mà người gọi đã thấy gần nhất; phiên bản cũ hoặc bị thiếu trả về `409 STALE_BOOK_STATE` mà không thay đổi dữ liệu.
 - BR-FE05-017: Truy vấn sách sử dụng các điều khiển xác định: độ dài từ khóa 1..200 khi được cung cấp; `page` mặc định là 1; `limit` mặc định là 20 và phải là 1..100. `/api/books` công khai chỉ chấp nhận `q`, `categoryId`, `authorId`, `publisherId`, `page` và `limit`; `q` công khai chỉ khớp với tiêu đề/tác giả và kết quả không bao gồm ISBN. `/api/admin/books` dành cho nhân viên có thể khớp tiêu đề, ISBN, tác giả, danh mục hoặc nhà xuất bản và chấp nhận thêm các trường sắp xếp `title`, `publishYear` hoặc `createdAt` cùng thứ tự `asc` hoặc `desc`.
@@ -201,6 +201,7 @@ Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
 - BR-FE05-020: Nếu thao tác tạo/cập nhật thất bại sau khi lưu tệp bìa mới thì phải xóa tệp chưa commit đó. Khi thay thế thành công, hệ thống giữ đường dẫn mới đã commit và chỉ xóa tệp trước nếu đường dẫn đó do FE05 quản lý; không bao giờ xóa đường dẫn bên ngoài hoặc không được quản lý.
 - BR-FE05-021: Biểu mẫu sách của Thủ thư/Quản trị viên chỉ được đọc các lựa chọn danh mục, tác giả và nhà xuất bản `ACTIVE` từ FE05. Chỉ Quản trị viên được thay đổi các bản ghi tham chiếu này qua tích hợp Thư viện quản trị FE11.
 - BR-FE05-022: Backend đã triển khai chưa sẵn sàng phục vụ danh mục cho đến khi `Authors`, `Publishers` và `Categories` đều có `Status` chuẩn cùng cột `CreatedAt` do cơ sở dữ liệu tạo. Trước khi nhận lưu lượng HTTP, tiến trình khởi động backend phải áp dụng migration tương thích siêu dữ liệu chuẩn đã được review trong một giao dịch và xác minh hậu điều kiện; nếu không thể hoàn tất đối soát, tiến trình phải khởi động thất bại thay vì phục vụ danh mục chỉ tương thích một phần.
+- BR-FE05-023: Thủ thư/Quản trị viên được xóa vật lý một sách chỉ khi sách chưa có bất kỳ `BookCopies` nào; sách có bản sao hoặc lịch sử liên quan phải bị từ chối để bảo toàn dữ liệu mượn, trả và đặt chỗ. Xóa yêu cầu `If-Match`, lý do và audit nguyên tử.
 
 
 ---
@@ -238,10 +239,12 @@ Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
 - FR-FE05-026: NẾU `pages` không phải là số nguyên từ 1 đến 10,000, hoặc `rating` nằm ngoài 0.0 đến 5.0 hoặc có nhiều hơn một chữ số thập phân khi tạo/cập nhật, hệ thống sẽ từ chối yêu cầu với xác thực cấp trường và không thay đổi bản ghi. (Nguồn: EC-FE05-017, Phần 10.2)
 - FR-FE05-027: KHI Thủ thư/Quản trị viên tạo hoặc cập nhật sách bằng `multipart/form-data`, hệ thống sẽ đọc siêu dữ liệu sách JSON từ `metadata`, xác thực và lưu ảnh `cover` tùy chọn theo đường dẫn do máy chủ tạo, lưu đường dẫn đó dưới dạng `Books.CoverUrl` và trả về qua các lần đọc sách dành cho nhân viên/công khai.
 - FR-FE05-028: NẾU bìa được cung cấp thiếu siêu dữ liệu nhiều phần bắt buộc, vượt quá 2 MB, có loại/chữ ký không được hỗ trợ hoặc không khớp, hoặc thao tác thay đổi sách liên quan thất bại, hệ thống phải từ chối hoặc bù trừ thao tác mà không thay đường dẫn bìa đã commit hay giữ lại tệp được quản lý chưa commit.
+- FR-FE05-029: KHI một trong hai điểm vào thay đổi trạng thái của nhân viên chuyển một cuốn sách giữa `ACTIVE` và `INACTIVE`, frontend phải giữ nguyên ngữ cảnh tìm kiếm và thể loại, chuyển bộ lọc sang tất cả trạng thái, đặt lại trang 1 và tải lại danh sách chuẩn từ máy chủ. Mỗi hàng tiếp tục hiển thị `Books.Status` riêng do máy chủ trả về; frontend không được gán trạng thái của sách đã chọn cho các hàng khác.
 - FR-FE05-029: KHI một trong hai điểm vào thay đổi trạng thái của nhân viên chuyển một cuốn sách giữa `ACTIVE` và `INACTIVE`, frontend phải giữ nguyên ngữ cảnh tìm kiếm và thể loại, chuyển bộ lọc trạng thái sang `Tất cả trạng thái`, đặt lại trang 1 và tải lại danh sách chuẩn nhiều trạng thái từ máy chủ để các sách không bị ảnh hưởng không bị trình bày như thể đã nhận cùng trạng thái đích.
 - FR-FE05-030: KHI Thủ thư/Quản trị viên đã xác thực yêu cầu `/api/books/metadata`, hệ thống sẽ chỉ trả về các lựa chọn danh mục/tác giả/nhà xuất bản đang hoạt động; yêu cầu của Khách/Thành viên sẽ bị từ chối và không bản ghi tham chiếu nào bị thay đổi.
 - FR-FE05-031: KHI bắt đầu khởi động backend, hệ thống sẽ áp dụng migration tương thích siêu dữ liệu đã được review trước khi lắng nghe và xác minh các cột siêu dữ liệu chuẩn; NẾU migration hoặc bước xác minh thất bại, backend sẽ không lắng nghe. KHI kiểm tra mức sẵn sàng qua `/health/ready`, hệ thống sẽ thực hiện xác minh chỉ đọc và trả về HTTP `503` với kết quả `not_ready` an toàn nếu sau này xảy ra sai lệch lược đồ hoặc lỗi cơ sở dữ liệu.
 - FR-FE05-032: KHI Thủ thư/Quản trị viên xem danh sách quản lý, cột `Trạng thái catalog` phải hiển thị `Books.Status` chuẩn thay vì tình trạng sẵn có của bản sao được FE06 suy ra độc lập, để kết quả của lệnh kích hoạt/vô hiệu hóa hiển thị trên sách đã cập nhật.
+- FR-FE05-033: KHI Thủ thư/Quản trị viên gửi `DELETE /api/books/{bookId}` với `If-Match` và lý do hợp lệ cho sách không có bản sao, hệ thống phải ghi `BOOK_DELETE` và xóa đúng sách trong cùng giao dịch; NẾU sách có bản sao hoặc lịch sử liên quan, hệ thống trả `409 BOOK_HAS_DEPENDENCIES` và không xóa dữ liệu nào.
 
 ---
 
@@ -266,10 +269,12 @@ Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
 - AC-FE05-017: Với `pages` hoặc `rating` không hợp lệ, khi nhân viên tạo hoặc cập nhật sách thì FE05 trả về xác thực cấp trường và giữ nguyên trạng thái sách, bản sao, quy trình làm việc và kiểm tra.
 - AC-FE05-018: Cho trước Thủ thư/Quản trị viên chọn một bìa JPG/PNG/WebP cục bộ hợp lệ trong biểu mẫu tạo hoặc cập nhật sách, khi xem lại và gửi biểu mẫu thì UI xem trước ảnh đã chọn, gửi siêu dữ liệu nhiều phần cùng `cover`, và bìa được quản lý trả về hiển thị trong giao diện nhân viên lẫn công khai.
 - AC-FE05-019: Cho trước bìa không hợp lệ hoặc lỗi phiên bản cũ/cơ sở dữ liệu/audit sau khi tệp thay thế được tạm lưu, khi thao tác tạo/cập nhật kết thúc thì sách/bìa đã commit vẫn không đổi và tệp được quản lý chưa commit bị xóa.
+- AC-FE05-020: Cho trước nhân viên thay đổi trạng thái của một cuốn sách qua một trong hai điểm vào được hỗ trợ, khi lệnh thành công thì chỉ `bookId` được chỉ định bị thay đổi; frontend giữ tìm kiếm/thể loại, hiển thị tất cả trạng thái từ trang 1 và tải lại dữ liệu chuẩn để trạng thái riêng của các sách còn lại không bị hiểu nhầm là đã đổi theo.
 - AC-FE05-020: Cho trước nhân viên thay đổi trạng thái của một cuốn sách qua một trong hai điểm vào được hỗ trợ, khi lệnh thành công thì chỉ `bookId` được chỉ định bị thay đổi; frontend giữ tìm kiếm/thể loại, chuyển bộ lọc trạng thái sang `Tất cả trạng thái`, đặt lại trang 1 và tải lại dữ liệu chuẩn nhiều trạng thái để các hàng không bị ảnh hưởng vẫn phản ánh trạng thái riêng do máy chủ sở hữu.
 - AC-FE05-021: Với các bản ghi tham chiếu đang hoạt động và không hoạt động, khi Thủ thư/Quản trị viên tải biểu mẫu sách thì chỉ các lựa chọn đang hoạt động được trả về; Khách/Thành viên không thể truy cập endpoint.
 - AC-FE05-022: Cho trước cơ sở dữ liệu đã triển khai cũ thiếu cột siêu dữ liệu chuẩn, khi backend khởi động thì áp dụng migration đã review và đóng gói trước khi lắng nghe; sau khi xác minh hậu điều kiện thành công, endpoint sẵn sàng trả HTTP `200` và cả ba danh sách siêu dữ liệu Quản trị viên tải dữ liệu ổn định. Nếu đối soát thất bại, backend không lắng nghe và bước xác minh triển khai thất bại.
 - AC-FE05-023: Cho trước danh sách quản lý được tải lại sau khi một cuốn sách thay đổi trạng thái, khi các hàng hiển thị thì mỗi ô trạng thái nhìn thấy phản ánh `Books.Status` của hàng đó; các hàng không bị ảnh hưởng giữ nguyên trạng thái do máy chủ sở hữu và frontend không gán lại nhãn cho chúng theo kết quả của cuốn sách được chọn.
+- AC-FE05-024: Cho trước sách chưa có bản sao, khi nhân viên xác nhận xóa với phiên bản hiện tại thì đúng sách đó bị xóa vật lý và audit được giữ lại. Cho trước sách đã có bản sao, thao tác trả `409 BOOK_HAS_DEPENDENCIES` và sách cùng mọi dữ liệu liên quan không đổi.
 
 ---
 
@@ -361,10 +366,11 @@ Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
 | PUT | `/api/books/{bookId}` | Librarian/Admin | Header `If-Match`; nội dung tương thích JSON hoặc `multipart/form-data` với trường chuỗi JSON `metadata` và trường ảnh tùy chọn `cover` | Sách đã cập nhật + phiên bản mới | Chỉ thay đổi siêu dữ liệu/bìa; không bao giờ thay đổi trạng thái sách hoặc bản sao; việc thay thế thất bại được bù trừ. |
 | PATCH | `/api/books/{bookId}/deactivate` | Librarian/Admin | Header `If-Match`; `{ reason: string }` | Sách đã vô hiệu hóa + phiên bản mới | Đặt `INACTIVE`; bắt buộc có lý do; không xóa vật lý hoặc ghi lại bản sao. |
 | PATCH | `/api/books/{bookId}/reactivate` | Librarian/Admin | Header `If-Match`; `{ reason: string }` | Sách đã kích hoạt lại + phiên bản mới | Đặt `ACTIVE`; bắt buộc có lý do; trạng thái bản sao không thay đổi. |
+| DELETE | `/api/books/{bookId}` | Librarian/Admin | Header `If-Match`; `{ reason: string }` | Sách đã xóa | Xóa vật lý chỉ khi chưa có bản sao; sách có dữ liệu phụ thuộc trả `409 BOOK_HAS_DEPENDENCIES`. |
 
 ### 11.1 Ranh giới sở hữu giao diện người dùng
 
-- `frontend/src/page/BookManagement.jsx` là giao diện thay đổi FE05 chuẩn cho các thao tác tạo sách, cập nhật siêu dữ liệu, vô hiệu hóa và kích hoạt lại.
+- `frontend/src/page/BookManagement.jsx` là giao diện thay đổi FE05 chuẩn cho các thao tác tạo sách, cập nhật siêu dữ liệu, vô hiệu hóa, kích hoạt lại và xóa sách không có dữ liệu phụ thuộc.
 - `frontend/src/page/UserManagement.jsx` có thể đọc danh sách sách của Thư viện quản trị để cung cấp ngữ cảnh bảng điều khiển, nhưng các hàng sách ở chế độ chỉ đọc và không hiển thị điều khiển thay đổi FE05 trùng lặp.
 - `adminApi` của FE11 không chứa bí danh thay đổi sách; mọi thay đổi sách hiện có đều dùng hợp đồng API FE05 ở trên với `If-Match` và lý do khi bắt buộc.
 - Thư viện quản trị FE11 có thể tạo/cập nhật/vô hiệu hóa bản ghi tham chiếu danh mục, tác giả và nhà xuất bản qua ranh giới `/api/admin/library/*` chỉ dành cho Quản trị viên. Mỗi mutation phải ghi actor và audit catalog trong cùng giao dịch; cập nhật hoặc vô hiệu hóa ID không tồn tại/không còn hoạt động trả `404 ADMIN_RESOURCE_ITEM_NOT_FOUND`. Thủ thư chỉ nhận các lựa chọn `/api/books/metadata` đang hoạt động cần thiết cho việc thay đổi sách FE05.
@@ -406,6 +412,7 @@ Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
 - NFR-FE05-UX-001: Lỗi xác thực phải xác định rõ ràng các trường sách không hợp lệ.
 - NFR-FE05-UX-002: Việc vô hiệu hóa và kích hoạt lại phải yêu cầu xác nhận trong UI trước khi gửi.
 - NFR-FE05-UX-003: Biểu mẫu tạo/cập nhật chuẩn phải hiển thị bộ chọn ảnh cục bộ, hướng dẫn về loại/kích thước được chấp nhận, tên tệp và bản xem trước thay vì trường văn bản URL bìa có thể chỉnh sửa.
+- NFR-FE05-UX-004: Thay đổi trạng thái thành công sẽ hiển thị lại tất cả trạng thái từ dữ liệu máy chủ, để người dùng phân biệt rõ sách vừa đổi với các sách không bị tác động.
 - NFR-FE05-UX-004: Thay đổi trạng thái thành công phải chuyển danh sách về `Tất cả trạng thái` thay vì dùng bộ lọc trạng thái đích khiến mọi hàng đang nhìn thấy có vẻ cùng thay đổi.
 - NFR-FE05-UX-005: Danh sách quản lý phải hiển thị nhãn tóm tắt của bộ lọc trạng thái đã áp dụng; nhãn này không được phản ánh lựa chọn nháp chưa bấm `Áp dụng`.
 
@@ -483,6 +490,7 @@ Các quyết định sau đây đã được phê duyệt trong gói đánh giá
 | BR-FE05-019..020 | UC22, UC23 | `bookRoutes.test.js`; `bookCoverStorage.test.js`; `bookManagementFrontend.test.js` | Hoàn thành |
 | BR-FE05-021 | UC22, UC23 | `bookRoutes.test.js` ranh giới vai trò tham chiếu tích cực | Hoàn thành |
 | BR-FE05-022 | Sẵn sàng triển khai | `schemaReadinessService.test.js`; `startApplication.test.js`; `smokeStaging.test.js`; `stagingWorkflowPolicy.test.js` | Hoàn thành |
+| BR-FE05-023 | UC24 | `bookRoutes.test.js`; `bookManagementFrontend.test.js` | Hoàn thành |
 | FR-FE05-001..017 | UC17-UC24 | `bookRoutes.test.js`; `publicBrowseRoutes.test.js` | Hoàn thành |
 | FR-FE05-018..026 | UC17-UC24, UC29, UC32 | `bookRoutes.test.js`; `bookAvailabilityRepository.test.js`; `bookConcurrency.sqltest.js`; Hồi quy gốc không hoạt động FE07 | Hoàn thành |
 | FR-FE05-027..028 | UC22, UC23 | `bookRoutes.test.js`; `bookCoverStorage.test.js`; `bookManagementFrontend.test.js` | Hoàn thành |
@@ -490,6 +498,7 @@ Các quyết định sau đây đã được phê duyệt trong gói đánh giá
 | FR-FE05-030 | UC22, UC23 | `bookRoutes.test.js` từ chối Khách/Thành viên và trả các lựa chọn đang hoạt động cho Thủ thư/Quản trị viên | Hoàn thành |
 | FR-FE05-031 | Sẵn sàng triển khai | `app.test.js`; `schemaReadinessService.test.js`; `startApplication.test.js`; `smokeStaging.test.js`; `stagingWorkflowPolicy.test.js` | Hoàn thành |
 | FR-FE05-032 | UC21, UC23, UC24 | Hợp đồng cột trạng thái chuẩn trong `bookManagementFrontend.test.js` | Kiểm thử tự động đạt; đang chờ con người rà soát |
+| FR-FE05-033 | UC24 | `bookRoutes.test.js`; `bookManagementFrontend.test.js` | Hoàn thành |
 | AC-FE05-001..010 | UC17-UC24 | `bookRoutes.test.js`; `publicBrowseRoutes.test.js`; `bookConcurrency.sqltest.js` | Hoàn thành |
 | AC-FE05-011..017 | UC17-UC24 | `bookRoutes.test.js`; `bookAvailabilityRepository.test.js`; `bookConcurrency.sqltest.js` | Hoàn thành |
 | AC-FE05-018..019 | UC22, UC23 | `bookRoutes.test.js`; `bookCoverStorage.test.js`; `bookManagementFrontend.test.js` | Hoàn thành |
@@ -497,8 +506,9 @@ Các quyết định sau đây đã được phê duyệt trong gói đánh giá
 | AC-FE05-021 | UC22, UC23 | `bookRoutes.test.js` ranh giới vai trò tham chiếu tích cực | Hoàn thành |
 | AC-FE05-022 | Sẵn sàng triển khai | `libraryMetadataMigration.test.js`; `schemaReadinessService.test.js`; `startApplication.test.js`; `smokeStaging.test.js`; `stagingWorkflowPolicy.test.js` | Hoàn thành |
 | AC-FE05-023 | UC21, UC23, UC24 | Các xác nhận hàng không bị ảnh hưởng trong `bookManagementFrontend.test.js`; `bookRoutes.test.js` | Kiểm thử tự động đạt; đang chờ con người rà soát |
+| AC-FE05-024 | UC24 | `bookRoutes.test.js`; `bookManagementFrontend.test.js` | Hoàn thành |
 
-Độ bao phủ: 22/22 BR, 32/32 FR và 23/23 AC hiện có ánh xạ bằng chứng tự động.
+Độ bao phủ: 23/23 BR, 33/33 FR và 24/24 AC hiện có ánh xạ bằng chứng tự động.
 
 ---
 

@@ -350,6 +350,23 @@ function makeInMemoryBookDependencies(authDependencies, initialState = {}) {
         throw error;
       }
     },
+    async deleteBook(bookId, expectedVersion, { onBeforeCommit } = {}) {
+      const before = stateSnapshot();
+      try {
+        const index = books.findIndex((item) => item.id === Number(bookId));
+        if (index < 0) return null;
+        const book = books[index];
+        if (book.version !== expectedVersion) return { outcome: 'STALE' };
+        if (copies.some((copy) => copy.bookId === book.id)) return { outcome: 'DEPENDENCIES' };
+        const result = mapBook(book);
+        if (typeof onBeforeCommit === 'function') await onBeforeCommit({ book: result });
+        books.splice(index, 1);
+        return result;
+      } catch (error) {
+        restore(before);
+        throw error;
+      }
+    },
   };
 
   const auditLogRepository = {

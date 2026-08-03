@@ -111,6 +111,8 @@ Trạng thái quy trình: đã hoàn tất cho phạm vi Giai đoạn 2 đã ph�
 | AC-FE05-011, AC-FE05-012 | FE05-T004, FE05-T006 |
 | AC-FE05-013 đến AC-FE05-017 | FE05-T002, FE05-T003, FE05-T006, FE05-T007 |
 | AC-FE05-018, AC-FE05-019 | FE05-T009 |
+| AC-FE05-020 | FE05-T011 |
+| BR-FE05-023, FR-FE05-033, AC-FE05-024 | FE05-T021 |
 | AC-FE05-020 | FE05-T011, FE05-T018, FE05-T020, FE05-T021 |
 | AC-FE05-021 | FE05-T012 |
 | AC-FE05-022 | FE05-T013, FE05-T014, FE05-T015 |
@@ -207,6 +209,12 @@ Trạng thái quy trình: đã hoàn tất cho phạm vi Giai đoạn 2 đã ph�
 - [x] **FE05-T020 - Đồng bộ bộ lọc với trạng thái sách vừa commit.**
   - Ánh xạ tới: FR-FE05-029, AC-FE05-020, NFR-FE05-UX-004.
   - RED: kiểm thử frontend tái hiện hai điểm vào vẫn tải lại bộ lọc trạng thái cũ khiến sách vừa cập nhật có vẻ không đổi hoặc biến mất.
+  - GREEN: cả hai điểm vào hiển thị tất cả trạng thái, đặt lại trang 1, tải dữ liệu chuẩn và không gán trạng thái của sách đã chọn cho các hàng khác.
+
+- [x] **FE05-T021 - Xóa vật lý sách không có dữ liệu phụ thuộc.**
+  - Ánh xạ tới: BR-FE05-023, FR-FE05-033, AC-FE05-024.
+  - RED: kiểm thử route/UI yêu cầu endpoint DELETE riêng, `If-Match`, xác nhận và bảo toàn sách có bản sao.
+  - GREEN: xóa đúng sách không có bản sao cùng audit nguyên tử; trả `BOOK_HAS_DEPENDENCIES` mà không mutation khi có dữ liệu liên quan.
   - GREEN: cả hai điểm vào chuyển bộ lọc sang trạng thái đích, đặt lại trang 1, tải dữ liệu chuẩn và chọn lại đúng `bookId` khi có trong kết quả.
 
 ## 2026-08-04 Vệ sinh dữ liệu catalog staging và sửa trình bày trạng thái

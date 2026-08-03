@@ -111,7 +111,19 @@ test('single-book status update reloads a mixed-status canonical list', async ()
   assert.ok((page.match(/categoryId: appliedCategoryFilter/g) || []).length >= 2);
   assert.ok((page.match(/q: appliedSearchQuery/g) || []).length >= 2);
   assert.ok((page.match(/pageNumber: 1/g) || []).length >= 2);
+  assert.doesNotMatch(page, /book\.status\s*=\s*targetStatus/);
   assert.doesNotMatch(page, /setAppliedStatusFilter\(targetStatus\)/);
+});
+
+// @spec BR-FE05-023, FR-FE05-033, AC-FE05-024
+test('book deletion uses a dedicated hard-delete endpoint and confirmation', async () => {
+  const { page } = await sources();
+
+  assert.match(page, /method: 'DELETE'/);
+  assert.match(page, /apiRequest\(`\/books\/\$\{pendingDelete\.id\}`/);
+  assert.match(page, /headers: \{ 'If-Match': pendingDelete\.version \}/);
+  assert.match(page, /title="Xóa vĩnh viễn sách"/);
+  assert.match(page, /confirmLabel="Xác nhận xóa"/);
 });
 
 // @spec NFR-FE05-UX-005

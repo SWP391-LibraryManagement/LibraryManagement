@@ -341,6 +341,13 @@ function createBookService({
     if (result.outcome === 'INVALID_TRANSITION') {
       throw new AppException(409, 'INVALID_BOOK_TRANSITION', 'Book is already in the requested status.');
     }
+    if (result.outcome === 'DEPENDENCIES') {
+      throw new AppException(
+        409,
+        'BOOK_HAS_DEPENDENCIES',
+        'Không thể xóa sách đã có bản sao hoặc lịch sử liên quan.'
+      );
+    }
     return result.book || result;
   }
 
@@ -456,6 +463,28 @@ function createBookService({
     return changeStatus(bookId, 'ACTIVE', body, actorUserId, ifMatch);
   }
 
+  // @spec FR-FE05-033
+  async function deleteBook(bookId, body, actorUserId, ifMatch) {
+    const id = normalizePositiveInt(bookId, 'bookId', { required: true });
+    const expectedVersion = normalizeIfMatch(ifMatch);
+    const reason = normalizeReason(body?.reason);
+    const result = await bookRepository.deleteBook(id, expectedVersion, {
+      actorUserId,
+      auditLogRepository,
+      onBeforeCommit: ({ book, transaction }) =>
+        writeAudit({
+          action: 'BOOK_DELETE',
+          actorUserId,
+          book,
+          metadata: { reason, title: book.title },
+          transaction,
+        }),
+    });
+    const deletedBook = mapBook(assertMutationResult(result), { staff: true });
+    await cleanManagedCover(deletedBook.cover);
+    return deletedBook;
+  }
+
   async function getCategories() {
     const categories = await bookRepository.getCategories();
     const total = categories.reduce((sum, item) => sum + Number(item.count || 0), 0);
@@ -475,6 +504,7 @@ function createBookService({
     updateBook,
     deactivateBook,
     reactivateBook,
+    deleteBook,
   };
 }
 
