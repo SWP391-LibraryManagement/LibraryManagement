@@ -1,12 +1,12 @@
 # SPEC.md - Quản lý sách FE05
 
-# Phiên bản: 0.6.12
+# Phiên bản: 0.6.13
 
 # Trạng thái: ĐÃ PHÊ DUYỆT - BASELINE 2026-07-17
 
 # Chủ sở hữu: Dung
 
-# Cập nhật lần cuối: 2026-08-03
+# Cập nhật lần cuối: 2026-08-04
 
 # ID tính năng: FE05
 
@@ -238,7 +238,7 @@ Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
 - FR-FE05-026: NẾU `pages` không phải là số nguyên từ 1 đến 10,000, hoặc `rating` nằm ngoài 0.0 đến 5.0 hoặc có nhiều hơn một chữ số thập phân khi tạo/cập nhật, hệ thống sẽ từ chối yêu cầu với xác thực cấp trường và không thay đổi bản ghi. (Nguồn: EC-FE05-017, Phần 10.2)
 - FR-FE05-027: KHI Thủ thư/Quản trị viên tạo hoặc cập nhật sách bằng `multipart/form-data`, hệ thống sẽ đọc siêu dữ liệu sách JSON từ `metadata`, xác thực và lưu ảnh `cover` tùy chọn theo đường dẫn do máy chủ tạo, lưu đường dẫn đó dưới dạng `Books.CoverUrl` và trả về qua các lần đọc sách dành cho nhân viên/công khai.
 - FR-FE05-028: NẾU bìa được cung cấp thiếu siêu dữ liệu nhiều phần bắt buộc, vượt quá 2 MB, có loại/chữ ký không được hỗ trợ hoặc không khớp, hoặc thao tác thay đổi sách liên quan thất bại, hệ thống phải từ chối hoặc bù trừ thao tác mà không thay đường dẫn bìa đã commit hay giữ lại tệp được quản lý chưa commit.
-- FR-FE05-029: KHI một trong hai điểm vào thay đổi trạng thái của nhân viên chuyển một cuốn sách giữa `ACTIVE` và `INACTIVE`, frontend phải giữ nguyên ngữ cảnh tìm kiếm và thể loại, chuyển bộ lọc trạng thái sang trạng thái đích đã commit, đặt lại trang 1 và tải lại danh sách chuẩn từ máy chủ để cuốn sách vừa thay đổi vẫn hiển thị.
+- FR-FE05-029: KHI một trong hai điểm vào thay đổi trạng thái của nhân viên chuyển một cuốn sách giữa `ACTIVE` và `INACTIVE`, frontend phải giữ nguyên ngữ cảnh tìm kiếm và thể loại, chuyển bộ lọc trạng thái sang `Tất cả trạng thái`, đặt lại trang 1 và tải lại danh sách chuẩn nhiều trạng thái từ máy chủ để các sách không bị ảnh hưởng không bị trình bày như thể đã nhận cùng trạng thái đích.
 - FR-FE05-030: KHI Thủ thư/Quản trị viên đã xác thực yêu cầu `/api/books/metadata`, hệ thống sẽ chỉ trả về các lựa chọn danh mục/tác giả/nhà xuất bản đang hoạt động; yêu cầu của Khách/Thành viên sẽ bị từ chối và không bản ghi tham chiếu nào bị thay đổi.
 - FR-FE05-031: KHI bắt đầu khởi động backend, hệ thống sẽ áp dụng migration tương thích siêu dữ liệu đã được review trước khi lắng nghe và xác minh các cột siêu dữ liệu chuẩn; NẾU migration hoặc bước xác minh thất bại, backend sẽ không lắng nghe. KHI kiểm tra mức sẵn sàng qua `/health/ready`, hệ thống sẽ thực hiện xác minh chỉ đọc và trả về HTTP `503` với kết quả `not_ready` an toàn nếu sau này xảy ra sai lệch lược đồ hoặc lỗi cơ sở dữ liệu.
 - FR-FE05-032: KHI Thủ thư/Quản trị viên xem danh sách quản lý, cột `Trạng thái catalog` phải hiển thị `Books.Status` chuẩn thay vì tình trạng sẵn có của bản sao được FE06 suy ra độc lập, để kết quả của lệnh kích hoạt/vô hiệu hóa hiển thị trên sách đã cập nhật.
@@ -266,7 +266,7 @@ Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
 - AC-FE05-017: Với `pages` hoặc `rating` không hợp lệ, khi nhân viên tạo hoặc cập nhật sách thì FE05 trả về xác thực cấp trường và giữ nguyên trạng thái sách, bản sao, quy trình làm việc và kiểm tra.
 - AC-FE05-018: Cho trước Thủ thư/Quản trị viên chọn một bìa JPG/PNG/WebP cục bộ hợp lệ trong biểu mẫu tạo hoặc cập nhật sách, khi xem lại và gửi biểu mẫu thì UI xem trước ảnh đã chọn, gửi siêu dữ liệu nhiều phần cùng `cover`, và bìa được quản lý trả về hiển thị trong giao diện nhân viên lẫn công khai.
 - AC-FE05-019: Cho trước bìa không hợp lệ hoặc lỗi phiên bản cũ/cơ sở dữ liệu/audit sau khi tệp thay thế được tạm lưu, khi thao tác tạo/cập nhật kết thúc thì sách/bìa đã commit vẫn không đổi và tệp được quản lý chưa commit bị xóa.
-- AC-FE05-020: Cho trước nhân viên thay đổi trạng thái của một cuốn sách qua một trong hai điểm vào được hỗ trợ, khi lệnh thành công thì chỉ `bookId` được chỉ định bị thay đổi; frontend giữ tìm kiếm/thể loại, chuyển bộ lọc trạng thái sang trạng thái đích, đặt lại trang 1 và tải lại dữ liệu chuẩn để sách vừa cập nhật vẫn được chọn và hiển thị.
+- AC-FE05-020: Cho trước nhân viên thay đổi trạng thái của một cuốn sách qua một trong hai điểm vào được hỗ trợ, khi lệnh thành công thì chỉ `bookId` được chỉ định bị thay đổi; frontend giữ tìm kiếm/thể loại, chuyển bộ lọc trạng thái sang `Tất cả trạng thái`, đặt lại trang 1 và tải lại dữ liệu chuẩn nhiều trạng thái để các hàng không bị ảnh hưởng vẫn phản ánh trạng thái riêng do máy chủ sở hữu.
 - AC-FE05-021: Với các bản ghi tham chiếu đang hoạt động và không hoạt động, khi Thủ thư/Quản trị viên tải biểu mẫu sách thì chỉ các lựa chọn đang hoạt động được trả về; Khách/Thành viên không thể truy cập endpoint.
 - AC-FE05-022: Cho trước cơ sở dữ liệu đã triển khai cũ thiếu cột siêu dữ liệu chuẩn, khi backend khởi động thì áp dụng migration đã review và đóng gói trước khi lắng nghe; sau khi xác minh hậu điều kiện thành công, endpoint sẵn sàng trả HTTP `200` và cả ba danh sách siêu dữ liệu Quản trị viên tải dữ liệu ổn định. Nếu đối soát thất bại, backend không lắng nghe và bước xác minh triển khai thất bại.
 - AC-FE05-023: Cho trước danh sách quản lý được tải lại sau khi một cuốn sách thay đổi trạng thái, khi các hàng hiển thị thì mỗi ô trạng thái nhìn thấy phản ánh `Books.Status` của hàng đó; các hàng không bị ảnh hưởng giữ nguyên trạng thái do máy chủ sở hữu và frontend không gán lại nhãn cho chúng theo kết quả của cuốn sách được chọn.
@@ -406,7 +406,8 @@ Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
 - NFR-FE05-UX-001: Lỗi xác thực phải xác định rõ ràng các trường sách không hợp lệ.
 - NFR-FE05-UX-002: Việc vô hiệu hóa và kích hoạt lại phải yêu cầu xác nhận trong UI trước khi gửi.
 - NFR-FE05-UX-003: Biểu mẫu tạo/cập nhật chuẩn phải hiển thị bộ chọn ảnh cục bộ, hướng dẫn về loại/kích thước được chấp nhận, tên tệp và bản xem trước thay vì trường văn bản URL bìa có thể chỉnh sửa.
-- NFR-FE05-UX-004: Thay đổi trạng thái thành công từ biểu mẫu cập nhật sẽ điều chỉnh bộ lọc trạng thái hiển thị thay vì làm cho bản ghi đã chọn có vẻ biến mất dưới bộ lọc cũ của nó.
+- NFR-FE05-UX-004: Thay đổi trạng thái thành công phải chuyển danh sách về `Tất cả trạng thái` thay vì dùng bộ lọc trạng thái đích khiến mọi hàng đang nhìn thấy có vẻ cùng thay đổi.
+- NFR-FE05-UX-005: Danh sách quản lý phải hiển thị nhãn tóm tắt của bộ lọc trạng thái đã áp dụng; nhãn này không được phản ánh lựa chọn nháp chưa bấm `Áp dụng`.
 
 ---
 

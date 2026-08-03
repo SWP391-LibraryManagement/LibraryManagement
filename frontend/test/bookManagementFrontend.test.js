@@ -102,16 +102,24 @@ test('book update exposes catalog status without sending status through metadata
 });
 
 // @spec FR-FE05-029, AC-FE05-020, NFR-FE05-UX-004
-test('single-book status update reloads the target status so the changed book stays visible', async () => {
+test('single-book status update reloads a mixed-status canonical list', async () => {
   const { page } = await sources();
 
   assert.match(page, /const statusChanged = updateForm\.status !== selectedBook\.status/);
-  assert.match(page, /const targetStatus = activating \? 'ACTIVE' : 'INACTIVE'/);
-  assert.ok((page.match(/setAppliedStatusFilter\(targetStatus\)/g) || []).length >= 2);
-  assert.ok((page.match(/status: targetStatus/g) || []).length >= 2);
+  assert.ok((page.match(/setAppliedStatusFilter\(''\)/g) || []).length >= 2);
+  assert.ok((page.match(/status: ''/g) || []).length >= 2);
   assert.ok((page.match(/categoryId: appliedCategoryFilter/g) || []).length >= 2);
   assert.ok((page.match(/q: appliedSearchQuery/g) || []).length >= 2);
   assert.ok((page.match(/pageNumber: 1/g) || []).length >= 2);
+  assert.doesNotMatch(page, /setAppliedStatusFilter\(targetStatus\)/);
+});
+
+// @spec NFR-FE05-UX-005
+test('management list states the applied status filter', async () => {
+  const { page } = await sources();
+
+  assert.match(page, /Đang lọc trạng thái:/);
+  assert.match(page, /getStatusLabel\(appliedStatusFilter\)/);
 });
 
 // @spec BR-FE05-011, FR-FE05-032, AC-FE05-023

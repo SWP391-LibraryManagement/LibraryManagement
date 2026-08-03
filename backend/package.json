@@ -8,6 +8,7 @@
     "start": "node src/index.js",
     "create-admin": "node scripts/createAdmin.js",
     "staging:borrow-candidates": "node scripts/stagingBorrowCandidates.js",
+    "cleanup:staging-acceptance": "node scripts/cleanupStagingAcceptanceData.js",
     "test": "jest --runInBand",
     "test:integration:system": "jest --runInBand --runTestsByPath tests/systemIntegration.test.js",
     "test:sql:fe03": "jest --runInBand --testMatch \"**/profileConcurrency.sqltest.js\"",
