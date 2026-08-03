@@ -68,6 +68,7 @@ const MEMBERSHIP_ERROR_MESSAGES = {
 };
 
 const BOOK_ERROR_MESSAGES = {
+  BOOK_HAS_DEPENDENCIES: 'Không thể xóa sách đã có bản sao hoặc lịch sử mượn, trả, đặt chỗ liên quan.',
   STALE_BOOK_STATE: 'Dữ liệu sách đã thay đổi bởi người khác. Vui lòng tải lại danh sách rồi thử lại.',
   INVALID_BOOK_STATUS_TRANSITION: 'Trạng thái sách vừa thay đổi. Vui lòng tải lại dữ liệu và thử lại.',
 };

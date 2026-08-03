@@ -1205,6 +1205,23 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
+    delete:
+      tags: [Book Management]
+      summary: Permanently delete a dependency-free book (FR-FE05-033)
+      parameters:
+        - { name: bookId, in: path, required: true, schema: { type: integer, minimum: 1 } }
+        - { name: If-Match, in: header, required: true, schema: { type: string }, description: Last-seen opaque rowversion token }
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/BookStatusInput' } }
+      responses:
+        '200': { description: Permanently deleted book, content: { application/json: { schema: { $ref: '#/components/schemas/BookResponse' } } } }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
   /api/books/{bookId}/deactivate:
     patch:
       tags: [Book Management]

@@ -111,6 +111,20 @@ function createBookController(bookService = defaultBookService) {
     }
   }
 
+  async function deleteBook(req, res, next) {
+    try {
+      const book = await bookService.deleteBook(
+        req.params.bookId,
+        req.body,
+        req.user?.userId,
+        req.headers['if-match']
+      );
+      return res.status(200).json({ book });
+    } catch (error) {
+      return next(error);
+    }
+  }
+
   return {
     getHomeBooks,
     getCategories,
@@ -121,6 +135,7 @@ function createBookController(bookService = defaultBookService) {
     updateBook,
     deactivateBook,
     reactivateBook,
+    deleteBook,
   };
 }
 

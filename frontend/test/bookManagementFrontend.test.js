@@ -102,16 +102,27 @@ test('book update exposes catalog status without sending status through metadata
 });
 
 // @spec FR-FE05-029, AC-FE05-020, NFR-FE05-UX-004
-test('single-book status update reloads the target status so the changed book stays visible', async () => {
+test('single-book status update reloads all statuses without relabeling other books', async () => {
   const { page } = await sources();
 
   assert.match(page, /const statusChanged = updateForm\.status !== selectedBook\.status/);
-  assert.match(page, /const targetStatus = activating \? 'ACTIVE' : 'INACTIVE'/);
-  assert.ok((page.match(/setAppliedStatusFilter\(targetStatus\)/g) || []).length >= 2);
-  assert.ok((page.match(/status: targetStatus/g) || []).length >= 2);
+  assert.ok((page.match(/setAppliedStatusFilter\(''\)/g) || []).length >= 2);
+  assert.ok((page.match(/status: ''/g) || []).length >= 2);
   assert.ok((page.match(/categoryId: appliedCategoryFilter/g) || []).length >= 2);
   assert.ok((page.match(/q: appliedSearchQuery/g) || []).length >= 2);
   assert.ok((page.match(/pageNumber: 1/g) || []).length >= 2);
+  assert.doesNotMatch(page, /book\.status\s*=\s*targetStatus/);
+});
+
+// @spec BR-FE05-023, FR-FE05-033, AC-FE05-024
+test('book deletion uses a dedicated hard-delete endpoint and confirmation', async () => {
+  const { page } = await sources();
+
+  assert.match(page, /method: 'DELETE'/);
+  assert.match(page, /apiRequest\(`\/books\/\$\{pendingDelete\.id\}`/);
+  assert.match(page, /headers: \{ 'If-Match': pendingDelete\.version \}/);
+  assert.match(page, /title="Xóa vĩnh viễn sách"/);
+  assert.match(page, /confirmLabel="Xác nhận xóa"/);
 });
 
 // @spec BR-FE05-011, FR-FE05-032, AC-FE05-023

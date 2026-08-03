@@ -62,6 +62,7 @@ function createBookRoutes({ authService } = {}) {
   if (typeof bookController.reactivateBook === 'function') {
     router.patch('/:bookId/reactivate', requireBookManager, bookController.reactivateBook);
   }
+  router.delete('/:bookId', requireBookManager, bookController.deleteBook);
 
   return router;
 }
