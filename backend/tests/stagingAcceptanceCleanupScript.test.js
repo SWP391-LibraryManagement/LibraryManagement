@@ -58,16 +58,18 @@ describe('staging acceptance cleanup operator', () => {
     expect(CLEANUP_SQL).toContain('Acceptance fixture residue remains after cleanup.');
   });
 
-  test('discovery and cleanup match the exact historical suffix identities', () => {
-    expect(DISCOVERY_SQL).toContain('RIGHT(candidate.RunId, 8)');
-    expect(CLEANUP_SQL).toContain('RIGHT(@RunId, 8)');
+  test('discovery and cleanup match the exact historical full-run identities', () => {
+    expect(DISCOVERY_SQL).toContain("CONCAT('acc_member_a_', candidate.RunId)");
+    expect(DISCOVERY_SQL).toContain("CONCAT('member-a.', candidate.RunId, '@lms.invalid')");
+    expect(CLEANUP_SQL).toContain("CONCAT('acc_member_a_', @RunId)");
+    expect(CLEANUP_SQL).toContain("CONCAT('member-a.', @RunId, '@lms.invalid')");
+    expect(DISCOVERY_SQL).not.toContain('RIGHT(candidate.RunId, 8)');
+    expect(CLEANUP_SQL).not.toContain('RIGHT(@RunId, 8)');
 
     for (const statement of [DISCOVERY_SQL, CLEANUP_SQL]) {
-      expect(statement).toContain("acc_member_a_");
       expect(statement).toContain("acc_member_b_");
       expect(statement).toContain("acc_librarian_");
       expect(statement).toContain("acc_admin_");
-      expect(statement).toContain("member-a.");
       expect(statement).toContain("member-b.");
       expect(statement).toContain("librarian.");
       expect(statement).toContain("admin.");

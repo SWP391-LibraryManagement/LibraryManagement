@@ -186,8 +186,8 @@ Discover only rows where:
 ```text
 Books.Title equals "Acceptance Book " plus the validated run ID
 BookCopies.Barcode equals "ACC-" plus the validated run ID
-Users.Username equals one of the four approved `acc_*_<8-hex suffix>` identities
-Users.Email equals the matching `member-a|member-b|librarian|admin.<suffix>@lms.invalid` identity
+Users.Username equals one of the four observed `acc_*_<full-run-id>` identities
+Users.Email equals the matching `member-a|member-b|librarian|admin.<full-run-id>@lms.invalid` identity
 ```
 
 Return run ID plus user/book/copy counts; do not return PII or credential fields.
@@ -260,6 +260,8 @@ npm.cmd --prefix backend run cleanup:staging-acceptance -- --run-id lms-acceptan
 Do not pass `--execute` until the candidate run IDs and counts have been reviewed.
 
 Blocked after three fail-closed Kudu attempts: the deployed module path was unavailable to the default runtime, the Kudu Node 18 runtime was incompatible with the deployed dependency graph, and the expected Oryx Node 22 runtime was absent. No staging row was changed or deleted; reassess the execution architecture after H2 instead of adding another Kudu workaround.
+
+Post-H3 direct-SQL closeout on 2026-08-04 found that the retained rows used the complete run ID rather than the planned eight-character suffix in usernames/emails. After applying that exact identity key in memory, dry-run returned ten candidates at `4 users / 1 book / 1 copy`; all ten graphs were deleted transactionally. Final SQL verification returned zero acceptance users, books, and copies, and browser QA returned zero results for `Acceptance Book lms-acceptance-`.
 
 - [ ] **Step 4: Human review gate**
 
