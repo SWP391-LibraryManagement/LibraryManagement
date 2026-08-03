@@ -1,130 +1,134 @@
-# Actor List
+# Danh sách tác nhân
 
-## 1. Purpose
+## 1. Mục đích
 
-This document identifies the actors that interact with the Library Management System. Each actor represents a user role or an external system that exchanges information with the system.
+Tài liệu này xác định các tác nhân tương tác với Hệ thống Quản lý Thư viện. Mỗi tác nhân đại diện cho
+một vai trò người dùng hoặc một hệ thống bên ngoài trao đổi thông tin với hệ thống.
 
-Actor responsibilities must stay consistent with the Master Feature List in [`07_master_feature_list.md`](07_master_feature_list.md).
+Trách nhiệm của tác nhân phải nhất quán với Danh sách chức năng tổng thể trong
+[`07_master_feature_list.md`](07_master_feature_list.md).
 
-## 2. Actor List
+## 2. Danh sách tác nhân
 
-| Actor                | Type            | Role / Responsibility |
-| -------------------- | --------------- | --------------------- |
-| Guest                | Human actor     | A visitor who can search and view public book information and register for an account. |
-| Member               | Human actor     | A registered library user who can borrow books, reserve unavailable books, renew loans, view borrowing history, and view fines. |
-| Librarian            | Human actor     | A library staff member who manages books, book copies, members, borrowing, returning, book reservations, and fines. |
-| Admin                | Human actor     | A system administrator who manages users, roles, loan policies, fine policies, reports, and audit logs. |
-| Notification Service | External system | An external service that sends account verification, password reset, due date, overdue, book reservation, and fine notifications. |
+| Tác nhân | Loại | Vai trò / Trách nhiệm |
+| --- | --- | --- |
+| Khách | Tác nhân con người | Khách truy cập có thể tìm kiếm, xem thông tin sách công khai và đăng ký tài khoản. |
+| Thành viên | Tác nhân con người | Người dùng thư viện đã đăng ký có thể mượn sách, đặt chỗ sách không có sẵn, gia hạn lượt mượn, xem lịch sử mượn và khoản phạt. |
+| Thủ thư | Tác nhân con người | Nhân viên thư viện quản lý sách, bản sao sách, thành viên, hoạt động mượn/trả, đặt chỗ và khoản phạt. |
+| Quản trị viên | Tác nhân con người | Quản trị hệ thống, quản lý người dùng, vai trò, chính sách mượn/phạt, báo cáo và nhật ký kiểm toán. |
+| Dịch vụ thông báo | Hệ thống bên ngoài | Dịch vụ gửi thông báo xác minh tài khoản, đặt lại mật khẩu, hạn trả, quá hạn, đặt chỗ sách và khoản phạt. |
 
-## 3. Actor Details
+## 3. Chi tiết tác nhân
 
-### 3.1 Guest
+### 3.1 Khách
 
-A Guest is a user who has not logged in or has not registered as a member.
+Khách là người dùng chưa đăng nhập hoặc chưa đăng ký làm thành viên.
 
-Main interactions:
+Tương tác chính:
 
-- Search books
-- Filter and browse books
-- View book details
-- Register for an account
+- Tìm kiếm sách
+- Lọc và duyệt sách
+- Xem chi tiết sách
+- Đăng ký tài khoản
 
-Limitations:
+Hạn chế:
 
-- Cannot borrow books
-- Cannot reserve books
-- Cannot renew loans
-- Cannot view borrowing history or fines
+- Không thể mượn sách
+- Không thể đặt chỗ sách
+- Không thể gia hạn lượt mượn
+- Không thể xem lịch sử mượn hoặc khoản phạt
 
-### 3.2 Member
+### 3.2 Thành viên
 
-A Member is a registered user of the library.
+Thành viên là người dùng đã đăng ký của thư viện.
 
-Main interactions:
+Tương tác chính:
 
-- Login
-- Update personal profile
-- Apply for membership
-- View membership status
-- Search, filter, and browse books
-- View book details
-- Request to borrow books
-- Reserve unavailable books
-- Cancel own reservations when allowed
-- Renew borrowed books
-- View borrowing history
-- View fine information
-- Receive notifications
+- Đăng nhập
+- Cập nhật hồ sơ cá nhân
+- Đăng ký tư cách thành viên
+- Xem trạng thái tư cách thành viên
+- Tìm kiếm, lọc và duyệt sách
+- Xem chi tiết sách
+- Yêu cầu mượn sách
+- Đặt chỗ sách không có sẵn
+- Hủy lượt đặt chỗ của mình khi được phép
+- Gia hạn sách đã mượn
+- Xem lịch sử mượn
+- Xem thông tin khoản phạt
+- Nhận thông báo
 
-### 3.3 Librarian
+### 3.3 Thủ thư
 
-A Librarian is responsible for daily library operations.
+Thủ thư chịu trách nhiệm về các hoạt động hằng ngày của thư viện.
 
-Main interactions:
+Tương tác chính:
 
-- Login
-- Update personal profile
-- Manage book information
-- Manage book copies
-- Manage categories, authors, and publishers when needed by book management
-- Manage member information
-- Approve or reject membership applications
-- Process borrow requests
-- Confirm book returns
-- Handle overdue, lost, or damaged books
-- Manage fines
-- Record fine collection
-- Manage book reservation queue
-- View member borrowing records
+- Đăng nhập
+- Cập nhật hồ sơ cá nhân
+- Quản lý thông tin sách
+- Quản lý bản sao sách
+- Quản lý thể loại, tác giả và nhà xuất bản khi chức năng quản lý sách yêu cầu
+- Quản lý thông tin thành viên
+- Phê duyệt hoặc từ chối đơn đăng ký tư cách thành viên
+- Xử lý yêu cầu mượn sách
+- Xác nhận trả sách
+- Xử lý sách quá hạn, mất hoặc hư hỏng
+- Quản lý khoản phạt
+- Ghi nhận việc thu khoản phạt
+- Quản lý hàng đợi đặt chỗ sách
+- Xem hồ sơ mượn sách của thành viên
 
-### 3.4 Admin
+### 3.4 Quản trị viên
 
-An Admin is responsible for system-level management and monitoring.
+Quản trị viên chịu trách nhiệm quản lý và giám sát ở cấp hệ thống.
 
-Main interactions:
+Tương tác chính:
 
-- Login
-- Manage users
-- Manage librarian accounts
-- Manage roles and permissions
-- Configure loan policies
-- Configure fine policies
-- View reports and statistics
-- Export report data if supported
-- View audit logs
+- Đăng nhập
+- Quản lý người dùng
+- Quản lý tài khoản Thủ thư
+- Quản lý vai trò và quyền
+- Cấu hình chính sách mượn sách
+- Cấu hình chính sách khoản phạt
+- Xem báo cáo và thống kê
+- Xuất dữ liệu báo cáo nếu được hỗ trợ
+- Xem nhật ký kiểm toán
 
-### 3.5 Notification Service
+### 3.5 Dịch vụ thông báo
 
-Notification Service is an external system used by the Library Management System to send notifications.
+Dịch vụ thông báo là hệ thống bên ngoài được Hệ thống Quản lý Thư viện sử dụng để gửi thông báo.
 
-Main interactions:
+Tương tác chính:
 
-- Receive notification requests from the system
-- Send account verification notifications
-- Send password reset notifications
-- Send due date reminders
-- Send overdue notifications
-- Send borrow request results
-- Send book reservation updates
-- Send fine notifications
-- Return delivery status to the system
+- Nhận yêu cầu gửi thông báo từ hệ thống
+- Gửi thông báo xác minh tài khoản
+- Gửi thông báo đặt lại mật khẩu
+- Gửi lời nhắc hạn trả
+- Gửi thông báo quá hạn
+- Gửi kết quả yêu cầu mượn sách
+- Gửi cập nhật về lượt đặt chỗ sách
+- Gửi thông báo khoản phạt
+- Trả trạng thái gửi về hệ thống
 
-## 4. Notes
+## 4. Ghi chú
 
-The following items are not actors:
+Các mục sau không phải là tác nhân:
 
-- Book
-- Book Copy
-- Loan
-- Reservation
-- Fine
-- Category
-- Author
-- Publisher
-- Report
+- Sách
+- Bản sao sách
+- Lượt mượn
+- Lượt đặt chỗ
+- Khoản phạt
+- Thể loại
+- Tác giả
+- Nhà xuất bản
+- Báo cáo
 
-These are system entities or data objects, not external users or external systems.
+Đây là các thực thể hệ thống hoặc đối tượng dữ liệu, không phải người dùng hoặc hệ thống bên ngoài.
 
-The system does not need a separate "Manager" actor because Admin and Librarian already cover management responsibilities.
+Hệ thống không cần tác nhân "Người quản lý" riêng vì Quản trị viên và Thủ thư đã bao phủ các trách
+nhiệm quản lý.
 
-Study seat reservation is out of scope for the current project version and is not represented as an actor responsibility.
+Đặt chỗ chỗ ngồi học tập nằm ngoài phạm vi phiên bản hiện tại của dự án và không được biểu diễn như
+một trách nhiệm của tác nhân.

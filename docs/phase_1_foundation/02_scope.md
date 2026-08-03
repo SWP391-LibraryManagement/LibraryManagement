@@ -1,191 +1,199 @@
-# Project Scope
+# Phạm vi dự án
 
-## 1. Purpose
+## 1. Mục đích
 
-This document defines the scope of the Library Management System. It identifies which features are included in the project and which features are excluded to avoid scope creep during development.
+Tài liệu này xác định phạm vi của Hệ thống quản lý thư viện. Nó xác định những chức năng nào được
+đưa vào dự án và những chức năng nào bị loại trừ để tránh phạm vi sai sót trong quá trình phát
+triển.
 
-The official feature source of truth is [`07_master_feature_list.md`](07_master_feature_list.md).
+Nguồn chức năng chính thức của sự thật là [`07_master_feature_list.md`](07_master_feature_list.md).
 
-## 2. In Scope
+## 2. Trong phạm vi
 
-The system includes the following features.
+Hệ thống bao gồm các chức năng sau.
 
-### 2.1 FE01 - Public / Browse
+### 2.1 FE01 - Công khai / Duyệt sách
 
-The system allows guests and members to search, browse, and view public book information.
+Hệ thống cho phép khách và thành viên tìm kiếm, duyệt và xem thông tin sách công khai.
 
-Included functions:
+Các chức năng đi kèm:
 
-- View home page
-- Search books
-- Browse book catalog
-- View book information
-- View book details
+- Xem trang chủ
+- Tìm kiếm sách
+- Duyệt qua danh mục sách
+- Xem thông tin sách
+- Xem chi tiết sách
 
-### 2.2 FE02 - Authentication
+### 2.2 FE02 - Xác thực
 
-The system supports account authentication.
+Hệ thống hỗ trợ xác thực tài khoản.
 
-Included functions:
+Các chức năng đi kèm:
 
-- Register account
-- Login
-- Logout
-- Change password
-- Forgot password
-- Reset password
+- Đăng ký tài khoản
+- Đăng nhập
+- Đăng xuất
+- Thay đổi mật khẩu
+- Quên mật khẩu
+- Đặt lại mật khẩu
 
-### 2.3 FE03 - User Profile
+### 2.3 FE03 - Hồ sơ người dùng
 
-The system allows members and librarians to manage their personal profile.
+Hệ thống cho phép thành viên và thủ thư quản lý hồ sơ cá nhân của mình.
 
-Included functions:
+Các chức năng đi kèm:
 
-- View profile
-- Update profile
+- Xem hồ sơ
+- Cập nhật hồ sơ
 
-### 2.4 FE04 - Membership Management
+### 2.4 FE04 - Quản lý thành viên
 
-The system supports membership application and membership status management.
+Hệ thống hỗ trợ đăng ký thành viên và quản lý trạng thái thành viên.
 
-Included functions:
+Các chức năng đi kèm:
 
-- Apply for membership
-- Approve membership application
-- Reject membership application
-- View membership status
+- Đăng ký thành viên
+- Phê duyệt đơn đăng ký thành viên
+- Từ chối đơn đăng ký thành viên
+- Xem trạng thái thành viên
 
-### 2.5 FE05 - Book Management
+### 2.5 FE05 - Quản lý sách
 
-The system allows librarians to manage book information.
+Hệ thống cho phép thủ thư quản lý thông tin sách.
 
-Included functions:
+Các chức năng đi kèm:
 
-- View book list
-- Add book
-- Update book information
-- Deactivate book
-- View book details
-- Search books by guest or member
+- Xem danh sách sách
+- Thêm sách
+- Cập nhật thông tin sách
+- Vô hiệu hóa sách
+- Xem chi tiết sách
+- Tìm kiếm sách theo khách hoặc thành viên
 
-Note: The system does not permanently delete books. It only deactivates or changes book status to preserve borrowing and fine history.
+Lưu ý: Hệ thống không xóa sách vĩnh viễn. Nó chỉ hủy kích hoạt hoặc thay đổi trạng thái sổ sách để
+duy trì lịch sử mượn và khoản phạt.
 
-### 2.6 FE06 - Inventory / Book Copy Management
+### 2.6 FE06 - Quản lý kho / bản sao sách
 
-The system manages physical book copies.
+Hệ thống quản lý các bản sao sách vật lý.
 
-Included functions:
+Các chức năng đi kèm:
 
-- View inventory
-- Check book copy status
-- Update book copy availability
-- Manage book copies, barcode, location, and status
+- Xem hàng tồn kho
+- Kiểm tra trạng thái bản sao sách
+- Cập nhật tính khả dụng của bản sao sách
+- Quản lý bản sao sách, mã vạch, vị trí và trạng thái
 
-### 2.7 FE07 - Borrowing Management
+### 2.7 FE07 - Quản lý mượn sách
 
-The system supports borrowing, returning, renewal, and borrowing history.
+Hệ thống hỗ trợ yêu cầu mượn, trả sách, gia hạn và lịch sử mượn.
 
-Included functions:
+Các chức năng đi kèm:
 
-- Create borrow request
-- View borrowing history
-- Renew borrowed books
-- Process borrow request
-- Process return request
-- View member borrowing information
-- Approve borrow request
+- Tạo yêu cầu mượn
+- Xem lịch sử mượn
+- Gia hạn sách đã mượn
+- Xử lý yêu cầu mượn
+- Xử lý yêu cầu trả sách
+- Xem thông tin mượn của thành viên
+- Phê duyệt yêu cầu mượn
 
-### 2.8 FE08 - Reservation Management
+### 2.8 FE08 - Quản lý đặt chỗ
 
-The system allows members to reserve books that are currently unavailable.
+Hệ thống cho phép thành viên đặt chỗ những cuốn sách hiện không có sẵn.
 
-Included functions:
+Các chức năng đi kèm:
 
-- Reserve book
-- Cancel reservation
-- View reservation list
-- Process reservation queue
-- Trigger book available notification
+- Đặt chỗ sách
+- Hủy đặt chỗ
+- Xem danh sách đặt chỗ
+- Xử lý hàng đợi đặt chỗ
+- Thông báo kích hoạt sách có sẵn
 
-### 2.9 FE09 - Fine Management
+### 2.9 FE09 - Quản lý khoản phạt
 
-The system manages fines related to overdue, lost, or damaged books.
+Hệ thống quản lý các khoản phạt liên quan đến sách quá hạn, thất lạc, hư hỏng.
 
-Included functions:
+Các chức năng đi kèm:
 
-- View fine information
-- Calculate fine
-- Record fine collection
-- Mark fine as paid
+- Xem thông tin khoản phạt
+- Tính khoản phạt
+- Ghi nhận việc thu khoản phạt
+- Đánh dấu phạt là đã thanh toán
 
-Note: Real online payment gateway integration is out of scope. The system records fine collection and paid status only.
+Lưu ý: Việc tích hợp cổng thanh toán trực tuyến thực sự nằm ngoài phạm vi. Hệ thống chỉ ghi lại
+trạng thái thu khoản phạt và đã thanh toán.
 
-### 2.10 FE10 - Notification Management
+### 2.10 FE10 - Quản lý thông báo
 
-The system sends basic email or in-app notifications.
+Hệ thống sẽ gửi email cơ bản hoặc thông báo trong ứng dụng.
 
-Included notification types:
+Các loại thông báo bao gồm:
 
-- Account verification notification
-- Password reset notification
-- Book reservation notification
-- Due date notification
-- Fine notification
+- Thông báo xác minh tài khoản
+- Thông báo đặt lại mật khẩu
+- Thông báo đặt sách
+- Thông báo ngày đáo hạn
+- Thông báo phạt
 
-### 2.11 FE11 - User & Role Management
+### 2.11 FE11 - Quản lý người dùng và vai trò
 
-The system allows administrators to manage users, librarians, and roles.
+Hệ thống cho phép quản trị viên quản lý người dùng, thủ thư và vai trò.
 
-Included functions:
+Các chức năng đi kèm:
 
-- View user list
-- View user information
-- Create user account
-- Update user information
-- Deactivate user account
-- Create librarian account
-- Update librarian account
-- Deactivate librarian account
-- Manage roles
+- Xem danh sách người dùng
+- Xem thông tin người dùng
+- Tạo tài khoản người dùng
+- Cập nhật thông tin người dùng
+- Vô hiệu hóa tài khoản người dùng
+- Tạo tài khoản thủ thư
+- Cập nhật tài khoản thủ thư
+- Vô hiệu hóa tài khoản thủ thư
+- Quản lý vai trò
 
-Note: The system does not permanently delete users. It only deactivates accounts or changes user status.
+Lưu ý: Hệ thống không xóa vĩnh viễn người dùng. Nó chỉ hủy kích hoạt tài khoản hoặc thay đổi trạng
+thái người dùng.
 
-### 2.12 FE12 - Reporting & Statistics
+### 2.12 FE12 - Báo cáo và thống kê
 
-The system provides basic reports and statistics for administrators.
+Hệ thống cung cấp các báo cáo, số liệu thống kê cơ bản cho người quản trị.
 
-Included reports:
+Các báo cáo đi kèm:
 
-- Borrowing report
-- Inventory report
-- User statistics
+- báo cáo mượn sách
+- Báo cáo tồn kho
+- Thống kê người dùng
 
-## 3. Out of Scope
+## 3. Ngoài phạm vi
 
-The following features are not included in this project:
+Các chức năng sau không được bao gồm trong dự án này:
 
-- Mobile application
-- RFID or QR hardware integration
-- Real online payment gateway
-- AI book recommendation
-- E-book reader
-- Complex multi-branch library management
-- Social login using Facebook or Google
-- Room booking
-- Study seat reservation
-- Visual seat map management
-- QR/RFID seat check-in
-- Room or seat access control hardware
-- Advanced financial accounting
-- Advanced data analytics dashboard
+- Ứng dụng di động
+- Tích hợp phần cứng RFID hoặc QR
+- Cổng thanh toán trực tuyến thực sự
+- Đề xuất sách AI
+- Máy đọc sách điện tử
+- Quản lý thư viện đa ngành phức tạp
+- Đăng nhập xã hội bằng Facebook hoặc Google
+- Đặt phòng
+- Đặt chỗ học
+- Quản lý bản đồ chỗ ngồi trực quan
+- Đăng ký chỗ ngồi QR/RFID
+- Phần cứng kiểm soát truy cập phòng hoặc chỗ ngồi
+- Kế toán tài chính nâng cao
+- Bảng điều khiển phân tích dữ liệu nâng cao
 
-## 4. Scope Notes
+## 4. Ghi chú phạm vi
 
-The project focuses on core library operations: public browsing, authentication, user profile, membership management, book management, book copy inventory, borrowing, reservation, fine management, notification, user and role management, and basic reporting.
+Dự án tập trung vào các hoạt động cốt lõi của thư viện: duyệt công khai, xác thực, hồ sơ người dùng,
+quản lý thành viên, quản lý sách, kiểm kê bản sao sách, mượn, đặt chỗ, quản lý khoản phạt, thông
+báo, quản lý vai trò và người dùng cũng như báo cáo cơ bản.
 
-Borrowing Management and Reservation Management are intentionally separated:
+Quản lý mượn sách và quản lý đặt chỗ được tách biệt một cách có chủ ý:
 
-- FE07 Borrowing Management handles borrow requests, return processing, renewal, and borrowing history.
-- FE08 Reservation Management handles book reservation, cancellation, and reservation queue management.
+- FE07 Quản lý mượn sách xử lý yêu cầu mượn, trả sách, gia hạn và lịch sử mượn.
+- FE08 Quản lý đặt chỗ xử lý việc đặt chỗ, hủy và quản lý hàng đợi đặt chỗ.
 
-Any new feature outside FE01-FE12 must first be added to the Master Feature List and approved before specification or implementation.
+Bất kỳ chức năng mới nào ngoài FE01-FE12 trước tiên phải được thêm vào Danh sách chức năng chính và
+được phê duyệt trước khi đặc tả hoặc triển khai.

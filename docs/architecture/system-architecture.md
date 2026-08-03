@@ -1,158 +1,161 @@
-# System Architecture
+# Kiến trúc hệ thống
 
-## Runtime Overview
+## Tổng quan về thời gian chạy
 
 ```mermaid
 flowchart LR
-  U["Guest / Member / Librarian / Admin"] --> F["React + Vite frontend"]
+  U["Khách / Thành viên / Thủ thư / Quản trị viên"] --> F["Giao diện React + Vite"]
   F -->|"HTTPS REST /api"| B["Express API"]
-  B -->|"Encrypted TDS"| D[("SQL Server / Azure SQL")]
-  B --> N["SMTP or mock notification provider"]
+  B -->|"TDS được mã hóa"| D[("SQL Server / Azure SQL")]
+  B --> N["Nhà cung cấp thông báo SMTP hoặc giả lập"]
   B --> A[("AuditLogs")]
 ```
 
-The frontend is a presentation and interaction layer. The Express backend is the authority for
-authentication, authorization, input validation, business rules, audit records, and database state.
+Giao diện là lớp trình bày và tương tác. Máy chủ Express chịu trách nhiệm xác thực, ủy quyền, kiểm tra
+đầu vào, quy tắc nghiệp vụ, nhật ký kiểm toán và trạng thái cơ sở dữ liệu.
 
-## Trust Boundaries
+## Ranh giới tin cậy
 
-| Boundary | Rule |
+| Ranh giới | Quy tắc |
 | --- | --- |
-| Browser -> API | Browser input is untrusted. The backend validates every protected operation. |
-| Authentication | Access tokens are verified by backend middleware before protected controllers run. |
-| Authorization | Route middleware and services enforce Member, Librarian, and Admin boundaries. |
-| API -> database | Values use `mssql.Request.input`; dynamic identifiers are selected from code-owned allowlists. |
-| API -> notification provider | Sensitive verification/reset content is not persisted in normal notification fields or returned by HTTP responses. |
-| Runtime -> configuration | Secrets come from local ignored environments or Azure App Service settings. |
-| CI -> staging | Deployment credentials are scoped to the GitHub `staging` Environment. CI never mutates database schema; the reviewed FE10 migration is operator-applied and verified before deployment. |
+| Trình duyệt -> API | Đầu vào của trình duyệt không đáng tin cậy. Phần máy chủ xác nhận mọi hoạt động được bảo vệ. |
+| Xác thực | Mã thông báo truy cập được xác minh bằng phần mềm trung gian máy chủ trước khi chạy bộ điều khiển được bảo vệ. |
+| Ủy quyền | Định tuyến phần mềm trung gian và dịch vụ thực thi ranh giới Thành viên, Thủ thư và Quản trị viên. |
+| API -> cơ sở dữ liệu | Các giá trị sử dụng `mssql.Request.input`; giá trị nhận dạng động được chọn từ danh sách cho phép do mã sở hữu. |
+| API -> nhà cung cấp thông báo | Nội dung xác minh/đặt lại nhạy cảm không được lưu giữ trong các trường thông báo thông thường hoặc được phản hồi HTTP trả về. |
+| Thời gian chạy -> cấu hình | Bí mật đến từ môi trường cục bộ bị bỏ qua hoặc cài đặt Azure App Service. |
+| CI -> môi trường tiền sản xuất | Thông tin xác thực triển khai nằm trong phạm vi Môi trường GitHub `staging`. CI không bao giờ thay đổi lược đồ cơ sở dữ liệu; quá trình di chuyển FE10 đã được đánh giá sẽ được nhà điều hành áp dụng và xác minh trước khi triển khai. |
 
-## Module Ownership
+## Quyền sở hữu mô-đun
 
-| Feature | Backend responsibility | Frontend responsibility | Source of truth |
+| chức năng | Trách nhiệm máy chủ | Trách nhiệm giao diện người dùng | Nguồn chuẩn |
 | --- | --- | --- | --- |
-| FE02 Authentication | Credentials, hashing, tokens, lockout, audit | Login/register/reset forms and session storage | [FE02 spec](../../.sdd/specs/feat-auth/SPEC.md) |
-| FE07 Borrowing | Eligibility, requests, approval, return, renewal | Member/staff borrowing workflows | [FE07 spec](../../.sdd/specs/feat-borrowing-management/SPEC.md) |
-| FE08 Reservation | Queue, holds, cancellation, promotion | Member reservation and staff queue views | [FE08 spec](../../.sdd/specs/feat-reservation-management/SPEC.md) |
-| FE09 Fine | Calculation, collection, payment state, authorization | Legacy UI is limited; server API is release evidence | [FE09 spec](../../.sdd/specs/feat-fine-management/SPEC.md) |
-| FE10 Notification | Templates, safe payloads, queue, retry, provider result, own-user inbox projection and `ReadAt` | Bell preview and `/notifications` for authenticated Member/Librarian/Admin users | [FE10 spec](../../.sdd/specs/feat-notification-management/SPEC.md) |
-| FE12 Reporting | Read-only aggregate queries and audit | Staff report filters, tables, and KPI views | [FE12 spec](../../.sdd/specs/feat-reporting-statistics/SPEC.md) |
+| Xác thực FE02 | Thông tin xác thực, băm, mã thông báo, khóa tài khoản, kiểm toán | Biểu mẫu đăng nhập/đăng ký/đặt lại và lưu trữ phiên | [Đặc tả FE02](../../.sdd/specs/feat-auth/SPEC.md) |
+| Mượn sách FE07 | Điều kiện mượn, yêu cầu, phê duyệt, trả sách, gia hạn | Quy trình mượn sách của thành viên/nhân viên | [Đặc tả FE07](../../.sdd/specs/feat-borrowing-management/SPEC.md) |
+| Đặt chỗ FE08 | Hàng đợi, giữ sách, hủy, chuyển người tiếp theo | Đặt chỗ của thành viên và chế độ xem hàng đợi của nhân viên | [Đặc tả FE08](../../.sdd/specs/feat-reservation-management/SPEC.md) |
+| Khoản phạt FE09 | Tính khoản phạt, thu tiền, trạng thái thanh toán, ủy quyền | Giao diện kế thừa bị giới hạn; API máy chủ là bằng chứng phát hành | [Đặc tả FE09](../../.sdd/specs/feat-fine-management/SPEC.md) |
+| Thông báo FE10 | Mẫu, dữ liệu an toàn, hàng đợi, thử lại, kết quả nhà cung cấp, chế độ xem hộp thư cá nhân và `ReadAt` | Xem trước thông báo và `/notifications` cho Thành viên/Thủ thư/Quản trị viên đã xác thực | [Đặc tả FE10](../../.sdd/specs/feat-notification-management/SPEC.md) |
+| Báo cáo FE12 | Kiểm toán và truy vấn tổng hợp chỉ đọc | Bộ lọc báo cáo nhân viên, bảng và chế độ xem KPI | [Đặc tả FE12](../../.sdd/specs/feat-reporting-statistics/SPEC.md) |
 
-The detailed cross-feature state flow, table ownership, and presentation answers live in the
-[feature integration map](feature-integration-map.md).
+Luồng trạng thái chức năng chéo chi tiết, quyền sở hữu bảng và câu trả lời trình bày có trong [bản
+đồ tích hợp chức năng](feature-integration-map.md).
 
-### Personal Notification Inbox Projection
+### Chiếu hộp thư đến thông báo cá nhân
 
 ```mermaid
 flowchart LR
-  S["FE04 / FE07 / FE08 source event"] --> E["One eligible email-backed Notifications row"]
-  E --> P["Own-user safe inbox projection"]
-  P --> R["Nullable ReadAt"]
-  E --> Q["Independent email delivery status and attempts"]
+  S["Sự kiện nguồn FE04 / FE07 / FE08"] --> E["Một bản ghi Notifications đủ điều kiện gửi email"]
+  E --> P["Chế độ xem hộp thư an toàn của chính người dùng"]
+  P --> R["ReadAt có thể để trống"]
+  E --> Q["Trạng thái gửi email và số lần thử độc lập"]
 ```
 
-The inbox does not create an `IN_APP` channel or duplicate record. SQL filters by the authenticated
-`UserId` and the fixed eligible type/template allowlist before materialization. Verification,
-password-reset, account-setup, legacy `EMAIL_VERIFY`, userless, and other-user records are excluded.
-The API exposes only list, unread-count, mark-one, and mark-all operations; there is no global log,
-delete, or archive endpoint. Action paths are selected by backend-owned constants rather than data
-stored in a notification or supplied by the browser.
+Hộp thư đến không tạo kênh `IN_APP` hoặc bản ghi trùng lặp. SQL lọc theo `UserId` đã được xác thực
+và danh sách cho phép loại/mẫu đủ điều kiện cố định trước khi tạo kết quả. Việc xác minh, đặt
+lại mật khẩu, thiết lập tài khoản, `EMAIL_VERIFY` cũ, hồ sơ không có người dùng và người dùng khác
+đều bị loại trừ. API chỉ hiển thị các hoạt động danh sách, số lượng chưa đọc, đánh dấu một và đánh
+dấu tất cả; không có điểm cuối nhật ký, xóa hoặc lưu trữ toàn cầu. Đường dẫn hành động được chọn bởi
+các hằng số thuộc sở hữu máy chủ thay vì dữ liệu được lưu trữ trong thông báo hoặc do trình duyệt
+cung cấp.
 
-## Primary Integrated Flow
+## Luồng tích hợp chính
 
 ```mermaid
 sequenceDiagram
-  participant M as Member
-  participant L as Librarian
+  participant M as Thành viên
+  participant L as Thủ thư
   participant API as Express API
   participant DB as SQL Server
-  participant N as Notification
-  participant R as Reporting
+  participant N as Thông báo
+  participant R as Báo cáo
 
-  M->>API: Create borrow request
-  API->>DB: Persist REQUESTED detail
-  L->>API: Approve request
-  API->>DB: Mark request approved and copy borrowed
-  API->>N: Queue due-date notification metadata
-  L->>API: Return overdue item
-  API->>DB: Persist return state
-  L->>API: Calculate and pay fine
-  API->>DB: Persist fine and audit records
-  L->>R: View borrowing report
-  R->>DB: Read aggregate activity
+  M->>API: Tạo yêu cầu mượn sách
+  API->>DB: Lưu chi tiết ở trạng thái REQUESTED
+  L->>API: Phê duyệt yêu cầu
+  API->>DB: Đánh dấu yêu cầu đã duyệt và bản sao đã được mượn
+  API->>N: Xếp hàng siêu dữ liệu thông báo hạn trả
+  L->>API: Trả sách quá hạn
+  API->>DB: Lưu trạng thái trả sách
+  L->>API: Tính và thanh toán khoản phạt
+  API->>DB: Lưu khoản phạt và bản ghi kiểm toán
+  L->>R: Xem báo cáo mượn sách
+  R->>DB: Đọc dữ liệu hoạt động tổng hợp
 ```
 
-The Playwright golden path uses the real React application with production-aligned services. Its
-FE09 step intentionally uses the API because the legacy fine page is not aligned to the final server
-contract.
+luồng nghiệp vụ chuẩn Playwright sử dụng ứng dụng React thực với các dịch vụ phù hợp với sản xuất.
+Bước FE09 của nó có chủ ý sử dụng API vì trang phạt cũ không được căn chỉnh theo hợp đồng máy chủ
+cuối cùng.
 
-## Local Topology
+## Cấu trúc liên kết cục bộ
 
 ```text
 React/Vite     http://localhost:5173
 Express API   http://localhost:3000
 Swagger UI    http://localhost:3000/api-docs
-SQL Server    backend/.env configuration
+SQL Server    cấu hình backend/.env
 ```
 
-`npm run dev` starts frontend and backend together. The browser API base is configured through
-`VITE_API_BASE_URL`.
+`npm run dev` bắt đầu giao diện người dùng và máy chủ cùng nhau. Cơ sở trình duyệt API được định cấu
+hình thông qua `VITE_API_BASE_URL`.
 
-## Azure Staging Topology
+## Cấu trúc liên kết môi trường tiền sản xuất Azure
 
 ```mermaid
 flowchart TB
-  GH["GitHub Actions: manual staging deployment"]
+  GH["GitHub Actions: triển khai tiền sản xuất thủ công"]
   SWA["Azure Static Web Apps Free"]
   APP["Azure App Service F1 - Node.js"]
-  SQL[("Azure SQL Database")]
-  CFG["GitHub Environment + App Service Configuration"]
+  SQL[("Cơ sở dữ liệu Azure SQL")]
+  CFG["GitHub Environment + cấu hình App Service"]
 
   GH --> SWA
   GH --> APP
   CFG --> GH
   CFG --> APP
-  SWA -->|"HTTPS API URL baked into Vite build"| APP
+  SWA -->|"URL API HTTPS được đóng gói trong bản dựng Vite"| APP
   APP -->|"encrypt=true; trustServerCertificate=false"| SQL
 ```
 
-Staging deployment keeps frontend and backend separate:
+Triển khai theo giai đoạn giúp tách biệt giao diện người dùng và máy chủ:
 
-- Static Web Apps serves only frontend assets.
-- App Service runs `npm start` from the backend package with `NODE_ENV=production`.
-- Azure SQL hosts the explicitly initialized staging database.
-- App Service `CORS_ORIGINS` contains only the observed Static Web Apps URL.
-- The GitHub workflow does not execute database schema SQL.
+- Static Web Apps chỉ phục vụ nội dung giao diện người dùng.
+- App Service chạy `npm start` từ gói máy chủ với `NODE_ENV=production`.
+- Azure SQL lưu trữ cơ sở dữ liệu môi trường tiền sản xuất được khởi tạo rõ ràng.
+- App Service `CORS_ORIGINS` chỉ chứa URL Static Web Apps đã được quan sát.
+- Luồng công việc GitHub không thực thi lược đồ cơ sở dữ liệu SQL.
 
-## Data And Transaction Boundaries
+## Ranh giới dữ liệu và giao dịch
 
-- Borrow approval/return and reservation queue transitions use repository transactions where the
-  specification requires atomic state changes.
-- Fine calculation reads stored due/return data; the client cannot submit the calculated amount.
-- Reports use read-only aggregate queries and cannot mutate circulation state.
-- Audit records capture important auth, circulation, fine, notification, report, and admin actions.
-- FE10 personal read state is independent from delivery state: marking an item read changes only
-  `Notifications.ReadAt` and never changes email status, attempts, source metadata, or idempotency.
-- The canonical schema is [`database/Librarymanagement.sql`](../../database/Librarymanagement.sql).
+- phê duyệt/trả sách và chuyển tiếp hàng đợi đặt chỗ sử dụng các giao dịch kho lưu trữ trong đó
+  đặc tả yêu cầu thay đổi trạng thái nguyên tử.
+- Tính khoản phạt đọc ngày đến hạn/ngày trả đã lưu; máy khách không thể gửi số tiền tự tính.
+- Báo cáo sử dụng truy vấn tổng hợp chỉ đọc và không thể thay đổi trạng thái lưu hành.
+- nhật ký kiểm toán nắm bắt các hành động xác thực, lưu hành, khoản phạt, thông báo, báo cáo và quản trị viên quan trọng.
+- FE10 trạng thái đọc cá nhân độc lập với trạng thái gửi: việc đánh dấu một mục đã đọc chỉ thay đổi
+  `Notifications.ReadAt` và không bao giờ thay đổi trạng thái email, số lần thử, siêu dữ liệu nguồn
+  hoặc trạng thái chuẩn hóa.
+- Lược đồ chuẩn là [`database/Librarymanagement.sql`](../../database/Librarymanagement.sql).
 
-## Reliability And Security Boundaries
+## Độ tin cậy và ranh giới bảo mật
 
-- `/health` is the deployment health endpoint.
-- Helmet provides baseline HTTP security headers.
-- Production CORS fails closed for unconfigured cross-origin requests.
-- Unknown and internal 5xx responses use a generic client envelope.
-- Notification provider failures use fixed safe messages and do not expose provider internals.
-- Dependency, secret, RBAC, validation, and error-boundary findings are recorded in the
-  [Week 12 security audit](../../.sdd/reviews/week12-security-audit-2026-07-14.md).
-- Staging smoke tests are read-only and verify health, CORS, and anonymous rejection.
-- FE10 rollback is additive and non-destructive: retain `ReadAt` and its supporting index, and disable
-  or redeploy only the inbox API/frontend if needed. Never erase read history or email-delivery rows.
+- `/health` là điểm cuối tình trạng triển khai.
+- Helmet cung cấp các tiêu đề bảo mật HTTP cơ bản.
+- CORS ở môi trường sản xuất từ chối mặc định các yêu cầu khác nguồn chưa được cấu hình.
+- Phản hồi 5xx nội bộ hoặc không xác định sử dụng cấu trúc lỗi chung cho máy khách.
+- Lỗi của nhà cung cấp thông báo sử dụng các thông báo an toàn cố định và không làm lộ thông tin nội bộ của nhà cung cấp.
+- Các phát hiện phụ thuộc, bí mật, RBAC, xác thực và ranh giới lỗi được ghi lại trong
+  [Kiểm tra bảo mật tuần 12](../../.sdd/reviews/week12-security-audit-2026-07-14.md).
+- Các kiểm thử nhanh theo giai đoạn ở dạng chỉ đọc và xác minh tình trạng, CORS cũng như từ chối ẩn danh.
+- FE10 khôi phục có tính chất bổ sung và không phá hủy: giữ lại `ReadAt` và chỉ mục hỗ trợ của nó, đồng thời vô hiệu hóa
+  hoặc chỉ triển khai lại hộp thư đến API/giao diện nếu cần. Không bao giờ xóa lịch sử đọc hoặc hàng
+  gửi email.
 
-## Operational Limitations
+## Hạn chế hoạt động
 
-- Access and refresh tokens currently use browser storage; migration to HttpOnly refresh cookies is
-  a documented pre-public-release risk.
-- HTTPS enforcement is provided by Azure endpoints and deployment configuration.
-- Per-IP login rate limiting remains a documented follow-up beyond account lockout.
-- Uploaded avatars use application filesystem storage and need durable object storage before a
-  production-scale deployment.
-- Staging is a student-credit environment, not a production SLA environment.
+- Mã thông báo truy cập và làm mới hiện đang sử dụng bộ nhớ của trình duyệt; việc di chuyển sang cookie làm mới HttpOnly là
+  một rủi ro trước khi phát hành công khai được ghi lại.
+- Việc thực thi HTTPS được cung cấp bởi các điểm cuối và cấu hình triển khai Azure.
+- Giới hạn tốc độ đăng nhập trên mỗi IP vẫn là một biện pháp tiếp theo được ghi lại ngoài việc khóa tài khoản.
+- Hình đại diện đã tải lên sử dụng bộ nhớ hệ thống tệp ứng dụng và cần bộ nhớ đối tượng lâu bền trước khi
+  triển khai quy mô sản xuất.
+- Môi trường tiền sản xuất sử dụng tín dụng sinh viên, không phải môi trường có SLA sản xuất.
