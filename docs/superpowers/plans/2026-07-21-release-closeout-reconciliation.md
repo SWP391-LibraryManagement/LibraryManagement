@@ -1,81 +1,88 @@
-# Release Closeout Reconciliation Implementation Plan
+# Kế hoạch thực hiện điều chỉnh kết thúc phát hành
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Đối với nhân viên đại lý:** SUB-SKILL BẮT BUỘC: Sử dụng siêu năng lực:phát triển theo định hướng phụ (được khuyến nghị) hoặc siêu năng lực:thực hiện các kế hoạch để triển khai kế hoạch này theo từng nhiệm vụ. Các bước sử dụng cú pháp hộp kiểm (`- [ ]`) để theo dõi.
 
-**Goal:** Bring the working copy to the current `origin/main`, close the verified release/security/documentation gaps, and produce evidence for a final human release decision without silently expanding FE01-FE12 scope.
+**Mục tiêu:** Đưa bản sao làm việc lên `origin/main` hiện tại, đóng các lỗ hổng phát hành/bảo
+mật/tài liệu đã được xác minh và tạo ra bằng chứng cho quyết định phát hành cuối cùng của con người
+mà không âm thầm mở rộng phạm vi FE01-FE12.
 
-**Architecture:** Fast-forward the clean tracked branch to the current remote baseline, then make small shell-layer changes for security gates, release metadata, stale task evidence, and artifact hygiene. Product behavior is not changed unless a dependency update requires a regression fix; any new feature remains Phase 4 work.
+**Kiến trúc:** Chuyển nhanh nhánh được theo dõi sạch sang mốc cơ sở từ xa hiện tại, sau đó thực hiện
+các thay đổi nhỏ về lớp vỏ cho cổng bảo mật, giải phóng siêu dữ liệu, bằng chứng nhiệm vụ cũ và vệ
+sinh tạo tác. Hành vi của sản phẩm không bị thay đổi trừ khi bản cập nhật phụ thuộc yêu cầu sửa lỗi
+hồi quy; mọi chức năng mới vẫn hoạt động ở Giai đoạn 4.
 
-**Tech Stack:** Git, Node.js 22/npm, Express/Jest, React/Vite, Playwright, GitHub Actions, Markdown SDD artifacts.
+**bộ công nghệ công nghệ:** Git, Node.js 22/npm, Express/Jest, React/Vite, Playwright, GitHub Hành
+động, tạo phẩm Markdown SDD.
 
-## Global Constraints
+## Ràng buộc toàn cầu
 
-- Keep Node.js + Express.js, React + Bootstrap/Material UI, SQL Server, and REST APIs.
-- Preserve approved FE01-FE12 contracts and do not implement deferred FE10 inbox, durable avatar storage, or production SLA scope.
-- Never commit secrets, Azure dumps, credentials, tokens, or real personal data.
-- Do not create a release tag or publish external media without explicit human release approval.
-- Every changed behavior must map to the relevant `SPEC.md`, tests, and changelog.
+- Giữ các API Node.js + Express.js, React + Bootstrap/Material UI, SQL Server và REST.
+- Giữ nguyên các hợp đồng FE01-FE12 đã được phê duyệt và không triển khai hộp thư đến FE10 bị trì hoãn, bộ nhớ hình đại diện lâu bền hoặc phạm vi SLA sản xuất.
+- Không bao giờ tiết lộ bí mật, hủy Azure, thông tin xác thực, mã thông báo hoặc dữ liệu cá nhân thực.
+- Không tạo thẻ phát hành hoặc xuất bản phương tiện bên ngoài mà không có sự chấp thuận phát hành rõ ràng của con người.
+- Mọi hành vi đã thay đổi phải ánh xạ tới `SPEC.md`, các kiểm thử và nhật ký thay đổi có liên quan.
 
-Execution follow-up (2026-07-21): after the read-only closeout audit, the
-existing dirty working tree was moved from `main` to the local
-`chore/release-closeout-reconciliation` branch without committing or pushing.
-This preserves the reviewed baseline while the final evidence diff is prepared.
+Theo dõi thực thi (21-07-2026): sau quá trình kiểm tra khóa chỉ đọc, cây làm việc bẩn hiện có đã
+được chuyển từ `main` sang nhánh `chore/release-closeout-reconciliation` cục bộ mà không cần cam kết
+hoặc đẩy. Điều này bảo tồn mốc cơ sở đã được xem xét trong khi chuẩn bị các bằng chứng khác biệt
+cuối cùng.
 
 ---
 
-### Task 1: Fast-forward to the current remote baseline
+### Nhiệm vụ 1: Chuyển nhanh đến mốc cơ sở từ xa hiện tại
 
-**Files:**
-- Modify: Git tracked files through `git pull --ff-only origin main`
-- Review: untracked `backend/.zip` and `output/`
+**Tệp:**
+- Sửa đổi: Các tệp được theo dõi Git thông qua `git pull --ff-only origin main`
+- Đánh giá: `backend/.zip` và `output/` chưa được theo dõi
 
-- [x] **Step 1: Preserve and inventory untracked artifacts.**
+- [x] **Bước 1: Bảo quản và kiểm kê các tệp bàn giao chưa được theo dõi.**
 
-Run:
+Chạy:
 
 ```powershell
 git status --short --untracked-files=all
 git ls-tree -r --name-only origin/main backend/.zip output
 ```
 
-Expected: no tracked collision; retain untracked files for later review.
+Dự kiến: không có va chạm được theo dõi; giữ lại các tập tin không bị theo dõi để xem xét sau.
 
-- [x] **Step 2: Fast-forward the branch.**
+- [x] **Bước 2: Chuyển tiếp nhanh nhánh.**
 
-Run:
+Chạy:
 
 ```powershell
 git pull --ff-only origin main
 ```
 
-Expected: `HEAD` becomes `a8729f92d0de98f157ebe8d66ac2000d2ee4f59a` with no tracked merge conflict.
+Dự kiến: `HEAD` trở thành `a8729f92d0de98f157ebe8d66ac2000d2ee4f59a` mà không có xung đột hợp nhất
+được theo dõi.
 
-- [x] **Step 3: Confirm the new baseline.**
+- [x] **Bước 3: Xác nhận mốc cơ sở mới.**
 
-Run:
+Chạy:
 
 ```powershell
 git status --short --branch
 git log --oneline -10
 ```
 
-Expected: `main` is aligned with `origin/main`; only previously untracked artifacts remain.
+Dự kiến: `main` được căn chỉnh với `origin/main`; chỉ còn lại những tệp bàn giao chưa được theo dõi trước đó.
 
 ---
 
-### Task 2: Add a dependency security gate and resolve current advisories
+### Nhiệm vụ 2: Thêm cổng bảo mật phụ thuộc và giải quyết các tư vấn hiện tại
 
-**Files:**
-- Modify: `package.json`
-- Modify: `backend/package.json`
-- Modify: `frontend/package.json`
-- Modify: corresponding lockfiles only when dependency versions are deliberately updated
-- Modify: `.github/workflows/ci.yml`
-- Modify: `TECH_DEBT.md` if an advisory is accepted rather than fixed
+**Tệp:**
+- Sửa đổi: `package.json`
+- Sửa đổi: `backend/package.json`
+- Sửa đổi: `frontend/package.json`
+- Sửa đổi: chỉ các tệp khóa tương ứng khi các phiên bản phụ thuộc được cập nhật có chủ ý
+- Sửa đổi: `.github/workflows/ci.yml`
+- Sửa đổi: `TECH_DEBT.md` nếu lời khuyên được chấp nhận thay vì cố định
 
-- [x] **Step 1: Capture exact audit findings on the synchronized baseline.**
+- [x] **Bước 1: Ghi lại chính xác các phát hiện kiểm tra trên mốc cơ sở được đồng bộ hóa.**
 
-Run:
+Chạy:
 
 ```powershell
 npm.cmd audit --audit-level=high
@@ -83,15 +90,18 @@ npm.cmd --prefix backend audit --audit-level=high
 npm.cmd --prefix frontend audit --audit-level=high
 ```
 
-Expected: identify the exact fixed versions for `axios`, `body-parser`, and `brace-expansion` (or any replacement advisories introduced by the current lockfiles).
+Dự kiến: xác định các phiên bản cố định chính xác cho `axios`, `body-parser` và `brace-expansion`
+(hoặc bất kỳ tư vấn thay thế nào được giới thiệu bởi các tệp khóa hiện tại).
 
-- [x] **Step 2: Update only vulnerable dependencies or safe overrides.**
+- [x] **Bước 2: Chỉ cập nhật các phần phụ thuộc dễ bị tấn công hoặc ghi đè an toàn.**
 
-Use the package manager's audit fix proposal as input, review the lockfile diff, and keep the approved dependency policy. Do not run an unreviewed broad upgrade.
+Sử dụng đề xuất sửa lỗi kiểm tra của người quản lý gói làm đầu vào, xem xét sự khác biệt của tệp
+khóa và duy trì chính sách phụ thuộc đã được phê duyệt. Không chạy bản nâng cấp rộng rãi chưa được
+xem xét.
 
-- [x] **Step 3: Make high-severity audits fail CI.**
+- [x] **Bước 3: Thực hiện các cuộc kiểm tra có mức độ nghiêm trọng cao không đạt CI.**
 
-Add these three commands after each install in `.github/workflows/ci.yml`:
+Thêm ba lệnh này sau mỗi lần cài đặt trong `.github/workflows/ci.yml`:
 
 ```yaml
       - name: Root dependency audit
@@ -106,9 +116,9 @@ Add these three commands after each install in `.github/workflows/ci.yml`:
         working-directory: frontend
 ```
 
-- [x] **Step 4: Run focused and full regression checks.**
+- [x] **Bước 4: Chạy kiểm tra hồi quy tập trung và đầy đủ.**
 
-Run:
+Chạy:
 
 ```powershell
 npm.cmd --prefix backend test
@@ -117,103 +127,119 @@ npm.cmd --prefix frontend run lint
 npm.cmd --prefix frontend run build
 ```
 
-Expected: all suites pass and the three production audits exit `0`.
+Dự kiến: tất cả các bộ đều đạt và ba cuộc kiểm tra sản xuất đều thoát khỏi `0`.
 
 ---
 
-### Task 3: Reconcile release and feature evidence with merged work
+### Nhiệm vụ 3: Đối chiếu bản phát hành và bằng chứng đặc trưng với tác phẩm đã hợp nhất
 
-**Files:**
-- Modify: `README.md`
-- Modify: `plan.md`
-- Modify: `.agents/CLAUDE.md`
-- Modify: `document/FinalRelease.md`
-- Modify: `docs/release/final-submission-checklist-2026-07-20.md`
-- Modify: `docs/release/phase3-final-report.md`
-- Modify: `.sdd/reviews/governance-release-reconciliation-validation-2026-07-20.md`
-- Modify: `.sdd/reviews/vietnamese-ui-localization-validation-2026-07-20.md`
-- Modify: stale completion gates under `.sdd/specs/feat-*/PLAN.md` and `TASKS.md`
+**Tệp:**
+- Sửa đổi: `README.md`
+- Sửa đổi: `plan.md`
+- Sửa đổi: `.agents/CLAUDE.md`
+- Sửa đổi: `document/FinalRelease.md`
+- Sửa đổi: `docs/release/final-submission-checklist-2026-07-20.md`
+- Sửa đổi: `docs/release/phase3-final-report.md`
+- Sửa đổi: `.sdd/reviews/governance-release-reconciliation-validation-2026-07-20.md`
+- Sửa đổi: `.sdd/reviews/vietnamese-ui-localization-validation-2026-07-20.md`
+- Sửa đổi: cổng hoàn thành cũ theo `.sdd/specs/feat-*/PLAN.md` và `TASKS.md`
 
-- [x] **Step 1: Record the actual current baseline.**
+- [x] **Bước 1: Ghi lại mốc cơ sở hiện tại thực tế.**
 
-Replace stale “H3 pending” statements only after confirming the merge evidence for PR #59. Record the current remote SHA `a8729f9`, CI run `29824756487`, deployment run `29824944954`, and the twelve post-PR #59 commits as a new reviewed reconciliation batch.
+Chỉ thay thế các câu lệnh “H3 đang chờ xử lý” cũ sau khi xác nhận bằng chứng hợp nhất cho PR #59.
+Ghi lại SHA `a8729f9` từ xa hiện tại, CI chạy `29824756487`, chạy triển khai `29824944954` và 12 cam
+kết sau PR #59 dưới dạng lô đối chiếu mới được đánh giá.
 
-- [x] **Step 2: Reconcile historical unchecked boxes.**
+- [x] **Bước 2: Điều chỉnh các hộp đã bỏ chọn trước đây.**
 
-Keep historical evidence, but add a dated supersession note or mark the current gate complete where evidence exists. Do not leave contradictory current-state claims such as `Implementation State: COMPLETE` beside an unexplained open completion gate.
+Giữ lại bằng chứng lịch sử, nhưng thêm ghi chú ghi ngày thay thế hoặc đánh dấu hoàn thành cổng hiện
+tại nếu có bằng chứng. Không để lại các xác nhận quyền sở hữu trạng thái hiện tại mâu thuẫn như
+`Implementation State: COMPLETE` bên cạnh cổng hoàn thành mở không giải thích được.
 
-- [x] **Step 3: Update release decision wording.**
+- [x] **Bước 3: Cập nhật nội dung quyết định phát hành.**
 
-State whether `v1.0.2` remains the submission release or whether a human-approved `v1.0.3` is eligible after the new batch passes security, visual, and integration review. Do not create the tag in this task.
+Nêu rõ liệu `v1.0.2` vẫn là bản phát hành đã gửi hay liệu `v1.0.3` được con người phê duyệt có đủ
+điều kiện sau khi lô mới vượt qua quá trình đánh giá về bảo mật, hình ảnh và tích hợp hay không.
+Không tạo thẻ trong nhiệm vụ này.
 
-- [x] **Step 4: Validate documentation consistency.**
+- [x] **Bước 4: Xác thực tính nhất quán của tài liệu.**
 
-Run:
+Chạy:
 
 ```powershell
 npm.cmd run trace:enforce
 rg -n -i "H3 pending|H3 remains pending|PR #59 awaits|Implementation State: COMPLETE|PENDING" README.md plan.md .agents .sdd/reviews docs/release .sdd/specs
 ```
 
-Expected: remaining `PENDING` text is explicitly scoped to genuine human acceptance or documented out-of-scope limitations.
+Dự kiến: văn bản `PENDING` còn lại được xác định rõ ràng trong phạm vi chấp nhận thực sự của con
+người hoặc các giới hạn ngoài phạm vi được ghi lại.
 
 ---
 
-### Task 4: Close visual acceptance and submission evidence
+### Nhiệm vụ 4: Đóng bằng chứng trực quan chấp nhận và nộp
 
-**Files:**
-- Review: `docs/release/final-submission-checklist-2026-07-20.md`
-- Review: `.sdd/reviews/vietnamese-ui-localization-validation-2026-07-20.md`
-- Add only approved screenshots or an approved external demo link
+**Tệp:**
+- Đánh giá: `docs/release/final-submission-checklist-2026-07-20.md`
+- Đánh giá: `.sdd/reviews/vietnamese-ui-localization-validation-2026-07-20.md`
+- Chỉ thêm ảnh chụp màn hình đã được phê duyệt hoặc liên kết demo bên ngoài đã được phê duyệt
 
-- [x] **Step 1: Run the latest staging smoke and browser flows.**
+- [x] **Bước 1: Chạy dòng trình duyệt và kiểm thử nhanh chạy thử mới nhất.**
 
-Run the documented staging smoke against the current staging URLs and the full Playwright suite. Expected: frontend, health, SQL catalog, CORS allow/deny, protected route, and 4/4 browser flows pass. The current staging workflow `29824944954` and local Playwright run satisfy this automated gate.
+Chạy kiểm thử nhanh môi trường tiền sản xuất được ghi lại đối với các URL môi trường tiền sản xuất hiện tại và
+bộ Playwright đầy đủ. Dự kiến: giao diện người dùng, tình trạng, danh mục SQL, cho phép/từ chối
+CORS, tuyến đường được bảo vệ và luồng trình duyệt 4/4. Quy trình môi trường tiền sản xuất hiện tại
+`29824944954` và Playwright cục bộ đáp ứng cổng tự động này.
 
-- [x] **Step 2: Perform human desktop/mobile visual acceptance.**
+- [x] **Bước 2: Thực hiện chấp nhận hình ảnh trên máy tính để bàn/thiết bị di động.**
 
-Inspect Home/catalog/detail, authentication, member borrowing/reservation, librarian operations, reports, and Admin at desktop and 390px mobile widths. Resolve or explicitly record any catalog/API failure before signing acceptance.
+Kiểm tra Trang chủ/danh mục/chi tiết, xác thực, mượn thành viên/reservation, hoạt động của thủ thư,
+báo cáo và Quản trị viên trên máy tính để bàn và độ rộng 390px trên thiết bị di động. Giải quyết
+hoặc ghi lại rõ ràng mọi lỗi trong danh mục/API trước khi ký chấp nhận.
 
-- [x] **Step 3: Record the acceptance result.**
+- [x] **Bước 3: Ghi kết quả nghiệm thu.**
 
-Update the localization validation packet and final checklist with reviewer/date/evidence. If the teacher requires a video, add the real URL; never invent one.
+Cập nhật gói xác thực bản địa hóa và danh sách kiểm tra cuối cùng với người đánh giá/ngày/bằng
+chứng. Nếu giáo viên yêu cầu video, hãy thêm URL thật; không bao giờ phát minh ra một.
 
 ---
 
-### Task 5: Clean release artifacts and whitespace
+### Nhiệm vụ 5: Làm sạch các tạo phẩm phát hành và khoảng trắng
 
-**Files:**
-- Modify: `.gitignore` with selective patterns for generated Azure dumps/packages
-- Modify: `.sdd/specs/feat-user-role-management/TASKS.md` to remove the known trailing whitespace
-- Review: `backend/.zip` and `output/azure-mail-20260721-145625/`
+**Tệp:**
+- Sửa đổi: `.gitignore` với các mẫu chọn lọc cho các gói/gói Azure được tạo
+- Sửa đổi: `.sdd/specs/feat-user-role-management/TASKS.md` để xóa khoảng trắng ở cuối đã biết
+- Đánh giá: `backend/.zip` và `output/azure-mail-20260721-145625/`
 
-- [x] **Step 1: Inspect untracked files for secrets/PII.**
+- [x] **Bước 1: Kiểm tra các tệp không bị theo dõi để tìm bí mật/PII.**
 
-Run a targeted search over the untracked deployment artifacts. Preserve intentional visual evidence; do not commit Azure logs, dumps, or packages containing credentials or personal data.
+Chạy tìm kiếm có mục tiêu trên các tạo phẩm triển khai không được theo dõi. Bảo quản bằng chứng trực
+quan có chủ ý; không cam kết nhật ký, kết xuất hoặc gói Azure có chứa thông tin xác thực hoặc dữ
+liệu cá nhân.
 
-- [x] **Step 2: Remove or selectively ignore generated artifacts.**
+- [x] **Bước 2: Xóa hoặc bỏ qua có chọn lọc các tạo phẩm đã tạo.**
 
-Use an explicit, human-approved target list. Do not recursively delete all of `output/`, because some screenshots may be release evidence.
+Sử dụng danh sách mục tiêu rõ ràng, được con người phê duyệt. Không xóa đệ quy tất cả `output/` vì
+một số ảnh chụp màn hình có thể là bằng chứng được phát hành.
 
-- [x] **Step 3: Fix whitespace and verify repository hygiene.**
+- [x] **Bước 3: Sửa khoảng trắng và xác minh vệ sinh kho lưu trữ.**
 
-Run:
+Chạy:
 
 ```powershell
 git diff --check
 git status --short --untracked-files=all
 ```
 
-Expected: no whitespace errors and only intentionally retained artifacts remain.
+Dự kiến: không có lỗi khoảng trắng và chỉ còn lại các tạo phẩm được cố ý giữ lại.
 
 ---
 
-### Task 6: Final validation packet
+### Nhiệm vụ 6: Gói xác nhận cuối cùng
 
-**Files:**
-- Modify: the applicable dated validation/release records
+**Tệp:**
+- Sửa đổi: hồ sơ xác nhận/phát hành ngày áp dụng
 
-- [x] **Step 1: Run the complete gate.**
+- [x] **Bước 1: Chạy cổng hoàn chỉnh.**
 
 ```powershell
 npm.cmd run trace:enforce
@@ -228,36 +254,42 @@ npm.cmd run test:deployment
 git diff --check
 ```
 
-- [x] **Step 2: Record exact counts and residual limitations.**
+- [x] **Bước 2: Ghi lại số lượng chính xác và giới hạn còn lại.**
 
-Document test counts, coverage, staging evidence, dependency audit status, visual acceptance, and the final release SHA. Keep SQL CI, durable avatar storage, FE10 inbox UI, and production SLA clearly labeled as accepted limitations if they remain out of scope.
+Số lượng kiểm tra tài liệu, phạm vi bao phủ, bằng chứng môi trường tiền sản xuất, trạng thái kiểm
+tra phụ thuộc, chấp nhận trực quan và bản phát hành cuối cùng SHA. Giữ SQL CI, bộ lưu trữ hình đại
+diện bền bỉ, giao diện người dùng hộp thư đến FE10 và SLA sản xuất được gắn nhãn rõ ràng là các giới
+hạn được chấp nhận nếu chúng vẫn nằm ngoài phạm vi.
 
-- [ ] **Step 3: Stop at human release approval.**
+- [ ] **Bước 3: Dừng lại ở khâu phê duyệt thả người.**
 
-Do not create `v1.0.3`, publish external media, or change Azure resources without the team's explicit release decision.
+Không tạo `v1.0.3`, xuất bản phương tiện bên ngoài hoặc thay đổi tài nguyên Azure mà không có quyết
+định phát hành rõ ràng của nhóm.
 
 ---
 
-### Task 7: Apply the approved minimal mobile visual remediation
+### Nhiệm vụ 7: Áp dụng biện pháp khắc phục hình ảnh trên thiết bị di động tối thiểu đã được phê duyệt
 
-**Files:**
-- Modify: `tests/e2e/fe08-reservation-candidate-catalog.spec.js`
-- Modify: `tests/e2e/fe11-admin-request-management.spec.js`
-- Modify: `frontend/src/styles/app-shell.css`
-- Modify: `frontend/src/page/UserManagement.jsx`
-- Review: `output/playwright/`
+**Tệp:**
+- Sửa đổi: `tests/e2e/fe08-reservation-candidate-catalog.spec.js`
+- Sửa đổi: `tests/e2e/fe11-admin-request-management.spec.js`
+- Sửa đổi: `frontend/src/styles/app-shell.css`
+- Sửa đổi: `frontend/src/page/UserManagement.jsx`
+- Đánh giá: `output/playwright/`
 
-**Interfaces:**
-- Consumes: the existing FE08 member reservation queue DOM and FE11 Admin topbar/table DOM.
-- Produces: mobile layouts whose visible controls remain inside their containers without changing APIs, business behavior, desktop layout, or the Admin table's internal horizontal scrolling.
+**Giao diện:**
+- Tiêu thụ: hàng đợi đặt chỗ thành viên FE08 hiện có DOM và FE11 Thanh trên cùng/bảng quản trị DOM.
+- Tạo ra: bố cục dành cho thiết bị di động có các điều khiển hiển thị vẫn nằm trong vùng chứa của chúng mà không thay đổi API, hành vi kinh doanh, bố cục máy tính để bàn hoặc cuộn ngang nội bộ của bảng Quản trị.
 
-- [x] **Step 1: Write the failing FE08 mobile containment assertion.**
+- [x] **Bước 1: Viết xác nhận ngăn chặn di động FE08 không thành công.**
 
-After the existing `390x844` reload, measure the first candidate row, its status badge, and its action button. Assert that the badge and button are visible and their right edges do not exceed the row's right edge by more than one CSS pixel.
+Sau khi tải lại `390x844` hiện có, hãy đo hàng ứng cử viên đầu tiên, huy hiệu trạng thái và nút hành
+động của nó. Xác nhận rằng huy hiệu và nút hiển thị và cạnh phải của chúng không vượt quá cạnh phải
+của hàng nhiều hơn một pixel CSS.
 
-- [x] **Step 2: Run the FE08 test and verify RED.**
+- [x] **Bước 2: Chạy kiểm thử FE08 và xác minh RED.**
 
-Run:
+Chạy:
 
 ```powershell
 $env:E2E_FRONTEND_PORT='4196'
@@ -265,23 +297,29 @@ $env:E2E_BACKEND_PORT='3121'
 npx.cmd playwright test tests/e2e/fe08-reservation-candidate-catalog.spec.js --project=chromium
 ```
 
-Expected before the CSS fix: FAIL because the long waiting-status badge is clipped beyond the candidate row on the `390px` viewport.
+Dự kiến trước khi sửa lỗi CSS: THẤT BẠI vì huy hiệu trạng thái chờ lâu bị cắt ra ngoài hàng ứng cử
+viên trên khung nhìn `390px`.
 
-- [x] **Step 3: Implement the minimal FE08 mobile CSS.**
+- [x] **Bước 3: Triển khai FE08 di động tối thiểu CSS.**
 
-Inside the existing `@media (max-width: 640px)` block, change only `.member-reservation-catalog .queue-item`: use a two-column grid, allow the text stack and badge to shrink/wrap, and place the action button on a full-width row.
+Bên trong khối `@media (max-width: 640px)` hiện có, chỉ thay đổi `.thành viên-đặt chỗ-danh mục
+.queue-item`: sử dụng lưới hai cột, cho phép bộ công nghệ văn bản và huy hiệu thu nhỏ/bọc và đặt nút
+hành động trên một hàng có chiều rộng đầy đủ.
 
-- [x] **Step 4: Run the FE08 test and verify GREEN.**
+- [x] **Bước 4: Chạy kiểm thử FE08 và xác minh GREEN.**
 
-Repeat the Step 2 command. Expected: PASS with no document-level horizontal overflow and all candidate controls contained in the row.
+Lặp lại lệnh Bước 2. Dự kiến: ĐẠT mà không có tràn ngang cấp tài liệu và tất cả các điều khiển đề cử
+có trong hàng.
 
-- [x] **Step 5: Write the failing FE11 mobile topbar assertion.**
+- [x] **Bước 5: Viết xác nhận thanh trên cùng của thiết bị di động FE11 bị lỗi.**
 
-In the Admin request-management E2E flow, open `Quản lý người dùng`, switch to `390x844`, and assert that `.um-actions` starts at least eight CSS pixels below the heading. Also assert that the document has no horizontal overflow and `.um-content` remains the horizontal-scroll container for the wide table.
+Trong luồng E2E quản lý yêu cầu quản trị viên, hãy mở `Quản lý người dùng`, chuyển sang `390x844` và
+xác nhận rằng `.um-actions` bắt đầu ít nhất tám pixel CSS bên dưới tiêu đề. Đồng thời khẳng định
+rằng tài liệu không có tràn ngang và `.um-content` vẫn là vùng chứa cuộn ngang cho bảng rộng.
 
-- [x] **Step 6: Run the FE11 test and verify RED.**
+- [x] **Bước 6: Chạy kiểm thử FE11 và xác minh RED.**
 
-Run:
+Chạy:
 
 ```powershell
 $env:E2E_FRONTEND_PORT='4197'
@@ -289,15 +327,18 @@ $env:E2E_BACKEND_PORT='3122'
 npx.cmd playwright test tests/e2e/fe11-admin-request-management.spec.js --project=chromium
 ```
 
-Expected before the CSS fix: FAIL because the mobile topbar has no separation between the heading block and action row.
+Dự kiến trước khi sửa lỗi CSS: THẤT BẠI vì thanh trên cùng trên thiết bị di động không có sự ngăn
+cách giữa khối tiêu đề và hàng hành động.
 
-- [x] **Step 7: Implement the minimal FE11 mobile CSS.**
+- [x] **Bước 7: Triển khai FE11 di động tối thiểu CSS.**
 
-Inside the existing `@media (max-width: 900px)` block, add a gap to `.um-topbar`, allow `.um-actions` to wrap at full width, and give its buttons a responsive flex basis. Preserve `.um-content { overflow: auto; }` and `.um-table { min-width: 850px; }`.
+Bên trong khối `@media (max-width: 900px)` hiện có, hãy thêm một khoảng trống vào `.um-topbar`, cho
+phép `.um-actions` bao bọc toàn bộ chiều rộng và cung cấp cho các nút của nó một cơ sở linh hoạt
+linh hoạt. Bảo quản `.um-content { overflow: auto; }` và `.um-table { min-width: 850px; }`.
 
-- [x] **Step 8: Run the focused tests and full visual regression gate.**
+- [x] **Bước 8: Chạy kiểm thử tập trung và cổng hồi quy trực quan đầy đủ.**
 
-Run both focused tests, then:
+Chạy cả hai kiểm thử tập trung, sau đó:
 
 ```powershell
 npm.cmd --prefix frontend test
@@ -307,4 +348,6 @@ npm.cmd run test:e2e
 git diff --check
 ```
 
-Expected: all commands pass. Capture fresh FE08 and FE11 mobile screenshots in `output/playwright/` and update the visual/release evidence with the exact result; do not commit, tag, or publish.
+Dự kiến: tất cả các lệnh đều vượt qua. Chụp ảnh chụp màn hình di động FE08 và FE11 mới trong
+`output/playwright/` và cập nhật bằng chứng trực quan/phát hành với kết quả chính xác; không cam
+kết, gắn thẻ hoặc xuất bản.

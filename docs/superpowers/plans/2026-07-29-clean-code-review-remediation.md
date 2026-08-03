@@ -1,88 +1,93 @@
-# Clean-code review remediation Implementation Plan
+# Kế hoạch thực hiện khắc phục đánh giá mã sạch
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use `executing-plans` to execute this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Đối với nhân viên đại lý:** BẮT BUỘC SUB-SKILL: Sử dụng `executing-plans` để thực hiện kế hoạch này theo từng nhiệm vụ. Các bước sử dụng cú pháp hộp kiểm (`- [ ]`) để theo dõi.
 
-**Goal:** Close the review findings from `main@8ef8367` without changing APIs, schema, or Azure runtime state.
+**Mục tiêu:** Đóng các kết quả đánh giá từ `main@8ef8367` mà không thay đổi API, lược đồ hoặc trạng
+thái thời gian chạy Azure.
 
-**Architecture:** Narrow the secret scanner's fixture exception from file scope to an explicitly marked line. Move FE08 handoff selection into a pure helper shared by UI and tests, then render an explicit empty selection for stale handoffs. Documentation changes only correct stale governance and traceability metadata.
+**Kiến trúc:** Thu hẹp ngoại lệ cố định của máy quét bí mật từ phạm vi tệp đến một dòng được đánh
+dấu rõ ràng. Di chuyển lựa chọn chuyển giao FE08 thành một trình trợ giúp thuần túy được chia sẻ bởi
+giao diện người dùng và các kiểm thử, sau đó hiển thị một lựa chọn trống rõ ràng cho các chuyển giao
+cũ. Những thay đổi về tài liệu chỉ sửa lại siêu dữ liệu quản trị cũ và truy vết.
 
-**Tech Stack:** Node.js built-in test runner, React 19, GitHub Actions YAML, existing SDD Markdown.
+**Tech bộ công nghệ:** Trình chạy kiểm thử tích hợp Node.js, React 19, GitHub Hành động YAML, SDD
+Markdown hiện có.
 
-## Global Constraints
+## Ràng buộc toàn cầu
 
-- Preserve `SAFE-001`: no real secret, password, token, or credential in source, fixture, log, or commit.
-- Preserve `BR-FE07-012`, `BR-FE07-013`, and `FR-FE08-039`; do not change API or database schema.
-- Use Node built-ins only for the scanner; do not add dependencies.
-- Azure SQL remains paused: do not deploy, run migrations, resume the database, or change Azure settings.
-- Each behavioral fix has a failing regression test before production-code changes.
+- Bảo toàn `SAFE-001`: không có bí mật, mật khẩu, mã thông báo hoặc thông tin xác thực thực sự trong nguồn, lịch thi đấu, nhật ký hoặc cam kết.
+- Bảo tồn `BR-FE07-012`, `BR-FE07-013` và `FR-FE08-039`; không thay đổi API hoặc lược đồ cơ sở dữ liệu.
+- Chỉ sử dụng các phần mềm tích hợp sẵn của Node cho máy quét; không thêm phụ thuộc.
+- Azure SQL vẫn bị tạm dừng: không triển khai, chạy di chuyển, tiếp tục cơ sở dữ liệu hoặc thay đổi cài đặt Azure.
+- Mỗi bản sửa lỗi hành vi đều có một kiểm thử hồi quy không thành công trước khi thay đổi mã sản xuất.
 
 ---
 
-### Task 1: Narrow the tracked-secret scanner exception and enforce its tests in CI
+### Nhiệm vụ 1: Thu hẹp ngoại lệ của trình quét bí mật được theo dõi và thực thi các kiểm thử của nó trong CI
 
-**Files:**
+**Tệp:**
 
-- Modify: `scripts/check-tracked-secrets.js`
-- Modify: `scripts/check-tracked-secrets.test.js`
-- Modify: `.github/workflows/ci.yml`
-- Modify: `docs/superpowers/plans/2026-07-29-pre-azure-release-remediation.md`
+- Sửa đổi: `scripts/check-tracked-secrets.js`
+- Sửa đổi: `scripts/check-tracked-secrets.test.js`
+- Sửa đổi: `.github/workflows/ci.yml`
+- Sửa đổi: `docs/superpowers/plans/2026-07-29-pre-azure-release-remediation.md`
 
-**Interfaces:**
+**Giao diện:**
 
-- `scanTrackedFiles(root)` continues to return `{ path, pattern }[]`.
-- A line containing `secret-scan: allow-synthetic` is excluded from matching; all other lines in that file still scan.
-- CI invokes `npm run test:secrets`, which runs both scanner unit tests and the repository scan.
+- `scanTrackedFiles(root)` tiếp tục trả sách `{ path, pattern }[]`.
+- Một dòng chứa `secret-scan: allow-synthetic` bị loại khỏi kết quả khớp; tất cả các dòng khác trong tập tin đó vẫn quét.
+- CI gọi `npm run test:secrets`, chạy cả kiểm tra đơn vị máy quét và quét kho lưu trữ.
 
-- [ ] **Step 1: Write failing regressions** — fixture has a marked database URL line plus an unmarked AWS key line; scanner must report only the AWS finding. Build synthetic values from string fragments so the test source is safe to scan.
-- [ ] **Step 2: Verify RED** — run `node --test scripts/check-tracked-secrets.test.js`; the line-scope regression must fail because current code skips the full file.
-- [ ] **Step 3: Implement minimal scanner change** — filter marked lines before evaluation, remove `SCANNER_TEST_PATH`, and rewrite static samples in test/prior plan.
-- [ ] **Step 4: Wire CI** — replace `node scripts/check-tracked-secrets.js` with `npm run test:secrets` after root `npm ci` and before audit.
-- [ ] **Step 5: Verify GREEN** — run `npm run test:secrets`; no secret value appears in output.
+- [ ] **Bước 1: Viết hồi quy thất bại** — lịch thi đấu có dòng URL cơ sở dữ liệu được đánh dấu cộng với dòng khóa AWS không được đánh dấu; máy quét chỉ được báo cáo phát hiện AWS. Xây dựng các giá trị tổng hợp từ các đoạn chuỗi để nguồn kiểm tra có thể quét an toàn.
+- [ ] **Bước 2: Xác minh RED** — chạy `node --test scripts/check-tracked-secrets.test.js`; hồi quy phạm vi dòng phải thất bại vì mã hiện tại bỏ qua toàn bộ tệp.
+- [ ] **Bước 3: Thực hiện thay đổi máy quét ở mức tối thiểu** — lọc các dòng được đánh dấu trước khi đánh giá, xóa `SCANNER_TEST_PATH` và viết lại các mẫu tĩnh trong kế hoạch kiểm thử/trước.
+- [ ] **Bước 4: Dây CI** — thay thế `node scripts/check-tracked-secrets.js` bằng `npm run test:secrets` sau khi root `npm ci` và trước khi kiểm tra.
+- [ ] **Bước 5: Xác minh GREEN** — chạy `npm run test:secrets`; không có giá trị bí mật nào xuất hiện ở đầu ra.
 
-### Task 2: Make FE08 stale-handoff state explicit and behaviorally tested
+### Nhiệm vụ 2: Làm cho trạng thái chuyển giao cũ của FE08 trở nên rõ ràng và được kiểm tra hành vi
 
-**Files:**
+**Tệp:**
 
-- Create: `frontend/src/utils/reservationHandoffState.js`
-- Modify: `frontend/src/page/reservation/ReservationsLibrarianPage.jsx`
-- Modify: `frontend/test/reservationFrontend.test.js`
+- Tạo: `frontend/src/utils/reservationHandoffState.js`
+- Sửa đổi: `frontend/src/page/reservation/ReservationsLibrarianPage.jsx`
+- Sửa đổi: `frontend/test/reservationFrontend.test.js`
 
-**Interfaces:**
+**Giao diện:**
 
-- `resolveReservationQueueHandoff({ pendingCopyId, currentCopyId, reservations })` returns `{ queueCopyId, notice, consumePendingHandoff }`.
-- A stale `pendingCopyId` returns `queueCopyId: null`, the approved warning, and `consumePendingHandoff: true`; it never falls back to an active copy.
-- With no pending handoff, the helper retains a valid current copy or selects the first active copy.
+- `resolveReservationQueueHandoff({ pendingCopyId, currentCopyId, reservations })` trả về `{ queueCopyId, notice, consumePendingHandoff }`.
+- `pendingCopyId` cũ trả về `queueCopyId: null`, cảnh báo đã được phê duyệt và `consumePendingHandoff: true`; nó không bao giờ trở lại bản sao đang hoạt động.
+- Không có sự chuyển giao đang chờ xử lý, người trợ giúp giữ lại một bản sao hiện tại hợp lệ hoặc chọn bản sao hoạt động đầu tiên.
 
-- [ ] **Step 1: Write failing behavior tests** — stale handoff with another active copy must yield `null`; ordinary load without handoff selects first active copy.
-- [ ] **Step 2: Verify RED** — run `npm --prefix frontend test -- --test-name-pattern "stale handoff"`; it fails because helper export does not exist.
-- [ ] **Step 3: Implement helper and consume it** — replace inline selection in `loadReservations()`; add disabled `value=""` placeholder labelled `Chọn bản sao xem hàng đợi` when there are active copies but no chosen copy.
-- [ ] **Step 4: Verify GREEN** — run `npm --prefix frontend test -- --test-name-pattern "handoff"`; behavioral tests pass.
+- [ ] **Bước 1: Viết các kiểm thử hành vi không đạt** — chuyển giao cũ với một bản sao hoạt động khác phải mang lại `null`; tải thông thường không có chuyển giao sẽ chọn bản sao hoạt động đầu tiên.
+- [ ] **Bước 2: Xác minh RED** — chạy `npm --prefix frontend test -- --test-name-pattern "stale handoff"`; nó không thành công vì việc xuất trợ giúp không tồn tại.
+- [ ] **Bước 3: Triển khai và sử dụng trình trợ giúp** — thay thế lựa chọn nội tuyến trong `loadReservations()`; thêm trình giữ chỗ `value=""` bị vô hiệu hóa có nhãn `Chọn bản sao xem hàng đợi` khi có bản sao đang hoạt động nhưng không có bản sao được chọn.
+- [ ] **Bước 4: Xác minh GREEN** — chạy `npm --prefix frontend test -- --test-name-pattern "handoff"`; vượt qua các kiểm thử hành vi.
 
-### Task 3: Correct traceability and release-state metadata
+### Nhiệm vụ 3: truy vết chính xác và siêu dữ liệu trạng thái phát hành
 
-**Files:**
+**Tệp:**
 
-- Modify: `backend/src/repositories/borrowingRepository.js`
-- Modify: `frontend/src/page/reservation/ReservationsLibrarianPage.jsx`
-- Modify: `backend/tests/borrowingRepository.test.js`
-- Modify: `frontend/test/reservationFrontend.test.js`
-- Modify: `.sdd/specs/feat-{borrowing-management,reservation-management,notification-management,reporting-statistics}/TASKS.md`
-- Modify: `.sdd/specs/feat-reporting-statistics/{SPEC.md,PLAN.md}`
+- Sửa đổi: `backend/src/repositories/borrowingRepository.js`
+- Sửa đổi: `frontend/src/page/reservation/ReservationsLibrarianPage.jsx`
+- Sửa đổi: `backend/tests/borrowingRepository.test.js`
+- Sửa đổi: `frontend/test/reservationFrontend.test.js`
+- Sửa đổi: `.sdd/specs/feat-{borrowing-management,reservation-management,notification-management,reporting-statistics}/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-reporting-statistics/{SPEC.md,PLAN.md}`
 
-**Interfaces:**
+**Giao diện:**
 
-- No runtime interface change.
-- FE07 return code traces `BR-FE07-012, BR-FE07-013`; FE08 handoff traces `FR-FE08-039`.
-- Release metadata agrees that merge/CI completed and Azure staging is quota-blocked; it does not claim H3 remains pending.
+- Không có thay đổi giao diện thời gian chạy.
+- FE07 trả sách dấu vết mã `BR-FE07-012, BR-FE07-013`; Dấu vết chuyển giao FE08 `FR-FE08-039`.
+- Siêu dữ liệu phát hành đồng ý rằng việc hợp nhất/CI đã hoàn tất và giai đoạn Azure bị chặn hạn ngạch; nó không khẳng định H3 vẫn đang chờ xử lý.
 
-- [ ] **Step 1: Write failing traceability assertions** — extend existing FE07/FE08 tests to require exact IDs and add a Node assertion that rejects H3-pending release text in the four TASKS files.
-- [ ] **Step 2: Verify RED** — run the focused backend, frontend, and traceability tests; they fail on missing IDs/stale metadata.
-- [ ] **Step 3: Apply smallest changes** — extend existing comments and replace only contradictory present-tense release wording, preserving historical evidence.
-- [ ] **Step 4: Verify GREEN** — re-run focused tests and `npm run trace:enforce`.
+- [ ] **Bước 1: Viết xác nhận truy vết không thành công** — mở rộng các kiểm thử FE07/FE08 hiện có để yêu cầu ID chính xác và thêm xác nhận Nút từ chối văn bản phát hành đang chờ xử lý H3 trong bốn tệp TASKS.
+- [ ] **Bước 2: Xác minh RED** — chạy các kiểm thử máy chủ, giao diện người dùng và khả năng truy vết tập trung; chúng thất bại do thiếu ID/siêu dữ liệu cũ.
+- [ ] **Bước 3: Áp dụng những thay đổi nhỏ nhất** — mở rộng các nhận xét hiện có và chỉ thay thế cách diễn đạt mâu thuẫn ở thì hiện tại, bảo tồn bằng chứng lịch sử.
+- [ ] **Bước 4: Xác minh GREEN** — chạy lại các kiểm thử tập trung và `npm run trace:enforce`.
 
-### Task 4: Full verification and handoff
+### Nhiệm vụ 4: Xác minh và bàn giao đầy đủ
 
-**Files:** Verify only.
+**Tệp:** Chỉ xác minh.
 
-- [ ] **Step 1: Run gates** — `npm run test:secrets`, focused backend tests, full frontend test/lint/build, deployment tests, traceability state/enforce, and `git diff --check`.
-- [ ] **Step 2: Commit and publish** — commit reviewed remediation on `fix/clean-code-remediation`, push, open PR, and wait for exact-head CI. Do not merge or deploy without subsequent user approval.
+- [ ] **Bước 1: Chạy cổng** — `npm run test:secrets`, kiểm tra máy chủ tập trung, kiểm tra/kiểm tra mã/xây dựng giao diện người dùng đầy đủ, kiểm tra triển khai, trạng thái/thực thi truy nguyên và `git diff --check`.
+- [ ] **Bước 2: Cam kết và xuất bản** — cam kết khắc phục đã được xem xét trên `fix/clean-code-remediation`, đẩy, mở PR và đợi CI chính xác. Không hợp nhất hoặc triển khai mà không có sự chấp thuận của người dùng tiếp theo.

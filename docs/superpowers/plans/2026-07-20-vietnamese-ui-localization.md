@@ -1,75 +1,83 @@
-# Vietnamese UI Localization Implementation Plan
+# Kế hoạch triển khai bản địa hóa giao diện người dùng tiếng Việt
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Đối với nhân viên đại lý:** SUB-SKILL BẮT BUỘC: Sử dụng siêu năng lực:phát triển theo định hướng phụ (được khuyến nghị) hoặc siêu năng lực:thực hiện các kế hoạch để triển khai kế hoạch này theo từng nhiệm vụ. Các bước sử dụng cú pháp hộp kiểm (`- [ ]`) để theo dõi.
 
-**Goal:** Convert all frontend-generated interface copy to Vietnamese and apply a Vietnamese-safe `Be Vietnam Pro` + `Noto Serif` typography system without changing business logic or API contracts.
+**Mục tiêu:** Chuyển đổi tất cả bản sao giao diện do giao diện người dùng tạo sang tiếng Việt và áp
+dụng hệ thống kiểu chữ `Be Vietnam Pro` + `Noto Serif` an toàn cho tiếng Việt mà không thay đổi
+logic nghiệp vụ hoặc hợp đồng API.
 
-**Architecture:** Add a small Vietnamese copy catalog and presentation-only label helpers, then migrate each UI surface to use translated labels while retaining raw role/status codes for filtering and workflow decisions. Normalize API fallbacks at the frontend boundary so unknown server failures remain safe and Vietnamese. Typography is controlled through shared CSS variables and Google Fonts with Unicode-capable fallbacks.
+**Kiến trúc:** Thêm một danh mục bản sao nhỏ bằng tiếng Việt và các trình trợ giúp nhãn chỉ dành cho
+bản trình bày, sau đó di chuyển từng bề mặt giao diện người dùng để sử dụng các nhãn đã dịch trong
+khi vẫn giữ lại mã vai trò/trạng thái thô để lọc và đưa ra quyết định về quy trình làm việc. Bình
+thường hóa các dự phòng API ở ranh giới giao diện người dùng để các lỗi máy chủ không xác định vẫn
+an toàn và tiếng Việt. Kiểu chữ được kiểm soát thông qua các biến CSS được chia sẻ và Phông chữ
+Google với các dự phòng có khả năng Unicode.
 
-**Tech Stack:** React 19, Vite 8, Bootstrap 5, MUI, Node test runner, CSS custom properties, existing Axios API modules.
+**bộ công nghệ công nghệ:** React 19, Vite 8, Bootstrap 5, MUI, Trình chạy kiểm thử nút, thuộc tính
+tùy chỉnh CSS, các mô-đun Axios API hiện có.
 
-## Current Implementation Closeout - 2026-07-20
+## Kết thúc triển khai hiện tại - 2026-07-20
 
-PR #58 is merged as `cce59d0`. Application-baseline CI `29712597463` and staging
-workflow `29712612188` pass the frontend localization tests, lint, build,
-browser E2E, and six-check staging smoke. The authoritative L1-L4 evidence is
+PR #58 được hợp nhất thành `cce59d0`. CI `29712597463` cơ sở ứng dụng và quy trình môi trường tiền
+sản xuất `29712612188` vượt qua các kiểm thử bản địa hóa giao diện người dùng, tìm lỗi mã nguồn, bản
+dựng, trình duyệt E2E và kiểm tra giai đoạn kiểm thử nhanh sáu bước. Bằng chứng L1-L4 có thẩm quyền là
 `.sdd/reviews/vietnamese-ui-localization-validation-2026-07-20.md`.
 
-The later governance reconciliation repairs five residual presentation-only
-label surfaces and strengthens the raw-value regression. Its responsive follow-up
-adds the HomePage mobile menu, CTA, benefit-card, and footer layout contract;
-fresh local frontend evidence is 173/173. The published reconciliation is H2
-approved, while the responsive follow-up remains subject to H3 before merge.
+Quá trình đối chiếu quản trị sau này sẽ sửa chữa năm bề mặt nhãn còn sót lại chỉ để trình bày và
+tăng cường hồi quy giá trị thô. Phần tiếp theo đáp ứng của nó bổ sung thêm menu di động HomePage,
+CTA, hợp đồng bố cục chân trang và thẻ lợi ích; bằng chứng giao diện người dùng địa phương mới là
+173/173. Bản đối chiếu đã xuất bản đã được phê duyệt H2, trong khi bản điều chỉnh đáp ứng vẫn tuân
+theo H3 trước khi hợp nhất.
 
-The granular RED-GREEN task boxes below are retained as the historical execution
-plan. The final checklist is the current acceptance snapshot; a dedicated
-human responsive browser review remains explicitly pending.
+Các hộp nhiệm vụ RED-GREEN chi tiết bên dưới được giữ lại làm kế hoạch thực hiện lịch sử. Danh sách
+kiểm tra cuối cùng là ảnh chụp nhanh chấp nhận hiện tại; việc đánh giá trình duyệt đáp ứng chuyên
+dụng của con người vẫn đang chờ xử lý rõ ràng.
 
-## Global Constraints
+## Ràng buộc toàn cầu
 
-- The product language is fixed Vietnamese; do not add a language switcher or an i18n framework.
-- Keep `Email`, `OTP`, and `Barcode` unchanged in user-facing copy.
-- Keep source identifiers, API paths, payload fields, enum values, and test names in English.
-- Do not translate book titles, author names, email addresses, barcode values, or user-entered content.
-- Preserve raw values such as `AVAILABLE`, `BORROWED`, `PENDING`, and the existing internal FE07/FE08 view-state tokens for business logic.
-- Do not change database schema, API contracts, permissions, authentication semantics, or library business rules.
-- Use `Be Vietnam Pro` for controls/body text and `Noto Serif` for headings, with Unicode-capable fallbacks.
-- Unknown or unsafe backend messages must resolve to contextual Vietnamese fallbacks rather than raw technical English.
-- Follow RED-GREEN-REFACTOR for every production change and keep commits scoped to one task.
-
----
-
-## File Structure
-
-- Create `frontend/src/i18n/vi.js`: shared Vietnamese copy constants only.
-- Create `frontend/src/utils/uiLabels.js`: pure role, status, and boolean display-label helpers.
-- Create `frontend/test/vietnameseUi.test.js`: focused unit/source tests added incrementally by Tasks 1-6.
-- Modify `frontend/src/api/apiErrorMessages.js`: safe Vietnamese API fallback behavior.
-- Modify `frontend/src/api/authApi.js`, `frontend/src/api/profileApi.js`, `frontend/src/api/userManagementApi.js`, and `frontend/src/api/adminApi.js`: module-specific Vietnamese fallback copy.
-- Modify `frontend/index.html`, `frontend/src/index.css`, and existing visual styles: global language metadata and font tokens.
-- Modify existing pages/components in place: user-facing text only, except the
-  approved H3 responsive shell follow-up for HomePage navigation access and
-  narrow-screen layout; do not restructure feature ownership.
-- Modify affected `.sdd/specs/feat-*/CHANGELOG.md` files: record the cross-feature presentation change.
+- Ngôn ngữ sản phẩm được cố định bằng tiếng Việt; không thêm trình chuyển đổi ngôn ngữ hoặc khung i18n.
+- Giữ nguyên `Email`, `OTP` và `Barcode` trong bản sao hướng tới người dùng.
+- Giữ mã định danh nguồn, đường dẫn API, trường tải trọng, giá trị giá trị liệt kê và tên kiểm tra bằng tiếng Anh.
+- Không dịch tên sách, tên tác giả, địa chỉ email, giá trị mã vạch hoặc nội dung do người dùng nhập.
+- Giữ nguyên các giá trị thô như `AVAILABLE`, `BORROWED`, `PENDING` và mã thông báo trạng thái xem FE07/FE08 nội bộ hiện có cho logic nghiệp vụ.
+- Không thay đổi lược đồ cơ sở dữ liệu, hợp đồng API, quyền, ngữ nghĩa xác thực hoặc quy tắc nghiệp vụ của thư viện.
+- Sử dụng `Be Vietnam Pro` cho các điều khiển/nội dung văn bản và `Noto Serif` cho các tiêu đề, với các dự phòng có khả năng Unicode.
+- Các thông báo máy chủ không xác định hoặc không an toàn phải được giải quyết bằng tiếng Việt theo ngữ cảnh thay vì tiếng Anh kỹ thuật thô.
+- Theo dõi RED-GREEN-REFACTOR để biết mọi thay đổi trong quá trình sản xuất và duy trì cam kết trong phạm vi một nhiệm vụ.
 
 ---
 
-### Task 1: Add Vietnamese Copy and Display-Label Primitives
+## Cấu trúc tệp
 
-**Files:**
-- Create: `frontend/src/i18n/vi.js`
-- Create: `frontend/src/utils/uiLabels.js`
-- Create: `frontend/test/vietnameseUi.test.js`
-- Test: `frontend/test/reservationFrontend.test.js`
+- Tạo `frontend/src/i18n/vi.js`: dùng chung hằng copy tiếng Việt.
+- Tạo `frontend/src/utils/uiLabels.js`: trình trợ giúp thuần túy về vai trò, trạng thái và nhãn hiển thị boolean.
+- Tạo `frontend/test/vietnameseUi.test.js`: các kiểm thử đơn vị/nguồn tập trung được bổ sung dần dần theo Nhiệm vụ 1-6.
+- Sửa đổi `frontend/src/api/apiErrorMessages.js`: hành vi dự phòng API tiếng Việt an toàn.
+- Sửa đổi `frontend/src/api/authApi.js`, `frontend/src/api/profileApi.js`, `frontend/src/api/userManagementApi.js` và `frontend/src/api/adminApi.js`: bản sao dự phòng tiếng Việt dành riêng cho mô-đun.
+- Sửa đổi `frontend/index.html`, `frontend/src/index.css` và các kiểu hình ảnh hiện có: siêu dữ liệu ngôn ngữ chung và mã thông báo phông chữ.
+- Sửa đổi các trang/thành phần hiện có tại chỗ: chỉ văn bản hướng tới người dùng, ngoại trừ
+Theo dõi vỏ phản hồi H3 đã được phê duyệt để truy cập điều hướng HomePage và bố cục màn hình hẹp;
+không cơ cấu lại quyền sở hữu chức năng.
+- Sửa đổi các tệp `.sdd/specs/feat-*/CHANGELOG.md` bị ảnh hưởng: ghi lại thay đổi trình bày nhiều chức năng.
 
-**Interfaces:**
-- Consumes: raw role/status strings already returned by APIs and existing view models.
-- Produces: `VI_COPY`, `getRoleLabel(value)`, `getStatusLabel(value)`, and `getBooleanLabel(value)` for later tasks.
-- Preserves: `statusToUi()` and `isActiveReservationQueueStatus()` internal return values and comparisons.
+---
 
-- [ ] **Step 1: Write the failing label-helper tests**
+### Nhiệm vụ 1: Thêm bản gốc tiếng Việt và nhãn hiển thị
 
-Create `frontend/test/vietnameseUi.test.js`:
+**Tệp:**
+- Tạo: `frontend/src/i18n/vi.js`
+- Tạo: `frontend/src/utils/uiLabels.js`
+- Tạo: `frontend/test/vietnameseUi.test.js`
+- Kiểm tra: `frontend/test/reservationFrontend.test.js`
+
+**Giao diện:**
+- Tiêu thụ: chuỗi vai trò/trạng thái thô đã được API và mô hình chế độ xem hiện có trả về.
+- Sản xuất: `VI_COPY`, `getRoleLabel(value)`, `getStatusLabel(value)` và `getBooleanLabel(value)` cho các tác vụ sau này.
+- Giữ nguyên: các giá trị trả về và so sánh nội bộ của `statusToUi()` và `isActiveReservationQueueStatus()`.
+
+- [ ] **Bước 1: Viết các kiểm thử trợ giúp nhãn không thành công**
+
+Tạo `frontend/test/vietnameseUi.test.js`:
 
 ```js
 import assert from 'node:assert/strict';
@@ -108,19 +116,20 @@ test('boolean values have Vietnamese display labels', () => {
 });
 ```
 
-- [ ] **Step 2: Run the new test and verify RED**
+- [ ] **Bước 2: Chạy kiểm thử mới và xác minh RED**
 
-Run from the repository root:
+Chạy từ kho lưu trữ gốc:
 
 ```powershell
 node --test frontend/test/vietnameseUi.test.js
 ```
 
-Expected: FAIL with `ERR_MODULE_NOT_FOUND` for `frontend/src/i18n/vi.js` or `frontend/src/utils/uiLabels.js`.
+Dự kiến: THẤT BẠI với `ERR_MODULE_NOT_FOUND` dành cho `frontend/src/i18n/vi.js` hoặc
+`frontend/src/utils/uiLabels.js`.
 
-- [ ] **Step 3: Implement the copy catalog**
+- [ ] **Bước 3: Triển khai sao chép danh mục**
 
-Create `frontend/src/i18n/vi.js`:
+Tạo `frontend/src/i18n/vi.js`:
 
 ```js
 export const VI_COPY = Object.freeze({
@@ -185,9 +194,9 @@ export const VI_COPY = Object.freeze({
 });
 ```
 
-- [ ] **Step 4: Implement pure display-label helpers**
+- [ ] **Bước 4: Triển khai trình trợ giúp nhãn hiển thị thuần túy**
 
-Create `frontend/src/utils/uiLabels.js`:
+Tạo `frontend/src/utils/uiLabels.js`:
 
 ```js
 import { VI_COPY } from '../i18n/vi.js';
@@ -213,15 +222,16 @@ export function getBooleanLabel(value) {
 }
 ```
 
-- [ ] **Step 5: Run label and FE08 regression tests and verify GREEN**
+- [ ] **Bước 5: Chạy kiểm thử hồi quy nhãn và FE08 và xác minh GREEN**
 
 ```powershell
 node --test frontend/test/vietnameseUi.test.js frontend/test/reservationFrontend.test.js
 ```
 
-Expected: all tests PASS; existing FE08 tests still prove that internal `Waiting`/`Ready to pick up` tokens have not changed.
+Dự kiến: tất cả các kiểm thử ĐẠT; Các kiểm thử FE08 hiện tại vẫn chứng minh rằng mã thông báo
+`Waiting`/`Ready to pick up` nội bộ không thay đổi.
 
-- [ ] **Step 6: Commit Task 1**
+- [ ] **Bước 6: Cam kết nhiệm vụ 1**
 
 ```powershell
 git add frontend/src/i18n/vi.js frontend/src/utils/uiLabels.js frontend/test/vietnameseUi.test.js
@@ -230,26 +240,26 @@ git commit -m "feat: add Vietnamese UI label helpers"
 
 ---
 
-### Task 2: Apply Vietnamese Document Metadata and Typography Tokens
+### Nhiệm vụ 2: Áp dụng Mã thông báo siêu dữ liệu tài liệu tiếng Việt và kiểu chữ
 
-**Files:**
-- Modify: `frontend/index.html`
-- Modify: `frontend/src/index.css`
-- Modify: `frontend/src/styles/app-shell.css`
-- Modify: `frontend/src/styles/UserProfile.css`
-- Modify: `frontend/src/page/HomePage.jsx`
-- Modify: `frontend/src/page/BookManagement.jsx`
-- Modify: `frontend/src/page/UserManagement.jsx`
-- Modify: `frontend/src/component/layout/LogoutConfirmModal.jsx`
-- Test: `frontend/test/vietnameseUi.test.js`
+**Tệp:**
+- Sửa đổi: `frontend/index.html`
+- Sửa đổi: `frontend/src/index.css`
+- Sửa đổi: `frontend/src/styles/app-shell.css`
+- Sửa đổi: `frontend/src/styles/UserProfile.css`
+- Sửa đổi: `frontend/src/page/HomePage.jsx`
+- Sửa đổi: `frontend/src/page/BookManagement.jsx`
+- Sửa đổi: `frontend/src/page/UserManagement.jsx`
+- Sửa đổi: `frontend/src/component/layout/LogoutConfirmModal.jsx`
+- Kiểm tra: `frontend/test/vietnameseUi.test.js`
 
-**Interfaces:**
-- Consumes: CSS variables `--sans` and `--heading` from `frontend/src/index.css`.
-- Produces: shared `Be Vietnam Pro` and `Noto Serif` typography used by all later page edits.
+**Giao diện:**
+- Tiêu thụ: Biến CSS `--sans` và `--heading` từ `frontend/src/index.css`.
+- Tạo ra: kiểu chữ `Be Vietnam Pro` và `Noto Serif` được chia sẻ được sử dụng bởi tất cả các chỉnh sửa trang sau này.
 
-- [ ] **Step 1: Add failing metadata/font source tests**
+- [ ] **Bước 1: Thêm các kiểm thử nguồn phông chữ/siêu dữ liệu không thành công**
 
-Append to `frontend/test/vietnameseUi.test.js`:
+Nối vào `frontend/test/vietnameseUi.test.js`:
 
 ```js
 import { readFile } from 'node:fs/promises';
@@ -285,17 +295,17 @@ test('major surfaces no longer hardcode superseded UI fonts', async () => {
 });
 ```
 
-- [ ] **Step 2: Run the font tests and verify RED**
+- [ ] **Bước 2: Chạy kiểm tra phông chữ và xác minh RED**
 
 ```powershell
 node --test frontend/test/vietnameseUi.test.js
 ```
 
-Expected: FAIL on `lang="en"`, the old title, old CSS tokens, and hardcoded font families.
+Dự kiến: THẤT BẠI trên `lang="en"`, tiêu đề cũ, mã thông báo CSS cũ và họ phông chữ được mã hóa cứng.
 
-- [ ] **Step 3: Update document metadata and font loading**
+- [ ] **Bước 3: Cập nhật siêu dữ liệu tài liệu và tải phông chữ**
 
-Replace the relevant `frontend/index.html` head content with:
+Thay thế nội dung đầu `frontend/index.html` có liên quan bằng:
 
 ```html
 <html lang="vi">
@@ -313,9 +323,9 @@ Replace the relevant `frontend/index.html` head content with:
   </head>
 ```
 
-- [ ] **Step 4: Replace global font tokens and ensure controls inherit them**
+- [ ] **Bước 4: Thay thế mã thông báo phông chữ chung và đảm bảo các điều khiển kế thừa chúng**
 
-In `frontend/src/index.css`, use:
+Trong `frontend/src/index.css`, sử dụng:
 
 ```css
 :root {
@@ -332,7 +342,7 @@ textarea {
 }
 ```
 
-In `frontend/src/styles/app-shell.css`, use:
+Trong `frontend/src/styles/app-shell.css`, sử dụng:
 
 ```css
 :root {
@@ -344,9 +354,9 @@ In `frontend/src/styles/app-shell.css`, use:
 }
 ```
 
-- [ ] **Step 5: Normalize page-level font declarations**
+- [ ] **Bước 5: Chuẩn hóa khai báo phông chữ cấp trang**
 
-Apply these exact replacements without changing sizes, weights, or layout:
+Áp dụng những thay thế chính xác này mà không thay đổi kích thước, trọng lượng hoặc bố cục:
 
 ```text
 'Playfair Display, serif' -> 'var(--heading)'
@@ -358,23 +368,23 @@ Georgia, 'Times New Roman', serif -> var(--heading)
 'Times New Roman', 'Noto Serif', serif -> var(--heading)
 ```
 
-For JSX inline styles, the result must use CSS variables as strings:
+Đối với kiểu nội tuyến JSX, kết quả phải sử dụng các biến CSS làm chuỗi:
 
 ```jsx
 style={{ fontFamily: 'var(--heading)' }}
 style={{ fontFamily: 'var(--sans)' }}
 ```
 
-- [ ] **Step 6: Run the focused test and frontend build**
+- [ ] **Bước 6: Chạy kiểm thử tập trung và xây dựng giao diện người dùng**
 
 ```powershell
 node --test frontend/test/vietnameseUi.test.js
 npm --prefix frontend run build
 ```
 
-Expected: both commands exit `0`; Vite completes the production build.
+Dự kiến: cả hai lệnh đều thoát `0`; Vite hoàn thành việc xây dựng sản xuất.
 
-- [ ] **Step 7: Commit Task 2**
+- [ ] **Bước 7: Cam kết nhiệm vụ 2**
 
 ```powershell
 git add frontend/index.html frontend/src/index.css frontend/src/styles/app-shell.css frontend/src/styles/UserProfile.css frontend/src/page/HomePage.jsx frontend/src/page/BookManagement.jsx frontend/src/page/UserManagement.jsx frontend/src/component/layout/LogoutConfirmModal.jsx frontend/test/vietnameseUi.test.js
@@ -383,26 +393,26 @@ git commit -m "feat: apply Vietnamese-safe typography"
 
 ---
 
-### Task 3: Localize the Shared Shell, Authentication, and Profile Surfaces
+### Nhiệm vụ 3: Bản địa hóa các bề mặt vỏ, xác thực và hồ sơ chung
 
-**Files:**
-- Modify: `frontend/src/utils/appNavigation.js`
-- Modify: `frontend/src/component/layout/AppLayout.jsx`
-- Modify: `frontend/src/component/layout/Header.jsx`
-- Modify: `frontend/src/component/shared/Feedback.jsx`
-- Modify: `frontend/src/component/forgotpassword/BackgroundPanel.jsx`
-- Modify: `frontend/src/page/HomePage.jsx`
-- Test: `frontend/test/vietnameseUi.test.js`
-- Test: `frontend/test/appShellFrontend.test.js`
-- Test: `frontend/test/authUxFrontend.test.js`
+**Tệp:**
+- Sửa đổi: `frontend/src/utils/appNavigation.js`
+- Sửa đổi: `frontend/src/component/layout/AppLayout.jsx`
+- Sửa đổi: `frontend/src/component/layout/Header.jsx`
+- Sửa đổi: `frontend/src/component/shared/Feedback.jsx`
+- Sửa đổi: `frontend/src/component/forgotpassword/BackgroundPanel.jsx`
+- Sửa đổi: `frontend/src/page/HomePage.jsx`
+- Kiểm tra: `frontend/test/vietnameseUi.test.js`
+- Kiểm tra: `frontend/test/appShellFrontend.test.js`
+- Kiểm tra: `frontend/test/authUxFrontend.test.js`
 
-**Interfaces:**
-- Consumes: `VI_COPY`, `getRoleLabel()` from Task 1.
-- Produces: a Vietnamese shell and shared dialog/accessibility copy reused by all protected pages.
+**Giao diện:**
+- Tiêu thụ: `VI_COPY`, `getRoleLabel()` từ Nhiệm vụ 1.
+- Tạo ra: một lớp bao tiếng Việt và bản sao hộp thoại/khả năng truy cập được chia sẻ được sử dụng lại bởi tất cả các trang được bảo vệ.
 
-- [ ] **Step 1: Add failing shared-surface tests**
+- [ ] **Bước 1: Thêm các kiểm thử bề mặt dùng chung không thành công**
 
-Append to `frontend/test/vietnameseUi.test.js`:
+Nối vào `frontend/test/vietnameseUi.test.js`:
 
 ```js
 test('shared shell and recovery surfaces use Vietnamese copy', async () => {
@@ -421,51 +431,55 @@ test('shared shell and recovery surfaces use Vietnamese copy', async () => {
 });
 ```
 
-Update the existing app-shell test that describes/renders `Home` so it expects the visible label `Thư viện` while keeping the route key `library-home` and path `/homepage` unchanged.
+Cập nhật kiểm thử lớp bao ứng dụng hiện có để mô tả/kết xuất `Home` để nó mong đợi nhãn hiển thị `Thư
+viện` trong khi vẫn giữ nguyên khóa tuyến `library-home` và đường dẫn `/homepage`.
 
-- [ ] **Step 2: Run shared UI tests and verify RED**
+- [ ] **Bước 2: Chạy kiểm thử giao diện người dùng được chia sẻ và xác minh RED**
 
 ```powershell
 node --test frontend/test/vietnameseUi.test.js frontend/test/appShellFrontend.test.js frontend/test/authUxFrontend.test.js
 ```
 
-Expected: FAIL on `Home`, `Close`, and `Welcome Back` assertions.
+Dự kiến: THẤT BẠI đối với các xác nhận `Home`, `Close` và `Welcome Back`.
 
-- [ ] **Step 3: Localize shell navigation without changing routes**
+- [ ] **Bước 3: Bản địa hóa điều hướng lớp bao mà không thay đổi tuyến**
 
-In `frontend/src/utils/appNavigation.js`:
+Trong `frontend/src/utils/appNavigation.js`:
 
 ```js
 const HOME_ITEM = { key: 'home', label: 'Tổng quan', path: '/home' };
 const LIBRARY_HOME_ITEM = { key: 'library-home', label: 'Thư viện', path: '/homepage' };
 ```
 
-In `frontend/src/component/layout/AppLayout.jsx`, keep route keys and navigation behavior, but render:
+Trong `frontend/src/component/layout/AppLayout.jsx`, giữ lại các phím định tuyến và hành vi điều
+hướng, nhưng hiển thị:
 
 ```jsx
 aria-label="Thư viện"
 <span>Thư viện</span>
 ```
 
-- [ ] **Step 4: Reuse shared role labels**
+- [ ] **Bước 4: Sử dụng lại nhãn vai trò được chia sẻ**
 
-Replace duplicate role-label functions in `Header.jsx` and `HomePage.jsx` with:
+Thay thế các chức năng nhãn vai trò trùng lặp trong `Header.jsx` và `HomePage.jsx` bằng:
 
 ```js
 import { getRoleLabel } from '../../utils/uiLabels'; // Header.jsx
 import { getRoleLabel } from '../utils/uiLabels'; // HomePage.jsx
 ```
 
-Use `getRoleLabel(storedRoles[0])` only after preserving the existing priority order. The exact priority remains `ADMIN`, then `LIBRARIAN`, then `MEMBER`; implement a small call site such as:
+Chỉ sử dụng `getRoleLabel(storedRoles[0])` sau khi duy trì thứ tự ưu tiên hiện có. Ưu tiên chính xác
+vẫn là `ADMIN`, sau đó là `LIBRARIAN`, sau đó là `MEMBER`; triển khai một trang web cuộc gọi nhỏ
+như:
 
 ```js
 const primaryRole = ['ADMIN', 'LIBRARIAN', 'MEMBER'].find((role) => storedRoles.includes(role));
 const roleLabel = getRoleLabel(primaryRole);
 ```
 
-- [ ] **Step 5: Localize shared close and recovery copy**
+- [ ] **Bước 5: Bản địa hóa bản sao đóng và khôi phục được chia sẻ**
 
-Use these exact visible strings:
+Sử dụng các chuỗi hiển thị chính xác này:
 
 ```jsx
 aria-label="Đóng"
@@ -473,15 +487,15 @@ aria-label="Đóng"
 <p>Đặt lại mật khẩu để tiếp tục sử dụng tài nguyên thư viện</p>
 ```
 
-- [ ] **Step 6: Run shared UI tests and verify GREEN**
+- [ ] **Bước 6: Chạy kiểm thử giao diện người dùng được chia sẻ và xác minh GREEN**
 
 ```powershell
 node --test frontend/test/vietnameseUi.test.js frontend/test/appShellFrontend.test.js frontend/test/authUxFrontend.test.js
 ```
 
-Expected: all tests PASS.
+Dự kiến: tất cả các kiểm thử ĐẠT.
 
-- [ ] **Step 7: Commit Task 3**
+- [ ] **Bước 7: Giao nhiệm vụ 3**
 
 ```powershell
 git add frontend/src/utils/appNavigation.js frontend/src/component/layout/AppLayout.jsx frontend/src/component/layout/Header.jsx frontend/src/component/shared/Feedback.jsx frontend/src/component/forgotpassword/BackgroundPanel.jsx frontend/src/page/HomePage.jsx frontend/test/vietnameseUi.test.js frontend/test/appShellFrontend.test.js
@@ -490,27 +504,27 @@ git commit -m "feat: localize shared frontend shell"
 
 ---
 
-### Task 4: Localize Public Browse and Member Workflows
+### Nhiệm vụ 4: Bản địa hóa quy trình duyệt công khai và quy trình làm việc của thành viên
 
-**Files:**
-- Modify: `frontend/src/page/HomePage.jsx`
-- Modify: `frontend/src/utils/libraryFeatureViewModels.js`
-- Modify: `frontend/src/page/borrowing/BorrowingHistoryPage.jsx`
-- Modify: `frontend/src/page/borrowing/MemberBorrowingDetailsPage.jsx`
-- Modify: `frontend/src/page/reservation/MyReservationsPage.jsx`
-- Test: `frontend/test/vietnameseUi.test.js`
-- Test: `frontend/test/borrowingFrontend.test.js`
-- Test: `frontend/test/reservationFrontend.test.js`
-- Test: `frontend/test/publicBrowseFrontend.test.js`
+**Tệp:**
+- Sửa đổi: `frontend/src/page/HomePage.jsx`
+- Sửa đổi: `frontend/src/utils/libraryFeatureViewModels.js`
+- Sửa đổi: `frontend/src/page/borrowing/BorrowingHistoryPage.jsx`
+- Sửa đổi: `frontend/src/page/borrowing/MemberBorrowingDetailsPage.jsx`
+- Sửa đổi: `frontend/src/page/reservation/MyReservationsPage.jsx`
+- Kiểm tra: `frontend/test/vietnameseUi.test.js`
+- Kiểm tra: `frontend/test/borrowingFrontend.test.js`
+- Kiểm tra: `frontend/test/reservationFrontend.test.js`
+- Kiểm tra: `frontend/test/publicBrowseFrontend.test.js`
 
-**Interfaces:**
-- Consumes: `getStatusLabel()` and `getRoleLabel()` from Task 1.
-- Produces: Vietnamese public/member captions, status badges, pagination labels, and fallback entity labels.
-- Preserves: English internal semantic tokens used by `canRenew`, reservation cancellation rules, queue filtering, and CSS status classes.
+**Giao diện:**
+- Tiêu thụ: `getStatusLabel()` và `getRoleLabel()` từ Nhiệm vụ 1.
+- Sản xuất: Chú thích tiếng Việt public/member, huy hiệu trạng thái, nhãn phân trang và nhãn thực thể dự phòng.
+- Bảo tồn: Mã thông báo ngữ nghĩa nội bộ bằng tiếng Anh được `canRenew` sử dụng, quy tắc hủy đặt chỗ, lọc hàng đợi và các lớp trạng thái CSS.
 
-- [ ] **Step 1: Add failing public/member source tests**
+- [ ] **Bước 1: Thêm các kiểm thử nguồn public/member không thành công**
 
-Append to `frontend/test/vietnameseUi.test.js`:
+Nối vào `frontend/test/vietnameseUi.test.js`:
 
 ```js
 test('public and member pages translate generated copy while preserving source data', async () => {
@@ -533,17 +547,19 @@ test('public and member pages translate generated copy while preserving source d
 });
 ```
 
-- [ ] **Step 2: Run public/member tests and verify RED**
+- [ ] **Bước 2: Chạy kiểm thử public/member và xác minh RED**
 
 ```powershell
 node --test frontend/test/vietnameseUi.test.js frontend/test/borrowingFrontend.test.js frontend/test/reservationFrontend.test.js frontend/test/publicBrowseFrontend.test.js
 ```
 
-Expected: FAIL on English category chips, captions, pagination labels, status rendering, and `Copy`/`Member` fallbacks.
+Dự kiến: THẤT BẠI trên các khối danh mục tiếng Anh, chú thích, nhãn phân trang, hiển thị trạng thái
+và các dự phòng `Copy`/`Member`.
 
-- [ ] **Step 3: Localize generated public labels**
+- [ ] **Bước 3: Bản địa hóa các nhãn công khai được tạo**
 
-In `HomePage.jsx`, keep category values and database content unchanged, but use Vietnamese presentation chips:
+Trong `HomePage.jsx`, giữ nguyên giá trị danh mục và nội dung cơ sở dữ liệu nhưng sử dụng chip trình
+bày tiếng Việt:
 
 ```js
 const CATEGORY_ICONS = {
@@ -556,9 +572,9 @@ const CATEGORY_ICONS = {
 const getCategoryIcon = (category) => CATEGORY_ICONS[category] || 'Sách';
 ```
 
-- [ ] **Step 4: Localize generated entity fallbacks**
+- [ ] **Bước 4: Bản địa hóa các dự phòng của thực thể được tạo**
 
-In `libraryFeatureViewModels.js`, replace only generated fallback copy:
+Trong `libraryFeatureViewModels.js`, chỉ thay thế bản sao dự phòng được tạo:
 
 ```js
 item.copy?.title || `Bản sao #${item.copyId}`
@@ -567,18 +583,18 @@ reservation.copy?.title || `Bản sao #${reservation.copyId}`
 reservation.member?.email || `Thành viên #${reservation.userId}`
 ```
 
-Do not translate `DEMO_BORROW_CATALOG` titles/authors because those are catalog data.
+Không dịch các tiêu đề `DEMO_BORROW_CATALOG`/authors vì đó là dữ liệu danh mục.
 
-- [ ] **Step 5: Render Vietnamese labels without changing internal status comparisons**
+- [ ] **Bước 5: Render nhãn tiếng Việt mà không thay đổi so sánh trạng thái bên trong**
 
-Import `getStatusLabel` in the three member workflow pages and render translated badge children:
+Nhập `getStatusLabel` vào các trang quy trình làm việc của ba thành viên và hiển thị các huy hiệu con đã dịch:
 
 ```jsx
 <Badge status={row.status}>{getStatusLabel(row.status)}</Badge>
 <Badge status={item.status}>{getStatusLabel(item.status)}</Badge>
 ```
 
-Keep logic such as these expressions exactly semantic-equivalent:
+Giữ logic như các biểu thức này tương đương chính xác về mặt ngữ nghĩa:
 
 ```js
 row.status === 'Borrowed'
@@ -587,9 +603,9 @@ item.status === 'Ready to pick up'
 ['Expired', 'Cancelled'].includes(item.status)
 ```
 
-- [ ] **Step 6: Localize captions and pagination accessibility labels**
+- [ ] **Bước 6: Bản địa hóa chú thích và nhãn khả năng phân trang**
 
-Use these exact values:
+Sử dụng các giá trị chính xác sau:
 
 ```jsx
 caption="Lịch sử mượn sách"
@@ -598,15 +614,16 @@ aria-label="Trang trước"
 aria-label="Trang sau"
 ```
 
-- [ ] **Step 7: Run public/member tests and verify GREEN**
+- [ ] **Bước 7: Chạy kiểm thử public/member và xác minh GREEN**
 
 ```powershell
 node --test frontend/test/vietnameseUi.test.js frontend/test/borrowingFrontend.test.js frontend/test/reservationFrontend.test.js frontend/test/publicBrowseFrontend.test.js
 ```
 
-Expected: all tests PASS; FE08 internal state tests still expect `Waiting` and `Ready to pick up`.
+Dự kiến: tất cả các kiểm thử ĐẠT; Các kiểm thử trạng thái nội bộ của FE08 vẫn mong đợi `Waiting` và
+`Ready to pick up`.
 
-- [ ] **Step 8: Commit Task 4**
+- [ ] **Bước 8: Giao nhiệm vụ 4**
 
 ```powershell
 git add frontend/src/page/HomePage.jsx frontend/src/utils/libraryFeatureViewModels.js frontend/src/page/borrowing/BorrowingHistoryPage.jsx frontend/src/page/borrowing/MemberBorrowingDetailsPage.jsx frontend/src/page/reservation/MyReservationsPage.jsx frontend/test/vietnameseUi.test.js
@@ -615,31 +632,31 @@ git commit -m "feat: localize public and member workflows"
 
 ---
 
-### Task 5: Localize Librarian Operations, Inventory, Fines, and Reports
+### Nhiệm vụ 5: Bản địa hóa các hoạt động, kiểm kê, khoản phạt và báo cáo của thủ thư
 
-**Files:**
-- Modify: `frontend/src/page/BookManagement.jsx`
-- Modify: `frontend/src/component/inventory/BookCopies.jsx`
-- Modify: `frontend/src/component/inventory/InventoryManagement.jsx`
-- Modify: `frontend/src/page/borrowing/ProcessReturnsPage.jsx`
-- Modify: `frontend/src/page/FineManagement.jsx`
-- Modify: `frontend/src/page/report/BorrowingReportPage.jsx`
-- Modify: `frontend/src/page/report/InventoryReportPage.jsx`
-- Modify: `frontend/src/page/report/UserStatisticsPage.jsx`
-- Test: `frontend/test/vietnameseUi.test.js`
-- Test: `frontend/test/bookManagementFrontend.test.js`
-- Test: `frontend/test/inventoryOperationalFrontend.test.js`
-- Test: `frontend/test/fineOperationalFrontend.test.js`
-- Test: `frontend/test/reportOperationalFrontend.test.js`
+**Tệp:**
+- Sửa đổi: `frontend/src/page/BookManagement.jsx`
+- Sửa đổi: `frontend/src/component/inventory/BookCopies.jsx`
+- Sửa đổi: `frontend/src/component/inventory/InventoryManagement.jsx`
+- Sửa đổi: `frontend/src/page/borrowing/ProcessReturnsPage.jsx`
+- Sửa đổi: `frontend/src/page/FineManagement.jsx`
+- Sửa đổi: `frontend/src/page/report/BorrowingReportPage.jsx`
+- Sửa đổi: `frontend/src/page/report/InventoryReportPage.jsx`
+- Sửa đổi: `frontend/src/page/report/UserStatisticsPage.jsx`
+- Kiểm tra: `frontend/test/vietnameseUi.test.js`
+- Kiểm tra: `frontend/test/bookManagementFrontend.test.js`
+- Kiểm tra: `frontend/test/inventoryOperationalFrontend.test.js`
+- Kiểm tra: `frontend/test/fineOperationalFrontend.test.js`
+- Kiểm tra: `frontend/test/reportOperationalFrontend.test.js`
 
-**Interfaces:**
-- Consumes: `getStatusLabel()`, `getRoleLabel()`, `getBooleanLabel()` from Task 1.
-- Produces: Vietnamese operational validation, table captions, headers, state labels, and generated fallbacks.
-- Preserves: raw status props passed to `Badge` for CSS tone and all mutation payloads.
+**Giao diện:**
+- Tiêu thụ: `getStatusLabel()`, `getRoleLabel()`, `getBooleanLabel()` từ Nhiệm vụ 1.
+- Tạo ra: xác thực hoạt động bằng tiếng Việt, chú thích bảng, tiêu đề, nhãn trạng thái và dự phòng được tạo.
+- Bảo toàn: đạo cụ trạng thái thô được chuyển tới `Badge` cho âm CSS và tất cả tải trọng thao tác ghi.
 
-- [ ] **Step 1: Add failing librarian/report source tests**
+- [ ] **Bước 1: Thêm các kiểm thử nguồn thủ thư/report bị lỗi**
 
-Append to `frontend/test/vietnameseUi.test.js`:
+Nối vào `frontend/test/vietnameseUi.test.js`:
 
 ```js
 test('librarian and report surfaces remove known English interface copy', async () => {
@@ -663,17 +680,17 @@ test('librarian and report surfaces remove known English interface copy', async 
 });
 ```
 
-- [ ] **Step 2: Run librarian/report tests and verify RED**
+- [ ] **Bước 2: Chạy kiểm tra thủ thư/report và xác minh RED**
 
 ```powershell
 node --test frontend/test/vietnameseUi.test.js frontend/test/bookManagementFrontend.test.js frontend/test/inventoryOperationalFrontend.test.js frontend/test/fineOperationalFrontend.test.js frontend/test/reportOperationalFrontend.test.js
 ```
 
-Expected: FAIL on the known English validation messages, captions, headers, and report labels.
+Dự kiến: THẤT BẠI đối với các thông báo xác thực bằng tiếng Anh, chú thích, tiêu đề và nhãn báo cáo đã biết.
 
-- [ ] **Step 3: Translate Book Management validation and action copy**
+- [ ] **Bước 3: Dịch bản sao hành động và xác thực Quản lý sách**
 
-Apply this exact mapping in `BookManagement.jsx`:
+Áp dụng ánh xạ chính xác này trong `BookManagement.jsx`:
 
 ```text
 Book title is required. -> Tên sách là bắt buộc.
@@ -703,20 +720,20 @@ Update Book Information -> Cập nhật thông tin sách
 Status -> Trạng thái
 ```
 
-- [ ] **Step 4: Localize inventory captions and generated fallbacks**
+- [ ] **Bước 4: Bản địa hóa chú thích khoảng không quảng cáo và các dự phòng được tạo**
 
-Use:
+sử dụng:
 
 ```jsx
 caption="Danh sách bản sao"
 caption="Danh sách bản sao trong kho"
 ```
 
-Replace generated `Book #${copy.bookId}` with `Sách #${copy.bookId}`. Keep `Barcode` unchanged.
+Thay thế `Book #${copy.bookId}` được tạo bằng `Sách #${copy.bookId}`. Giữ `Barcode` không thay đổi.
 
-- [ ] **Step 5: Localize return/fine status rendering**
+- [ ] **Bước 5: Bản địa hóa kết xuất trạng thái trả sách/khoản phạt**
 
-Keep status props for styling and provide Vietnamese children:
+Giữ đạo cụ trạng thái để tạo kiểu và cung cấp cho trẻ em Việt Nam:
 
 ```jsx
 <Badge status="Overdue">Quá hạn</Badge>
@@ -724,11 +741,11 @@ Keep status props for styling and provide Vietnamese children:
 <Badge status={fine.status}>{getStatusLabel(fine.status)}</Badge>
 ```
 
-Replace `User #${fine.userId}` with `Người dùng #${fine.userId}`.
+Thay thế `User #${fine.userId}` bằng `Người dùng #${fine.userId}`.
 
-- [ ] **Step 6: Localize report captions, headers, roles, and statuses**
+- [ ] **Bước 6: Bản địa hóa chú thích, tiêu đề, vai trò và trạng thái của báo cáo**
 
-Use these exact captions and headers:
+Sử dụng các chú thích và tiêu đề chính xác sau:
 
 ```jsx
 caption="Chi tiết báo cáo mượn trả"
@@ -739,7 +756,7 @@ caption="Chi tiết thống kê người dùng"
 headers={['Mã người dùng', 'Trạng thái', 'Vai trò', 'Hội viên', 'Ngày tạo', 'Ngày duyệt']}
 ```
 
-Render role and status values through helpers:
+Hiển thị các giá trị vai trò và trạng thái thông qua người trợ giúp:
 
 ```jsx
 <Badge status={row.status}>{getStatusLabel(row.status)}</Badge>
@@ -747,17 +764,19 @@ Render role and status values through helpers:
 {row.membershipStatus ? <Badge status={row.membershipStatus}>{getStatusLabel(row.membershipStatus)}</Badge> : '-'}
 ```
 
-Use `Từ ngày` and `Đến ngày` for visible report date labels. Keep technical data-source keys such as `membershipByStatus` only if they are required diagnostic identifiers; otherwise replace visible source labels with `Theo trạng thái hội viên`.
+Sử dụng `Từ ngày` và `Đến ngày` để có nhãn ngày báo cáo hiển thị. Chỉ giữ các khóa nguồn dữ liệu kỹ
+thuật như `membershipByStatus` nếu chúng là mã định danh chẩn đoán bắt buộc; nếu không thì thay thế
+nhãn nguồn hiển thị bằng `Theo trạng thái hội viên`.
 
-- [ ] **Step 7: Run librarian/report tests and verify GREEN**
+- [ ] **Bước 7: Chạy kiểm tra thủ thư/report và xác minh GREEN**
 
 ```powershell
 node --test frontend/test/vietnameseUi.test.js frontend/test/bookManagementFrontend.test.js frontend/test/inventoryOperationalFrontend.test.js frontend/test/fineOperationalFrontend.test.js frontend/test/reportOperationalFrontend.test.js
 ```
 
-Expected: all tests PASS.
+Dự kiến: tất cả các kiểm thử ĐẠT.
 
-- [ ] **Step 8: Commit Task 5**
+- [ ] **Bước 8: Giao nhiệm vụ 5**
 
 ```powershell
 git add frontend/src/page/BookManagement.jsx frontend/src/component/inventory/BookCopies.jsx frontend/src/component/inventory/InventoryManagement.jsx frontend/src/page/borrowing/ProcessReturnsPage.jsx frontend/src/page/FineManagement.jsx frontend/src/page/report/BorrowingReportPage.jsx frontend/src/page/report/InventoryReportPage.jsx frontend/src/page/report/UserStatisticsPage.jsx frontend/test/vietnameseUi.test.js
@@ -766,28 +785,28 @@ git commit -m "feat: localize librarian operations and reports"
 
 ---
 
-### Task 6: Localize Admin Console and Safe API Error Fallbacks
+### Nhiệm vụ 6: Bản địa hóa Bảng điều khiển dành cho quản trị viên và Dự phòng lỗi API an toàn
 
-**Files:**
-- Modify: `frontend/src/api/apiErrorMessages.js`
-- Modify: `frontend/src/api/authApi.js`
-- Modify: `frontend/src/api/profileApi.js`
-- Modify: `frontend/src/api/userManagementApi.js`
-- Modify: `frontend/src/api/adminApi.js`
-- Modify: `frontend/src/page/UserManagement.jsx`
-- Test: `frontend/test/apiErrorMessages.test.js`
-- Test: `frontend/test/userManagementApi.test.js`
-- Test: `frontend/test/userManagementFrontend.test.js`
-- Test: `frontend/test/vietnameseUi.test.js`
+**Tệp:**
+- Sửa đổi: `frontend/src/api/apiErrorMessages.js`
+- Sửa đổi: `frontend/src/api/authApi.js`
+- Sửa đổi: `frontend/src/api/profileApi.js`
+- Sửa đổi: `frontend/src/api/userManagementApi.js`
+- Sửa đổi: `frontend/src/api/adminApi.js`
+- Sửa đổi: `frontend/src/page/UserManagement.jsx`
+- Kiểm tra: `frontend/test/apiErrorMessages.test.js`
+- Kiểm tra: `frontend/test/userManagementApi.test.js`
+- Kiểm tra: `frontend/test/userManagementFrontend.test.js`
+- Kiểm tra: `frontend/test/vietnameseUi.test.js`
 
-**Interfaces:**
-- Consumes: role/status/boolean label helpers from Task 1.
-- Produces: Vietnamese admin copy and contextual Vietnamese error messages for every frontend API module.
-- Preserves: error codes in `error.cause`, HTTP behavior, token refresh, role mutation ordering, and raw audit identifiers.
+**Giao diện:**
+- Sử dụng: vai trò/trạng thái/người trợ giúp nhãn boolean từ Nhiệm vụ 1.
+- Tạo: Bản sao quản trị tiếng Việt và thông báo lỗi tiếng Việt theo ngữ cảnh cho mọi mô-đun API giao diện người dùng.
+- Bảo tồn: mã lỗi trong hành vi `error.cause`, HTTP, làm mới mã thông báo, thứ tự thao tác ghi vai trò và mã định danh kiểm tra thô.
 
-- [ ] **Step 1: Change API tests to require Vietnamese safe fallbacks**
+- [ ] **Bước 1: Thay đổi kiểm thử API để yêu cầu dự phòng an toàn cho người Việt**
 
-Update `frontend/test/apiErrorMessages.test.js` expectations:
+Cập nhật kỳ vọng của `frontend/test/apiErrorMessages.test.js`:
 
 ```js
 assert.equal(
@@ -812,31 +831,38 @@ assert.equal(
 );
 ```
 
-Update the known FE07/FE08 message fixtures to use `thành viên`, `thủ thư hoặc quản trị viên`, and `đơn hội viên` instead of visible `Member`, `admin`, or `Membership`.
+Cập nhật các phần cố định thông báo FE07/FE08 đã biết để sử dụng `thành viên`, `thủ thư hoặc quản
+trị viên` và `đơn hội viên` thay vì `Member`, `admin` hoặc `Membership` hiển thị.
 
-Add source assertions to `vietnameseUi.test.js` for accented `adminApi` fallbacks and absence of `Could not`, `Please login`, `Request failed`, and `Admin login required` in user-facing API/page strings.
+Thêm các xác nhận nguồn vào `vietnameseUi.test.js` để dự phòng `adminApi` có dấu và không có `Could
+not`, `Please login`, `Request failed` và `Admin login required` trong chuỗi trang API/giao diện
+người dùng.
 
-- [ ] **Step 2: Run API/admin tests and verify RED**
+- [ ] **Bước 2: Chạy kiểm thử API/admin và xác minh RED**
 
 ```powershell
 node --test frontend/test/apiErrorMessages.test.js frontend/test/userManagementApi.test.js frontend/test/userManagementFrontend.test.js frontend/test/vietnameseUi.test.js
 ```
 
-Expected: FAIL because raw backend English and English admin copy are still returned/rendered.
+Dự kiến: THẤT BẠI vì bản sao tiếng Anh máy chủ thô và bản quản trị tiếng Anh vẫn được trả về/kết xuất.
 
-- [ ] **Step 3: Make feature API resolvers use safe contextual fallbacks**
+- [ ] **Bước 3: Tạo chức năng cho trình phân giải API sử dụng các phương án dự phòng theo ngữ cảnh an toàn**
 
-In `apiErrorMessages.js`, keep network, 401, 403, and known-code branches. Replace the final raw-message/detail returns with the supplied fallback:
+Trong `apiErrorMessages.js`, giữ lại các nhánh mạng, 401, 403 và mã đã biết. Thay thế thông báo
+thô/trả về chi tiết cuối cùng bằng dự phòng được cung cấp:
 
 ```js
 return fallback;
 ```
 
-Apply this to generic, borrowing, reservation, book, inventory, membership, and report resolvers. Do not expose `error.response.data.error.message` or `details[].message` unless a local Vietnamese code mapping explicitly owns that message.
+Áp dụng điều này cho những người giải quyết chung, mượn, đặt chỗ, đặt chỗ, kiểm kê, tư cách thành
+viên và báo cáo. Không để lộ `error.response.data.error.message` hoặc `details[].message` trừ khi
+bản đồ mã địa phương tiếng Việt sở hữu rõ ràng thông báo đó.
 
-- [ ] **Step 4: Localize auth, profile, user-management, and admin API fallbacks**
+- [ ] **Bước 4: Bản địa hóa các dự phòng xác thực, hồ sơ, quản lý người dùng và quản trị viên API**
 
-Use contextual fallbacks and return them instead of raw server messages. Required visible strings include:
+Sử dụng các dự phòng theo ngữ cảnh và trả về chúng thay vì các tin nhắn máy chủ thô. Các chuỗi hiển
+thị bắt buộc bao gồm:
 
 ```text
 Request failed. Please try again. -> Yêu cầu thất bại. Vui lòng thử lại.
@@ -855,17 +881,17 @@ Could not update profile. -> Không thể cập nhật hồ sơ cá nhân.
 Could not upload avatar. -> Không thể tải ảnh đại diện lên.
 ```
 
-For `authApi.js`, `profileApi.js`, and `userManagementApi.js`, preserve network/401/403
-and known-code branches, then end the resolver with the caller-owned fallback:
+Đối với `authApi.js`, `profileApi.js` và `userManagementApi.js`, hãy bảo toàn mạng/401/403 và các
+nhánh mã đã biết, sau đó kết thúc trình phân giải bằng dự phòng do người gọi sở hữu:
 
 ```js
 return fallback;
 ```
 
-Do not return `apiError.message` or concatenate `details[].message`; the original Axios
-error remains available through `Error.cause` for programmatic handling.
+Không trả sách `apiError.message` hoặc ghép `details[].message`; lỗi Axios ban đầu vẫn có sẵn thông
+qua `Error.cause` để xử lý theo chương trình.
 
-Replace the unaccented `adminApi.js` fallbacks with:
+Thay thế các dự phòng `adminApi.js` không có dấu bằng:
 
 ```js
 'Không thể tải tổng quan quản trị.'
@@ -881,15 +907,15 @@ Replace the unaccented `adminApi.js` fallbacks with:
 'Không thể tải nhật ký hoạt động.'
 ```
 
-- [ ] **Step 5: Localize admin roles, statuses, dates, actions, and feedback**
+- [ ] **Bước 5: Bản địa hóa vai trò, trạng thái, ngày tháng, hành động và phản hồi của quản trị viên**
 
-In `UserManagement.jsx`:
+Trong `UserManagement.jsx`:
 
 ```js
 import { getBooleanLabel, getRoleLabel, getStatusLabel } from '../utils/uiLabels';
 ```
 
-Replace local English label maps with helper calls, and format dates with:
+Thay thế bản đồ nhãn tiếng Anh địa phương bằng lệnh gọi trợ giúp và định dạng ngày bằng:
 
 ```js
 return new Date(value).toLocaleDateString('vi-VN', {
@@ -899,7 +925,7 @@ return new Date(value).toLocaleDateString('vi-VN', {
 });
 ```
 
-Apply this exact visible-copy mapping:
+Áp dụng ánh xạ bản sao hiển thị chính xác này:
 
 ```text
 Every user must keep at least one role. -> Mỗi người dùng phải giữ ít nhất một vai trò.
@@ -927,22 +953,22 @@ Close details -> Đóng chi tiết
 No name -> Chưa có tên
 Active borrowings -> Lượt mượn đang hoạt động
 Unpaid fines -> Tiền phạt chưa thanh toán
-Actor ID -> Mã người thực hiện
+Actor ID -> Mã tác nhân
 Yes -> Có
 Edit -> Chỉnh sửa
 ```
 
-Keep audit action codes such as `AUTH_LOGIN_SUCCESS` unchanged because they are technical identifiers.
+Giữ nguyên các mã hành động kiểm tra như `AUTH_LOGIN_SUCCESS` vì chúng là mã định danh kỹ thuật.
 
-- [ ] **Step 6: Run API/admin tests and verify GREEN**
+- [ ] **Bước 6: Chạy kiểm thử API/admin và xác minh GREEN**
 
 ```powershell
 node --test frontend/test/apiErrorMessages.test.js frontend/test/userManagementApi.test.js frontend/test/userManagementFrontend.test.js frontend/test/vietnameseUi.test.js
 ```
 
-Expected: all tests PASS.
+Dự kiến: tất cả các kiểm thử ĐẠT.
 
-- [ ] **Step 7: Commit Task 6**
+- [ ] **Bước 7: Giao nhiệm vụ 6**
 
 ```powershell
 git add frontend/src/api/apiErrorMessages.js frontend/src/api/authApi.js frontend/src/api/profileApi.js frontend/src/api/userManagementApi.js frontend/src/api/adminApi.js frontend/src/page/UserManagement.jsx frontend/test/apiErrorMessages.test.js frontend/test/userManagementApi.test.js frontend/test/userManagementFrontend.test.js frontend/test/vietnameseUi.test.js
@@ -951,31 +977,31 @@ git commit -m "feat: localize admin and API feedback"
 
 ---
 
-### Task 7: Add the Localization Audit, Update Traceability, and Run Full Verification
+### Nhiệm vụ 7: Thêm kiểm tra bản địa hóa, cập nhật khả năng truy vết và chạy xác minh đầy đủ
 
-**Files:**
-- Modify: `frontend/test/vietnameseUi.test.js`
-- Modify: `.sdd/specs/feat-public-browse/CHANGELOG.md`
-- Modify: `.sdd/specs/feat-auth/CHANGELOG.md`
-- Modify: `.sdd/specs/feat-user-profile/CHANGELOG.md`
-- Modify: `.sdd/specs/feat-membership-management/CHANGELOG.md`
-- Modify: `.sdd/specs/feat-book-management/CHANGELOG.md`
-- Modify: `.sdd/specs/feat-inventory-book-copy/CHANGELOG.md`
-- Modify: `.sdd/specs/feat-borrowing-management/CHANGELOG.md`
-- Modify: `.sdd/specs/feat-reservation-management/CHANGELOG.md`
-- Modify: `.sdd/specs/feat-fine-management/CHANGELOG.md`
-- Modify: `.sdd/specs/feat-notification-management/CHANGELOG.md`
-- Modify: `.sdd/specs/feat-user-role-management/CHANGELOG.md`
-- Modify: `.sdd/specs/feat-reporting-statistics/CHANGELOG.md`
-- Test: all `frontend/test/*.test.js`
+**Tệp:**
+- Sửa đổi: `frontend/test/vietnameseUi.test.js`
+- Sửa đổi: `.sdd/specs/feat-public-browse/CHANGELOG.md`
+- Sửa đổi: `.sdd/specs/feat-auth/CHANGELOG.md`
+- Sửa đổi: `.sdd/specs/feat-user-profile/CHANGELOG.md`
+- Sửa đổi: `.sdd/specs/feat-membership-management/CHANGELOG.md`
+- Sửa đổi: `.sdd/specs/feat-book-management/CHANGELOG.md`
+- Sửa đổi: `.sdd/specs/feat-inventory-book-copy/CHANGELOG.md`
+- Sửa đổi: `.sdd/specs/feat-borrowing-management/CHANGELOG.md`
+- Sửa đổi: `.sdd/specs/feat-reservation-management/CHANGELOG.md`
+- Sửa đổi: `.sdd/specs/feat-fine-management/CHANGELOG.md`
+- Sửa đổi: `.sdd/specs/feat-notification-management/CHANGELOG.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/CHANGELOG.md`
+- Sửa đổi: `.sdd/specs/feat-reporting-statistics/CHANGELOG.md`
+- Kiểm tra: tất cả `frontend/test/*.test.js`
 
-**Interfaces:**
-- Consumes: all localized pages and helpers from Tasks 1-6.
-- Produces: a regression guard against reintroducing the audited English interface strings and traceability records for affected features.
+**Giao diện:**
+- Tiêu thụ: tất cả các trang và trợ giúp đã bản địa hóa từ Nhiệm vụ 1-6.
+- Tạo ra: một biện pháp bảo vệ hồi quy chống lại việc giới thiệu lại các chuỗi giao diện tiếng Anh đã được kiểm tra và các bản ghi truy vết cho các chức năng bị ảnh hưởng.
 
-- [ ] **Step 1: Add a failing final audit test before the last cleanup pass**
+- [ ] **Bước 1: Thêm kiểm thử kiểm tra cuối cùng không thành công trước lần vượt qua lần dọn dẹp cuối cùng**
 
-Append this structure to `frontend/test/vietnameseUi.test.js`:
+Nối cấu trúc này vào `frontend/test/vietnameseUi.test.js`:
 
 ```js
 const forbiddenCopyByFile = new Map([
@@ -1005,90 +1031,93 @@ test('audited frontend surfaces do not contain known English interface copy', as
 });
 ```
 
-Run it before cleanup to confirm any remaining audited phrase causes RED.
+Chạy nó trước khi dọn dẹp để xác nhận mọi cụm từ được kiểm tra còn lại gây ra RED.
 
-- [ ] **Step 2: Run the audit test and remove every reported user-facing occurrence**
+- [ ] **Bước 2: Chạy kiểm thử kiểm tra và xóa mọi sự cố xảy ra với người dùng được báo cáo**
 
 ```powershell
 node --test frontend/test/vietnameseUi.test.js
 ```
 
-Expected before cleanup: FAIL if any known interface phrase remains. Replace only visible copy; do not rename components, variables, imports, API fields, raw enum constants, or technical audit codes.
+Dự kiến trước khi dọn dẹp: THẤT BẠI nếu vẫn còn bất kỳ cụm từ giao diện đã biết nào. Chỉ thay thế
+bản sao hiển thị; không đổi tên các thành phần, biến, nội dung nhập, trường API, hằng số giá trị liệt kê thô
+hoặc mã kiểm tra kỹ thuật.
 
-- [ ] **Step 3: Update feature changelogs**
+- [ ] **Bước 3: Cập nhật nhật ký thay đổi chức năng**
 
-Add this exact dated entry to FE01-FE09, FE11, and FE12 changelogs:
-
-```markdown
-## 2026-07-20 - Vietnamese UI localization and typography
-
-- Localized frontend-generated labels, states, accessibility names, and safe error feedback for this feature.
-- Preserved API contracts, raw enum values, permissions, business rules, and user-owned catalog/profile data.
-- Applied the shared `Be Vietnam Pro` body and `Noto Serif` heading typography contract with Unicode-capable fallbacks.
-```
-
-Add this exact FE10 entry:
+Thêm mục nhập ngày chính xác này vào nhật ký thay đổi FE01-FE09, FE11 và FE12:
 
 ```markdown
-## 2026-07-20 - Vietnamese UI localization and typography
+## 2026-07-20 - Bản địa hóa giao diện tiếng Việt và kiểu chữ
 
-- Localized shared frontend labels, accessibility names, and safe error feedback used around notification-related surfaces.
-- Preserved notification-template payloads, delivery behavior, API contracts, raw enum values, permissions, and business rules.
-- Applied the shared `Be Vietnam Pro` body and `Noto Serif` heading typography contract with Unicode-capable fallbacks.
+- Đã bản địa hóa nhãn, trạng thái, tên hỗ trợ tiếp cận và phản hồi lỗi an toàn do giao diện tạo cho chức năng này.
+- Bảo toàn hợp đồng API, giá trị liệt kê thô, quyền, quy tắc nghiệp vụ và dữ liệu danh mục/hồ sơ do người dùng sở hữu.
+- Áp dụng hợp đồng kiểu chữ dùng chung: `Be Vietnam Pro` cho nội dung và `Noto Serif` cho tiêu đề, kèm phông dự phòng hỗ trợ Unicode.
 ```
 
-- [ ] **Step 4: Run the complete frontend test suite**
+Thêm mục FE10 chính xác này:
+
+```markdown
+## 2026-07-20 - Bản địa hóa giao diện tiếng Việt và kiểu chữ
+
+- Đã bản địa hóa nhãn giao diện dùng chung, tên hỗ trợ tiếp cận và phản hồi lỗi an toàn trên các bề mặt liên quan đến thông báo.
+- Bảo toàn dữ liệu mẫu thông báo, hành vi gửi, hợp đồng API, giá trị liệt kê thô, quyền và quy tắc nghiệp vụ.
+- Áp dụng hợp đồng kiểu chữ dùng chung: `Be Vietnam Pro` cho nội dung và `Noto Serif` cho tiêu đề, kèm phông dự phòng hỗ trợ Unicode.
+```
+
+- [ ] **Bước 4: Chạy bộ kiểm thử giao diện người dùng hoàn chỉnh**
 
 ```powershell
 npm --prefix frontend test
 ```
 
-Expected: exit `0`, all frontend tests PASS, zero failures.
+Dự kiến: thoát `0`, tất cả các kiểm thử giao diện người dùng ĐẠT, không có lỗi nào.
 
-- [ ] **Step 5: Run lint and production build**
+- [ ] **Bước 5: Chạy công cụ tìm lỗi mã nguồn và bản dựng sản xuất**
 
 ```powershell
 npm --prefix frontend run lint
 npm --prefix frontend run build
 ```
 
-Expected: both commands exit `0`; ESLint reports no errors and Vite produces `frontend/dist`.
+Dự kiến: cả hai lệnh đều thoát `0`; ESLint báo cáo không có lỗi và Vite tạo ra `frontend/dist`.
 
-- [ ] **Step 6: Run repository-level checks**
+- [ ] **Bước 6: Chạy kiểm tra cấp kho lưu trữ**
 
 ```powershell
 npm run trace:enforce
 git diff --check
 ```
 
-Expected: traceability enforcement passes and `git diff --check` prints no whitespace errors.
+Dự kiến: vượt qua quá trình thực thi truy vết và `git diff --check` không in ra lỗi khoảng trắng.
 
-- [ ] **Step 7: Perform responsive browser verification**
+- [ ] **Bước 7: Thực hiện xác minh trình duyệt đáp ứng**
 
-Start the frontend:
+Bắt đầu giao diện người dùng:
 
 ```powershell
 npm --prefix frontend run dev -- --host 127.0.0.1
 ```
 
-Verify at 1440px and 390px widths:
+Xác minh ở độ rộng 1440px và 390px:
 
 ```text
-/login       - headings, fields, password controls, and Vietnamese diacritics render correctly.
-/homepage    - public navigation, search, book cards, detail panel, and footer contain no generated English copy.
+/login       - tiêu đề, trường nhập, điều khiển mật khẩu và dấu tiếng Việt hiển thị chính xác.
+/homepage    - điều hướng công khai, tìm kiếm, thẻ sách, bảng chi tiết và chân trang không chứa nội dung tiếng Anh được tạo tự động.
 /home        - shared shell navigation shows “Thư viện” and “Tổng quan”; menus remain reachable.
-/admin/users - admin headings, filters, tables, dialogs, statuses, and error states are Vietnamese.
+/admin/users - tiêu đề quản trị, bộ lọc, bảng, hộp thoại, trạng thái và thông báo lỗi đều bằng tiếng Việt.
 ```
 
-Expected: no missing glyph boxes, detached combining marks, text overlap, clipped primary actions, or horizontal page overflow. `Email`, `OTP`, and `Barcode` remain unchanged; book titles/authors remain source data.
+Dự kiến: không thiếu hộp glyph, dấu kết hợp tách rời, chồng chéo văn bản, hành động chính bị cắt bớt
+hoặc tràn trang ngang. `Email`, `OTP` và `Barcode` không thay đổi; tựa sách/authors vẫn là dữ liệu
+nguồn.
 
-Automated focused evidence: Playwright review 1/1 at 1440px and 390px passed
-the login, public mobile menu/footer/CTA, and protected borrowing checks; images
-are under `output/playwright/h3-visual/`. The run logged `GET /api/books`
-`INTERNAL_ERROR`, so public book-card/detail content still needs human or
-environment-backed acceptance.
+Bằng chứng tập trung tự động: Đánh giá Playwright 1/1 ở 1440px và 390px đã vượt qua đăng nhập,
+menu/chân trang/CTA trên thiết bị di động công cộng và kiểm tra mượn được bảo vệ; hình ảnh dưới
+`output/playwright/h3-visual/`. Quá trình chạy được ghi lại `GET /api/books` `INTERNAL_ERROR`, vì
+vậy nội dung chi tiết/thẻ sách công khai vẫn cần sự chấp nhận của con người hoặc môi trường.
 
-- [ ] **Step 8: Review final diff against the design**
+- [ ] **Bước 8: Xem xét sự khác biệt cuối cùng so với thiết kế**
 
 ```powershell
 git status --short
@@ -1096,11 +1125,11 @@ git diff --stat
 git diff -- frontend docs/superpowers/specs/2026-07-20-vietnamese-ui-localization-design.md .sdd/specs
 ```
 
-Expected: only localization, typography, responsive presentation, tests, and
-related governance/changelog files are changed; no backend, database, API
-contract, or permission files are modified.
+Dự kiến: chỉ có nội địa hóa, kiểu chữ, bản trình bày phản hồi, kiểm tra và các tệp quản trị/thay đổi
+liên quan được thay đổi; không có phần máy chủ, cơ sở dữ liệu, hợp đồng API hoặc tệp quyền nào được
+sửa đổi.
 
-- [ ] **Step 9: Commit Task 7**
+- [ ] **Bước 9: Giao nhiệm vụ 7**
 
 ```powershell
 git add frontend/test/vietnameseUi.test.js .sdd/specs/feat-public-browse/CHANGELOG.md .sdd/specs/feat-auth/CHANGELOG.md .sdd/specs/feat-user-profile/CHANGELOG.md .sdd/specs/feat-membership-management/CHANGELOG.md .sdd/specs/feat-book-management/CHANGELOG.md .sdd/specs/feat-inventory-book-copy/CHANGELOG.md .sdd/specs/feat-borrowing-management/CHANGELOG.md .sdd/specs/feat-reservation-management/CHANGELOG.md .sdd/specs/feat-fine-management/CHANGELOG.md .sdd/specs/feat-notification-management/CHANGELOG.md .sdd/specs/feat-user-role-management/CHANGELOG.md .sdd/specs/feat-reporting-statistics/CHANGELOG.md
@@ -1109,12 +1138,12 @@ git commit -m "docs: record Vietnamese UI localization"
 
 ---
 
-## Final Verification Checklist
+## Danh sách kiểm tra xác minh cuối cùng
 
-- [x] All frontend-generated interface text is Vietnamese except approved technical terms and technical identifiers.
-- [x] Book titles, author names, email addresses, barcode values, and user-entered content remain unchanged.
-- [x] Raw role/status/API values remain unchanged in logic and requests.
-- [x] Known API errors are Vietnamese and unknown failures use Vietnamese fallbacks.
-- [x] `lang="vi"`, page title, `Be Vietnam Pro`, and `Noto Serif` are wired correctly.
-- [ ] Desktop and mobile checks show correct Vietnamese glyph rendering and no overflow.
-- [x] `npm --prefix frontend test`, lint, build, traceability, and `git diff --check` all pass.
+- [x] Tất cả văn bản giao diện do giao diện người dùng tạo ra đều là tiếng Việt ngoại trừ các thuật ngữ kỹ thuật và mã định danh kỹ thuật đã được phê duyệt.
+- [x] Tiêu đề sách, tên tác giả, địa chỉ email, giá trị mã vạch và nội dung do người dùng nhập không thay đổi.
+- [x] Các giá trị vai trò/trạng thái/API thô không thay đổi về mặt logic và yêu cầu.
+- [x] Lỗi API đã biết là tiếng Việt và các lỗi không xác định sử dụng dự phòng tiếng Việt.
+- [x] `lang="vi"`, tiêu đề trang, `Be Vietnam Pro` và `Noto Serif` được nối dây chính xác.
+- [ ] Kiểm tra trên máy tính để bàn và thiết bị di động cho thấy kết xuất hình tượng tiếng Việt chính xác và không bị tràn.
+- [x] `npm --prefix frontend test`, kiểm tra mã, bản dựng, khả năng truy vết và `git diff --check` đều đạt.

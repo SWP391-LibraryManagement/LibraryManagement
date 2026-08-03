@@ -1,74 +1,80 @@
-# System Integration Test Implementation Plan
+# Kế hoạch thực hiện kiểm tra tích hợp hệ thống
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Đối với nhân viên đại lý:** SUB-SKILL BẮT BUỘC: Sử dụng siêu năng lực:phát triển theo định hướng phụ (được khuyến nghị) hoặc siêu năng lực:thực hiện các kế hoạch để triển khai kế hoạch này theo từng nhiệm vụ. Các bước sử dụng cú pháp hộp kiểm (`- [ ]`) để theo dõi.
 
-**Goal:** Build repeatable system integration evidence for the completed FE07, FE08, FE09, FE10, and FE12 workflows, with a short deterministic demo path for the project presentation.
+**Mục tiêu:** Xây dựng bằng chứng tích hợp hệ thống có thể lặp lại cho các quy trình làm việc FE07,
+FE08, FE09, FE10 và FE12 đã hoàn thành, cùng với đường dẫn demo xác định ngắn để trình bày dự án.
 
-**Architecture:** Use two verification layers. Layer A extends the existing Express/Supertest in-memory integration harness for fast deterministic API and role-flow checks in CI. Layer B uses a mutation-gated SQL Server suite to prove that borrowing, reservation, fine, notification, and reporting modules observe the same persisted records without relying on test-only state bridges. A manual demo runbook reuses the same scenario IDs and expected outcomes.
+**Kiến trúc:** Sử dụng hai lớp xác minh. Lớp A mở rộng khai thác tích hợp trong bộ nhớ
+Express/Supertest hiện có để xác định nhanh API và kiểm tra luồng vai trò trong CI. Lớp B sử dụng bộ
+SQL Server có kiểm soát thao tác ghi để chứng minh rằng các mô-đun mượn, đặt chỗ, phạt, thông báo và báo
+cáo tuân theo cùng các bản ghi liên tục mà không cần dựa vào các cầu nối trạng thái chỉ kiểm tra. Sổ
+tay demo thủ công sử dụng lại cùng một ID kịch bản và kết quả mong đợi.
 
-**Tech Stack:** Node.js 22, Express, Jest, Supertest, React/Vite, SQL Server, GitHub Actions, existing in-memory repository helpers.
+**Tech bộ công nghệ:** Node.js 22, Express, Jest, Supertest, React/Vite, SQL Server, GitHub hành động, các
+trình trợ giúp kho lưu trữ trong bộ nhớ hiện có.
 
-## Global Constraints
+## Ràng buộc toàn cầu
 
-- Treat the approved FE07, FE08, FE09, FE10, and FE12 `SPEC.md` files as the behavior source of truth.
-- Keep Phase 1 policy values unchanged: 5 active copies, 14 calendar-day loan, 1 renewal, and 5,000 VND per overdue day.
-- FE07 exposes return and overdue data; FE09 alone creates and resolves fine records.
-- FE08 reservation priority blocks FE07 renewal and a held copy cannot be borrowed by another member.
-- FE10 receives idempotent notification requests; tests use the existing mock email provider and never send real email.
-- FE12 remains read-only and must not mutate borrowing, reservation, fine, notification, user, or inventory state.
-- Do not add a payment gateway, scheduler, production schema change, new status value, or frontend dependency.
-- SQL mutation tests require `SYSTEM_SQL_TEST_ALLOW_MUTATION=true` and an explicit `SYSTEM_SQL_TEST_ENV_FILE`.
-- Use only synthetic accounts ending in `@example.test`; never store real credentials or personal data.
-- Preserve unrelated untracked files, including `.superpowers/`, `backend/coverage/`, and `docs/briefing-thuyet-trinh-du-an-vi.docx`.
-- Use branch `test/system-integration`; do not create a branch containing `codex`.
-
----
-
-## File Structure
-
-- Create `backend/tests/helpers/systemIntegrationHarness.js`: shared application factory, actors, fixed clock, and in-memory state bridges.
-- Create `backend/tests/systemIntegration.test.js`: deterministic API-level SIT cases `SIT-001` through `SIT-009`.
-- Create `backend/tests/sql/systemIntegration.sqltest.js`: SQL-backed shared-state case `SIT-SQL-001` with guarded cleanup.
-- Create `docs/testing/system-integration-demo-runbook.md`: presentation-ready manual flow, fixture checklist, fallback path, and reset steps.
-- Create `.sdd/reviews/system-integration-evidence-2026-07-14.md`: execution evidence populated only with actual results.
-- Modify `backend/package.json`: add focused in-memory and SQL SIT scripts.
-- Modify `package.json`: add the project-level `test:system` command.
-- Modify `.github/workflows/ci.yml`: run the in-memory SIT suite after backend tests.
-- Modify `docs/architecture/feature-integration-map.md`: replace current SIT gaps with the new case IDs and evidence paths.
+- Hãy coi các tệp FE07, FE08, FE09, FE10 và FE12 `SPEC.md` đã được phê duyệt là nguồn hành vi chính xác.
+- Giữ nguyên các giá trị chính sách của Giai đoạn 1: 5 bản sao hiện hành, lượt mượn 14 ngày theo lịch, 1 lần gia hạn và 5.000 VND mỗi ngày quá hạn.
+- FE07 hiển thị dữ liệu trả sách và quá hạn; FE09 tự mình tạo và giải quyết các bản ghi tốt.
+- FE08 ưu tiên đặt chỗ chặn việc gia hạn FE07 và thành viên khác không thể mượn bản sao đã giữ.
+- FE10 nhận được yêu cầu thông báo bình thường; các kiểm thử sử dụng nhà cung cấp email giả hiện có và không bao giờ gửi email thực.
+- FE12 vẫn ở chế độ chỉ đọc và không được thay đổi trạng thái mượn, đặt chỗ, phạt, thông báo, người dùng hoặc tồn kho.
+- Không thêm cổng thanh toán, bộ lập lịch, thay đổi sơ đồ sản xuất, giá trị trạng thái mới hoặc phần phụ thuộc giao diện người dùng.
+- Các kiểm thử thao tác ghi SQL yêu cầu `SYSTEM_SQL_TEST_ALLOW_MUTATION=true` và `SYSTEM_SQL_TEST_ENV_FILE` rõ ràng.
+- Chỉ sử dụng các tài khoản tổng hợp kết thúc bằng `@example.test`; không bao giờ lưu trữ thông tin xác thực hoặc dữ liệu cá nhân.
+- Bảo toàn các tệp không bị theo dõi không liên quan, bao gồm `.superpowers/`, `backend/coverage/` và `docs/briefing-thuyet-trinh-du-an-vi.docx`.
+- Sử dụng nhánh `test/system-integration`; không tạo nhánh chứa `codex`.
 
 ---
 
-## System Test Matrix
+## Cấu trúc tệp
 
-| ID | Cross-feature flow | Expected result |
+- Tạo `backend/tests/helpers/systemIntegrationHarness.js`: application factory dùng chung, tác nhân, đồng hồ cố định và cầu nối trạng thái trong bộ nhớ.
+- Tạo `backend/tests/systemIntegration.test.js`: các trường hợp API cấp SIT xác định `SIT-001` đến `SIT-009`.
+- Tạo trường hợp trạng thái chia sẻ được hỗ trợ `backend/tests/sql/systemIntegration.sqltest.js`: SQL `SIT-SQL-001` với chức năng dọn dẹp được bảo vệ.
+- Tạo `docs/testing/system-integration-demo-runbook.md`: quy trình thủ công sẵn sàng cho bản trình bày, danh sách kiểm tra lịch thi đấu, đường dẫn dự phòng và các bước đặt lại.
+- Tạo `.sdd/reviews/system-integration-evidence-2026-07-14.md`: bằng chứng thực thi chỉ được điền bằng kết quả thực tế.
+- Sửa đổi `backend/package.json`: thêm tập lệnh tập trung vào bộ nhớ và SQL SIT.
+- Sửa đổi `package.json`: thêm lệnh `test:system` cấp dự án.
+- Sửa đổi `.github/workflows/ci.yml`: chạy bộ SIT trong bộ nhớ sau khi kiểm tra máy chủ.
+- Sửa đổi `docs/architecture/feature-integration-map.md`: thay thế các khoảng trống SIT hiện tại bằng ID trường hợp và đường dẫn bằng chứng mới.
+
+---
+
+## Ma trận kiểm tra hệ thống
+
+| ID | Luồng chức năng chéo | Kết quả mong đợi |
 | --- | --- | --- |
-| SIT-001 | FE02 auth and RBAC across FE07/08/09/10/12 | Guest receives `401`; Member receives `403` on staff APIs; Librarian/Admin can access staff APIs. |
-| SIT-002 | FE07 borrow approval -> FE10 -> FE12 | Approval sets detail/copy to `BORROWED`, due date to +14 days, creates one FE07 notification, and increments borrowing report activity. |
-| SIT-003 | FE08 queue -> FE10 -> FE07 held-copy guard | Queue processing sets reservation `NOTIFIED`, copy `RESERVED`, creates one FE08 notification, and another member cannot borrow the copy. |
-| SIT-004 | FE08 reservation conflict -> FE07 renewal | Active reservation by another member returns `409 RESERVATION_BLOCKS_RENEWAL`; due date and renewal count remain unchanged. |
-| SIT-005 | FE07 overdue return -> FE09 fine | Stored due/return dates produce one server-calculated `UNPAID` fine at 5,000 VND/day; client amount is ignored. |
-| SIT-006 | FE09 unpaid/paid lifecycle -> FE07 eligibility | Unpaid fine blocks a new borrow; marking the fine paid removes the blocker and the next valid borrow request succeeds. |
-| SIT-007 | FE10 idempotency and processing | Replayed source request returns the same notification; processing creates one attempt and exposes no message body or secret. |
-| SIT-008 | FE12 read-only aggregation | Reports reflect actual loans, ignore `REQUESTED` as loan activity, enforce staff access, and leave source state byte-for-byte unchanged. |
-| SIT-009 | FE10 request failure isolation | A failed FE10 notification request does not roll back a successfully approved FE07 borrow. |
-| SIT-SQL-001 | Real SQL shared-state golden path | FE07 return is visible to FE09 calculation and FE12 borrowing report through the same database; all seeded rows are removed afterward. |
+| SIT-001 | Xác thực FE02 và RBAC trên FE07/08/09/10/12 | Khách nhận được `401`; Thành viên nhận được `403` trên API nhân viên; Thủ thư/Quản trị viên có thể truy cập API của nhân viên. |
+| SIT-002 | Phê duyệt vay FE07 -> FE10 -> FE12 | Phê duyệt đặt chi tiết/bản sao vào `BORROWED`, ngày đến hạn là +14 ngày, tạo một thông báo FE07 và tăng hoạt động báo cáo lượt mượn. |
+| SIT-003 | Hàng đợi FE08 -> FE10 -> FE07 bảo vệ bản sao được giữ | Xử lý hàng đợi đặt chỗ `NOTIFIED`, sao chép `RESERVED`, tạo một thông báo FE08 và thành viên khác không thể mượn bản sao. |
+| SIT-004 | Xung đột bảo lưu FE08 -> Gia hạn FE07 | Việc đặt chỗ tích cực của thành viên khác sẽ trả về `409 RESERVATION_BLOCKS_RENEWAL`; ngày đến hạn và số lần gia hạn không thay đổi. |
+| SIT-005 | FE07 trả sách quá hạn -> FE09 phạt | Ngày đến hạn/trả sách được lưu trữ tạo ra một khoản phạt `UNPAID` do máy chủ tính toán ở mức 5.000 VND/ngày; số tiền của khách hàng bị bỏ qua. |
+| SIT-006 | Vòng đời chưa thanh toán/đã thanh toán của FE09 -> Điều kiện mượn FE07 | Khoản phạt chưa thanh toán chặn lượt mượn mới; đánh dấu khoản phạt đã thanh toán loại bỏ điều kiện chặn và yêu cầu mượn hợp lệ tiếp theo thành công. |
+| SIT-007 | FE10 bình thường và xử lý | Yêu cầu nguồn được phát lại sẽ trả về cùng một thông báo; quá trình xử lý tạo ra một lần thử và không tiết lộ nội dung thư hoặc bí mật. |
+| SIT-008 | Tổng hợp chỉ đọc FE12 | Các báo cáo phản ánh các lượt mượn thực tế, bỏ qua `REQUESTED` dưới dạng hoạt động cho vay, thực thi quyền truy cập của nhân viên và giữ nguyên trạng thái nguồn theo từng byte. |
+| SIT-009 | Cách ly lỗi yêu cầu FE10 | Yêu cầu thông báo FE10 không thành công sẽ không khôi phục lượt mượn FE07 đã được phê duyệt thành công. |
+| SIT-SQL-001 | luồng nghiệp vụ chuẩn trạng thái chia sẻ SQL thực sự | Trả về FE07 được hiển thị trong phép tính FE09 và báo cáo mượn FE12 thông qua cùng một cơ sở dữ liệu; tất cả các hàng được gieo hạt sẽ bị loại bỏ sau đó. |
 
 ---
 
-### Task 1: Extract A Shared System Integration Harness
+### Nhiệm vụ 1: Trích xuất Khai thác tích hợp hệ thống dùng chung
 
-**Files:**
-- Create: `backend/tests/helpers/systemIntegrationHarness.js`
-- Modify: `backend/tests/integration.test.js`
-- Test: `backend/tests/systemIntegration.test.js`
+**Tệp:**
+- Tạo: `backend/tests/helpers/systemIntegrationHarness.js`
+- Sửa đổi: `backend/tests/integration.test.js`
+- Kiểm tra: `backend/tests/systemIntegration.test.js`
 
-**Interfaces:**
-- Consumes: existing `makeInMemory*Dependencies()` helpers and `createApp()` dependency injection.
-- Produces: `makeSystemIntegrationApp()`, `createVerifiedActor()`, `authHeader()`, `syncFineSourceFromBorrowing()`, `syncFineBlockersToBorrowing()`, and `syncCopyStatus()`.
+**Giao diện:**
+- Tiêu thụ: trình trợ giúp `makeInMemory*Dependencies()` hiện có và nội dung phụ thuộc `createApp()`.
+- Sản xuất: `makeSystemIntegrationApp()`, `createVerifiedActor()`, `authHeader()`, `syncFineSourceFromBorrowing()`, `syncFineBlockersToBorrowing()` và `syncCopyStatus()`.
 
-- [ ] **Step 1: Write the failing harness contract test**
+- [ ] **Bước 1: Viết kiểm thử hợp đồng khai thác không thành công**
 
-Create `backend/tests/systemIntegration.test.js`:
+Tạo `backend/tests/systemIntegration.test.js`:
 
 ```js
 process.env.BCRYPT_COST = '4';
@@ -94,17 +100,17 @@ describe('System integration', () => {
 });
 ```
 
-- [ ] **Step 2: Run the contract and verify RED**
+- [ ] **Bước 2: Chạy hợp đồng và xác minh RED**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/systemIntegration.test.js
 ```
 
-Expected: FAIL with `Cannot find module './helpers/systemIntegrationHarness'`.
+Dự kiến: THẤT BẠI với `Cannot find module './helpers/systemIntegrationHarness'`.
 
-- [ ] **Step 3: Implement the shared application factory**
+- [ ] **Bước 3: Triển khai nhà máy ứng dụng dùng chung**
 
-Create `backend/tests/helpers/systemIntegrationHarness.js` with these imports and factory boundaries:
+Tạo `backend/tests/helpers/systemIntegrationHarness.js` với các ranh giới nhập khẩu và nhà máy sau:
 
 ```js
 const request = require('supertest');
@@ -212,9 +218,9 @@ function makeSystemIntegrationApp({ borrowingNotificationError = null } = {}) {
 module.exports = { FIXED_NOW, authHeader, makeSystemIntegrationApp, syncCopyStatus };
 ```
 
-- [ ] **Step 4: Add the actor and fine-state bridge functions**
+- [ ] **Bước 4: Thêm tác nhân và chức năng cầu nối trạng thái tốt**
 
-Append and export these functions from the same helper:
+Nối và xuất các hàm này từ cùng một trình trợ giúp:
 
 ```js
 async function createVerifiedActor({ setup, email, role = 'MEMBER', approveMember = true }) {
@@ -294,15 +300,15 @@ module.exports = {
 };
 ```
 
-- [ ] **Step 5: Run the harness contract and existing integration suite**
+- [ ] **Bước 5: Chạy hợp đồng khai thác và bộ tích hợp hiện có**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/systemIntegration.test.js tests/integration.test.js
 ```
 
-Expected: both suites PASS and the existing integration behavior remains unchanged.
+Dự kiến: cả hai bộ đạt và hành vi tích hợp hiện tại vẫn không thay đổi.
 
-- [ ] **Step 6: Commit the harness boundary**
+- [ ] **Bước 6: Cam kết ranh giới khai thác**
 
 ```powershell
 git add backend/tests/helpers/systemIntegrationHarness.js backend/tests/systemIntegration.test.js
@@ -311,18 +317,18 @@ git commit -m "test: add shared system integration harness"
 
 ---
 
-### Task 2: Add Authentication, Borrowing, Notification, And Report Flow
+### Nhiệm vụ 2: Thêm luồng xác thực, mượn, thông báo và báo cáo
 
-**Files:**
-- Modify: `backend/tests/systemIntegration.test.js`
+**Tệp:**
+- Sửa đổi: `backend/tests/systemIntegration.test.js`
 
-**Interfaces:**
-- Consumes: `makeSystemIntegrationApp()`, `createVerifiedActor()`, and `authHeader()` from Task 1.
-- Produces: automated evidence for `SIT-001`, `SIT-002`, `SIT-007`, and `SIT-008`.
+**Giao diện:**
+- Tiêu thụ: `makeSystemIntegrationApp()`, `createVerifiedActor()` và `authHeader()` từ Nhiệm vụ 1.
+- Tạo ra: bằng chứng tự động cho `SIT-001`, `SIT-002`, `SIT-007` và `SIT-008`.
 
-- [ ] **Step 1: Add the failing golden-path test**
+- [ ] **Bước 1: Thêm kiểm thử luồng nghiệp vụ chuẩn không thành công**
 
-Replace the opening test imports with:
+Thay thế việc nhập kiểm thử mở đầu bằng:
 
 ```js
 const request = require('supertest');
@@ -333,7 +339,7 @@ const {
 } = require('./helpers/systemIntegrationHarness');
 ```
 
-Then add a test that performs these exact API steps:
+Sau đó, thêm kiểm thử thực hiện các bước API chính xác sau:
 
 ```js
 test('SIT-002 FE07 approval creates FE10 data and FE12 activity', async () => {
@@ -382,9 +388,9 @@ test('SIT-002 FE07 approval creates FE10 data and FE12 activity', async () => {
 });
 ```
 
-- [ ] **Step 2: Add RBAC assertions before the golden path**
+- [ ] **Bước 2: Thêm xác nhận RBAC trước luồng nghiệp vụ chuẩn**
 
-Add `SIT-001` assertions for unauthenticated and Member access to:
+Thêm xác nhận `SIT-001` cho quyền truy cập không được xác thực và Thành viên vào:
 
 ```text
 GET /api/borrow-requests
@@ -394,13 +400,16 @@ POST /api/notifications/process-pending
 GET /api/reports/borrowing
 ```
 
-Expected: no token returns `401`; a Member token returns `403`; a Librarian token reaches validation or success instead of an authorization error.
+Dự kiến: không có mã thông báo nào trả về `401`; mã thông báo Thành viên trả về `403`; mã thông báo
+Thủ thư đạt được xác thực hoặc thành công thay vì lỗi ủy quyền.
 
-- [ ] **Step 3: Add notification replay and report immutability assertions**
+- [ ] **Bước 3: Thêm chức năng phát lại thông báo và báo cáo các xác nhận về tính bất biến**
 
-For `SIT-007`, submit the same notification request twice with idempotency key `sit-fe07-1`; assert the second response returns the same `notificationId`. Process pending notifications and assert `{ processed: 1, failed: 0 }` without a `notifications` property.
+Đối với `SIT-007`, hãy gửi cùng một yêu cầu thông báo hai lần bằng khóa tạm thời `sit-fe07-1`; khẳng
+định phản hồi thứ hai trả về cùng một `notificationId`. Xử lý các thông báo đang chờ xử lý và xác
+nhận `{ processed: 1, failed: 0 }` mà không có thuộc tính `notifications`.
 
-For `SIT-008`, snapshot these arrays before and after all three report endpoints:
+Đối với `SIT-008`, chụp nhanh các mảng này trước và sau cả ba điểm cuối báo cáo:
 
 ```js
 const before = JSON.stringify({
@@ -412,33 +421,36 @@ const before = JSON.stringify({
 });
 ```
 
-Expected: the serialized snapshot is identical after report calls, while `REQUESTED` details do not increase actual-loan metrics.
+Dự kiến: ảnh chụp nhanh được tuần tự hóa giống hệt nhau sau các cuộc gọi báo cáo, trong khi chi tiết
+`REQUESTED` không làm tăng số liệu cho vay thực tế.
 
-- [ ] **Step 4: Add the notification-failure isolation case**
+- [ ] **Bước 4: Thêm trường hợp cách ly lỗi thông báo**
 
-Create the setup with `makeSystemIntegrationApp({ borrowingNotificationError: new Error('Provider unavailable') })`, then create and approve a valid borrow request.
+Tạo thiết lập với `makeSystemIntegrationApp({ borrowingNotificationError: new Error('Provider unavailable') })`,
+sau đó tạo và phê duyệt yêu cầu mượn hợp lệ.
 
-Expected:
+Dự kiến:
 
 ```text
-approval response = 200
+phản hồi phê duyệt = 200
 BorrowRequest.Status = APPROVED
 BorrowDetail.Status = BORROWED
 BookCopy.Status = BORROWED
-no FE07 notification row is claimed as delivered
+không có bản ghi thông báo FE07 nào bị xác nhận sai là đã gửi
 ```
 
-Keep the existing FE07 SQL audit-rollback tests as separate feature-level transaction evidence; `SIT-009` covers only the cross-feature FE07/FE10 failure boundary.
+Giữ các kiểm thử khôi phục kiểm toán FE07 SQL hiện có làm bằng chứng giao dịch cấp chức năng riêng
+biệt; `SIT-009` chỉ bao gồm ranh giới lỗi FE07/FE10 đa chức năng.
 
-- [ ] **Step 5: Run the focused SIT cases**
+- [ ] **Bước 5: Chạy các trường hợp SIT tập trung**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/systemIntegration.test.js
 ```
 
-Expected: `SIT-001`, `SIT-002`, `SIT-007`, `SIT-008`, and the notification-failure part of `SIT-009` PASS.
+Dự kiến: `SIT-001`, `SIT-002`, `SIT-007`, `SIT-008` và phần thông báo lỗi của `SIT-009` đạt.
 
-- [ ] **Step 6: Commit the first system slice**
+- [ ] **Bước 6: Cam kết lát hệ thống đầu tiên**
 
 ```powershell
 git add backend/tests/systemIntegration.test.js
@@ -447,45 +459,49 @@ git commit -m "test: cover auth borrow notification report flow"
 
 ---
 
-### Task 3: Add Reservation Priority And Renewal Conflict Flow
+### Nhiệm vụ 3: Thêm mức độ ưu tiên đặt chỗ và luồng xung đột gia hạn
 
-**Files:**
-- Modify: `backend/tests/systemIntegration.test.js`
+**Tệp:**
+- Sửa đổi: `backend/tests/systemIntegration.test.js`
 
-**Interfaces:**
-- Consumes: shared actors and copy-state bridge from Task 1.
-- Produces: automated evidence for `SIT-003` and `SIT-004`.
+**Giao diện:**
+- Tiêu thụ: các tác nhân được chia sẻ và cầu nối trạng thái sao chép từ Nhiệm vụ 1.
+- Tạo ra: bằng chứng tự động cho `SIT-003` và `SIT-004`.
 
-- [ ] **Step 1: Add a held-copy integration test**
+- [ ] **Bước 1: Thêm kiểm thử tích hợp bản sao lưu giữ**
 
-Use Member A to reserve borrowed copy `1`, set the FE08 copy to `AVAILABLE`, and call:
+Sử dụng Thành viên A để đặt chỗ bản sao `1` đã mượn, đặt bản sao FE08 thành `AVAILABLE` và gọi:
 
 ```http
 POST /api/reservations/process-queue
 { "copyId": 1 }
 ```
 
-Assert the selected reservation is `NOTIFIED`, FE08 copy status is `RESERVED`, and exactly one notification has `sourceFeature: FE08` plus `templateKey: RESERVATION_READY`. Call `syncCopyStatus(reservationState, borrowingState, 1)`, then assert Member B receives `409 COPY_NOT_AVAILABLE` from `POST /api/borrow-requests`.
+Xác nhận đặt chỗ đã chọn là `NOTIFIED`, trạng thái sao chép FE08 là `RESERVED` và chính xác một
+thông báo có `sourceFeature: FE08` cộng với `templateKey: RESERVATION_READY`. Gọi
+`syncCopyStatus(reservationState, borrowingState, 1)`, sau đó xác nhận Thành viên B nhận được `409
+COPY_NOT_AVAILABLE` từ `POST /api/borrow-requests`.
 
-- [ ] **Step 2: Add a renewal-conflict integration test**
+- [ ] **Bước 2: Thêm kiểm thử tích hợp gia hạn-xung đột**
 
-Borrow and approve copy `2` for Member A. Insert one active reservation owned by Member B into the FE07 reservation-conflict state, then call:
+Mượn và phê duyệt bản sao `2` cho Thành viên A. Chèn một phần đặt chỗ đang hoạt động thuộc sở hữu
+của Thành viên B vào trạng thái xung đột đặt chỗ FE07, sau đó gọi:
 
 ```http
 PATCH /api/borrow-details/{borrowDetailId}/renew
 ```
 
-Expected: `409 RESERVATION_BLOCKS_RENEWAL`; `dueDate` and `renewalCount` equal their pre-call values.
+Dự kiến: `409 RESERVATION_BLOCKS_RENEWAL`; `dueDate` và `renewalCount` bằng giá trị trước cuộc gọi của chúng.
 
-- [ ] **Step 3: Run the reservation cases with existing integration coverage**
+- [ ] **Bước 3: Chạy các trường hợp đặt chỗ với phạm vi tích hợp hiện có**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/systemIntegration.test.js tests/integration.test.js tests/reservationRoutes.test.js
 ```
 
-Expected: all suites PASS without duplicate queue notifications or copy-status divergence.
+Dự kiến: tất cả các bộ ĐẠT mà không có thông báo hàng đợi trùng lặp hoặc phân kỳ trạng thái sao chép.
 
-- [ ] **Step 4: Commit the reservation boundary**
+- [ ] **Bước 4: Cam kết ranh giới đặt chỗ**
 
 ```powershell
 git add backend/tests/systemIntegration.test.js
@@ -494,59 +510,62 @@ git commit -m "test: cover reservation borrowing integration"
 
 ---
 
-### Task 4: Add Overdue Fine And Borrowing-Blocker Lifecycle
+### Nhiệm vụ 4: Thêm vòng đời phạt quá hạn và chặn tiền vay
 
-**Files:**
-- Modify: `backend/tests/systemIntegration.test.js`
+**Tệp:**
+- Sửa đổi: `backend/tests/systemIntegration.test.js`
 
-**Interfaces:**
-- Consumes: `syncFineSourceFromBorrowing()` and `syncFineBlockersToBorrowing()` from Task 1.
-- Produces: automated evidence for `SIT-005` and `SIT-006`.
+**Giao diện:**
+- Tiêu thụ: `syncFineSourceFromBorrowing()` và `syncFineBlockersToBorrowing()` từ Nhiệm vụ 1.
+- Tạo ra: bằng chứng tự động cho `SIT-005` và `SIT-006`.
 
-- [ ] **Step 1: Write the overdue return and fine calculation test**
+- [ ] **Bước 1: Viết tờ khai quá hạn và tính phạt**
 
-Borrow and approve copy `1`, then set its stored due date to `2026-06-30`. Return it on `2026-07-14`, call `syncFineSourceFromBorrowing(setup)`, and submit:
+Mượn và phê duyệt bản sao `1`, sau đó đặt ngày đến hạn được lưu trữ thành `2026-06-30`. trả sách
+trên `2026-07-14`, gọi `syncFineSourceFromBorrowing(setup)` và gửi:
 
 ```http
 POST /api/fines/calculate
 { "borrowDetailId": 1, "amount": 999999 }
 ```
 
-Use the actual returned `borrowDetailId`, not the literal example ID. Expected: one `UNPAID` fine, `overdueDays: 14`, and `amount: 70000`; the client amount is ignored.
+Sử dụng `borrowDetailId` được trả về thực tế chứ không phải ID mẫu theo nghĩa đen. Dự kiến: một
+`UNPAID` phạt, `overdueDays: 14` và `amount: 70000`; số tiền của khách hàng bị bỏ qua.
 
-- [ ] **Step 2: Prove the fine blocks and then unblocks FE07**
+- [ ] **Bước 2: Chứng minh các khối tốt và sau đó mở khóa FE07**
 
-Call `syncFineBlockersToBorrowing(setup)`, then request another available copy as the same member. Expected: `409 UNPAID_FINE_BLOCKS_BORROWING` and no new request row.
+Gọi `syncFineBlockersToBorrowing(setup)`, sau đó yêu cầu một bản sao khác có sẵn cho cùng một thành
+viên. Dự kiến: `409 UNPAID_FINE_BLOCKS_BORROWING` và không có hàng yêu cầu mới.
 
-Mark the fine paid through:
+Đánh dấu số khoản phạt đã nộp qua:
 
 ```http
 PATCH /api/fines/{fineId}/paid
 { "paymentMethod": "CASH" }
 ```
 
-Call `syncFineBlockersToBorrowing(setup)` again and repeat the borrow request with copy `2`. Expected: `201 PENDING`.
+Gọi lại `syncFineBlockersToBorrowing(setup)` và lặp lại yêu cầu mượn với bản sao `2`. Dự kiến: `201 PENDING`.
 
-- [ ] **Step 3: Verify fine ownership and duplicate calculation**
+- [ ] **Bước 3: Xác minh quyền sở hữu khoản phạt và tính toán trùng lặp**
 
-Expected:
+Dự kiến:
 
 ```text
-GET /api/fines/me as owner -> one fine
-GET /api/fines/me as another member -> zero fines
-second POST /api/fines/calculate -> created=false and same fineId
-Member PATCH /api/fines/{fineId}/paid -> 403
+GET /api/fines/me với tư cách chủ sở hữu -> một khoản phạt
+GET /api/fines/me với tư cách thành viên khác -> không có khoản phạt
+POST /api/fines/calculate lần thứ hai -> created=false và cùng fineId
+Thành viên PATCH /api/fines/{fineId}/paid -> 403
 ```
 
-- [ ] **Step 4: Run FE07 and FE09 regression together**
+- [ ] **Bước 4: Chạy hồi quy FE07 và FE09 cùng nhau**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/systemIntegration.test.js tests/borrowingRoutes.test.js tests/fineManagementRoutes.test.js
 ```
 
-Expected: all suites PASS.
+Dự kiến: tất cả các bộ ĐẠT.
 
-- [ ] **Step 5: Commit the fine lifecycle**
+- [ ] **Bước 5: Cam kết vòng đời tốt**
 
 ```powershell
 git add backend/tests/systemIntegration.test.js
@@ -555,19 +574,19 @@ git commit -m "test: cover fine borrowing blocker lifecycle"
 
 ---
 
-### Task 5: Add SQL-Backed Shared-State Proof
+### Nhiệm vụ 5: Thêm bằng chứng trạng thái chia sẻ được hỗ trợ bởi SQL
 
-**Files:**
-- Create: `backend/tests/sql/systemIntegration.sqltest.js`
-- Modify: `backend/package.json`
+**Tệp:**
+- Tạo: `backend/tests/sql/systemIntegration.sqltest.js`
+- Sửa đổi: `backend/package.json`
 
-**Interfaces:**
-- Consumes: production SQL repositories and services through the database configured by `SYSTEM_SQL_TEST_ENV_FILE`.
-- Produces: `SIT-SQL-001` proving FE07 -> FE09 -> FE12 state visibility without in-memory bridges.
+**Giao diện:**
+- Tiêu thụ: sản xuất các kho lưu trữ và dịch vụ SQL thông qua cơ sở dữ liệu được cấu hình bởi `SYSTEM_SQL_TEST_ENV_FILE`.
+- Tạo ra: `SIT-SQL-001` chứng minh khả năng hiển thị trạng thái FE07 -> FE09 -> FE12 mà không cần cầu nối trong bộ nhớ.
 
-- [ ] **Step 1: Add the mutation guard and deterministic seed registry**
+- [ ] **Bước 1: Thêm trình bảo vệ thao tác ghi và đăng ký hạt giống xác định**
 
-Start the SQL suite with:
+Bắt đầu bộ SQL với:
 
 ```js
 const dotenv = require('dotenv');
@@ -589,30 +608,30 @@ const seed = {
 };
 ```
 
-- [ ] **Step 2: Implement one real database golden path**
+- [ ] **Bước 2: Triển khai một luồng nghiệp vụ chuẩn cho cơ sở dữ liệu thực**
 
-The test must perform these operations through production service/repository APIs:
+kiểm thử phải thực hiện các hoạt động này thông qua API dịch vụ sản xuất/kho lưu trữ:
 
 ```text
-1. Insert synthetic Member and Librarian users and an approved Members row.
-2. Insert one AVAILABLE copy using an existing BookId.
-3. FE07 creates and approves a request; assert detail BORROWED and copy BORROWED.
-4. Set due date to 2026-06-30 and return on 2026-07-14; assert FE07 fineCandidate has 14 overdue days.
-5. FE09 calculates from the persisted BorrowDetail; assert one UNPAID fine for 70,000 VND.
-6. FE12 borrowing report for July includes the request and actual loan activity.
-7. Query AuditLogs and Notifications for FE07 source records without exposing payload secrets.
+1. Chèn người dùng Thành viên và Thủ thư tổng hợp, cùng một bản ghi `Members` đã được phê duyệt.
+2. Chèn một bản sao AVAILABLE bằng một `BookId` hiện có.
+3. FE07 tạo và phê duyệt một yêu cầu; xác nhận chi tiết ở trạng thái BORROWED và bản sao cũng ở trạng thái BORROWED.
+4. Đặt ngày đến hạn là 2026-06-30 và trả sách vào 2026-07-14; xác nhận `fineCandidate` của FE07 có 14 ngày quá hạn.
+5. FE09 tính từ `BorrowDetail` đã lưu; xác nhận có một khoản phạt UNPAID trị giá 70.000 VND.
+6. Báo cáo mượn sách tháng 7 của FE12 bao gồm yêu cầu và hoạt động mượn thực tế.
+7. Truy vấn `AuditLogs` và `Notifications` cho các bản ghi nguồn FE07 mà không làm lộ dữ liệu gửi bí mật.
 ```
 
-- [ ] **Step 3: Implement cleanup in reverse dependency order**
+- [ ] **Bước 3: Thực hiện dọn dẹp theo thứ tự phụ thuộc ngược lại**
 
-Use `afterEach` and `afterAll` to delete only IDs recorded in `seed`, in this order:
+Sử dụng `afterEach` và `afterAll` để chỉ xóa các ID được ghi trong `seed`, theo thứ tự sau:
 
 ```text
 NotificationAttempts -> Notifications -> AuditLogs -> Fines -> BorrowDetails -> BorrowRequests
 -> Reservations -> BookCopies -> Members -> UserRoles -> Users
 ```
 
-After cleanup, assert:
+Sau khi dọn dẹp, khẳng định:
 
 ```sql
 SELECT
@@ -620,17 +639,17 @@ SELECT
   (SELECT COUNT(*) FROM BookCopies WHERE Barcode LIKE @SeedPrefix) AS TestCopies;
 ```
 
-Expected: `TestUsers = 0` and `TestCopies = 0`.
+Dự kiến: `TestUsers = 0` và `TestCopies = 0`.
 
-- [ ] **Step 4: Add the focused SQL script**
+- [ ] **Bước 4: Thêm tập lệnh SQL tập trung**
 
-Add to `backend/package.json`:
+Thêm vào `backend/package.json`:
 
 ```json
 "test:sql:system": "jest --runInBand --runTestsByPath tests/sql/systemIntegration.sqltest.js"
 ```
 
-- [ ] **Step 5: Run the SQL suite against an explicit environment**
+- [ ] **Bước 5: Chạy bộ SQL trong môi trường rõ ràng**
 
 ```powershell
 $env:SYSTEM_SQL_TEST_ALLOW_MUTATION = 'true'
@@ -638,9 +657,9 @@ $env:SYSTEM_SQL_TEST_ENV_FILE = 'D:\SWP391\library-management-system\backend\.en
 npm.cmd --prefix backend run test:sql:system
 ```
 
-Expected: `SIT-SQL-001` PASS and cleanup counts are both zero.
+Dự kiến: `SIT-SQL-001` đạt và số lần dọn dẹp đều bằng 0.
 
-- [ ] **Step 6: Commit the SQL evidence layer**
+- [ ] **Bước 6: Cam kết lớp bằng chứng SQL**
 
 ```powershell
 git add backend/tests/sql/systemIntegration.sqltest.js backend/package.json backend/package-lock.json
@@ -649,37 +668,37 @@ git commit -m "test: add SQL system integration proof"
 
 ---
 
-### Task 6: Add Demo Runbook, CI Command, And Evidence Record
+### Nhiệm vụ 6: Thêm sổ tay trình diễn, lệnh CI và bản ghi bằng chứng
 
-**Files:**
-- Create: `docs/testing/system-integration-demo-runbook.md`
-- Create: `.sdd/reviews/system-integration-evidence-2026-07-14.md`
-- Modify: `package.json`
-- Modify: `backend/package.json`
-- Modify: `.github/workflows/ci.yml`
-- Modify: `docs/architecture/feature-integration-map.md`
+**Tệp:**
+- Tạo: `docs/testing/system-integration-demo-runbook.md`
+- Tạo: `.sdd/reviews/system-integration-evidence-2026-07-14.md`
+- Sửa đổi: `package.json`
+- Sửa đổi: `backend/package.json`
+- Sửa đổi: `.github/workflows/ci.yml`
+- Sửa đổi: `docs/architecture/feature-integration-map.md`
 
-**Interfaces:**
-- Consumes: SIT case IDs and passing output from Tasks 1-5.
-- Produces: one CI command, one presentation checklist, and one durable evidence record.
+**Giao diện:**
+- Tiêu thụ: ID trường hợp SIT và chuyển đầu ra từ Nhiệm vụ 1-5.
+- Tạo ra: một lệnh CI, một danh sách kiểm tra trình bày và một bản ghi bằng chứng lâu dài.
 
-- [ ] **Step 1: Add focused scripts**
+- [ ] **Bước 1: Thêm tập lệnh tập trung**
 
-Add to `backend/package.json`:
+Thêm vào `backend/package.json`:
 
 ```json
 "test:integration:system": "jest --runInBand --runTestsByPath tests/systemIntegration.test.js"
 ```
 
-Add to root `package.json`:
+Thêm vào root `package.json`:
 
 ```json
 "test:system": "npm --prefix backend run test:integration:system"
 ```
 
-- [ ] **Step 2: Add the in-memory SIT suite to CI**
+- [ ] **Bước 2: Thêm bộ SIT trong bộ nhớ vào CI**
 
-After `Backend tests` in `.github/workflows/ci.yml`, add:
+Sau `Backend tests` trong `.github/workflows/ci.yml`, hãy thêm:
 
 ```yaml
       - name: System integration tests
@@ -687,40 +706,46 @@ After `Backend tests` in `.github/workflows/ci.yml`, add:
         working-directory: backend
 ```
 
-Do not run the SQL mutation suite in shared CI until the repository has an isolated SQL Server service and disposable credentials.
+Không chạy bộ thao tác ghi SQL trong CI được chia sẻ cho đến khi kho lưu trữ có dịch vụ SQL Server riêng
+biệt và thông tin đăng nhập dùng một lần.
 
-- [ ] **Step 3: Create the presentation demo runbook**
+- [ ] **Bước 3: Tạo sổ tay vận hành demo thuyết trình**
 
-The runbook must use this five-minute flow:
+Sổ tay chạy phải sử dụng quy trình dài 5 phút này:
 
 ```text
-Preflight: backend /health -> frontend login -> copy AVAILABLE -> no unpaid fine.
-1. Member creates borrow request.
-2. Librarian approves; show BORROWED status and due date +14 days.
-3. Show FE10 due-date notification record or API response.
-4. Return an overdue/damaged fixture; show fineCandidate, then FE09-calculated fine.
-5. Show unpaid fine blocking the next borrow; mark paid and retry successfully.
-6. Open FE12 borrowing report and show the integrated activity.
+Kiểm tra trước: máy chủ /health -> đăng nhập giao diện -> bản sao AVAILABLE -> không có khoản phạt chưa thanh toán.
+1. Thành viên tạo yêu cầu mượn.
+2. Thủ thư phê duyệt; hiển thị trạng thái BORROWED và ngày đến hạn sau 14 ngày.
+3. Hiển thị bản ghi thông báo ngày đến hạn của FE10 hoặc phản hồi API.
+4. Trả dữ liệu kiểm thử quá hạn/hư hỏng; hiển thị `fineCandidate`, sau đó hiển thị khoản phạt do FE09 tính.
+5. Hiển thị khoản phạt chưa thanh toán đang chặn lượt mượn tiếp theo; đánh dấu đã thanh toán và thử lại thành công.
+6. Mở báo cáo mượn sách FE12 và hiển thị hoạt động tích hợp.
 ```
 
-Include a fallback path using API responses and screenshots if email, SQL Server, or frontend startup is unavailable. Include reset checks for copy status, pending notifications, fines, and synthetic users.
+Bao gồm đường dẫn dự phòng sử dụng phản hồi và ảnh chụp màn hình API nếu email, SQL Server hoặc khởi
+động giao diện người dùng không khả dụng. Bao gồm kiểm tra đặt lại trạng thái sao chép, thông báo
+đang chờ xử lý, khoản phạt và người dùng tổng hợp.
 
-- [ ] **Step 4: Record only observed evidence**
+- [ ] **Bước 4: Chỉ ghi lại bằng chứng quan sát được**
 
-Create `.sdd/reviews/system-integration-evidence-2026-07-14.md` with a row for every SIT ID and these columns:
+Tạo `.sdd/reviews/system-integration-evidence-2026-07-14.md` bằng một hàng cho mỗi ID SIT và các cột sau:
 
 ```markdown
-| ID | Status | Command / action | Observed result | Cleanup |
+|ID|Trạng thái|Lệnh/hành động|Kết quả quan sát|Dọn dẹp|
 | --- | --- | --- | --- | --- |
 ```
 
-Use `NOT RUN` until the corresponding command has actually completed. Never pre-fill `PASS`.
+Sử dụng `NOT RUN` cho đến khi lệnh tương ứng thực sự hoàn thành. Không bao giờ điền trước `PASS`.
 
-- [ ] **Step 5: Update the integration map**
+- [ ] **Bước 5: Cập nhật bản đồ tích hợp**
 
-In `docs/architecture/feature-integration-map.md` Section 7, map each completed flow to `backend/tests/systemIntegration.test.js` or `backend/tests/sql/systemIntegration.sqltest.js`. Keep FE01/FE05 availability and FE11 admin-console gaps open because they are outside this plan.
+Trong `docs/architecture/feature-integration-map.md` Phần 7, ánh xạ từng luồng đã hoàn thành tới
+`backend/tests/systemIntegration.test.js` hoặc `backend/tests/sql/systemIntegration.sqltest.js`.
+Luôn mở tính khả dụng của FE01/FE05 và các khoảng trống trong bảng điều khiển dành cho quản trị viên
+FE11 vì chúng nằm ngoài kế hoạch này.
 
-- [ ] **Step 6: Run the complete verification gate**
+- [ ] **Bước 6: Chạy cổng xác minh hoàn chỉnh**
 
 ```powershell
 npm.cmd run test:system
@@ -732,20 +757,22 @@ npm.cmd run trace:enforce
 git diff --check
 ```
 
-Expected: all commands exit `0`. Record exact suite/test counts and the existing Vite advisory separately from failures.
+Dự kiến: tất cả các lệnh thoát `0`. Ghi lại số lượng bộ/kiểm tra chính xác và lời khuyên Vite hiện
+có tách biệt với các lỗi.
 
-- [ ] **Step 7: Run the manual demo rehearsal**
+- [ ] **Bước 7: Chạy thử demo thủ công**
 
-Run the demo flow twice:
+Chạy luồng demo hai lần:
 
 ```text
-Rehearsal 1: normal pace, verify every state and reset.
-Rehearsal 2: timed five-minute presentation pace using the fallback screenshots/API evidence.
+Diễn tập 1: thực hiện với nhịp độ bình thường, xác minh mọi trạng thái rồi đặt lại dữ liệu.
+Diễn tập 2: trình bày trong năm phút, sử dụng ảnh chụp màn hình hoặc bằng chứng API dự phòng.
 ```
 
-Expected: no page-level overflow, no fabricated demo success, no stale authenticated role, and all test fixtures are removed or restored.
+Dự kiến: không có lỗi tràn cấp trang, không có bản demo giả thành công, không có vai trò xác thực cũ
+và tất cả các nội dung kiểm thử đều bị xóa hoặc khôi phục.
 
-- [ ] **Step 8: Commit the integration gate**
+- [ ] **Bước 8: Cam kết cổng tích hợp**
 
 ```powershell
 git add package.json backend/package.json backend/package-lock.json .github/workflows/ci.yml docs/testing/system-integration-demo-runbook.md docs/architecture/feature-integration-map.md .sdd/reviews/system-integration-evidence-2026-07-14.md
@@ -754,19 +781,19 @@ git commit -m "test: establish system integration gate"
 
 ---
 
-## Exit Criteria
+## Tiêu chí thoát
 
-- [ ] `SIT-001` through `SIT-009` pass in the deterministic Supertest suite.
-- [ ] `SIT-SQL-001` passes against the configured SQL Server and cleanup returns zero rows.
-- [ ] CI runs the in-memory SIT suite on pull requests and `main`.
-- [ ] The manual runbook completes twice and has a working fallback path.
-- [ ] No production requirement, schema, status, dependency, or authorization boundary changes.
-- [ ] Evidence maps each flow from feature specs and integration map to code, command, observed result, and cleanup.
+- [ ] Vượt qua `SIT-001` đến `SIT-009` trong bộ Supertest xác định.
+- [ ] `SIT-SQL-001` chuyển sang SQL Server đã định cấu hình và quá trình dọn dẹp sẽ trả về 0 hàng.
+- [ ] CI chạy bộ SIT trong bộ nhớ theo yêu cầu hợp nhất và `main`.
+- [ ] Sổ tay chạy thủ công hoàn thành hai lần và có đường dẫn dự phòng đang hoạt động.
+- [ ] Không có thay đổi về yêu cầu sản xuất, lược đồ, trạng thái, sự phụ thuộc hoặc ranh giới ủy quyền.
+- [ ] Bằng chứng ánh xạ từng luồng từ thông số chức năng và bản đồ tích hợp tới mã, lệnh, kết quả được quan sát và dọn dẹp.
 
-## Execution Order For Tomorrow's Presentation
+## Lệnh thi hành bài thuyết trình ngày mai
 
-1. Execute Task 1 and Task 2 first; they provide the safest borrow/notification/report demo evidence.
-2. Execute Task 4 next; it provides the clearest business-rule story: overdue fine blocks borrowing until paid.
-3. Create the Task 6 demo runbook immediately after the first green automated flow.
-4. Execute Task 3 reservation cases if time remains before rehearsal.
-5. Execute Task 5 SQL proof only with a reachable disposable database and enough time to verify cleanup.
+1. Thực hiện Nhiệm vụ 1 và Nhiệm vụ 2 trước; chúng cung cấp bằng chứng trình diễn mượn sách/thông báo/báo cáo an toàn nhất.
+2. Thực hiện Nhiệm vụ 4 tiếp theo; nó cung cấp câu chuyện về quy tắc nghiệp vụ rõ ràng nhất: phạt quá hạn sẽ chặn lượt mượn cho đến khi được thanh toán.
+3. Tạo sổ tay demo Nhiệm vụ 6 ngay sau luồng tự động màu xanh lá cây đầu tiên.
+4. Thực hiện các trường hợp đặt chỗ Nhiệm vụ 3 nếu vẫn còn thời gian trước buổi diễn tập.
+5. Chỉ thực hiện bằng chứng SQL của Nhiệm vụ 5 với cơ sở dữ liệu dùng một lần có thể truy cập và đủ thời gian để xác minh việc dọn dẹp.

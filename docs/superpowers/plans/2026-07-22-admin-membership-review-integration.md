@@ -1,55 +1,61 @@
-# Admin Membership Review Integration Implementation Plan
+# Kế hoạch thực hiện tích hợp đánh giá thành viên quản trị viên
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Đối với nhân viên đại lý:** SUB-SKILL BẮT BUỘC: Sử dụng siêu năng lực:phát triển theo định hướng phụ (được khuyến nghị) hoặc siêu năng lực:thực hiện các kế hoạch để triển khai kế hoạch này theo từng nhiệm vụ. Các bước sử dụng cú pháp hộp kiểm (`- [ ]`) để theo dõi.
 
-**Goal:** Add a responsive, Admin-native FE04 membership review module to the existing Admin Console without changing FE04 APIs, schema, state transitions, authorization, audit, or FE10 delivery ownership.
+**Mục tiêu:** Thêm mô-đun đánh giá thành viên FE04 gốc dành cho quản trị viên vào Bảng điều khiển
+dành cho quản trị viên hiện có mà không thay đổi API FE04, lược đồ, chuyển đổi trạng thái, ủy quyền,
+kiểm tra hoặc quyền sở hữu phân phối FE10.
 
-**Architecture:** FE11 owns the Admin shell and adds one `membership` navigation/section composition point. A focused `admin/membership` module consumes the existing `membershipApi`; pure normalization/feedback helpers keep response handling testable while the backend remains authoritative for review rules.
+**Kiến trúc:** FE11 sở hữu lớp vỏ Quản trị và thêm một điểm tổng hợp phần/điều hướng `membership`.
+Mô-đun `admin/membership` tập trung sử dụng `membershipApi` hiện có; trình trợ giúp chuẩn hóa/phản
+hồi thuần túy giúp kiểm tra việc xử lý phản hồi trong khi phần máy chủ vẫn có thẩm quyền đối với các
+quy tắc xem xét.
 
-**Tech Stack:** React 19, Vite, Lucide React, Axios, Node test runner, Playwright Chromium, Express FE04 API, SQL Server production repository.
+**bộ công nghệ công nghệ:** React 19, Vite, Lucide React, Axios, Trình chạy kiểm thử nút, Playwright
+Chrome, Express FE04 API, SQL Server kho lưu trữ sản xuất.
 
-## Global Constraints
+## Ràng buộc toàn cầu
 
-- Sidebar order is exactly Home, Dashboard, Library, Circulation, Requests, Users, Membership Review, Audit.
-- `Duyệt hội viên` follows `Quản lý người dùng`; Permissions and the removed payment/borrow confirmations stay absent.
-- Use only canonical FE04 endpoints; do not create `/api/admin/membership` aliases.
-- Preserve `/membership` for Member/Librarian.
-- Search is at most 100 characters; rejection reason is trimmed and 1..500; page size is 10.
-- Only `PENDING` rows expose decisions; reload authoritative data after every mutation success or failure.
-- A `FAILED` notification status is a delivery warning after a committed decision, not a failed decision.
-- No backend production, API, schema, migration, role, or membership-state change is allowed; a test-only in-memory FE04 service may be wired into the existing E2E harness.
-- No document-level overflow at 1440x900, 1366x768, 1280x720, or 390x844.
-- Fast-Track H2 overrides generic frequent commits: keep Tasks 1-4 uncommitted, review once, then commit in Task 5.
+- Thứ tự thanh bên chính xác là Trang chủ, Bảng điều khiển, Thư viện, Lưu hành, Yêu cầu, Người dùng, Đánh giá thành viên, Kiểm tra.
+- `Duyệt hội viên` nối tiếp `Quản lý người dùng`; Quyền và xác nhận thanh toán/vay đã bị xóa vẫn không có.
+- Chỉ sử dụng điểm cuối FE04 chuẩn; không tạo bí danh `/api/admin/membership`.
+- Bảo quản `/membership` cho Thành viên/Thủ thư.
+- Tìm kiếm tối đa 100 ký tự; lý do từ chối được cắt bớt và 1..500; kích thước trang là 10.
+- Chỉ các hàng `PENDING` hiển thị các quyết định; tải lại dữ liệu có thẩm quyền sau mỗi lần thao tác ghi thành công hay thất bại.
+- Trạng thái thông báo `FAILED` là cảnh báo gửi sau một quyết định đã cam kết chứ không phải một quyết định thất bại.
+- Không cho phép sản xuất máy chủ, API, lược đồ, di chuyển, vai trò hoặc thay đổi trạng thái thành viên; dịch vụ FE04 trong bộ nhớ chỉ dành cho kiểm thử có thể được kết nối với bộ khai thác E2E hiện có.
+- Không tràn cấp tài liệu ở 1440x900, 1366x768, 1280x720 hoặc 390x844.
+- luồng nhanh H2 ghi đè các cam kết chung chung thường xuyên: giữ nguyên Nhiệm vụ 1-4, xem lại một lần, sau đó cam kết trong Nhiệm vụ 5.
 
-## File Map
+## Bản đồ tệp
 
-| File | Responsibility |
+| Tập tin | Trách nhiệm |
 | --- | --- |
-| `frontend/src/page/admin/membership/adminMembershipPresentation.js` | Pure FE04 list normalization, pending decision, notification feedback. |
-| `frontend/src/page/admin/membership/AdminMembershipSection.jsx` | Filters, paging, table/cards, mutations, reload and feedback. |
-| `frontend/src/page/admin/membership/AdminMembershipReviewModal.jsx` | Accessible detail, approval confirmation, rejection input. |
-| `frontend/src/page/admin/adminNavigation.js` | Exact eight-entry sidebar. |
-| `frontend/src/page/admin/AdminConsolePage.jsx` | Admin-only section composition. |
-| `frontend/src/page/admin/admin-console.css` | Responsive module and warning toast. |
-| `frontend/test/*.test.js` | Pure/source ownership and regression contracts. |
-| `backend/tests/helpers/systemIntegrationHarness.js` | Test-only in-memory FE04 service for authenticated browser acceptance. |
-| `tests/e2e/fe04-admin-membership-review.spec.js` | Authenticated real FE04 review acceptance. |
+| `frontend/src/page/admin/membership/adminMembershipPresentation.js` | Chuẩn hóa danh sách FE04 thuần túy, quyết định đang chờ xử lý, phản hồi thông báo. |
+| `frontend/src/page/admin/membership/AdminMembershipSection.jsx` | Bộ lọc, phân trang, bảng/thẻ, thao tác ghi, tải lại và phản hồi. |
+| `frontend/src/page/admin/membership/AdminMembershipReviewModal.jsx` | Chi tiết có thể truy cập, xác nhận phê duyệt, đầu vào từ chối. |
+| `frontend/src/page/admin/adminNavigation.js` | Thanh bên có tám mục chính xác. |
+| `frontend/src/page/admin/AdminConsolePage.jsx` | Thành phần phần chỉ dành cho quản trị viên. |
+| `frontend/src/page/admin/admin-console.css` | Mô-đun đáp ứng và bánh mì nướng cảnh báo. |
+| `frontend/test/*.test.js` | Hợp đồng sở hữu thuần túy/nguồn và hồi quy. |
+| `backend/tests/helpers/systemIntegrationHarness.js` | Dịch vụ FE04 trong bộ nhớ chỉ kiểm thử để chấp nhận trình duyệt đã xác thực. |
+| `tests/e2e/fe04-admin-membership-review.spec.js` | Đã xác thực chấp nhận đánh giá FE04 thực. |
 
 ---
 
-### Task 1: Navigation And Pure Presentation Contracts
+### Nhiệm vụ 1: Hợp đồng điều hướng và trình bày thuần túy
 
-**Files:**
-- Create: `frontend/src/page/admin/membership/adminMembershipPresentation.js`
-- Modify: `frontend/src/page/admin/adminNavigation.js`
-- Modify: `frontend/test/adminConsolePresentation.test.js`
-- Modify: `frontend/test/appShellFrontend.test.js`
+**Tệp:**
+- Tạo: `frontend/src/page/admin/membership/adminMembershipPresentation.js`
+- Sửa đổi: `frontend/src/page/admin/adminNavigation.js`
+- Sửa đổi: `frontend/test/adminConsolePresentation.test.js`
+- Sửa đổi: `frontend/test/appShellFrontend.test.js`
 
-**Interfaces:**
-- Consumes: `{ applications, page, limit, total, totalPages }`.
-- Produces: `ADMIN_MEMBERSHIP_PAGE_SIZE`, `EMPTY_ADMIN_MEMBERSHIP_FILTERS`, `normalizeAdminMembershipList`, `isPendingMembershipApplication`, `getMembershipDecisionFeedback`.
+**Giao diện:**
+- Tiêu thụ: `{ applications, page, limit, total, totalPages }`.
+- Sản xuất: `ADMIN_MEMBERSHIP_PAGE_SIZE`, `EMPTY_ADMIN_MEMBERSHIP_FILTERS`, `normalizeAdminMembershipList`, `isPendingMembershipApplication`, `getMembershipDecisionFeedback`.
 
-- [ ] **Step 1: Write failing navigation and helper tests**
+- [ ] **Bước 1: Viết các kiểm thử điều hướng và trợ giúp không thành công**
 
 ```js
 import {
@@ -81,26 +87,27 @@ test('Admin membership presentation keeps canonical paging and safe feedback', (
 });
 ```
 
-Update `appShellFrontend.test.js` to require `Duyệt hội viên` and replace the old Membership-negative assertion with:
+Cập nhật `appShellFrontend.test.js` để yêu cầu `Duyệt hội viên` và thay thế xác nhận phủ định tư
+cách thành viên cũ bằng:
 
 ```js
 assert.match(navigation, /\{ id: 'membership'[^\n]+label: 'Duyệt hội viên'/);
 assert.doesNotMatch(navigation, /label: 'Phân quyền'/);
 ```
 
-- [ ] **Step 2: Verify RED**
+- [ ] **Bước 2: Xác minh RED**
 
-Run:
+Chạy:
 
 ```powershell
 node --test frontend/test/adminConsolePresentation.test.js frontend/test/appShellFrontend.test.js
 ```
 
-Expected: FAIL because the helper file is absent and navigation still has seven entries.
+Dự kiến: THẤT BẠI vì không có tệp trợ giúp và điều hướng vẫn có bảy mục nhập.
 
-- [ ] **Step 3: Implement minimal pure contracts**
+- [ ] **Bước 3: Thực hiện các hợp đồng thuần túy tối thiểu**
 
-Create the helper with these exact exports:
+Tạo trình trợ giúp với các lần xuất chính xác sau:
 
 ```js
 export const ADMIN_MEMBERSHIP_PAGE_SIZE = 10;
@@ -152,7 +159,7 @@ export function getMembershipDecisionFeedback(action, notificationStatus) {
 }
 ```
 
-Import `UserCheck` in `adminNavigation.js` and insert:
+Nhập `UserCheck` vào `adminNavigation.js` và chèn:
 
 ```js
 { id: 'users', icon: Users, label: 'Quản lý người dùng' },
@@ -160,33 +167,34 @@ Import `UserCheck` in `adminNavigation.js` and insert:
 { id: 'audit', icon: ClipboardList, label: 'Nhật ký hoạt động' },
 ```
 
-- [ ] **Step 4: Verify GREEN**
+- [ ] **Bước 4: Xác minh GREEN**
 
-Run the Step 2 command. Expected: PASS with zero failures.
+Chạy lệnh Bước 2. Dự kiến: ĐẠT mà không thất bại.
 
-- [ ] **Step 5: Record checkpoint**
+- [ ] **Bước 5: Ghi điểm kiểm tra**
 
-Run `git diff --check` and `git status --short`. Expected: only Task 1 frontend/test files; do not commit before H2.
+Chạy `git diff --check` và `git status --short`. Dự kiến: chỉ các tệp frontend/test của Nhiệm vụ 1;
+không cam kết trước H2.
 
 ---
 
-### Task 2: Read-Only Admin Membership Directory
+### Nhiệm vụ 2: Thư mục thành viên quản trị viên chỉ đọc
 
-**Files:**
-- Create: `frontend/src/page/admin/membership/AdminMembershipSection.jsx`
-- Modify: `frontend/src/page/admin/AdminConsolePage.jsx`
-- Modify: `frontend/src/page/admin/admin-console.css`
-- Modify: `frontend/test/adminConsoleStructure.test.js`
-- Modify: `frontend/test/membershipFrontend.test.js`
-- Modify: `frontend/test/userManagementFrontend.test.js`
+**Tệp:**
+- Tạo: `frontend/src/page/admin/membership/AdminMembershipSection.jsx`
+- Sửa đổi: `frontend/src/page/admin/AdminConsolePage.jsx`
+- Sửa đổi: `frontend/src/page/admin/admin-console.css`
+- Sửa đổi: `frontend/test/adminConsoleStructure.test.js`
+- Sửa đổi: `frontend/test/membershipFrontend.test.js`
+- Sửa đổi: `frontend/test/userManagementFrontend.test.js`
 
-**Interfaces:**
-- Consumes: Task 1 helpers and `membershipApi.listApplications(params)`.
-- Produces: `AdminMembershipSection({ onToast })` with applied filters `{ q, status }` and server pagination.
+**Giao diện:**
+- Tiêu thụ: Người trợ giúp Nhiệm vụ 1 và `membershipApi.listApplications(params)`.
+- Tạo ra: `AdminMembershipSection({ onToast })` với các bộ lọc được áp dụng `{ q, status }` và phân trang máy chủ.
 
-- [ ] **Step 1: Write failing ownership/composition tests**
+- [ ] **Bước 1: Viết kiểm thử quyền sở hữu/thành phần không thành công**
 
-Append to `adminConsoleStructure.test.js`:
+Nối vào `adminConsoleStructure.test.js`:
 
 ```js
 test('Admin membership section consumes canonical FE04 reads inside the Admin shell', async () => {
@@ -205,7 +213,7 @@ test('Admin membership section consumes canonical FE04 reads inside the Admin sh
 });
 ```
 
-Replace the obsolete exclusion in `membershipFrontend.test.js` with:
+Thay thế loại trừ lỗi thời trong `membershipFrontend.test.js` bằng:
 
 ```js
 test('FE04 keeps its workspace and powers embedded Admin review', async () => {
@@ -217,26 +225,26 @@ test('FE04 keeps its workspace and powers embedded Admin review', async () => {
 });
 ```
 
-In `userManagementFrontend.test.js`, retain only the FE09/payment exclusion:
+Trong `userManagementFrontend.test.js`, chỉ giữ lại FE09/loại trừ thanh toán:
 
 ```js
 assert.doesNotMatch(adminSource, /getFineRecords|saveFineRecords/);
 assert.doesNotMatch(adminSource, /activeSection === ['"]payments['"]/);
 ```
 
-- [ ] **Step 2: Verify RED**
+- [ ] **Bước 2: Xác minh RED**
 
-Run:
+Chạy:
 
 ```powershell
 node --test frontend/test/adminConsoleStructure.test.js frontend/test/membershipFrontend.test.js frontend/test/userManagementFrontend.test.js
 ```
 
-Expected: FAIL because the section and composition do not exist.
+Dự kiến: THẤT BẠI vì phần và thành phần không tồn tại.
 
-- [ ] **Step 3: Implement server-owned list state and rendering**
+- [ ] **Bước 3: Triển khai trạng thái và kết xuất danh sách do máy chủ sở hữu**
 
-Create `AdminMembershipSection.jsx` with this state/load contract:
+Tạo `AdminMembershipSection.jsx` với hợp đồng trạng thái/tải này:
 
 ```jsx
 import { FilterX, RefreshCw, Search, UserCheck } from 'lucide-react';
@@ -309,7 +317,7 @@ function resetFilters() {
 }
 ```
 
-Add these complete presentation functions above the component:
+Thêm các chức năng trình bày hoàn chỉnh này phía trên thành phần:
 
 ```jsx
 function formatMembershipDate(value) {
@@ -331,7 +339,7 @@ function renderMembershipCard(application) {
 }
 ```
 
-Render these exact UI contracts:
+Hiển thị các hợp đồng giao diện người dùng chính xác này:
 
 ```jsx
 return <section className="admin-membership admin-membership-directory">
@@ -350,9 +358,11 @@ return <section className="admin-membership admin-membership-directory">
 }
 ```
 
-Place `formatMembershipDate`, `ApplicantIdentity`, `renderMembershipRow`, and `renderMembershipCard` above `AdminMembershipSection` so the complete file compiles without forward state dependencies.
+Đặt `formatMembershipDate`, `ApplicantIdentity`, `renderMembershipRow` và `renderMembershipCard`
+phía trên `AdminMembershipSection` để tệp hoàn chỉnh được biên dịch mà không phụ thuộc vào trạng
+thái chuyển tiếp.
 
-Import the section in `AdminConsolePage.jsx` and compose it immediately after users:
+Nhập phần trong `AdminConsolePage.jsx` và soạn nó ngay sau người dùng:
 
 ```jsx
 ) : activeSection === 'membership' ? (
@@ -360,7 +370,7 @@ Import the section in `AdminConsolePage.jsx` and compose it immediately after us
 ) : activeSection === 'dashboard' ? (
 ```
 
-Add baseline CSS:
+Thêm mốc cơ sở CSS:
 
 ```css
 .admin-membership-directory { display: grid; gap: 16px; }
@@ -372,31 +382,32 @@ Add baseline CSS:
 .admin-membership-card { display: grid; gap: 8px; padding: 16px; border: 1px solid var(--admin-line); border-radius: 16px; background: var(--admin-paper); }
 ```
 
-- [ ] **Step 4: Verify GREEN**
+- [ ] **Bước 4: Xác minh GREEN**
 
-Run the Step 2 command and `npm.cmd --prefix frontend run build`.
+Chạy lệnh Bước 2 và `npm.cmd --prefix frontend run build`.
 
-Expected: focused tests pass and Vite reports a successful build.
+Dự kiến: các kiểm thử tập trung đã vượt qua và Vite báo cáo quá trình xây dựng thành công.
 
-- [ ] **Step 5: Record checkpoint**
+- [ ] **Bước 5: Ghi điểm kiểm tra**
 
-Run `git diff --check` and inspect scope. Expected: Task 1-2 frontend/tests only; no backend file.
+Chạy `git diff --check` và kiểm tra phạm vi. Dự kiến: Chỉ nhiệm vụ 1-2 frontend/tests; không có tập
+tin máy chủ.
 
 ---
 
-### Task 3: Approval, Rejection, Conflict Reload, And FE10 Feedback
+### Nhiệm vụ 3: Phê duyệt, Từ chối, Tải lại Xung đột và Phản hồi FE10
 
-**Files:**
-- Create: `frontend/src/page/admin/membership/AdminMembershipReviewModal.jsx`
-- Modify: `frontend/src/page/admin/membership/AdminMembershipSection.jsx`
-- Modify: `frontend/src/page/admin/admin-console.css`
-- Modify: `frontend/test/adminConsoleStructure.test.js`
+**Tệp:**
+- Tạo: `frontend/src/page/admin/membership/AdminMembershipReviewModal.jsx`
+- Sửa đổi: `frontend/src/page/admin/membership/AdminMembershipSection.jsx`
+- Sửa đổi: `frontend/src/page/admin/admin-console.css`
+- Sửa đổi: `frontend/test/adminConsoleStructure.test.js`
 
-**Interfaces:**
-- Consumes: `membershipApi.approve`, `membershipApi.reject`, `isPendingMembershipApplication`, `getMembershipDecisionFeedback`.
-- Produces: `AdminMembershipReviewModal({ application, saving, onClose, onApprove, onReject })`.
+**Giao diện:**
+- Tiêu thụ: `membershipApi.approve`, `membershipApi.reject`, `isPendingMembershipApplication`, `getMembershipDecisionFeedback`.
+- Sản xuất: `AdminMembershipReviewModal({ application, saving, onClose, onApprove, onReject })`.
 
-- [ ] **Step 1: Write failing mutation/modal test**
+- [ ] **Bước 1: Viết kiểm thử thao tác ghi/phương thức thất bại**
 
 ```js
 test('Admin membership decisions preserve FE04 review rules', async () => {
@@ -414,15 +425,15 @@ test('Admin membership decisions preserve FE04 review rules', async () => {
 });
 ```
 
-- [ ] **Step 2: Verify RED**
+- [ ] **Bước 2: Xác minh RED**
 
-Run `node --test frontend/test/adminConsoleStructure.test.js`.
+Chạy `node --test frontend/test/adminConsoleStructure.test.js`.
 
-Expected: FAIL because the modal and mutation handlers are absent.
+Dự kiến: THẤT BẠI vì không có trình xử lý phương thức và thao tác ghi.
 
-- [ ] **Step 3: Implement modal and authoritative mutation flow**
+- [ ] **Bước 3: Triển khai luồng thao tác ghi phương thức và có thẩm quyền**
 
-Create the modal with this complete decision boundary:
+Tạo phương thức với ranh giới quyết định hoàn chỉnh này:
 
 ```jsx
 import { Check, X } from 'lucide-react';
@@ -463,7 +474,7 @@ export function AdminMembershipReviewModal({ application, saving, onClose, onApp
 }
 ```
 
-Add this state and close/open contract to the section:
+Thêm trạng thái này và đóng/mở hợp đồng vào phần này:
 
 ```jsx
 const [selectedApplication, setSelectedApplication] = useState(null);
@@ -481,7 +492,7 @@ function closeApplication() {
 }
 ```
 
-Use these handlers:
+Sử dụng các trình xử lý này:
 
 ```jsx
 async function approveSelected() {
@@ -523,7 +534,8 @@ async function rejectSelected(reason) {
 }
 ```
 
-Replace the Task 2 row/card renderers with action-aware versions using this exact action:
+Thay thế trình kết xuất hàng/thẻ Nhiệm vụ 2 bằng các phiên bản nhận biết hành động bằng cách sử dụng
+hành động chính xác này:
 
 ```jsx
 function MembershipRowAction({ application, onOpen }) {
@@ -532,13 +544,16 @@ function MembershipRowAction({ application, onOpen }) {
 }
 ```
 
-Add an action column to the table, render `<MembershipRowAction application={application} onOpen={openApplication} />` in each row/card, and pass `Eye`, `AdminActionButton`, `isPendingMembershipApplication`, and `openApplication` through the exact existing imports/scope. Render the modal with the focus-restoring close handler:
+Thêm một cột hành động vào bảng, hiển thị `<MembershipRowAction application={application}
+onOpen={openApplication} />` trong mỗi hàng/thẻ và chuyển `Eye`, `AdminActionButton`,
+`isPendingMembershipApplication` và `openApplication` thông qua phạm vi/nhập chính xác hiện có. Kết
+xuất phương thức bằng trình xử lý đóng khôi phục tiêu điểm:
 
 ```jsx
 {selectedApplication ? <AdminMembershipReviewModal application={selectedApplication} saving={saving} onClose={closeApplication} onApprove={approveSelected} onReject={rejectSelected} /> : null}
 ```
 
-Add styles:
+Thêm phong cách:
 
 ```css
 .admin-toast--warning { background: #8a5a12; }
@@ -546,45 +561,48 @@ Add styles:
 .admin-membership-detail p > span { overflow-wrap: anywhere; }
 ```
 
-- [ ] **Step 4: Verify GREEN**
+- [ ] **Bước 4: Xác minh GREEN**
 
-Run:
+Chạy:
 
 ```powershell
 node --test frontend/test/adminConsolePresentation.test.js frontend/test/adminConsoleStructure.test.js frontend/test/membershipFrontend.test.js
 npm.cmd --prefix frontend run lint
 ```
 
-Expected: all tests pass and ESLint reports no findings.
+Dự kiến: tất cả các kiểm thử đều vượt qua và ESLint không báo cáo kết quả nào.
 
-- [ ] **Step 5: Record checkpoint**
+- [ ] **Bước 5: Ghi điểm kiểm tra**
 
-Run `git diff --check`; confirm no backend/API/schema production file changed and keep the diff uncommitted for H2.
+Chạy `git diff --check`; xác nhận không có tệp sản xuất backend/API/schema nào được thay đổi và giữ
+nguyên chênh lệch cho H2.
 
 ---
 
-### Task 4: Responsive Authenticated Browser Acceptance
+### Nhiệm vụ 4: Chấp nhận trình duyệt được xác thực đáp ứng
 
-**Files:**
-- Modify: `frontend/src/page/admin/admin-console.css`
-- Modify: `backend/tests/helpers/systemIntegrationHarness.js`
-- Create: `tests/e2e/fe04-admin-membership-review.spec.js`
-- Modify: `tests/e2e/fe11-admin-request-management.spec.js`
+**Tệp:**
+- Sửa đổi: `frontend/src/page/admin/admin-console.css`
+- Sửa đổi: `backend/tests/helpers/systemIntegrationHarness.js`
+- Tạo: `tests/e2e/fe04-admin-membership-review.spec.js`
+- Sửa đổi: `tests/e2e/fe11-admin-request-management.spec.js`
 
-**Interfaces:**
-- Consumes: Admin Membership DOM classes and real FE04 endpoints.
-- Produces: `E2E-FE04-ADM01` plus screenshots at 1440, 1366, 1280, and 390.
+**Giao diện:**
+- Tiêu thụ: Các lớp thành viên quản trị DOM và điểm cuối FE04 thực.
+- Tạo ra: `E2E-FE04-ADM01` cộng với ảnh chụp màn hình ở 1440, 1366, 1280 và 390.
 
-- [ ] **Step 1: Add FE04 to the test-only system harness**
+- [ ] **Bước 1: Thêm FE04 vào bộ khai thác hệ thống chỉ dành cho kiểm thử**
 
-The existing browser server otherwise falls through to the production SQL-backed membership service. Extend only `backend/tests/helpers/systemIntegrationHarness.js` with the in-memory FE04 dependency already used by `membershipRoutes.test.js`:
+Mặt khác, máy chủ trình duyệt hiện tại sẽ chuyển sang dịch vụ thành viên được hỗ trợ bởi SQL. Chỉ mở
+rộng `backend/tests/helpers/systemIntegrationHarness.js` với phần phụ thuộc FE04 trong bộ nhớ đã
+được `membershipRoutes.test.js` sử dụng:
 
 ```js
 const { createMembershipService } = require('../../src/services/membershipService');
 const { makeInMemoryMembershipDependencies } = require('./inMemoryMembershipRepositories');
 ```
 
-After constructing `notificationService`, create:
+Sau khi xây dựng `notificationService`, hãy tạo:
 
 ```js
 const membershipDependencies = makeInMemoryMembershipDependencies(authDependencies.state);
@@ -595,11 +613,13 @@ const membershipService = createMembershipService({
 });
 ```
 
-Add `membershipService` to `services` and `membershipDependencies` to `dependencies`. Do not modify `backend/src/**`, the FE04 endpoint contract, or `createVerifiedActor`; E2E applicants must still submit through `POST /api/membership/applications`.
+Thêm `membershipService` vào `services` và `membershipDependencies` vào `dependencies`. Không sửa
+đổi `backend/src/**`, hợp đồng điểm cuối FE04 hoặc `createVerifiedActor`; Người nộp đơn E2E vẫn phải
+nộp qua `POST /api/membership/applications`.
 
-- [ ] **Step 2: Write failing real-browser acceptance**
+- [ ] **Bước 2: Viết không được chấp nhận trên trình duyệt thực**
 
-Create the new spec with the existing login/setup helpers and this exact flow:
+Tạo đặc tả mới với trình trợ giúp đăng nhập/thiết lập hiện có và luồng chính xác này:
 
 ```js
 const { randomUUID } = require('crypto');
@@ -691,11 +711,11 @@ test('[E2E-FE04-ADM01] Admin reviews Membership inside the responsive Admin Cons
 });
 ```
 
-Change the existing FE11 spec's navigation count from 7 to 8.
+Thay đổi số lượng điều hướng của thông số FE11 hiện có từ 7 thành 8.
 
-- [ ] **Step 3: Verify RED**
+- [ ] **Bước 3: Xác minh RED**
 
-Run:
+Chạy:
 
 ```powershell
 $env:E2E_FRONTEND_PORT='48173'
@@ -703,9 +723,9 @@ $env:E2E_BACKEND_PORT='43100'
 npx.cmd playwright test tests/e2e/fe04-admin-membership-review.spec.js --project=chromium
 ```
 
-Expected: FAIL before the responsive module/action contract is complete.
+Dự kiến: THẤT BẠI trước khi hợp đồng hành động/mô-đun đáp ứng hoàn tất.
 
-- [ ] **Step 4: Complete responsive CSS**
+- [ ] **Bước 4: Hoàn thành CSS đáp ứng**
 
 ```css
 @media (max-width: 1440px) {
@@ -719,43 +739,46 @@ Expected: FAIL before the responsive module/action contract is complete.
 }
 ```
 
-Keep every card/control width fluid and render the action inside each card.
+Giữ mọi thẻ/chiều rộng điều khiển linh hoạt và thực hiện hành động bên trong mỗi thẻ.
 
-- [ ] **Step 5: Verify GREEN and inspect images**
+- [ ] **Bước 5: Xác minh GREEN và kiểm tra hình ảnh**
 
-Run:
+Chạy:
 
 ```powershell
 npx.cmd playwright test tests/e2e/fe04-admin-membership-review.spec.js tests/e2e/fe11-admin-request-management.spec.js --project=chromium
 node --test frontend/test/adminConsolePresentation.test.js frontend/test/adminConsoleStructure.test.js frontend/test/membershipFrontend.test.js frontend/test/appShellFrontend.test.js frontend/test/userManagementFrontend.test.js
 ```
 
-Expected: Chromium 2/2 and every focused Node test pass. Open every generated image and confirm no clipped sidebar, no page overflow, readable identity/contact, reachable action, modal inside viewport, and one-column mobile cards.
+Dự kiến: Chrome 2/2 và mọi kiểm thử Node tập trung đều vượt qua. Mở mọi hình ảnh được tạo và xác
+nhận không có thanh bên bị cắt bớt, không tràn trang, danh tính/liên hệ có thể đọc được, hành động
+có thể truy cập, phương thức bên trong khung nhìn và thẻ di động một cột.
 
-- [ ] **Step 6: Record checkpoint**
+- [ ] **Bước 6: Ghi điểm kiểm tra**
 
-Run `git diff --check`; retain screenshots as local evidence and keep product changes uncommitted pending H2.
+Chạy `git diff --check`; giữ lại ảnh chụp màn hình làm bằng chứng địa phương và giữ nguyên các thay
+đổi về sản phẩm trong khi chờ H2.
 
 ---
 
-### Task 5: L1-L4 Validation, H2 Commit, Push, And Azure Staging
+### Nhiệm vụ 5: Xác thực L1-L4, Cam kết H2, Đẩy và Giai đoạn Azure
 
-**Files:**
-- Modify: `.sdd/specs/feat-membership-management/PLAN.md`
-- Modify: `.sdd/specs/feat-membership-management/TASKS.md`
-- Modify: `.sdd/specs/feat-membership-management/TEST_PLAN.md`
-- Modify: `.sdd/specs/feat-membership-management/CHANGELOG.md`
-- Modify: `.sdd/specs/feat-user-role-management/PLAN.md`
-- Modify: `.sdd/specs/feat-user-role-management/TASKS.md`
-- Modify: `.sdd/specs/feat-user-role-management/TEST_PLAN.md`
-- Modify: `.sdd/specs/feat-user-role-management/CHANGELOG.md`
-- Create: `.sdd/reviews/admin-membership-review-integration-validation-2026-07-22.md`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-membership-management/PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-membership-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-membership-management/TEST_PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-membership-management/CHANGELOG.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/TEST_PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/CHANGELOG.md`
+- Tạo: `.sdd/reviews/admin-membership-review-integration-validation-2026-07-22.md`
 
-**Interfaces:**
-- Consumes: complete Tasks 1-4 diff and evidence.
-- Produces: reviewed implementation/evidence commits, staging run, and open human acceptance gate.
+**Giao diện:**
+- Tiêu thụ: hoàn thành Nhiệm vụ 1-4 khác biệt và bằng chứng.
+- Sản xuất: xem xét việc triển khai/bằng chứng cam kết, chạy theo giai đoạn và mở cổng chấp nhận của con người.
 
-- [ ] **Step 1: Run the fresh validation matrix**
+- [ ] **Bước 1: Chạy ma trận xác thực mới**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/membershipRoutes.test.js tests/systemIntegration.test.js
@@ -769,30 +792,32 @@ npx.cmd playwright test tests/e2e/fe04-admin-membership-review.spec.js tests/e2e
 git diff --check
 ```
 
-Expected: both focused backend suites pass; frontend has zero failures; lint/build pass; every implemented feature stays above 70% trace; Chromium 2/2; no diff errors.
+Dự kiến: cả hai bộ máy chủ tập trung đều vượt qua; giao diện người dùng không có lỗi nào; kiểm tra mã/xây
+dựng thẻ; mọi chức năng được triển khai vẫn ở mức trên 70%; crom 2/2; không có lỗi khác biệt.
 
-- [ ] **Step 2: Perform H2 review**
+- [ ] **Bước 2: Thực hiện đánh giá H2**
 
-Record all four layers:
-
-```text
-L1 Automated: every Step 1 command passes.
-L2 Spec: FR-FE04-014, AC-FE04-013, BR-FE11-016, AC-FE11-016 map to source/tests.
-L3 Safety: FE04 server authorization remains authoritative; no backend production/API/schema/credential/unsafe-HTML change; the only backend-side diff is the in-memory E2E harness wiring.
-L4 Acceptance: local authenticated Chromium/images pass; Azure human review remains open.
-```
-
-Reject any production change outside the Admin membership/shell presentation boundary.
-
-- [ ] **Step 3: Write evidence and synchronize tasks**
-
-The validation record must include exact counts, commands, screenshot paths, Core/Shell ownership, and this open-gate statement:
+Ghi lại tất cả bốn lớp:
 
 ```text
-FE04-ADM05 and FE11-UXR09 remain open until authenticated Azure Staging review is explicitly approved by the human reviewer.
+L1 Tự động: mọi lệnh ở Bước 1 đều đạt.
+L2 Đặc tả: FR-FE04-014, AC-FE04-013, BR-FE11-016, AC-FE11-016 ánh xạ tới mã nguồn/kiểm thử.
+L3 An toàn: phân quyền máy chủ FE04 vẫn có thẩm quyền; không thay đổi máy chủ production/API/lược đồ/thông tin xác thực/HTML không an toàn; khác biệt duy nhất phía máy chủ là phần nối bộ công cụ E2E trong bộ nhớ.
+L4 Nghiệm thu: Chromium/ảnh có xác thực cục bộ đạt; việc con người rà soát Azure vẫn để mở.
 ```
 
-- [ ] **Step 4: Commit after H2**
+Từ chối mọi thay đổi sản xuất bên ngoài ranh giới trình bày thành viên Quản trị viên/lớp bao.
+
+- [ ] **Bước 3: Viết bằng chứng và đồng bộ hóa nhiệm vụ**
+
+Bản ghi xác thực phải bao gồm số lượng chính xác, lệnh, đường dẫn ảnh chụp màn hình, quyền sở hữu
+lõi/lớp bao và câu lệnh cổng mở này:
+
+```text
+FE04-ADM05 và FE11-UXR09 vẫn để mở cho đến khi người rà soát phê duyệt rõ ràng việc rà soát môi trường tiền sản xuất Azure có xác thực.
+```
+
+- [ ] **Bước 4: Cam kết sau H2**
 
 ```powershell
 git add -- frontend/src/page/admin frontend/test backend/tests/helpers/systemIntegrationHarness.js tests/e2e/fe04-admin-membership-review.spec.js tests/e2e/fe11-admin-request-management.spec.js
@@ -801,9 +826,9 @@ git add -- .sdd/specs/feat-membership-management .sdd/specs/feat-user-role-manag
 git commit -m "docs: record admin membership review validation"
 ```
 
-Expected: product/tests and evidence are separate reviewed commits; working tree is clean.
+Dự kiến: sản phẩm/kiểm thử và bằng chứng là những cam kết được xem xét riêng biệt; cây làm việc sạch sẽ.
 
-- [ ] **Step 5: Push and deploy reviewed HEAD**
+- [ ] **Bước 5: Đẩy và triển khai HEAD đã được đánh giá**
 
 ```powershell
 git push origin chore/release-closeout-reconciliation
@@ -811,15 +836,18 @@ gh workflow run deploy-staging.yml --ref chore/release-closeout-reconciliation
 gh run list --workflow deploy-staging.yml --branch chore/release-closeout-reconciliation --event workflow_dispatch --limit 1
 ```
 
-Watch the returned run until backend, frontend, and smoke jobs are `success`, then verify:
+Xem quá trình chạy được trả về cho đến khi các công việc máy chủ, giao diện người dùng và kiểm thử nhanh là
+`success`, sau đó xác minh:
 
 ```powershell
 Invoke-WebRequest -Uri 'https://app-library-api-staging-nhat714.azurewebsites.net/health' -UseBasicParsing
 Invoke-WebRequest -Uri 'https://lemon-wave-04db51100.7.azurestaticapps.net/admin/users' -UseBasicParsing
 ```
 
-Expected: workflow SHA equals reviewed HEAD and both URLs return HTTP 200.
+Dự kiến: quy trình làm việc SHA tương đương với HEAD đã được đánh giá và cả hai URL đều trả về HTTP 200.
 
-- [ ] **Step 6: Record deployment and request human acceptance**
+- [ ] **Bước 6: Ghi lại quá trình triển khai và yêu cầu sự chấp nhận của con người**
 
-Append the exact run URL/ID and deployed SHA to validation/TASKS/CHANGELOG, commit and push that documentation-only update, then ask the reviewer to verify `Duyệt hội viên` on desktop/mobile. Keep FE04-ADM05 and FE11-UXR09 open until explicit approval.
+Thêm URL/ID chạy chính xác và SHA đã triển khai vào xác thực/TASKS/CHANGELOG, cam kết và đẩy bản cập
+nhật chỉ có tài liệu đó, sau đó yêu cầu người đánh giá xác minh `Duyệt hội viên` trên máy tính để
+bàn/thiết bị di động. Giữ FE04-ADM05 và FE11-UXR09 mở cho đến khi được phê duyệt rõ ràng.

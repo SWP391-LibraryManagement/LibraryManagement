@@ -1,88 +1,89 @@
-# FE07/FE10/FE12 Business-Rule Alignment Implementation Plan
+# Kế hoạch triển khai điều chỉnh quy tắc nghiệp vụ FE07/FE10/FE12
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use `executing-plans` to
-> implement this plan task-by-task. Delegation is not authorized unless Nhat
-> explicitly requests it. Use checkbox (`- [ ]`) syntax for tracking.
+> **Đối với nhân viên đại lý:** BẮT BUỘC SUB-SKILL: Sử dụng `executing-plans` để
+> thực hiện kế hoạch này theo từng nhiệm vụ. Việc ủy quyền không được ủy quyền trừ khi Nhật
+> yêu cầu nó một cách rõ ràng. Sử dụng cú pháp hộp kiểm (`- [ ]`) để theo dõi.
 
-**Goal:** Align four active FE07, FE10, and FE12 Core contracts while proving
-the unchanged FE08 handoffs and preserving every existing public route, schema,
-role, and frontend workflow.
+**Mục tiêu:** Căn chỉnh bốn hợp đồng FE07, FE10 và FE12 lõi đang hoạt động trong khi chứng minh sự
+chuyển giao FE08 không thay đổi và duy trì mọi quy trình công việc, lược đồ, vai trò và giao diện
+người dùng công khai hiện có.
 
-**Architecture:** Keep the current Express route-controller-service-repository
-layers. FE07 uses the project-wide single-role authorization model and keeps
-business-date calculations in the service, while its return repository exposes a transaction-locked internal
-snapshot used by both audit and response construction. FE10 adds a separate
-stored-definition gate before rendering. FE12 adds exact endpoint-key
-middleware before existing value validators.
+**Kiến trúc:** Giữ các lớp kho lưu trữ dịch vụ-bộ điều khiển tuyến đường Express hiện tại. FE07 sử
+dụng mô hình ủy quyền một vai trò trên toàn dự án và lưu giữ các tính toán ngày làm việc trong dịch
+vụ, trong khi kho lưu trữ trả về của nó hiển thị ảnh chụp nhanh nội bộ bị khóa giao dịch được sử
+dụng bởi cả quá trình kiểm tra và xây dựng phản hồi. FE10 thêm một cổng định nghĩa được lưu trữ
+riêng trước khi kết xuất. FE12 bổ sung phần mềm trung gian khóa điểm cuối chính xác trước các trình
+xác thực giá trị hiện có.
 
-**Tech Stack:** Node.js, Express.js, express-validator, Jest, Supertest, SQL
-Server through `mssql`, React/Vite, and Playwright.
+**bộ công nghệ công nghệ:** Node.js, Express.js, trình xác thực nhanh, Jest, Supertest, SQL Server
+đến `mssql`, React/Vite và Playwright.
 
-## Global Constraints
+## Ràng buộc toàn cầu
 
-- Source of truth: approved FE07 v0.7.6, FE10 v0.4.4, and FE12 v0.2.0 SPECs
-  plus the approved design
-  `docs/superpowers/specs/2026-07-27-fe07-fe10-fe12-business-rule-alignment-design.md`.
-- Delivery order is SPEC -> PLAN/TASKS -> RED -> minimal code -> GREEN ->
-  L1-L4/runtime evidence.
-- No database schema, public route, role, notification type, report field,
-  frontend workflow, dependency, or architecture change.
-- FE08 is regression-only; a failing FE08 contract blocks completion and does
-  not authorize an FE08 product change.
-- Every production change carries the applicable existing `@spec` IDs.
-- Keep all generated implementation changes uncommitted until the complete
-  local diff and L1-L4 evidence receive H2 from Nhat.
-- Do not commit the pending merge, push the reconciled head, update the draft
-  PR, or merge during implementation or H2-addendum preparation.
-- Run mutable SQL only when the configured `DB_NAME` is explicitly confirmed
-  as a disposable local database and `FE07_SQL_TEST_ALLOW_MUTATION=true`.
-- Staging checks are read-only. Never use real PII, credentials, tokens, OTPs,
-  or mutable staging business data as evidence.
-- A deterministic failure receives at most three total attempts. A suspected
-  E2E flake may be rerun once with the first failure retained in evidence.
+- Nguồn chuẩn: FE07 v0.7.6, FE10 v0.4.4 và FE12 v0.2.0 SPEC đã được phê duyệt
+cộng với thiết kế
+`docs/superpowers/specs/2026-07-27-fe07-fe10-fe12-business-rule-alignment-design.md` đã được phê
+duyệt.
+- Lệnh bàn giao là SPEC -> PLAN/TASKS -> RED -> mã tối thiểu -> GREEN ->
+  L1-L4/bằng chứng thời gian chạy.
+- Không có lược đồ cơ sở dữ liệu, tuyến đường công cộng, vai trò, loại thông báo, trường báo cáo,
+  quy trình làm việc ở giao diện người dùng, sự phụ thuộc hoặc thay đổi kiến trúc.
+- FE08 chỉ hồi quy; một hợp đồng FE08 bị lỗi sẽ chặn việc hoàn thành và thực hiện
+  không cho phép thay đổi sản phẩm FE08.
+- Mọi thay đổi sản xuất đều mang ID `@spec` hiện có.
+- Giữ tất cả các thay đổi triển khai đã tạo ở trạng thái sẵn sàng cho đến khi hoàn tất
+  bằng chứng khác biệt cục bộ và L1-L4 nhận được H2 từ Nhật.
+- Không cam kết hợp nhất đang chờ xử lý, đẩy đầu đối chiếu, cập nhật bản nháp
+  PR, hoặc hợp nhất trong quá trình triển khai hoặc chuẩn bị phụ lục H2.
+- Chỉ chạy SQL có thể thay đổi khi `DB_NAME` được định cấu hình được xác nhận rõ ràng
+  như một cơ sở dữ liệu cục bộ dùng một lần và `FE07_SQL_TEST_ALLOW_MUTATION=true`.
+- Kiểm tra môi trường tiền sản xuất ở chế độ chỉ đọc. Không bao giờ sử dụng PII thực, thông tin xác thực, mã thông báo, OTP,
+  hoặc môi trường tiền sản xuất dữ liệu kinh doanh có thể thay đổi làm bằng chứng.
+- Một thất bại xác định nhận được tối đa ba lần thử. Một người bị nghi ngờ
+  Lớp E2E có thể được chạy lại một lần với bằng chứng lỗi đầu tiên được giữ lại.
 
 ---
 
-## File Map
+## Bản đồ tệp
 
-| Responsibility | Files |
+| Trách nhiệm | Tập tin |
 | --- | --- |
-| FE07 single-role renewal and business-date policy | `backend/src/services/borrowingService.js` |
-| FE07 authoritative return transaction | `backend/src/repositories/borrowingRepository.js` |
-| FE07 in-memory transaction parity | `backend/tests/helpers/inMemoryBorrowingRepositories.js` |
-| FE07 route and repository regressions | `backend/tests/borrowingRoutes.test.js`, `backend/tests/borrowingRepository.test.js` |
-| Optional FE07 real SQL evidence | `backend/tests/sql/borrowingConcurrency.sqltest.js` |
-| FE10 stored-definition gate | `backend/src/services/notificationService.js` |
-| FE10 safety regressions | `backend/tests/notificationRoutes.test.js` |
-| FE12 exact query-key boundary | `backend/src/validators/reportValidators.js` |
-| FE12 boundary regressions | `backend/tests/reportRoutes.test.js` |
-| FE08 unchanged handoff evidence | `backend/tests/reservationRoutes.test.js`, `backend/tests/systemIntegration.test.js` |
-| Real browser/runtime evidence | `tests/e2e/system-golden-path.spec.js`, `tests/e2e/fe08-reservation-candidate-catalog.spec.js` |
-| Final evidence record | `.sdd/reviews/fe07-fe10-fe12-business-rule-alignment-validation-2026-07-27.md` |
+| Chính sách ngày làm việc và gia hạn một vai trò của FE07 | `backend/src/services/borrowingService.js` |
+| Giao dịch hoàn trả có thẩm quyền FE07 | `backend/src/repositories/borrowingRepository.js` |
+| FE07 chẵn lẻ giao dịch trong bộ nhớ | `backend/tests/helpers/inMemoryBorrowingRepositories.js` |
+| Hồi quy kho lưu trữ và tuyến đường FE07 | `backend/tests/borrowingRoutes.test.js`, `backend/tests/borrowingRepository.test.js` |
+| Tùy chọn FE07 bằng chứng SQL thực | `backend/tests/sql/borrowingConcurrency.sqltest.js` |
+| Cổng định nghĩa được lưu trữ FE10 | `backend/src/services/notificationService.js` |
+| Hồi quy an toàn FE10 | `backend/tests/notificationRoutes.test.js` |
+| Ranh giới khóa truy vấn chính xác FE12 | `backend/src/validators/reportValidators.js` |
+| Hồi quy ranh giới FE12 | `backend/tests/reportRoutes.test.js` |
+| FE08 bằng chứng chuyển giao không thay đổi | `backend/tests/reservationRoutes.test.js`, `backend/tests/systemIntegration.test.js` |
+| Bằng chứng thực tế về trình duyệt/thời gian chạy | `tests/e2e/system-golden-path.spec.js`, `tests/e2e/fe08-reservation-candidate-catalog.spec.js` |
+| Hồ sơ bằng chứng cuối cùng | `.sdd/reviews/fe07-fe10-fe12-business-rule-alignment-validation-2026-07-27.md` |
 
 ---
 
-### Task 1: Historical FE07 Multi-Role Renewal Attempt (Superseded)
+### Nhiệm vụ 1: Nỗ lực gia hạn đa vai trò FE07 trong lịch sử (Đã thay thế)
 
-**Task ID:** `FE07-T052` (superseded multi-role scenario; reconciled in Task 8)
+**ID nhiệm vụ:** `FE07-T052` (kịch bản đa vai trò được thay thế; được điều chỉnh trong Nhiệm vụ 8)
 
-This section records the original RED/GREEN evidence only. Nhat's later
-single-role confirmation supersedes its actor premise. Do not retain the
-multi-role test or its authorization delta in the integrated result.
+Phần này chỉ ghi lại bằng chứng RED/GREEN ban đầu. Việc xác nhận vai đơn sau này của Nhật thay thế
+tiền đề về tác nhân của nó. Không giữ lại kiểm thử đa vai trò hoặc authorization delta của nó
+trong kết quả tích hợp.
 
-**Files:**
-- Modify: `backend/tests/borrowingRoutes.test.js`
-- Modify: `backend/src/services/borrowingService.js`
+**Tệp:**
+- Sửa đổi: `backend/tests/borrowingRoutes.test.js`
+- Sửa đổi: `backend/src/services/borrowingService.js`
 
-**Interfaces:**
-- Consumes: `hasAnyRole(actor, allowedRoles)` and
+**Giao diện:**
+- Tiêu thụ: `hasAnyRole(actor, allowedRoles)` và
   `renewBorrowDetail(borrowDetailIdInput, input, actor, context)`.
-- Produces: role-order-independent staff scope; loan-owner eligibility remains
-  unchanged.
+- Tạo ra: phạm vi nhân viên độc lập với trật tự vai trò; khả năng hội đủ điều kiện của chủ sở hữu lượt mượn vẫn còn
+  không thay đổi.
 
-- [x] **Step 1: Add the failing route regression**
+- [x] **Bước 1: Thêm hồi quy tuyến đường bị lỗi**
 
-Add this test inside `describe('FE07 borrowing management', ...)`:
+Thêm kiểm thử này bên trong `describe('FE07 borrowing management', ...)`:
 
 ```js
 test('multi-role librarian renews another member loan while member-only remains owner-scoped', async () => {
@@ -144,20 +145,19 @@ test('multi-role librarian renews another member loan while member-only remains 
 });
 ```
 
-- [x] **Step 2: Run RED**
+- [x] **Bước 2: Chạy RED**
 
-Run:
+Chạy:
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/borrowingRoutes.test.js --testNamePattern "multi-role librarian renews"
 ```
 
-Expected: FAIL because the staff request returns
-`403 BORROW_DETAIL_OWNER_REQUIRED`.
+Dự kiến: THẤT BẠI vì yêu cầu của nhân viên trả về `403 BORROW_DETAIL_OWNER_REQUIRED`.
 
-- [x] **Step 3: Apply the minimal authorization change**
+- [x] **Bước 3: Áp dụng thay đổi ủy quyền tối thiểu**
 
-Replace the ownership/role block in `renewBorrowDetail` with:
+Thay thế khối quyền sở hữu/vai trò trong `renewBorrowDetail` bằng:
 
 ```js
 const isStaff = hasAnyRole(actor, ['LIBRARIAN', 'ADMIN']);
@@ -176,49 +176,48 @@ if (!isStaff && !isMember) {
 }
 ```
 
-Do not change `ensureEligibleMember(borrowDetail.userId)`,
-`ensureNoBorrowingBlockers(borrowDetail.userId)`, renewal count, fine,
-overdue, or reservation checks.
+Không thay đổi `ensureEligibleMember(borrowDetail.userId)`,
+`ensureNoBorrowingBlockers(borrowDetail.userId)`, số lần gia hạn, khoản phạt, quá hạn hoặc kiểm tra
+đặt chỗ.
 
-- [x] **Step 4: Run GREEN**
+- [x] **Bước 4: Chạy GREEN**
 
-Run the command from Step 2.
+Chạy lệnh từ Bước 2.
 
-Expected: PASS for both multi-role staff success and member-only denial.
+Dự kiến: ĐẠT cho cả sự thành công của nhân viên đa vai trò và sự từ chối chỉ dành cho thành viên.
 
-- [x] **Step 5: Checkpoint without commit**
+- [x] **Bước 5: Điểm kiểm tra không cần cam kết**
 
-Inspect `git diff -- backend/src/services/borrowingService.js
-backend/tests/borrowingRoutes.test.js`. Do not stage or commit.
+Kiểm tra `git khác biệt -- backend/src/services/borrowingService.js
+backend/tests/borrowingRoutes.test.js`. Đừng giai đoạn hoặc cam kết.
 
 ---
 
-### Task 2: FE07 Authoritative Return Snapshot
+### Nhiệm vụ 2: Ảnh chụp nhanh trả sách có thẩm quyền FE07
 
-**Task ID:** `FE07-T049`
+**ID nhiệm vụ:** `FE07-T049`
 
-**Files:**
-- Modify: `backend/tests/borrowingRoutes.test.js`
-- Modify: `backend/tests/borrowingRepository.test.js`
-- Modify: `backend/src/services/borrowingService.js`
-- Modify: `backend/src/repositories/borrowingRepository.js`
-- Modify: `backend/tests/helpers/inMemoryBorrowingRepositories.js`
-- Modify only when disposable SQL is confirmed:
+**Tệp:**
+- Sửa đổi: `backend/tests/borrowingRoutes.test.js`
+- Sửa đổi: `backend/tests/borrowingRepository.test.js`
+- Sửa đổi: `backend/src/services/borrowingService.js`
+- Sửa đổi: `backend/src/repositories/borrowingRepository.js`
+- Sửa đổi: `backend/tests/helpers/inMemoryBorrowingRepositories.js`
+- Chỉ sửa đổi khi SQL dùng một lần được xác nhận:
   `backend/tests/sql/borrowingConcurrency.sqltest.js`
 
-**Interfaces:**
-- Consumes: the current
-  `returnBorrowDetail({ borrowDetailId, detailStatus, copyStatus, returnDate,
-  auditLogRepository, auditEntry })` contract.
-- Produces: the same mapped detail plus an internal
-  `authoritativeReturn` object containing `requestId`, `userId`, `copyId`,
-  `dueDate`, `returnDate`, and `overdueDays`. The service strips this internal
-  object before returning the public `borrowDetail`.
+**Giao diện:**
+- Tiêu thụ: hiện tại
+Hợp đồng `returnBorrowDetail({ borrowDetailId, detailStatus, copyStatus, returnDate,
+auditLogRepository, auditEntry })`.
+- Tạo ra: cùng một chi tiết được ánh xạ cộng với một nội bộ
+Đối tượng `authoritativeReturn` chứa `requestId`, `userId`, `copyId`, `dueDate`, `returnDate` và
+`overdueDays`. Dịch vụ sẽ loại bỏ đối tượng nội bộ này trước khi trả về `borrowDetail` công khai.
 
-- [x] **Step 1: Add the stale-preflight RED regression**
+- [x] **Bước 1: Thêm hồi quy RED cũ**
 
-Add a route test that sets an initial due date, changes it only when the
-repository transaction starts, and checks response/audit parity:
+Thêm kiểm tra lộ trình đặt ngày đến hạn ban đầu, chỉ thay đổi ngày đến hạn khi giao dịch kho lưu trữ
+bắt đầu và kiểm tra tính chẵn lẻ của phản hồi/kiểm tra:
 
 ```js
 test('return response and audit use the due date locked by the repository', async () => {
@@ -283,10 +282,9 @@ test('return response and audit use the due date locked by the repository', asyn
 });
 ```
 
-- [x] **Step 2: Add the repository source-contract RED assertions**
+- [x] **Bước 2: Thêm xác nhận RED hợp đồng nguồn kho lưu trữ**
 
-Extend the existing return lock-order test in
-`backend/tests/borrowingRepository.test.js`:
+Mở rộng kiểm thử thứ tự khóa trả sách hiện có trong `backend/tests/borrowingRepository.test.js`:
 
 ```js
 expect(source).toContain('bd.DueDate');
@@ -298,30 +296,30 @@ expect(source.indexOf('buildReturnEvidence(authoritativeReturn)')).toBeGreaterTh
 );
 ```
 
-- [x] **Step 3: Run RED**
+- [x] **Bước 3: Chạy RED**
 
-Run:
+Chạy:
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/borrowingRoutes.test.js tests/borrowingRepository.test.js --testNamePattern "due date locked|return serializes"
 ```
 
-Expected: the route test reports stale `overdueDays = 12`, and the repository
-source-contract assertions fail.
+Dự kiến: báo cáo kiểm tra lộ trình `overdueDays = 12` cũ và xác nhận hợp đồng nguồn kho lưu trữ
+không thành công.
 
-- [x] **Step 4: Extend the SQL repository contract**
+- [x] **Bước 4: Gia hạn hợp đồng kho lưu trữ SQL**
 
-In `backend/src/repositories/borrowingRepository.js`:
+Trong `backend/src/repositories/borrowingRepository.js`:
 
-1. Accept optional `buildReturnEvidence` while retaining optional `auditEntry`
-   for existing direct repository callers.
-2. Lock `bd.DueDate` and `br.UserId` with the detail.
-3. Add `INSERTED.ReturnDate` to the detail update output.
-4. Build evidence after locked values and the committed return value exist,
-   but before the audit write and transaction commit.
-5. Return the mapped detail with internal `authoritativeReturn`.
+1. Chấp nhận `buildReturnEvidence` tùy chọn trong khi vẫn giữ `auditEntry` tùy chọn
+   cho người gọi kho lưu trữ trực tiếp hiện có.
+2. Khóa `bd.DueDate` và `br.UserId` một cách chi tiết.
+3. Thêm `INSERTED.ReturnDate` vào đầu ra cập nhật chi tiết.
+4. Xây dựng bằng chứng sau khi tồn tại các giá trị bị khóa và giá trị trả sách đã cam kết,
+   nhưng trước khi viết kiểm toán và cam kết giao dịch.
+5. Trả về chi tiết được ánh xạ bằng `authoritativeReturn` bên trong.
 
-Use this contract:
+Sử dụng hợp đồng này:
 
 ```js
 async function returnBorrowDetail({
@@ -368,13 +366,13 @@ async function returnBorrowDetail({
 }
 ```
 
-The real implementation must retain every existing rollback and conflict path;
-the snippet defines only the changed contract and ordering.
+Việc triển khai thực tế phải giữ lại mọi đường dẫn quay lui và xung đột hiện có; đoạn mã chỉ xác
+định hợp đồng và đơn đặt hàng đã thay đổi.
 
-- [x] **Step 5: Mirror the contract in the in-memory repository**
+- [x] **Bước 5: Phản chiếu hợp đồng vào kho lưu trữ trong bộ nhớ**
 
-After the detail/copy are selected and before mutation, call the same
-`buildReturnEvidence` callback with the current in-memory detail:
+Sau khi chi tiết/bản sao được chọn và trước khi thao tác ghi, hãy gọi lệnh gọi lại `buildReturnEvidence`
+tương tự với chi tiết hiện tại trong bộ nhớ:
 
 ```js
 const authoritativeReturn = {
@@ -390,7 +388,7 @@ const returnEvidence = typeof buildReturnEvidence === 'function'
 const resolvedAuditEntry = returnEvidence?.auditEntry || auditEntry;
 ```
 
-Use `resolvedAuditEntry` for the transactional audit and return:
+Sử dụng `resolvedAuditEntry` để kiểm tra và hoàn trả giao dịch:
 
 ```js
 return {
@@ -402,10 +400,10 @@ return {
 };
 ```
 
-- [x] **Step 6: Build response and audit from one service callback**
+- [x] **Bước 6: Xây dựng phản hồi và kiểm tra từ một lệnh gọi lại dịch vụ**
 
-In `backend/src/services/borrowingService.js`, remove the preflight
-`overdueDays` and prebuilt return audit. Pass:
+Trong `backend/src/services/borrowingService.js`, hãy xóa `overdueDays` kiểm tra trước và kiểm tra hoàn
+trả dựng sẵn. Vượt qua:
 
 ```js
 buildReturnEvidence: ({ requestId, userId, copyId, dueDate, returnDate: committedReturnDate }) => {
@@ -431,7 +429,7 @@ buildReturnEvidence: ({ requestId, userId, copyId, dueDate, returnDate: committe
 },
 ```
 
-After conflict handling, strip the internal object:
+Sau khi xử lý xung đột, hãy loại bỏ đối tượng bên trong:
 
 ```js
 const { authoritativeReturn, ...publicBorrowDetail } = returnedDetail;
@@ -451,62 +449,61 @@ return {
 };
 ```
 
-- [x] **Step 7: Run GREEN**
+- [x] **Bước 7: Chạy GREEN**
 
-Run the command from Step 3, then:
+Chạy lệnh từ Bước 3, sau đó:
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/borrowingRoutes.test.js tests/borrowingRepository.test.js
 ```
 
-Expected: both suites pass; public response has no internal evidence field;
-audit and `fineCandidate` use the locked due date.
+Dự kiến: cả hai dãy đều đạt; phản ứng của công chúng không có trường bằng chứng nội bộ; kiểm tra và
+`fineCandidate` sử dụng ngày đến hạn bị khóa.
 
-- [ ] **Step 8: Optional real SQL evidence**
+- [ ] **Bước 8: Bằng chứng SQL thực tế tùy chọn**
 
-Not run: `DB_NAME` and `FE07_SQL_TEST_ALLOW_MUTATION` were both unset, so no
-mutable SQL command was authorized.
+Không chạy: `DB_NAME` và `FE07_SQL_TEST_ALLOW_MUTATION` đều chưa được đặt, do đó không có lệnh SQL
+có thể thay đổi nào được ủy quyền.
 
-First print only the database name and confirm it is disposable local data:
+Đầu tiên chỉ in tên cơ sở dữ liệu và xác nhận đó là dữ liệu cục bộ dùng một lần:
 
 ```powershell
 Write-Output $env:DB_NAME
 Write-Output $env:FE07_SQL_TEST_ALLOW_MUTATION
 ```
 
-Run the SQL suite only when the name is explicitly disposable and the mutation
-flag is `true`:
+Chỉ chạy bộ SQL khi tên rõ ràng chỉ dùng một lần và cờ thao tác ghi là `true`:
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/sql/borrowingConcurrency.sqltest.js --testNamePattern "return"
 ```
 
-Expected: return concurrency, locked snapshot, and audit rollback tests pass.
-Otherwise record SQL evidence as not run; do not point the test at staging or a
-shared database.
+Dự kiến: trả về tính đồng thời, ảnh chụp nhanh bị khóa và kiểm tra khôi phục vượt qua. Nếu không thì
+ghi lại bằng chứng SQL là không chạy; không trỏ kiểm thử vào môi trường tiền sản xuất hoặc cơ sở dữ
+liệu dùng chung.
 
-- [x] **Step 9: Checkpoint without commit**
+- [x] **Bước 9: Điểm kiểm tra không cần cam kết**
 
-Inspect the five-file FE07 diff. Do not stage or commit.
+Kiểm tra khác biệt FE07 gồm năm tệp. Đừng giai đoạn hoặc cam kết.
 
 ---
 
-### Task 3: FE07 Shared Renewal Calendar Arithmetic
+### Nhiệm vụ 3: Số học Lịch gia hạn chung FE07
 
-**Task ID:** `FE07-T050`
+**ID nhiệm vụ:** `FE07-T050`
 
-**Files:**
-- Modify: `backend/tests/borrowingRoutes.test.js`
-- Modify: `backend/src/services/borrowingService.js`
-- Modify: `backend/src/repositories/borrowingRepository.js`
-- Modify: `backend/tests/helpers/inMemoryBorrowingRepositories.js`
+**Tệp:**
+- Sửa đổi: `backend/tests/borrowingRoutes.test.js`
+- Sửa đổi: `backend/src/services/borrowingService.js`
+- Sửa đổi: `backend/src/repositories/borrowingRepository.js`
+- Sửa đổi: `backend/tests/helpers/inMemoryBorrowingRepositories.js`
 
-**Interfaces:**
-- Consumes: `formatBusinessDate`, `addBusinessDays`, and
-  `compareBusinessDates` from `backend/src/utils/libraryBusinessTime.js`.
-- Produces: an exact `YYYY-MM-DD` `newDueDate` independent of host timezone.
+**Giao diện:**
+- Tiêu thụ: `formatBusinessDate`, `addBusinessDays` và
+  `compareBusinessDates` từ `backend/src/utils/libraryBusinessTime.js`.
+- Tạo ra: `YYYY-MM-DD` `newDueDate` chính xác độc lập với múi giờ của máy chủ.
 
-- [x] **Step 1: Add the timezone-sensitive RED regression**
+- [x] **Bước 1: Thêm hồi quy RED theo múi giờ**
 
 ```js
 test('renewal extends the business due date identically across host timezones', async () => {
@@ -552,7 +549,7 @@ test('renewal extends the business due date identically across host timezones', 
 });
 ```
 
-- [x] **Step 2: Run the RED timezone matrix**
+- [x] **Bước 2: Chạy ma trận múi giờ RED**
 
 ```powershell
 $env:TZ='UTC'
@@ -562,12 +559,11 @@ npm.cmd --prefix backend test -- --runTestsByPath tests/borrowingRoutes.test.js 
 Remove-Item Env:TZ -ErrorAction SilentlyContinue
 ```
 
-Expected: the current host-local implementation fails in at least
-`America/New_York`.
+Dự kiến: quá trình triển khai máy chủ cục bộ hiện tại không thành công ở ít nhất `America/New_York`.
 
-- [x] **Step 3: Remove host-local service arithmetic**
+- [x] **Bước 3: Xóa số học dịch vụ máy chủ cục bộ**
 
-Delete the local `addDays()` helper and replace renewal extension with:
+Xóa trình trợ giúp `addDays()` cục bộ và thay thế tiện ích mở rộng gia hạn bằng:
 
 ```js
 // @spec BR-FE07-015, FR-FE07-009, NFR-FE07-TIME-001
@@ -575,69 +571,68 @@ const currentDueDate = formatBusinessDate(borrowDetail.dueDate);
 const newDueDate = addBusinessDays(currentDueDate, LOAN_DAYS);
 ```
 
-- [x] **Step 4: Use shared comparison helpers in repository parity**
+- [x] **Bước 4: Sử dụng trình trợ giúp so sánh được chia sẻ trong tính chẵn lẻ của kho lưu trữ**
 
-Import `formatBusinessDate` and `compareBusinessDates` in the SQL repository
-and in-memory helper. Replace affected renewal comparisons with:
+Nhập `formatBusinessDate` và `compareBusinessDates` vào kho lưu trữ SQL và trình trợ giúp trong bộ
+nhớ. Thay thế các so sánh gia hạn bị ảnh hưởng bằng:
 
 ```js
 compareBusinessDates(formatBusinessDate(detail.DueDate), String(today)) < 0
 ```
 
-and:
+và:
 
 ```js
 compareBusinessDates(formatBusinessDate(item.dueDate), String(today)) < 0
 ```
 
-Use the same comparison in the in-memory `hasOverdueActiveLoans` method so the
-service preflight and authoritative in-memory transaction agree. Do not alter
-the SQL `bd.DueDate < @Today` predicate because SQL Server already compares
-typed `date` values.
+Sử dụng so sánh tương tự trong phương pháp `hasOverdueActiveLoans` trong bộ nhớ để ánh sáng trước
+dịch vụ và giao dịch có thẩm quyền trong bộ nhớ đồng ý. Không thay đổi vị từ SQL `bd.DueDate <
+@Today` vì SQL Server đã so sánh các giá trị `date` đã nhập.
 
-- [x] **Step 5: Run GREEN in both timezones**
+- [x] **Bước 5: Chạy GREEN ở cả hai múi giờ**
 
-Repeat Step 2.
+Lặp lại Bước 2.
 
-Expected: both timezone runs pass with due date `2026-03-22`.
+Dự kiến: cả hai lần chạy múi giờ đều có ngày đến hạn `2026-03-22`.
 
-- [x] **Step 6: Run the focused FE07 suites**
+- [x] **Bước 6: Chạy bộ FE07 tập trung**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/borrowingRoutes.test.js tests/borrowingRepository.test.js
 ```
 
-Expected: PASS with no renewal, return, audit, or reservation regression.
+Dự kiến: ĐẠT mà không gia hạn, trả sách, kiểm tra hoặc hồi quy đặt chỗ.
 
-- [x] **Step 7: Checkpoint without commit**
+- [x] **Bước 7: Điểm kiểm tra không cần cam kết**
 
-Search the affected renewal path:
+Tìm kiếm đường dẫn gia hạn bị ảnh hưởng:
 
 ```powershell
 rg -n "setDate|getDate|setHours" backend/src/services/borrowingService.js backend/src/repositories/borrowingRepository.js backend/tests/helpers/inMemoryBorrowingRepositories.js
 ```
 
-Expected: no host-local calendar arithmetic remains in the affected renewal
-logic. Do not stage or commit.
+Dự kiến: không còn số học lịch máy chủ-cục bộ nào trong logic gia hạn bị ảnh hưởng. Đừng giai đoạn
+hoặc cam kết.
 
 ---
 
-### Task 4: FE10 Fail-Closed Stored Template Definitions
+### Nhiệm vụ 4: Định nghĩa mẫu được lưu trữ không đóng được FE10
 
-**Task ID:** `FE10-S11`
+**ID nhiệm vụ:** `FE10-S11`
 
-**Files:**
-- Modify: `backend/tests/notificationRoutes.test.js`
-- Modify: `backend/src/services/notificationService.js`
+**Tệp:**
+- Sửa đổi: `backend/tests/notificationRoutes.test.js`
+- Sửa đổi: `backend/src/services/notificationService.js`
 
-**Interfaces:**
-- Consumes: template `{ subject, body }` returned by
+**Giao diện:**
+- Tiêu thụ: mẫu `{ subject, body }` được trả về bởi
   `notificationRepository.findTemplateByCode(templateKey)`.
-- Produces:
-  `validateStoredTemplateDefinition(template): void`, throwing safe
-  `400 UNSAFE_TEMPLATE_DEFINITION` before rendering or side effects.
+- Sản xuất:
+`validateStoredTemplateDefinition(template): void`, ném `400 UNSAFE_TEMPLATE_DEFINITION` an toàn
+trước khi kết xuất hoặc tác dụng phụ.
 
-- [x] **Step 1: Add table-driven RED tests**
+- [x] **Bước 1: Thêm kiểm thử RED dựa trên bảng**
 
 ```js
 test.each([
@@ -677,18 +672,17 @@ test.each([
 });
 ```
 
-- [x] **Step 2: Run RED**
+- [x] **Bước 2: Chạy RED**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/notificationRoutes.test.js --testNamePattern "unsafe stored template"
 ```
 
-Expected: requests are accepted/rendered instead of rejecting with
-`UNSAFE_TEMPLATE_DEFINITION`.
+Dự kiến: các yêu cầu được chấp nhận/kết xuất thay vì từ chối bằng `UNSAFE_TEMPLATE_DEFINITION`.
 
-- [x] **Step 3: Add the stored-definition gate**
+- [x] **Bước 3: Thêm cổng định nghĩa được lưu trữ**
 
-Add near `renderTemplate()`:
+Thêm gần `renderTemplate()`:
 
 ```js
 function containsUnsafeTemplateDefinition(value) {
@@ -711,57 +705,57 @@ function validateStoredTemplateDefinition(template) {
 }
 ```
 
-Call it immediately after active-template lookup and before recipient
-resolution, template-data validation, rendering, persistence, or provider I/O:
+Gọi nó ngay sau khi tra cứu mẫu đang hoạt động và trước khi giải quyết người nhận, xác thực dữ liệu
+mẫu, kết xuất, lưu giữ hoặc I/O của nhà cung cấp:
 
 ```js
 validateStoredTemplateDefinition(template);
 const recipient = await resolveRecipient(requestInput);
 ```
 
-Keep `sanitizeString`, `sanitizePayload`, and `renderTemplate` unchanged so
-runtime values remain escaped/sanitized.
+Giữ nguyên `sanitizeString`, `sanitizePayload` và `renderTemplate` để các giá trị thời gian chạy vẫn
+được thoát/khử trùng.
 
-- [x] **Step 4: Run GREEN plus runtime-value preservation**
+- [x] **Bước 4: Chạy GREEN cộng với bảo toàn giá trị thời gian chạy**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/notificationRoutes.test.js --testNamePattern "unsafe stored template|sanitizes script content in template data"
 ```
 
-Expected: unsafe stored definitions reject with zero side effects; the existing
-runtime-value sanitization test still passes.
+Dự kiến: các định nghĩa được lưu trữ không an toàn bị từ chối mà không có tác dụng phụ; kiểm thử dọn
+dẹp giá trị thời gian chạy hiện tại vẫn vượt qua.
 
-- [x] **Step 5: Run the full FE10 route suite**
+- [x] **Bước 5: Chạy bộ lộ trình FE10 đầy đủ**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/notificationRoutes.test.js
 ```
 
-Expected: PASS with source ownership, secret redaction, idempotency,
-`PROCESSING`, retry, and DTO contracts unchanged.
+Dự kiến: đạt với quyền sở hữu nguồn, biên tập bí mật, tính tạm thời, `PROCESSING`, thử lại và các
+hợp đồng DTO không thay đổi.
 
-- [x] **Step 6: Checkpoint without commit**
+- [x] **Bước 6: Điểm kiểm tra không cần cam kết**
 
-Inspect the two-file diff and verify no template content or secret value appears
-in errors. Do not stage or commit.
+Kiểm tra sự khác biệt của hai tệp và xác minh rằng không có nội dung mẫu hoặc giá trị bí mật nào
+xuất hiện do lỗi. Đừng giai đoạn hoặc cam kết.
 
 ---
 
-### Task 5: FE12 Exact Endpoint Query Allowlists
+### Nhiệm vụ 5: Danh sách cho phép truy vấn điểm cuối chính xác của FE12
 
-**Task ID:** `FE12-N11`
+**ID nhiệm vụ:** `FE12-N11`
 
-**Files:**
-- Modify: `backend/tests/reportRoutes.test.js`
-- Modify: `backend/src/validators/reportValidators.js`
+**Tệp:**
+- Sửa đổi: `backend/tests/reportRoutes.test.js`
+- Sửa đổi: `backend/src/validators/reportValidators.js`
 
-**Interfaces:**
-- Produces:
+**Giao diện:**
+- Sản xuất:
   `rejectUnsupportedQueryParameters(allowedKeys): ExpressMiddleware`.
-- The middleware calls `next()` for exact allowed keys and otherwise calls
+- Phần mềm trung gian gọi `next()` để biết chính xác các khóa được phép và các cuộc gọi khác
   `next(errors.badRequest('UNSUPPORTED_REPORT_QUERY_PARAMETER', ...))`.
 
-- [x] **Step 1: Add the route-level RED matrix**
+- [x] **Bước 1: Thêm ma trận RED cấp tuyến**
 
 ```js
 test.each([
@@ -798,17 +792,17 @@ test.each([
 });
 ```
 
-- [x] **Step 2: Run RED**
+- [x] **Bước 2: Chạy RED**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/reportRoutes.test.js --testNamePattern "unsupported query keys"
 ```
 
-Expected: all three requests return `200` and invoke a report repository method.
+Dự kiến: cả ba yêu cầu đều trả về `200` và gọi phương thức kho lưu trữ báo cáo.
 
-- [x] **Step 3: Add the reusable exact-key middleware**
+- [x] **Bước 3: Thêm phần mềm trung gian khóa chính xác có thể tái sử dụng**
 
-Import safe errors and define exact allowlists:
+Nhập các lỗi an toàn và xác định danh sách cho phép chính xác:
 
 ```js
 const errors = require('../utils/safeErrors');
@@ -840,7 +834,7 @@ function rejectUnsupportedQueryParameters(allowedKeys) {
 }
 ```
 
-Place the matching middleware first in each validator array:
+Đặt phần mềm trung gian phù hợp đầu tiên trong mỗi mảng trình xác thực:
 
 ```js
 const borrowingReportValidators = [
@@ -850,95 +844,93 @@ const borrowingReportValidators = [
 ];
 ```
 
-Repeat for inventory and users. Export the factory and key arrays only if a
-focused unit test needs them; route behavior is the primary contract.
+Lặp lại cho khoảng không quảng cáo và người dùng. Chỉ xuất các mảng nhà máy và khóa nếu kiểm thử đơn
+vị tập trung cần chúng; hành vi tuyến đường là hợp đồng chính.
 
-- [x] **Step 4: Run GREEN**
+- [x] **Bước 4: Chạy GREEN**
 
-Repeat Step 2.
+Lặp lại Bước 2.
 
-Expected: all endpoints return safe `400`, do not echo the value, and all three
-repository spies remain untouched.
+Dự kiến: tất cả các điểm cuối đều trả về `400` an toàn, không lặp lại giá trị và cả ba gián điệp kho
+lưu trữ vẫn không bị ảnh hưởng.
 
-- [x] **Step 5: Run approved-key preservation tests**
+- [x] **Bước 5: Chạy kiểm thử bảo quản khóa đã được phê duyệt**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/reportRoutes.test.js
 ```
 
-Expected: existing filters, empty IDs, date-only validation, role guards,
-audit privacy, pagination, and all report responses remain green.
+Dự kiến: các bộ lọc hiện có, ID trống, xác thực chỉ ngày, bảo vệ vai trò, quyền riêng tư kiểm tra,
+phân trang và tất cả phản hồi báo cáo vẫn có màu xanh.
 
-- [x] **Step 6: Checkpoint without commit**
+- [x] **Bước 6: Điểm kiểm tra không cần cam kết**
 
-Inspect the two-file diff. Confirm the unknown-key middleware is first in all
-three validator arrays. Do not stage or commit.
+Kiểm tra sự khác biệt của hai tập tin. Xác nhận phần mềm trung gian có khóa không xác định là phần
+mềm đầu tiên trong cả ba mảng trình xác thực. Đừng giai đoạn hoặc cam kết.
 
 ---
 
-### Task 6: FE08 Regression-Only Handoff Verification
+### Nhiệm vụ 6: Xác minh chuyển giao chỉ hồi quy FE08
 
-**Task ID:** `FE08-T047`
+**ID nhiệm vụ:** `FE08-T047`
 
-**Files:**
-- No FE08 production file changes.
-- Verify: `backend/tests/reservationRoutes.test.js`
-- Verify: `backend/tests/systemIntegration.test.js`
+**Tệp:**
+- Không có thay đổi tệp sản xuất FE08.
+- Xác minh: `backend/tests/reservationRoutes.test.js`
+- Xác minh: `backend/tests/systemIntegration.test.js`
 
-**Interfaces:**
+**Giao diện:**
 - FE08 -> FE10:
-  `RESERVATION_AVAILABLE -> RESERVATION_READY` through the construction-bound
-  FE08 requester.
-- FE08 -> FE07: active reservation priority blocks another member's renewal
-  without changing the loan.
+`RESERVATION_AVAILABLE -> RESERVATION_READY` thông qua trình yêu cầu FE08 có giới hạn xây dựng.
+- FE08 -> FE07: ưu tiên đặt chỗ hiện hoạt chặn việc gia hạn của thành viên khác
+  mà không thay đổi lượt mượn.
 
-- [x] **Step 1: Run the canonical requester regression**
+- [x] **Bước 1: Chạy hồi quy chuẩn của người yêu cầu**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/reservationRoutes.test.js --testNamePattern "binds FE08 and submits the canonical reservation-ready notification request"
 ```
 
-Expected: PASS with one FE08-bound requester and canonical source metadata.
+Dự kiến: ĐẠT với một người yêu cầu gắn với FE08 và siêu dữ liệu nguồn chuẩn.
 
-- [x] **Step 2: Run cross-feature SIT-003 and SIT-004**
+- [x] **Bước 2: Chạy chức năng chéo SIT-003 và SIT-004**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/systemIntegration.test.js --testNamePattern "SIT-003|SIT-004"
 ```
 
-Expected: queue hold creates one FE10 request, and reservation priority blocks
-FE07 renewal without mutation.
+Dự kiến: việc giữ hàng đợi tạo ra một yêu cầu FE10 và ưu tiên đặt chỗ chặn việc gia hạn FE07 mà
+không bị thao tác ghi.
 
-- [x] **Step 3: Stop on any FE08 failure**
+- [x] **Bước 3: Dừng khi FE08 bị lỗi**
 
-Do not modify FE08. Diagnose and return to SPEC review if the failure requires
-a product-rule change.
+Không sửa đổi FE08. Chẩn đoán và quay lại đánh giá SPEC nếu lỗi yêu cầu thay đổi quy tắc sản phẩm.
 
 ---
 
-### Task 7: Cross-Feature Validation And Real Runtime Evidence
+### Nhiệm vụ 7: Xác thực chức năng chéo và bằng chứng thời gian chạy thực
 
-**Task IDs:** `FE07-T051`, `FE08-T047`, `FE10-S11`, `FE12-N11`
+**ID nhiệm vụ:** `FE07-T051`, `FE08-T047`, `FE10-S11`, `FE12-N11`
 
-**Files:**
-- Modify: `tests/e2e/system-golden-path.spec.js`
-- Create after all commands run:
+**Tệp:**
+- Sửa đổi: `tests/e2e/system-golden-path.spec.js`
+- Tạo sau khi tất cả các lệnh chạy:
   `.sdd/reviews/fe07-fe10-fe12-business-rule-alignment-validation-2026-07-27.md`
-- Update task checkboxes/evidence only after observed results exist.
+- Chỉ cập nhật các hộp kiểm/bằng chứng nhiệm vụ sau khi có kết quả quan sát được.
 
-**Interfaces:**
-- Produces the H2 review package: complete uncommitted diff, L1-L4 results,
-  runtime evidence, gaps, and residual risks.
+**Giao diện:**
+- Tạo gói đánh giá H2: hoàn thành các kết quả khác biệt không được cam kết, L1-L4,
+  bằng chứng thời gian chạy, khoảng trống và rủi ro còn sót lại.
 
-- [x] **Step 1: Run the focused L1 gate**
+- [x] **Bước 1: Chạy cổng L1 tập trung**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/borrowingRoutes.test.js tests/borrowingRepository.test.js tests/notificationRoutes.test.js tests/reportRoutes.test.js tests/reservationRoutes.test.js tests/systemIntegration.test.js
 ```
 
-Expected: all six suites pass.
+Dự kiến: cả sáu dãy đều đạt.
 
-- [x] **Step 2: Run the timezone matrix**
+- [x] **Bước 2: Chạy ma trận múi giờ**
 
 ```powershell
 $env:TZ='UTC'
@@ -948,9 +940,9 @@ npm.cmd --prefix backend test -- --runTestsByPath tests/borrowingRoutes.test.js 
 Remove-Item Env:TZ -ErrorAction SilentlyContinue
 ```
 
-Expected: both runs pass with identical business dates and outcomes.
+Dự kiến: cả hai lần đều diễn ra với ngày và kết quả kinh doanh giống hệt nhau.
 
-- [x] **Step 3: Run full automated quality checks**
+- [x] **Bước 3: Chạy kiểm tra chất lượng hoàn toàn tự động**
 
 ```powershell
 npm.cmd --prefix backend test
@@ -963,24 +955,24 @@ npm.cmd run trace:enforce
 git diff --check
 ```
 
-Expected: all commands exit 0; backend coverage remains above the repository's
-80% global thresholds; FE07, FE08, FE10, and FE12 traceability remains enforced.
+Dự kiến: tất cả các lệnh thoát 0; phạm vi bảo hiểm máy chủ vẫn ở trên ngưỡng toàn cầu 80% của kho
+lưu trữ; khả năng truy vết nguồn gốc FE07, FE08, FE10 và FE12 vẫn được thực thi.
 
-- [x] **Step 4: Run real browser/runtime acceptance**
+- [x] **Bước 4: Chạy trình duyệt thực/chấp nhận thời gian chạy**
 
 ```powershell
 npx.cmd playwright test tests/e2e/system-golden-path.spec.js tests/e2e/fe08-reservation-candidate-catalog.spec.js --project=chromium
 ```
 
-Expected: both Playwright scenarios pass against actual local HTTP servers.
-The golden path proves login -> borrow -> approve -> return -> fine -> report;
-the FE08 scenario proves candidate search and a real reservation request. Keep
-failure traces/screenshots; do not promote them as passing evidence.
+Dự kiến: cả hai kịch bản Playwright đều vượt qua các máy chủ HTTP cục bộ thực tế. luồng nghiệp vụ
+chuẩn chứng minh đăng nhập -> mượn -> phê duyệt -> trả sách -> phạt -> báo cáo; kịch bản FE08 chứng
+minh việc tìm kiếm ứng viên và yêu cầu đặt chỗ thực sự. Giữ dấu vết/ảnh chụp màn hình lỗi; không
+quảng cáo chúng như là bằng chứng vượt qua.
 
-- [x] **Step 5: Verify FE12 through the running HTTP boundary**
+- [x] **Bước 5: Xác minh FE12 thông qua ranh giới HTTP đang chạy**
 
-During the Playwright runtime, use the authenticated Admin/Librarian request
-context already created by the test and assert:
+Trong thời gian chạy Playwright, hãy sử dụng bối cảnh yêu cầu Quản trị viên/Thư viện đã được xác
+thực đã được tạo bởi quá trình kiểm tra và xác nhận:
 
 ```js
 const response = await request.get(
@@ -995,55 +987,53 @@ expect(payload).toMatchObject({
 expect(JSON.stringify(payload)).not.toContain('runtime-secret-value');
 ```
 
-Add this assertion to `tests/e2e/system-golden-path.spec.js` after the existing
-`accessToken` is read. This is test-only runtime evidence and does not change a
-frontend workflow.
+Thêm xác nhận này vào `tests/e2e/system-golden-path.spec.js` sau khi `accessToken` hiện có được đọc.
+Đây là bằng chứng thời gian chạy chỉ dành cho kiểm thử và không thay đổi quy trình làm việc ở giao
+diện người dùng.
 
-- [x] **Step 6: Perform L2 and L3 review**
+- [x] **Bước 6: Thực hiện đánh giá L2 và L3**
 
-Check:
+Kiểm tra:
 
 ```text
 L2 Spec:
-- BD-007/AT-001 -> FE07-T052 -> single-role reconciliation -> existing role guards
-- BD-002/AT-002 -> FE07-T049 -> route/repository RED/GREEN -> locked evidence
-- BD-003/AT-003 -> FE07-T050 -> two-timezone RED/GREEN -> shared helpers
-- BD-004/AT-004 -> FE10-S11 -> zero-side-effect security regression
-- BD-005/AT-005 -> FE12-N11 -> all three endpoints and zero repository calls
-- BD-006/AT-006 -> FE08-T047 -> requester plus SIT-003/SIT-004
+- BD-007/AT-001 -> FE07-T052 -> đối soát vai trò duy nhất -> bộ bảo vệ vai trò hiện có
+- BD-002/AT-002 -> FE07-T049 -> RED/GREEN cho tuyến/kho dữ liệu -> bằng chứng đã khóa
+- BD-003/AT-003 -> FE07-T050 -> RED/GREEN cho hai múi giờ -> trình trợ giúp dùng chung
+- BD-004/AT-004 -> FE10-S11 -> hồi quy bảo mật không có tác dụng phụ
+- BD-005/AT-005 -> FE12-N11 -> cả ba điểm cuối và không gọi kho dữ liệu
+- BD-006/AT-006 -> FE08-T047 -> người yêu cầu cùng SIT-003/SIT-004
 
 L3 Constitution/Safety:
-- server-side authorization remains role-order independent
-- unsafe stored definitions fail closed
-- unknown query values are never echoed
-- no secret, schema, dependency, public API, or architecture expansion
-- return audit remains in the transaction
+- phân quyền phía máy chủ không phụ thuộc thứ tự vai trò
+- định nghĩa đã lưu không an toàn phải đóng khi lỗi
+- giá trị truy vấn không xác định không bao giờ được phản chiếu lại
+- không mở rộng bí mật, lược đồ, phụ thuộc, API công khai hoặc kiến trúc
+- kiểm toán trả sách vẫn nằm trong giao dịch
 ```
 
-Any gap returns to the owning task; do not weaken the SPEC.
+Mọi khoảng trống đều quay trở lại nhiệm vụ sở hữu; không làm suy yếu SPEC.
 
-- [x] **Step 7: Record observed evidence**
+- [x] **Bước 7: Ghi lại bằng chứng quan sát được**
 
-Create
-`.sdd/reviews/fe07-fe10-fe12-business-rule-alignment-validation-2026-07-27.md`
-with:
+Tạo `.sdd/reviews/fe07-fe10-fe12-business-rule-alignment-validation-2026-07-27.md` với:
 
-1. exact branch and pre-H2 commit;
-2. changed-file list;
-3. RED command and observed failure for AT-001 through AT-005;
-4. GREEN/focused/full/coverage/timezone/traceability command outputs;
-5. SQL database name and disposable confirmation, or an explicit "not run"
-   statement with no SQL claim;
-6. Playwright runtime command and observed scenarios;
-7. L2 traceability matrix and L3 safety review;
-8. residual risks and the explicit statement that implementation remains
-   uncommitted pending H2.
+1. nhánh chính xác và cam kết trước H2;
+2. danh sách tập tin đã thay đổi;
+3. Lệnh RED và quan sát thấy lỗi đối với AT-001 đến AT-005;
+4. Đầu ra lệnh GREEN/tập trung/đầy đủ/phạm vi bảo hiểm/múi giờ/truy vết;
+5. Tên cơ sở dữ liệu SQL và xác nhận dùng một lần hoặc "không chạy" rõ ràng
+   tuyên bố không có xác nhận quyền sở hữu SQL;
+6. Lệnh thời gian chạy Playwright và các kịch bản được quan sát;
+7. Ma trận truy vết L2 và đánh giá an toàn L3;
+8. rủi ro tồn tại và tuyên bố rõ ràng rằng việc thực hiện vẫn còn
+   chưa được cam kết đang chờ xử lý H2.
 
-Do not write PASS for an unrun command.
+Không viết đạt cho lệnh chưa chạy.
 
-- [x] **Step 8: Prepare H2; do not commit**
+- [x] **Bước 8: Chuẩn bị H2; không cam kết**
 
-Run:
+Chạy:
 
 ```powershell
 git status --short
@@ -1051,61 +1041,59 @@ git diff --stat
 git diff --check
 ```
 
-Present the complete uncommitted diff and evidence to Nhat. Only an explicit H2
-approval authorizes staging, committing, pushing, or PR publication.
+Trình bày đầy đủ sự khác biệt và bằng chứng có sẵn cho Nhật. Chỉ có phê duyệt H2 rõ ràng mới cho
+phép xuất bản môi trường tiền sản xuất, cam kết, thúc đẩy hoặc PR.
 
 ---
 
-### Task 8: Reconcile The Single-Role Main Contract
+### Nhiệm vụ 8: Đối chiếu Hợp đồng chính một vai trò
 
-**Task ID:** `FE07-T052`
+**ID nhiệm vụ:** `FE07-T052`
 
-**Files:**
-- Modify: `.sdd/specs/feat-borrowing-management/SPEC.md`
-- Modify: `.sdd/specs/feat-borrowing-management/PLAN.md`
-- Modify: `.sdd/specs/feat-borrowing-management/TASKS.md`
-- Modify: `.sdd/specs/feat-reservation-management/PLAN.md`
-- Modify: `.sdd/specs/feat-reservation-management/TASKS.md`
-- Modify: `docs/superpowers/specs/2026-07-27-fe07-fe10-fe12-business-rule-alignment-design.md`
-- Modify: `docs/superpowers/plans/2026-07-27-fe07-fe10-fe12-business-rule-alignment.md`
-- Modify: `backend/tests/borrowingRoutes.test.js`
-- Modify: `backend/src/services/borrowingService.js`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-borrowing-management/SPEC.md`
+- Sửa đổi: `.sdd/specs/feat-borrowing-management/PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-borrowing-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-reservation-management/PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-reservation-management/TASKS.md`
+- Sửa đổi: `docs/superpowers/specs/2026-07-27-fe07-fe10-fe12-business-rule-alignment-design.md`
+- Sửa đổi: `docs/superpowers/plans/2026-07-27-fe07-fe10-fe12-business-rule-alignment.md`
+- Sửa đổi: `backend/tests/borrowingRoutes.test.js`
+- Sửa đổi: `backend/src/services/borrowingService.js`
 
-**Interfaces:**
-- Consumes: `DEC-GEN-005`, `requireMemberOnly`, and the existing
-  `renewBorrowDetail()` actor contract.
-- Produces: one supported account role per actor; Member owner-only renewal;
-  Librarian/Admin cross-member renewal; no multi-role business case.
+**Giao diện:**
+- Tiêu thụ: `DEC-GEN-005`, `requireMemberOnly` và hiện có
+  Hợp đồng tác nhân `renewBorrowDetail()`.
+- Production: một vai trò tài khoản được hỗ trợ cho mỗi tác nhân; gia hạn chỉ dành cho chủ sở hữu thành viên;
+  Gia hạn nhiều thành viên Thư viện/Quản trị viên; không có trường hợp kinh doanh đa vai trò.
 
-- [x] **Step 1: Reconcile the written contracts**
+- [x] **Bước 1: Đối chiếu hợp đồng bằng văn bản**
 
-Preserve `FE07-T047`, `FE07-T048`, and `FE08-T041` through `FE08-T045` from
-`main`. Record this cleanup as `FE07-T052` and renumber the regression-only
-FE08 task to `FE08-T047`.
-Classify original BD-001 as superseded and record the approved single-role
-decision as BD-007.
+Bảo tồn `FE07-T047`, `FE07-T048` và `FE08-T041` thông qua `FE08-T045` từ `main`. Ghi lại quá trình
+dọn dẹp này dưới dạng `FE07-T052` và đánh số lại tác vụ FE08 chỉ hồi quy thành `FE08-T047`. Phân
+loại BD-001 ban đầu là BD-001 được thay thế và ghi lại quyết định vai trò đơn đã được phê duyệt là
+BD-007.
 
-- [x] **Step 2: Replace the obsolete route test**
+- [x] **Bước 2: Thay thế kiểm thử lộ trình lỗi thời**
 
-Change the branch-local multi-role renewal test so it uses a normal
-single-role `LIBRARIAN` for cross-member renewal and a separate single-role
-`MEMBER` for the owner denial. Do not mutate `rolesByUserId` to contain two
-roles and do not log in a multi-role account.
+Thay đổi kiểm thử gia hạn đa vai trò tại nhánh cục bộ để nó sử dụng `LIBRARIAN` một vai trò thông
+thường để gia hạn nhiều thành viên và `MEMBER` một vai trò riêng biệt cho việc từ chối chủ sở hữu.
+Không thay đổi `rolesByUserId` để chứa hai vai trò và không đăng nhập vào tài khoản nhiều vai trò.
 
-- [x] **Step 3: Verify the single-role baseline before cleanup**
+- [x] **Bước 3: Xác minh mốc cơ sở một vai trò trước khi dọn dẹp**
 
-Run:
+Chạy:
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/borrowingRoutes.test.js tests/userRoleRepository.test.js --testNamePattern "single-role librarian renews|exactly one role|repairs legacy multiple mappings"
 ```
 
-Expected: the single-role role boundary and database repair/invariant cases
-pass. This is a green reconciliation baseline, not a new RED behavior claim.
+Dự kiến: ranh giới vai trò đơn và các trường hợp sửa chữa/bất biến cơ sở dữ liệu đã vượt qua. Đây là
+mốc cơ sở điều chỉnh xanh chứ không phải xác nhận hành vi RED mới.
 
-- [x] **Step 4: Remove the superseded authorization delta**
+- [x] **Bước 4: Xóa delta ủy quyền thay thế**
 
-Restore the simple one-role renewal authorization shape:
+Khôi phục hình dạng ủy quyền gia hạn một vai trò đơn giản:
 
 ```js
 if (hasAnyRole(actor, ['MEMBER']) && borrowDetail.userId !== actor.userId) {
@@ -1120,201 +1108,188 @@ if (!hasAnyRole(actor, ['MEMBER', 'LIBRARIAN', 'ADMIN'])) {
 }
 ```
 
-Do not alter loan-owner eligibility, fines, overdue, reservation, renewal
-count, business-date, notification, or audit behavior.
+Không thay đổi khả năng hội đủ điều kiện của chủ lượt mượn, khoản phạt, quá hạn, hạn chế, số lần gia
+hạn, ngày làm việc, thông báo hoặc hành vi kiểm toán.
 
-- [x] **Step 5: Verify after cleanup**
+- [x] **Bước 5: Xác minh sau khi dọn dẹp**
 
-Repeat Step 3, then run the focused FE07 route/repository suites. Expected:
-all selected tests pass with no multi-role account setup remaining in the
-rule-alignment test.
+Lặp lại Bước 3, sau đó chạy bộ tuyến/kho lưu trữ FE07 tập trung. Dự kiến: tất cả các kiểm thử đã
+chọn đều vượt qua và không còn thiết lập tài khoản đa vai trò nào trong kiểm thử căn chỉnh quy tắc.
 
-- [x] **Step 6: Continue the full Task 7 verification**
+- [x] **Bước 6: Tiếp tục xác minh đầy đủ Nhiệm vụ 7**
 
-Run the full backend/frontend/traceability/runtime gates against the merged
-result and update the validation record. Keep the merge uncommitted until Nhat
-approves the H2 addendum.
+Chạy các cổng backend/frontend/traceability/runtime đầy đủ dựa trên kết quả đã hợp nhất và cập nhật
+bản ghi xác thực. Giữ nguyên việc hợp nhất cho đến khi Nhật phê duyệt phụ lục H2.
 
 ---
 
-### Task 9: Reconcile Prior Main Without Expanding FE08
+### Nhiệm vụ 9: Đối chiếu phần chính trước mà không cần mở rộng FE08
 
-**Task ID:** `FE08-T047`
+**ID nhiệm vụ:** `FE08-T047`
 
-- [x] **Step 1: Merge `origin/main` through `e20fdc3` without committing**
+- [x] **Bước 1: Hợp nhất `origin/main` với `e20fdc3` mà không cần cam kết**
 
-Keep PR #63 on its existing branch and preserve the open merge for H2 review.
+Giữ PR #63 trên nhánh hiện tại của nó và duy trì việc hợp nhất mở để xem xét H2.
 
-- [x] **Step 2: Resolve the FE08 documentation conflicts**
+- [x] **Bước 2: Giải quyết xung đột tài liệu FE08**
 
-Preserve upstream `FE07-T047/T048` and `FE08-T041` through `FE08-T044`;
-renumber this slice's tasks to `FE07-T049..T052` and `FE08-T047`, retain the
-one-account/one-role wording, and accept the upstream held-copy handoff without
-adding another FE08 behavior.
+Bảo tồn `FE07-T047/T048` và `FE08-T041` ngược dòng thông qua `FE08-T044`; đánh số lại các nhiệm vụ
+của phần việc này thành `FE07-T049..T052` và `FE08-T047`, giữ lại cách diễn đạt một tài khoản/một vai
+trò và chấp nhận chuyển giao bản sao được giữ ngược dòng mà không cần thêm hành vi FE08 khác.
 
-- [x] **Step 3: Reconcile the lifecycle-label contract**
+- [x] **Bước 3: Điều chỉnh hợp đồng nhãn vòng đời**
 
-The first Chromium run is RED because the branch E2E expects `Đã đặt chỗ`
-while upstream v0.5.6 renders `Đang đặt chỗ` for `ACTIVE`. Align
-NFR-FE08-UX-003 and the E2E expectation with `Đang đặt chỗ`/`Đến lượt bạn`;
-do not change production code.
+Lần chạy Chrome đầu tiên là RED vì nhánh E2E mong đợi `Đã đặt chỗ` trong khi phiên bản ngược dòng
+v0.5.6 hiển thị `Đang đặt chỗ` cho `ACTIVE`. Căn chỉnh kỳ vọng NFR-FE08-UX-003 và E2E với `Đang đặt
+chỗ`/`Đến lượt bạn`; không thay đổi mã sản xuất.
 
-- [x] **Step 4: Repeat the latest-main evidence**
+- [x] **Bước 4: Lặp lại bằng chứng chính mới nhất**
 
-Run the single-role check, 7-suite cross-feature gate, timezone matrix, full
-backend and coverage, full frontend/lint/build, traceability, and both Chromium
-acceptance scenarios.
+Chạy kiểm tra một vai trò, cổng chức năng chéo 7 bộ, ma trận múi giờ, chương trình máy chủ và phạm
+vi đầy đủ, khả năng truy vết frontend/lint/build, đầy đủ và cả hai kịch bản chấp nhận Chrome.
 
-- [x] **Step 5: Prepare the latest H2 addendum**
+- [x] **Bước 5: Chuẩn bị phụ lục H2 mới nhất**
 
-Update the validation record with the exact base, observed counts, initial
-browser RED, final GREEN, residual SQL/staging limits, and keep the merge
-uncommitted and unpushed.
+Cập nhật bản ghi xác thực với cơ sở chính xác, số lượng quan sát được, trình duyệt ban đầu RED,
+GREEN cuối cùng, SQL/giới hạn phân giai đoạn còn lại và giữ cho việc hợp nhất không được cam kết và
+không được đẩy.
 
 ---
 
-### Task 10: Integrate The Upstream Same-Book Reservation Rule
+### Nhiệm vụ 10: Tích hợp Quy tắc đặt chỗ cùng một cuốn sách ngược dòng
 
-**Task IDs:** upstream `FE08-T045`; branch regression `FE08-T047`
+**ID nhiệm vụ:** ngược dòng `FE08-T045`; hồi quy nhánh `FE08-T047`
 
-- [x] **Step 1: Merge `origin/main` through `e99daf5` without committing**
+- [x] **Bước 1: Hợp nhất `origin/main` với `e99daf5` mà không cần cam kết**
 
-Keep the existing PR branch and preserve the open merge for a new H2 addendum.
+Giữ nhánh PR hiện tại và duy trì hợp nhất mở cho phụ lục H2 mới.
 
-- [x] **Step 2: Reconcile the written contracts and task IDs**
+- [x] **Bước 2: Đối chiếu hợp đồng bằng văn bản và ID nhiệm vụ**
 
-Integrate FE07 v0.7.8 and FE08 v0.5.9. Keep upstream `FE08-T045` for the
-same-book current-loan rule and move the branch regression-only handoff task to
-`FE08-T047`. Preserve the one-account/one-role and exact held-copy contracts.
+Tích hợp FE07 v0.7.8 và FE08 v0.5.9. Giữ ngược dòng `FE08-T045` để biết quy tắc cho vay hiện tại của
+cùng một cuốn sách và chuyển nhiệm vụ chuyển giao chỉ hồi quy nhánh sang `FE08-T047`. Bảo quản các
+hợp đồng một tài khoản/một vai trò và bản sao chính xác.
 
-- [x] **Step 3: Review the upstream production implementation**
+- [x] **Bước 3: Xem xét quá trình triển khai sản xuất thượng nguồn**
 
-Confirm candidate exclusion, transactional direct-create rejection,
-stale-queue skipping, shared Member circulation locking, stable
-`BOOK_ALREADY_BORROWED` mapping, parameterized SQL, and no unrelated behavior
-change. This upstream-approved implementation is not a new RED claim from this
-branch.
+Xác nhận loại trừ ứng viên, từ chối tạo trực tiếp giao dịch, bỏ qua hàng đợi cũ, khóa lưu thông
+Thành viên được chia sẻ, ánh xạ `BOOK_ALREADY_BORROWED` ổn định, SQL được tham số hóa và không có
+thay đổi hành vi không liên quan. Việc triển khai được phê duyệt ngược dòng này không phải là yêu
+cầu RED mới từ nhánh này.
 
-- [x] **Step 4: Repeat focused and full evidence**
+- [x] **Bước 4: Lặp lại bằng chứng tập trung và đầy đủ**
 
-Run the same-book repository/service/route/frontend tests, the branch
-single-role and rule-alignment suites, cross-feature integration, timezone
-matrix, full backend/coverage, full frontend/lint/build, traceability, diff
-hygiene, and both Chromium acceptance scenarios.
+Chạy các kiểm thử kho lưu trữ/dịch vụ/tuyến đường/giao diện người dùng cùng một cuốn sách, các bộ
+điều chỉnh quy tắc và vai trò đơn nhánh, tích hợp nhiều chức năng, ma trận múi giờ, khả năng truy
+vết frontend/lint/build, đầy đủ của backend/coverage,, vệ sinh khác biệt và cả hai kịch bản chấp
+nhận Chrome.
 
-- [x] **Step 5: Prepare the new H2 addendum**
+- [x] **Bước 5: Chuẩn bị phụ lục H2 mới**
 
-Record exact fresh counts against `e99daf5`, changed-file parity with
-`origin/main`, runtime evidence, skipped mutable SQL/staging limits, and the
-complete uncommitted diff. Do not commit or push before Nhat explicitly
-approves the addendum.
+Ghi lại số lượng mới chính xác so với `e99daf5`, tính chẵn lẻ của tệp đã thay đổi với `origin/main`,
+bằng chứng thời gian chạy, giới hạn phân tầng/SQL có thể thay đổi và hoàn toàn khác biệt có sẵn.
+Không cam kết hoặc thúc đẩy trước khi Nhật phê duyệt phụ lục một cách rõ ràng.
 
 ---
 
-### Task 11: Integrate Copy-Scoped Queues And Member Fine Permissions
+### Nhiệm vụ 11: Tích hợp hàng đợi có phạm vi sao chép và quyền tốt của thành viên
 
-**Task IDs:** upstream `FE08-T046`, upstream `FE09-T024`; branch regression
-`FE08-T047`
+**ID nhiệm vụ:** ngược dòng `FE08-T046`, ngược dòng `FE09-T024`; hồi quy nhánh `FE08-T047`
 
-- [x] **Step 1: Merge `origin/main` through `8d0059b` without committing**
+- [x] **Bước 1: Hợp nhất `origin/main` với `8d0059b` mà không cần cam kết**
 
-Keep PR #63 on the existing branch and preserve the merge result for a new H2
-addendum.
+Giữ PR #63 trên nhánh hiện có và giữ nguyên kết quả hợp nhất cho phụ lục H2 mới.
 
-- [x] **Step 2: Reconcile SPEC, PLAN, TASKS, and version collisions**
+- [x] **Bước 2: Điều chỉnh xung đột giữa SPEC, PLAN, TASKS và phiên bản**
 
-Combine the parallel FE07 v0.7.8 changes as v0.7.9 and the parallel FE08
-v0.5.9 changes as v0.5.10. Keep upstream `FE08-T046` for copy-scoped queue
-positions and move branch regression evidence to `FE08-T047`.
+Kết hợp FE07 v0.7.8 song song thay đổi thành v0.7.9 và FE08 v0.5.9 song song thay đổi thành v0.5.10.
+Giữ ngược dòng `FE08-T046` cho các vị trí hàng đợi trong phạm vi sao chép và di chuyển bằng chứng
+hồi quy nhánh sang `FE08-T047`.
 
-- [x] **Step 3: Capture the queue-position RED**
+- [x] **Bước 3: Chụp vị trí hàng đợi RED**
 
-Prove that the upstream mapper returns null while Member/staff presentation
-still stringifies it. The focused frontend test must fail because no null-safe
-formatter exists.
+Chứng minh rằng trình ánh xạ ngược dòng trả về giá trị rỗng trong khi phần trình bày của Thành
+viên/nhân viên vẫn xâu chuỗi nó. Kiểm tra giao diện người dùng tập trung phải thất bại vì không có
+định dạng null-safe nào tồn tại.
 
-- [x] **Step 4: Apply the bounded GREEN presentation fix**
+- [x] **Bước 4: Áp dụng bản sửa lỗi trình bày GREEN bị chặn**
 
-Render null as `Chưa xác định`; preserve real `#N` positions and their
-per-`CopyId` scope in Member/staff tables, creation feedback, and cancellation
-feedback.
+Kết xuất null dưới dạng `Chưa xác định`; duy trì các vị trí `#N` thực và phạm vi mỗi `CopyId` của
+chúng trong bảng Thành viên/nhân viên, phản hồi về việc tạo và phản hồi về việc hủy.
 
-- [x] **Step 5: Review FE09 authorization and data contracts**
+- [x] **Bước 5: Xem lại hợp đồng dữ liệu và ủy quyền FE09**
 
-Verify `/api/fines/me` is Member-only under the exactly-one-role model,
-staff mutation ownership is unchanged, SQL remains parameterized, the OpenAPI
-DTO matches repository output, and Member UI remains read-only.
+Xác minh `/api/fines/me` là Chỉ dành cho Thành viên theo mô hình chính xác một vai trò, quyền sở hữu
+thao tác ghi của nhân viên không thay đổi, SQL vẫn được tham số hóa, OpenAPI DTO khớp với đầu ra của kho
+lưu trữ và Giao diện người dùng thành viên vẫn ở chế độ chỉ đọc.
 
-- [x] **Step 6: Repeat focused, cross-feature, full, and runtime evidence**
+- [x] **Bước 6: Lặp lại bằng chứng tập trung, chức năng chéo, đầy đủ và thời gian chạy**
 
-Run FE08/FE09 focused tests, single-role checks, the seven-suite cross-feature
-gate, timezone matrix, full backend and coverage, full frontend/lint/build,
-traceability, conflict/diff checks, and both Chromium acceptance scenarios.
-Mutable SQL remains prohibited without the approved disposable-database flags.
+Chạy các kiểm thử tập trung FE08/FE09, kiểm tra một vai trò, cổng chức năng chéo bảy bộ, ma trận múi
+giờ, chương trình máy chủ và độ bao phủ đầy đủ, khả năng truy vết frontend/lint/build, đầy đủ, kiểm
+tra xung đột/khác biệt và cả hai kịch bản chấp nhận Chrome. SQL có thể thay đổi vẫn bị cấm nếu không
+có cờ cơ sở dữ liệu dùng một lần được phê duyệt.
 
-- [x] **Step 7: Prepare the `8d0059b` H2 addendum**
+- [x] **Bước 7: Chuẩn bị phụ lục `8d0059b` H2**
 
-Update the validation record with exact counts, the queue-position RED/GREEN,
-FE09 security review, changed-file parity, runtime evidence, and residual
-SQL/staging limits. Do not commit, push, or update draft PR #63 before explicit
-H2 approval.
+Cập nhật bản ghi xác thực với số lượng chính xác, đánh giá bảo mật RED/GREEN, FE09, tính chẵn lẻ của
+tệp đã thay đổi, bằng chứng thời gian chạy và giới hạn phân tầng/SQL còn lại. Không cam kết, đẩy
+hoặc cập nhật dự thảo PR #63 trước khi phê duyệt H2 rõ ràng.
 
 ---
 
-### Task 12: Remediate H3 Governance-Evidence Drift
+### Nhiệm vụ 12: Khắc phục sai lệch bằng chứng quản trị H3
 
-**Task ID:** `GOV-H3-001`
+**ID nhiệm vụ:** `GOV-H3-001`
 
-**Files:**
-- Modify:
+**Tệp:**
+- Sửa đổi:
   `docs/superpowers/specs/2026-07-27-fe07-fe10-fe12-business-rule-alignment-design.md`
-- Modify:
+- Sửa đổi:
   `docs/superpowers/plans/2026-07-27-fe07-fe10-fe12-business-rule-alignment.md`
-- Modify current-state fields in the affected FE07, FE08, FE10, and FE12
-  `SPEC.md`, `PLAN.md`, and `TASKS.md` files.
-- Modify:
+- Sửa đổi các trường trạng thái hiện tại trong FE07, FE08, FE10 và FE12 bị ảnh hưởng
+  Các tệp `SPEC.md`, `PLAN.md` và `TASKS.md`.
+- Sửa đổi:
   `.sdd/reviews/fe07-fe10-fe12-business-rule-alignment-validation-2026-07-27.md`
-- Do not modify production code, tests, schema, dependencies, API contracts,
-  or historical pre-H2 process instructions.
+- Không sửa đổi mã sản xuất, kiểm tra, lược đồ, phụ thuộc, hợp đồng API,
+  hoặc hướng dẫn quy trình trước H2 trước đây.
 
-**Interfaces:**
-- Consumes: explicit H2 approval on 2026-07-27, merge commit `f346ae0`, draft
-  PR #63, and successful CI run `30244750250`.
-- Produces: truthful current-state H2/H3 evidence and a fresh uncommitted
-  documentation-only H2 package.
+**Giao diện:**
+- Tiêu thụ: phê duyệt H2 rõ ràng vào ngày 27-07-2026, cam kết hợp nhất `f346ae0`, bản nháp
+  PR #63 và CI chạy `30244750250` thành công.
+- Tạo ra: bằng chứng H2/H3 ở trạng thái hiện tại trung thực và một bản báo cáo mới có sẵn
+  gói H2 chỉ có tài liệu.
 
-- [x] **Step 1: Record the first H3 review**
+- [x] **Bước 1: Ghi lại đánh giá H3 đầu tiên**
 
-Record that Standards and Spec review found no product-code or business-rule
-defect. Preserve the FE10 idempotent replay because `AC-FE10-008` and
-`EC-FE10-008` require the duplicate `200` path and it performs no render,
-new persistence, or provider call.
+Ghi lại rằng quá trình xem xét Tiêu chuẩn và đặc tả không tìm thấy lỗi nào về mã sản phẩm hoặc quy
+tắc nghiệp vụ. Giữ nguyên chức năng phát lại bình thường của FE10 vì `AC-FE10-008` và `EC-FE10-008`
+yêu cầu đường dẫn `200` trùng lặp và nó không thực hiện kết xuất, tính bền vững mới hoặc lệnh gọi
+nhà cung cấp.
 
-- [x] **Step 2: Synchronize current-state governance wording**
+- [x] **Bước 2: Đồng bộ hóa từ ngữ quản trị trạng thái hiện tại**
 
-Update the validation record and affected feature status fields so they state:
+Cập nhật bản ghi xác thực và các trường trạng thái chức năng bị ảnh hưởng để chúng nêu rõ:
 
 ```text
-- latest 8d0059b H2 addendum approved;
-- reviewed merge committed/pushed as f346ae0;
-- PR #63 CI run 30244750250 passed;
-- first H3 review found only stale governance wording;
-- documentation remediation is uncommitted pending fresh H2;
-- repeated H3 remains mandatory before merge.
+- phụ lục H2 mới nhất tại 8d0059b đã được phê duyệt;
+- thay đổi hợp nhất đã rà soát được ghi nhận/đẩy lên tại f346ae0;
+- lượt CI 30244750250 của PR #63 đã đạt;
+- lần rà soát H3 đầu tiên chỉ phát hiện cách diễn đạt quản trị đã cũ;
+- phần khắc phục tài liệu chưa được ghi nhận và đang chờ H2 mới;
+- vẫn bắt buộc lặp lại H3 trước khi hợp nhất.
 ```
 
-Do not rewrite historical instructions that correctly describe how work was
-held before the original H2 gate.
+Không viết lại các hướng dẫn lịch sử mô tả chính xác cách thức công việc được thực hiện trước cổng H2 ban đầu.
 
-- [x] **Step 3: Verify the documentation-only scope**
+- [x] **Bước 3: Xác minh phạm vi chỉ dành cho tài liệu**
 
-Confirm the remediation diff contains no production, test, schema, dependency,
-or API file. Confirm the prior 40-file product PR diff remains otherwise
-unchanged.
+Xác nhận sự khác biệt về cách khắc phục không chứa tệp sản xuất, kiểm tra, lược đồ, phụ thuộc hoặc
+API. Xác nhận chênh lệch PR của sản phẩm 40 tệp trước đó vẫn không thay đổi.
 
-- [x] **Step 4: Run the bounded validation gate**
+- [x] **Bước 4: Chạy cổng xác thực giới hạn**
 
-Run:
+Chạy:
 
 ```powershell
 npm.cmd run test:traceability-state
@@ -1324,77 +1299,74 @@ git diff --check
 git diff --cached --check
 ```
 
-Scan the current-state sections for stale H2-pending, uncommitted-merge, or
-awaiting-PLAN/TASKS wording. Historical task instructions may remain.
+Quét các phần trạng thái hiện tại để tìm từ ngữ H2 cũ đang chờ xử lý, hợp nhất không được cam kết
+hoặc đang chờ-PLAN/TASKS. Hướng dẫn nhiệm vụ lịch sử có thể vẫn còn.
 
-- [x] **Step 5: Prepare fresh H2; do not commit**
+- [x] **Bước 5: Chuẩn bị H2 tươi; không cam kết**
 
-Update the validation record with exact changed files and observed command
-results. Present the complete uncommitted documentation diff for fresh H2.
-Do not stage, commit, push, update PR #63, mark it ready, or merge before Nhat
-explicitly approves this remediation H2 addendum.
+Cập nhật bản ghi xác thực với các tệp đã thay đổi chính xác và kết quả lệnh được quan sát. Trình bày
+đầy đủ tài liệu khác biệt có sẵn cho H2 mới. Không thực hiện, cam kết, đẩy, cập nhật PR #63, đánh
+dấu nó là sẵn sàng hoặc hợp nhất trước khi Nhất phê duyệt rõ ràng phụ lục H2 khắc phục này.
 
 ---
 
-### Task 13: Freeze H2 Evidence Without Self-Reference
+### Nhiệm vụ 13: Đóng băng bằng chứng H2 mà không tự tham khảo
 
-**Task ID:** `GOV-H3-002`
+**ID nhiệm vụ:** `GOV-H3-002`
 
-**Files:**
-- Modify:
+**Tệp:**
+- Sửa đổi:
   `.sdd/reviews/fe07-fe10-fe12-business-rule-alignment-validation-2026-07-27.md`
-- Modify:
+- Sửa đổi:
   `docs/superpowers/specs/2026-07-27-fe07-fe10-fe12-business-rule-alignment-design.md`
-- Modify:
+- Sửa đổi:
   `docs/superpowers/plans/2026-07-27-fe07-fe10-fe12-business-rule-alignment.md`
-- Do not modify feature behavior, SPEC requirements, production code, tests,
-  schema, dependencies, or API contracts.
+- Không sửa đổi hành vi chức năng, yêu cầu SPEC, mã sản xuất, kiểm tra,
+  lược đồ, phần phụ thuộc hoặc hợp đồng API.
 
-**Interfaces:**
-- Consumes: Task 12 H2 approval, commit `2d0ef78`, CI run `30246892241`, and
-  the repeated H3 Standards P2 finding.
-- Produces: immutable checked-in H2 snapshots plus a non-self-referential
-  publication-evidence boundary.
+**Giao diện:**
+- Tiêu thụ: Phê duyệt nhiệm vụ 12 H2, cam kết `2d0ef78`, CI chạy `30246892241` và
+  phát hiện P2 theo Tiêu chuẩn H3 được lặp lại.
+- Tạo ra: ảnh chụp nhanh H2 đã đăng ký bất biến cộng với ảnh chụp nhanh không tự tham chiếu
+  ranh giới công bố-bằng chứng.
 
-- [x] **Step 1: Record the repeated H3 result**
+- [x] **Bước 1: Ghi lại kết quả H3 lặp lại**
 
-Record that Spec/business review passed and Standards found only the
-self-referential current-state wording.
+Ghi lại rằng đánh giá đặc tả/doanh nghiệp đã được thông qua và Tiêu chuẩn chỉ tìm thấy từ ngữ ở
+trạng thái hiện tại tự tham chiếu.
 
-- [x] **Step 2: Define the frozen-evidence invariant**
+- [x] **Bước 2: Xác định bất biến bằng chứng cố định**
 
-Checked-in H2 evidence records review-time facts. PR #63 records later H2,
-commit, updated CI, and repeated H3 facts; final closeout records merge and
-post-merge CI. Do not place a future commit SHA inside its own pre-commit
-snapshot.
+Bằng chứng H2 đã đăng ký ghi lại sự thật về thời gian xem xét. PR #63 ghi lại H2 sau, cam kết, CI
+cập nhật và các sự kiện H3 lặp lại; bản ghi khóa sổ cuối cùng hợp nhất và CI sau hợp nhất. Không đặt
+SHA cam kết trong tương lai bên trong ảnh chụp nhanh trước cam kết của chính nó.
 
-- [x] **Step 3: Apply the bounded three-file remediation**
+- [x] **Bước 3: Áp dụng biện pháp khắc phục ba tệp bị chặn**
 
-Relabel current-state wording as frozen H2 package evidence. Preserve all
-historical process instructions and product evidence.
+Dán nhãn lại từ ngữ ở trạng thái hiện tại dưới dạng bằng chứng gói H2 bị đóng băng. Lưu giữ tất cả
+các hướng dẫn quy trình lịch sử và bằng chứng sản phẩm.
 
-- [x] **Step 4: Run bounded validation and freeze H2**
+- [x] **Bước 4: Chạy xác thực giới hạn và đóng băng H2**
 
-Confirm exactly three Markdown files changed, no stale live-state label remains,
-traceability/deployment checks pass, and diff hygiene passes. Present the
-uncommitted snapshot for H2. Record later approval and publication facts in PR
-#63 rather than adding another self-referential checked-in status field.
+Xác nhận chính xác ba tệp Markdown đã được thay đổi, không còn nhãn trạng thái hoạt động cũ, vượt
+qua kiểm tra truy vết/triển khai và vượt qua vệ sinh khác. Trình bày ảnh chụp nhanh có sẵn cho H2.
+Ghi lại các dữ kiện phê duyệt và xuất bản sau này trong PR #63 thay vì thêm trường trạng thái đăng
+ký tự tham khảo khác.
 
 ---
 
-## Plan Approval Gate
+## Cổng phê duyệt kế hoạch
 
-- [x] Nhat approves the original consolidated plan and FE07-T049..T052, FE08-T047,
-  FE10-S11, and FE12-N11.
-- [x] Only after approval, begin Task 1 with RED tests.
-- [x] Do not infer plan approval from the earlier SPEC approval.
-- [x] Nhat confirms one account has exactly one role and authorizes Task 8
-  reconciliation on 2026-07-27.
-- [x] Nhat authorizes Task 10 integration of upstream `e99daf5` on 2026-07-27.
-- [x] Nhat authorizes Task 11 integration of upstream `8d0059b` on 2026-07-27.
-- [x] Nhat authorizes Task 12 documentation-only H3 remediation on 2026-07-27.
-- [x] Nhat approved the Task 12 H2 addendum on 2026-07-27; commit `2d0ef78`
-  and CI run `30246892241` are recorded in PR #63.
-- Task 13 H2 approval must be recorded in PR #63 before publication; this file
-  intentionally does not contain a self-referential future-commit checkbox or
-  SHA.
+- [x] Nhật phê duyệt phương án hợp nhất ban đầu và FE07-T049..T052, FE08-T047,
+  FE10-S11 và FE12-N11.
+- [x] Chỉ sau khi được phê duyệt, hãy bắt đầu Nhiệm vụ 1 với các kiểm thử RED.
+- [x] Không suy luận phê duyệt kế hoạch từ phê duyệt SPEC trước đó.
+- [x] Nhật xác nhận 1 tài khoản có đúng 1 vai trò và ủy quyền Nhiệm vụ 8
+  hòa giải vào ngày 27-07-2026.
+- [x] Nhật ủy quyền cho Nhiệm vụ 10 tích hợp `e99daf5` ngược dòng vào ngày 27-07-2026.
+- [x] Nhật ủy quyền cho Nhiệm vụ 11 tích hợp `8d0059b` ngược dòng vào ngày 27-07-2026.
+- [x] Nhật ủy quyền khắc phục H3 chỉ trong tài liệu Nhiệm vụ 12 vào ngày 27-07-2026.
+- [x] Nhật phê duyệt phụ lục Nhiệm vụ 12 H2 vào ngày 27-07-2026; cam kết `2d0ef78`
+  và CI chạy `30246892241` được ghi trong PR #63.
+- Phê duyệt nhiệm vụ 13 H2 phải được ghi trong PR #63 trước khi xuất bản; tập tin này
+cố ý không chứa hộp kiểm cam kết tương lai tự tham chiếu hoặc SHA.

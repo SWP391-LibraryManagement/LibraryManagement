@@ -1,119 +1,126 @@
-# Week 13 Documentation And Azure Staging Implementation Plan
+# Tài liệu Tuần 13 và Kế hoạch triển khai theo giai đoạn Azure
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Do not create subagents or reviewers for this plan.
+> **Đối với nhân viên đại lý:** BẮT BUỘC SUB-SKILL: Sử dụng siêu năng lực:thực thi các kế hoạch để thực hiện kế hoạch này theo từng nhiệm vụ. Không tạo đại lý phụ hoặc người đánh giá cho kế hoạch này.
 
-**Goal:** Close the six-feature acceptance package, complete Week 13 documentation, and deploy a smoke-tested Azure staging environment using Azure Static Web Apps, App Service, and Azure SQL.
+**Mục tiêu:** Đóng gói chấp nhận sáu chức năng, hoàn thành tài liệu Tuần 13 và triển khai môi trường
+một đợt chạy thử Azure đã được kiểm thử nhanh bằng Azure Static Web Apps, App Service và
+Azure SQL.
 
-**Architecture:** Keep the React frontend and Express backend as separate deployables. Azure Static Web Apps serves the Vite build, Azure App Service runs the backend, and Azure SQL stores staging data. GitHub Actions performs quality gates and manual staging deployment; database schema execution remains an explicit operator action.
+**Kiến trúc:** Giữ giao diện người dùng React và máy chủ Express dưới dạng có thể triển khai riêng
+biệt. Azure Static Web Apps phục vụ bản dựng Vite, Azure App Service chạy phần máy chủ và Azure SQL
+lưu trữ dữ liệu môi trường tiền sản xuất. GitHub hành động thực hiện các cổng chất lượng và triển khai
+môi trường tiền sản xuất thủ công; việc thực thi lược đồ cơ sở dữ liệu vẫn là một hành động rõ ràng
+của người vận hành.
 
-**Tech Stack:** Node.js 22 in CI, React/Vite, Express, SQL Server/Azure SQL, Playwright, GitHub Actions, Azure Static Web Apps, Azure App Service, Azure SQL Database.
+**bộ công nghệ công nghệ:** Node.js 22 trong CI, React/Vite, Express, SQL Server/Azure SQL,
+Playwright, GitHub Hành động, Azure Cơ sở dữ liệu Static Web Apps, Azure App Service, Azure SQL.
 
-## Global Constraints
+## Ràng buộc toàn cầu
 
-- Complete Tasks 1-7 on `docs/week13-documentation-deployment`. Create
-  `docs/week13-staging-evidence` only after the implementation branch is merged. Do not use `codex`
-  in a branch name.
-- Preserve unrelated changes in the main worktree, especially `docs/testing/system-integration-demo-runbook.md`, `.superpowers/`, and `docs/briefing-thuyet-trinh-du-an-vi.docx`.
-- Do not add product features or change approved business rules.
-- Do not align the FE09 legacy frontend in this plan.
-- Never commit Azure credentials, database credentials, JWT secrets, deployment tokens, or `.env` values.
-- Start App Service on F1 Free. Stop and request approval before selecting B1 or any paid plan.
-- Create Azure SQL only after the Azure portal shows that the configuration is inside the free allowance or Azure for Students credit.
-- Keep Azure Static Web Apps on the Free plan.
-- Do not execute schema SQL automatically from CI.
-- Use only synthetic staging accounts and data.
-- Keep staging deployment manual through `workflow_dispatch` until the first deployment and smoke test pass.
-- Do not claim SMTP delivery when SMTP is not configured.
-- Use `apply_patch` for manual file edits and test-driven development for new executable scripts.
+- Hoàn thành nhiệm vụ 1-7 trên `docs/week13-documentation-deployment`. Tạo
+`docs/week13-staging-evidence` chỉ sau khi nhánh triển khai được hợp nhất. Không sử dụng `codex`
+trong tên nhánh.
+- Giữ nguyên những thay đổi không liên quan trong cây làm việc chính, đặc biệt là `docs/testing/system-integration-demo-runbook.md`, `.superpowers/` và `docs/briefing-thuyet-trinh-du-an-vi.docx`.
+- Không thêm chức năng sản phẩm hoặc thay đổi các quy tắc nghiệp vụ đã được phê duyệt.
+- Không căn chỉnh giao diện kế thừa FE09 trong kế hoạch này.
+- Không bao giờ cam kết thông tin xác thực Azure, thông tin xác thực cơ sở dữ liệu, bí mật JWT, mã thông báo triển khai hoặc giá trị `.env`.
+- Bắt đầu App Service trên F1 miễn phí. Dừng lại và yêu cầu phê duyệt trước khi chọn B1 hoặc bất kỳ gói trả phí nào.
+- Chỉ tạo Azure SQL sau khi Azure Portal xác nhận cấu hình nằm trong hạn mức miễn phí hoặc tín dụng Azure for Students.
+- Giữ Azure Static Web Apps ở gói miễn phí.
+- Không tự động thực thi lược đồ SQL từ CI.
+- Chỉ sử dụng các tài khoản và dữ liệu môi trường tiền sản xuất tổng hợp.
+- Giữ hướng dẫn triển khai môi trường tiền sản xuất thông qua `workflow_dispatch` cho đến khi vượt qua lần triển khai đầu tiên và kiểm thử nhanh.
+- Không yêu cầu phân phối SMTP khi SMTP không được định cấu hình.
+- Sử dụng `apply_patch` để chỉnh sửa tệp thủ công và phát triển theo hướng kiểm thử cho các tập lệnh thực thi mới.
 
 ---
 
-### Task 1: Close The Six-Feature Acceptance Package
+### Nhiệm vụ 1: Đóng gói chấp nhận sáu chức năng
 
-**Files:**
-- Create: `docs/release/week13-acceptance-record.md`
-- Modify: `.sdd/test-plan.md`
+**Tệp:**
+- Tạo: `docs/release/week13-acceptance-record.md`
+- Sửa đổi: `.sdd/test-plan.md`
 
-**Interfaces:**
-- Consumes: feature `SPEC.md`, `TASKS.md`, `TEST_PLAN.md`, Week 11/12 evidence, FE07/FE12 closeout records, and system integration evidence.
-- Produces: one release-level acceptance matrix used by the README, deployment evidence, and human staging review.
+**Giao diện:**
+- Tiêu thụ: chức năng `SPEC.md`, `TASKS.md`, `TEST_PLAN.md`, bằng chứng Tuần 11/12, bản ghi kết thúc FE07/FE12 và bằng chứng tích hợp hệ thống.
+- Tạo ra: một ma trận chấp nhận cấp độ phát hành được README sử dụng, bằng chứng triển khai và đánh giá giai đoạn của con người.
 
-- [ ] **Step 1: Record the current feature states without upgrading them**
+- [ ] **Bước 1: Ghi lại trạng thái chức năng hiện tại mà không cần nâng cấp chúng**
 
-Use these observed states:
+Sử dụng các trạng thái được quan sát sau:
 
-| Feature | Current task state | Week 13 acceptance state |
+| chức năng | Trạng thái nhiệm vụ hiện tại | Trạng thái chấp nhận tuần 13 |
 | --- | --- | --- |
-| FE02 Authentication | READY FOR REVIEW | READY FOR HUMAN ACCEPTANCE |
-| FE07 Borrowing | COMPLETE | HUMAN REVIEW ALREADY RECORDED; RECHECK ON STAGING |
-| FE08 Reservation | READY FOR REVIEW | READY FOR HUMAN ACCEPTANCE |
-| FE09 Fine server API | READY FOR REVIEW | READY FOR HUMAN ACCEPTANCE; LEGACY UI LIMITATION |
-| FE10 Notification | COMPLETE | READY FOR HUMAN ACCEPTANCE; INBOX UI LIMITATION |
-| FE12 Reporting | COMPLETE | HUMAN REVIEW ALREADY RECORDED; RECHECK ON STAGING |
+| Xác thực FE02 | SẴN SÀNG RÀ SOÁT | SẴN SÀNG NGHIỆM THU CỦA CON NGƯỜI |
+| Mượn sách FE07 | HOÀN THÀNH | ĐÃ GHI NHẬN RÀ SOÁT CỦA CON NGƯỜI; KIỂM TRA LẠI TRÊN MÔI TRƯỜNG TIỀN SẢN XUẤT |
+| Đặt chỗ FE08 | SẴN SÀNG RÀ SOÁT | SẴN SÀNG NGHIỆM THU CỦA CON NGƯỜI |
+| API máy chủ FE09 | SẴN SÀNG RÀ SOÁT | SẴN SÀNG NGHIỆM THU CỦA CON NGƯỜI; GIỚI HẠN GIAO DIỆN KẾ THỪA |
+| Thông báo FE10 | HOÀN THÀNH | SẴN SÀNG NGHIỆM THU CỦA CON NGƯỜI; GIỚI HẠN GIAO DIỆN HỘP THƯ |
+| Báo cáo FE12 | HOÀN THÀNH | ĐÃ GHI NHẬN RÀ SOÁT CỦA CON NGƯỜI; KIỂM TRA LẠI TRÊN MÔI TRƯỜNG TIỀN SẢN XUẤT |
 
-- [ ] **Step 2: Create the acceptance record**
+- [ ] **Bước 2: Tạo hồ sơ nghiệm thu**
 
-Create `docs/release/week13-acceptance-record.md` with these sections:
+Tạo `docs/release/week13-acceptance-record.md` với các phần sau:
 
 ```markdown
-# Week 13 Core Feature Acceptance Record
+# Bản ghi nghiệm thu chức năng cốt lõi Tuần 13
 
-Date: 2026-07-14
-Release candidate: Week 13 Azure staging
-Overall status: READY FOR HUMAN ACCEPTANCE
+Ngày: 2026-07-14
+Ứng viên phát hành: Môi trường tiền sản xuất Azure Tuần 13
+Trạng thái tổng thể: SẴN SÀNG NGHIỆM THU CỦA CON NGƯỜI
 
-## Evidence Rules
+## Quy tắc bằng chứng
 
-- L1 automated evidence does not replace L4 human acceptance.
-- Only observed results are marked PASS.
-- FE09 browser alignment and FE10 inbox UI remain explicit limitations.
+- Bằng chứng tự động L1 không thay thế nghiệm thu L4 của con người.
+- Chỉ kết quả đã quan sát mới được đánh dấu ĐẠT.
+- Việc căn chỉnh trình duyệt FE09 và giao diện hộp thư FE10 vẫn là các giới hạn rõ ràng.
 
-## Feature Matrix
+## Ma trận chức năng
 
-| Feature | Spec/Tasks | Automated evidence | Human evidence | Current decision |
+| Chức năng | Đặc tả/Nhiệm vụ | Bằng chứng tự động | Bằng chứng của con người | Quyết định hiện tại |
 | --- | --- | --- | --- | --- |
-| FE02 | `.sdd/specs/feat-auth/` | `authRoutes`, `authUtils`, security regression, full backend gate | Staging login/logout/reset review required | READY FOR HUMAN ACCEPTANCE |
-| FE07 | `.sdd/specs/feat-borrowing-management/` | FE07 tests, system integration, browser golden path | FE07 B7 review confirmed; staging recheck required | READY FOR STAGING RECHECK |
-| FE08 | `.sdd/specs/feat-reservation-management/` | reservation route/service and system integration evidence | Staging member/staff queue review required | READY FOR HUMAN ACCEPTANCE |
-| FE09 | `.sdd/specs/feat-fine-management/` | fine management tests and Playwright API handoff | Production API review required; legacy UI is not acceptance evidence | READY WITH UI LIMITATION |
-| FE10 | `.sdd/specs/feat-notification-management/` | notification safety tests and system integration evidence | Metadata/failure behavior review required; inbox UI is deferred | READY WITH UI LIMITATION |
-| FE12 | `.sdd/specs/feat-reporting-statistics/` | report tests and browser golden path | FE12 B7 review confirmed; staging recheck required | READY FOR STAGING RECHECK |
+| FE02 | `.sdd/specs/feat-auth/` | `authRoutes`, `authUtils`, hồi quy bảo mật, cổng máy chủ đầy đủ | Cần rà soát đăng nhập/đăng xuất/đặt lại trên môi trường tiền sản xuất | SẴN SÀNG NGHIỆM THU CỦA CON NGƯỜI |
+| FE07 | `.sdd/specs/feat-borrowing-management/` | Kiểm thử FE07, tích hợp hệ thống, luồng nghiệp vụ chuẩn của trình duyệt | Đã xác nhận rà soát B7 FE07; cần kiểm tra lại môi trường tiền sản xuất | SẴN SÀNG KIỂM TRA LẠI TIỀN SẢN XUẤT |
+| FE08 | `.sdd/specs/feat-reservation-management/` | Kiểm thử tuyến/dịch vụ đặt chỗ và bằng chứng tích hợp hệ thống | Cần rà soát hàng đợi Thành viên/nhân viên trên môi trường tiền sản xuất | SẴN SÀNG NGHIỆM THU CỦA CON NGƯỜI |
+| FE09 | `.sdd/specs/feat-fine-management/` | Kiểm thử quản lý khoản phạt và bàn giao API qua Playwright | Cần rà soát API phù hợp hợp đồng sản xuất; giao diện kế thừa không phải bằng chứng nghiệm thu | SẴN SÀNG VỚI GIỚI HẠN GIAO DIỆN |
+| FE10 | `.sdd/specs/feat-notification-management/` | Kiểm thử an toàn thông báo và bằng chứng tích hợp hệ thống | Cần rà soát siêu dữ liệu/hành vi lỗi; giao diện hộp thư được hoãn | SẴN SÀNG VỚI GIỚI HẠN GIAO DIỆN |
+| FE12 | `.sdd/specs/feat-reporting-statistics/` | Kiểm thử báo cáo và luồng nghiệp vụ chuẩn của trình duyệt | Đã xác nhận rà soát B7 FE12; cần kiểm tra lại môi trường tiền sản xuất | SẴN SÀNG KIỂM TRA LẠI TIỀN SẢN XUẤT |
 
-## Staging Human Checklist
+## Danh sách kiểm tra tiền sản xuất của con người
 
-- [ ] Member login and protected-route redirect are correct.
-- [ ] Member creates a borrow request using synthetic data.
-- [ ] Librarian approves and returns the item.
-- [ ] FE09 API calculates 14 overdue days as 70,000 VND and records PAID.
-- [ ] FE10 exposes safe metadata without sensitive body/token content.
-- [ ] FE12 displays the integrated activity without mutation controls.
-- [ ] Desktop and mobile views have no blocking overlap.
+- [ ] Thành viên đăng nhập và chuyển hướng tuyến được bảo vệ đúng.
+- [ ] Thành viên tạo yêu cầu mượn bằng dữ liệu tổng hợp.
+- [ ] Thủ thư phê duyệt và trả sách.
+- [ ] API FE09 tính 14 ngày quá hạn thành 70.000 VND và ghi trạng thái `PAID`.
+- [ ] FE10 hiển thị siêu dữ liệu an toàn, không có nội dung/mã thông báo nhạy cảm.
+- [ ] FE12 hiển thị hoạt động tích hợp mà không có điều khiển thay đổi dữ liệu.
+- [ ] Chế độ xem máy tính và di động không có phần chồng lấn gây cản trở.
 
-## Sign-Off
+## Xác nhận
 
-Reviewer:
-Date:
-Decision: READY FOR STAGING / CHANGES REQUIRED
-Notes:
+Người rà soát:
+Ngày:
+Quyết định: SẴN SÀNG TIỀN SẢN XUẤT / CẦN THAY ĐỔI
+Ghi chú:
 ```
 
-- [ ] **Step 3: Update the Week 10 milestone truthfully**
+- [ ] **Bước 3: Cập nhật trung thực cột mốc Tuần 10**
 
-Change `.sdd/test-plan.md` from:
+Thay đổi `.sdd/test-plan.md` từ:
 
 ```markdown
-| Week 10: Core features pass acceptance | Each implemented core feature has acceptance evidence mapped to `SPEC.md` | In progress (6 features implemented) |
+| Tuần 10: Chức năng cốt lõi đạt nghiệm thu | Mỗi chức năng cốt lõi đã triển khai có bằng chứng nghiệm thu ánh xạ tới `SPEC.md` | Đang thực hiện (đã triển khai 6 chức năng) |
 ```
 
-to:
+đến:
 
 ```markdown
-| Week 10: Core features pass acceptance | Each implemented core feature has acceptance evidence mapped to `SPEC.md` | Ready for human staging acceptance (6 features) |
+| Tuần 10: Chức năng cốt lõi đạt nghiệm thu | Mỗi chức năng cốt lõi đã triển khai có bằng chứng nghiệm thu ánh xạ tới `SPEC.md` | Sẵn sàng để con người nghiệm thu trên môi trường tiền sản xuất (6 chức năng) |
 ```
 
-- [ ] **Step 4: Verify references and diff**
+- [ ] **Bước 4: Xác minh tài liệu tham khảo và khác biệt**
 
-Run:
+Chạy:
 
 ```powershell
 $paths = @(
@@ -132,9 +139,9 @@ if ($missing) { throw "Missing acceptance references: $missing" }
 git diff --check
 ```
 
-Expected: no missing path and `git diff --check` exits 0.
+Dự kiến: không thiếu đường dẫn và `git diff --check` thoát 0.
 
-- [ ] **Step 5: Commit**
+- [ ] **Bước 5: Cam kết**
 
 ```powershell
 git add docs/release/week13-acceptance-record.md .sdd/test-plan.md
@@ -143,115 +150,112 @@ git commit -m "docs: prepare week 13 acceptance gate"
 
 ---
 
-### Task 2: Add The Technical Documentation Entry Points
+### Nhiệm vụ 2: Thêm điểm nhập tài liệu kỹ thuật
 
-**Files:**
-- Create: `README.md`
-- Create: `docs/architecture/system-architecture.md`
-- Modify: `backend/README.md`
+**Tệp:**
+- Tạo: `README.md`
+- Tạo: `docs/architecture/system-architecture.md`
+- Sửa đổi: `backend/README.md`
 
-**Interfaces:**
-- Consumes: `docs/architecture/feature-integration-map.md`, `backend/src/docs/openapi.yaml`, package scripts, and the Week 13 design.
-- Produces: the root navigation/documentation entry point used by developers, reviewers, and deployment operators.
+**Giao diện:**
+- Tiêu thụ: `docs/architecture/feature-integration-map.md`, `backend/src/docs/openapi.yaml`, tập lệnh gói và thiết kế Tuần 13.
+- Tạo ra: điểm nhập tài liệu/điều hướng gốc được các nhà phát triển, người đánh giá và người vận hành triển khai sử dụng.
 
-- [ ] **Step 1: Create the system architecture document**
+- [ ] **Bước 1: Tạo tài liệu kiến trúc hệ thống**
 
-Create `docs/architecture/system-architecture.md` with:
+Tạo `docs/architecture/system-architecture.md` với:
 
 ````markdown
-# System Architecture
+# Kiến trúc hệ thống
 
-## Runtime Overview
+## Tổng quan thời gian chạy
 
 ```mermaid
-flowchart LR
-  U[Guest / Member / Librarian / Admin] --> F[React + Vite]
-  F -->|HTTPS REST /api| B[Express API]
-  B -->|Encrypted TDS| D[(SQL Server / Azure SQL)]
-  B --> N[SMTP or mock notification provider]
-  B --> A[AuditLogs]
+sơ đồ LR U[Khách / Thành viên / Thủ thư / Quản trị viên] --> F[React + Vite] F -->|HTTPS REST /api|
+B[Express API] B -->|TDS được mã hóa| D[(SQL Server / Azure SQL)] B --> N[SMTP hoặc nhà cung cấp
+thông báo mô phỏng] B --> A[AuditLogs]
 ```
 
-## Trust Boundaries
+## Ranh giới tin cậy
 
-- Browser input is untrusted and is validated again by the backend.
-- Bearer authentication and role authorization are enforced by Express middleware and services.
-- SQL values use `mssql.Request.input`; code-owned allowlists select dynamic identifiers.
-- Secrets are environment/App Service settings and never browser build values.
-- Notification responses and persistence exclude sensitive reset/verification content.
+- Dữ liệu đầu vào từ trình duyệt không đáng tin cậy và phải được máy chủ xác thực lại.
+- Xác thực Bearer và phân quyền theo vai trò được thực thi bằng middleware và dịch vụ Express.
+- Giá trị SQL dùng `mssql.Request.input`; danh sách cho phép do mã nguồn sở hữu chọn các định danh động.
+- Bí mật được lưu trong biến môi trường/cài đặt App Service, không bao giờ nằm trong giá trị bản dựng trình duyệt.
+- Phản hồi và dữ liệu lưu của thông báo loại trừ nội dung đặt lại/xác minh nhạy cảm.
 
-## Module Ownership
+## Quyền sở hữu mô-đun
 
-Link FE02, FE07, FE08, FE09, FE10, and FE12 to their `.sdd/specs/feat-*/` folders and link the full integration map.
+Liên kết FE02, FE07, FE08, FE09, FE10 và FE12 tới các thư mục `.sdd/specs/feat-*/` tương ứng, đồng thời liên kết bản đồ tích hợp đầy đủ.
 
-## Local Topology
+## Cấu trúc liên kết cục bộ
 
-- Frontend: `http://localhost:5173`
-- Backend: `http://localhost:3000`
-- SQL Server: configured by `backend/.env`
+- Giao diện: `http://localhost:5173`
+- Máy chủ: `http://localhost:3000`
+- SQL Server: được cấu hình bằng `backend/.env`
 
-## Azure Staging Topology
+## Cấu trúc liên kết môi trường tiền sản xuất Azure
 
-- Azure Static Web Apps Free: frontend HTTPS endpoint.
-- Azure App Service F1: backend HTTPS endpoint.
-- Azure SQL Database: encrypted database endpoint.
-- GitHub `staging` Environment: deployment secrets and URL variables.
+- Azure Static Web Apps Free: điểm cuối HTTPS của giao diện.
+- Azure App Service F1: điểm cuối HTTPS của máy chủ.
+- Azure SQL Database: điểm cuối cơ sở dữ liệu được mã hóa.
+- Môi trường `staging` trên GitHub: bí mật triển khai và biến URL.
 
-## Reliability And Security Boundaries
+## Ranh giới độ tin cậy và bảo mật
 
-Document health checks, CORS allowlist, safe 5xx responses, no automatic schema mutation, and the accepted Week 12 risks.
+Ghi rõ kiểm tra tình trạng, danh sách CORS cho phép, phản hồi 5xx an toàn, nguyên tắc không tự động thay đổi lược đồ và các rủi ro Tuần 12 đã được chấp nhận.
 ````
 
-Keep the Mermaid fence valid by using a four-backtick outer fence while editing if needed.
+Giữ cho hàng rào Nàng tiên cá hợp lệ bằng cách sử dụng hàng rào bên ngoài bốn dấu gạch ngang trong
+khi chỉnh sửa nếu cần.
 
-- [ ] **Step 2: Create the root README**
+- [ ] **Bước 2: Tạo gốc README**
 
-Create `README.md` with these exact top-level sections:
+Tạo `README.md` với các phần cấp cao nhất chính xác sau:
 
 ```markdown
-# Library Management System
+# Hệ thống Quản lý Thư viện
 
-## Overview
-## Implemented Scope
-## Architecture
-## Technology Stack
-## Repository Structure
-## Prerequisites
-## Local Setup
-## Environment Configuration
-## Development Commands
-## Test And Quality Gates
-## API Documentation
-## Azure Staging
-## User Documentation
-## Current Limitations
-## Security Notes
-## Team Workflow
+## Tổng quan
+## Phạm vi đã triển khai
+## Kiến trúc
+## Bộ công nghệ
+## Cấu trúc kho mã nguồn
+## Điều kiện tiên quyết
+## Thiết lập cục bộ
+## Cấu hình môi trường
+## Lệnh phát triển
+## Cổng kiểm thử và chất lượng
+## Tài liệu API
+## Môi trường tiền sản xuất Azure
+## Tài liệu người dùng
+## Giới hạn hiện tại
+## Ghi chú bảo mật
+## Quy trình làm việc của nhóm
 ```
 
-Requirements for the content:
+Yêu cầu về nội dung:
 
-- State that FE02, FE07, FE08, FE09 server API, FE10, and FE12 are the completed production-aligned scope.
-- Do not claim FE09 legacy browser storage is production evidence.
-- Link `docs/architecture/system-architecture.md`, `docs/architecture/feature-integration-map.md`,
-  `backend/src/docs/openapi.yaml`, `docs/user-manual.md`,
-  `docs/deployment/azure-staging-guide.md`, `docs/release/week13-acceptance-record.md`, and
-  `docs/testing/system-integration-demo-runbook.md`.
-- Include commands already present in package files; do not invent commands before their task adds them.
-- Explain that Azure deployment is staging-only and manually dispatched.
+- Nêu rõ rằng máy chủ FE02, FE07, FE08, FE09 máy chủ API, FE10 và FE12 là phạm vi phù hợp với sản xuất đã hoàn thành.
+- Không khẳng định bộ nhớ trình duyệt cũ FE09 là bằng chứng sản xuất.
+- Liên kết `docs/architecture/system-architecture.md`, `docs/architecture/feature-integration-map.md`,
+`backend/src/docs/openapi.yaml`, `docs/user-manual.md`, `docs/deployment/azure-staging-guide.md`,
+`docs/release/week13-acceptance-record.md` và `docs/testing/system-integration-demo-runbook.md`.
+- Bao gồm các lệnh đã có trong tệp gói; không phát minh ra các lệnh trước khi nhiệm vụ của họ thêm chúng.
+- Giải thích rằng việc triển khai Azure chỉ được thực hiện theo giai đoạn và được gửi theo cách thủ công.
 
-- [ ] **Step 3: Link the backend README to the root documentation**
+- [ ] **Bước 3: Liên kết phần máy chủ README với tài liệu gốc**
 
-Add near the top of `backend/README.md`:
+Thêm gần đầu `backend/README.md`:
 
 ```markdown
-Project-level setup, architecture, quality gates, and Azure staging instructions live in the root
+Thiết lập cấp dự án, kiến trúc, cổng chất lượng và hướng dẫn môi trường tiền sản xuất Azure nằm trong thư mục gốc
 [`README.md`](../README.md).
 ```
 
-- [ ] **Step 4: Verify the documented commands exist**
+- [ ] **Bước 4: Xác minh các lệnh được ghi lại tồn tại**
 
-Run:
+Chạy:
 
 ```powershell
 $root = Get-Content package.json -Raw | ConvertFrom-Json
@@ -269,9 +273,9 @@ $frontend = Get-Content frontend/package.json -Raw | ConvertFrom-Json
 git diff --check
 ```
 
-Expected: all scripts exist and diff check exits 0.
+Dự kiến: tất cả các tập lệnh đều tồn tại và kiểm tra khác biệt sẽ thoát 0.
 
-- [ ] **Step 5: Commit**
+- [ ] **Bước 5: Cam kết**
 
 ```powershell
 git add README.md docs/architecture/system-architecture.md backend/README.md
@@ -280,21 +284,21 @@ git commit -m "docs: add project technical documentation"
 
 ---
 
-### Task 3: Add Safe Environment Templates And Azure Deployment Guide
+### Nhiệm vụ 3: Thêm mẫu môi trường an toàn và hướng dẫn triển khai Azure
 
-**Files:**
-- Modify: `.gitignore`
-- Create: `backend/.env.example`
-- Create: `frontend/.env.example`
-- Create: `docs/deployment/azure-staging-guide.md`
+**Tệp:**
+- Sửa đổi: `.gitignore`
+- Tạo: `backend/.env.example`
+- Tạo: `frontend/.env.example`
+- Tạo: `docs/deployment/azure-staging-guide.md`
 
-**Interfaces:**
-- Consumes: environment reads in `backend/src/config/db.js`, `backend/src/config/env.js`, `backend/src/app.js`, and frontend API modules.
-- Produces: the configuration contract used by local developers, Azure App Service, GitHub Actions, and smoke testing.
+**Giao diện:**
+- Tiêu thụ: môi trường đọc trong các mô-đun `backend/src/config/db.js`, `backend/src/config/env.js`, `backend/src/app.js` và giao diện người dùng API.
+- Sản xuất: hợp đồng cấu hình được sử dụng bởi các nhà phát triển địa phương, Azure App Service, GitHub hành động và kiểm thử nhanh.
 
-- [ ] **Step 1: Allow tracked example files while keeping real environments ignored**
+- [ ] **Bước 1: Cho phép các tệp mẫu được theo dõi trong khi vẫn bỏ qua môi trường thực**
 
-Immediately after `.env.*` in `.gitignore`, add:
+Ngay sau `.env.*` trong `.gitignore`, hãy thêm:
 
 ```gitignore
 !.env.example
@@ -302,9 +306,9 @@ Immediately after `.env.*` in `.gitignore`, add:
 !frontend/.env.example
 ```
 
-- [ ] **Step 2: Create the backend environment template**
+- [ ] **Bước 2: Tạo mẫu môi trường máy chủ**
 
-Create `backend/.env.example`:
+Tạo `backend/.env.example`:
 
 ```dotenv
 NODE_ENV=development
@@ -335,74 +339,74 @@ SMTP_PASSWORD=
 MAIL_FROM=
 ```
 
-- [ ] **Step 3: Create the frontend environment template**
+- [ ] **Bước 3: Tạo mẫu môi trường lối vào**
 
-Create `frontend/.env.example`:
+Tạo `frontend/.env.example`:
 
 ```dotenv
 VITE_API_BASE_URL=http://localhost:3000/api
 ```
 
-- [ ] **Step 4: Write the Azure staging guide**
+- [ ] **Bước 4: Viết hướng dẫn môi trường tiền sản xuất Azure**
 
-Create `docs/deployment/azure-staging-guide.md` with these sections and exact resource names:
+Tạo `docs/deployment/azure-staging-guide.md` với các phần này và tên tài nguyên chính xác:
 
 ```markdown
-# Azure Staging Deployment Guide
+# Hướng dẫn triển khai môi trường tiền sản xuất Azure
 
-## Cost Guardrails
-## Resource Names And Regions
-## Install And Sign In To Azure CLI
-## Create Resource Group And App Service F1
-## Create Azure Static Web Apps Free
-## Create Azure SQL Inside Student Credit
-## Configure Azure SQL Firewall
-## Prepare And Execute The Azure-Compatible Schema
-## Configure App Service Runtime Settings
-## Configure GitHub Environment Variables And Secrets
-## Run The First Manual Deployment
-## Run Smoke Tests
-## Rollback
-## Stop/Delete Resources
+## Hàng rào kiểm soát chi phí
+## Tên tài nguyên và khu vực
+## Cài đặt và đăng nhập Azure CLI
+## Tạo nhóm tài nguyên và App Service F1
+## Tạo Azure Static Web Apps Free
+## Tạo Azure SQL bằng tín dụng sinh viên
+## Cấu hình tường lửa Azure SQL
+## Chuẩn bị và thực thi lược đồ tương thích Azure
+## Cấu hình cài đặt thời gian chạy App Service
+## Cấu hình biến môi trường và bí mật GitHub
+## Chạy lần triển khai thủ công đầu tiên
+## Chạy kiểm thử nhanh
+## Hoàn tác
+## Dừng/xóa tài nguyên
 ```
 
-Use these names:
+Sử dụng những tên này:
 
 ```text
-Resource group: rg-library-staging
-App Service plan: plan-library-staging
-Backend web app: app-library-api-staging-nhat714
+Nhóm tài nguyên: rg-library-staging
+Gói App Service: plan-library-staging
+Ứng dụng web máy chủ: app-library-api-staging-nhat714
 Static Web App: swa-library-staging-nhat714
-SQL logical server: sql-library-staging-ea-nhat714
-Database: LibraryManagementStaging
-App Service region: malaysiawest
-SQL region: eastasia
-Static Web Apps region: eastasia
-SQL administrator username: libraryadmin
+Máy chủ logic SQL: sql-library-staging-ea-nhat714
+Cơ sở dữ liệu: LibraryManagementStaging
+Vùng App Service: malaysiawest
+Vùng SQL: eastasia
+Vùng Static Web Apps: eastasia
+Tên đăng nhập quản trị SQL: libraryadmin
 ```
 
-Document these GitHub `staging` Environment variables:
+Ghi lại các biến môi trường GitHub `staging` này:
 
 ```text
 AZURE_WEBAPP_NAME=app-library-api-staging-nhat714
 STAGING_API_URL=https://app-library-api-staging-nhat714.azurewebsites.net
 ```
 
-Create `STAGING_FRONTEND_URL` with the exact Static Web Apps URL displayed by Azure after resource
-creation. It is an operator-observed value and must not be guessed from the resource name.
+Tạo `STAGING_FRONTEND_URL` với Static Web Apps URL chính xác được hiển thị bởi Azure sau khi tạo tài
+nguyên. Đó là giá trị do người vận hành quan sát và không được đoán từ tên tài nguyên.
 
-Document these GitHub secrets:
+Ghi lại những bí mật GitHub này:
 
 ```text
 AZURE_WEBAPP_PUBLISH_PROFILE
 AZURE_STATIC_WEB_APPS_API_TOKEN
 ```
 
-Document that database credentials and `JWT_SECRET` live only in App Service Configuration.
+Ghi lại rằng thông tin xác thực cơ sở dữ liệu và `JWT_SECRET` chỉ tồn tại trong Cấu hình App Service.
 
-- [ ] **Step 5: Verify examples are tracked and real environments remain ignored**
+- [ ] **Bước 5: Xác minh các ví dụ được theo dõi và môi trường thực vẫn bị bỏ qua**
 
-Run:
+Chạy:
 
 ```powershell
 git check-ignore backend/.env frontend/.env
@@ -412,7 +416,7 @@ if ($LASTEXITCODE -eq 0) { throw 'Example env files must be trackable.' }
 git diff --check
 ```
 
-Then scan the examples for non-empty secret assignments:
+Sau đó quét các ví dụ để tìm các bài tập bí mật không trống:
 
 ```powershell
 $unsafe = Select-String -Path backend/.env.example,frontend/.env.example `
@@ -420,7 +424,7 @@ $unsafe = Select-String -Path backend/.env.example,frontend/.env.example `
 if ($unsafe) { throw 'Environment example contains a non-empty secret.' }
 ```
 
-- [ ] **Step 6: Commit**
+- [ ] **Bước 6: Cam kết**
 
 ```powershell
 git add .gitignore backend/.env.example frontend/.env.example docs/deployment/azure-staging-guide.md
@@ -429,21 +433,21 @@ git commit -m "docs: add azure staging configuration guide"
 
 ---
 
-### Task 4: Generate An Azure-Compatible Schema Without Duplicating The Source
+### Nhiệm vụ 4: Tạo lược đồ tương thích Azure mà không cần sao chép nguồn
 
-**Files:**
-- Create: `scripts/prepare-azure-schema.js`
-- Create: `tests/deployment/azureSchema.test.js`
-- Modify: `package.json`
-- Modify: `README.md`
+**Tệp:**
+- Tạo: `scripts/prepare-azure-schema.js`
+- Tạo: `tests/deployment/azureSchema.test.js`
+- Sửa đổi: `package.json`
+- Sửa đổi: `README.md`
 
-**Interfaces:**
-- Consumes: canonical `database/Librarymanagement.sql`.
-- Produces: `transformSchema(source: string): string` and generated ignored file `tmp/azure/LibraryManagementStaging.sql`.
+**Giao diện:**
+- Tiêu thụ: `database/Librarymanagement.sql` chuẩn.
+- Tạo: `transformSchema(source: string): string` và tạo tệp `tmp/azure/LibraryManagementStaging.sql` bị bỏ qua.
 
-- [ ] **Step 1: Write the failing schema transformation tests**
+- [ ] **Bước 1: Viết các kiểm thử chuyển đổi lược đồ không thành công**
 
-Create `tests/deployment/azureSchema.test.js`:
+Tạo `tests/deployment/azureSchema.test.js`:
 
 ```javascript
 const test = require('node:test');
@@ -493,19 +497,19 @@ GO
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify RED**
+- [ ] **Bước 2: Chạy kiểm thử để xác minh RED**
 
-Run:
+Chạy:
 
 ```powershell
 node --test tests/deployment/azureSchema.test.js
 ```
 
-Expected: FAIL because `scripts/prepare-azure-schema.js` does not exist.
+Dự kiến: THẤT BẠI vì `scripts/prepare-azure-schema.js` không tồn tại.
 
-- [ ] **Step 3: Implement the schema transformer**
+- [ ] **Bước 3: Triển khai trình biến đổi lược đồ**
 
-Create `scripts/prepare-azure-schema.js`:
+Tạo `scripts/prepare-azure-schema.js`:
 
 ```javascript
 const fs = require('node:fs');
@@ -557,21 +561,21 @@ module.exports = {
 };
 ```
 
-- [ ] **Step 4: Add root scripts**
+- [ ] **Bước 4: Thêm tập lệnh gốc**
 
-Add to `package.json`:
+Thêm vào `package.json`:
 
 ```json
 "schema:azure:prepare": "node scripts/prepare-azure-schema.js",
 "test:deployment": "node --test tests/deployment/*.test.js"
 ```
 
-Add `npm.cmd run schema:azure:prepare` and `npm.cmd run test:deployment` to the root README command
-list after the scripts exist.
+Thêm `npm.cmd run schema:azure:prepare` và `npm.cmd run test:deployment` vào danh sách lệnh README
+gốc sau khi tập lệnh tồn tại.
 
-- [ ] **Step 5: Verify GREEN and generated output**
+- [ ] **Bước 5: Xác minh GREEN và đầu ra được tạo**
 
-Run:
+Chạy:
 
 ```powershell
 npm.cmd run test:deployment
@@ -581,9 +585,9 @@ if ($LASTEXITCODE -eq 0) { throw 'Generated Azure schema still contains database
 git check-ignore tmp/azure/LibraryManagementStaging.sql
 ```
 
-Expected: tests pass, no forbidden statement is found, and the generated file is ignored.
+Dự kiến: các kiểm thử đã vượt qua, không tìm thấy câu lệnh cấm nào và tệp được tạo sẽ bị bỏ qua.
 
-- [ ] **Step 6: Commit**
+- [ ] **Bước 6: Cam kết**
 
 ```powershell
 git add package.json scripts/prepare-azure-schema.js tests/deployment/azureSchema.test.js
@@ -592,21 +596,21 @@ git commit -m "chore: add azure schema preparation"
 
 ---
 
-### Task 5: Add A Read-Only Staging Smoke Test
+### Nhiệm vụ 5: Thêm kiểm thử nhanh theo giai đoạn chỉ đọc
 
-**Files:**
-- Create: `scripts/smoke-staging.js`
-- Create: `tests/deployment/smokeStaging.test.js`
-- Modify: `package.json`
-- Modify: `README.md`
+**Tệp:**
+- Tạo: `scripts/smoke-staging.js`
+- Tạo: `tests/deployment/smokeStaging.test.js`
+- Sửa đổi: `package.json`
+- Sửa đổi: `README.md`
 
-**Interfaces:**
-- Consumes: `STAGING_FRONTEND_URL`, `STAGING_API_URL`, and Fetch-compatible HTTP responses.
-- Produces: `runStagingSmoke(options): Promise<object>` and CLI command `npm run smoke:staging`.
+**Giao diện:**
+- Tiêu thụ: `STAGING_FRONTEND_URL`, `STAGING_API_URL` và phản hồi HTTP tương thích với tìm nạp.
+- Tạo ra: `runStagingSmoke(options): Promise<object>` và CLI lệnh `npm run smoke:staging`.
 
-- [ ] **Step 1: Write failing smoke tests**
+- [ ] **Bước 1: Viết các bài kiểm thử nhanh thất bại**
 
-Create `tests/deployment/smokeStaging.test.js` with a local HTTP server:
+Tạo `tests/deployment/smokeStaging.test.js` bằng máy chủ HTTP cục bộ:
 
 ```javascript
 const http = require('node:http');
@@ -686,17 +690,17 @@ test('fails when a protected endpoint accepts an anonymous request', async () =>
 });
 ```
 
-- [ ] **Step 2: Run tests to verify RED**
+- [ ] **Bước 2: Chạy kiểm thử để xác minh RED**
 
 ```powershell
 npm.cmd run test:deployment
 ```
 
-Expected: FAIL because `scripts/smoke-staging.js` does not exist.
+Dự kiến: THẤT BẠI vì `scripts/smoke-staging.js` không tồn tại.
 
-- [ ] **Step 3: Implement the smoke runner**
+- [ ] **Bước 3: Tạo kiểm thử nhanh**
 
-Create `scripts/smoke-staging.js`:
+Tạo `scripts/smoke-staging.js`:
 
 ```javascript
 const DEFAULT_TIMEOUT_MS = 15000;
@@ -781,25 +785,25 @@ if (require.main === module) {
 module.exports = { runStagingSmoke };
 ```
 
-- [ ] **Step 4: Add the CLI script**
+- [ ] **Bước 4: Thêm tập lệnh CLI**
 
-Add to root `package.json`:
+Thêm vào root `package.json`:
 
 ```json
 "smoke:staging": "node scripts/smoke-staging.js"
 ```
 
-Add `npm.cmd run smoke:staging` to the Azure staging command section in the root README.
+Thêm `npm.cmd run smoke:staging` vào phần lệnh Môi trường tiền sản xuất Azure trong thư mục gốc README.
 
-- [ ] **Step 5: Verify GREEN**
+- [ ] **Bước 5: Xác minh GREEN**
 
 ```powershell
 npm.cmd run test:deployment
 ```
 
-Expected: all deployment tests pass.
+Dự kiến: tất cả các kiểm thử triển khai đều vượt qua.
 
-- [ ] **Step 6: Commit**
+- [ ] **Bước 6: Cam kết**
 
 ```powershell
 git add package.json scripts/smoke-staging.js tests/deployment/smokeStaging.test.js
@@ -808,52 +812,53 @@ git commit -m "test: add staging smoke checks"
 
 ---
 
-### Task 6: Create The User Manual And Synthetic Screenshots
+### Nhiệm vụ 6: Tạo hướng dẫn sử dụng và ảnh chụp màn hình tổng hợp
 
-**Files:**
-- Modify: `tests/e2e/system-golden-path.spec.js`
-- Create: `scripts/promote-doc-screenshots.js`
-- Create: `docs/user-manual.md`
-- Create generated images under: `docs/assets/user-manual/`
-- Modify: `package.json`
-- Modify: `README.md`
+**Tệp:**
+- Sửa đổi: `tests/e2e/system-golden-path.spec.js`
+- Tạo: `scripts/promote-doc-screenshots.js`
+- Tạo: `docs/user-manual.md`
+- Tạo hình ảnh được tạo theo: `docs/assets/user-manual/`
+- Sửa đổi: `package.json`
+- Sửa đổi: `README.md`
 
-**Interfaces:**
-- Consumes: deterministic Playwright actors and the existing browser golden path.
-- Produces: four synthetic screenshots and a role-based user manual.
+**Giao diện:**
+- Tiêu thụ: các tác nhân Playwright mang tính quyết định và luồng nghiệp vụ chuẩn của trình duyệt hiện có.
+- Tạo ra: bốn ảnh chụp màn hình tổng hợp và hướng dẫn sử dụng dựa trên vai trò.
 
-- [ ] **Step 1: Add deterministic screenshot capture points**
+- [ ] **Bước 1: Thêm điểm chụp ảnh màn hình xác định**
 
-In `tests/e2e/system-golden-path.spec.js`, keep existing assertions and add these screenshots:
+Trong `tests/e2e/system-golden-path.spec.js`, giữ nguyên các xác nhận hiện có và thêm các ảnh chụp
+màn hình sau:
 
 ```javascript
 await page.goto(`${FRONTEND_URL}/login`);
 await page.screenshot({ path: 'output/playwright/manual-login.png', fullPage: true });
 ```
 
-Add after the member request success assertion:
+Thêm sau khi xác nhận thành công yêu cầu thành viên:
 
 ```javascript
 await page.screenshot({ path: 'output/playwright/manual-member-borrow-request.png', fullPage: true });
 ```
 
-Add after librarian approval succeeds:
+Thêm sau khi thủ thư phê duyệt thành công:
 
 ```javascript
 await page.screenshot({ path: 'output/playwright/manual-librarian-approval.png', fullPage: true });
 ```
 
-Rename/copy the existing report screenshot source as:
+Đổi tên/sao chép nguồn ảnh chụp màn hình báo cáo hiện có thành:
 
 ```javascript
 await page.screenshot({ path: 'output/playwright/manual-borrowing-report.png', fullPage: true });
 ```
 
-Do not remove the mobile overflow assertion.
+Không xóa xác nhận tràn thiết bị di động.
 
-- [ ] **Step 2: Add the screenshot promotion script**
+- [ ] **Bước 2: Thêm tập lệnh quảng cáo ảnh chụp màn hình**
 
-Create `scripts/promote-doc-screenshots.js`:
+Tạo `scripts/promote-doc-screenshots.js`:
 
 ```javascript
 const fs = require('node:fs');
@@ -877,63 +882,64 @@ for (const name of names) {
 console.log(`Promoted ${names.length} user-manual screenshots.`);
 ```
 
-- [ ] **Step 3: Add the screenshot command**
+- [ ] **Bước 3: Thêm lệnh chụp màn hình**
 
-Add to root `package.json`:
+Thêm vào root `package.json`:
 
 ```json
 "docs:screenshots": "playwright test tests/e2e/system-golden-path.spec.js --project=chromium && node scripts/promote-doc-screenshots.js"
 ```
 
-Add `npm.cmd run docs:screenshots` to the documentation command list in the root README.
+Thêm `npm.cmd run docs:screenshots` vào danh sách lệnh tài liệu trong thư mục gốc README.
 
-- [ ] **Step 4: Run the browser flow and generate images**
+- [ ] **Bước 4: Chạy luồng trình duyệt và tạo hình ảnh**
 
 ```powershell
 npm.cmd run docs:screenshots
 ```
 
-Expected: Playwright 1/1 passes and four PNG files appear in `docs/assets/user-manual/`.
+Dự kiến: Playwright đạt 1/1 và bốn tệp PNG xuất hiện trong `docs/assets/user-manual/`.
 
-- [ ] **Step 5: Inspect every screenshot**
+- [ ] **Bước 5: Kiểm tra mọi ảnh chụp màn hình**
 
-Use the local image viewer on each PNG. Confirm:
+Sử dụng trình xem hình ảnh cục bộ trên mỗi PNG. Xác nhận:
 
-- only synthetic `example.test` data appears;
-- no password, token, notification body, `.env`, or connection string appears;
-- no modal, text, or navigation element overlaps incoherently;
-- the report screenshot shows the real-backend notice and integrated KPI.
+- chỉ xuất hiện dữ liệu `example.test` tổng hợp;
+- không xuất hiện mật khẩu, mã thông báo, nội dung thông báo, `.env` hoặc chuỗi kết nối;
+- không có phần tử phương thức, văn bản hoặc điều hướng nào chồng chéo nhau một cách không mạch lạc;
+- ảnh chụp màn hình báo cáo hiển thị thông báo máy chủ thực và KPI được tích hợp.
 
-- [ ] **Step 6: Write the user manual**
+- [ ] **Bước 6: Viết hướng dẫn sử dụng**
 
-Create `docs/user-manual.md` with:
+Tạo `docs/user-manual.md` với:
 
 ```markdown
-# Library Management System User Manual
+# Hướng dẫn sử dụng Hệ thống Quản lý Thư viện
 
-## Supported Roles
-## Sign In And Sign Out
-![Login](assets/user-manual/manual-login.png)
-## Member: Create A Borrow Request
-![Member borrow request](assets/user-manual/manual-member-borrow-request.png)
-## Member: View Borrowing History
-## Member: Manage Reservations
-## Librarian: Approve Borrow Requests
-![Librarian approval](assets/user-manual/manual-librarian-approval.png)
-## Librarian: Process Returns
-## Librarian/Admin: Fine API Boundary
-## Librarian/Admin: View Reports
-![Borrowing report](assets/user-manual/manual-borrowing-report.png)
-## Admin: User And Role Management
-## Common Errors And Recovery
-## Security And Privacy Notes
-## Known Limitations
+## Vai trò được hỗ trợ
+## Đăng nhập và đăng xuất
+![Đăng nhập](assets/user-manual/manual-login.png)
+## Thành viên: Tạo yêu cầu mượn
+![Yêu cầu mượn của thành viên](assets/user-manual/manual-member-borrow-request.png)
+## Thành viên: Xem lịch sử mượn
+## Thành viên: Quản lý đặt chỗ
+## Thủ thư: Phê duyệt yêu cầu mượn
+![Thư viện phê duyệt](assets/user-manual/manual-librarian-approval.png)
+## Thủ thư: Xử lý trả sách
+## Thủ thư/Quản trị viên: Ranh giới API khoản phạt
+## Thủ thư/Quản trị viên: Xem báo cáo
+![Báo cáo vay](assets/user-manual/manual-borrowing-report.png)
+## Quản trị viên: Quản lý người dùng và vai trò
+## Lỗi thường gặp và cách khôi phục
+## Ghi chú bảo mật và quyền riêng tư
+## Giới hạn đã biết
 ```
 
-State explicitly that FE09 legacy browser rows are not proof of Azure SQL persistence and FE10 has no
-completed inbox UI acceptance. Reference the production-aligned API and staging evidence instead.
+Tuyên bố rõ ràng rằng các hàng trình duyệt cũ của FE09 không phải là bằng chứng về tính bền bỉ của
+Azure SQL và FE10 chưa hoàn tất việc chấp nhận giao diện người dùng hộp thư đến. Thay vào đó, hãy
+tham khảo API phù hợp với quá trình sản xuất và bằng chứng môi trường tiền sản xuất.
 
-- [ ] **Step 7: Re-run E2E and verify image paths**
+- [ ] **Bước 7: Chạy lại E2E và xác minh đường dẫn hình ảnh**
 
 ```powershell
 npm.cmd run test:e2e
@@ -948,7 +954,7 @@ if ($missing) { throw "Missing manual images: $missing" }
 git diff --check
 ```
 
-- [ ] **Step 8: Commit**
+- [ ] **Bước 8: Cam kết**
 
 ```powershell
 git add package.json tests/e2e/system-golden-path.spec.js scripts/promote-doc-screenshots.js docs/user-manual.md docs/assets/user-manual
@@ -957,18 +963,18 @@ git commit -m "docs: add user manual and screenshots"
 
 ---
 
-### Task 7: Add The Manual Azure Staging Deployment Workflow
+### Nhiệm vụ 7: Thêm quy trình triển khai môi trường tiền sản xuất Azure thủ công
 
-**Files:**
-- Create: `.github/workflows/deploy-staging.yml`
+**Tệp:**
+- Tạo: `.github/workflows/deploy-staging.yml`
 
-**Interfaces:**
-- Consumes: GitHub `staging` variables/secrets, App Service build configuration, Static Web Apps token, and `npm run smoke:staging`.
-- Produces: a manually dispatched quality-gated deployment of backend and frontend followed by smoke testing.
+**Giao diện:**
+- Tiêu thụ: Biến/bí mật GitHub `staging`, cấu hình bản dựng App Service, mã thông báo Static Web Apps và `npm run smoke:staging`.
+- Sản xuất: triển khai phần máy chủ và giao diện người dùng có kiểm soát chất lượng được gửi thủ công, sau đó là kiểm thử nhanh.
 
-- [ ] **Step 1: Create the workflow**
+- [ ] **Bước 1: Tạo quy trình làm việc**
 
-Create `.github/workflows/deploy-staging.yml`:
+Tạo `.github/workflows/deploy-staging.yml`:
 
 ```yaml
 name: Deploy staging
@@ -1082,7 +1088,7 @@ jobs:
           STAGING_API_URL: ${{ vars.STAGING_API_URL }}
 ```
 
-- [ ] **Step 2: Validate YAML syntax with the existing backend dependency**
+- [ ] **Bước 2: Xác thực cú pháp YAML với phần phụ thuộc máy chủ hiện có**
 
 ```powershell
 npm.cmd --prefix backend ci
@@ -1091,9 +1097,9 @@ node -e "require('yamljs').load('../.github/workflows/deploy-staging.yml'); cons
 Pop-Location
 ```
 
-Expected: `workflow yaml ok`.
+Dự kiến: `workflow yaml ok`.
 
-- [ ] **Step 3: Verify required variable and secret names are consistent**
+- [ ] **Bước 3: Xác minh biến bắt buộc và tên bí mật có nhất quán**
 
 ```powershell
 $workflow = Get-Content .github/workflows/deploy-staging.yml -Raw
@@ -1106,7 +1112,7 @@ $workflow = Get-Content .github/workflows/deploy-staging.yml -Raw
 git diff --check
 ```
 
-- [ ] **Step 4: Run the local quality subset**
+- [ ] **Bước 4: Chạy tập hợp con chất lượng cục bộ**
 
 ```powershell
 npm.cmd run test:deployment
@@ -1114,9 +1120,9 @@ npm.cmd run trace:enforce
 npm.cmd --prefix frontend run build
 ```
 
-Expected: all commands exit 0.
+Dự kiến: tất cả các lệnh thoát 0.
 
-- [ ] **Step 5: Commit**
+- [ ] **Bước 5: Cam kết**
 
 ```powershell
 git add .github/workflows/deploy-staging.yml
@@ -1125,20 +1131,20 @@ git commit -m "ci: add azure staging deployment"
 
 ---
 
-### Task 8: Provision Azure, Deploy, Smoke-Test, And Record Evidence
+### Nhiệm vụ 8: Cung cấp Azure, Triển khai, Smoke-kiểm thử và Ghi lại bằng chứng
 
-**Files:**
-- Create after observed deployment: `.sdd/reviews/week13-staging-deployment-evidence-2026-07-14.md`
-- Modify after human review: `docs/release/week13-acceptance-record.md`
-- Modify after completion: `.sdd/test-plan.md`
+**Tệp:**
+- Tạo sau khi triển khai được quan sát: `.sdd/reviews/week13-staging-deployment-evidence-2026-07-14.md`
+- Sửa đổi sau khi con người đánh giá: `docs/release/week13-acceptance-record.md`
+- Sửa đổi sau khi hoàn thành: `.sdd/test-plan.md`
 
-**Interfaces:**
-- Consumes: committed Week 13 branch, Azure for Students subscription, GitHub repository settings, generated Azure schema, and deployment workflow.
-- Produces: public staging URLs, smoke evidence, human acceptance decision, and Week 13 completion record.
+**Giao diện:**
+- Đầu vào: nhánh Tuần 13 đã commit, subscription Azure for Students, cấu hình GitHub repository, schema Azure đã tạo và workflow triển khai.
+- Tạo ra: URL môi trường tiền sản xuất công khai, bằng chứng kiểm thử nhanh, quyết định chấp nhận của con người và hồ sơ hoàn thành Tuần 13.
 
-- [ ] **Step 1: Install Azure CLI and authenticate**
+- [ ] **Bước 1: Cài đặt Azure CLI và xác thực**
 
-Run from an interactive PowerShell terminal:
+Chạy từ thiết bị đầu cuối PowerShell tương tác:
 
 ```powershell
 winget install --exact --id Microsoft.AzureCLI
@@ -1147,10 +1153,10 @@ az account list --output table
 az account show --output table
 ```
 
-Expected: the active subscription is the Azure for Students subscription. Stop if a different
-subscription is active.
+Dự kiến: subscription đang hoạt động là `Azure for Students`. Dừng lại
+nếu đăng ký khác đang hoạt động.
 
-- [ ] **Step 2: Create the resource group and F1 App Service**
+- [ ] **Bước 2: Tạo nhóm tài nguyên và F1 App Service**
 
 ```powershell
 az group create --name rg-library-staging --location southeastasia
@@ -1171,9 +1177,9 @@ az webapp config set `
   --startup-file "npm start"
 ```
 
-Expected: every command exits 0 and the plan SKU is F1. Stop before retrying with a paid SKU.
+Dự kiến: mọi lệnh đều thoát 0 và kế hoạch SKU là F1. Dừng lại trước khi thử lại với SKU trả phí.
 
-- [ ] **Step 3: Configure non-secret App Service settings**
+- [ ] **Bước 3: Định cấu hình cài đặt App Service không bí mật**
 
 ```powershell
 az webapp config appsettings set `
@@ -1190,31 +1196,31 @@ az webapp config appsettings set `
     SCM_DO_BUILD_DURING_DEPLOYMENT=true
 ```
 
-Use Azure Portal App Service Configuration to enter `JWT_SECRET`, `DB_USER`, and `DB_PASSWORD`.
-Generate `JWT_SECRET` locally with:
+Sử dụng Cấu hình Azure Portal App Service để nhập `JWT_SECRET`, `DB_USER` và `DB_PASSWORD`. Tạo
+`JWT_SECRET` cục bộ với:
 
 ```powershell
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
-Do not paste the generated value into chat, source files, command history, or evidence.
+Không dán giá trị được tạo vào cuộc trò chuyện, tệp nguồn, lịch sử lệnh hoặc bằng chứng.
 
-- [ ] **Step 4: Create Azure SQL with an observed cost check**
+- [ ] **Bước 4: Tạo Azure SQL bằng cách kiểm tra chi phí được quan sát**
 
-In Azure Portal:
+Trong Cổng thông tin Azure:
 
-1. Create logical server `sql-library-staging-ea-nhat714` in `rg-library-staging`, East Asia. The
-   free limit API rejected Malaysia West during observed provisioning even though the portal
-   displayed the offer.
-2. Use administrator username `libraryadmin` and a newly generated password.
-3. Create database `LibraryManagementStaging` only after the cost page shows free allowance or
-   confirms coverage by Azure for Students credit.
-4. Record the displayed SKU and cost estimate in private operator notes and only the SKU in evidence.
-5. Do not enable a permanent all-Internet firewall rule.
+1. Tạo máy chủ logic `sql-library-staging-ea-nhat714` tại `rg-library-staging`, Đông Á. các
+giới hạn miễn phí API đã từ chối Malaysia West trong quá trình cung cấp được quan sát mặc dù cổng
+thông tin đã hiển thị ưu đãi.
+2. Sử dụng tên người dùng quản trị viên `libraryadmin` và mật khẩu mới được tạo.
+3. Chỉ tạo cơ sở dữ liệu `LibraryManagementStaging` sau khi trang chi phí hiển thị trợ cấp miễn phí hoặc
+   xác nhận phạm vi được bao phủ bởi tín dụng Azure for Students.
+4. Ghi lại SKU được hiển thị và ước tính chi phí vào ghi chú của nhà điều hành tư nhân và chỉ SKU làm bằng chứng.
+5. Không kích hoạt quy tắc tường lửa vĩnh viễn trên toàn Internet.
 
-- [ ] **Step 5: Restrict the SQL firewall**
+- [ ] **Bước 5: Hạn chế tường lửa SQL**
 
-Get App Service outbound addresses:
+Nhận địa chỉ gửi đi App Service:
 
 ```powershell
 az webapp show `
@@ -1224,19 +1230,19 @@ az webapp show `
   --output tsv
 ```
 
-Add those addresses and the current operator IP through Azure SQL Networking. Remove the operator IP
-after schema initialization if it is no longer needed.
+Thêm các địa chỉ đó và IP của nhà điều hành hiện tại thông qua Mạng Azure SQL. Xóa IP toán tử sau
+khi khởi tạo lược đồ nếu không còn cần thiết.
 
-- [ ] **Step 6: Create Static Web Apps Free and record its URL**
+- [ ] **Bước 6: Tạo Static Web Apps miễn phí và ghi lại URL của nó**
 
-In Azure Portal:
+Trong Cổng thông tin Azure:
 
-1. Create `swa-library-staging-nhat714` in `rg-library-staging` using the Free plan and East Asia.
-2. Select deployment source `Other` so the repository-owned workflow remains authoritative.
-3. Copy the generated `https://*.azurestaticapps.net` URL.
-4. Copy the deployment token without placing it in a file.
+1. Tạo `swa-library-staging-nhat714` trong `rg-library-staging` bằng gói Miễn phí và Đông Á.
+2. Chọn nguồn triển khai `Other` để quy trình làm việc thuộc sở hữu của kho lưu trữ vẫn có thẩm quyền.
+3. Sao chép `https://*.azurestaticapps.net` URL được tạo.
+4. Sao chép mã thông báo triển khai mà không đặt nó vào một tệp.
 
-Set App Service non-secret URL settings:
+Đặt cài đặt URL không bí mật của App Service:
 
 ```powershell
 $staticUrl = Read-Host 'Paste the exact Azure Static Web Apps URL'
@@ -1248,16 +1254,17 @@ az webapp config appsettings set `
     "FRONTEND_BASE_URL=$staticUrl"
 ```
 
-The URL is public, but it must still be copied accurately from the Azure resource output.
+URL là công khai nhưng vẫn phải được sao chép chính xác từ đầu ra tài nguyên Azure.
 
-- [ ] **Step 7: Prepare and initialize the Azure SQL schema**
+- [ ] **Bước 7: Chuẩn bị và khởi tạo lược đồ Azure SQL**
 
 ```powershell
 npm.cmd run schema:azure:prepare
 ```
 
-Review `tmp/azure/LibraryManagementStaging.sql`, confirm the connected database is
-`LibraryManagementStaging`, then execute it using Azure Query Editor, SSMS, or `sqlcmd`. Verify:
+Xem lại `tmp/azure/LibraryManagementStaging.sql`, xác nhận cơ sở dữ liệu được kết nối là
+`LibraryManagementStaging`, sau đó thực thi nó bằng Azure truy vấn Editor, SSMS hoặc `sqlcmd`. Xác
+minh:
 
 ```sql
 SELECT
@@ -1266,37 +1273,37 @@ SELECT
 FROM sys.tables;
 ```
 
-Expected: `DatabaseName = LibraryManagementStaging` and a non-zero table count. Do not record
-credentials in evidence.
+Dự kiến: `DatabaseName = LibraryManagementStaging` và số lượng bảng khác 0. Không ghi lại thông tin
+xác thực làm bằng chứng.
 
-- [ ] **Step 8: Configure the GitHub staging Environment**
+- [ ] **Bước 8: Định cấu hình Môi trường chạy thử GitHub**
 
-In GitHub repository Settings -> Environments -> New environment, create `staging`.
+Trong Cài đặt kho lưu trữ GitHub -> Môi trường -> Môi trường mới, tạo `staging`.
 
-Variables:
+Biến:
 
 ```text
 AZURE_WEBAPP_NAME=app-library-api-staging-nhat714
 STAGING_API_URL=https://app-library-api-staging-nhat714.azurewebsites.net
 ```
 
-Create `STAGING_FRONTEND_URL` with the exact observed Static Web Apps URL.
+Tạo `STAGING_FRONTEND_URL` với Static Web Apps URL được quan sát chính xác.
 
-Secrets:
+Bí mật:
 
 ```text
 AZURE_WEBAPP_PUBLISH_PROFILE
 AZURE_STATIC_WEB_APPS_API_TOKEN
 ```
 
-Set the first secret to the backend App Service publish profile and the second to the Static Web Apps
-deployment token. Do not paste either value into a local file.
+Đặt bí mật đầu tiên cho hồ sơ xuất bản App Service máy chủ và bí mật thứ hai cho mã thông báo triển
+khai Static Web Apps. Không dán một trong hai giá trị vào một tệp cục bộ.
 
-Enable required reviewer approval for the `staging` Environment if the repository plan supports it.
+Cho phép phê duyệt cần thiết của người đánh giá đối với Môi trường `staging` nếu gói kho lưu trữ hỗ trợ nó.
 
-- [ ] **Step 9: Review, merge, and push the Week 13 implementation branch**
+- [ ] **Bước 9: Xem xét, hợp nhất và đẩy nhánh triển khai Tuần 13**
 
-Run the full pre-merge gate on the feature branch:
+Chạy cổng hợp nhất trước đầy đủ trên nhánh chức năng:
 
 ```powershell
 npm.cmd --prefix backend test
@@ -1310,31 +1317,31 @@ npm.cmd run trace:enforce
 git diff --check
 ```
 
-The local `main` is currently ahead of `origin/main` with the completed Week 11/12 quality commits.
-Request explicit confirmation before the first push, then push `main` so the Week 13 branch has the
-correct remote base:
+`main` địa phương hiện đang dẫn trước `origin/main` với các cam kết chất lượng đã hoàn thành vào
+Tuần 12/11. Yêu cầu xác nhận rõ ràng trước lần đẩy đầu tiên, sau đó đẩy `main` để nhánh Tuần 13 có
+cơ sở từ xa chính xác:
 
 ```powershell
 git -C D:\SWP391\library-management-system push origin main
 ```
 
-Use `superpowers:finishing-a-development-branch` for the Week 13 implementation branch. A Pull Request
-is recommended because the staging workflow and documentation need human review. The workflow must be
-merged into pushed `main` before the first `workflow_dispatch` run.
+Sử dụng `superpowers:finishing-a-development-branch` cho nhánh triển khai Tuần 13. Nên sử dụng yêu
+cầu hợp nhất vì quy trình môi trường tiền sản xuất và tài liệu cần có sự xem xét của con người. Quy
+trình công việc phải được hợp nhất vào `main` được đẩy trước lần chạy `workflow_dispatch` đầu tiên.
 
-- [ ] **Step 10: Run the deployment workflow**
+- [ ] **Bước 10: Chạy quy trình triển khai**
 
-In GitHub Actions, choose `Deploy staging`, select `main`, and run the workflow. Approve the
-`staging` Environment deployment when prompted.
+Trong GitHub Actions, chọn `Deploy staging`, chọn `main` và chạy workflow. Phê duyệt
+triển khai Môi trường `staging` khi được nhắc.
 
-Expected:
+Dự kiến:
 
-- `quality-gate` PASS;
-- `deploy-backend` PASS;
-- `deploy-frontend` PASS;
-- `smoke-test` PASS.
+- ĐẠT `quality-gate`;
+- ĐẠT `deploy-backend`;
+- ĐẠT `deploy-frontend`;
+- ĐẠI DIỆN `smoke-test`.
 
-- [ ] **Step 11: Run an independent local smoke check**
+- [ ] **Bước 11: Tiến hành kiểm thử nhanh độc lập tại địa phương**
 
 ```powershell
 $env:STAGING_FRONTEND_URL = Read-Host 'Paste the exact Azure Static Web Apps URL'
@@ -1342,17 +1349,18 @@ $env:STAGING_API_URL='https://app-library-api-staging-nhat714.azurewebsites.net'
 npm.cmd run smoke:staging
 ```
 
-Expected: JSON with `status: "PASS"` and five checks.
+Dự kiến: JSON với `status: "PASS"` và năm lần kiểm tra.
 
-- [ ] **Step 12: Perform human staging acceptance**
+- [ ] **Bước 12: Thực hiện chấp nhận môi trường tiền sản xuất của con người**
 
-Use synthetic staging data and complete every checkbox in
-`docs/release/week13-acceptance-record.md`. Record the human reviewer, date, decision, and limitations.
-Do not mark FE09 legacy UI or FE10 inbox UI complete.
+Sử dụng dữ liệu môi trường tiền sản xuất tổng hợp và hoàn thành mọi hộp kiểm trong
+`docs/release/week13-acceptance-record.md`. Ghi lại người đánh giá, ngày tháng, quyết định và những
+hạn chế. Không đánh dấu giao diện người dùng cũ của FE09 hoặc giao diện người dùng hộp thư đến FE10
+là hoàn tất.
 
-- [ ] **Step 13: Create a follow-up evidence branch after deployment**
+- [ ] **Bước 13: Tạo nhánh bằng chứng tiếp theo sau khi triển khai**
 
-Update the main worktree after the implementation PR/merge, then create an isolated evidence branch:
+Cập nhật cây công việc chính sau khi triển khai PR/hợp nhất, sau đó tạo một nhánh bằng chứng riêng biệt:
 
 ```powershell
 git -C D:\SWP391\library-management-system pull --ff-only
@@ -1362,47 +1370,48 @@ git -C D:\SWP391\library-management-system worktree add `
   main
 ```
 
-Perform Steps 14-16 in that evidence worktree so observed deployment results do not get mixed into
-the already-reviewed implementation branch.
+Thực hiện các Bước 14-16 trong sơ đồ bằng chứng đó để kết quả triển khai được quan sát không bị lẫn
+vào nhánh triển khai đã được xem xét.
 
-- [ ] **Step 14: Record deployment evidence using observed values only**
+- [ ] **Bước 14: Ghi lại bằng chứng triển khai chỉ sử dụng các giá trị được quan sát**
 
-Create `.sdd/reviews/week13-staging-deployment-evidence-2026-07-14.md` containing:
+Tạo `.sdd/reviews/week13-staging-deployment-evidence-2026-07-14.md` chứa:
 
 ```markdown
-# Week 13 Azure Staging Deployment Evidence
+# Bằng chứng triển khai môi trường tiền sản xuất Azure Tuần 13
 
-Date: 2026-07-14
-Deployed commit:
-Frontend URL:
+Ngày: 2026-07-14
+Cam kết đã triển khai:
+Giao diện người dùng URL:
 API URL: https://app-library-api-staging-nhat714.azurewebsites.net
-Azure resource group: rg-library-staging
-App Service plan: F1 Free
+Nhóm tài nguyên Azure: rg-library-staging
+Gói App Service: F1 miễn phí
 Azure SQL SKU:
 
-## Deployment Workflow
-## Smoke Results
-## Database Initialization
-## Human Acceptance
-## Known Limitations
-## Rollback
-## Cost Guardrails
+## Quy trình triển khai
+## Kết quả kiểm thử nhanh
+## Khởi tạo cơ sở dữ liệu
+## Nghiệm thu của con người
+## Giới hạn đã biết
+## Hoàn tác
+## Hàng rào kiểm soát chi phí
 ```
 
-Fill every blank evidence field from observed deployment output before committing. Do not include
-credentials, deployment tokens, connection strings, or sensitive notification content.
+Điền vào mọi trường bằng chứng trống từ đầu ra triển khai được quan sát trước khi cam kết. Không bao
+gồm thông tin xác thực, mã thông báo triển khai, chuỗi kết nối hoặc nội dung thông báo nhạy cảm.
 
-- [ ] **Step 15: Mark Week 13 complete only after deployment and human acceptance**
+- [ ] **Bước 15: Đánh dấu Tuần 13 chỉ hoàn thành sau khi triển khai và được con người chấp nhận**
 
-Add a Week 13 milestone to `.sdd/test-plan.md`:
+Thêm cột mốc Tuần 13 vào `.sdd/test-plan.md`:
 
 ```markdown
-| Week 13: Documentation and staging deployment | Staging URLs, technical docs, user manual, deployment workflow, smoke evidence, human acceptance | **Done (2026-07-14)** |
+|Tuần 13: Triển khai tài liệu và môi trường tiền sản xuất|URL môi trường tiền sản xuất, tài liệu kỹ thuật, hướng dẫn sử dụng, quy trình triển khai, bằng chứng kiểm thử nhanh, sự chấp nhận của con người|**Xong (2026-07-14)**|
 ```
 
-If deployment or human acceptance is incomplete, use `In progress` and state the exact blocker.
+Nếu việc triển khai hoặc sự chấp nhận của con người chưa hoàn tất, hãy sử dụng `In progress` và nêu
+rõ trình chặn chính xác.
 
-- [ ] **Step 16: Commit final observed evidence**
+- [ ] **Bước 16: Cam kết bằng chứng quan sát cuối cùng**
 
 ```powershell
 git add .sdd/reviews/week13-staging-deployment-evidence-2026-07-14.md docs/release/week13-acceptance-record.md .sdd/test-plan.md

@@ -1,79 +1,90 @@
-# FE11 User List Envelope Decision
+# FE11 Quyết định phong bì danh sách người dùng
 
-Status: APPROVED BY HUMAN - 2026-07-18
+Trạng thái: ĐƯỢC PHÊ DUYỆT BỞI HUMAN - 2026-07-18
 
-Date: 2026-07-18
+Ngày: 2026-07-18
 
-Scope: `TD-026` and the data-source dependency forecast for `TD-023`
+Phạm vi: `TD-026` và dự báo phụ thuộc vào nguồn dữ liệu cho `TD-023`
 
-## Current Conflict
+## Xung đột hiện tại
 
-The approved `GET /api/users` response is `{ data, pagination }`. The implementation also emits top-level `summary`, and the Admin page consumes it for user counters. Permissions currently derives role counts from only the loaded page, which is not authoritative.
+Phản hồi `GET /api/users` được phê duyệt là `{ data, pagination }`. Việc triển khai cũng phát ra
+`summary` cấp cao nhất và trang Quản trị sử dụng nó cho bộ đếm người dùng. Các quyền hiện chỉ tính
+số lượng vai trò từ trang được tải, trang này không có thẩm quyền.
 
-FE12 already owns the completed global user-statistics read model at `GET /api/reports/users`. Its B7 response includes `totals.users`, `usersByStatus`, and `usersByRole`, sourced from FE11 Users/Roles data.
+FE12 đã sở hữu mô hình đọc thống kê người dùng toàn cầu hoàn chỉnh tại `GET /api/reports/users`.
+Phản hồi B7 của nó bao gồm `totals.users`, `usersByStatus` và `usersByRole`, có nguồn gốc từ dữ liệu
+Người dùng/Vai trò FE11.
 
-## Option A - Formalize `summary` In `GET /api/users`
+## Tùy chọn A - Chính thức hóa `summary` trong `GET /api/users`
 
-- Smallest implementation change.
-- Requires an approved FE11 SPEC/API contract change.
-- Couples paginated list retrieval to unrelated global aggregates.
-- Duplicates FE12 user-statistics ownership.
+- Thay đổi thực hiện nhỏ nhất.
+- Yêu cầu thay đổi hợp đồng FE11 SPEC/API đã được phê duyệt.
+- Các cặp đôi truy xuất danh sách được phân trang tới các tập hợp toàn cầu không liên quan.
+- Sao chép quyền sở hữu số liệu thống kê người dùng FE12.
 
-Result: rejected.
+Kết quả: bị từ chối.
 
-## Option B - Remove `summary` And Derive Counts From The Loaded Page
+## Tùy chọn B - Xóa `summary` và lấy số lượng từ trang đã tải
 
-- Preserves the documented list envelope.
-- Produces incorrect global counts whenever pagination/filtering is active.
+- Bảo quản phong bì danh sách tài liệu.
+- Tạo ra số lượng tổng thể không chính xác bất cứ khi nào chức năng phân trang/lọc được kích hoạt.
 
-Result: rejected because it cannot satisfy authoritative dashboard or Permissions counts.
+Kết quả: bị từ chối vì nó không thể đáp ứng được bảng điều khiển có thẩm quyền hoặc số lượng Quyền.
 
-## Option C - Reuse The FE12 User-Statistics Read Model
+## Tùy chọn C - Tái sử dụng Mô hình đọc thống kê người dùng FE12
 
-- Keep `GET /api/users` exactly `{ data, pagination }`.
-- Use existing `GET /api/reports/users` for the Admin user cards.
-- Map `total` from `totals.users`.
-- Map `active` from `usersByStatus.ACTIVE`, defaulting to numeric zero.
-- Map `inactive` from `usersByStatus.INACTIVE`, defaulting to numeric zero.
-- Map `librarians` from `usersByRole.LIBRARIAN`, defaulting to numeric zero.
-- Load the paginated list and FE12 statistics independently so list filters never change global cards.
-- Remove the undocumented repository aggregate query and top-level list `summary` in the same TD-026 slice.
-- Do not create `/api/admin/user-summary`.
+- Giữ `GET /api/users` chính xác là `{ data, pagination }`.
+- Sử dụng `GET /api/reports/users` hiện có cho thẻ người dùng Quản trị viên.
+- Bản đồ `total` từ `totals.users`.
+- Ánh xạ `active` từ `usersByStatus.ACTIVE`, mặc định là số 0.
+- Ánh xạ `inactive` từ `usersByStatus.INACTIVE`, mặc định là số 0.
+- Ánh xạ `librarians` từ `usersByRole.LIBRARIAN`, mặc định là số 0.
+- Tải danh sách phân trang và số liệu thống kê FE12 một cách độc lập để bộ lọc danh sách không bao giờ thay đổi thẻ chung.
+- Xóa truy vấn tổng hợp kho lưu trữ không có giấy tờ và danh sách cấp cao nhất `summary` trong cùng một lát TD-026.
+- Không tạo `/api/admin/user-summary`.
 
-Result: recommended because it preserves both FE11 and FE12 source ownership without another public endpoint.
+Kết quả: được khuyến nghị vì nó bảo toàn quyền sở hữu nguồn FE11 và FE12 mà không cần điểm cuối công
+khai khác.
 
-## TD-023 Dependency Forecast
+## Dự báo phụ thuộc TD-023
 
-`TD-023` remains outside Batch 1 and receives no implementation authorization from this decision. Its future Permissions view must not derive counts from paginated user rows. It should reuse FE12 `usersByRole` for counts and keep FE11 ownership of the read-only permission matrix, unless a separately approved TD-023 contract chooses another composition.
+`TD-023` vẫn nằm ngoài Lô 1 và không nhận được ủy quyền thực hiện từ quyết định này. Chế độ xem
+Quyền trong tương lai của nó không được lấy số lượng từ các hàng người dùng được phân trang. Nó nên
+sử dụng lại FE12 `usersByRole` để đếm và giữ quyền sở hữu FE11 đối với ma trận quyền chỉ đọc, trừ
+khi hợp đồng TD-023 được phê duyệt riêng chọn thành phần khác.
 
-## Validation Required After H1
+## Yêu cầu xác thực sau H1
 
-- `GET /api/users` repository/service/route tests assert exact top-level keys `data` and `pagination`.
-- The removed summary aggregate SQL is not executed by list requests.
-- Admin page requests the list and FE12 statistics independently.
-- Dashboard-card mapping uses deterministic numeric zero defaults.
-- List loading/filter errors do not overwrite an independently successful statistics result, and statistics errors do not erase a successfully loaded list.
-- Frontend does not derive global status or role counts from page rows.
-- Existing FE12 authorization, response, and B7 tests remain unchanged and pass.
+- Các kiểm thử kho lưu trữ/dịch vụ/tuyến đường `GET /api/users` xác nhận các khóa cấp cao nhất chính xác `data` và `pagination`.
+- Tổng hợp tóm tắt đã loại bỏ SQL không được thực thi bởi các yêu cầu danh sách.
+- Trang quản trị yêu cầu danh sách và số liệu thống kê FE12 một cách độc lập.
+- Ánh xạ thẻ trang tổng quan sử dụng giá trị mặc định bằng số 0 xác định.
+- Lỗi tải/lọc danh sách không ghi đè kết quả thống kê thành công độc lập và lỗi thống kê không xóa danh sách được tải thành công.
+- Giao diện người dùng không lấy được trạng thái chung hoặc số lượng vai trò từ các hàng trang.
+- Các kiểm thử ủy quyền, phản hồi và B7 FE12 hiện tại vẫn không thay đổi và đã vượt qua.
 
-## File Ownership Clarification
+## Làm rõ quyền sở hữu tệp
 
-TD-026 owns only the FE11 list-envelope and Admin consumer migration files:
+TD-026 chỉ sở hữu các tệp di chuyển người tiêu dùng Quản trị viên và phong bì danh sách FE11:
 
-- `.sdd/specs/feat-user-role-management/SPEC.md` only if a documentation clarification is required
+- `.sdd/specs/feat-user-role-management/SPEC.md` chỉ khi cần làm rõ tài liệu
 - `docs/api/api-contract.md`
 - `backend/src/docs/openapi.yaml`
 - `backend/src/repositories/userRepository.js`
-- `backend/src/services/userManagementService.js` only if it currently forwards repository summary state
+- `backend/src/services/userManagementService.js` chỉ khi nó hiện đang chuyển tiếp trạng thái tóm tắt kho lưu trữ
 - `backend/tests/userRepository.test.js`
 - `backend/tests/userManagementService.test.js`
 - `backend/tests/userManagementRoutes.test.js`
 - `frontend/src/page/UserManagement.jsx`
 - `frontend/test/userManagementFrontend.test.js`
-- `frontend/test/userManagementApi.test.js` only for exact list-envelope assertions
+- `frontend/test/userManagementApi.test.js` chỉ dành cho các xác nhận phong bì danh sách chính xác
 
-TD-026 does not own Admin routes/controllers/services, FE12 production files, or a new summary endpoint.
+TD-026 không sở hữu các tuyến/bộ điều khiển/dịch vụ của Quản trị viên, tệp sản xuất FE12 hoặc điểm
+cuối tóm tắt mới.
 
-## H1 Decision
+## Quyết định H1
 
-Recommended approval: Option C. Approval authorizes the FE11/API documentation clarification and a later detailed TD-026 implementation plan. No product code changes occur in the H1 preparation or governance activation phase.
+Đề xuất phê duyệt: Tùy chọn C. Phê duyệt cho phép làm rõ tài liệu FE11/API và kế hoạch triển khai
+TD-026 chi tiết sau này. Không có thay đổi mã sản phẩm nào xảy ra trong giai đoạn chuẩn bị H1 hoặc
+kích hoạt quản trị.

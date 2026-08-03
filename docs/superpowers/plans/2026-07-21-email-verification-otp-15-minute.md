@@ -1,47 +1,52 @@
-# Email Verification OTP 15-Minute Implementation Plan
+# Xác minh email Kế hoạch triển khai 15 phút OTP
 
-> **For Codex:** Execute this plan inline with test-driven development. Do not push, merge, or deploy code without a separate user request.
+> **Đối với Codex:** Thực hiện nội tuyến kế hoạch này bằng quá trình phát triển dựa trên kiểm thử. Không đẩy, hợp nhất hoặc triển khai mã mà không có yêu cầu riêng của người dùng.
 
-**Goal:** Reduce self-registration email-verification OTP lifetime from 24 hours to 15 minutes and keep Azure staging consistent with the code contract.
+**Mục tiêu:** Giảm thời gian tồn tại của OTP xác minh email tự đăng ký từ 24 giờ xuống 15 phút và
+giữ cho giai đoạn Azure nhất quán với hợp đồng mã.
 
-**Architecture:** FE02 remains responsible for OTP generation, hashing, expiry, revocation, and validation. FE10 continues to receive `expiresInMinutes` from FE02 and only renders/delivers the email. A new minute-based environment setting is canonical; the old hour-based setting remains a temporary fallback for deployed environments.
+**Kiến trúc:** FE02 vẫn chịu trách nhiệm tạo, băm, hết hạn, thu hồi và xác thực OTP. FE10 tiếp tục
+nhận `expiresInMinutes` từ FE02 và chỉ hiển thị/gửi email. Cài đặt môi trường dựa trên phút mới là
+chuẩn; cài đặt dựa trên giờ cũ vẫn là phương án dự phòng tạm thời cho các môi trường được triển
+khai.
 
-**Tech Stack:** Node.js, Express, Jest, SQL Server-backed Azure App Service, Gmail SMTP through FE10.
+**bộ công nghệ công nghệ:** Node.js, Express, Jest, SQL Server được hỗ trợ bởi Azure App Service,
+Gmail SMTP đến FE10.
 
 ---
 
-### Task 1: Lock the approved contract in tests and specifications
+### Nhiệm vụ 1: Khóa hợp đồng đã được phê duyệt trong các kiểm thử và đặc tả
 
-**Files:**
-- Modify: `.sdd/specs/feat-auth/SPEC.md`
-- Modify: `.sdd/specs/feat-auth/PLAN.md`
-- Modify: `.sdd/specs/feat-auth/TASKS.md`
-- Modify: `backend/tests/authRoutes.test.js`
-- Create: `backend/tests/envConfig.test.js`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-auth/SPEC.md`
+- Sửa đổi: `.sdd/specs/feat-auth/PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-auth/TASKS.md`
+- Sửa đổi: `backend/tests/authRoutes.test.js`
+- Tạo: `backend/tests/envConfig.test.js`
 
-1. Change registration and resend expectations from 1440 to 15 minutes.
-2. Add configuration tests for the canonical minute setting, legacy-hour fallback, and invalid fractional minute values.
-3. Run the focused tests and record the expected RED failure against the 24-hour implementation.
+1. Thay đổi đăng ký và gửi lại kỳ vọng từ 14h40 đến 15 phút.
+2. Thêm kiểm tra cấu hình cho cài đặt phút chuẩn, dự phòng giờ cũ và giá trị phút phân đoạn không hợp lệ.
+3. Chạy các kiểm thử tập trung và ghi lại lỗi RED dự kiến trong quá trình triển khai 24 giờ.
 
-### Task 2: Implement the smallest compatible configuration change
+### Nhiệm vụ 2: Thực hiện thay đổi cấu hình tương thích nhỏ nhất
 
-**Files:**
-- Modify: `backend/src/config/env.js`
-- Modify: `backend/src/services/authService.js`
-- Modify: `backend/.env.example`
+**Tệp:**
+- Sửa đổi: `backend/src/config/env.js`
+- Sửa đổi: `backend/src/services/authService.js`
+- Sửa đổi: `backend/.env.example`
 
-1. Add validated `EMAIL_VERIFICATION_TTL_MINUTES`, defaulting to 15.
-2. If it is absent, convert the legacy `EMAIL_VERIFICATION_TTL_HOURS` value to minutes.
-3. Use the minute value directly for registration and resend token creation/delivery.
-4. Rerun the focused tests until GREEN.
+1. Thêm `EMAIL_VERIFICATION_TTL_MINUTES` đã xác thực, mặc định là 15.
+2. Nếu không có, hãy chuyển đổi giá trị `EMAIL_VERIFICATION_TTL_HOURS` cũ thành phút.
+3. Sử dụng trực tiếp giá trị phút để đăng ký và gửi lại việc tạo/phân phối mã thông báo.
+4. Chạy lại các kiểm thử tập trung cho đến GREEN.
 
-### Task 3: Verify local and Azure behavior
+### Nhiệm vụ 3: Xác minh hành vi cục bộ và Azure
 
-**Files:**
-- Modify: `.sdd/specs/feat-auth/CHANGELOG.md`
-- Modify: `.sdd/specs/feat-auth/CONTEXT.md`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-auth/CHANGELOG.md`
+- Sửa đổi: `.sdd/specs/feat-auth/CONTEXT.md`
 
-1. Run the full backend suite, traceability, secret/leakage checks, and `git diff --check`.
-2. Set Azure staging to `EMAIL_VERIFICATION_TTL_MINUTES=15` and legacy `EMAIL_VERIFICATION_TTL_HOURS=0.25` until the new code is deployed.
-3. Restart staging, check `/health`, request one verification resend, and confirm Gmail renders a 15-minute expiry without exposing the OTP in project logs or the final report.
-4. Leave all code changes unpushed and unmerged for user review.
+1. Chạy bộ máy chủ đầy đủ, truy vết, kiểm tra bí mật/rò rỉ và `git diff --check`.
+2. Đặt Môi trường tiền sản xuất Azure thành `EMAIL_VERIFICATION_TTL_MINUTES=15` và `EMAIL_VERIFICATION_TTL_HOURS=0.25` cũ cho đến khi mã mới được triển khai.
+3. Khởi động lại quá trình chạy thử, kiểm tra `/health`, yêu cầu gửi lại một lần xác minh và xác nhận Gmail hiển thị hết hạn trong 15 phút mà không để lộ OTP trong nhật ký dự án hoặc báo cáo cuối cùng.
+4. Để lại tất cả các thay đổi mã ở trạng thái không được đẩy và chưa được hợp nhất để người dùng xem xét.

@@ -1,34 +1,39 @@
-# Admin Authenticated UX Corrections Implementation Plan
+# Kế hoạch thực hiện chỉnh sửa UX được quản trị viên xác thực
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Đối với nhân viên đại lý:** SUB-SKILL BẮT BUỘC: Sử dụng siêu năng lực:phát triển theo định hướng phụ (được khuyến nghị) hoặc siêu năng lực:thực hiện các kế hoạch để triển khai kế hoạch này theo từng nhiệm vụ. Các bước sử dụng cú pháp hộp kiểm (`- [ ]`) để theo dõi.
 
-**Goal:** Remove the redundant Permissions sidebar item and correct User Management/Audit responsiveness without changing role management, Audit filters, APIs, authorization, or redaction.
+**Mục tiêu:** Xóa mục thanh bên Quyền dư thừa và điều chỉnh phản hồi Quản lý/Kiểm tra người dùng mà
+không thay đổi quản lý vai trò, bộ lọc kiểm tra, API, ủy quyền hoặc biên tập.
 
-**Architecture:** Keep the shared Admin navigation contract as the only sidebar source. Reuse the existing user cards at laptop widths, and keep Audit raw values separate from Vietnamese presentation while rendering safe details in a native disclosure. The backend and API adapters remain untouched.
+**Kiến trúc:** Giữ hợp đồng điều hướng Quản trị viên được chia sẻ làm nguồn thanh bên duy nhất. Tái
+sử dụng thẻ người dùng hiện có theo chiều rộng của máy tính xách tay và tách biệt các giá trị Kiểm
+tra thô khỏi bản trình bày tiếng Việt trong khi hiển thị các chi tiết an toàn ở dạng tiết lộ gốc.
+Các bộ điều hợp máy chủ và API vẫn được giữ nguyên.
 
-**Tech Stack:** React 19, Vite 8, plain CSS, Node.js test runner, Playwright browser acceptance.
+**Tech bộ công nghệ:** React 19, Vite 8, CSS đơn giản, trình chạy thử Node.js, chấp nhận trình duyệt
+Playwright.
 
-## Global Constraints
+## Ràng buộc toàn cầu
 
-- `/admin/users` remains the Admin Console entry and User Management remains the default section.
-- Manage Roles remains available from every eligible user row/card.
-- Audit continues to submit canonical `q`, `action`, `actorId`, `from`, `to`, `page`, and `limit` values.
-- No backend endpoint, DTO, authorization rule, schema, dependency, or redaction rule changes.
-- UI copy is Vietnamese while canonical API values remain unchanged.
+- `/admin/users` vẫn là mục trong Bảng điều khiển dành cho quản trị viên và Quản lý người dùng vẫn là phần mặc định.
+- Quản lý vai trò vẫn khả dụng ở mọi hàng/thẻ người dùng đủ điều kiện.
+- Kiểm tra tiếp tục gửi các giá trị `q`, `action`, `actorId`, `from`, `to`, `page` và `limit` chuẩn.
+- Không có điểm cuối máy chủ, DTO, quy tắc ủy quyền, lược đồ, sự phụ thuộc hoặc quy tắc biên tập.
+- Bản sao giao diện người dùng là tiếng Việt trong khi các giá trị API chuẩn không thay đổi.
 
 ---
 
-### Task 1: Lock the corrected navigation and responsive contracts
+### Nhiệm vụ 1: Khóa điều hướng đã sửa và hợp đồng đáp ứng
 
-**Files:**
-- Modify: `frontend/test/userManagementFrontend.test.js`
-- Modify: `frontend/test/adminConsoleStructure.test.js`
+**Tệp:**
+- Sửa đổi: `frontend/test/userManagementFrontend.test.js`
+- Sửa đổi: `frontend/test/adminConsoleStructure.test.js`
 
-**Interfaces:**
-- Consumes: `ADMIN_NAVIGATION`, `.admin-user-table`, `.admin-user-cards`, `AdminAuditSection` source contracts.
-- Produces: failing assertions for seven navigation entries, a `1440px` card breakpoint, canonical Audit filters, mapped action choices, and safe-detail disclosure.
+**Giao diện:**
+- Tiêu thụ: hợp đồng nguồn `ADMIN_NAVIGATION`, `.admin-user-table`, `.admin-user-cards`, `AdminAuditSection`.
+- Tạo ra: xác nhận không thành công cho bảy mục điều hướng, điểm dừng thẻ `1440px`, bộ lọc Kiểm tra chuẩn, lựa chọn hành động được ánh xạ và tiết lộ chi tiết an toàn.
 
-- [ ] **Step 1: Write the failing navigation and responsive tests**
+- [ ] **Bước 1: Viết các kiểm thử điều hướng không thành công và phản hồi**
 
 ```js
 assert.deepEqual(entries, [
@@ -44,7 +49,7 @@ assert.doesNotMatch(navigation, /id: 'permissions'/);
 assert.match(css, /@media \(max-width: 1440px\)[^]*?\.admin-user-table \{ display: none; \}[^]*?\.admin-user-cards \{ display: grid;/);
 ```
 
-- [ ] **Step 2: Write the failing Audit presentation test**
+- [ ] **Bước 2: Viết kiểm thử trình bày Kiểm toán không thành công**
 
 ```js
 assert.match(source, /list="admin-audit-action-options"/);
@@ -54,25 +59,26 @@ assert.match(source, /<summary>Xem chi tiết \(\{details\.length\}\)<\/summary>
 assert.doesNotMatch(source, /placeholder="AUTH_LOGIN_SUCCESS"/);
 ```
 
-- [ ] **Step 3: Run the focused suite and verify RED**
+- [ ] **Bước 3: Chạy bộ tập trung và xác minh RED**
 
-Run from `frontend`: `node --test --test-name-pattern="FE11 modular console|FE11 desktop table|FE11 audit|Admin CSS" test/userManagementFrontend.test.js test/adminConsoleStructure.test.js`
+Chạy từ `frontend`: `node --test --test-name-pattern="FE11 modular console|FE11 desktop table|FE11 audit|Admin CSS" test/userManagementFrontend.test.js test/adminConsoleStructure.test.js`
 
-Expected: FAIL because navigation still contains Permissions, cards switch only at 900px, and Audit has neither the action list nor disclosure.
+Dự kiến: THẤT BẠI vì điều hướng vẫn chứa Quyền, thẻ chỉ chuyển đổi ở 900px và Kiểm tra không có danh
+sách hành động cũng như không tiết lộ.
 
-### Task 2: Apply the navigation and User Management responsive corrections
+### Nhiệm vụ 2: Áp dụng các chỉnh sửa phản hồi điều hướng và Quản lý người dùng
 
-**Files:**
-- Modify: `frontend/src/page/admin/adminNavigation.js`
-- Modify: `frontend/src/page/admin/admin-console.css`
-- Test: `frontend/test/userManagementFrontend.test.js`
-- Test: `frontend/test/adminConsoleStructure.test.js`
+**Tệp:**
+- Sửa đổi: `frontend/src/page/admin/adminNavigation.js`
+- Sửa đổi: `frontend/src/page/admin/admin-console.css`
+- Kiểm tra: `frontend/test/userManagementFrontend.test.js`
+- Kiểm tra: `frontend/test/adminConsoleStructure.test.js`
 
-**Interfaces:**
-- Consumes: shared `ADMIN_NAVIGATION` and the existing table/card markup.
-- Produces: seven visible navigation entries and a content-safe laptop card breakpoint.
+**Giao diện:**
+- Tiêu thụ: `ADMIN_NAVIGATION` được chia sẻ và đánh dấu bảng/thẻ hiện có.
+- Tạo ra: bảy mục điều hướng hiển thị và một điểm ngắt thẻ máy tính xách tay an toàn cho nội dung.
 
-- [ ] **Step 1: Remove only the Permissions navigation entry and unused icon import**
+- [ ] **Bước 1: Chỉ xóa mục điều hướng Quyền và nhập biểu tượng không sử dụng**
 
 ```js
 import {
@@ -95,7 +101,7 @@ export const ADMIN_NAVIGATION = Object.freeze([
 ]);
 ```
 
-- [ ] **Step 2: Switch the user directory to cards before the 1040px table overflows**
+- [ ] **Bước 2: Chuyển thư mục người dùng sang thẻ trước khi tràn bảng 1040px**
 
 ```css
 @media (max-width: 1440px) {
@@ -104,26 +110,26 @@ export const ADMIN_NAVIGATION = Object.freeze([
 }
 ```
 
-- [ ] **Step 3: Run the focused navigation/responsive tests and verify GREEN**
+- [ ] **Bước 3: Chạy các kiểm thử điều hướng/phản hồi tập trung và xác minh GREEN**
 
-Run from `frontend`: `node --test --test-name-pattern="FE11 modular console|FE11 desktop table|Admin CSS" test/userManagementFrontend.test.js test/adminConsoleStructure.test.js`
+Chạy từ `frontend`: `node --test --test-name-pattern="FE11 modular console|FE11 desktop table|Admin CSS" test/userManagementFrontend.test.js test/adminConsoleStructure.test.js`
 
-Expected: PASS.
+Dự kiến: ĐẠT.
 
-### Task 3: Correct Audit filter and detail density without losing behavior
+### Nhiệm vụ 3: Chỉnh sửa bộ lọc Kiểm tra và mật độ chi tiết mà không làm mất hành vi
 
-**Files:**
-- Modify: `frontend/src/page/admin/audit/adminAuditPresentation.js`
-- Modify: `frontend/src/page/admin/audit/AdminAuditSection.jsx`
-- Modify: `frontend/src/page/admin/admin-console.css`
-- Test: `frontend/test/adminConsolePresentation.test.js`
-- Test: `frontend/test/userManagementFrontend.test.js`
+**Tệp:**
+- Sửa đổi: `frontend/src/page/admin/audit/adminAuditPresentation.js`
+- Sửa đổi: `frontend/src/page/admin/audit/AdminAuditSection.jsx`
+- Sửa đổi: `frontend/src/page/admin/admin-console.css`
+- Kiểm tra: `frontend/test/adminConsolePresentation.test.js`
+- Kiểm tra: `frontend/test/userManagementFrontend.test.js`
 
-**Interfaces:**
-- Consumes: canonical action strings and the allowlisted `[key, value]` entries returned by `getAuditDetailEntries`.
-- Produces: `getAuditActionOptions(): Array<{ value: string, label: string }>` and per-row native disclosures.
+**Giao diện:**
+- Tiêu thụ: chuỗi hành động chuẩn và các mục nhập `[key, value]` được đưa vào danh sách cho phép do `getAuditDetailEntries` trả về.
+- Tạo ra: `getAuditActionOptions(): Array<{ value: string, label: string }>` và các tiết lộ gốc trên mỗi hàng.
 
-- [ ] **Step 1: Export stable mapped action options**
+- [ ] **Bước 1: Xuất các tùy chọn hành động được ánh xạ ổn định**
 
 ```js
 export function getAuditActionOptions() {
@@ -131,7 +137,7 @@ export function getAuditActionOptions() {
 }
 ```
 
-- [ ] **Step 2: Replace the technical placeholder with labeled suggestions and preserve arbitrary raw input**
+- [ ] **Bước 2: Thay thế phần giữ chỗ kỹ thuật bằng các đề xuất được gắn nhãn và giữ nguyên dữ liệu đầu vào thô tùy ý**
 
 ```jsx
 <input
@@ -146,7 +152,7 @@ export function getAuditActionOptions() {
 </datalist>
 ```
 
-- [ ] **Step 3: Render safe details behind a native disclosure**
+- [ ] **Bước 3: Hiển thị thông tin chi tiết an toàn đằng sau tiết lộ gốc**
 
 ```jsx
 {showAuditDetails ? (
@@ -161,7 +167,7 @@ export function getAuditActionOptions() {
 ) : null}
 ```
 
-- [ ] **Step 4: Give Audit filters a responsive two-row layout and style the disclosure**
+- [ ] **Bước 4: Cung cấp cho bộ lọc Kiểm tra bố cục hai hàng đáp ứng và tạo kiểu cho thông tin tiết lộ**
 
 ```css
 .admin-audit-filter-bar .admin-filter-grid {
@@ -175,47 +181,54 @@ export function getAuditActionOptions() {
 }
 ```
 
-- [ ] **Step 5: Run the focused Audit tests and verify GREEN**
+- [ ] **Bước 5: Chạy các kiểm thử Kiểm tra tập trung và xác minh GREEN**
 
-Run from `frontend`: `node --test --test-name-pattern="audit" test/adminConsolePresentation.test.js test/userManagementFrontend.test.js`
+Chạy từ `frontend`: `node --test --test-name-pattern="audit" test/adminConsolePresentation.test.js test/userManagementFrontend.test.js`
 
-Expected: PASS with canonical filters, safe detail projection, Vietnamese presentation, and no technical placeholder regression.
+Dự kiến: ĐẠT với các bộ lọc chuẩn, trình chiếu chi tiết an toàn, trình bày tiếng Việt và không có
+hồi quy giữ chỗ kỹ thuật.
 
-### Task 4: Validate the complete correction
+### Nhiệm vụ 4: Xác nhận việc chỉnh sửa hoàn chỉnh
 
-**Files:**
-- Modify: `.sdd/specs/feat-user-role-management/CHANGELOG.md`
-- Create: `.sdd/reviews/admin-console-authenticated-ux-correction-validation-2026-07-22.md`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-user-role-management/CHANGELOG.md`
+- Tạo: `.sdd/reviews/admin-console-authenticated-ux-correction-validation-2026-07-22.md`
 
-**Interfaces:**
-- Consumes: completed navigation, User Management, and Audit corrections.
-- Produces: L1-L4 validation evidence and the next Azure Staging human-review candidate.
+**Giao diện:**
+- Tiêu thụ: điều hướng đã hoàn thành, Quản lý người dùng và chỉnh sửa Kiểm tra.
+- Tạo ra: Bằng chứng xác thực L1-L4 và ứng cử viên đánh giá con người theo giai đoạn Azure tiếp theo.
 
-- [ ] **Step 1: Run full frontend validation**
+- [ ] **Bước 1: Chạy xác thực toàn bộ giao diện người dùng**
 
-Run: `npm.cmd --prefix frontend test`
+Chạy: `npm.cmd --prefix frontend test`
 
-Expected: all frontend tests pass.
+Dự kiến: tất cả các kiểm thử giao diện người dùng đều vượt qua.
 
-Run: `npm.cmd --prefix frontend run lint`
+Chạy: `npm.cmd --prefix frontend run lint`
 
-Expected: exit code 0.
+Dự kiến: mã thoát 0.
 
-Run: `npm.cmd --prefix frontend run build`
+Chạy: `npm.cmd --prefix frontend run build`
 
-Expected: production build succeeds.
+Dự kiến: xây dựng sản xuất thành công.
 
-- [ ] **Step 2: Run browser acceptance**
+- [ ] **Bước 2: Chạy chấp nhận trình duyệt**
 
-Run the project Playwright workflow at `1280x720`, `1366x768`, `1440x900`, and `390x844`; open User Management and Audit, verify no page overflow, verify cards before table overflow, open one safe-detail disclosure, and confirm Manage Roles remains visible.
+Chạy quy trình công việc Playwright của dự án tại `1280x720`, `1366x768`, `1440x900` và `390x844`;
+mở Quản lý và kiểm tra người dùng, xác minh không có tràn trang, xác minh thẻ trước khi tràn bảng,
+mở một tiết lộ chi tiết an toàn và xác nhận Quản lý vai trò vẫn hiển thị.
 
-Expected: no horizontal page overflow; seven sidebar items; User Management actions remain visible; Audit filters wrap cleanly; safe details expand on demand.
+Dự kiến: không có tràn trang ngang; bảy mục thanh bên; Các hành động Quản lý người dùng vẫn hiển
+thị; Bộ lọc kiểm toán được bọc sạch sẽ; chi tiết an toàn mở rộng theo yêu cầu.
 
-- [ ] **Step 3: Record validation evidence**
+- [ ] **Bước 3: Ghi lại bằng chứng xác thực**
 
-Write the exact commands, pass counts, browser viewport results, spec mapping, unchanged backend boundary, residual staging-review requirement, and current commit SHA to `.sdd/reviews/admin-console-authenticated-ux-correction-validation-2026-07-22.md`; add the same bounded outcome to the FE11 changelog.
+Viết các lệnh chính xác, số lượt vượt qua, kết quả khung nhìn trình duyệt, ánh xạ đặc tả, ranh giới
+máy chủ không thay đổi, yêu cầu đánh giá giai đoạn còn lại và cam kết hiện tại SHA với
+`.sdd/reviews/admin-console-authenticated-ux-correction-validation-2026-07-22.md`; thêm kết quả giới
+hạn tương tự vào nhật ký thay đổi FE11.
 
-- [ ] **Step 4: Commit the validated correction**
+- [ ] **Bước 4: Cam kết chỉnh sửa đã được xác thực**
 
 ```bash
 git add .sdd/specs/feat-user-role-management docs/superpowers frontend/src/page/admin frontend/test .sdd/reviews/admin-console-authenticated-ux-correction-validation-2026-07-22.md

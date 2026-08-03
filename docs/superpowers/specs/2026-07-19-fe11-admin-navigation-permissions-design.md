@@ -1,45 +1,47 @@
-# FE11 Admin Navigation And Permissions Design
+# FE11 Thiết kế điều hướng và quyền của quản trị viên
 
-Status: APPROVED BY HUMAN - 2026-07-19
+Trạng thái: ĐƯỢC PHÊ DUYỆT BỞI HUMAN - 2026-07-19
 
-Date: 2026-07-19
+Ngày: 2026-07-19
 
-Scope: `TD-023`; `FR-FE11-030`, `FR-FE11-032`, `AC-FE11-016`, `AC-FE11-017`
+Phạm vi: `TD-023`; `FR-FE11-030`, `FR-FE11-032`, `AC-FE11-016`, `AC-FE11-017`
 
-## 1. Decision
+## 1. Quyết định
 
-Use Hybrid SDD + ADD at Standard depth.
+Sử dụng Hybrid SDD + ADD ở độ sâu Tiêu chuẩn.
 
-- Core: the approved Admin navigation, Admin-only read boundary, canonical permission matrix, FE11/FE12 ownership, and failure isolation.
-- Shell: sidebar labels, cards, tables, loading/error presentation, and responsive rendering.
+- Cốt lõi: điều hướng của Quản trị viên đã được phê duyệt, ranh giới chỉ đọc của Quản trị viên, ma trận quyền chuẩn, quyền sở hữu FE11/FE12 và cách ly lỗi.
+- lớp bao: nhãn thanh bên, thẻ, bảng, trình bày tải/lỗi và hiển thị phản hồi.
 
-The selected architecture is a canonical FE11 read-only Permissions API plus independent FE12 role counts. The frontend must not own a hardcoded permission matrix and must not derive counts from paginated user rows.
+Kiến trúc được chọn là FE11 quyền chỉ đọc chuẩn API cộng với số lượng vai trò FE12 độc lập. Giao
+diện người dùng không được sở hữu ma trận quyền được mã hóa cứng và không được lấy số lượng từ các
+hàng người dùng được phân trang.
 
-Whole-feature metadata remains `Implementation State: DEFERRED`.
+Siêu dữ liệu toàn bộ chức năng vẫn là `Implementation State: DEFERRED`.
 
-## 2. Approved Scope
+## 2. Phạm vi được phê duyệt
 
-### In Scope
+### Trong phạm vi
 
-- Align the Admin Console sidebar to the eight approved FE11 sections.
-- Make the Permissions section reachable from the sidebar.
-- Add Admin-only `GET /api/admin/permissions`.
-- Move the Phase 1 permission policy out of `UserManagement.jsx` into an FE11 backend policy module.
-- Load the FE11 permission matrix and FE12 role counts independently.
-- Render a read-only role summary, module coverage, and permission matrix.
-- Add backend/frontend contract tests and complete the normal validation gates.
+- Căn chỉnh thanh bên của Bảng điều khiển dành cho quản trị viên theo tám phần FE11 đã được phê duyệt.
+- Làm cho phần Quyền có thể truy cập được từ thanh bên.
+- Thêm `GET /api/admin/permissions` chỉ dành cho quản trị viên.
+- Chuyển chính sách cấp phép Giai đoạn 1 ra khỏi `UserManagement.jsx` sang mô-đun chính sách máy chủ FE11.
+- Tải ma trận quyền FE11 và số lượng vai trò FE12 một cách độc lập.
+- Hiển thị bản tóm tắt vai trò chỉ đọc, phạm vi mô-đun và ma trận quyền.
+- Thêm các kiểm thử hợp đồng backend/frontend và hoàn thành các cổng xác thực thông thường.
 
-### Out Of Scope
+### Ngoài phạm vi
 
-- Permission editing, role hierarchy, role creation, or role deletion.
-- A new `Permissions` database table or any schema migration.
-- Removing the FE04 Membership page, route, API, or implementation.
-- Request Management detail/immutability work tracked by `TD-025`.
-- User update/deactivation, librarian fields, optimistic concurrency, or whole-feature FE11 completion.
+- Chỉnh sửa quyền, phân cấp vai trò, tạo vai trò hoặc xóa vai trò.
+- Bảng cơ sở dữ liệu `Permissions` mới hoặc bất kỳ di chuyển lược đồ nào.
+- Xóa trang Thành viên FE04, lộ trình, API hoặc cách triển khai.
+- Yêu cầu quản lý chi tiết/công việc bất biến được theo dõi bởi `TD-025`.
+- Cập nhật/hủy kích hoạt người dùng, trường thủ thư, đồng thời lạc quan hoặc hoàn thành toàn bộ chức năng FE11.
 
-## 3. Admin Navigation Contract
+## 3. Hợp đồng điều hướng quản trị viên
 
-The Admin Console sidebar contains exactly these entries in this order:
+Thanh bên của Bảng điều khiển dành cho quản trị viên chứa chính xác các mục này theo thứ tự sau:
 
 1. `home` - Trang chủ - navigates to `/home`.
 2. `dashboard` - Tổng quan.
@@ -50,22 +52,25 @@ The Admin Console sidebar contains exactly these entries in this order:
 7. `permissions` - Phân quyền.
 8. `audit` - Nhật ký hoạt động.
 
-`membership`, `Confirm Payment`, and `Confirm Borrow` are not Admin Console sidebar entries. Removing `membership` from this sidebar does not remove or modify FE04 functionality elsewhere.
+`membership`, `Confirm Payment` và `Confirm Borrow` không phải là mục nhập thanh bên của Bảng điều
+khiển dành cho quản trị viên. Việc xóa `membership` khỏi thanh bên này sẽ không xóa hoặc sửa đổi
+chức năng FE04 ở nơi khác.
 
-Manage Roles remains an explicit user action under Quản lý người dùng. The Permissions page is read-only.
+Manage Roles remains an explicit người dùng hành động under Quản lý người dùng. The Permissions page
+is chỉ đọc.
 
-## 4. API Contract
+## 4. Hợp đồng API
 
-### Endpoint
+### Điểm cuối
 
 `GET /api/admin/permissions`
 
-- Actor: Admin only.
-- Request body/query: none.
-- Authentication and Admin authorization run before the controller.
-- Response is deterministic, read-only, and has no database mutation.
+- Tác nhân: Chỉ có quản trị viên.
+- Nội dung yêu cầu/truy vấn: không có.
+- Xác thực và ủy quyền quản trị viên chạy trước bộ điều khiển.
+- Phản hồi mang tính xác định, chỉ đọc và không có thao tác ghi cơ sở dữ liệu.
 
-### Response
+### phản hồi
 
 ```json
 {
@@ -86,120 +91,124 @@ Manage Roles remains an explicit user action under Quản lý người dùng. Th
 }
 ```
 
-Top-level keys are exactly `roles` and `permissions`.
+Các khóa cấp cao nhất chính xác là `roles` và `permissions`.
 
-Role objects contain exactly `roleName` and `label`. Permission objects contain exactly `permissionKey`, `label`, `moduleKey`, `moduleLabel`, and `allowedRoles`.
+Đối tượng vai trò chứa chính xác `roleName` và `label`. Các đối tượng quyền chứa chính xác
+`permissionKey`, `label`, `moduleKey`, `moduleLabel` và `allowedRoles`.
 
-Allowed role names are limited to `ADMIN`, `LIBRARIAN`, and `MEMBER`. Arrays use deterministic order and contain no duplicates.
+Tên vai trò được phép được giới hạn ở `ADMIN`, `LIBRARIAN` và `MEMBER`. Mảng sử dụng thứ tự xác định
+và không chứa bản sao.
 
-## 5. Canonical Phase 1 Matrix
+## 5. Ma trận kinh điển pha 1
 
-| Module | Permission key | Label | Allowed roles |
+| Mô-đun | Khóa cấp phép | Nhãn | Vai trò được phép |
 | --- | --- | --- | --- |
-| User & Role | `USER_VIEW` | View users | ADMIN |
-| User & Role | `USER_CREATE` | Create accounts | ADMIN |
-| User & Role | `USER_UPDATE` | Update accounts | ADMIN |
-| User & Role | `USER_DEACTIVATE` | Deactivate accounts | ADMIN |
-| User & Role | `ROLE_MANAGE` | Manage roles | ADMIN |
-| User & Role | `AUDIT_VIEW` | View audit logs | ADMIN |
-| Library | `CATALOG_MANAGE` | Manage library catalog | ADMIN, LIBRARIAN |
-| Library | `METADATA_MANAGE` | Manage authors/publishers/categories | ADMIN |
-| Borrow/Return | `BORROW_APPROVE_REJECT` | Approve/reject borrow requests | ADMIN, LIBRARIAN |
-| Borrow/Return | `RETURN_RENEW_PROCESS` | Process returns and renewals | ADMIN, LIBRARIAN |
-| Fine | `FINE_CALCULATE_COLLECT` | Calculate and collect fines | ADMIN, LIBRARIAN |
-| Fine | `FINE_WAIVE_CANCEL` | Waive or cancel fines | ADMIN |
-| Reports | `REPORT_VIEW` | View reports | ADMIN, LIBRARIAN |
-| Borrow/Return | `BORROW_REQUEST_CREATE` | Create borrow request | MEMBER |
-| Borrow/Return | `BORROW_HISTORY_VIEW_OWN` | View own borrowing history | MEMBER |
+| Người dùng & Vai trò | `USER_VIEW` | Xem người dùng | ADMIN |
+| Người dùng & Vai trò | `USER_CREATE` | Tạo tài khoản | ADMIN |
+| Người dùng & Vai trò | `USER_UPDATE` | Cập nhật tài khoản | ADMIN |
+| Người dùng & Vai trò | `USER_DEACTIVATE` | Vô hiệu hóa tài khoản | ADMIN |
+| Người dùng & Vai trò | `ROLE_MANAGE` | Quản lý vai trò | ADMIN |
+| Người dùng & Vai trò | `AUDIT_VIEW` | Xem nhật ký kiểm tra | ADMIN |
+| Thư viện | `CATALOG_MANAGE` | Quản lý danh mục thư viện | ADMIN, LIBRARIAN |
+| Thư viện | `METADATA_MANAGE` | Quản lý tác giả/nhà xuất bản/danh mục | ADMIN |
+| Mượn/trả sách | `BORROW_APPROVE_REJECT` | Phê duyệt/từ chối yêu cầu mượn sách | ADMIN, LIBRARIAN |
+| Mượn/trả sách | `RETURN_RENEW_PROCESS` | Quy trình trả sách và gia hạn | ADMIN, LIBRARIAN |
+| Khoản phạt | `FINE_CALCULATE_COLLECT` | Tính và thu khoản phạt | ADMIN, LIBRARIAN |
+| Khoản phạt | `FINE_WAIVE_CANCEL` | Miễn hoặc hủy bỏ khoản phạt | ADMIN |
+| Báo cáo | `REPORT_VIEW` | Xem báo cáo | ADMIN, LIBRARIAN |
+| Mượn/trả sách | `BORROW_REQUEST_CREATE` | Tạo yêu cầu mượn | MEMBER |
+| Mượn/trả sách | `BORROW_HISTORY_VIEW_OWN` | Xem lịch sử mượn của mình | MEMBER |
 
-The backend policy module is the only product-code owner of this matrix. The frontend derives table booleans and module coverage counts from the response.
+Mô-đun chính sách máy chủ là chủ sở hữu mã sản phẩm duy nhất của ma trận này. Giao diện người dùng
+lấy số boolean của bảng và số lượng phạm vi mô-đun từ phản hồi.
 
-## 6. Data Flow And Ownership
+## 6. Luồng dữ liệu và quyền sở hữu
 
-1. Opening Permissions triggers `adminApi.permissions()`.
-2. FE11 returns the canonical read-only matrix.
-3. Existing FE12 `reportApi.users()` supplies global `usersByRole` counts.
-4. The frontend joins the two responses by `roleName` only for presentation.
-5. Module coverage is derived by counting permissions whose `allowedRoles` contain each role.
+1. Việc mở Quyền sẽ kích hoạt `adminApi.permissions()`.
+2. FE11 trả về ma trận chỉ đọc chuẩn.
+3. FE12 `reportApi.users()` hiện tại cung cấp số lượng `usersByRole` toàn cầu.
+4. Giao diện người dùng kết hợp hai phản hồi của `roleName` chỉ để trình bày.
+5. Phạm vi bao phủ của mô-đun được tính bằng cách đếm các quyền có `allowedRoles` chứa từng vai trò.
 
-The two requests remain independent:
+Hai yêu cầu vẫn độc lập:
 
-- FE11 matrix failure does not erase a successful FE12 count result.
-- FE12 statistics failure does not erase a successful FE11 matrix result.
-- List filters and pagination do not affect role counts.
-- No `/api/admin/user-summary` or duplicate count query is introduced.
+- FE11 lỗi ma trận không xóa kết quả đếm FE12 thành công.
+- FE12 lỗi thống kê không xóa kết quả ma trận FE11 thành công.
+- Bộ lọc danh sách và phân trang không ảnh hưởng đến số lượng vai trò.
+- Không có truy vấn `/api/admin/user-summary` hoặc số lượng trùng lặp nào được đưa ra.
 
-## 7. Error And Security Behavior
+## 7. Lỗi và hành vi bảo mật
 
-- Missing/invalid authentication returns `401`.
-- Authenticated Member or Librarian access returns `403`.
-- Authorization runs before controller execution.
-- The response uses an explicit allowlist and contains no credentials, personal data, audit metadata, internal function names, or mutable policy objects.
-- The service returns fresh DTO objects so callers cannot mutate the shared policy definition.
-- Frontend API failure shows a retryable error and does not use a hardcoded matrix fallback.
-- Counts start at numeric zero and preserve their last successful value after later FE12 failures.
-- The matrix preserves its last successful value after later FE11 failures.
+- Xác thực bị thiếu/không hợp lệ trả về `401`.
+- Quyền truy cập của Thành viên hoặc Thủ thư được xác thực trả về `403`.
+- Ủy quyền chạy trước khi thực thi bộ điều khiển.
+- Phản hồi sử dụng danh sách cho phép rõ ràng và không chứa thông tin xác thực, dữ liệu cá nhân, siêu dữ liệu kiểm tra, tên hàm nội bộ hoặc đối tượng chính sách có thể thay đổi.
+- Dịch vụ trả về các đối tượng DTO mới để người gọi không thể thay đổi định nghĩa chính sách dùng chung.
+- Lỗi giao diện người dùng API hiển thị lỗi có thể thử lại và không sử dụng dự phòng ma trận được mã hóa cứng.
+- Việc đếm bắt đầu từ số 0 và duy trì giá trị thành công cuối cùng của chúng sau các lỗi FE12 sau này.
+- Ma trận duy trì giá trị thành công cuối cùng của nó sau các lỗi FE11 sau này.
 
-## 8. Implementation Boundaries
+## 8. Ranh giới thực hiện
 
-Expected backend ownership:
+Quyền sở hữu máy chủ dự kiến:
 
 - `backend/src/policies/adminPermissionPolicy.js`
 - `backend/src/services/adminService.js`
 - `backend/src/controllers/adminController.js`
 - `backend/src/routes/adminRoutes.js`
-- focused backend tests
-- API/OpenAPI documentation where the Admin API is documented
+- kiểm tra máy chủ tập trung
+- Tài liệu API/OpenAPI trong đó tài liệu API của Quản trị viên được ghi lại
 
-Expected frontend ownership:
+Quyền sở hữu giao diện người dùng dự kiến:
 
 - `frontend/src/api/adminApi.js`
 - `frontend/src/page/UserManagement.jsx`
-- focused frontend source/contract tests
+- kiểm tra nguồn/hợp đồng giao diện người dùng tập trung
 
-Expected governance updates:
+Cập nhật quản trị dự kiến:
 
 - FE11 PLAN/TASKS/TEST_PLAN/CHANGELOG
 - `TECH_DEBT.md`
-- a TD-023 validation record
+- bản ghi xác thực TD-023
 
-No repository, SQL, schema, authentication implementation, FE12 production file, or FE04 production file is owned by this slice.
+Không có kho lưu trữ, SQL, lược đồ, triển khai xác thực, tệp sản xuất FE12 hoặc tệp sản xuất FE04
+thuộc sở hữu của lát này.
 
-## 9. Test Strategy
+## 9. Chiến lược kiểm thử
 
-### Backend RED-GREEN
+### máy chủ RED-GREEN
 
-- Route rejects unauthenticated and non-Admin callers before the service.
-- Route returns exact `{ roles, permissions }` for Admin.
-- Service returns the canonical role order and all 15 permission rows.
-- DTO objects contain only approved keys, valid roles, stable ordering, and no duplicates.
-- Repeated calls return independent objects and do not mutate the policy source.
-- No repository or write method is invoked.
+- Tuyến từ chối người gọi không được xác thực và không phải Quản trị viên trước dịch vụ.
+- Tuyến trả về chính xác `{ roles, permissions }` cho Quản trị viên.
+- Dịch vụ trả về thứ tự vai trò chuẩn và tất cả 15 hàng quyền.
+- Các đối tượng DTO chỉ chứa các khóa được phê duyệt, vai trò hợp lệ, thứ tự ổn định và không trùng lặp.
+- Các cuộc gọi lặp lại sẽ trả về các đối tượng độc lập và không làm thay đổi nguồn chính sách.
+- Không có kho lưu trữ hoặc phương thức ghi nào được gọi.
 
-### Frontend RED-GREEN
+### Giao diện người dùng RED-GREEN
 
-- Sidebar exposes exactly the eight approved entries in order.
-- Membership, Confirm Payment, and Confirm Borrow are absent from Admin navigation.
-- Permissions is reachable and loads through `adminApi.permissions()`.
-- The page contains no product hardcoded `permissionRows` or `permissionModules` fallback.
-- Role cards use FE12 `usersByRole`, not loaded user rows.
-- Module coverage and permission cells are derived from the FE11 response.
-- Matrix and count loading/error state remain independent and retryable.
+- Thanh bên hiển thị chính xác tám mục được phê duyệt theo thứ tự.
+- Tư cách thành viên, Xác nhận thanh toán và Xác nhận lượt mượn không có trong điều hướng của Quản trị viên.
+- Quyền có thể truy cập và tải thông qua `adminApi.permissions()`.
+- Trang này không chứa sản phẩm dự phòng `permissionRows` hoặc `permissionModules` được mã hóa cứng.
+- Thẻ vai trò sử dụng FE12 `usersByRole`, không tải hàng người dùng.
+- Các ô cấp phép và phạm vi mô-đun được lấy từ phản hồi FE11.
+- Ma trận và trạng thái tải/lỗi đếm vẫn độc lập và có thể thử lại.
 
-### Validation Gate
+### Cổng xác thực
 
-- Focused and full backend/frontend tests pass.
-- Backend coverage threshold, frontend lint/build, browser E2E, health import, OpenAPI parsing, traceability, diff hygiene, and high-confidence secret scan pass.
-- Human H2 review occurs before commit/push; human H3 review occurs after PR checks and before merge.
-- Post-merge `main` CI is recorded before closing `TD-023`.
+- Các kiểm thử backend/frontend tập trung và đầy đủ đã vượt qua.
+- Ngưỡng phạm vi máy chủ, tìm lỗi mã nguồn/xây dựng giao diện người dùng, trình duyệt E2E, nhập tình trạng, phân tích cú pháp OpenAPI, truy vết, vệ sinh khác biệt và thẻ quét bí mật có độ tin cậy cao.
+- Quá trình xem xét H2 ở người diễn ra trước khi cam kết/đẩy; Đánh giá H3 của con người diễn ra sau khi kiểm tra PR và trước khi hợp nhất.
+- `main` CI sau hợp nhất được ghi lại trước khi đóng `TD-023`.
 
-## 10. Acceptance Criteria
+## 10. Tiêu chí chấp nhận
 
-- Admin sees exactly the approved eight sidebar entries and can open Permissions.
-- Membership remains functional outside the Admin Console sidebar.
-- Permissions displays global Admin/Librarian/Member counts from FE12.
-- Permissions displays the canonical FE11 matrix and derived module coverage.
-- The page is read-only and exposes no permission mutation controls.
-- FE11/FE12 failures are isolated without invented fallback data.
-- `TD-023` closes only after H2, tests, H3, merge, and post-merge CI.
-- Whole FE11 remains deferred after this bounded slice.
+- Quản trị viên nhìn thấy chính xác tám mục nhập thanh bên đã được phê duyệt và có thể mở Quyền.
+- Tư cách thành viên vẫn hoạt động bên ngoài thanh bên của Bảng điều khiển dành cho quản trị viên.
+- Quyền hiển thị số lượng Quản trị viên/Thủ thư/Thành viên toàn cầu từ FE12.
+- Quyền hiển thị ma trận FE11 chuẩn và phạm vi mô-đun dẫn xuất.
+- Trang này ở chế độ chỉ đọc và không hiển thị các điều khiển thao tác ghi quyền.
+- Các lỗi FE11/FE12 bị cô lập mà không có dữ liệu dự phòng được phát minh.
+- `TD-023` chỉ đóng sau H2, kiểm tra, H3, hợp nhất và CI sau hợp nhất.
+- Toàn bộ FE11 vẫn bị trì hoãn sau lát cắt giới hạn này.

@@ -1,132 +1,143 @@
-# FE11 Safe User List And Detail Implementation Plan
+# FE11 Danh sách người dùng an toàn và kế hoạch thực hiện chi tiết
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Đối với nhân viên đại lý:** SUB-SKILL BẮT BUỘC: Sử dụng siêu năng lực:phát triển theo định hướng phụ (được khuyến nghị) hoặc siêu năng lực:thực hiện các kế hoạch để triển khai kế hoạch này theo từng nhiệm vụ. Các bước sử dụng cú pháp hộp kiểm (`- [ ]`) để theo dõi.
 
-**Goal:** Make FE11 user list and detail responses use the approved safe DTO, strict query validation, deterministic detail aggregates, and `404 USER_NOT_FOUND`, with the Admin UI consuming the real detail endpoint.
+**Mục tiêu:** Tạo danh sách người dùng FE11 và phản hồi chi tiết bằng cách sử dụng DTO an toàn đã
+được phê duyệt, xác thực truy vấn nghiêm ngặt, tổng hợp chi tiết xác định và `404 USER_NOT_FOUND`,
+với Giao diện người dùng quản trị sử dụng điểm cuối chi tiết thực.
 
-**Architecture:** Keep the existing Express controller/service/repository flow and the existing `userRepository.js` read boundary. Implement the list and detail as separate safe projections so detail-only aggregates never leak into list or mutation readback responses; keep frontend query normalization in a small pure helper and fetch detail only when a row is selected.
+**Kiến trúc:** Giữ nguyên luồng bộ điều khiển/dịch vụ/kho lưu trữ Express hiện có và ranh giới đọc
+`userRepository.js` hiện có. Triển khai danh sách và chi tiết dưới dạng các phép chiếu an toàn riêng
+biệt để các tổng hợp chỉ có chi tiết không bao giờ bị rò rỉ vào các phản hồi đọc lại danh sách hoặc
+thao tác ghi; giữ chuẩn hóa truy vấn giao diện người dùng trong một trình trợ giúp thuần túy nhỏ và chỉ
+tìm nạp chi tiết khi một hàng được chọn.
 
-**Tech Stack:** Node.js CommonJS, Express 5, express-validator 7, Jest 30, SQL Server via `mssql`, React 19, Vite 8, Node test runner, Markdown SDD artifacts.
+**bộ công nghệ công nghệ:** Node.js CommonJS, Express 5, trình xác thực nhanh 7, Jest 30, SQL Server
+qua `mssql`, React 19, Vite 8, Trình chạy kiểm thử nút, Markdown tệp bàn giao SDD.
 
-## Global Constraints
+## Ràng buộc toàn cầu
 
-- Execute from an isolated worktree based on `origin/main` at or after `66642b5`; bring in only the approved design and this plan from `agent/spec-baseline-fe01`, not the branch's unrelated traceability history.
-- Approved stack remains Node.js + Express.js, React + Bootstrap, SQL Server, and RESTful API.
-- Implement only `BR-FE11-001`, `BR-FE11-026`, `FR-FE11-001`, `FR-FE11-002`, `FR-FE11-015`, `FR-FE11-016`, `AC-FE11-001`, `AC-FE11-002`, `NFR-FE11-SEC-001`, `NFR-FE11-SEC-002`, `NFR-FE11-SEC-004..006`, and `NFR-FE11-PERF-001` for this slice.
-- Keep FE11 `Implementation State: DEFERRED`; record this completed slice separately because the feature-wide traceability denominator is unchanged.
-- Do not change database schema, user update/deactivation behavior, account setup, role mutation, Admin dashboard, audit-log UI, or the traceability checker.
-- Do not return fake `department` or `specialization` keys; `TD-012` remains open.
-- The managed-user response key is `phoneNumber`; create/update request payloads continue to use `phone` in this slice.
-- List items and mutation readbacks never contain `relatedSummary`; only `GET /api/users/{userId}` contains it.
-- Authenticate and authorize Admin access before exposing input-validation details.
-- Use typed SQL parameters and explicit response allowlists; never return credentials, tokens, sessions, setup/reset links, provider payloads, or secret audit metadata.
-- Every production behavior change must have an observed failing test first.
-- Preserve unrelated user changes and untracked files; stage only files named by the active task.
+- Thực thi từ một cây làm việc bị cô lập dựa trên `origin/main` tại hoặc sau `66642b5`; chỉ mang theo thiết kế đã được phê duyệt và phương án này từ `agent/spec-baseline-fe01` chứ không mang theo lịch sử truy vết không liên quan của nhánh.
+- bộ công nghệ được phê duyệt vẫn là Node.js + Express.js, React + Bootstrap, SQL Server và RESTful API.
+- Chỉ triển khai `BR-FE11-001`, `BR-FE11-026`, `FR-FE11-001`, `FR-FE11-002`, `FR-FE11-015`, `FR-FE11-016`, `AC-FE11-001`, `AC-FE11-002`, `NFR-FE11-SEC-001`, `NFR-FE11-SEC-002`, `NFR-FE11-SEC-004..006` và `NFR-FE11-PERF-001` cho lát cắt này.
+- Giữ FE11 `Implementation State: DEFERRED`; ghi lại phần hoàn chỉnh này một cách riêng biệt vì mẫu số truy vết trên toàn đối tượng không thay đổi.
+- Không thay đổi lược đồ cơ sở dữ liệu, hành vi cập nhật/hủy kích hoạt của người dùng, thiết lập tài khoản, thay đổi vai trò, bảng thông tin dành cho quản trị viên, giao diện người dùng nhật ký kiểm tra hoặc trình kiểm tra truy vết.
+- Không trả sách khóa `department` hoặc `specialization` giả; `TD-012` vẫn mở.
+- Khóa phản hồi của người dùng được quản lý là `phoneNumber`; tải trọng yêu cầu tạo/cập nhật tiếp tục sử dụng `phone` trong lát này.
+- Danh sách các mục và đọc lại thao tác ghi không bao giờ chứa `relatedSummary`; chỉ `GET /api/users/{userId}` chứa nó.
+- Xác thực và ủy quyền quyền truy cập của Quản trị viên trước khi hiển thị chi tiết xác thực đầu vào.
+- Sử dụng các tham số SQL đã nhập và danh sách cho phép phản hồi rõ ràng; không bao giờ trả sách thông tin xác thực, mã thông báo, phiên, liên kết thiết lập/đặt lại, trọng tải của nhà cung cấp hoặc siêu dữ liệu kiểm tra bí mật.
+- Mọi thay đổi về hành vi sản xuất trước tiên phải có một kiểm thử thất bại được quan sát.
+- Bảo toàn những thay đổi không liên quan của người dùng và các tập tin không bị theo dõi; chỉ xử lý các tệp được đặt tên theo tác vụ đang hoạt động.
 
 ---
 
-### Task 1: Activate The Approved FE11 Read Slice
+### Nhiệm vụ 1: Kích hoạt phần đọc FE11 đã được phê duyệt
 
-**Files:**
-- Modify: `.sdd/specs/feat-user-role-management/PLAN.md`
-- Modify: `.sdd/specs/feat-user-role-management/TASKS.md`
-- Modify: `.sdd/specs/feat-user-role-management/TEST_PLAN.md`
-- Modify: `.sdd/specs/feat-user-role-management/CHANGELOG.md`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-user-role-management/PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/TEST_PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/CHANGELOG.md`
 
-**Interfaces:**
-- Consumes: approved design `docs/superpowers/specs/2026-07-18-fe11-safe-user-list-detail-design.md` and completed FE11 account-setup/transactional-role slices on `origin/main`.
-- Produces: task IDs `FE11-U01..U06`, explicit scope, and validation evidence expectations used by Tasks 2-5.
+**Giao diện:**
+- Tiêu thụ: thiết kế `docs/superpowers/specs/2026-07-18-fe11-safe-user-list-detail-design.md` đã được phê duyệt và hoàn thành các lát cắt vai trò giao dịch/thiết lập tài khoản FE11 trên `origin/main`.
+- Tạo ra: ID nhiệm vụ `FE11-U01..U06`, phạm vi rõ ràng và các kỳ vọng bằng chứng xác thực được sử dụng bởi Nhiệm vụ 2-5.
 
-- [ ] **Step 1: Append the safe list/detail slice to FE11 PLAN.md**
+- [ ] **Bước 1: Nối danh sách an toàn/lát chi tiết vào FE11 PLAN.md**
 
-Update the top status to:
-
-```markdown
-Status: APPROVED - BASELINE 2026-07-17; ACCOUNT SETUP AND TRANSACTIONAL ROLE SLICES COMPLETE; SAFE LIST/DETAIL SLICE APPROVED FOR IMPLEMENTATION; REMAINING WORK DEFERRED
-```
-
-Append:
+Cập nhật trạng thái hàng đầu thành:
 
 ```markdown
-## 11. Safe User List And Detail Slice
-
-### In Scope
-
-- Validate list pagination, status, role, search, and detail user ID.
-- Return only the explicit `UserManagementView` allowlist with `phoneNumber`.
-- Restrict search to email, full name, and user ID with stable ordering.
-- Return detail-only borrowing, unpaid-fine, and open-reservation summaries.
-- Return `404 USER_NOT_FOUND` for a missing detail user.
-- Make the Admin UI fetch and render the real detail response.
-- Add route, service, repository, and frontend RED-GREEN tests.
-
-### Out Of Scope
-
-- Schema changes and librarian `department`/`specialization` persistence.
-- Update/deactivation, account setup, role mutation, audit-log, dashboard, and request-management behavior.
-- Feature-wide traceability-checker policy changes.
-
-### Validation Gate
-
-- Invalid supplied list/detail values are rejected instead of clamped.
-- Hostile extra database columns never appear in the safe DTO.
-- List items have no `relatedSummary`; detail has exactly three deterministic numeric summary fields.
-- Focused/full backend and frontend checks plus `trace:enforce` pass.
-- Remaining FE11 work stays deferred and is not reported as complete.
+Trạng thái: ĐƯỢC PHÊ DUYỆT - CƠ SỞ 2026-07-17; ACCOUNT SETUP AND TRANSACTIONAL ROLE SLICES HOÀN THÀNH; SAFE LIST/DETAIL SLICE ĐÃ PHÊ DUYỆT FOR IMPLEMENTATION; REMAINING WORK TRÌ HOÃN
 ```
 
-- [ ] **Step 2: Add FE11-U01..U06 to TASKS.md**
-
-Insert before `## Deferred FE11 Work`:
+Nối thêm:
 
 ```markdown
-## Safe User List And Detail Tasks
+## 11. Lát cắt danh sách và chi tiết người dùng an toàn
 
-- [ ] **FE11-U01 - Enforce the canonical user-list contract.**
-  - Maps to: FR-FE11-001, AC-FE11-001, NFR-FE11-SEC-004, NFR-FE11-PERF-001.
-  - DoD: omitted values use page 1/limit 20; invalid supplied values are rejected; status/role/search are normalized; search uses only email, full name, and user ID; order stays `CreatedAt DESC, UserId DESC`.
+### Trong phạm vi
 
-- [ ] **FE11-U02 - Return the explicit safe managed-user allowlist.**
-  - Maps to: BR-FE11-026, FR-FE11-001, AC-FE11-001, NFR-FE11-SEC-006.
-  - DoD: list/readback responses use `phoneNumber`, deterministic uppercase roles, and no credential/token/session/link/audit-secret fields.
+- Xác thực phân trang danh sách, trạng thái, vai trò, tìm kiếm và ID người dùng chi tiết.
+- Chỉ trả sách danh sách cho phép `UserManagementView` rõ ràng với `phoneNumber`.
+- Giới hạn tìm kiếm trong email, tên đầy đủ và ID người dùng với thứ tự ổn định.
+- trả sách các bản tóm tắt lượt mượn chỉ chi tiết, khoản khoản phạt chưa thanh toán và khoản đặt chỗ mở.
+- trả sách `404 USER_NOT_FOUND` cho người dùng thiếu chi tiết.
+- Làm cho giao diện người dùng quản trị tìm nạp và hiển thị phản hồi chi tiết thực sự.
+- Thêm các kiểm thử RED-GREEN về tuyến đường, dịch vụ, kho lưu trữ và giao diện người dùng.
 
-- [ ] **FE11-U03 - Add the detail-only related summary query.**
-  - Maps to: FR-FE11-002, AC-FE11-002.
-  - DoD: one parameterized detail query returns active borrowing count, outstanding unpaid-fine total, and open reservation count with numeric zero defaults.
+### Ngoài phạm vi
 
-- [ ] **FE11-U04 - Return deterministic detail validation and not-found errors.**
-  - Maps to: FR-FE11-015, FR-FE11-016, NFR-FE11-SEC-001/002/004.
-  - DoD: Admin authorization precedes validation; invalid IDs return `400 VALIDATION_ERROR`; valid missing IDs return `404 USER_NOT_FOUND`.
+- Thay đổi lược đồ và sự tồn tại của thủ thư `department`/`specialization`.
+- Cập nhật/hủy kích hoạt, thiết lập tài khoản, thay đổi vai trò, nhật ký kiểm tra, bảng thông tin và hành vi quản lý yêu cầu.
+- Thay đổi chính sách về trình kiểm tra truy vết trên toàn bộ chức năng.
 
-- [ ] **FE11-U05 - Consume the safe list/detail contract in the Admin UI.**
-  - Maps to: AC-FE11-001, AC-FE11-002.
-  - DoD: UI omits `ALL`/empty search, reads `phoneNumber`, fetches detail on row selection, renders summaries, and reloads a stale list after detail 404.
+### Cổng xác nhận
 
-- [ ] **FE11-U06 - Pass the safe list/detail validation gate.**
-  - Dependencies: FE11-U01..U05.
-  - DoD: focused/full tests, coverage, frontend lint/build, traceability, diff hygiene, security review, debt reconciliation, validation record, and human review evidence are complete.
+- Các giá trị danh sách/chi tiết được cung cấp không hợp lệ sẽ bị từ chối thay vì bị kẹp.
+- Các cột cơ sở dữ liệu bổ sung thù địch không bao giờ xuất hiện trong DTO an toàn.
+- Các mục trong danh sách không có `relatedSummary`; chi tiết có chính xác ba trường tóm tắt bằng số xác định.
+- Kiểm tra giao diện người dùng và máy chủ tập trung/đầy đủ cùng với thẻ `trace:enforce`.
+- Công việc FE11 còn lại vẫn bị trì hoãn và không được báo cáo là hoàn thành.
 ```
 
-Keep this line unchanged:
+- [ ] **Bước 2: Thêm FE11-U01..U06 vào TASKS.md**
+
+Chèn trước `## Deferred FE11 Work`:
 
 ```markdown
-Implementation State: DEFERRED
+## Nhiệm vụ danh sách và chi tiết người dùng an toàn
+
+- [ ] **FE11-U01 - Thực thi hợp đồng danh sách người dùng chuẩn.**
+  - Bản đồ tới: FR-FE11-001, AC-FE11-001, NFR-FE11-SEC-004, NFR-FE11-PERF-001.
+  - DoD: các giá trị bị bỏ qua sử dụng trang 1/giới hạn 20; các giá trị được cung cấp không hợp lệ sẽ bị từ chối; trạng thái/vai trò/tìm kiếm được chuẩn hóa; tìm kiếm chỉ sử dụng email, tên đầy đủ và ID người dùng; đơn hàng vẫn là `CreatedAt DESC, UserId DESC`.
+
+- [ ] **FE11-U02 - trả sách danh sách cho phép người dùng được quản lý an toàn rõ ràng.**
+  - Bản đồ tới: BR-FE11-026, FR-FE11-001, AC-FE11-001, NFR-FE11-SEC-006.
+  - DoD: phản hồi danh sách/đọc lại sử dụng `phoneNumber`, vai trò viết hoa xác định và không có trường thông tin xác thực/mã thông báo/phiên/liên kết/bí mật kiểm toán.
+
+- [ ] **FE11-U03 - Thêm truy vấn tóm tắt chỉ liên quan đến chi tiết.**
+  - Bản đồ tới: FR-FE11-002, AC-FE11-002.
+  - DoD: một truy vấn chi tiết được tham số hóa trả về số lượt mượn đang hoạt động, tổng số khoản phạt chưa thanh toán chưa thanh toán và số lượng đặt chỗ mở với giá trị mặc định là số 0.
+
+- [ ] **FE11-U04 - Trả về xác thực chi tiết xác định và lỗi không tìm thấy.**
+  - Ánh xạ tới: FR-FE11-015, FR-FE11-016, NFR-FE11-SEC-001/002/004.
+  - DoD: Ủy quyền của quản trị viên trước khi xác thực; ID không hợp lệ trả về `400 VALIDATION_ERROR`; ID bị thiếu hợp lệ trả về `404 USER_NOT_FOUND`.
+
+- [ ] **FE11-U05 - Sử dụng danh sách an toàn/hợp đồng chi tiết trong Giao diện người dùng quản trị.**
+  - Bản đồ tới: AC-FE11-001, AC-FE11-002.
+  - DoD: Giao diện người dùng bỏ qua `ALL`/tìm kiếm trống, đọc `phoneNumber`, tìm nạp chi tiết về lựa chọn hàng, hiển thị tóm tắt và tải lại danh sách cũ sau chi tiết 404.
+
+- [ ] **FE11-U06 - Vượt qua cổng xác thực danh sách/chi tiết an toàn.**
+  - Các phần phụ thuộc: FE11-U01..U05.
+  - DoD: các kiểm thử tập trung/đầy đủ, phạm vi bao phủ, tìm lỗi/xây dựng giao diện người dùng, truy vết, vệ sinh khác biệt, đánh giá bảo mật, đối chiếu nợ, hồ sơ xác nhận và bằng chứng đánh giá con người đã hoàn tất.
 ```
 
-- [ ] **Step 3: Update TEST_PLAN.md and CHANGELOG.md**
+Giữ dòng này không thay đổi:
 
-Add the approved design and implementation plan under Current Evidence. Add a `2026-07-18 - Safe User List And Detail Slice Approved` changelog entry stating the exact allowlist, strict query validation, aggregate semantics, no-schema decision, TDD requirement, and that no implementation evidence is claimed yet.
+```markdown
+Trạng thái thực hiện: TRÌ HOÃN
+```
 
-- [ ] **Step 4: Run documentation checks**
+- [ ] **Bước 3: Cập nhật TEST_PLAN.md và CHANGELOG.md**
+
+Thêm kế hoạch thiết kế và thực hiện đã được phê duyệt vào phần Bằng chứng hiện tại. Thêm mục nhập
+nhật ký thay đổi `2026-07-18 - Safe User List And Detail Slice Approved` nêu rõ danh sách cho phép
+chính xác, xác thực truy vấn nghiêm ngặt, ngữ nghĩa tổng hợp, quyết định không có lược đồ, yêu cầu
+TDD và chưa có bằng chứng triển khai nào được xác nhận.
+
+- [ ] **Bước 4: Chạy kiểm tra tài liệu**
 
 ```powershell
 npm.cmd run trace:enforce
 git diff --check -- .sdd/specs/feat-user-role-management
 ```
 
-Expected: traceability enforcement remains PASS with FE11 whole-feature `DEFERRED`, and the Markdown diff is clean. Do not add or modify traceability-checker scripts in this slice.
+Dự kiến: việc thực thi truy vết vẫn ĐẠT với FE11 toàn bộ chức năng `DEFERRED` và điểm khác biệt
+Markdown hoàn toàn sạch. Không thêm hoặc sửa đổi các tập lệnh kiểm tra truy vết trong phần này.
 
-- [ ] **Step 5: Commit the planning checkpoint**
+- [ ] **Bước 5: Cam kết điểm kiểm tra quy hoạch**
 
 ```powershell
 git add -- .sdd/specs/feat-user-role-management/PLAN.md .sdd/specs/feat-user-role-management/TASKS.md .sdd/specs/feat-user-role-management/TEST_PLAN.md .sdd/specs/feat-user-role-management/CHANGELOG.md
@@ -135,30 +146,30 @@ git commit -m "docs: activate FE11 safe user reads"
 
 ---
 
-### Task 2: Implement The Safe User List Vertical Slice
+### Nhiệm vụ 2: Thực hiện lát dọc danh sách người dùng an toàn
 
-**Files:**
-- Create: `backend/tests/userRepository.test.js`
-- Create: `frontend/src/utils/userManagementQuery.js`
-- Modify: `backend/tests/userManagementRoutes.test.js`
-- Modify: `backend/tests/userManagementService.test.js`
-- Modify: `backend/src/validators/userManagementValidators.js`
-- Modify: `backend/src/routes/userManagementRoutes.js`
-- Modify: `backend/src/controllers/userManagementController.js`
-- Modify: `backend/src/services/userManagementService.js`
-- Modify: `backend/src/repositories/userRepository.js`
-- Modify: `frontend/test/userManagementApi.test.js`
-- Modify: `frontend/src/api/userManagementApi.js`
-- Modify: `frontend/src/page/UserManagement.jsx`
-- Modify: `.sdd/specs/feat-user-role-management/TASKS.md`
+**Tệp:**
+- Tạo: `backend/tests/userRepository.test.js`
+- Tạo: `frontend/src/utils/userManagementQuery.js`
+- Sửa đổi: `backend/tests/userManagementRoutes.test.js`
+- Sửa đổi: `backend/tests/userManagementService.test.js`
+- Sửa đổi: `backend/src/validators/userManagementValidators.js`
+- Sửa đổi: `backend/src/routes/userManagementRoutes.js`
+- Sửa đổi: `backend/src/controllers/userManagementController.js`
+- Sửa đổi: `backend/src/services/userManagementService.js`
+- Sửa đổi: `backend/src/repositories/userRepository.js`
+- Sửa đổi: `frontend/test/userManagementApi.test.js`
+- Sửa đổi: `frontend/src/api/userManagementApi.js`
+- Sửa đổi: `frontend/src/page/UserManagement.jsx`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/TASKS.md`
 
-**Interfaces:**
-- Consumes: existing `handleValidationErrors`, Admin-first middleware, `listManagedUsers({ page, limit, status, role, search })`, and current pagination envelope.
-- Produces: `listUsersValidators`, `req.validatedListQuery`, canonical service filters, `buildManagedUserListParams(input)`, and safe list items with `phoneNumber` and no `relatedSummary`.
+**Giao diện:**
+- Tiêu thụ: `handleValidationErrors` hiện có, phần mềm trung gian ưu tiên quản trị viên, `listManagedUsers({ page, limit, status, role, search })` và phong bì phân trang hiện tại.
+- Sản xuất: `listUsersValidators`, `req.validatedListQuery`, bộ lọc dịch vụ chuẩn, `buildManagedUserListParams(input)` và các mục trong danh sách an toàn có `phoneNumber` và không có `relatedSummary`.
 
-- [ ] **Step 1: Write failing list route tests**
+- [ ] **Bước 1: Viết kiểm thử lộ trình danh sách không thành công**
 
-Add to `backend/tests/userManagementRoutes.test.js`:
+Thêm vào `backend/tests/userManagementRoutes.test.js`:
 
 ```js
 test('GET /api/users normalizes the approved list query', async () => {
@@ -224,9 +235,9 @@ test('GET /api/users authorizes before validating the query', async () => {
 });
 ```
 
-- [ ] **Step 2: Write failing service list tests**
+- [ ] **Bước 2: Viết kiểm thử danh sách dịch vụ không thành công**
 
-Add a focused harness and tests to `backend/tests/userManagementService.test.js`:
+Thêm dây nịt tập trung và kiểm thử vào `backend/tests/userManagementService.test.js`:
 
 ```js
 function makeReadHarness(userRepositoryOverrides = {}) {
@@ -299,9 +310,9 @@ test.each([
 });
 ```
 
-- [ ] **Step 3: Write failing repository allowlist and SQL tests**
+- [ ] **Bước 3: Viết danh sách cho phép kho lưu trữ không thành công và các kiểm thử SQL**
 
-Create `backend/tests/userRepository.test.js` with the database mock and list assertions:
+Tạo `backend/tests/userRepository.test.js` với các xác nhận mô phỏng và liệt kê cơ sở dữ liệu:
 
 ```js
 jest.mock('../src/config/db', () => ({
@@ -405,9 +416,10 @@ test('listManagedUsers uses only approved search fields and stable ordering', as
 });
 ```
 
-- [ ] **Step 4: Write failing frontend query and field-name tests**
+- [ ] **Bước 4: Viết các kiểm thử tên trường và truy vấn giao diện người dùng không thành công**
 
-Replace the Task 2 utility import in `frontend/test/userManagementApi.test.js`, then append the tests:
+Thay thế nhập tiện ích Nhiệm vụ 2 trong `frontend/test/userManagementApi.test.js`, sau đó nối thêm
+các kiểm thử:
 
 ```js
 import { buildManagedUserListParams } from '../src/utils/userManagementQuery.js';
@@ -446,18 +458,22 @@ test('FE11 Admin UI reads phoneNumber instead of response phone', async () => {
 });
 ```
 
-- [ ] **Step 5: Run the list RED tests**
+- [ ] **Bước 5: Chạy danh sách kiểm tra RED**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/userManagementRoutes.test.js tests/userManagementService.test.js tests/userRepository.test.js
 node --test --test-name-pattern="FE11" frontend/test/userManagementApi.test.js
 ```
 
-Expected: backend failures show missing list validators, silent service clamping, broad search, and `phone`; frontend fails because the query helper and `phoneNumber` reads do not exist.
+Dự kiến: lỗi máy chủ hiển thị trình xác thực danh sách bị thiếu, kẹp dịch vụ im lặng, tìm kiếm rộng
+rãi và `phone`; giao diện người dùng không thành công vì trình trợ giúp truy vấn và các lần đọc
+`phoneNumber` không tồn tại.
 
-- [ ] **Step 6: Implement list validators and route wiring**
+- [ ] **Bước 6: Triển khai trình xác thực danh sách và nối tuyến đường**
 
-Update `backend/src/validators/userManagementValidators.js`. Express 5 exposes `req.query` through a getter that reparses the URL, so store express-validator's sanitized result on a dedicated request property:
+Cập nhật `backend/src/validators/userManagementValidators.js`. Express 5 hiển thị `req.query` thông
+qua một getter phân tích lại URL, vì vậy hãy lưu trữ kết quả đã được lọc của trình xác thực nhanh
+trên một thuộc tính yêu cầu chuyên dụng:
 
 ```js
 const { body, matchedData, param, query } = require('express-validator');
@@ -506,7 +522,7 @@ const listUsersValidators = [
 ];
 ```
 
-Export `listUsersValidators`. Wire it after Admin authorization:
+Xuất `listUsersValidators`. Đấu dây sau khi có sự cho phép của Quản trị viên:
 
 ```js
 const {
@@ -519,15 +535,15 @@ const {
 router.get('/', ...requireAdmin, listUsersValidators, controller.listUsers);
 ```
 
-Update the controller boundary:
+Cập nhật ranh giới bộ điều khiển:
 
 ```js
 const result = await userManagementService.listUsers(req.validatedListQuery || req.query);
 ```
 
-- [ ] **Step 7: Implement canonical service list parsing**
+- [ ] **Bước 7: Triển khai phân tích cú pháp danh sách dịch vụ chuẩn**
 
-Add near the top of `backend/src/services/userManagementService.js`:
+Thêm gần đầu `backend/src/services/userManagementService.js`:
 
 ```js
 const USER_LIST_STATUSES = new Set(['ACTIVE', 'INACTIVE', 'LOCKED']);
@@ -573,7 +589,7 @@ function normalizeListSearch(value) {
 }
 ```
 
-Replace `listUsers` with:
+Thay thế `listUsers` bằng:
 
 ```js
 async function listUsers(query = {}) {
@@ -609,9 +625,10 @@ async function listUsers(query = {}) {
 }
 ```
 
-- [ ] **Step 8: Implement the repository allowlist and approved search**
+- [ ] **Bước 8: Triển khai danh sách kho lưu trữ cho phép và tìm kiếm được phê duyệt**
 
-Replace the managed-role and managed-user mapping in `backend/src/repositories/userRepository.js`:
+Thay thế ánh xạ vai trò được quản lý và người dùng được quản lý trong
+`backend/src/repositories/userRepository.js`:
 
 ```js
 function mapManagedRoles(value) {
@@ -647,7 +664,7 @@ function mapManagedUser(row) {
 }
 ```
 
-Change the search parameter and predicate to:
+Thay đổi tham số tìm kiếm và vị ngữ thành:
 
 ```js
 request.input('Search', sql.NVarChar(202), `%${search}%`);
@@ -658,15 +675,15 @@ where.push(`(
 )`);
 ```
 
-Keep the SQL pagination and exact stable order already present. Add above `listManagedUsers`:
+Giữ phân trang SQL và thứ tự ổn định chính xác đã có sẵn. Thêm vào `listManagedUsers` ở trên:
 
 ```js
 // @spec FR-FE11-001, BR-FE11-026
 ```
 
-- [ ] **Step 9: Implement frontend query normalization and `phoneNumber` reads**
+- [ ] **Bước 9: Triển khai chuẩn hóa truy vấn giao diện người dùng và đọc `phoneNumber`**
 
-Create `frontend/src/utils/userManagementQuery.js`:
+Tạo `frontend/src/utils/userManagementQuery.js`:
 
 ```js
 export function buildManagedUserListParams({ page, limit, role, status, search } = {}) {
@@ -687,7 +704,7 @@ export function buildManagedUserListParams({ page, limit, role, status, search }
 }
 ```
 
-Import it in `frontend/src/api/userManagementApi.js` and change the list call:
+Nhập nó vào `frontend/src/api/userManagementApi.js` và thay đổi lệnh gọi danh sách:
 
 ```js
 import { buildManagedUserListParams } from '../utils/userManagementQuery';
@@ -706,7 +723,7 @@ export async function fetchUsers(params = {}) {
 }
 ```
 
-Change only response reads in `UserManagement.jsx`:
+Thay đổi chỉ đọc phản hồi trong `UserManagement.jsx`:
 
 ```js
 phone: user?.phoneNumber || '',
@@ -720,9 +737,9 @@ phone: user?.phoneNumber || '',
 {selectedUser.phoneNumber || '-'}
 ```
 
-Keep `form.phone` and create/update request payload fields unchanged.
+Giữ nguyên `form.phone` và tạo/cập nhật các trường tải trọng yêu cầu.
 
-- [ ] **Step 10: Run list GREEN and regression checks**
+- [ ] **Bước 10: Chạy danh sách GREEN và kiểm tra hồi quy**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/userManagementRoutes.test.js tests/userManagementService.test.js tests/userRepository.test.js
@@ -731,9 +748,10 @@ npm.cmd --prefix frontend run lint
 npm.cmd --prefix frontend run build
 ```
 
-Expected: focused backend/frontend tests pass; lint and production build pass; existing create/update payload tests remain unchanged.
+Dự kiến: vượt qua các kiểm thử backend/frontend tập trung; kiểm tra mã và thẻ xây dựng sản xuất; các kiểm
+thử tạo/cập nhật tải trọng hiện có vẫn không thay đổi.
 
-- [ ] **Step 11: Mark FE11-U01/U02 complete and commit**
+- [ ] **Bước 11: Đánh dấu hoàn thành FE11-U01/U02 và cam kết**
 
 ```powershell
 git add -- backend/tests/userRepository.test.js backend/tests/userManagementRoutes.test.js backend/tests/userManagementService.test.js backend/src/validators/userManagementValidators.js backend/src/routes/userManagementRoutes.js backend/src/controllers/userManagementController.js backend/src/services/userManagementService.js backend/src/repositories/userRepository.js frontend/src/utils/userManagementQuery.js frontend/test/userManagementApi.test.js frontend/src/api/userManagementApi.js frontend/src/page/UserManagement.jsx .sdd/specs/feat-user-role-management/TASKS.md docs/superpowers/plans/2026-07-18-fe11-safe-user-list-detail.md
@@ -742,25 +760,25 @@ git commit -m "feat: enforce safe FE11 user list contract"
 
 ---
 
-### Task 3: Implement The Safe Detail API And Aggregates
+### Nhiệm vụ 3: Triển khai chi tiết an toàn API và các tập hợp
 
-**Files:**
-- Modify: `backend/tests/userManagementRoutes.test.js`
-- Modify: `backend/tests/userManagementService.test.js`
-- Modify: `backend/tests/userRepository.test.js`
-- Modify: `backend/src/validators/userManagementValidators.js`
-- Modify: `backend/src/routes/userManagementRoutes.js`
-- Modify: `backend/src/services/userManagementService.js`
-- Modify: `backend/src/repositories/userRepository.js`
-- Modify: `.sdd/specs/feat-user-role-management/TASKS.md`
+**Tệp:**
+- Sửa đổi: `backend/tests/userManagementRoutes.test.js`
+- Sửa đổi: `backend/tests/userManagementService.test.js`
+- Sửa đổi: `backend/tests/userRepository.test.js`
+- Sửa đổi: `backend/src/validators/userManagementValidators.js`
+- Sửa đổi: `backend/src/routes/userManagementRoutes.js`
+- Sửa đổi: `backend/src/services/userManagementService.js`
+- Sửa đổi: `backend/src/repositories/userRepository.js`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/TASKS.md`
 
-**Interfaces:**
-- Consumes: `mapManagedUser(row)` from Task 2 and existing `errors.notFound`.
-- Produces: `getUserValidators` and `getManagedUserDetailById(userId) -> UserManagementView & { relatedSummary }`.
+**Giao diện:**
+- Tiêu thụ: `mapManagedUser(row)` từ Nhiệm vụ 2 và `errors.notFound` hiện có.
+- Sản xuất: `getUserValidators` và `getManagedUserDetailById(userId) -> UserManagementView & { relatedSummary }`.
 
-- [ ] **Step 1: Write failing detail route tests**
+- [ ] **Bước 1: Viết các kiểm thử lộ trình chi tiết không thành công**
 
-Add:
+Thêm:
 
 ```js
 test('GET /api/users/:userId passes a normalized positive ID', async () => {
@@ -802,7 +820,7 @@ test.each(['0', '-1', '1.5', 'not-a-user'])(
 );
 ```
 
-- [ ] **Step 2: Write failing service detail tests**
+- [ ] **Bước 2: Viết kiểm thử chi tiết dịch vụ không thành công**
 
 ```js
 test('getUser returns the dedicated detail projection', async () => {
@@ -853,9 +871,9 @@ test.each([0, -1, 1.5, 'not-a-user'])(
 );
 ```
 
-- [ ] **Step 3: Write failing repository detail tests**
+- [ ] **Bước 3: Viết các kiểm thử chi tiết kho lưu trữ không thành công**
 
-Append to `backend/tests/userRepository.test.js`:
+Nối vào `backend/tests/userRepository.test.js`:
 
 ```js
 test('getManagedUserDetailById returns exactly three numeric summaries', async () => {
@@ -927,17 +945,18 @@ test('getManagedUserDetailById maps missing aggregates to zero and missing users
 });
 ```
 
-- [ ] **Step 4: Run the detail RED tests**
+- [ ] **Bước 4: Chạy kiểm thử chi tiết RED**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/userManagementRoutes.test.js tests/userManagementService.test.js tests/userRepository.test.js
 ```
 
-Expected: failures show the missing detail validator/repository method, string route ID, base readback use, missing aggregates, and current `400` missing-user behavior.
+Dự kiến: lỗi hiển thị phương thức kho lưu trữ/trình xác thực chi tiết bị thiếu, ID lộ trình chuỗi,
+việc sử dụng đọc lại cơ sở, tổng hợp bị thiếu và hành vi thiếu người dùng `400` hiện tại.
 
-- [ ] **Step 5: Implement detail ID validation and route wiring**
+- [ ] **Bước 5: Thực hiện xác thực ID chi tiết và nối tuyến**
 
-Reuse `positiveIdParam` and add:
+Tái sử dụng `positiveIdParam` và thêm:
 
 ```js
 const getUserValidators = [
@@ -946,7 +965,7 @@ const getUserValidators = [
 ];
 ```
 
-Export it and wire:
+Xuất nó và nối dây:
 
 ```js
 const {
@@ -960,9 +979,9 @@ const {
 router.get('/:userId', ...requireAdmin, getUserValidators, controller.getUser);
 ```
 
-- [ ] **Step 6: Implement the dedicated detail mapper and query**
+- [ ] **Bước 6: Triển khai trình ánh xạ chi tiết và truy vấn chuyên dụng**
 
-Add to `backend/src/repositories/userRepository.js`:
+Thêm vào `backend/src/repositories/userRepository.js`:
 
 ```js
 function mapManagedUserDetail(row) {
@@ -1038,11 +1057,12 @@ async function getManagedUserDetailById(userId) {
 }
 ```
 
-Export `getManagedUserDetailById`. Do not change `getManagedUserById`; mutation readbacks must stay summary-free.
+Xuất `getManagedUserDetailById`. Không thay đổi `getManagedUserById`; việc đọc lại thao tác ghi phải
+không có bản tóm tắt.
 
-- [ ] **Step 7: Implement service detail validation and 404 mapping**
+- [ ] **Bước 7: Triển khai xác thực chi tiết dịch vụ và ánh xạ 404**
 
-Replace only `getUser`:
+Chỉ thay thế `getUser`:
 
 ```js
 async function getUser(userId) {
@@ -1062,17 +1082,19 @@ async function getUser(userId) {
 }
 ```
 
-Do not change the shared `getExistingUser` helper, because update/deactivation not-found behavior is outside this slice.
+Không thay đổi trình trợ giúp `getExistingUser` được chia sẻ vì hành vi không tìm thấy cập nhật/hủy
+kích hoạt nằm ngoài phần này.
 
-- [ ] **Step 8: Run detail GREEN and affected regression tests**
+- [ ] **Bước 8: Chạy chi tiết GREEN và kiểm tra hồi quy bị ảnh hưởng**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/userManagementRoutes.test.js tests/userManagementService.test.js tests/userRepository.test.js tests/userRoleRepository.test.js
 ```
 
-Expected: all focused tests pass; transactional role mutation still reads back the summary-free `getManagedUserById` shape.
+Dự kiến: tất cả các kiểm thử tập trung đều đạt; thao tác ghi vai trò giao dịch vẫn đọc lại hình dạng
+`getManagedUserById` không có tóm tắt.
 
-- [ ] **Step 9: Mark FE11-U03/U04 complete and commit**
+- [ ] **Bước 9: Đánh dấu FE11-U03/U04 là hoàn thành và cam kết**
 
 ```powershell
 git add -- backend/tests/userManagementRoutes.test.js backend/tests/userManagementService.test.js backend/tests/userRepository.test.js backend/src/validators/userManagementValidators.js backend/src/routes/userManagementRoutes.js backend/src/services/userManagementService.js backend/src/repositories/userRepository.js .sdd/specs/feat-user-role-management/TASKS.md
@@ -1081,23 +1103,23 @@ git commit -m "feat: add safe FE11 user detail summaries"
 
 ---
 
-### Task 4: Fetch And Render Real User Detail In The Admin UI
+### Nhiệm vụ 4: Tìm nạp và hiển thị chi tiết người dùng thực trong giao diện người dùng quản trị
 
-**Files:**
-- Create: `frontend/test/userManagementFrontend.test.js`
-- Modify: `frontend/test/userManagementApi.test.js`
-- Modify: `frontend/src/utils/userManagementQuery.js`
-- Modify: `frontend/src/api/userManagementApi.js`
-- Modify: `frontend/src/page/UserManagement.jsx`
-- Modify: `.sdd/specs/feat-user-role-management/TASKS.md`
+**Tệp:**
+- Tạo: `frontend/test/userManagementFrontend.test.js`
+- Sửa đổi: `frontend/test/userManagementApi.test.js`
+- Sửa đổi: `frontend/src/utils/userManagementQuery.js`
+- Sửa đổi: `frontend/src/api/userManagementApi.js`
+- Sửa đổi: `frontend/src/page/UserManagement.jsx`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/TASKS.md`
 
-**Interfaces:**
-- Consumes: backend `GET /api/users/{userId}` detail contract from Task 3.
-- Produces: `fetchManagedUser(userId)`, `isManagedUserNotFound(error)`, and detail-drawer rendering from the fetched DTO.
+**Giao diện:**
+- Tiêu thụ: hợp đồng chi tiết `GET /api/users/{userId}` máy chủ từ Nhiệm vụ 3.
+- Tạo ra: `fetchManagedUser(userId)`, `isManagedUserNotFound(error)` và kết xuất ngăn kéo chi tiết từ DTO đã tìm nạp.
 
-- [ ] **Step 1: Write failing API, error-classification, and component contract tests**
+- [ ] **Bước 1: Viết kiểm thử hợp đồng thành phần, phân loại lỗi và API bị lỗi**
 
-Extend `frontend/test/userManagementApi.test.js`:
+Mở rộng `frontend/test/userManagementApi.test.js`:
 
 ```js
 import {
@@ -1129,7 +1151,7 @@ test('FE11 detail request uses the authorized request flow', async () => {
 });
 ```
 
-Create `frontend/test/userManagementFrontend.test.js`:
+Tạo `frontend/test/userManagementFrontend.test.js`:
 
 ```js
 import assert from 'node:assert/strict';
@@ -1158,17 +1180,17 @@ test('FE11 drawer renders all approved related summaries', async () => {
 });
 ```
 
-- [ ] **Step 2: Run frontend RED**
+- [ ] **Bước 2: Chạy giao diện người dùng RED**
 
 ```powershell
 node --test --test-name-pattern="FE11" frontend/test/userManagementApi.test.js frontend/test/userManagementFrontend.test.js
 ```
 
-Expected: failures show the missing detail API, 404 helper, row-selection loader, and summary rendering.
+Dự kiến: lỗi hiển thị chi tiết bị thiếu API, trình trợ giúp 404, trình tải lựa chọn hàng và hiển thị tóm tắt.
 
-- [ ] **Step 3: Implement the detail API and safe 404 classifier**
+- [ ] **Bước 3: Triển khai chi tiết API và bộ phân loại 404 an toàn**
 
-Append to `frontend/src/utils/userManagementQuery.js`:
+Nối vào `frontend/src/utils/userManagementQuery.js`:
 
 ```js
 export function isManagedUserNotFound(error) {
@@ -1177,7 +1199,7 @@ export function isManagedUserNotFound(error) {
 }
 ```
 
-Add to `frontend/src/api/userManagementApi.js`:
+Thêm vào `frontend/src/api/userManagementApi.js`:
 
 ```js
 export async function fetchManagedUser(userId) {
@@ -1193,9 +1215,9 @@ export async function fetchManagedUser(userId) {
 }
 ```
 
-- [ ] **Step 4: Implement detail loading and stale-row recovery**
+- [ ] **Bước 4: Thực hiện tải chi tiết và khôi phục hàng cũ**
 
-Add `fetchManagedUser` to the existing API import and import the classifier:
+Thêm `fetchManagedUser` vào quá trình nhập API hiện có và nhập trình phân loại:
 
 ```js
 import {
@@ -1213,7 +1235,7 @@ import {
 import { isManagedUserNotFound } from '../utils/userManagementQuery';
 ```
 
-Add inside `UserManagement`:
+Thêm vào bên trong `UserManagement`:
 
 ```js
 async function openUserDetail(userId) {
@@ -1232,17 +1254,18 @@ async function openUserDetail(userId) {
 }
 ```
 
-Replace the row click with:
+Thay thế nhấp chuột vào hàng bằng:
 
 ```jsx
 <tr key={user.userId} onClick={() => openUserDetail(user.userId)}>
 ```
 
-The existing row-action wrapper continues to stop propagation, so edit/role/deactivate actions do not trigger detail loading.
+Trình bao bọc hành động hàng hiện có tiếp tục dừng truyền, do đó, các hành động chỉnh sửa/vai
+trò/hủy kích hoạt không kích hoạt tải chi tiết.
 
-- [ ] **Step 5: Render the three summary cards**
+- [ ] **Bước 5: Kết xuất ba thẻ tóm tắt**
 
-Insert after `.um-detail-list` and before drawer actions:
+Chèn sau `.um-detail-list` và trước các hành động của ngăn kéo:
 
 ```jsx
 <div className="um-related-summary">
@@ -1264,7 +1287,7 @@ Insert after `.um-detail-list` and before drawer actions:
 </div>
 ```
 
-Add to the component's existing style block:
+Thêm vào khối kiểu hiện có của thành phần:
 
 ```css
 .um-related-summary { display: grid; gap: 8px; margin: 0 0 24px; }
@@ -1272,7 +1295,7 @@ Add to the component's existing style block:
 .um-related-summary strong { color: #0f172a; }
 ```
 
-- [ ] **Step 6: Run frontend GREEN, lint, and build**
+- [ ] **Bước 6: Chạy giao diện người dùng GREEN, kiểm tra mã và bản dựng**
 
 ```powershell
 node --test --test-name-pattern="FE11" frontend/test/userManagementApi.test.js frontend/test/userManagementFrontend.test.js
@@ -1281,9 +1304,10 @@ npm.cmd --prefix frontend run lint
 npm.cmd --prefix frontend run build
 ```
 
-Expected: all frontend tests pass; lint and production build pass; no new dependency is added.
+Dự kiến: tất cả các kiểm thử giao diện người dùng đều vượt qua; kiểm tra mã và thẻ xây dựng sản xuất; không
+có sự phụ thuộc mới nào được thêm vào.
 
-- [ ] **Step 7: Mark FE11-U05 complete and commit**
+- [ ] **Bước 7: Đánh dấu FE11-U05 là hoàn thành và cam kết**
 
 ```powershell
 git add -- frontend/test/userManagementApi.test.js frontend/test/userManagementFrontend.test.js frontend/src/utils/userManagementQuery.js frontend/src/api/userManagementApi.js frontend/src/page/UserManagement.jsx .sdd/specs/feat-user-role-management/TASKS.md
@@ -1292,21 +1316,21 @@ git commit -m "feat: load FE11 user detail in Admin UI"
 
 ---
 
-### Task 5: Validate, Reconcile Debt, And Record Evidence
+### Nhiệm vụ 5: Xác thực, đối chiếu khoản nợ và ghi lại bằng chứng
 
-**Files:**
-- Modify: `.sdd/specs/feat-user-role-management/PLAN.md`
-- Modify: `.sdd/specs/feat-user-role-management/TASKS.md`
-- Modify: `.sdd/specs/feat-user-role-management/TEST_PLAN.md`
-- Modify: `.sdd/specs/feat-user-role-management/CHANGELOG.md`
-- Modify: `TECH_DEBT.md`
-- Create: `.sdd/reviews/fe11-safe-user-list-detail-validation-2026-07-18.md`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-user-role-management/PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/TEST_PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/CHANGELOG.md`
+- Sửa đổi: `TECH_DEBT.md`
+- Tạo: `.sdd/reviews/fe11-safe-user-list-detail-validation-2026-07-18.md`
 
-**Interfaces:**
-- Consumes: completed FE11-U01..U05 implementation and test evidence.
-- Produces: FE11-U06 validation record, narrowed `TD-014`/`TD-015`, and reviewer-ready B1-B7 handoff without a whole-feature completion claim.
+**Giao diện:**
+- Tiêu thụ: đã hoàn thành bằng chứng kiểm thử và triển khai FE11-U01..U05.
+- Tạo ra: bản ghi xác thực FE11-U06, `TD-014`/`TD-015` được thu hẹp và chuyển giao B1-B7 sẵn sàng cho người đánh giá mà không cần yêu cầu hoàn thành toàn bộ chức năng.
 
-- [ ] **Step 1: Run focused and full automated checks**
+- [ ] **Bước 1: Chạy kiểm tra tập trung và hoàn toàn tự động**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/userManagementRoutes.test.js tests/userManagementService.test.js tests/userRepository.test.js tests/userRoleRepository.test.js
@@ -1318,9 +1342,11 @@ npm.cmd --prefix frontend run build
 npm.cmd run trace:enforce
 ```
 
-Expected: all focused/full suites pass, existing coverage thresholds pass, frontend lint/build pass, and traceability remains PASS while FE11 stays whole-feature `DEFERRED`.
+Dự kiến: tất cả các bộ tập trung/đầy đủ đều vượt qua, ngưỡng phủ sóng hiện có vượt qua, vượt qua
+kiểm tra mã/xây dựng giao diện người dùng và khả năng truy vết vẫn đạt trong khi FE11 vẫn duy trì toàn bộ
+chức năng `DEFERRED`.
 
-- [ ] **Step 2: Run security and diff-hygiene checks**
+- [ ] **Bước 2: Chạy kiểm tra bảo mật và vệ sinh**
 
 ```powershell
 rg -n "passwordHash|tokenHash|refreshToken|sessionId|setupLink|resetLink|providerPayload|auditSecret" backend/src/repositories/userRepository.js backend/src/services/userManagementService.js backend/tests/userRepository.test.js frontend/src/api/userManagementApi.js frontend/src/page/UserManagement.jsx frontend/test
@@ -1328,76 +1354,86 @@ git diff --check
 git status --short
 ```
 
-Expected: sensitive-name matches occur only in explicit forbidden-field tests or pre-existing unrelated account-setup code; no response mapper returns them. Diff check is clean. Status still shows any user's pre-existing unrelated files, which remain unstaged.
+Dự kiến: việc trùng khớp tên nhạy cảm chỉ xảy ra trong các kiểm thử trường cấm rõ ràng hoặc mã thiết
+lập tài khoản không liên quan có sẵn; không có người lập bản đồ phản hồi nào trả sách chúng. Kiểm
+tra khác biệt là sạch sẽ. Trạng thái vẫn hiển thị các tệp không liên quan có sẵn của bất kỳ người
+dùng nào, các tệp này vẫn chưa được phân loại.
 
-- [ ] **Step 3: Reconcile FE11 documentation and technical debt**
+- [ ] **Bước 3: Đối chiếu tài liệu FE11 và nợ kỹ thuật**
 
-Mark `FE11-U06` complete only after every available command passes. Update the PLAN top status to state that account setup, transactional role management, and safe list/detail slices are complete while remaining FE11 work is deferred.
+Đánh dấu `FE11-U06` chỉ hoàn thành sau mỗi lệnh có sẵn. Cập nhật trạng thái hàng đầu của PLAN để nêu
+rõ rằng việc thiết lập tài khoản, quản lý vai trò giao dịch và các lát cắt chi tiết/danh sách an
+toàn đã hoàn tất trong khi công việc FE11 còn lại bị trì hoãn.
 
-Update TEST_PLAN Current Evidence with:
-
-```markdown
-- `backend/tests/userRepository.test.js` for safe list/detail DTO, approved search SQL, aggregate predicates, zero defaults, and hostile-column exclusion.
-- `backend/tests/userManagementService.test.js` for strict list normalization and detail `404 USER_NOT_FOUND`.
-- `backend/tests/userManagementRoutes.test.js` for Admin-first list/detail validation.
-- `frontend/test/userManagementApi.test.js` and `frontend/test/userManagementFrontend.test.js` for query omission, `phoneNumber`, detail loading, summaries, and stale-row recovery.
-- Approved design: `docs/superpowers/specs/2026-07-18-fe11-safe-user-list-detail-design.md`.
-- Approved implementation plan: `docs/superpowers/plans/2026-07-18-fe11-safe-user-list-detail.md`.
-```
-
-Update `TECH_DEBT.md` as follows:
-
-- Keep `TD-012` OPEN and explicitly note that this slice adds no fake librarian fields or schema migration.
-- Narrow `TD-014` to remaining update/deactivation and other non-detail not-found/acting-admin semantics; record detail `404 USER_NOT_FOUND` as resolved evidence.
-- Narrow `TD-015` to remaining update/deactivation/audit service coverage; record list/detail service tests as completed evidence.
-- Leave `TD-016` and `TD-017` unchanged.
-
-Add a changelog entry describing strict list validation, safe DTO, `phoneNumber`, approved search fields, detail aggregates, frontend detail consumption, automated evidence, and residual SQL Server environment evidence.
-
-- [ ] **Step 4: Write the B1-B7 validation record**
-
-Create `.sdd/reviews/fe11-safe-user-list-detail-validation-2026-07-18.md` with exactly these sections:
+Cập nhật Bằng chứng hiện tại của TEST_PLAN với:
 
 ```markdown
-# FE11 Safe User List And Detail Validation
-
-Date: 2026-07-18
-Scope: FE11-U01..U06 only
-
-## L1 Automated Evidence
-## L2 Spec Compliance
-## L3 Constitution And Safety
-## L4 Acceptance And Residual Risks
-## Files Changed
-## Remaining FE11 Work
-## Human Review Gate
+- `backend/tests/userRepository.test.js` để biết danh sách/chi tiết an toàn DTO, tìm kiếm được phê duyệt SQL, các vị từ tổng hợp, giá trị mặc định bằng 0 và loại trừ cột thù địch.
+- `backend/tests/userManagementService.test.js` để chuẩn hóa danh sách nghiêm ngặt và chi tiết `404 USER_NOT_FOUND`.
+- `backend/tests/userManagementRoutes.test.js` để xác thực chi tiết/danh sách ưu tiên quản trị viên.
+- `frontend/test/userManagementApi.test.js` và `frontend/test/userManagementFrontend.test.js` để bỏ sót truy vấn, `phoneNumber`, tải chi tiết, tóm tắt và khôi phục hàng cũ.
+- Thiết kế được phê duyệt: `docs/superpowers/specs/2026-07-18-fe11-safe-user-list-detail-design.md`.
+- Kế hoạch triển khai được phê duyệt: `docs/superpowers/plans/2026-07-18-fe11-safe-user-list-detail.md`.
 ```
 
-Record exact command results and test counts from Steps 1-2. State explicitly that repository tests verify emitted parameterized SQL and mapping, while a real SQL Server aggregate read remains an environment-dependent residual check if no disposable instance is available. Do not claim whole-feature FE11 completion.
+Cập nhật `TECH_DEBT.md` như sau:
 
-- [ ] **Step 5: Commit validation evidence**
+- Giữ `TD-012` MỞ và lưu ý rõ ràng rằng lát cắt này không thêm các trường thủ thư giả mạo hoặc di chuyển lược đồ.
+- Thu hẹp `TD-014` vào phạm vi cập nhật/hủy kích hoạt còn lại và các ngữ nghĩa không tìm thấy/hành động quản trị viên không chi tiết khác; ghi lại chi tiết `404 USER_NOT_FOUND` làm bằng chứng đã được giải quyết.
+- Thu hẹp `TD-015` trong phạm vi dịch vụ cập nhật/hủy kích hoạt/kiểm tra còn lại; ghi lại danh sách/kiểm tra dịch vụ chi tiết làm bằng chứng hoàn chỉnh.
+- Giữ nguyên `TD-016` và `TD-017`.
+
+Thêm mục nhập nhật ký thay đổi mô tả xác thực danh sách nghiêm ngặt, DTO an toàn, `phoneNumber`, các
+trường tìm kiếm được phê duyệt, tổng hợp chi tiết, mức tiêu thụ chi tiết giao diện người dùng, bằng
+chứng tự động và bằng chứng môi trường SQL Server còn sót lại.
+
+- [ ] **Bước 4: Viết bản ghi xác nhận B1-B7**
+
+Tạo `.sdd/reviews/fe11-safe-user-list-detail-validation-2026-07-18.md` với chính xác các phần sau:
+
+```markdown
+# Xác nhận danh sách và chi tiết người dùng an toàn FE11
+
+Ngày: 2026-07-18
+Phạm vi: chỉ FE11-U01..U06
+
+## Bằng chứng tự động L1
+## L2 Tuân thủ đặc tả
+## L3 Hiến chương và an toàn
+## L4 Nghiệm thu và rủi ro còn lại
+## Tệp đã thay đổi
+## Công việc FE11 còn lại
+## Cổng rà soát của con người
+```
+
+Ghi lại kết quả lệnh chính xác và số lần kiểm tra từ Bước 1-2. Nêu rõ rằng kiểm tra kho lưu trữ xác
+minh SQL được tham số hóa và ánh xạ được phát ra, trong khi lượt đọc tổng hợp SQL Server thực vẫn là
+kiểm tra dư lượng phụ thuộc vào môi trường nếu không có phiên bản dùng một lần. Không yêu cầu hoàn
+thành toàn bộ chức năng FE11.
+
+- [ ] **Bước 5: Cam kết bằng chứng xác thực**
 
 ```powershell
 git add -- .sdd/specs/feat-user-role-management/PLAN.md .sdd/specs/feat-user-role-management/TASKS.md .sdd/specs/feat-user-role-management/TEST_PLAN.md .sdd/specs/feat-user-role-management/CHANGELOG.md TECH_DEBT.md .sdd/reviews/fe11-safe-user-list-detail-validation-2026-07-18.md
 git commit -m "docs: record FE11 safe user read validation"
 ```
 
-## Final Review Checklist
+## Danh sách kiểm tra đánh giá cuối cùng
 
-- [ ] Implementation started from current `origin/main` plus only the approved design/plan commits.
-- [ ] Every production behavior change was preceded by a focused failing test.
-- [ ] Authentication and Admin authorization run before list/detail validation.
-- [ ] Invalid supplied pagination/filter/search/ID values are rejected rather than clamped.
-- [ ] Search uses only email, full name, and user ID; ordering is stable.
-- [ ] Base managed-user responses use only the explicit allowlist and `phoneNumber`.
-- [ ] Roles are deterministic uppercase strings.
-- [ ] List items and mutation readbacks contain no `relatedSummary`.
-- [ ] Detail contains exactly the three approved numeric summaries with zero defaults.
-- [ ] Active borrowing counts persisted `BORROWED`; open reservations count `ACTIVE`/`NOTIFIED`; unpaid total uses `UNPAID` outstanding balance.
-- [ ] Missing detail returns `404 USER_NOT_FOUND`; invalid ID returns `400 VALIDATION_ERROR`.
-- [ ] The Admin UI fetches detail, renders summaries, and reloads stale list data after detail 404.
-- [ ] No credential, token, session, link, provider, or secret audit field appears in a response.
-- [ ] No database migration or fake librarian-field placeholder was introduced.
-- [ ] Focused/full backend and frontend tests, coverage, lint, build, traceability, security scan, and diff checks pass.
-- [ ] `TD-014/015` are narrowed without hiding remaining FE11 gaps; `TD-012` stays open.
-- [ ] No unrelated user files are staged or committed.
+- [ ] Việc triển khai bắt đầu từ `origin/main` hiện tại cộng với chỉ các cam kết về thiết kế/kế hoạch đã được phê duyệt.
+- [ ] Mọi thay đổi về hành vi sản xuất đều được thực hiện trước một kiểm thử thất bại tập trung.
+- [ ] Xác thực và ủy quyền của Quản trị viên chạy trước khi xác thực danh sách/chi tiết.
+- [ ] Các giá trị phân trang/bộ lọc/tìm kiếm/ID được cung cấp không hợp lệ sẽ bị từ chối thay vì bị kẹp.
+- [ ] Tìm kiếm chỉ sử dụng email, tên đầy đủ và ID người dùng; đặt hàng ổn định.
+- [ ] Phản hồi cơ bản của người dùng được quản lý chỉ sử dụng danh sách cho phép rõ ràng và `phoneNumber`.
+- [ ] Vai trò là các chuỗi chữ hoa xác định.
+- [ ] Danh sách các mục và các lần đọc lại thao tác ghi không chứa `relatedSummary`.
+- [ ] Chi tiết chứa chính xác ba bản tóm tắt bằng số đã được phê duyệt với giá trị mặc định bằng 0.
+- [ ] Số lượng lượt mượn đang hoạt động vẫn tồn tại `BORROWED`; số lượng đặt chỗ mở `ACTIVE`/`NOTIFIED`; tổng số chưa thanh toán sử dụng số dư chưa thanh toán `UNPAID`.
+- [ ] Thiếu chi tiết trả về `404 USER_NOT_FOUND`; ID không hợp lệ trả về `400 VALIDATION_ERROR`.
+- [ ] Giao diện người dùng quản trị tìm nạp chi tiết, hiển thị tóm tắt và tải lại dữ liệu danh sách cũ sau chi tiết 404.
+- [ ] Không có trường thông tin xác thực, mã thông báo, phiên, liên kết, nhà cung cấp hoặc trường kiểm tra bí mật nào xuất hiện trong phản hồi.
+- [ ] Không có sự di chuyển cơ sở dữ liệu hoặc trình giữ chỗ trường thủ thư giả mạo nào được đưa vào.
+- [ ] Các kiểm thử giao diện người dùng và máy chủ tập trung/đầy đủ, phạm vi bảo hiểm, tìm lỗi mã nguồn, bản dựng, truy vết, quét bảo mật và kiểm tra khác biệt đều vượt qua.
+- [ ] `TD-014/015` được thu hẹp mà không che giấu những khoảng trống FE11 còn lại; `TD-012` vẫn mở.
+- [ ] Không có tệp người dùng không liên quan nào được môi trường tiền sản xuất hoặc cam kết.

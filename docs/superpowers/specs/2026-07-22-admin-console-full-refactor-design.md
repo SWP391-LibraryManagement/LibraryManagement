@@ -1,76 +1,84 @@
-# Admin Console Full Frontend Refactor Design
+# Bảng điều khiển dành cho quản trị viên Thiết kế tái cấu trúc giao diện người dùng đầy đủ
 
-Status: APPROVED BY HUMAN - 2026-07-22
+Trạng thái: ĐƯỢC PHÊ DUYỆT BỞI HUMAN - 22-2026-07-07
 
-> Amendment approved 2026-07-22: `2026-07-22-admin-membership-review-integration-design.md` supersedes only this document's seven-entry navigation lock and FE04-outside-Admin boundary. Permissions/payment remain removed and all other refactor decisions remain active.
+> Bản sửa đổi được phê duyệt ngày 22-07-2026: `2026-07-22-admin-membership-review-integration-design.md` chỉ thay thế khóa điều hướng bảy mục nhập của tài liệu này và ranh giới FE04-bên ngoài-Quản trị viên. Quyền/thanh toán vẫn bị xóa và tất cả các quyết định tái cấu trúc khác vẫn có hiệu lực.
 
-Date: 2026-07-22
+Ngày: 22-07-2026
 
-Scope: FE11 Admin Console presentation and frontend structure; `FR-FE11-030..035`, `AC-FE11-016..019`, `NFR-FE11-UX-001..004`
+Phạm vi: Cấu trúc giao diện người dùng và bản trình bày Bảng điều khiển dành cho quản trị viên FE11;
+`FR-FE11-030..035`, `AC-FE11-016..019`, `NFR-FE11-UX-001..004`
 
-## 1. Decision
+## 1. Quyết định
 
-Refactor the FE11 Admin Console frontend into a modular single-route application while preserving the approved backend, API, authorization, and business contracts.
+Tái cấu trúc giao diện Bảng điều khiển dành cho quản trị viên FE11 thành một ứng dụng một tuyến
+mô-đun trong khi vẫn duy trì phần máy chủ đã được phê duyệt, API, ủy quyền và hợp đồng kinh doanh.
 
-- The public entry URL remains `/admin/users`.
-- The default Admin section remains User Management.
-- Navigation exposes the seven sections approved after authenticated human review; the separate Permissions item is removed while Manage Roles remains available from User Management.
-- Each section becomes an independent frontend module.
-- No backend endpoint, request payload, response DTO, role rule, or database schema changes.
-- The refactor may improve visible copy, responsive presentation, loading/error/empty states, and accessibility without changing what an Admin is authorized to do.
+- Mục nhập công khai URL vẫn là `/admin/users`.
+- Phần Quản trị mặc định vẫn là Quản lý người dùng.
+- Điều hướng hiển thị bảy phần được phê duyệt sau khi được con người đánh giá xác thực; mục Quyền riêng biệt sẽ bị xóa trong khi Quản lý vai trò vẫn có sẵn trong Quản lý người dùng.
+- Mỗi phần trở thành một mô-đun giao diện người dùng độc lập.
+- Không có điểm cuối máy chủ, tải trọng yêu cầu, phản hồi DTO, quy tắc vai trò hoặc thay đổi lược đồ cơ sở dữ liệu.
+- Trình tái cấu trúc có thể cải thiện bản sao hiển thị, cách trình bày phản hồi, trạng thái tải/lỗi/trống và khả năng truy cập mà không thay đổi những gì Quản trị viên được ủy quyền thực hiện.
 
-This is a Shell refactor under Hybrid SDD + ADD. Core authentication, authorization, lifecycle, permission ownership, request immutability, audit redaction, and FE07/FE12 ownership boundaries remain unchanged.
+Đây là công cụ tái cấu trúc lớp bao dưới Hybrid SDD + ADD. Xác thực cốt lõi, ủy quyền, vòng đời, quyền
+sở hữu quyền, yêu cầu bất biến, biên tập kiểm tra và ranh giới quyền sở hữu FE07/FE12 vẫn không thay
+đổi.
 
-## 2. Problem Statement And Evidence
+## 2. Mô tả vấn đề và bằng chứng
 
-The current `frontend/src/page/UserManagement.jsx` combines navigation, data loading, filters, tables, charts, modals, mutations, legacy hidden sections, and more than 400 lines of inline CSS in one file of more than 3,000 lines.
+`frontend/src/page/UserManagement.jsx` hiện tại kết hợp điều hướng, tải dữ liệu, bộ lọc, bảng, biểu
+đồ, phương thức, thao tác ghi, phần ẩn kế thừa và hơn 400 dòng CSS nội tuyến trong một tệp gồm hơn 3.000
+dòng.
 
-Live Azure Staging review on 2026-07-22 reproduced these presentation problems:
+Đánh giá giai đoạn Azure trực tiếp vào ngày 22 tháng 07 năm 2026 đã tái hiện các vấn đề trình bày sau:
 
-- Dashboard charts render all returned categories, including rows whose values are all zero, which creates overlapping labels and misleading flat-line charts.
-- The eight-column user table uses fixed layout and aggressive word breaking at common laptop widths.
-- Mobile keeps a 980px minimum table width, so the primary user workflow requires horizontal scrolling and hides actions.
-- User actions are icon-only and depend on hover titles for meaning.
-- Permission matrix cells use the same green presentation for both allowed and denied values.
-- Permissions exposes internal source names such as `FE11` and `FE12`.
-- Audit rows expose raw action codes, and the filter bar compresses search, action, actor, two dates, and two buttons into one dense row.
-- Authenticated review found that the Audit safe-detail column expands every row even when the detail is secondary, and the User Management table still requires horizontal scrolling at common laptop/zoom widths.
-- Native date inputs have no persistent visible labels, so the browser placeholder becomes the only date guidance.
-- Hidden `membership` and `payments` render paths remain inside the Admin Console even though neither is part of the approved navigation.
+- Biểu đồ trang tổng quan hiển thị tất cả các danh mục được trả về, bao gồm các hàng có giá trị bằng 0, điều này tạo ra các nhãn chồng chéo và biểu đồ đường phẳng gây hiểu nhầm.
+- Bảng người dùng tám cột sử dụng bố cục cố định và ngắt từ linh hoạt ở các chiều rộng phổ biến của máy tính xách tay.
+- Thiết bị di động giữ chiều rộng bảng tối thiểu 980px, do đó, quy trình làm việc của người dùng chính yêu cầu cuộn ngang và ẩn các hành động.
+- Hành động của người dùng chỉ mang tính biểu tượng và phụ thuộc vào tiêu đề di chuột để biết ý nghĩa.
+- Các ô ma trận quyền sử dụng cùng một cách trình bày màu xanh lục cho cả giá trị được phép và bị từ chối.
+- Quyền hiển thị các tên nguồn nội bộ như `FE11` và `FE12`.
+- Các hàng kiểm tra hiển thị mã hành động thô và thanh bộ lọc nén tìm kiếm, hành động, tác nhân, hai ngày và hai nút thành một hàng dày đặc.
+- Đánh giá đã được xác thực cho thấy cột Kiểm tra chi tiết an toàn sẽ mở rộng mọi hàng ngay cả khi chi tiết là phụ và bảng Quản lý người dùng vẫn yêu cầu cuộn ngang ở độ rộng thu phóng/máy tính xách tay phổ biến.
+- Dữ liệu nhập ngày gốc không có nhãn hiển thị liên tục nên trình giữ chỗ của trình duyệt trở thành hướng dẫn ngày duy nhất.
+- Đường dẫn hiển thị `membership` và `payments` ẩn vẫn tồn tại bên trong Bảng điều khiển dành cho quản trị viên mặc dù cả hai đường dẫn này đều không nằm trong điều hướng được phê duyệt.
 
-The root causes are frontend structure and presentation rules, not backend data or authorization failures.
+Nguyên nhân cốt lõi là cấu trúc giao diện người dùng và quy tắc trình bày, không phải dữ liệu máy
+chủ hoặc lỗi ủy quyền.
 
-## 3. Approved Scope
+## 3. Phạm vi được phê duyệt
 
-### In Scope
+### Trong phạm vi
 
-- Split the Admin Console into a shell, shared presentation primitives, and seven independently rendered Admin modules plus the Home navigation action.
-- Move Admin Console CSS from inline JSX into a dedicated stylesheet.
-- Preserve the current route and the seven approved sidebar entries in their current order; remove only the Permissions sidebar entry and keep the underlying permission policy/API plus Manage Roles workflow unchanged.
-- Redesign Dashboard charts for decision-focused presentation, including top-five limits and true empty states.
-- Keep a desktop table for users and render a mobile user-card list below the responsive breakpoint.
-- Add visible labels to row actions while preserving the same edit, role, detail, and deactivate handlers.
-- Localize Audit action/detail presentation without changing raw API values.
-- Add persistent filter labels and responsive filter layouts.
-- Make permission allow/deny values visually and semantically distinct.
-- Preserve last-success data while showing non-blocking refresh and retry states.
-- Remove unreachable Admin Console membership/payment state, imports, and render paths.
-- Update FE11 planning, tasks, changelog, tests, and validation evidence for the refactor.
+- Chia Bảng điều khiển dành cho quản trị viên thành một khung, các nguyên mẫu trình bày được chia sẻ và bảy mô-đun Quản trị được hiển thị độc lập cùng với hành động điều hướng Trang chủ.
+- Di chuyển Bảng điều khiển dành cho quản trị viên CSS từ JSX nội tuyến sang biểu định kiểu chuyên dụng.
+- Giữ nguyên lộ trình hiện tại và bảy mục nhập thanh bên đã được phê duyệt theo thứ tự hiện tại của chúng; chỉ xóa mục nhập thanh bên Quyền và giữ nguyên chính sách cấp phép cơ bản/API cộng với quy trình làm việc Quản lý vai trò.
+- Thiết kế lại biểu đồ Trang tổng quan để trình bày tập trung vào quyết định, bao gồm năm giới hạn hàng đầu và trạng thái trống thực sự.
+- Giữ một bảng dành cho người dùng trên máy tính để bàn và hiển thị danh sách thẻ người dùng trên thiết bị di động bên dưới điểm ngắt phản hồi.
+- Thêm nhãn hiển thị vào các hành động trong hàng trong khi vẫn giữ nguyên chỉnh sửa, vai trò, chi tiết và hủy kích hoạt trình xử lý.
+- Bản địa hóa hành động kiểm tra/trình bày chi tiết mà không thay đổi giá trị API thô.
+- Thêm nhãn bộ lọc liên tục và bố cục bộ lọc đáp ứng.
+- Làm cho các giá trị cho phép/từ chối quyền trở nên khác biệt về mặt trực quan và ngữ nghĩa.
+- Bảo toàn dữ liệu thành công cuối cùng trong khi hiển thị trạng thái làm mới và thử lại không chặn.
+- Xóa trạng thái thanh toán/thành viên Bảng điều khiển dành cho quản trị viên không thể truy cập, đường dẫn nhập và hiển thị.
+- Cập nhật kế hoạch, nhiệm vụ, nhật ký thay đổi, kiểm tra và bằng chứng xác thực của FE11 cho bộ tái cấu trúc.
 
-### Out Of Scope
+### Ngoài phạm vi
 
-- New Admin features, permissions, roles, routes, or backend endpoints.
-- Changes to account lifecycle, role mutation order, last-Admin protection, audit redaction, request actions, or request terminal-state immutability.
-- Changes to FE04 Membership functionality outside the Admin Console.
-- Changes to FE09 fine/payment functionality or its canonical pages.
-- Changes to FE12 report calculations or FE12 APIs.
-- Database migrations or schema changes.
-- Replacing React, Bootstrap, Lucide icons, or the approved frontend stack.
-- Creating separate URLs for individual Admin sections.
+- Các chức năng, quyền, vai trò, tuyến đường hoặc điểm cuối máy chủ mới của Quản trị viên.
+- Các thay đổi đối với vòng đời tài khoản, thứ tự thay đổi vai trò, bảo vệ Quản trị viên cuối cùng, biên tập kiểm tra, hành động yêu cầu hoặc yêu cầu bất biến ở trạng thái đầu cuối.
+- Các thay đổi đối với chức năng Thành viên FE04 bên ngoài Bảng điều khiển dành cho quản trị viên.
+- Các thay đổi đối với chức năng thanh toán/khoản phạt của FE09 hoặc các trang chuẩn của nó.
+- Các thay đổi đối với tính toán báo cáo FE12 hoặc API FE12.
+- Di chuyển cơ sở dữ liệu hoặc thay đổi lược đồ.
+- Thay thế các biểu tượng React, Bootstrap, Lucide hoặc bộ công nghệ giao diện người dùng đã được phê duyệt.
+- Tạo URL riêng cho từng phần Quản trị viên.
 
-## 4. Architecture
+## 4. Kiến trúc
 
-`UserManagement.jsx` becomes a compatibility entry that renders `AdminConsolePage`. The application route and login redirect therefore remain stable while the implementation moves into focused files.
+`UserManagement.jsx` trở thành mục tương thích hiển thị `AdminConsolePage`. Do đó, lộ trình ứng dụng
+và chuyển hướng đăng nhập vẫn ổn định trong khi quá trình triển khai chuyển sang các tệp tập trung.
 
 ```text
 frontend/src/page/admin/
@@ -98,236 +106,248 @@ frontend/src/page/admin/
 └── admin-console.css
 ```
 
-Existing focused utilities remain in place when they already have a stable responsibility, including permission composition, request export, user statistics, request guards, user-query helpers, and shared Vietnamese labels.
+Các tiện ích tập trung hiện tại vẫn được giữ nguyên khi chúng đã có trách nhiệm ổn định, bao gồm
+thành phần quyền, xuất yêu cầu, thống kê người dùng, trình bảo vệ yêu cầu, trình trợ giúp truy vấn
+người dùng và nhãn tiếng Việt được chia sẻ.
 
-### Ownership
+### quyền sở hữu
 
-- `AdminConsolePage`: stored Admin access, unauthenticated/forbidden redirects, active section, logout confirmation, top-level refresh routing, and shared toast state.
-- `AdminShell`: responsive navigation, brand/session presentation, and the seven-entry sidebar contract.
-- Section modules: section-specific API calls, filters, pagination, selection, and rendering.
-- Shared components: presentation only; they do not call feature APIs or own business rules.
-- View-model/presentation utilities: pure transformations that can be unit tested without rendering React.
+- `AdminConsolePage`: quyền truy cập Quản trị viên được lưu trữ, chuyển hướng không được xác thực/bị cấm, phần hoạt động, xác nhận đăng xuất, định tuyến làm mới cấp cao nhất và trạng thái cập nhật được chia sẻ.
+- `AdminShell`: điều hướng đáp ứng, trình bày thương hiệu/phiên và hợp đồng thanh bên bảy mục.
+- Các mô-đun phần: các cuộc gọi, bộ lọc, phân trang, lựa chọn và hiển thị API dành riêng cho từng phần.
+- Các thành phần được chia sẻ: chỉ trình bày; họ không gọi API chức năng hoặc quy tắc nghiệp vụ riêng.
+- Tiện ích xem mô hình/trình bày: các phép biến đổi thuần túy có thể được kiểm tra đơn vị mà không cần hiển thị React.
 
-## 5. Visual System
+## 5. Hệ thống thị giác
 
-The refactor keeps the existing library identity instead of replacing it with a generic blue dashboard.
+Bộ tái cấu trúc giữ lại danh tính thư viện hiện có thay vì thay thế nó bằng một bảng thông tin chung
+màu xanh lam.
 
-### Color Tokens
+### Mã màu
 
-- Library ink: `#2A2118`
-- Paper surface: `#FFFDF8`
-- Reading canvas: `#FAF6EF`
-- Brass accent: `#A87532`
-- Success: `#18794E`
-- Danger: `#B42318`
-- Muted text: `#6B6153`
-- Divider: `#E7DDCA`
+- Mực thư viện: `#2A2118`
+- Bề mặt giấy: `#FFFDF8`
+- Canvas đọc: `#FAF6EF`
+- Điểm nhấn bằng đồng thau: `#A87532`
+- Thành công: `#18794E`
+- Nguy hiểm: `#B42318`
+- Văn bản bị tắt tiếng: `#6B6153`
+- Bộ chia: `#E7DDCA`
 
-### Typography
+### kiểu chữ
 
-- Shared `var(--heading)` remains the restrained display face for page and panel headings.
-- Shared `var(--sans)` remains the body and control face.
-- Counts, dates, IP addresses, and pagination use tabular numerals where supported.
+- `var(--heading)` được chia sẻ vẫn là mặt hiển thị hạn chế cho các tiêu đề trang và bảng điều khiển.
+- `var(--sans)` được chia sẻ vẫn giữ nguyên thân máy và mặt điều khiển.
+- Số lượng, ngày tháng, địa chỉ IP và phân trang sử dụng các chữ số dạng bảng nếu được hỗ trợ.
 
-### Signature
+### Chữ ký
 
-The Admin Console uses an operational-ledger pattern: quiet paper surfaces, clear section rules, compact labeled statuses, and data rows optimized for scanning. Decorative cards are limited to information that supports a decision.
+Bảng điều khiển dành cho quản trị viên sử dụng mẫu sổ cái hoạt động: bề mặt giấy yên tĩnh, quy tắc
+phần rõ ràng, trạng thái được gắn nhãn nhỏ gọn và các hàng dữ liệu được tối ưu hóa để quét. Thẻ
+trang trí được giới hạn ở thông tin hỗ trợ quyết định.
 
-## 6. Navigation And Responsive Shell
+## 6. Điều hướng và lớp bao đáp ứng
 
-### Desktop
+### Máy tính để bàn
 
-- A 248px sticky sidebar contains the brand, seven approved entries, current account, and logout.
-- The main content uses a bounded readable width with fluid data panels.
-- Current-section state stays visible through background, text, icon color, and `aria-current` semantics.
+- Thanh bên cố định 248px chứa thương hiệu, bảy mục nhập được phê duyệt, tài khoản hiện tại và đăng xuất.
+- Nội dung chính sử dụng chiều rộng giới hạn có thể đọc được với bảng dữ liệu linh hoạt.
+- Trạng thái của phần hiện tại vẫn hiển thị thông qua nền, văn bản, màu biểu tượng và ngữ nghĩa `aria-current`.
 
-### Mobile And Narrow Tablet
+### Máy tính bảng di động và hẹp
 
-- The sidebar becomes a compact header with a Menu button.
-- Menu content opens as a dismissible navigation panel; eight entries are not permanently displayed as a two-column grid.
-- Opening and closing the menu preserves keyboard focus and supports Escape.
-- The user/session block remains available inside the panel.
+- Thanh bên trở thành một tiêu đề nhỏ gọn với nút Menu.
+- Nội dung menu mở ra dưới dạng bảng điều hướng có thể loại bỏ; tám mục không được hiển thị vĩnh viễn dưới dạng lưới hai cột.
+- Việc mở và đóng menu vẫn duy trì tiêu điểm của bàn phím và hỗ trợ Escape.
+- Khối người dùng/phiên vẫn có sẵn bên trong bảng điều khiển.
 
-## 7. Section Designs
+## 7. Thiết kế phần
 
-### 7.1 Dashboard
+### 7.1 Trang tổng quan
 
-- Keep the five approved operational summary values.
-- `Top sách được mượn` displays at most five positive-value rows.
-- Overdue and returned-today charts display at most five positive-value rows.
-- A dataset with no positive value is an empty state, not a zero line chart.
-- Chart labels are truncated visually but retain a full accessible label and tooltip.
-- The list below each chart remains the exact-value reading surface; the chart supports comparison.
+- Giữ năm giá trị tóm tắt hoạt động đã được phê duyệt.
+- `Top sách được mượn` hiển thị tối đa năm hàng có giá trị dương.
+- Biểu đồ quá hạn và trả sách hôm nay hiển thị tối đa năm hàng có giá trị dương.
+- Tập dữ liệu không có giá trị dương là trạng thái trống, không phải biểu đồ đường số 0.
+- Nhãn biểu đồ được cắt bớt một cách trực quan nhưng vẫn giữ lại nhãn và chú giải công cụ có thể truy cập đầy đủ.
+- Danh sách bên dưới mỗi biểu đồ vẫn là bề mặt đọc giá trị chính xác; biểu đồ hỗ trợ so sánh.
 
-### 7.2 User Management
+### 7.2 Quản lý người dùng
 
-- Desktop keeps a table with the approved information: user identity/email, username, phone, roles, status, created date, last login, and actions.
-- Laptop widths prioritize identity, roles, status, last login, and actions; secondary fields use controlled truncation instead of breaking every character.
-- Mobile renders one card per user with identity, status, roles, last login, and a labeled action row.
-- `Chỉnh sửa`, `Phân quyền`, and `Vô hiệu hóa` use icon plus visible text.
-- Disabled destructive actions include an explanatory title and disabled styling.
-- Clicking the card/row continues to open the authoritative detail flow.
+- Máy tính để bàn giữ một bảng với thông tin đã được phê duyệt: danh tính/email người dùng, tên người dùng, số điện thoại, vai trò, trạng thái, ngày tạo, lần đăng nhập cuối cùng và hành động.
+- Độ rộng của máy tính xách tay ưu tiên danh tính, vai trò, trạng thái, lần đăng nhập cuối cùng và hành động; các trường phụ sử dụng chức năng cắt bớt có kiểm soát thay vì ngắt từng ký tự.
+- Thiết bị di động hiển thị một thẻ cho mỗi người dùng với danh tính, trạng thái, vai trò, lần đăng nhập cuối cùng và hàng hành động được gắn nhãn.
+- `Chỉnh sửa`, `Phân quyền` và `Vô hiệu hóa` sử dụng biểu tượng cùng với văn bản hiển thị.
+- Các hành động phá hoại bị vô hiệu hóa bao gồm tiêu đề giải thích và kiểu dáng bị vô hiệu hóa.
+- Nhấp vào thẻ/hàng tiếp tục mở luồng chi tiết chính thức.
 
-### 7.3 Requests
+### 7.3 Yêu cầu
 
-- Search, status, date range, Apply, Reset when active, and Export are grouped in a labeled responsive filter bar.
-- `Từ ngày` and `Đến ngày` remain native date inputs for validation and accessibility, with persistent visible labels.
-- Pending rows keep `Xử lý`; terminal rows keep `Chi tiết`.
-- No Admin-owned approve/reject endpoint is introduced.
+- Tìm kiếm, trạng thái, phạm vi ngày, Áp dụng, Đặt lại khi hoạt động và Xuất được nhóm trong thanh bộ lọc phản hồi có gắn nhãn.
+- `Từ ngày` và `Đến ngày` vẫn giữ nguyên dữ liệu đầu vào ngày gốc để xác thực và trợ năng, với các nhãn hiển thị liên tục.
+- Các hàng đang chờ xử lý giữ `Xử lý`; các hàng đầu cuối giữ `Chi tiết`.
+- Không có điểm cuối phê duyệt/từ chối do quản trị viên sở hữu nào được giới thiệu.
 
-### 7.4 Permissions
+### 7.4 Quyền
 
-- Remove the standalone Permissions entry from desktop and mobile sidebar navigation.
-- Keep the existing read-only permission component, API adapter, backend policy, and focused derivation tests unchanged; this correction does not alter role authorization or the Manage Roles workflow in User Management.
-- Replace `Ma trận FE11` with `Dữ liệu phân quyền`.
-- Replace `Thống kê FE12` with `Thống kê tài khoản theo vai trò`.
-- Explain that role totals may exceed unique accounts because an account can hold multiple roles.
-- Allowed cells use a success check and `Có`; denied cells use a neutral dash and `Không`.
-- Table headers remain visible while scanning a long matrix where the browser supports sticky positioning.
-- The view remains read-only.
+- Xóa mục nhập Quyền độc lập khỏi điều hướng thanh bên trên máy tính để bàn và thiết bị di động.
+- Giữ nguyên thành phần quyền chỉ đọc hiện có, bộ điều hợp API, chính sách máy chủ và các kiểm thử phái sinh tập trung; việc chỉnh sửa này không làm thay đổi việc ủy ​​quyền vai trò hoặc quy trình làm việc Quản lý vai trò trong Quản lý người dùng.
+- Thay thế `Ma trận FE11` bằng `Dữ liệu phân quyền`.
+- Thay thế `Thống kê FE12` bằng `Thống kê tài khoản theo vai trò`.
+- Giải thích rằng tổng số vai trò có thể vượt quá số tài khoản duy nhất vì một tài khoản có thể giữ nhiều vai trò.
+- Các ô được phép sử dụng kiểm tra thành công và `Có`; các ô bị từ chối sử dụng dấu gạch ngang trung tính và `Không`.
+- Tiêu đề bảng vẫn hiển thị trong khi quét một ma trận dài nơi trình duyệt hỗ trợ định vị cố định.
+- Chế độ xem vẫn ở chế độ chỉ đọc.
 
-### 7.5 Audit Logs
+### 7.5 Nhật ký kiểm tra
 
-- Keep the canonical `q`, `action`, `actorId`, `from`, `to`, page, and limit API values.
-- Present known action choices with Vietnamese labels while continuing to submit canonical raw action values; preserve free-text canonical input for actions not yet mapped.
-- Map known safe detail keys to Vietnamese labels while preserving unknown allowlisted keys as text.
-- Use persistent labels for action, actor ID, and both dates.
-- Split filter fields and actions into a responsive two-row layout instead of a single compressed row.
-- Keep safe details available through an explicit per-row disclosure so secondary metadata does not dominate the table.
-- Audit loading, error, empty, and filtered-empty states remain distinct.
-- Audit rows remain read-only and continue to render only the safe nested DTO.
+- Giữ trang `q`, `action`, `actorId`, `from`, `to` chuẩn và giới hạn các giá trị API.
+- Trình bày các lựa chọn hành động đã biết với nhãn tiếng Việt trong khi tiếp tục gửi các giá trị hành động thô chuẩn; duy trì đầu vào chuẩn văn bản tự do cho các hành động chưa được ánh xạ.
+- Ánh xạ các khóa chi tiết an toàn đã biết vào nhãn tiếng Việt trong khi vẫn giữ các khóa không xác định trong danh sách cho phép dưới dạng văn bản.
+- Sử dụng nhãn nhất quán cho hành động, ID tác nhân và cả hai ngày.
+- Tách các trường và hành động của bộ lọc thành bố cục hai hàng đáp ứng thay vì một hàng nén duy nhất.
+- Luôn cung cấp các chi tiết an toàn thông qua tiết lộ rõ ràng trên mỗi hàng để siêu dữ liệu thứ cấp không thống trị bảng.
+- Kiểm tra trạng thái tải, lỗi, trống và lọc trống vẫn khác biệt.
+- Các hàng kiểm tra vẫn ở chế độ chỉ đọc và tiếp tục chỉ hiển thị DTO được lồng an toàn.
 
-### 7.6 Library And Circulation
+### 7.6 Thư viện và lưu hành
 
-- Preserve the existing read-only Admin ownership boundaries.
-- Reuse the shared header, status, filter, table/card, empty-state, and pagination patterns.
-- No duplicate FE05 or FE07 mutation adapter is added.
+- Giữ nguyên ranh giới quyền sở hữu của Quản trị viên chỉ đọc hiện có.
+- Sử dụng lại các mẫu tiêu đề, trạng thái, bộ lọc, bảng/thẻ, trạng thái trống và phân trang được chia sẻ.
+- Không có bộ chuyển đổi thao tác ghi FE05 hoặc FE07 trùng lặp nào được thêm vào.
 
-## 8. Loading, Empty, Error, And Mutation States
+## 8. Các trạng thái đang tải, trống, lỗi và thao tác ghi
 
-- Initial load with no data uses a section skeleton or centered loading state.
-- Refresh with last-success data keeps the data visible and marks the section as updating.
-- A refresh failure preserves last-success data, shows a specific inline message, and exposes `Thử lại`.
-- A successful empty response explains what data will make the section non-empty.
-- A filtered-empty response names the active search/filter context and offers `Xóa lọc`.
-- Mutations keep existing confirmation and server reconciliation behavior.
-- Stale-response guards remain active for every asynchronous loader.
-- No demo or invented fallback data is displayed after API failure.
+- Tải ban đầu không có dữ liệu sử dụng khung phần hoặc trạng thái tải ở giữa.
+- Làm mới bằng dữ liệu thành công cuối cùng giúp dữ liệu hiển thị và đánh dấu phần đó là đang cập nhật.
+- Lỗi làm mới sẽ bảo toàn dữ liệu thành công cuối cùng, hiển thị thông báo nội tuyến cụ thể và hiển thị `Thử lại`.
+- Phản hồi trống thành công sẽ giải thích dữ liệu nào sẽ khiến phần này không trống.
+- Phản hồi trống được lọc đặt tên cho bối cảnh tìm kiếm/bộ lọc đang hoạt động và cung cấp `Xóa lọc`.
+- thao tác ghi giữ lại hành vi xác nhận và đối chiếu máy chủ hiện có.
+- Bộ bảo vệ phản hồi cũ vẫn hoạt động cho mọi trình tải không đồng bộ.
+- Không có dữ liệu demo hoặc dự phòng được phát minh nào được hiển thị sau lỗi API.
 
-## 9. Accessibility And Interaction
+## 9. Khả năng tiếp cận và tương tác
 
-- All icon buttons receive visible text or an accessible label; destructive actions are not communicated by color alone.
-- Keyboard focus is visibly styled for links, buttons, filters, pagination, menu controls, modals, and drawers.
-- Modal and mobile-menu interaction supports Escape and returns focus to the trigger.
-- Status, role, and permission meaning is available as text.
-- Minimum interactive target size is 40px on touch layouts.
-- Motion is limited to menu/modal entry and hover/focus feedback and is disabled under `prefers-reduced-motion: reduce`.
-- Tables retain semantic headers; mobile cards use labeled fields instead of visually rearranging table markup.
+- Tất cả các nút biểu tượng đều nhận được văn bản hiển thị hoặc nhãn có thể truy cập được; hành động phá hoại không chỉ được truyền đạt bằng màu sắc.
+- Tiêu điểm của bàn phím được tạo kiểu rõ ràng cho các liên kết, nút, bộ lọc, phân trang, điều khiển menu, phương thức và ngăn kéo.
+- Tương tác theo phương thức và menu di động hỗ trợ Escape và trả sách tiêu điểm cho trình kích hoạt.
+- Ý nghĩa trạng thái, vai trò và quyền có sẵn dưới dạng văn bản.
+- Kích thước mục tiêu tương tác tối thiểu là 40px trên bố cục cảm ứng.
+- Chuyển động bị giới hạn ở mục nhập menu/phương thức và phản hồi di chuột/tiêu điểm và bị tắt trong `prefers-reduced-motion: reduce`.
+- Các bảng giữ lại các tiêu đề ngữ nghĩa; thẻ di động sử dụng các trường được gắn nhãn thay vì sắp xếp lại đánh dấu bảng một cách trực quan.
 
-## 10. Legacy Removal Boundary
+## 10. Ranh giới loại bỏ di sản
 
-The Admin Console refactor removes its unreachable `membership` and `payments` imports, state, loaders, section metadata, render blocks, and local-storage fine review logic.
+Công cụ tái cấu trúc của Bảng điều khiển dành cho quản trị viên sẽ loại bỏ các nội dung nhập, trạng
+thái, trình tải, siêu dữ liệu phần, khối kết xuất và logic xem xét tinh chỉnh của bộ nhớ cục bộ
+không thể truy cập vào `membership` và `payments`.
 
-This removal does not delete or modify:
+Việc xóa này không xóa hoặc sửa đổi:
 
-- FE04 membership components, routes, APIs, or canonical approval screens.
-- FE09 fine records, collection, waiver, cancellation, or payment screens.
-- Any backend endpoint or database record.
+- FE04 thành phần thành viên, tuyến đường, API hoặc màn hình phê duyệt chuẩn.
+- FE09 hồ sơ phạt, thu tiền, từ bỏ, hủy bỏ hoặc sàng lọc thanh toán.
+- Bất kỳ điểm cuối máy chủ hoặc bản ghi cơ sở dữ liệu nào.
 
-The approved seven-entry Admin navigation remains the authoritative scope; the permission policy and Manage Roles authorization remain unchanged.
+Điều hướng Quản trị viên bảy mục đã được phê duyệt vẫn là phạm vi có thẩm quyền; chính sách cấp phép
+và ủy quyền Quản lý vai trò không thay đổi.
 
-## 11. Data And Security Boundaries
+## 11. Ranh giới dữ liệu và bảo mật
 
-- Stored authentication and role checks remain required before protected data loads.
-- Backend authorization remains authoritative.
-- Existing API adapters and safe DTOs remain unchanged.
-- Audit raw values are transformed only for display; filters still submit canonical raw values.
-- No secret, token, password hash, raw session value, or unapproved PII is added to the UI.
-- No client-side transformation creates or changes a business decision.
+- Xác thực được lưu trữ và kiểm tra vai trò vẫn cần thiết trước khi tải dữ liệu được bảo vệ.
+- Ủy quyền máy chủ vẫn có thẩm quyền.
+- Bộ điều hợp API hiện tại và DTO an toàn vẫn không thay đổi.
+- Kiểm tra giá trị thô chỉ được chuyển đổi để hiển thị; bộ lọc vẫn gửi giá trị thô chuẩn.
+- Không có bí mật, mã thông báo, hàm băm mật khẩu, giá trị phiên thô hoặc PII chưa được phê duyệt nào được thêm vào giao diện người dùng.
+- Không có chuyển đổi phía khách hàng nào tạo ra hoặc thay đổi quyết định kinh doanh.
 
-## 12. Test Strategy
+## 12. Chiến lược kiểm thử
 
-### Unit Tests
+### Kiểm tra đơn vị
 
-- Dashboard view model limits charts to five positive rows and returns an empty dataset for all-zero input.
-- Audit presentation maps known codes/details while preserving unknown safe values.
-- Permission presentation produces distinct allowed/denied states.
-- Navigation exports exactly the approved seven entries in order and excludes Permissions.
+- Mô hình chế độ xem bảng điều khiển giới hạn biểu đồ ở năm hàng dương và trả về tập dữ liệu trống cho đầu vào hoàn toàn bằng 0.
+- Bản trình bày kiểm toán ánh xạ các mã/chi tiết đã biết trong khi vẫn bảo toàn các giá trị an toàn chưa biết.
+- Việc trình bày quyền tạo ra các trạng thái được phép/từ chối riêng biệt.
+- Điều hướng xuất chính xác bảy mục đã được phê duyệt theo thứ tự và không bao gồm Quyền.
 
-### Frontend Contract And Component Tests
+### Kiểm tra hợp đồng và thành phần giao diện
 
-- `/admin/users` still renders the Admin Console and opens User Management by default.
-- Authentication and Admin authorization guard every protected load.
-- Each section calls only its approved API owners.
-- User desktop table and mobile card view expose the same approved data and actions.
-- Hidden membership/payment Admin paths and local-storage payment review code are absent.
-- Loading, error, empty, filtered-empty, retry, and last-success states remain deterministic.
-- Existing lifecycle, role, request, audit, permission, export, and stale-response tests remain green.
+- `/admin/users` vẫn hiển thị Bảng điều khiển dành cho quản trị viên và mở Quản lý người dùng theo mặc định.
+- Xác thực và ủy quyền của Quản trị viên bảo vệ mọi tải được bảo vệ.
+- Mỗi phần chỉ gọi chủ sở hữu API đã được phê duyệt.
+- Chế độ xem trên bảng trên máy tính để bàn và trên thiết bị di động của người dùng hiển thị cùng một dữ liệu và hành động được phê duyệt.
+- Không có đường dẫn quản trị thành viên/thanh toán ẩn và mã đánh giá thanh toán lưu trữ cục bộ.
+- Các trạng thái đang tải, lỗi, trống, trống đã lọc, thử lại và thành công cuối cùng vẫn mang tính quyết định.
+- Các kiểm thử vòng đời, vai trò, yêu cầu, kiểm tra, cấp phép, xuất và phản hồi cũ hiện tại vẫn giữ nguyên màu xanh.
 
-### Browser Acceptance
+### Chấp nhận trình duyệt
 
-- Desktop/laptop: 1280x720, 1366x768, 1440x900, and the normal large desktop viewport.
-- Mobile: 390x844.
-- Navigation, Dashboard, User Management, Requests, and Audit are reviewed in desktop/laptop and mobile widths; Manage Roles is exercised from User Management.
-- Verify no horizontal page overflow, no unreadable chart labels, no hidden primary action, visible keyboard focus, and reduced-motion support.
-- Exercise create/edit/role modals without submitting destructive changes during visual review.
+- Máy tính để bàn/máy tính xách tay: 1280x720, 1366x768, 1440x900 và khung nhìn máy tính để bàn lớn thông thường.
+- Di động: 390x844.
+- Điều hướng, Trang tổng quan, Quản lý người dùng, Yêu cầu và Kiểm tra được xem xét theo chiều rộng của máy tính để bàn/máy tính xách tay và thiết bị di động; Quản lý vai trò được thực hiện từ Quản lý người dùng.
+- Xác minh không có tràn trang ngang, không có nhãn biểu đồ không thể đọc được, không có hành động chính bị ẩn, tiêu điểm bàn phím hiển thị và hỗ trợ giảm chuyển động.
+- Thực hiện các phương thức tạo/chỉnh sửa/vai trò mà không gửi các thay đổi có hại trong quá trình xem xét trực quan.
 
-### Validation Gate
+### Cổng xác thực
 
-- Focused RED-GREEN frontend tests.
-- Full frontend tests, lint, and production build.
-- Focused backend boundary tests plus the full backend suite because API ownership must remain unchanged.
-- Traceability, deployment tests, and diff hygiene.
-- Authenticated Azure Staging walkthrough after deployment.
-- Human review remains separate from automated responsive evidence.
+- Các kiểm thử giao diện người dùng RED-GREEN tập trung.
+- Kiểm tra giao diện người dùng đầy đủ, tìm lỗi mã nguồn và xây dựng sản xuất.
+- Các kiểm thử ranh giới máy chủ tập trung cộng với bộ máy chủ đầy đủ vì quyền sở hữu API phải không thay đổi.
+- truy vết, kiểm tra triển khai và vệ sinh khác biệt.
+- Hướng dẫn môi trường tiền sản xuất Azure đã được xác thực sau khi triển khai.
+- Đánh giá của con người vẫn tách biệt với bằng chứng giao diện thích ứng tự động.
 
-## 13. Implementation Sequence
+## 13. Trình tự thực hiện
 
-1. Add governance/task records for the approved refactor without changing FE11 business requirements.
-2. Add pure view-model and presentation tests and observe the expected failures.
-3. Add the new file structure, shared primitives, and stylesheet while retaining the old entry route.
-4. Move the shell and navigation.
-5. Migrate Dashboard and verify chart/empty behavior.
-6. Migrate User Management and verify desktop/mobile parity.
-7. Migrate Requests, Permissions, and Audit.
-8. Migrate read-only Library and Circulation sections.
-9. Remove unreachable membership/payment Admin Console code.
-10. Run full automated validation, browser acceptance, Azure Staging deployment, and authenticated smoke testing.
+1. Thêm bản ghi quản trị/nhiệm vụ cho bộ tái cấu trúc đã được phê duyệt mà không thay đổi các yêu cầu kinh doanh của FE11.
+2. Thêm các kiểm thử trình bày và mô hình xem thuần túy, đồng thời quan sát các lỗi dự kiến.
+3. Thêm cấu trúc tệp mới, các nguyên gốc được chia sẻ và biểu định kiểu trong khi vẫn giữ lại lộ trình nhập cũ.
+4. Di chuyển lớp bao và điều hướng.
+5. Di chuyển Trang tổng quan và xác minh biểu đồ/hành vi trống.
+6. Di chuyển Quản lý người dùng và xác minh tính tương đương trên máy tính để bàn/thiết bị di động.
+7. Di chuyển yêu cầu, quyền và kiểm tra.
+8. Di chuyển các phần Thư viện và Lưu hành chỉ đọc.
+9. Xóa mã Bảng điều khiển dành cho quản trị viên/thanh toán không thể truy cập được.
+10. Chạy xác thực hoàn toàn tự động, chấp nhận trình duyệt, triển khai Azure môi trường tiền sản xuất và kiểm thử nhanh được xác thực.
 
-Each migration step must keep the application buildable and preserve the current API boundary.
+Mỗi bước di chuyển phải giữ cho ứng dụng có thể xây dựng được và duy trì ranh giới API hiện tại.
 
-## 14. Risks And Controls
+## 14. Rủi ro và Kiểm soát
 
-| Risk | Control |
+| Rủi ro | Kiểm soát |
 | --- | --- |
-| Refactor changes business behavior accidentally | Preserve API adapters and move code section-by-section behind focused contract tests. |
-| Authorization loads occur before redirect | Keep stored-access checks in `AdminConsolePage` and retain protected-load regression tests. |
-| Mobile card and desktop table diverge | Render both from the same normalized user objects and action handlers. |
-| Audit localization changes filter values | Separate raw canonical values from presentation labels. |
-| Removing Permissions from navigation removes role management | Retain the User Management role action and its existing tests; change only the shared navigation contract. |
-| Removing hidden code affects canonical features | Remove only Admin Console references; run FE04/FE09 frontend regressions. |
-| Large one-shot rewrite becomes unreviewable | Use an incremental migration sequence with green checks after every module. |
-| Existing approved navigation drifts | Export one navigation definition and retain the exact-order test. |
+| Refactor thay đổi hành vi kinh doanh một cách vô tình | Bảo quản bộ điều hợp API và di chuyển mã từng phần sau các kiểm thử hợp đồng tập trung. |
+| Tải ủy quyền xảy ra trước khi chuyển hướng | Duy trì các hoạt động kiểm tra quyền truy cập được lưu trữ trong `AdminConsolePage` và giữ lại các kiểm tra hồi quy tải được bảo vệ. |
+| Thẻ di động và bàn để bàn khác nhau | Hiển thị cả hai từ cùng một đối tượng người dùng và trình xử lý hành động được chuẩn hóa. |
+| Kiểm tra các thay đổi nội địa hóa giá trị bộ lọc | Tách các giá trị chuẩn thô khỏi nhãn trình bày. |
+| Xóa Quyền khỏi điều hướng sẽ xóa quản lý vai trò | Giữ lại hành động vai trò Quản lý người dùng và các kiểm thử hiện có của nó; chỉ thay đổi hợp đồng điều hướng được chia sẻ. |
+| Loại bỏ mã ẩn ảnh hưởng đến chức năng chuẩn | Chỉ xóa các tham chiếu trong Bảng điều khiển dành cho quản trị viên; chạy hồi quy giao diện người dùng FE04/FE09. |
+| Việc viết lại một lần lớn sẽ không thể xem lại được | Sử dụng trình tự di chuyển tăng dần có dấu kiểm màu xanh lục sau mỗi mô-đun. |
+| Hiện tại trôi dạt điều hướng đã được phê duyệt | Xuất một định nghĩa điều hướng và giữ lại kiểm thử theo thứ tự chính xác. |
 
-## 15. Acceptance Criteria
+## 15. Tiêu chí chấp nhận
 
-- `/admin/users` remains the single Admin Console route and opens User Management by default.
-- The console contains exactly the seven approved navigation entries and does not show Permissions.
-- No backend, API, database, security, or business-rule contract changes.
-- Dashboard never renders an all-zero line chart and shows no more than five plotted rows per chart.
-- At 1280px and 1366px, User Management switches to the existing card presentation before the 1040px table would require horizontal scrolling; the wide table remains available when the content region can contain it.
-- At 390px, User Management uses cards and the page has no horizontal overflow.
-- User actions have visible Vietnamese labels.
-- Permissions clearly distinguishes allowed and denied values and exposes no FE11/FE12 implementation labels.
-- Audit displays Vietnamese action labels while preserving canonical raw values for filtering and technical inspection.
-- Audit keeps `q`, `action`, `actorId`, `from`, and `to`; its filters wrap cleanly and safe details open only on request.
-- Filter controls have persistent labels and stack cleanly on narrow layouts.
-- Loading, error, empty, filtered-empty, retry, and last-success states are distinct.
-- Hidden Admin Console membership/payment code is removed without changing FE04 or FE09 canonical behavior.
-- Focused/full tests, lint, build, traceability, deployment checks, desktop/mobile browser acceptance, and Azure Staging smoke tests pass before completion is claimed.
+- `/admin/users` vẫn là tuyến Bảng điều khiển dành cho quản trị viên duy nhất và mở Quản lý người dùng theo mặc định.
+- Bảng điều khiển chứa chính xác bảy mục điều hướng đã được phê duyệt và không hiển thị Quyền.
+- Không có thay đổi về máy chủ, API, cơ sở dữ liệu, bảo mật hoặc quy tắc nghiệp vụ.
+- Trang tổng quan không bao giờ hiển thị biểu đồ dạng đường hoàn toàn bằng 0 và hiển thị không quá năm hàng được vẽ trên mỗi biểu đồ.
+- Ở 1280px và 1366px, Quản lý người dùng chuyển sang bản trình bày thẻ hiện có trước khi bảng 1040px yêu cầu cuộn ngang; bảng rộng vẫn có sẵn khi vùng nội dung có thể chứa nó.
+- Với kích thước 390px, Quản lý người dùng sử dụng thẻ và trang không bị tràn ngang.
+- Các thao tác của người dùng đều có nhãn tiếng Việt hiển thị.
+- Các quyền phân biệt rõ ràng các giá trị được phép và bị từ chối, đồng thời không hiển thị nhãn triển khai FE11/FE12.
+- Kiểm toán hiển thị nhãn hành động tiếng Việt trong khi vẫn giữ nguyên giá trị chuẩn để lọc và kiểm tra kỹ thuật.
+- Kiểm tra giữ `q`, `action`, `actorId`, `from` và `to`; bộ lọc của nó được bọc sạch sẽ và các chi tiết an toàn chỉ mở theo yêu cầu.
+- Điều khiển bộ lọc có nhãn liên tục và xếp chồng rõ ràng trên bố cục hẹp.
+- Các trạng thái đang tải, lỗi, trống, trống đã lọc, thử lại và thành công cuối cùng là khác nhau.
+- Mã thanh toán/thành viên Bảng điều khiển dành cho quản trị viên ẩn bị xóa mà không thay đổi hành vi chuẩn của FE04 hoặc FE09.
+- Các kiểm thử tập trung/đầy đủ, tìm lỗi mã nguồn, xây dựng, truy vết, kiểm tra triển khai, chấp nhận trình duyệt trên máy tính để bàn/thiết bị di động và các kiểm thử nhanh phân đoạn Azure đều vượt qua trước khi xác nhận hoàn thành.
 
-## 16. Governance Updates
+## 16. Cập nhật quản trị
 
-Implementation will add a bounded FE11 Admin Console UX refactor task group to `PLAN.md` and `TASKS.md`, record the visible refactor in `CHANGELOG.md`, and create a validation record under `.sdd/reviews/`.
+Việc triển khai sẽ thêm nhóm tác vụ tái cấu trúc UX của Bảng điều khiển dành cho quản trị viên FE11
+được giới hạn vào `PLAN.md` và `TASKS.md`, ghi lại trình tái cấu trúc hiển thị trong `CHANGELOG.md`
+và tạo bản ghi xác thực trong `.sdd/reviews/`.
 
-The approved FE11 business requirements remain unchanged. Any discovered need to modify an API, authorization rule, database schema, or business outcome stops this refactor and requires a separately approved Core spec change.
+Các yêu cầu kinh doanh FE11 đã được phê duyệt vẫn không thay đổi. Bất kỳ nhu cầu nào được phát hiện
+để sửa đổi API, quy tắc ủy quyền, lược đồ cơ sở dữ liệu hoặc kết quả kinh doanh sẽ dừng hoạt động
+tái cấu trúc này và yêu cầu thay đổi thông số cốt lõi được phê duyệt riêng.

@@ -1,73 +1,78 @@
-# Library Operational Page Patterns Implementation Plan
+# Kế hoạch triển khai các mẫu trang hoạt động của thư viện
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. This slice explicitly uses inline execution without subagents or a separate reviewer. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Đối với nhân viên đại lý:** BẮT BUỘC SUB-SKILL: Sử dụng siêu năng lực:thực thi các kế hoạch để thực hiện kế hoạch này theo từng nhiệm vụ. Lát này sử dụng rõ ràng việc thực thi nội tuyến mà không có tác nhân phụ hoặc trình đánh giá riêng. Các bước sử dụng cú pháp hộp kiểm (`- [ ]`) để theo dõi.
 
-**Goal:** Standardize operational page headers, data states, toolbars, tables, confirmations, and completion feedback across FE07, FE08, FE06, FE09, and FE12 without changing business behavior.
+**Mục tiêu:** Chuẩn hóa tiêu đề trang vận hành, trạng thái dữ liệu, thanh công cụ, bảng, xác nhận và
+phản hồi hoàn thành trên FE07, FE08, FE06, FE09 và FE12 mà không thay đổi hành vi kinh doanh.
 
-**Architecture:** Add small compositional structural primitives beside the existing feedback primitives, then migrate pages in the approved order. Pages continue to own API calls, view models, filters, selection, and mutations; shared components own layout, semantics, responsive table hooks, modal confirmation, and duplicate-action prevention.
+**Kiến trúc:** Thêm các nguyên mẫu cấu trúc thành phần nhỏ bên cạnh các nguyên mẫu phản hồi hiện có,
+sau đó di chuyển các trang theo thứ tự đã được phê duyệt. Các trang tiếp tục sở hữu các lệnh gọi
+API, xem mô hình, bộ lọc, lựa chọn và thao tác ghi; các thành phần được chia sẻ có bố cục riêng, ngữ
+nghĩa, móc bảng phản hồi, xác nhận phương thức và ngăn chặn hành động trùng lặp.
 
-**Tech Stack:** React 19, React Router 7, Vite 8, Bootstrap 5, existing MUI/lucide icons, Node built-in test runner, CSS in `frontend/src/styles/app-shell.css`.
+**Tech bộ công nghệ:** React 19, React Router 7, Vite 8, Bootstrap 5, MUI/biểu tượng lucide hiện có, trình
+chạy kiểm thử tích hợp Node, CSS trong `frontend/src/styles/app-shell.css`.
 
-## Global Constraints
+## Ràng buộc toàn cầu
 
-- No backend, API contract, database schema, or business-rule change.
-- No change to fine calculation, borrowing eligibility, renewal rules, reservation queue order, report metrics, or inventory status transitions.
-- No new client role or server authorization behavior.
-- No new production or test dependency.
-- FE06 remains presentation-only and retains its current mock/in-memory data boundary.
-- FE09 remains presentation-only and retains localStorage/sample-data behavior; `FE09-T012` remains open.
-- Protected operational pages use Vietnamese user-facing labels; identifiers and test names remain English.
-- Keep existing API methods, view-model helpers, route guards, and feature utility tests intact.
-- Implement in order: shared primitives, FE07, FE08, FE06, FE09, FE12, validation.
-- Use `apply_patch` for manual edits and stage only files belonging to the current task.
+- Không có máy chủ, hợp đồng API, lược đồ cơ sở dữ liệu hoặc thay đổi quy tắc nghiệp vụ.
+- Không có thay đổi nào về cách tính khoản phạt, tính đủ điều kiện vay, quy tắc gia hạn, thứ tự xếp hàng đặt chỗ, số liệu báo cáo hoặc chuyển đổi trạng thái hàng tồn kho.
+- Không có vai trò khách hàng mới hoặc hành vi ủy quyền máy chủ.
+- Không có sự phụ thuộc vào sản xuất hoặc kiểm thử mới.
+- FE06 vẫn chỉ ở chế độ trình bày và giữ lại ranh giới dữ liệu mô phỏng/trong bộ nhớ hiện tại.
+- FE09 vẫn chỉ ở chế độ trình bày và giữ lại hành vi localStorage/dữ liệu mẫu; `FE09-T012` vẫn mở.
+- Các trang hoạt động được bảo vệ sử dụng nhãn tiếng Việt dành cho người dùng; mã định danh và tên kiểm tra vẫn là tiếng Anh.
+- Giữ nguyên các phương thức API, trình trợ giúp mô hình xem, trình bảo vệ tuyến đường và các kiểm thử tiện ích chức năng hiện có.
+- Thực hiện theo thứ tự: nguyên thủy được chia sẻ, FE07, FE08, FE06, FE09, FE12, xác thực.
+- Sử dụng `apply_patch` để chỉnh sửa thủ công và chỉ xử lý các tệp thuộc nhiệm vụ hiện tại.
 
-## File Map
+## Bản đồ tệp
 
-### New files
+### Tệp mới
 
-- `frontend/src/component/shared/OperationalPatterns.jsx`: structural `PageHeader`, `DataToolbar`, and `DataTable` components.
-- `frontend/test/operationalPatternsFrontend.test.js`: shared component and navigation contracts.
-- `frontend/test/inventoryOperationalFrontend.test.js`: FE06 presentation-boundary contracts.
-- `frontend/test/fineOperationalFrontend.test.js`: FE09 shell, shared-state, and prototype-boundary contracts.
-- `frontend/test/reportOperationalFrontend.test.js`: FE12 shared-pattern adoption contracts.
-- `frontend/src/styles/fine-management.css`: FE09 page-local styles after removing its duplicate application shell.
-- `.sdd/reviews/library-ux-slice3-validation-review-2026-07-15.md`: final automated evidence and human-review checklist.
+- `frontend/src/component/shared/OperationalPatterns.jsx`: các thành phần cấu trúc `PageHeader`, `DataToolbar` và `DataTable`.
+- `frontend/test/operationalPatternsFrontend.test.js`: hợp đồng điều hướng và thành phần dùng chung.
+- `frontend/test/inventoryOperationalFrontend.test.js`: Hợp đồng ranh giới trình bày FE06.
+- `frontend/test/fineOperationalFrontend.test.js`: Hợp đồng vỏ FE09, trạng thái chia sẻ và ranh giới nguyên mẫu.
+- `frontend/test/reportOperationalFrontend.test.js`: Hợp đồng áp dụng mẫu chia sẻ FE12.
+- `frontend/src/styles/fine-management.css`: Kiểu trang cục bộ FE09 sau khi loại bỏ lớp vỏ ứng dụng trùng lặp của nó.
+- `.sdd/reviews/library-ux-slice3-validation-review-2026-07-15.md`: bằng chứng tự động cuối cùng và danh sách kiểm tra đánh giá của con người.
 
-### Shared files modified throughout the plan
+### Các tệp được chia sẻ được sửa đổi trong suốt kế hoạch
 
-- `frontend/src/component/shared/Feedback.jsx`: `StatusNotice`, compatibility `DataNotice`, actionable `EmptyState`, `ConfirmAction`, and shared toast semantics.
-- `frontend/src/component/layout/AppLayout.jsx`: compose `PageHeader` and register Inventory/Fines navigation icons.
-- `frontend/src/utils/appNavigation.js`: expose Inventory and Fines to existing staff roles.
-- `frontend/src/styles/app-shell.css`: operational primitive styles and mobile labeled-row table behavior.
+- `frontend/src/component/shared/Feedback.jsx`: `StatusNotice`, khả năng tương thích `DataNotice`, `EmptyState` có thể hành động, `ConfirmAction` và ngữ nghĩa bánh mì nướng được chia sẻ.
+- `frontend/src/component/layout/AppLayout.jsx`: soạn `PageHeader` và đăng ký các biểu tượng điều hướng Kho/khoản phạt.
+- `frontend/src/utils/appNavigation.js`: hiển thị Hàng tồn kho và khoản phạt cho các vai trò nhân viên hiện có.
+- `frontend/src/styles/app-shell.css`: kiểu hoạt động nguyên thủy và hành vi của bảng hàng được gắn nhãn di động.
 
-### Feature files modified
+### Các tập tin chức năng đã được sửa đổi
 
-- FE07: all files under `frontend/src/page/borrowing/`.
-- FE08: `frontend/src/page/reservation/MyReservationsPage.jsx` and `frontend/src/page/reservation/ReservationsLibrarianPage.jsx`.
-- FE06: `frontend/src/page/InventoryPage.jsx` and files under `frontend/src/component/inventory/`.
+- FE07: tất cả các tệp dưới `frontend/src/page/borrowing/`.
+- FE08: `frontend/src/page/reservation/MyReservationsPage.jsx` và `frontend/src/page/reservation/ReservationsLibrarianPage.jsx`.
+- FE06: `frontend/src/page/InventoryPage.jsx` và các tệp dưới `frontend/src/component/inventory/`.
 - FE09: `frontend/src/page/FineManagement.jsx`.
-- FE12: all files under `frontend/src/page/report/`.
+- FE12: tất cả các tệp dưới `frontend/src/page/report/`.
 
 ---
 
-### Task 1: Shared Operational Primitives and Staff Navigation
+### Nhiệm vụ 1: Nguyên tắc hoạt động chung và điều hướng nhân viên
 
-**Files:**
-- Create: `frontend/src/component/shared/OperationalPatterns.jsx`
-- Create: `frontend/test/operationalPatternsFrontend.test.js`
-- Modify: `frontend/src/component/shared/Feedback.jsx:1-151`
-- Modify: `frontend/src/component/layout/AppLayout.jsx:1-161`
-- Modify: `frontend/src/utils/appNavigation.js:1-48`
-- Modify: `frontend/src/styles/app-shell.css:159-230,275-343,519-604`
-- Modify: `frontend/test/appShellFrontend.test.js:12-42`
+**Tệp:**
+- Tạo: `frontend/src/component/shared/OperationalPatterns.jsx`
+- Tạo: `frontend/test/operationalPatternsFrontend.test.js`
+- Sửa đổi: `frontend/src/component/shared/Feedback.jsx:1-151`
+- Sửa đổi: `frontend/src/component/layout/AppLayout.jsx:1-161`
+- Sửa đổi: `frontend/src/utils/appNavigation.js:1-48`
+- Sửa đổi: `frontend/src/styles/app-shell.css:159-230,275-343,519-604`
+- Sửa đổi: `frontend/test/appShellFrontend.test.js:12-42`
 
-**Interfaces:**
-- Consumes: existing `Modal`, `LoadingBlock`, `.ph`, `.toolbar`, `.lib-table`, and staff role visibility.
-- Produces: `PageHeader({ title, subtitle, actions })`, `DataToolbar({ primary, filters, summary, actions, className })`, `DataTable({ caption, headers, loading, loadingRows, isEmpty, emptyState, children, className })`, `StatusNotice`, `ConfirmAction`, and compatible `DataNotice`.
+**Giao diện:**
+- Tiêu thụ: `Modal`, `LoadingBlock`, `.ph`, `.toolbar`, `.lib-table` hiện có và khả năng hiển thị vai trò của nhân viên.
+- Sản xuất: `PageHeader({ title, subtitle, actions })`, `DataToolbar({ primary, filters, summary, actions, className })`, `DataTable({ caption, headers, loading, loadingRows, isEmpty, emptyState, children, className })`, `StatusNotice`, `ConfirmAction` và `DataNotice` tương thích.
 
-- [ ] **Step 1: Write failing shared contracts**
+- [ ] **Bước 1: Viết hợp đồng chia sẻ không thành công**
 
-Create `frontend/test/operationalPatternsFrontend.test.js`:
+Tạo `frontend/test/operationalPatternsFrontend.test.js`:
 
 ```js
 import assert from 'node:assert/strict';
@@ -124,21 +129,23 @@ test('staff navigation includes Inventory and Fines without changing role groups
 });
 ```
 
-Update the existing staff-navigation expectation in `frontend/test/appShellFrontend.test.js` to the same ordered key list.
+Cập nhật kỳ vọng điều hướng nhân viên hiện có trong `frontend/test/appShellFrontend.test.js` vào
+cùng danh sách khóa được sắp xếp.
 
-- [ ] **Step 2: Run the contracts and verify they fail**
+- [ ] **Bước 2: Chạy hợp đồng và xác minh chúng thất bại**
 
-Run:
+Chạy:
 
 ```powershell
 node --test frontend/test/operationalPatternsFrontend.test.js frontend/test/appShellFrontend.test.js
 ```
 
-Expected: FAIL because `OperationalPatterns.jsx`, `StatusNotice`, `ConfirmAction`, and the two navigation items do not exist.
+Dự kiến: THẤT BẠI vì `OperationalPatterns.jsx`, `StatusNotice`, `ConfirmAction` và hai mục điều
+hướng không tồn tại.
 
-- [ ] **Step 3: Implement structural primitives**
+- [ ] **Bước 3: Triển khai cấu trúc nguyên thủy**
 
-Create `frontend/src/component/shared/OperationalPatterns.jsx`:
+Tạo `frontend/src/component/shared/OperationalPatterns.jsx`:
 
 ```jsx
 import { LoadingBlock } from './Feedback';
@@ -208,9 +215,10 @@ export function DataTable({
 }
 ```
 
-- [ ] **Step 4: Extend shared feedback contracts**
+- [ ] **Bước 4: Gia hạn hợp đồng phản hồi chung**
 
-In `frontend/src/component/shared/Feedback.jsx`, replace `DataNotice`, extend `EmptyState`, and add `ConfirmAction`:
+Trong `frontend/src/component/shared/Feedback.jsx`, thay thế `DataNotice`, mở rộng `EmptyState` và
+thêm `ConfirmAction`:
 
 ```jsx
 export function StatusNotice({ type = 'info', title, children, action }) {
@@ -281,11 +289,13 @@ export function ConfirmAction({
 }
 ```
 
-Set Toast's role to `toast.type === 'error' ? 'alert' : 'status'` and keep its current 3.2-second lifecycle.
+Đặt vai trò của Toast thành `toast.type === 'error' ? 'alert' : 'status'` và giữ nguyên vòng đời 3,2
+giây hiện tại của nó.
 
-- [ ] **Step 5: Compose the page header and navigation**
+- [ ] **Bước 5: Soạn tiêu đề trang và điều hướng**
 
-In `AppLayout.jsx`, import `PageHeader`, add `ReceiptText` to lucide imports, add icon mappings, and replace the inline `.ph` block:
+Trong `AppLayout.jsx`, nhập `PageHeader`, thêm `ReceiptText` để làm rõ quá trình nhập, thêm ánh xạ
+biểu tượng và thay thế khối `.ph` nội tuyến:
 
 ```jsx
 import { PageHeader } from '../shared/OperationalPatterns';
@@ -302,16 +312,16 @@ const NAV_ICONS = {
 </main>
 ```
 
-In `appNavigation.js`, add the following existing-role items after `member-details`:
+Trong `appNavigation.js`, thêm các mục vai trò hiện có sau `member-details`:
 
 ```js
 { key: 'inventory-management', label: 'Quản lý kho sách', path: '/librarian/inventory' },
 { key: 'fine-management', label: 'Quản lý tiền phạt', path: '/librarian/fines' },
 ```
 
-- [ ] **Step 6: Add structural and mobile styles**
+- [ ] **Bước 6: Thêm kiểu cấu trúc và kiểu di động**
 
-Add to `app-shell.css`:
+Thêm vào `app-shell.css`:
 
 ```css
 .data-toolbar-primary,
@@ -363,17 +373,17 @@ Add to `app-shell.css`:
 }
 ```
 
-- [ ] **Step 7: Run focused tests**
+- [ ] **Bước 7: Chạy kiểm thử tập trung**
 
-Run:
+Chạy:
 
 ```powershell
 node --test frontend/test/operationalPatternsFrontend.test.js frontend/test/appShellFrontend.test.js
 ```
 
-Expected: PASS with 0 failures.
+Dự kiến: ĐẠT với 0 lần thất bại.
 
-- [ ] **Step 8: Commit**
+- [ ] **Bước 8: Cam kết**
 
 ```powershell
 git add frontend/src/component/shared/OperationalPatterns.jsx frontend/src/component/shared/Feedback.jsx frontend/src/component/layout/AppLayout.jsx frontend/src/utils/appNavigation.js frontend/src/styles/app-shell.css frontend/test/operationalPatternsFrontend.test.js frontend/test/appShellFrontend.test.js
@@ -382,20 +392,20 @@ git commit -m "feat: add shared operational page patterns"
 
 ---
 
-### Task 2: FE07 Member Borrowing Tracer
+### Nhiệm vụ 2: Người theo dõi vay mượn thành viên FE07
 
-**Files:**
-- Modify: `frontend/src/page/borrowing/BorrowRequestPage.jsx:1-93`
-- Modify: `frontend/src/page/borrowing/BorrowingHistoryPage.jsx:1-88`
-- Modify: `frontend/test/borrowingFrontend.test.js`
+**Tệp:**
+- Sửa đổi: `frontend/src/page/borrowing/BorrowRequestPage.jsx:1-93`
+- Sửa đổi: `frontend/src/page/borrowing/BorrowingHistoryPage.jsx:1-88`
+- Sửa đổi: `frontend/test/borrowingFrontend.test.js`
 
-**Interfaces:**
-- Consumes: `DataToolbar`, `DataTable`, `EmptyState`, `ConfirmAction`, existing `borrowingApi`, and existing FE07 view models.
-- Produces: the first complete page adoption and a reference for later migrations.
+**Giao diện:**
+- Tiêu thụ: `DataToolbar`, `DataTable`, `EmptyState`, `ConfirmAction`, `borrowingApi` hiện có và các mẫu chế độ xem FE07 hiện có.
+- Tạo ra: việc áp dụng trang hoàn chỉnh đầu tiên và một tài liệu tham khảo cho những lần di chuyển sau này.
 
-- [ ] **Step 1: Add failing FE07 member adoption tests**
+- [ ] **Bước 1: Thêm các kiểm thử chấp nhận thành viên FE07 không thành công**
 
-Append to `frontend/test/borrowingFrontend.test.js`:
+Nối vào `frontend/test/borrowingFrontend.test.js`:
 
 ```js
 test('FE07 member pages use shared operational patterns without changing API calls', async () => {
@@ -417,19 +427,20 @@ test('FE07 member pages use shared operational patterns without changing API cal
 });
 ```
 
-- [ ] **Step 2: Verify the tests fail**
+- [ ] **Bước 2: Xác minh kiểm thử thất bại**
 
-Run:
+Chạy:
 
 ```powershell
 node --test frontend/test/borrowingFrontend.test.js
 ```
 
-Expected: FAIL on missing shared structural components and `renewing` state.
+Dự kiến: THẤT BẠI khi thiếu các thành phần cấu trúc dùng chung và trạng thái `renewing`.
 
-- [ ] **Step 3: Migrate `BorrowRequestPage`**
+- [ ] **Bước 3: Di chuyển `BorrowRequestPage`**
 
-Import `DataToolbar` and use it around search. Replace both custom empty blocks with shared empty states:
+Nhập `DataToolbar` và sử dụng nó để tìm kiếm. Thay thế cả hai khối trống tùy chỉnh bằng trạng thái
+trống được chia sẻ:
 
 ```jsx
 <DataToolbar
@@ -448,11 +459,12 @@ Import `DataToolbar` and use it around search. Replace both custom empty blocks 
 )}
 ```
 
-Keep `DEMO_BORROW_CATALOG`, `borrowingApi.createRequest`, the eligibility helper copy, and submit behavior unchanged.
+Giữ nguyên `DEMO_BORROW_CATALOG`, `borrowingApi.createRequest`, bản sao của trình trợ giúp đủ điều
+kiện và hành vi gửi không thay đổi.
 
-- [ ] **Step 4: Migrate `BorrowingHistoryPage`**
+- [ ] **Bước 4: Di chuyển `BorrowingHistoryPage`**
 
-Add pending state and protect the existing mutation:
+Thêm trạng thái đang chờ xử lý và bảo vệ thao tác ghi hiện có:
 
 ```jsx
 const [renewing, setRenewing] = useState(false);
@@ -476,7 +488,7 @@ async function confirmRenew() {
 }
 ```
 
-Replace the tabs/search row with `DataToolbar`, and render rows through:
+Thay thế các tab/hàng tìm kiếm bằng `DataToolbar` và hiển thị các hàng thông qua:
 
 ```jsx
 <DataTable
@@ -513,19 +525,20 @@ Replace the tabs/search row with `DataToolbar`, and render rows through:
 </DataTable>
 ```
 
-Replace `RenewModal` with `ConfirmAction`, passing `pending={renewing}`, `confirmLabel="Xác nhận gia hạn"`, and the existing book/due-date content.
+Thay thế `RenewModal` bằng `ConfirmAction`, chuyển `pending={renewing}`, `confirmLabel="Xác nhận gia
+hạn"` và nội dung sách/ngày đến hạn hiện có.
 
-- [ ] **Step 5: Run FE07 tests**
+- [ ] **Bước 5: Chạy kiểm thử FE07**
 
-Run:
+Chạy:
 
 ```powershell
 node --test frontend/test/borrowingFrontend.test.js frontend/test/operationalPatternsFrontend.test.js
 ```
 
-Expected: PASS with 0 failures.
+Dự kiến: ĐẠT với 0 lần thất bại.
 
-- [ ] **Step 6: Commit**
+- [ ] **Bước 6: Cam kết**
 
 ```powershell
 git add frontend/src/page/borrowing/BorrowRequestPage.jsx frontend/src/page/borrowing/BorrowingHistoryPage.jsx frontend/test/borrowingFrontend.test.js
@@ -534,21 +547,21 @@ git commit -m "feat: standardize member borrowing UX"
 
 ---
 
-### Task 3: FE07 Staff Borrowing Patterns
+### Nhiệm vụ 3: Mô hình mượn nhân viên FE07
 
-**Files:**
-- Modify: `frontend/src/page/borrowing/BorrowRequestsAdminPage.jsx:1-88`
-- Modify: `frontend/src/page/borrowing/ProcessReturnsPage.jsx:1-139`
-- Modify: `frontend/src/page/borrowing/MemberBorrowingDetailsPage.jsx:1-98`
-- Modify: `frontend/test/borrowingFrontend.test.js`
+**Tệp:**
+- Sửa đổi: `frontend/src/page/borrowing/BorrowRequestsAdminPage.jsx:1-88`
+- Sửa đổi: `frontend/src/page/borrowing/ProcessReturnsPage.jsx:1-139`
+- Sửa đổi: `frontend/src/page/borrowing/MemberBorrowingDetailsPage.jsx:1-98`
+- Sửa đổi: `frontend/test/borrowingFrontend.test.js`
 
-**Interfaces:**
-- Consumes: the Task 1 primitives and unchanged FE07 API/view-model contracts.
-- Produces: shared staff tables and pending confirmation patterns for approval, rejection, return, and lookup results.
+**Giao diện:**
+- Tiêu thụ: các hợp đồng gốc của Nhiệm vụ 1 và các hợp đồng FE07 API/mô hình xem không thay đổi.
+- Tạo: các bảng nhân viên được chia sẻ và các mẫu xác nhận đang chờ xử lý để có kết quả phê duyệt, từ chối, trả sách và tra cứu.
 
-- [ ] **Step 1: Add failing staff adoption tests**
+- [ ] **Bước 1: Thêm các kiểm thử chấp nhận nhân viên không thành công**
 
-Append:
+Nối thêm:
 
 ```js
 test('FE07 staff pages use shared tables and pending confirmations', async () => {
@@ -574,15 +587,15 @@ test('FE07 staff pages use shared tables and pending confirmations', async () =>
 });
 ```
 
-- [ ] **Step 2: Verify failure**
+- [ ] **Bước 2: Xác minh lỗi**
 
-Run `node --test frontend/test/borrowingFrontend.test.js`.
+Chạy `node --test frontend/test/borrowingFrontend.test.js`.
 
-Expected: FAIL on missing structural imports and pending state.
+Dự kiến: THẤT BẠI đối với việc nhập cấu trúc bị thiếu và trạng thái đang chờ xử lý.
 
-- [ ] **Step 3: Migrate approval and rejection**
+- [ ] **Bước 3: Di chuyển phê duyệt và từ chối**
 
-In `BorrowRequestsAdminPage.jsx`:
+Trong `BorrowRequestsAdminPage.jsx`:
 
 ```jsx
 const [actionPending, setActionPending] = useState(false);
@@ -602,11 +615,14 @@ async function handleApprove() {
 }
 ```
 
-Apply the same `actionPending` guard/finally pattern to rejection. Replace the request table with `DataTable`, preserving keyboard row selection and adding `data-label` to every cell. Replace both dialogs with `ConfirmAction`; rejection keeps its textarea inside the dialog and uses `confirmDisabled={!rejectReason.trim()}`.
+Áp dụng mẫu bảo vệ/cuối cùng `actionPending` tương tự để từ chối. Thay thế bảng yêu cầu bằng
+`DataTable`, giữ nguyên lựa chọn hàng bàn phím và thêm `data-label` vào mọi ô. Thay thế cả hai hộp
+thoại bằng `ConfirmAction`; từ chối giữ vùng văn bản của nó bên trong hộp thoại và sử dụng
+`confirmDisabled={!rejectReason.trim()}`.
 
-- [ ] **Step 4: Add return confirmation**
+- [ ] **Bước 4: Thêm xác nhận trả sách**
 
-In `ProcessReturnsPage.jsx`:
+Trong `ProcessReturnsPage.jsx`:
 
 ```jsx
 const [returnTarget, setReturnTarget] = useState(null);
@@ -636,23 +652,27 @@ async function confirmReturn() {
 }
 ```
 
-The panel button sets `returnTarget` instead of calling the API directly. Add a `ConfirmAction` with the selected member, book, condition, due date, and fine-review warning. Migrate search to `DataToolbar` and loans to `DataTable`.
+Nút bảng điều khiển đặt `returnTarget` thay vì gọi trực tiếp API. Thêm `ConfirmAction` với thành
+viên, sách, tình trạng, ngày đến hạn và cảnh báo đánh giá tốt đã chọn. Di chuyển tìm kiếm sang
+`DataToolbar` và cho mượn sang `DataTable`.
 
-- [ ] **Step 5: Migrate member lookup tables**
+- [ ] **Bước 5: Di chuyển bảng tra cứu thành viên**
 
-Use `DataToolbar` for the member ID field and load button. Rewrite `PendingTable` and `LoanTable` to return `DataTable` inside their existing `.lib-card`, preserving captions, row classes, dates, status badges, and empty-state copy. Add `data-label` to all cells.
+Sử dụng `DataToolbar` cho trường ID thành viên và nút tải. Viết lại `PendingTable` và `LoanTable` để
+trả sách `DataTable` bên trong `.lib-card` hiện có của chúng, giữ nguyên chú thích, lớp hàng, ngày
+tháng, huy hiệu trạng thái và bản sao trạng thái trống. Thêm `data-label` vào tất cả các ô.
 
-- [ ] **Step 6: Run FE07 tests**
+- [ ] **Bước 6: Chạy kiểm thử FE07**
 
-Run:
+Chạy:
 
 ```powershell
 node --test frontend/test/borrowingFrontend.test.js frontend/test/operationalPatternsFrontend.test.js
 ```
 
-Expected: PASS with 0 failures and unchanged API assertions.
+Dự kiến: ĐẠT với 0 lần thất bại và xác nhận API không thay đổi.
 
-- [ ] **Step 7: Commit**
+- [ ] **Bước 7: Cam kết**
 
 ```powershell
 git add frontend/src/page/borrowing/BorrowRequestsAdminPage.jsx frontend/src/page/borrowing/ProcessReturnsPage.jsx frontend/src/page/borrowing/MemberBorrowingDetailsPage.jsx frontend/test/borrowingFrontend.test.js
@@ -661,20 +681,20 @@ git commit -m "feat: standardize staff borrowing UX"
 
 ---
 
-### Task 4: FE08 Reservation Patterns
+### Nhiệm vụ 4: Mẫu đặt chỗ FE08
 
-**Files:**
-- Modify: `frontend/src/page/reservation/MyReservationsPage.jsx:1-170`
-- Modify: `frontend/src/page/reservation/ReservationsLibrarianPage.jsx:1-178`
-- Modify: `frontend/test/reservationFrontend.test.js`
+**Tệp:**
+- Sửa đổi: `frontend/src/page/reservation/MyReservationsPage.jsx:1-170`
+- Sửa đổi: `frontend/src/page/reservation/ReservationsLibrarianPage.jsx:1-178`
+- Sửa đổi: `frontend/test/reservationFrontend.test.js`
 
-**Interfaces:**
-- Consumes: Task 1 primitives and existing reservation API/view-state helpers.
-- Produces: shared reservation tables, toolbar, cancel/notify confirmation, and clearly labeled demo fallback.
+**Giao diện:**
+- Tiêu thụ: Nguyên tắc nhiệm vụ 1 và người trợ giúp đặt chỗ API/trạng thái xem hiện có.
+- Tạo ra: bảng đặt chỗ chung, thanh công cụ, xác nhận hủy/thông báo và dự phòng demo được dán nhãn rõ ràng.
 
-- [ ] **Step 1: Add failing FE08 adoption test**
+- [ ] **Bước 1: Thêm kiểm thử áp dụng FE08 không thành công**
 
-Append:
+Nối thêm:
 
 ```js
 test('FE08 pages adopt shared operational patterns and preserve demo fallback boundaries', async () => {
@@ -695,40 +715,40 @@ test('FE08 pages adopt shared operational patterns and preserve demo fallback bo
 });
 ```
 
-- [ ] **Step 2: Verify failure**
+- [ ] **Bước 2: Xác minh lỗi**
 
-Run `node --test frontend/test/reservationFrontend.test.js`.
+Chạy `node --test frontend/test/reservationFrontend.test.js`.
 
-Expected: FAIL on shared component and pending-state assertions.
+Dự kiến: THẤT BẠI đối với các xác nhận thành phần được chia sẻ và trạng thái đang chờ xử lý.
 
-- [ ] **Step 3: Migrate member reservations**
+- [ ] **Bước 3: Di chuyển đặt chỗ của thành viên**
 
-- Wrap the reservable-book search in `DataToolbar`.
-- Render reservation rows with `DataTable` and `data-label` attributes.
-- Keep `DEMO_RESERVABLE`, `DEMO_MY_RESERVATIONS`, `reservationApi.create`, `listMine`, and `cancel` unchanged.
-- Add `const [cancelling, setCancelling] = useState(false)` and guard `confirmCancel` with try/finally.
-- Replace the cancel `Modal` with `ConfirmAction pending={cancelling}`.
-- Keep the warning notice visible when `isDemo` is true; change success copy from endpoint wording to `Dữ liệu đặt chỗ đã được cập nhật.`
+- Gói tìm kiếm sách có thể đặt chỗ trong `DataToolbar`.
+- Hiển thị các hàng đặt chỗ với thuộc tính `DataTable` và `data-label`.
+- Giữ `DEMO_RESERVABLE`, `DEMO_MY_RESERVATIONS`, `reservationApi.create`, `listMine` và `cancel` không thay đổi.
+- Thêm `const [cancelling, setCancelling] = useState(false)` và bảo vệ `confirmCancel` bằng thử/cuối cùng.
+- Thay thế `Modal` hủy bằng `ConfirmAction pending={cancelling}`.
+- Hiển thị thông báo cảnh báo khi `isDemo` là đúng; thay đổi bản sao thành công từ từ ngữ điểm cuối sang `Dữ liệu đặt chỗ đã được cập nhật.`
 
-- [ ] **Step 4: Migrate staff reservations**
+- [ ] **Bước 4: Di chuyển đặt chỗ của nhân viên**
 
-- Use `DataToolbar` for search, book filter, status filter, and pagination summary.
-- Use `DataTable` for the list view.
-- Add `notifying` state around `reservationApi.process` and replace notify `Modal` with `ConfirmAction`.
-- Preserve `runHoldExpirationWorkflow`, demo fallback, queue sorting, and disabled server-only actions.
-- Keep queue view as a list, but use shared `EmptyState` and user-oriented warning copy.
+- Sử dụng `DataToolbar` để tìm kiếm, lọc sách, lọc trạng thái và tóm tắt phân trang.
+- Sử dụng `DataTable` để xem danh sách.
+- Thêm trạng thái `notifying` xung quanh `reservationApi.process` và thay thế thông báo `Modal` bằng `ConfirmAction`.
+- Giữ nguyên `runHoldExpirationWorkflow`, dự phòng demo, sắp xếp hàng đợi và vô hiệu hóa các hành động chỉ dành cho máy chủ.
+- Giữ chế độ xem hàng đợi dưới dạng danh sách nhưng sử dụng `EmptyState` được chia sẻ và bản sao cảnh báo hướng đến người dùng.
 
-- [ ] **Step 5: Run FE08 tests**
+- [ ] **Bước 5: Chạy kiểm thử FE08**
 
-Run:
+Chạy:
 
 ```powershell
 node --test frontend/test/reservationFrontend.test.js frontend/test/operationalPatternsFrontend.test.js
 ```
 
-Expected: PASS with 0 failures.
+Dự kiến: ĐẠT với 0 lần thất bại.
 
-- [ ] **Step 6: Commit**
+- [ ] **Bước 6: Cam kết**
 
 ```powershell
 git add frontend/src/page/reservation/MyReservationsPage.jsx frontend/src/page/reservation/ReservationsLibrarianPage.jsx frontend/test/reservationFrontend.test.js
@@ -737,24 +757,24 @@ git commit -m "feat: standardize reservation UX"
 
 ---
 
-### Task 5: FE06 Inventory Presentation-Only Migration
+### Nhiệm vụ 5: Di chuyển chỉ trình bày khoảng không quảng cáo FE06
 
-**Files:**
-- Create: `frontend/test/inventoryOperationalFrontend.test.js`
-- Modify: `frontend/src/page/InventoryPage.jsx:1-42`
-- Modify: `frontend/src/component/inventory/InventoryManagement.jsx:1-176`
-- Modify: `frontend/src/component/inventory/Filter.jsx:1-54`
-- Modify: `frontend/src/component/inventory/EditBookModal.jsx:1-181`
-- Modify: `frontend/src/component/inventory/BookCopies.jsx:1-169`
-- Modify: `frontend/src/component/inventory/StatusBadge.jsx:1-31`
+**Tệp:**
+- Tạo: `frontend/test/inventoryOperationalFrontend.test.js`
+- Sửa đổi: `frontend/src/page/InventoryPage.jsx:1-42`
+- Sửa đổi: `frontend/src/component/inventory/InventoryManagement.jsx:1-176`
+- Sửa đổi: `frontend/src/component/inventory/Filter.jsx:1-54`
+- Sửa đổi: `frontend/src/component/inventory/EditBookModal.jsx:1-181`
+- Sửa đổi: `frontend/src/component/inventory/BookCopies.jsx:1-169`
+- Sửa đổi: `frontend/src/component/inventory/StatusBadge.jsx:1-31`
 
-**Interfaces:**
-- Consumes: shared operational primitives and current `MOCK_BOOKS`, `MOCK_COPIES`, and inventory API methods already present in `BookCopies`.
-- Produces: one app-shell page with shared presentation while preserving prototype boundaries.
+**Giao diện:**
+- Tiêu thụ: các nguyên tắc hoạt động được chia sẻ và các phương thức `MOCK_BOOKS`, `MOCK_COPIES` hiện tại cũng như hàng tồn kho API đã có trong `BookCopies`.
+- Tạo ra: một trang vỏ ứng dụng với bản trình bày được chia sẻ trong khi vẫn duy trì ranh giới nguyên mẫu.
 
-- [ ] **Step 1: Write failing FE06 boundary tests**
+- [ ] **Bước 1: Viết các kiểm thử ranh giới FE06 không thành công**
 
-Create:
+Tạo:
 
 ```js
 import assert from 'node:assert/strict';
@@ -790,15 +810,15 @@ test('FE06 dialogs and badges use shared presentation without changing API metho
 });
 ```
 
-- [ ] **Step 2: Verify failure**
+- [ ] **Bước 2: Xác minh lỗi**
 
-Run `node --test frontend/test/inventoryOperationalFrontend.test.js`.
+Chạy `node --test frontend/test/inventoryOperationalFrontend.test.js`.
 
-Expected: FAIL because FE06 still uses duplicate/custom presentation.
+Dự kiến: THẤT BẠI vì FE06 vẫn sử dụng bản trình bày trùng lặp/tùy chỉnh.
 
-- [ ] **Step 3: Normalize inventory state and filters**
+- [ ] **Bước 3: Bình thường hóa trạng thái tồn kho và bộ lọc**
 
-In `InventoryManagement.jsx`:
+Trong `InventoryManagement.jsx`:
 
 ```jsx
 const EMPTY_FILTER = { title: '', author: '', fromYear: '', toYear: '' };
@@ -810,9 +830,13 @@ const [toast, showToast, clearToast] = useToast();
 <Filter filters={filter} onChange={setFilter} onReset={() => setFilter(EMPTY_FILTER)} />
 ```
 
-Remove the inner page header and outer page padding. Keep filtering against `books`, but use `fromYear` and `toYear` consistently. Replace the custom table with `DataTable`, add cell labels, preserve row click/edit click behavior, and pass `showToast` plus a no-op async refresh to `BookCopies` without introducing `inventoryApi.list`.
+Loại bỏ tiêu đề trang bên trong và phần đệm trang bên ngoài. Tiếp tục lọc `books` nhưng sử dụng
+`fromYear` và `toYear` một cách nhất quán. Thay thế bảng tùy chỉnh bằng `DataTable`, thêm nhãn ô,
+duy trì hành vi nhấp chuột/chỉnh sửa hàng và chuyển `showToast` cộng với chức năng làm mới không
+đồng bộ không hoạt động cho `BookCopies` mà không giới thiệu `inventoryApi.list`.
 
-In `Filter.jsx`, import `DataToolbar` and use this return block. Disable reset when every filter value is blank.
+Trong `Filter.jsx`, nhập `DataToolbar` và sử dụng khối trả về này. Tắt đặt lại khi mọi giá trị bộ
+lọc đều trống.
 
 ```jsx
 const hasFilters = Object.values(filters).some((value) => String(value).trim());
@@ -843,9 +867,10 @@ return (
 );
 ```
 
-- [ ] **Step 4: Reuse modal and badge presentation**
+- [ ] **Bước 4: Sử dụng lại cách trình bày phương thức và huy hiệu**
 
-Rewrite `EditBookModal`'s return with the shared `Modal` while preserving `form`, `errors`, `validate`, and `handleSave`:
+Viết lại kết quả trả về của `EditBookModal` với `Modal` được chia sẻ trong khi vẫn giữ nguyên
+`form`, `errors`, `validate` và `handleSave`:
 
 ```jsx
 return (
@@ -892,7 +917,7 @@ return (
 );
 ```
 
-Rewrite `StatusBadge` with the shared `Badge`:
+Viết lại `StatusBadge` bằng `Badge` được chia sẻ:
 
 ```jsx
 import { Badge } from '../shared/Feedback';
@@ -912,25 +937,25 @@ export default function StatusBadge({ status }) {
 }
 ```
 
-- [ ] **Step 5: Migrate book-copy presentation**
+- [ ] **Bước 5: Di chuyển phần trình bày bản sao sách**
 
-- Compose the existing modal body through shared `Modal`.
-- Render copy rows with `DataTable`, retaining every `inventoryApi` call and the existing `saving` guard.
-- Add `deactivateTarget` state; the Ngừng button opens `ConfirmAction` and its confirm handler calls the existing `deactivate(copy)` function.
-- Use `DataToolbar` for the add-copy controls and shared `EmptyState` when no copies exist.
-- Do not add list loading or new API ownership to `InventoryManagement`.
+- Soạn nội dung phương thức hiện có thông qua `Modal` được chia sẻ.
+- Kết xuất các hàng sao chép bằng `DataTable`, giữ lại mọi lệnh gọi `inventoryApi` và bộ bảo vệ `saving` hiện có.
+- Thêm trạng thái `deactivateTarget`; nút **Ngừng hoạt động** mở `ConfirmAction` và trình xử lý xác nhận gọi hàm `deactivate(copy)` hiện có.
+- Sử dụng `DataToolbar` cho các điều khiển thêm bản sao và chia sẻ `EmptyState` khi không có bản sao nào tồn tại.
+- Không thêm tải danh sách hoặc quyền sở hữu API mới vào `InventoryManagement`.
 
-- [ ] **Step 6: Run FE06 and shared tests**
+- [ ] **Bước 6: Chạy FE06 và chia sẻ các kiểm thử**
 
-Run:
+Chạy:
 
 ```powershell
 node --test frontend/test/inventoryOperationalFrontend.test.js frontend/test/operationalPatternsFrontend.test.js
 ```
 
-Expected: PASS with 0 failures.
+Dự kiến: ĐẠT với 0 lần thất bại.
 
-- [ ] **Step 7: Commit**
+- [ ] **Bước 7: Cam kết**
 
 ```powershell
 git add frontend/src/page/InventoryPage.jsx frontend/src/component/inventory/InventoryManagement.jsx frontend/src/component/inventory/Filter.jsx frontend/src/component/inventory/EditBookModal.jsx frontend/src/component/inventory/BookCopies.jsx frontend/src/component/inventory/StatusBadge.jsx frontend/test/inventoryOperationalFrontend.test.js
@@ -939,20 +964,20 @@ git commit -m "feat: align inventory presentation patterns"
 
 ---
 
-### Task 6: FE09 Shared Shell Migration
+### Nhiệm vụ 6: Di chuyển lớp bao chia sẻ FE09
 
-**Files:**
-- Create: `frontend/src/styles/fine-management.css`
-- Create: `frontend/test/fineOperationalFrontend.test.js`
-- Modify: `frontend/src/page/FineManagement.jsx:1-1368`
+**Tệp:**
+- Tạo: `frontend/src/styles/fine-management.css`
+- Tạo: `frontend/test/fineOperationalFrontend.test.js`
+- Sửa đổi: `frontend/src/page/FineManagement.jsx:1-1368`
 
-**Interfaces:**
-- Consumes: `AppLayout`, `StatusNotice`, existing `BookManagement`, local fine workflow state, and existing localStorage helpers.
-- Produces: FE09 inside the shared shell with page-local tabs and external CSS; no fine workflow behavior changes yet.
+**Giao diện:**
+- Tiêu thụ: `AppLayout`, `StatusNotice`, `BookManagement` hiện có, trạng thái quy trình làm việc tốt cục bộ và các trình trợ giúp localStorage hiện có.
+- Tạo ra: FE09 bên trong lớp bao được chia sẻ với các tab trang cục bộ và CSS bên ngoài; chưa có thay đổi hành vi quy trình làm việc tốt nào.
 
-- [ ] **Step 1: Write failing shell-boundary test**
+- [ ] **Bước 1: Viết kiểm thử ranh giới lớp bao thất bại**
 
-Create:
+Tạo:
 
 ```js
 import assert from 'node:assert/strict';
@@ -976,17 +1001,19 @@ test('FE09 uses AppLayout while retaining prototype data ownership', async () =>
 });
 ```
 
-- [ ] **Step 2: Verify failure**
+- [ ] **Bước 2: Xác minh lỗi**
 
-Run `node --test frontend/test/fineOperationalFrontend.test.js`.
+Chạy `node --test frontend/test/fineOperationalFrontend.test.js`.
 
-Expected: FAIL on shared shell and external stylesheet assertions.
+Dự kiến: THẤT BẠI trên các xác nhận lớp bao được chia sẻ và biểu định kiểu bên ngoài.
 
-- [ ] **Step 3: Replace the duplicate application shell**
+- [ ] **Bước 3: Thay thế vỏ ứng dụng trùng lặp**
 
-Remove `useNavigate`, `Home`, `LogOut`, duplicate app navigation markup, session markup, and `handleLogout`. Keep `workspace`, `BookManagement`, `activeSection`, and all workflow handlers.
+Xóa `useNavigate`, `Home`, `LogOut`, đánh dấu điều hướng ứng dụng trùng lặp, đánh dấu phiên và
+`handleLogout`. Giữ `workspace`, `BookManagement`, `activeSection` và tất cả các trình xử lý quy
+trình công việc.
 
-Use this top-level structure:
+Sử dụng cấu trúc cấp cao nhất này:
 
 ```jsx
 return (
@@ -1039,25 +1066,32 @@ return (
 );
 ```
 
-Before this return, move each current `activeSection` JSX block unchanged into the four local constants `listSection`, `calculateSection`, `collectionSection`, and `paidSection`. This is a mechanical extraction only: each constant contains the current section element and continues to reference the same state and handlers.
+Trước khi quay trở lại, hãy di chuyển từng khối `activeSection` JSX hiện tại không thay đổi vào bốn
+hằng số cục bộ `listSection`, `calculateSection`, `collectionSection` và `paidSection`. Đây chỉ là
+trích xuất cơ học: mỗi hằng số chứa phần tử phần hiện tại và tiếp tục tham chiếu cùng trạng thái và
+trình xử lý.
 
-- [ ] **Step 4: Extract FE09 styles**
+- [ ] **Bước 4: Trích xuất kiểu FE09**
 
-Move the existing non-shell `.fine-*` declarations from the inline style block to `frontend/src/styles/fine-management.css`. Delete shell-only selectors for `.fine-shell`, `.fine-sidebar`, `.fine-brand*`, `.fine-app-nav`, `.fine-workflow-nav`, `.fine-session`, `.fine-main`, and their responsive overrides. Keep form, stats, panels, detail, transfer, table, empty, and responsive declarations unchanged until Task 7.
+Di chuyển các khai báo `.fine-*` không có lớp bao hiện có từ khối kiểu nội tuyến sang
+`frontend/src/styles/fine-management.css`. Xóa các bộ chọn chỉ có lớp bao cho `.fine-shell`,
+`.fine-sidebar`, `.fine-brand*`, `.fine-app-nav`, `.fine-workflow-nav`, `.fine-session`,
+`.fine-main` và các phần ghi đè phản hồi của chúng. Giữ nguyên các khai báo biểu mẫu, số liệu thống
+kê, bảng điều khiển, chi tiết, chuyển giao, bảng, trống và phản hồi cho đến Nhiệm vụ 7.
 
-Import the stylesheet once from `FineManagement.jsx`:
+Nhập biểu định kiểu một lần từ `FineManagement.jsx`:
 
 ```js
 import '../styles/fine-management.css';
 ```
 
-- [ ] **Step 5: Run the FE09 shell test**
+- [ ] **Bước 5: Chạy kiểm thử lớp bao FE09**
 
-Run `node --test frontend/test/fineOperationalFrontend.test.js`.
+Chạy `node --test frontend/test/fineOperationalFrontend.test.js`.
 
-Expected: PASS with 0 failures.
+Dự kiến: ĐẠT với 0 lần thất bại.
 
-- [ ] **Step 6: Commit**
+- [ ] **Bước 6: Cam kết**
 
 ```powershell
 git add frontend/src/page/FineManagement.jsx frontend/src/styles/fine-management.css frontend/test/fineOperationalFrontend.test.js
@@ -1066,20 +1100,20 @@ git commit -m "feat: move fine management into app shell"
 
 ---
 
-### Task 7: FE09 Shared Workflow Patterns
+### Nhiệm vụ 7: Mẫu quy trình làm việc được chia sẻ FE09
 
-**Files:**
-- Modify: `frontend/src/page/FineManagement.jsx`
-- Modify: `frontend/src/styles/fine-management.css`
-- Modify: `frontend/test/fineOperationalFrontend.test.js`
+**Tệp:**
+- Sửa đổi: `frontend/src/page/FineManagement.jsx`
+- Sửa đổi: `frontend/src/styles/fine-management.css`
+- Sửa đổi: `frontend/test/fineOperationalFrontend.test.js`
 
-**Interfaces:**
-- Consumes: Task 6 shell and all existing FE09 local handlers/data helpers.
-- Produces: shared toolbar, table, empty state, toast, and confirmations while preserving localStorage/sample-data behavior.
+**Giao diện:**
+- Tiêu thụ: lớp bao Nhiệm vụ 6 và tất cả trình xử lý/trợ giúp dữ liệu cục bộ FE09 hiện có.
+- Tạo ra: thanh công cụ dùng chung, bảng, trạng thái trống, thông báo và xác nhận trong khi vẫn duy trì hành vi localStorage/dữ liệu mẫu.
 
-- [ ] **Step 1: Add failing workflow contracts**
+- [ ] **Bước 1: Thêm hợp đồng quy trình làm việc không thành công**
 
-Append:
+Nối thêm:
 
 ```js
 test('FE09 reuses shared workflow components without API alignment', async () => {
@@ -1099,17 +1133,19 @@ test('FE09 reuses shared workflow components without API alignment', async () =>
 });
 ```
 
-- [ ] **Step 2: Verify failure**
+- [ ] **Bước 2: Xác minh lỗi**
 
-Run `node --test frontend/test/fineOperationalFrontend.test.js`.
+Chạy `node --test frontend/test/fineOperationalFrontend.test.js`.
 
-Expected: FAIL on duplicate and missing shared components.
+Dự kiến: THẤT BẠI đối với các thành phần chia sẻ trùng lặp và bị thiếu.
 
-- [ ] **Step 3: Remove duplicate feedback components and translate validation copy**
+- [ ] **Bước 3: Xóa các thành phần phản hồi trùng lặp và dịch bản sao xác thực**
 
-Import shared `Badge`, `ConfirmAction`, `EmptyState`, `StatusNotice`, `Toast`, and structural `DataTable`, `DataToolbar`. Remove local `Toast` and `EmptyState` functions. Keep `StatusBadge` only as a small adapter over shared `Badge`.
+Nhập chia sẻ `Badge`, `ConfirmAction`, `EmptyState`, `StatusNotice`, `Toast` và cấu trúc
+`DataTable`, `DataToolbar`. Xóa các chức năng `Toast` và `EmptyState` cục bộ. Chỉ giữ `StatusBadge`
+dưới dạng một bộ chuyển đổi nhỏ trên `Badge` được chia sẻ.
 
-Replace validation strings with the exact Vietnamese equivalents:
+Thay thế chuỗi xác thực bằng chuỗi tương đương chính xác bằng tiếng Việt:
 
 ```js
 errors[field] = 'Trường này là bắt buộc.';
@@ -1120,11 +1156,13 @@ errors.amount = 'Số tiền phải lớn hơn 0.';
 errors.status = 'Trạng thái không hợp lệ.';
 ```
 
-- [ ] **Step 4: Migrate fine list toolbar and table**
+- [ ] **Bước 4: Di chuyển thanh công cụ và bảng danh sách mịn**
 
-Use `DataToolbar` for query, status filter, New, and Delete. Use `DataTable` with headers `Phiếu phạt`, `Thành viên`, `Sách`, `Quá hạn`, `Số tiền`, and `Trạng thái`; preserve row selection and add mobile labels.
+Sử dụng `DataToolbar` cho truy vấn, bộ lọc trạng thái, Mới và Xóa. Sử dụng `DataTable` với các tiêu
+đề `Phiếu phạt`, `Thành viên`, `Sách`, `Quá hạn`, `Số tiền` và `Trạng thái`; duy trì lựa chọn hàng
+và thêm nhãn di động.
 
-Use:
+sử dụng:
 
 ```jsx
 emptyState={(
@@ -1140,19 +1178,22 @@ emptyState={(
 )}
 ```
 
-Keep fine ordering, filtering, selected-fine behavior, local forms, and `saveFineRecords` unchanged.
+Giữ nguyên thứ tự, lọc, hành vi tốt đã chọn, biểu mẫu cục bộ và `saveFineRecords` không thay đổi.
 
-- [ ] **Step 5: Add consequential-action confirmations**
+- [ ] **Bước 5: Thêm xác nhận hành động do hậu quả**
 
-Add `confirmTarget` state:
+Thêm trạng thái `confirmTarget`:
 
 ```jsx
 const [confirmTarget, setConfirmTarget] = useState(null);
 ```
 
-Use values `{ type: 'delete', fine }`, `{ type: 'collect', fine }`, and `{ type: 'paid', fine }`. Buttons/forms set the target; the shared confirmation calls the existing synchronous handler. Clear the target only after the handler completes.
+Sử dụng các giá trị `{ type: 'delete', fine }`, `{ type: 'collect', fine }` và `{ type: 'đã thanh
+toán', khoản phạt
+}`. Các nút/biểu mẫu đặt mục tiêu; xác nhận được chia sẻ sẽ gọi trình xử lý đồng bộ hiện có. Chỉ xóa
+mục tiêu sau khi trình xử lý hoàn thành.
 
-Render one confirmation:
+Đưa ra một xác nhận:
 
 ```jsx
 {confirmTarget && (
@@ -1173,23 +1214,27 @@ Render one confirmation:
 )}
 ```
 
-Refactor `handleRecordCollection(event)` into `recordCollection()` by removing only `event.preventDefault()`. The form submit prevents default and sets the collect confirmation target. Do not change calculation, transfer validation, or local state updates.
+Tái cấu trúc `handleRecordCollection(event)` thành `recordCollection()` bằng cách chỉ xóa
+`event.preventDefault()`. Việc gửi biểu mẫu ngăn chặn mặc định và đặt mục tiêu xác nhận thu thập.
+Không thay đổi cách tính, xác thực chuyển khoản hoặc cập nhật trạng thái cục bộ.
 
-- [ ] **Step 6: Remove obsolete FE09 presentation styles**
+- [ ] **Bước 6: Xóa các kiểu trình bày FE09 lỗi thời**
 
-Delete `.fine-toolbar`, `.fine-search`, `.fine-select`, `.fine-table*`, `.fine-empty`, and `.fine-toast*` declarations after their markup is gone. Keep form/panel/detail/transfer styles required by the remaining local workflow.
+Xóa các khai báo `.fine-toolbar`, `.fine-search`, `.fine-select`, `.fine-table*`, `.fine-empty` và
+`.fine-toast*` sau khi đánh dấu của chúng không còn nữa. Giữ các kiểu biểu mẫu/bảng điều khiển/chi
+tiết/chuyển giao theo yêu cầu của quy trình làm việc cục bộ còn lại.
 
-- [ ] **Step 7: Run FE09 tests**
+- [ ] **Bước 7: Chạy kiểm thử FE09**
 
-Run:
+Chạy:
 
 ```powershell
 node --test frontend/test/fineOperationalFrontend.test.js frontend/test/operationalPatternsFrontend.test.js
 ```
 
-Expected: PASS with 0 failures and prototype-boundary assertions intact.
+Dự kiến: ĐẠT với 0 lỗi và xác nhận ranh giới nguyên mẫu còn nguyên vẹn.
 
-- [ ] **Step 8: Commit**
+- [ ] **Bước 8: Cam kết**
 
 ```powershell
 git add frontend/src/page/FineManagement.jsx frontend/src/styles/fine-management.css frontend/test/fineOperationalFrontend.test.js
@@ -1198,21 +1243,21 @@ git commit -m "feat: standardize fine workflow presentation"
 
 ---
 
-### Task 8: FE12 Report Patterns
+### Nhiệm vụ 8: Mẫu báo cáo FE12
 
-**Files:**
-- Create: `frontend/test/reportOperationalFrontend.test.js`
-- Modify: `frontend/src/page/report/BorrowingReportPage.jsx:1-133`
-- Modify: `frontend/src/page/report/InventoryReportPage.jsx:1-184`
-- Modify: `frontend/src/page/report/UserStatisticsPage.jsx:1-136`
+**Tệp:**
+- Tạo: `frontend/test/reportOperationalFrontend.test.js`
+- Sửa đổi: `frontend/src/page/report/BorrowingReportPage.jsx:1-133`
+- Sửa đổi: `frontend/src/page/report/InventoryReportPage.jsx:1-184`
+- Sửa đổi: `frontend/src/page/report/UserStatisticsPage.jsx:1-136`
 
-**Interfaces:**
-- Consumes: Task 1 primitives, existing report APIs, filter builders, guards, charts, and view models.
-- Produces: shared report filters/tables and outcome-oriented notices without changing report values.
+**Giao diện:**
+- Tiêu thụ: Nguyên hàm của Nhiệm vụ 1, API báo cáo hiện có, trình tạo bộ lọc, bảo vệ, biểu đồ và mô hình xem.
+- Tạo ra: các bộ lọc/bảng báo cáo được chia sẻ và các thông báo hướng đến kết quả mà không thay đổi giá trị báo cáo.
 
-- [ ] **Step 1: Write failing report adoption tests**
+- [ ] **Bước 1: Viết báo cáo kiểm tra việc áp dụng không thành công**
 
-Create:
+Tạo:
 
 ```js
 import assert from 'node:assert/strict';
@@ -1246,43 +1291,46 @@ test('FE12 report API and filter contracts remain unchanged', async () => {
 });
 ```
 
-- [ ] **Step 2: Verify failure**
+- [ ] **Bước 2: Xác minh lỗi**
 
-Run:
+Chạy:
 
 ```powershell
 node --test frontend/test/reportOperationalFrontend.test.js frontend/test/reportFilters.test.js frontend/test/reportAccess.test.js
 ```
 
-Expected: FAIL on shared pattern and endpoint-copy assertions; existing filter/access tests remain passing.
+Dự kiến: THẤT BẠI đối với các xác nhận mẫu được chia sẻ và bản sao điểm cuối; các kiểm thử bộ
+lọc/quyền truy cập hiện tại vẫn vượt qua.
 
-- [ ] **Step 3: Migrate report toolbars**
+- [ ] **Bước 3: Di chuyển thanh công cụ báo cáo**
 
-- Borrowing/User reports: place date inputs and Apply under `DataToolbar filters`; keep the existing reload action in `AppLayout`.
-- Inventory report: place category select under `filters`, Lọc and icon reset under `actions`.
-- Keep all input values, submit handlers, disabled states, and parameter builders unchanged.
+- Báo cáo mượn/người dùng: đặt đầu vào ngày và Áp dụng theo `DataToolbar filters`; giữ hành động tải lại hiện có trong `AppLayout`.
+- Inventory báo cáo: place category select under `filters`, Lọc và icon đặt lại under `actions`.
+- Giữ nguyên tất cả các giá trị đầu vào, trình xử lý gửi, trạng thái bị tắt và trình tạo tham số.
 
-Set successful load messages to:
+Đặt thông báo tải thành công thành:
 
 ```js
 setNotice('Dữ liệu báo cáo đã được cập nhật.');
 ```
 
-- [ ] **Step 4: Migrate report tables**
+- [ ] **Bước 4: Di chuyển bảng báo cáo**
 
-Replace the top-books, low-inventory, and role/membership tables with `DataTable`. Add `data-label` attributes matching visible Vietnamese headers. Preserve row keys, values, badges, low-stock row class, and empty-state copy.
+Thay thế các bảng top-books, low-inventory và role/membership bằng `DataTable`. Thêm thuộc tính
+`data-label` phù hợp với tiêu đề tiếng Việt hiển thị. Giữ nguyên các khóa hàng, giá trị, huy hiệu,
+loại hàng sắp hết hàng và bản sao trạng thái trống.
 
-- [ ] **Step 5: Run report tests**
+- [ ] **Bước 5: Chạy kiểm thử báo cáo**
 
-Run:
+Chạy:
 
 ```powershell
 node --test frontend/test/reportOperationalFrontend.test.js frontend/test/reportFilters.test.js frontend/test/reportAccess.test.js frontend/test/operationalPatternsFrontend.test.js
 ```
 
-Expected: PASS with 0 failures.
+Dự kiến: ĐẠT với 0 lần thất bại.
 
-- [ ] **Step 6: Commit**
+- [ ] **Bước 6: Cam kết**
 
 ```powershell
 git add frontend/src/page/report/BorrowingReportPage.jsx frontend/src/page/report/InventoryReportPage.jsx frontend/src/page/report/UserStatisticsPage.jsx frontend/test/reportOperationalFrontend.test.js
@@ -1291,40 +1339,41 @@ git commit -m "feat: standardize report presentation patterns"
 
 ---
 
-### Task 9: Slice 3 Validation and Human Review Gate
+### Nhiệm vụ 9: Cổng xác thực và đánh giá con người lát 3
 
-**Files:**
-- Create: `.sdd/reviews/library-ux-slice3-validation-review-2026-07-15.md`
-- Modify only if evidence requires correction: files changed in Tasks 1-8
+**Tệp:**
+- Tạo: `.sdd/reviews/library-ux-slice3-validation-review-2026-07-15.md`
+- Chỉ sửa đổi nếu bằng chứng yêu cầu chỉnh sửa: các tập tin đã thay đổi trong Nhiệm vụ 1-8
 
-**Interfaces:**
-- Consumes: all completed Slice 3 commits.
-- Produces: automated evidence and a bounded checklist for Nhat's human review; no merge claim.
+**Giao diện:**
+- Tiêu thụ: tất cả các cam kết phần việc 3 đã hoàn thành.
+- Tạo ra: bằng chứng tự động và một danh sách kiểm tra có giới hạn để Nhật đánh giá con người; không có yêu cầu hợp nhất.
 
-- [ ] **Step 1: Run focused frontend contracts**
+- [ ] **Bước 1: Chạy các hợp đồng giao diện người dùng tập trung**
 
-Run:
+Chạy:
 
 ```powershell
 npm.cmd --prefix frontend test
 ```
 
-Expected: all frontend Node tests PASS with 0 failures.
+Dự kiến: tất cả các kiểm thử Nút giao diện người dùng ĐẠT với 0 lần thất bại.
 
-- [ ] **Step 2: Run lint and production build**
+- [ ] **Bước 2: Chạy công cụ tìm lỗi mã nguồn và bản dựng sản xuất**
 
-Run:
+Chạy:
 
 ```powershell
 npm.cmd --prefix frontend run lint
 npm.cmd --prefix frontend run build
 ```
 
-Expected: both commands exit `0`; a non-failing Vite chunk-size warning may be recorded but does not block review.
+Dự kiến: cả hai lệnh đều thoát `0`; cảnh báo kích thước khối Vite không bị lỗi có thể được ghi lại
+nhưng không chặn việc đánh giá.
 
-- [ ] **Step 3: Verify scope and whitespace**
+- [ ] **Bước 3: Xác minh phạm vi và khoảng trắng**
 
-Run:
+Chạy:
 
 ```powershell
 git diff main...HEAD --check
@@ -1332,97 +1381,100 @@ git diff main...HEAD --name-only
 rg -n "Đã kết nối backend thật qua GET|function Toast\(|function EmptyState\(|className=\"fine-shell\"|<table className=\"lib-table\"" frontend/src/page/borrowing frontend/src/page/reservation frontend/src/component/inventory frontend/src/page/FineManagement.jsx frontend/src/page/report
 ```
 
-Expected:
+Dự kiến:
 
-- `git diff --check` exits `0`.
-- Changed files are limited to approved docs, shared frontend patterns/styles/tests, and target operational pages.
-- The source scan returns no endpoint-oriented success copy, FE09 duplicate feedback components/shell, or raw legacy tables in migrated pages.
+- `git diff --check` thoát khỏi `0`.
+- Các tệp đã thay đổi được giới hạn ở các tài liệu đã được phê duyệt, các mẫu/kiểu/kiểm tra giao diện người dùng được chia sẻ và các trang hoạt động mục tiêu.
+- Quá trình quét nguồn không trả về bản sao thành công theo định hướng điểm cuối, các thành phần/vỏ phản hồi trùng lặp FE09 hoặc các bảng kế thừa thô trong các trang đã di chuyển.
 
-- [ ] **Step 4: Verify protected contracts did not change**
+- [ ] **Bước 4: Xác minh hợp đồng được bảo vệ không thay đổi**
 
-Run:
+Chạy:
 
 ```powershell
 git diff main...HEAD -- frontend/src/api frontend/src/utils/borrowingAccess.js frontend/src/utils/reportAccess.js backend database
 ```
 
-Expected: no diff. If any output appears, stop and remove the out-of-scope change before continuing.
+Dự kiến: không có khác biệt. Nếu bất kỳ kết quả đầu ra nào xuất hiện, hãy dừng và xóa thay đổi ngoài
+phạm vi trước khi tiếp tục.
 
-- [ ] **Step 5: Write validation record**
+- [ ] **Bước 5: Viết hồ sơ xác nhận**
 
-Create `.sdd/reviews/library-ux-slice3-validation-review-2026-07-15.md`:
+Tạo `.sdd/reviews/library-ux-slice3-validation-review-2026-07-15.md`:
 
 ```markdown
-# Library UX Slice 3 Validation Review - 2026-07-15
+# Rà soát xác nhận lát cắt trải nghiệm thư viện 3 - 2026-07-15
 
-Status: READY FOR HUMAN REVIEW
+Trạng thái: SẴN SÀNG ĐỂ CON NGƯỜI RÀ SOÁT
 
-Branch: `docs/ux-slice3-operational-patterns`
+Nhánh: `docs/ux-slice3-operational-patterns`
 
-## Scope
+## Phạm vi
 
-Record automated evidence for shared operational patterns and their ordered application to FE07, FE08, FE06, FE09, and FE12. This record does not claim human acceptance, merge, FE06 completion, or FE09-T012 completion.
+Ghi lại bằng chứng tự động về các mô hình hoạt động được chia sẻ và ứng dụng theo thứ tự của chúng vào FE07, FE08, FE06, FE09 và FE12. Bản ghi này không yêu cầu sự chấp nhận của con người, hợp nhất, hoàn thành FE06 hoặc hoàn thành FE09-T012.
 
-## Automated Evidence
+## Bằng chứng tự động
 
-| Check | Result |
+|Kiểm tra|kết quả|
 | --- | --- |
-| Frontend tests | PASS - all tests, 0 failures |
-| Frontend lint | PASS |
-| Frontend production build | PASS |
-| Diff whitespace | PASS |
-| API/backend/database scope | PASS - no changes |
-| FE06 boundary | PASS - mock/in-memory ownership retained |
-| FE09 boundary | PASS - localStorage/sample-data retained; FE09-T012 open |
+|Kiểm tra giao diện người dùng|ĐẠT - tất cả các kiểm thử, 0 thất bại|
+|kiểm tra mã giao diện người dùng|ĐẠT|
+|Xây dựng sản xuất Frontend|ĐẠT|
+|Khoảng trắng khác biệt|ĐẠT|
+|API/phạm vi cơ sở dữ liệu/máy chủ|ĐẠT - không có thay đổi|
+|Ranh giới FE06|PASS - quyền sở hữu mô phỏng/trong bộ nhớ được giữ lại|
+|Ranh giới FE09|PASS - localStorage/dữ liệu mẫu được giữ lại; FE09-T012 mở|
 
-## Human Review Checklist
+## Danh sách rà soát của con người
 
-- Borrowing: loading, error, empty, filtered, approval, rejection, renewal, and return confirmation.
-- Reservations: demo fallback warning, cancellation, staff list, queue, and notification confirmation.
-- Inventory: one page header, filters, empty results, edit dialog, copy table, and prototype warning.
-- Fines: shared shell, local tabs, list filters, confirmations, toast, and no loss of embedded book-management access.
-- Reports: date/category filters, zero results, values, charts, and table readability.
-- Mobile: labeled rows remain understandable at 390px without incoherent overlap.
+- Vay: tải, lỗi, trống, lọc, phê duyệt, từ chối, gia hạn và xác nhận trả sách.
+- Đặt chỗ: cảnh báo dự phòng demo, hủy bỏ, danh sách nhân viên, xếp hàng và xác nhận thông báo.
+- Khoảng không quảng cáo: tiêu đề một trang, bộ lọc, kết quả trống, hộp thoại chỉnh sửa, bảng sao chép và cảnh báo nguyên mẫu.
+- khoản phạt: lớp bao được chia sẻ, tab cục bộ, bộ lọc danh sách, xác nhận, bánh mì nướng và không mất quyền truy cập quản lý sách được nhúng.
+- Báo cáo: bộ lọc ngày/danh mục, kết quả bằng 0, giá trị, biểu đồ và khả năng đọc bảng.
+- Thiết bị di động: các hàng được gắn nhãn vẫn có thể hiểu được ở 390px mà không có sự chồng chéo không mạch lạc.
 
-## Residual Risks
+## Rủi ro còn lại
 
-- FE06 remains a prototype until its feature plan/tasks are approved.
-- FE09 remains local-data UI until FE09-T012 is implemented.
-- Full responsive and keyboard acceptance remains Slice 4.
+- FE06 vẫn là nguyên mẫu cho đến khi kế hoạch/nhiệm vụ chức năng của nó được phê duyệt.
+- FE09 vẫn giữ nguyên giao diện người dùng dữ liệu cục bộ cho đến khi FE09-T012 được triển khai.
+- Khả năng đáp ứng đầy đủ và chấp nhận bàn phím vẫn là phần việc 4.
 
-## Review Outcome
+## Kết quả rà soát
 
-Verdict: **Automated Slice 3 evidence is complete; Nhat's human review is required before integration.**
+Phán quyết: **Bằng chứng lát 3 tự động đã hoàn tất; Cần có sự đánh giá của con người Nhật trước khi hội nhập.**
 ```
 
-- [ ] **Step 6: Commit the validation record**
+- [ ] **Bước 6: Cam kết hồ sơ xác nhận**
 
 ```powershell
 git add .sdd/reviews/library-ux-slice3-validation-review-2026-07-15.md
 git commit -m "docs: record operational UX validation"
 ```
 
-- [ ] **Step 7: Stop for human review**
+- [ ] **Bước 7: Dừng để con người đánh giá**
 
-Provide Nhat the validation record path, the focused review checklist, and the branch commit summary. Do not merge or push until Nhat explicitly confirms review and requests the next git action.
+Cung cấp cho Nhật đường dẫn bản ghi xác thực, danh sách kiểm tra đánh giá tập trung và bản tóm tắt
+cam kết của nhánh. Không hợp nhất hoặc đẩy cho đến khi Nhật xác nhận rõ ràng việc xem xét và yêu cầu
+hành động git tiếp theo.
 
 ---
 
-## Traceability Summary
+## Tóm tắt truy vết
 
-| Requirement | Tasks |
+| Yêu cầu | Nhiệm vụ |
 | --- | --- |
-| `UX-FE-006`, `AC-UX-005` state coverage | 1-8 |
-| `AC-UX-004`, mobile labeled rows | 1-8 |
-| `AC-UX-007`, confirmation/focus contract | 1-7 |
-| `AC-UX-008`, no API/business/security changes | 1-9 |
-| `AC-UX-S3-001` page header | 1, 5, 6 |
-| `AC-UX-S3-002` operational states | 1-8 |
-| `AC-UX-S3-003` pending confirmations | 1-7 |
-| `AC-UX-S3-004` mobile tables | 1-8 |
-| `AC-UX-S3-005` FE07 preservation | 2-3, 9 |
-| `AC-UX-S3-006` FE08 fallback | 4, 9 |
-| `AC-UX-S3-007` FE06 presentation-only | 5, 9 |
-| `AC-UX-S3-008` FE09 presentation-only | 6-7, 9 |
-| `AC-UX-S3-009` FE12 preservation | 8-9 |
-| `AC-UX-S3-010` final scope gate | 9 |
+| Bảo hiểm trạng thái `UX-FE-006`, `AC-UX-005` | 1-8 |
+| `AC-UX-004`, hàng được gắn nhãn di động | 1-8 |
+| `AC-UX-007`, hợp đồng xác nhận/tập trung | 1-7 |
+| `AC-UX-008`, không có thay đổi API/kinh doanh/bảo mật | 1-9 |
+| Tiêu đề trang `AC-UX-S3-001` | 1, 5, 6 |
+| Trạng thái hoạt động của `AC-UX-S3-002` | 1-8 |
+| `AC-UX-S3-003` đang chờ xác nhận | 1-7 |
+| Bàn di động `AC-UX-S3-004` | 1-8 |
+| Bảo quản `AC-UX-S3-005` FE07 | 2-3, 9 |
+| Dự phòng `AC-UX-S3-006` FE08 | 4, 9 |
+| `AC-UX-S3-007` FE06 chỉ dành cho bản trình bày | 5, 9 |
+| `AC-UX-S3-008` FE09 chỉ dành cho bản trình bày | 6-7, 9 |
+| Bảo quản `AC-UX-S3-009` FE12 | 8-9 |
+| Cổng phạm vi cuối cùng `AC-UX-S3-010` | 9 |

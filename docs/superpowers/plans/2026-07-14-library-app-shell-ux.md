@@ -1,55 +1,61 @@
-# Library App Shell UX Implementation Plan
+# Kế hoạch triển khai UX lớp bao của ứng dụng thư viện
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Đối với nhân viên đại lý:** SUB-SKILL BẮT BUỘC: Sử dụng siêu năng lực:phát triển theo định hướng phụ (được khuyến nghị) hoặc siêu năng lực:thực hiện các kế hoạch để triển khai kế hoạch này theo từng nhiệm vụ. Các bước sử dụng cú pháp hộp kiểm (`- [ ]`) để theo dõi.
 
-**Goal:** Deliver one role-aware, Vietnamese app shell with route-derived navigation, a real mobile drawer, a functional profile header, and a role-aware `/home` dashboard.
+**Mục tiêu:** Cung cấp một vỏ ứng dụng tiếng Việt, nhận biết vai trò với điều hướng bắt nguồn từ
+tuyến đường, ngăn kéo di động thực sự, tiêu đề hồ sơ chức năng và bảng điều khiển `/home` nhận biết
+vai trò.
 
-**Architecture:** Keep navigation and audience decisions in pure utilities that can be tested with Node's built-in test runner. `AppLayout` owns the responsive shell and composes `Header`; a new route wrapper selects the existing public home or a protected role dashboard without changing backend contracts.
+**Kiến trúc:** Lưu giữ các quyết định về điều hướng và đối tượng trong các tiện ích thuần túy có thể
+được kiểm thử bằng trình chạy kiểm thử tích hợp của Node. `AppLayout` sở hữu lớp vỏ phản hồi và tạo
+thành `Header`; trình bao bọc tuyến đường mới chọn ngôi nhà công cộng hiện có hoặc bảng điều khiển
+vai trò được bảo vệ mà không thay đổi hợp đồng máy chủ.
 
-**Tech Stack:** React 19, React Router 7, lucide-react, MUI Avatar/Menu components already installed, CSS in `frontend/src/styles/app-shell.css`, Node test runner.
+**Tech bộ công nghệ:** React 19, React Router 7, lucide-react, MUI Avatar/Thành phần Menu đã được cài đặt,
+CSS trong `frontend/src/styles/app-shell.css`, trình chạy thử Node.
 
-## Global Constraints
+## Ràng buộc toàn cầu
 
-- Follow `docs/superpowers/specs/2026-07-14-library-ux-system-design.md`.
-- Preserve Node.js + Express.js, React + Bootstrap/MUI, SQL Server, and REST contracts.
-- Do not add dependencies.
-- Do not change backend authorization or business rules.
-- Remove the non-functional global header search; keep search local to owning pages.
-- `/home` is public browse for guests and a role-aware dashboard for authenticated users.
-- Protected-page labels are Vietnamese; source identifiers and test names remain English.
-- Keep tokens, OTPs, passwords, SMTP settings, and personal data out of source and tests.
-- Use TDD for each behavior change and commit after each independently reviewable task.
-
----
-
-## File Structure
-
-- Create `frontend/src/utils/appNavigation.js`: pure role, route, and dashboard-audience decisions.
-- Create `frontend/test/appShellFrontend.test.js`: contract and source-level regression tests.
-- Modify `frontend/src/component/layout/AppLayout.jsx`: responsive drawer, active route, shared header composition.
-- Modify `frontend/src/component/layout/Header.jsx`: mobile menu trigger and profile-only header; remove global search.
-- Delete `frontend/src/component/layout/Sidebar.jsx`: unused legacy layout implementation.
-- Create `frontend/src/page/dashboard/HomeRoutePage.jsx`: guest/authenticated route selection.
-- Create `frontend/src/page/dashboard/RoleDashboardPage.jsx`: member/staff dashboard surface.
-- Create `frontend/src/page/dashboard/dashboardViewModel.js`: pure API response summary mapping.
-- Modify `frontend/src/App.jsx`: route `/home` through `HomeRoutePage`.
-- Modify `frontend/src/styles/app-shell.css`: drawer, backdrop, header, dashboard, and mobile behavior.
+- Theo dõi `docs/superpowers/specs/2026-07-14-library-ux-system-design.md`.
+- Giữ nguyên các hợp đồng Node.js + Express.js, React + Bootstrap/MUI, SQL Server và REST.
+- Không thêm phụ thuộc.
+- Không thay đổi ủy quyền máy chủ hoặc quy tắc nghiệp vụ.
+- Loại bỏ tìm kiếm tiêu đề toàn cầu không có chức năng; giữ tìm kiếm cục bộ cho các trang sở hữu.
+- `/home` là trình duyệt công khai dành cho khách và là bảng điều khiển nhận biết vai trò dành cho người dùng được xác thực.
+- Nhãn trang được bảo vệ là tiếng Việt; mã định danh nguồn và tên kiểm thử vẫn là tiếng Anh.
+- Giữ mã thông báo, OTP, mật khẩu, cài đặt SMTP và dữ liệu cá nhân ra khỏi nguồn và các kiểm thử.
+- Sử dụng TDD cho mỗi thay đổi hành vi và cam kết sau mỗi nhiệm vụ có thể xem xét độc lập.
 
 ---
 
-### Task 1: Navigation and Dashboard Contracts
+## Cấu trúc tệp
 
-**Files:**
-- Create: `frontend/src/utils/appNavigation.js`
-- Create: `frontend/test/appShellFrontend.test.js`
+- Tạo `frontend/src/utils/appNavigation.js`: các quyết định thuần túy về vai trò, lộ trình và bảng điều khiển-đối tượng.
+- Tạo `frontend/test/appShellFrontend.test.js`: kiểm tra hồi quy cấp hợp đồng và cấp nguồn.
+- Sửa đổi `frontend/src/component/layout/AppLayout.jsx`: ngăn đáp ứng, tuyến hoạt động, thành phần tiêu đề được chia sẻ.
+- Sửa đổi `frontend/src/component/layout/Header.jsx`: trình kích hoạt menu di động và tiêu đề chỉ dành cho hồ sơ; loại bỏ tìm kiếm toàn cầu.
+- Xóa `frontend/src/component/layout/Sidebar.jsx`: triển khai bố cục cũ không được sử dụng.
+- Tạo `frontend/src/page/dashboard/HomeRoutePage.jsx`: lựa chọn tuyến đường guest/authenticated.
+- Tạo `frontend/src/page/dashboard/RoleDashboardPage.jsx`: bề mặt bảng thông tin thành viên/nhân viên.
+- Tạo `frontend/src/page/dashboard/dashboardViewModel.js`: ánh xạ tóm tắt phản hồi API thuần túy.
+- Sửa đổi `frontend/src/App.jsx`: định tuyến `/home` qua `HomeRoutePage`.
+- Sửa đổi `frontend/src/styles/app-shell.css`: ngăn kéo, phông nền, tiêu đề, bảng điều khiển và hành vi của thiết bị di động.
 
-**Interfaces:**
-- Produces: `APP_NAV_GROUPS`, `getVisibleNavigation(roles)`, `getActiveNavigationKey(pathname)`, `getDashboardAudience(roles)`.
-- Consumes: role names `MEMBER`, `LIBRARIAN`, and `ADMIN` already stored in `authUser.roles`.
+---
 
-- [ ] **Step 1: Write the failing contract tests**
+### Nhiệm vụ 1: Hợp đồng điều hướng và bảng điều khiển
 
-Create `frontend/test/appShellFrontend.test.js`:
+**Tệp:**
+- Tạo: `frontend/src/utils/appNavigation.js`
+- Tạo: `frontend/test/appShellFrontend.test.js`
+
+**Giao diện:**
+- Sản xuất: `APP_NAV_GROUPS`, `getVisibleNavigation(roles)`, `getActiveNavigationKey(pathname)`, `getDashboardAudience(roles)`.
+- Tiêu thụ: tên vai trò `MEMBER`, `LIBRARIAN` và `ADMIN` đã được lưu trữ trong `authUser.roles`.
+
+- [ ] **Bước 1: Viết các kiểm thử hợp đồng thất bại**
+
+Tạo `frontend/test/appShellFrontend.test.js`:
 
 ```js
 import assert from 'node:assert/strict';
@@ -94,20 +100,20 @@ test('shared header has no decorative global search', async () => {
 });
 ```
 
-- [ ] **Step 2: Run the test to verify RED**
+- [ ] **Bước 2: Chạy kiểm thử để xác minh RED**
 
-Run:
+Chạy:
 
 ```powershell
 cd frontend
 npm test -- --test-name-pattern="navigation|dashboard audience|decorative global search"
 ```
 
-Expected: FAIL because `src/utils/appNavigation.js` does not exist and the old search is present.
+Dự kiến: THẤT BẠI vì `src/utils/appNavigation.js` không tồn tại và tìm kiếm cũ vẫn tồn tại.
 
-- [ ] **Step 3: Implement the pure navigation contract**
+- [ ] **Bước 3: Thực hiện hợp đồng điều hướng thuần túy**
 
-Create `frontend/src/utils/appNavigation.js`:
+Tạo `frontend/src/utils/appNavigation.js`:
 
 ```js
 export const APP_NAV_GROUPS = [
@@ -162,18 +168,18 @@ export function getDashboardAudience(roles = []) {
 }
 ```
 
-- [ ] **Step 4: Run the pure contract tests**
+- [ ] **Bước 4: Chạy kiểm thử hợp đồng thuần túy**
 
-Run:
+Chạy:
 
 ```powershell
 cd frontend
 node --test --test-name-pattern="navigation visibility|active navigation|dashboard audience" test/appShellFrontend.test.js
 ```
 
-Expected: 3 tests PASS; header search test remains FAIL until Task 2.
+Dự kiến: 3 bài thi ĐẠT; kiểm tra tìm kiếm tiêu đề vẫn THẤT BẠI cho đến Nhiệm vụ 2.
 
-- [ ] **Step 5: Commit Task 1**
+- [ ] **Bước 5: Cam kết nhiệm vụ 1**
 
 ```powershell
 git add frontend/src/utils/appNavigation.js frontend/test/appShellFrontend.test.js
@@ -182,22 +188,22 @@ git commit -m "test: define app shell navigation contract"
 
 ---
 
-### Task 2: Responsive AppLayout and Header
+### Nhiệm vụ 2: AppLayout và Tiêu đề đáp ứng
 
-**Files:**
-- Modify: `frontend/src/component/layout/AppLayout.jsx`
-- Modify: `frontend/src/component/layout/Header.jsx`
-- Modify: `frontend/src/styles/app-shell.css`
-- Delete: `frontend/src/component/layout/Sidebar.jsx`
-- Test: `frontend/test/appShellFrontend.test.js`
+**Tệp:**
+- Sửa đổi: `frontend/src/component/layout/AppLayout.jsx`
+- Sửa đổi: `frontend/src/component/layout/Header.jsx`
+- Sửa đổi: `frontend/src/styles/app-shell.css`
+- Xóa: `frontend/src/component/layout/Sidebar.jsx`
+- Kiểm tra: `frontend/test/appShellFrontend.test.js`
 
-**Interfaces:**
-- Consumes: `APP_NAV_GROUPS`, `getActiveNavigationKey`, and current roles.
-- Produces: `Header({ onOpenNavigation, navigationOpen })` and the `app-sidebar-open` responsive state.
+**Giao diện:**
+- Tiêu thụ: `APP_NAV_GROUPS`, `getActiveNavigationKey` và các vai trò hiện tại.
+- Tạo ra: `Header({ onOpenNavigation, navigationOpen })` và trạng thái phản hồi `app-sidebar-open`.
 
-- [ ] **Step 1: Extend the failing source contract tests**
+- [ ] **Bước 1: Mở rộng các kiểm thử hợp đồng nguồn không thành công**
 
-Append to `frontend/test/appShellFrontend.test.js`:
+Nối vào `frontend/test/appShellFrontend.test.js`:
 
 ```js
 test('app layout exposes an accessible mobile navigation drawer', async () => {
@@ -221,26 +227,26 @@ test('app layout composes the shared profile header', async () => {
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify RED**
+- [ ] **Bước 2: Chạy kiểm thử để xác minh RED**
 
-Run:
+Chạy:
 
 ```powershell
 cd frontend
 node --test test/appShellFrontend.test.js
 ```
 
-Expected: drawer, header composition, and search-removal tests FAIL.
+Dự kiến: các kiểm thử ngăn kéo, thành phần tiêu đề và loại bỏ tìm kiếm THẤT BẠI.
 
-- [ ] **Step 3: Refactor `Header` to profile plus mobile navigation**
+- [ ] **Bước 3: Tái cấu trúc `Header` thành cấu hình và điều hướng trên thiết bị di động**
 
-Change the public signature to:
+Thay đổi chữ ký công khai thành:
 
 ```jsx
 export default function Header({ onOpenNavigation, navigationOpen = false }) {
 ```
 
-Replace the search block at the start of the header with:
+Thay thế khối tìm kiếm ở đầu tiêu đề bằng:
 
 ```jsx
 <button
@@ -255,12 +261,12 @@ Replace the search block at the start of the header with:
 </button>
 ```
 
-Import `Menu` from `lucide-react`, remove `Search`, and keep the existing profile trigger,
-profile fallback, menu popup, and logout behavior unchanged.
+Nhập `Menu` từ `lucide-react`, xóa `Search` và giữ nguyên trình kích hoạt hồ sơ hiện có, dự phòng hồ
+sơ, cửa sổ bật lên menu và hành vi đăng xuất.
 
-- [ ] **Step 4: Refactor `AppLayout` to own the drawer state**
+- [ ] **Bước 4: Refactor `AppLayout` để sở hữu trạng thái ngăn kéo**
 
-Use this state and route skeleton inside `AppLayout`:
+Sử dụng khung trạng thái và lộ trình này bên trong `AppLayout`:
 
 ```jsx
 const location = useLocation();
@@ -278,7 +284,7 @@ function closeNavigation({ restoreFocus = false } = {}) {
 }
 ```
 
-Render the shell with:
+Kết xuất vỏ với:
 
 ```jsx
 <aside id="app-navigation" className={`app-sidebar${navigationOpen ? ' app-sidebar-open' : ''}`}>
@@ -304,10 +310,10 @@ Render the shell with:
 </div>
 ```
 
-Use `APP_NAV_GROUPS` and `activeKey`; remove the `active` prop as an active-state source while
-temporarily accepting it in the function signature to avoid breaking existing callers.
-Keep icon components in `AppLayout` through a local map so the pure navigation utility does
-not import React components:
+Sử dụng `APP_NAV_GROUPS` và `activeKey`; xóa prop `active` làm nguồn trạng thái hoạt động trong khi
+tạm thời chấp nhận nó trong chữ ký hàm để tránh phá vỡ những người gọi hiện có. Giữ các thành phần
+biểu tượng trong `AppLayout` thông qua bản đồ cục bộ để tiện ích điều hướng thuần túy không nhập các
+thành phần React:
 
 ```jsx
 const NAV_ICONS = {
@@ -325,9 +331,9 @@ const NAV_ICONS = {
 };
 ```
 
-- [ ] **Step 5: Add responsive CSS**
+- [ ] **Bước 5: Thêm CSS đáp ứng**
 
-Replace the current 860px collapsed-sidebar rule with:
+Thay thế quy tắc thanh bên thu gọn 860px hiện tại bằng:
 
 ```css
 .app-menu-trigger { display: none; }
@@ -362,25 +368,25 @@ Replace the current 860px collapsed-sidebar rule with:
 }
 ```
 
-- [ ] **Step 6: Delete the unused legacy component**
+- [ ] **Bước 6: Xóa thành phần cũ không sử dụng**
 
-Run:
+Chạy:
 
 ```powershell
 git rm frontend/src/component/layout/Sidebar.jsx
 ```
 
-Confirm before deletion:
+Xác nhận trước khi xóa:
 
 ```powershell
 rg -n "component/layout/Sidebar|layout/Sidebar" frontend/src
 ```
 
-Expected: no imports.
+Dự kiến: không nhập khẩu.
 
-- [ ] **Step 7: Run tests and lint**
+- [ ] **Bước 7: Chạy kiểm thử và tìm lỗi mã nguồn**
 
-Run:
+Chạy:
 
 ```powershell
 cd frontend
@@ -388,9 +394,9 @@ node --test test/appShellFrontend.test.js
 npm run lint
 ```
 
-Expected: app-shell tests PASS and lint reports zero errors.
+Dự kiến: các kiểm thử lớp bao ứng dụng đạt và kiểm tra mã báo cáo không có lỗi.
 
-- [ ] **Step 8: Commit Task 2**
+- [ ] **Bước 8: Cam kết nhiệm vụ 2**
 
 ```powershell
 git add frontend/src/component/layout/AppLayout.jsx frontend/src/component/layout/Header.jsx frontend/src/styles/app-shell.css frontend/test/appShellFrontend.test.js
@@ -399,23 +405,23 @@ git commit -m "feat: add responsive role-aware app shell"
 
 ---
 
-### Task 3: Role-aware `/home` Dashboard
+### Nhiệm vụ 3: Bảng điều khiển `/home` nhận biết vai trò
 
-**Files:**
-- Create: `frontend/src/page/dashboard/HomeRoutePage.jsx`
-- Create: `frontend/src/page/dashboard/RoleDashboardPage.jsx`
-- Create: `frontend/src/page/dashboard/dashboardViewModel.js`
-- Modify: `frontend/src/App.jsx`
-- Modify: `frontend/src/styles/app-shell.css`
-- Test: `frontend/test/appShellFrontend.test.js`
+**Tệp:**
+- Tạo: `frontend/src/page/dashboard/HomeRoutePage.jsx`
+- Tạo: `frontend/src/page/dashboard/RoleDashboardPage.jsx`
+- Tạo: `frontend/src/page/dashboard/dashboardViewModel.js`
+- Sửa đổi: `frontend/src/App.jsx`
+- Sửa đổi: `frontend/src/styles/app-shell.css`
+- Kiểm tra: `frontend/test/appShellFrontend.test.js`
 
-**Interfaces:**
-- Consumes: `getDashboardAudience`, `hasStoredAuth`, `borrowingApi`, and `reservationApi`.
-- Produces: `HomeRoutePage`, `RoleDashboardPage({ audience, roles })`, `buildMemberSummary`, and `buildStaffSummary`.
+**Giao diện:**
+- Tiêu thụ: `getDashboardAudience`, `hasStoredAuth`, `borrowingApi` và `reservationApi`.
+- Sản xuất: `HomeRoutePage`, `RoleDashboardPage({ audience, roles })`, `buildMemberSummary` và `buildStaffSummary`.
 
-- [ ] **Step 1: Write failing dashboard mapping tests**
+- [ ] **Bước 1: Viết các kiểm thử ánh xạ trang tổng quan không thành công**
 
-Append:
+Nối thêm:
 
 ```js
 import { buildMemberSummary, buildStaffSummary } from '../src/page/dashboard/dashboardViewModel.js';
@@ -441,20 +447,20 @@ test('staff dashboard summarizes operational queues', () => {
 });
 ```
 
-- [ ] **Step 2: Run tests to verify RED**
+- [ ] **Bước 2: Chạy kiểm thử để xác minh RED**
 
-Run:
+Chạy:
 
 ```powershell
 cd frontend
 node --test --test-name-pattern="dashboard summarizes" test/appShellFrontend.test.js
 ```
 
-Expected: FAIL because `dashboardViewModel.js` does not exist.
+Dự kiến: THẤT BẠI vì `dashboardViewModel.js` không tồn tại.
 
-- [ ] **Step 3: Implement pure summary mapping**
+- [ ] **Bước 3: Triển khai ánh xạ tóm tắt thuần tuý**
 
-Create `frontend/src/page/dashboard/dashboardViewModel.js`:
+Tạo `frontend/src/page/dashboard/dashboardViewModel.js`:
 
 ```js
 export function buildMemberSummary(borrowing = {}, reservations = {}) {
@@ -478,9 +484,9 @@ export function buildStaffSummary(borrowing = {}, reservations = {}) {
 }
 ```
 
-- [ ] **Step 4: Implement route selection**
+- [ ] **Bước 4: Thực hiện lựa chọn tuyến đường**
 
-Create `HomeRoutePage.jsx`:
+Tạo `HomeRoutePage.jsx`:
 
 ```jsx
 import HomePage from '../HomePage';
@@ -506,11 +512,12 @@ export default function HomeRoutePage() {
 }
 ```
 
-Modify `App.jsx` to import `HomeRoutePage` and render it for `/home`; keep `HomePage` private to the route wrapper.
+Sửa đổi `App.jsx` để nhập `HomeRoutePage` và hiển thị nó cho `/home`; giữ `HomePage` ở chế độ riêng
+tư đối với trình bao bọc tuyến đường.
 
-- [ ] **Step 5: Implement `RoleDashboardPage` with existing APIs**
+- [ ] **Bước 5: Triển khai `RoleDashboardPage` với các API hiện có**
 
-The component must:
+Thành phần phải:
 
 ```jsx
 export default function RoleDashboardPage({ audience }) {
@@ -546,20 +553,22 @@ export default function RoleDashboardPage({ audience }) {
 }
 ```
 
-`DashboardContent` renders three KPI cards and only links to existing permitted routes:
+`DashboardContent` hiển thị ba thẻ KPI và chỉ liên kết đến các tuyến đường được phép hiện có:
 
-- Member: `/borrowing/new`, `/borrowing/history`, `/reservations/mine`.
-- Staff: `/librarian/borrow-requests`, `/librarian/returns`, `/reports/borrowing`.
+- Thành viên: `/borrowing/new`, `/borrowing/history`, `/reservations/mine`.
+- Nhân viên: `/librarian/borrow-requests`, `/librarian/returns`, `/reports/borrowing`.
 
-Do not add placeholder features or fabricated demo metrics.
+Không thêm các chức năng giữ chỗ hoặc số liệu demo bịa đặt.
 
-- [ ] **Step 6: Add dashboard CSS**
+- [ ] **Bước 6: Thêm bảng điều khiển CSS**
 
-Add `.dashboard-actions`, `.dashboard-action`, and mobile one-column behavior using the existing `kpi-grid`, `kpi-card`, and token variables. Cards must use at most 12px radius and have stable icon/action dimensions.
+Thêm `.dashboard-actions`, `.dashboard-action` và hành vi một cột trên thiết bị di động bằng cách sử
+dụng các biến `kpi-grid`, `kpi-card` và mã thông báo hiện có. Thẻ phải sử dụng bán kính tối đa 12px
+và có kích thước biểu tượng/hành động ổn định.
 
-- [ ] **Step 7: Run targeted tests and lint**
+- [ ] **Bước 7: Chạy kiểm thử mục tiêu và tìm lỗi mã nguồn**
 
-Run:
+Chạy:
 
 ```powershell
 cd frontend
@@ -567,9 +576,9 @@ node --test test/appShellFrontend.test.js
 npm run lint
 ```
 
-Expected: all app-shell tests PASS and lint reports zero errors.
+Dự kiến: tất cả các kiểm thử lớp bao ứng dụng đều ĐẠT và tìm lỗi mã nguồn không báo cáo lỗi nào.
 
-- [ ] **Step 8: Commit Task 3**
+- [ ] **Bước 8: Cam kết nhiệm vụ 3**
 
 ```powershell
 git add frontend/src/page/dashboard frontend/src/App.jsx frontend/src/styles/app-shell.css frontend/test/appShellFrontend.test.js
@@ -578,16 +587,16 @@ git commit -m "feat: add role-aware library dashboard"
 
 ---
 
-### Task 4: App Shell Validation Gate
+### Nhiệm vụ 4: Cổng xác thực App lớp bao
 
-**Files:**
-- Modify only if validation reveals a defect in files already listed in Tasks 1-3.
+**Tệp:**
+- Chỉ sửa đổi nếu việc xác thực cho thấy lỗi trong các tệp đã được liệt kê trong Nhiệm vụ 1-3.
 
-**Interfaces:**
-- Consumes the completed shell and dashboard.
-- Produces B6 evidence for automated, spec, constitution, and acceptance layers.
+**Giao diện:**
+- Tiêu thụ lớp bao và bảng điều khiển đã hoàn thành.
+- Tạo ra bằng chứng B6 cho các lớp tự động, đặc tả, cấu trúc và chấp nhận.
 
-- [ ] **Step 1: Run automated checks**
+- [ ] **Bước 1: Chạy kiểm tra tự động**
 
 ```powershell
 cd frontend
@@ -596,11 +605,11 @@ npm run lint
 npm run build
 ```
 
-Expected: all commands exit `0`; build produces `frontend/dist`.
+Dự kiến: tất cả các lệnh thoát `0`; bản dựng tạo ra `frontend/dist`.
 
-- [ ] **Step 2: Run spec compliance checks**
+- [ ] **Bước 2: Chạy kiểm tra tuân thủ đặc tả**
 
-Confirm with `rg`:
+Xác nhận với `rg`:
 
 ```powershell
 rg -n "app-search|Search books, members, loans" src/component/layout
@@ -608,19 +617,20 @@ rg -n "Mở điều hướng|Đóng điều hướng|aria-expanded" src/componen
 rg -n "Tổng quan của bạn|Tổng quan vận hành" src/page/dashboard
 ```
 
-Expected: no global search results; accessible drawer and both dashboard titles present.
+Dự kiến: không có kết quả tìm kiếm chung; ngăn kéo có thể truy cập và cả hai tiêu đề bảng điều khiển
+đều có mặt.
 
-- [ ] **Step 3: Run responsive manual acceptance**
+- [ ] **Bước 3: Chạy chấp nhận thủ công đáp ứng**
 
-At 1440px, 1024px, 768px, and 390px verify:
+Tại 1440px, 1024px, 768px và 390px hãy xác minh:
 
-- Sidebar is persistent on desktop and an explicit drawer at 860px and below.
-- Drawer closes after route selection and backdrop activation.
-- Profile menu remains reachable.
-- Page title and primary action do not overlap.
-- Member and staff accounts see only permitted navigation and dashboard links.
+- Thanh bên tồn tại liên tục trên máy tính để bàn và ngăn kéo rõ ràng ở 860px trở xuống.
+- Ngăn kéo đóng lại sau khi chọn tuyến đường và kích hoạt phông nền.
+- Menu hồ sơ vẫn có thể truy cập được.
+- Tiêu đề trang và hành động chính không trùng nhau.
+- Tài khoản thành viên và nhân viên chỉ nhìn thấy các liên kết điều hướng và bảng điều khiển được phép.
 
-- [ ] **Step 4: Inspect final diff**
+- [ ] **Bước 4: Kiểm tra sự khác biệt cuối cùng**
 
 ```powershell
 git status --short
@@ -628,25 +638,27 @@ git diff --check
 git diff --stat origin/main...HEAD
 ```
 
-Expected: only App Shell plan files changed; no secrets, generated assets, or unrelated formatting.
+Dự kiến: chỉ các tệp gói App lớp bao được thay đổi; không có bí mật, nội dung được tạo hoặc định dạng
+không liên quan.
 
-- [ ] **Step 5: Commit validation-only fixes if required**
+- [ ] **Bước 5: Cam kết các bản sửa lỗi chỉ xác thực nếu được yêu cầu**
 
 ```powershell
 git add frontend
 git commit -m "fix: close app shell UX validation gaps"
 ```
 
-Skip this commit when validation requires no code correction.
+Bỏ qua cam kết này khi xác thực không yêu cầu sửa mã.
 
 ---
 
-## Human Review Gate
+## Cổng đánh giá con người
 
-Review the slice against:
+Xem lại lát cắt chống lại:
 
 - `UX-FE-001`, `UX-FE-007`, `UX-FE-008`.
 - `NFR-UX-001`, `NFR-UX-002`, `NFR-UX-003`.
 - `AC-UX-004`, `AC-UX-006`, `AC-UX-007`, `AC-UX-008`.
 
-Do not begin the Auth UX plan until this App Shell slice passes automated checks and human review.
+Không bắt đầu kế hoạch xác thực UX cho đến khi phần App lớp bao này vượt qua quá trình kiểm tra tự động và
+đánh giá của con người.

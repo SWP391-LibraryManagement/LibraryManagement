@@ -1,144 +1,150 @@
-# Member Rejected Borrow Status Implementation Plan
+# Kế hoạch thực hiện tình trạng lượt mượn bị từ chối của thành viên
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Đối với nhân viên đại lý:** SUB-SKILL BẮT BUỘC: Sử dụng siêu năng lực:phát triển theo định hướng phụ (được khuyến nghị) hoặc siêu năng lực:thực hiện các kế hoạch để triển khai kế hoạch này theo từng nhiệm vụ. Các bước sử dụng cú pháp hộp kiểm (`- [ ]`) để theo dõi.
 
-**Goal:** Show `Đã từ chối` in member borrowing history after staff rejects a pending borrow request, while preserving `BorrowDetails.Status = REQUESTED` in persistence.
+**Mục tiêu:** Hiển thị `Đã từ chối` trong lịch sử mượn của thành viên sau khi nhân viên từ chối yêu
+cầu vay đang chờ xử lý, trong khi vẫn duy trì `BorrowDetails.Status = REQUESTED`.
 
-**Architecture:** Add the owning request's status to the existing borrow-detail read model as `requestStatus`. The frontend history mapper will prefer `REJECTED` only when the owning request was rejected and will otherwise keep the existing detail-status and derived-overdue behavior.
+**Kiến trúc:** Thêm trạng thái yêu cầu sở hữu vào mô hình đọc chi tiết mượn hiện có dưới dạng
+`requestStatus`. Trình ánh xạ lịch sử giao diện người dùng sẽ chỉ ưu tiên `REJECTED` khi yêu cầu sở
+hữu bị từ chối và nếu không sẽ giữ trạng thái chi tiết hiện có và hành vi quá hạn xuất phát.
 
-**Tech Stack:** Node.js, Express.js, Jest, Supertest, SQL Server `mssql`, React, Vite, Node test runner, OpenAPI YAML.
+**bộ công nghệ công nghệ:** Node.js, Express.js, Jest, Supertest, SQL Server `mssql`, React, Vite,
+Trình chạy thử Node, OpenAPI YAML.
 
-## Global Constraints
+## Ràng buộc toàn cầu
 
-- Preserve the approved Node.js + Express.js backend, React + Bootstrap frontend, SQL Server database, and RESTful API stack.
-- Do not change the database schema or persisted `BorrowDetails.Status` enum.
-- Keep history query filters limited to `REQUESTED`, `BORROWED`, `RETURNED`, `LOST`, `DAMAGED`, and derived `OVERDUE`.
-- Keep authentication, role checks, pagination, stable ordering, rejection audit behavior, and rejection-reason validation unchanged.
-- Do not expose rejection reasons or staff identity to members.
-- Preserve all unrelated authentication and admin-console working-tree changes.
-- Do not commit generated implementation until the required human review is complete.
+- Bảo tồn phần máy chủ Node.js + Express.js đã được phê duyệt, giao diện người dùng React + Bootstrap, cơ sở dữ liệu SQL Server và bộ công nghệ RESTful API.
+- Không thay đổi lược đồ cơ sở dữ liệu hoặc giá trị liệt kê `BorrowDetails.Status` vẫn tồn tại.
+- Giữ các bộ lọc truy vấn lịch sử được giới hạn ở `REQUESTED`, `BORROWED`, `RETURNED`, `LOST`, `DAMAGED` và `OVERDUE` dẫn xuất.
+- Giữ nguyên chức năng xác thực, kiểm tra vai trò, phân trang, sắp xếp ổn định, hành vi kiểm tra từ chối và xác thực lý do từ chối.
+- Không tiết lộ lý do từ chối hoặc danh tính nhân viên cho các thành viên.
+- Giữ nguyên tất cả các thay đổi về cây làm việc trong bảng điều khiển quản trị và xác thực không liên quan.
+- Không cam kết triển khai đã tạo cho đến khi quá trình đánh giá con người bắt buộc hoàn tất.
 
 ---
 
-## File Map
+## Bản đồ tệp
 
-| File | Responsibility |
+| Tập tin | Trách nhiệm |
 | --- | --- |
-| `.sdd/specs/feat-borrowing-management/SPEC.md` | Define the rejected-request history read contract and acceptance criterion. |
-| `.sdd/specs/feat-borrowing-management/TASKS.md` | Record the maintenance task and its verification evidence. |
-| `.sdd/specs/feat-borrowing-management/CHANGELOG.md` | Record the observable member-history correction. |
-| `backend/src/repositories/borrowingRepository.js` | Map the already-selected SQL `RequestStatus` into borrow-detail responses. |
-| `backend/tests/helpers/inMemoryBorrowingRepositories.js` | Keep in-memory route-test behavior aligned with SQL read-model behavior. |
-| `backend/tests/borrowingRoutes.test.js` | Reproduce reject-then-member-history behavior through the HTTP boundary. |
-| `backend/src/docs/openapi.yaml` | Document `BorrowDetail.requestStatus`. |
-| `backend/tests/borrowingContract.test.js` | Lock the OpenAPI response shape and enum. |
-| `frontend/src/utils/libraryFeatureViewModels.js` | Resolve the effective member-visible status without changing persisted detail status. |
-| `frontend/test/borrowingFrontend.test.js` | Prove rejected and still-pending requests render differently. |
+| `.sdd/specs/feat-borrowing-management/SPEC.md` | Xác định hợp đồng đọc lịch sử yêu cầu bị từ chối và tiêu chí chấp nhận. |
+| `.sdd/specs/feat-borrowing-management/TASKS.md` | Ghi lại nhiệm vụ bảo trì và bằng chứng xác minh của nó. |
+| `.sdd/specs/feat-borrowing-management/CHANGELOG.md` | Ghi lại sự điều chỉnh lịch sử thành viên có thể quan sát được. |
+| `backend/src/repositories/borrowingRepository.js` | Ánh xạ SQL `RequestStatus` đã được chọn vào các phản hồi chi tiết về lượt mượn. |
+| `backend/tests/helpers/inMemoryBorrowingRepositories.js` | Giữ hành vi kiểm tra tuyến đường trong bộ nhớ phù hợp với hành vi mô hình đọc SQL. |
+| `backend/tests/borrowingRoutes.test.js` | Tái tạo hành vi lịch sử từ chối thành viên thông qua ranh giới HTTP. |
+| `backend/src/docs/openapi.yaml` | Tài liệu `BorrowDetail.requestStatus`. |
+| `backend/tests/borrowingContract.test.js` | Khóa hình dạng và giá trị liệt kê phản hồi OpenAPI. |
+| `frontend/src/utils/libraryFeatureViewModels.js` | Giải quyết trạng thái hiển thị thành viên hiệu quả mà không thay đổi trạng thái chi tiết liên tục. |
+| `frontend/test/borrowingFrontend.test.js` | Chứng minh các yêu cầu bị từ chối và vẫn đang chờ xử lý hiển thị khác nhau. |
 
-### Task 1: Align The Approved FE07 Contract
+### Nhiệm vụ 1: Căn chỉnh Hợp đồng FE07 đã được phê duyệt
 
-**Files:**
-- Modify: `.sdd/specs/feat-borrowing-management/SPEC.md`
-- Modify: `.sdd/specs/feat-borrowing-management/TASKS.md`
-- Modify: `.sdd/specs/feat-borrowing-management/CHANGELOG.md`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-borrowing-management/SPEC.md`
+- Sửa đổi: `.sdd/specs/feat-borrowing-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-borrowing-management/CHANGELOG.md`
 
-**Interfaces:**
-- Consumes: approved design `docs/superpowers/specs/2026-07-22-member-rejected-borrow-status-design.md`.
-- Produces: `BR-FE07-029`, `FR-FE07-029`, `AC-FE07-023`, and maintenance task `FE07-T041` for implementation traceability.
+**Giao diện:**
+- Tiêu thụ: thiết kế `docs/superpowers/specs/2026-07-22-member-rejected-borrow-status-design.md` đã được phê duyệt.
+- Tạo ra: `BR-FE07-029`, `FR-FE07-029`, `AC-FE07-023` và nhiệm vụ bảo trì `FE07-T041` để truy vết triển khai.
 
-- [ ] **Step 1: Add the read-model business and functional rules**
+- [ ] **Bước 1: Thêm quy tắc chức năng và nghiệp vụ của mô hình đọc**
 
-Set `Version` to `0.7.1`, set `Last Updated` to `2026-07-22`, and add these exact rules to the next sequential positions in `SPEC.md`:
-
-```markdown
-- BR-FE07-029: Borrowing-history detail rows must expose the owning request status separately from the persisted detail status. When the owning request is `REJECTED`, the member-visible status is rejected while the persisted detail remains `REQUESTED`.
-
-- FR-FE07-029: When a member views a borrow detail whose owning request is `REJECTED`, the system shall return `requestStatus = REJECTED` and the frontend shall display `Đã từ chối` instead of `Chờ xử lý` without changing `BorrowDetails.Status`.
-```
-
-- [ ] **Step 2: Add the acceptance criterion and API note**
-
-Add this acceptance criterion and clarify both borrowing-history endpoints in Section 11:
+Đặt `Version` thành `0.7.1`, đặt `Last Updated` thành `2026-07-22` và thêm các quy tắc chính xác này
+vào các vị trí tuần tự tiếp theo trong `SPEC.md`:
 
 ```markdown
-- AC-FE07-023: Given a member's pending borrow request, when staff rejects it and the member reloads borrowing history, then every detail belonging to that request displays `Đã từ chối`; the request remains `REJECTED` and each persisted detail remains `REQUESTED`.
+- BR-FE07-029: Các hàng chi tiết lịch sử mượn phải hiển thị trạng thái yêu cầu sở hữu tách biệt với trạng thái chi tiết được lưu. Khi yêu cầu sở hữu là `REJECTED`, trạng thái hiển thị cho thành viên là bị từ chối trong khi chi tiết được lưu vẫn là `REQUESTED`.
+
+- FR-FE07-029: Khi thành viên xem chi tiết mượn có yêu cầu sở hữu là `REJECTED`, hệ thống sẽ trả về `requestStatus = REJECTED` và giao diện người dùng sẽ hiển thị `Đã từ chối` thay vì `Chờ xử lý` mà không thay đổi `BorrowDetails.Status`.
 ```
 
-Replace the existing `requestStatus` row in Section 10.2 with this exact clarification:
+- [ ] **Bước 2: Thêm tiêu chí chấp nhận và ghi chú API**
+
+Thêm tiêu chí chấp nhận này và làm rõ cả hai endpoint lịch sử mượn trong Phần 11:
 
 ```markdown
-| requestStatus | string | Yes | Values: `PENDING`, `APPROVED`, `REJECTED`, `COMPLETED`, `CANCELLED`. Borrowing-history detail responses expose this owning-request state separately from persisted `detailStatus`. |
+- AC-FE07-023: Với yêu cầu mượn đang chờ của thành viên, khi nhân viên từ chối và thành viên tải lại lịch sử mượn thì mọi chi tiết thuộc yêu cầu đó hiển thị `Đã từ chối`; yêu cầu vẫn là `REJECTED` và mỗi chi tiết được lưu vẫn là `REQUESTED`.
 ```
 
-Append this exact sentence to the Notes cell for both history endpoints in Section 11:
+Thay thế hàng `requestStatus` hiện có trong Phần 10.2 bằng phần làm rõ chính xác sau:
 
 ```markdown
-Each returned detail includes `requestStatus` from its owning request; `status` remains the detail status used by filters.
+| requestStatus |chuỗi|Có|Các giá trị: `PENDING`, `APPROVED`, `REJECTED`, `COMPLETED`, `CANCELLED`. Phản hồi chi tiết lịch sử mượn hiển thị trạng thái của yêu cầu sở hữu tách biệt với `detailStatus` được lưu.|
 ```
 
-Add these exact traceability rows to Section 16:
+Thêm câu chính xác này vào ô Ghi chú cho cả hai điểm cuối lịch sử trong Phần 11:
 
 ```markdown
-| AC-FE07-023 | UC30 | borrowingRoutes.test.js > "member history exposes a rejected owning request without changing detail status"; borrowingFrontend.test.js > "member history displays rejected requests without relabeling pending details" | Planned |
-| BR-FE07-029 | UC30 | FE07-T041 | Planned |
-| FR-FE07-029 | UC30 | FE07-T041 | Planned |
+Mỗi chi tiết được trả về bao gồm `requestStatus` từ yêu cầu sở hữu của nó; `status` vẫn giữ nguyên trạng thái chi tiết được các bộ lọc sử dụng.
 ```
 
-- [ ] **Step 3: Add the maintenance task and changelog entry**
-
-Append this task to `TASKS.md`:
+Thêm các hàng truy vết chính xác này vào Phần 16:
 
 ```markdown
-- [ ] **FE07-T041 - Show rejected borrow requests correctly in member history.**
-  - Maps to: BR-FE07-029, FR-FE07-029, AC-FE07-023.
-  - RED: reject a member request, reload `/api/borrow-requests/me`, and prove the response lacks `requestStatus = REJECTED`; prove the frontend maps the row to `Pending`.
-  - GREEN: expose `requestStatus` in SQL/in-memory read models and prefer it only for rejected member-history display.
-  - Verify: focused backend route/contract tests, frontend borrowing tests, lint/build, traceability, and diff hygiene pass.
+| AC-FE07-023 | UC30 | `borrowingRoutes.test.js` > "lịch sử thành viên hiển thị yêu cầu sở hữu bị từ chối mà không thay đổi trạng thái chi tiết"; `borrowingFrontend.test.js` > "lịch sử thành viên hiển thị các yêu cầu bị từ chối mà không gắn nhãn lại các chi tiết đang chờ xử lý" | Đã lên kế hoạch |
+| BR-FE07-029 | UC30 | FE07-T041 |Đã lên kế hoạch|
+| FR-FE07-029 | UC30 | FE07-T041 |Đã lên kế hoạch|
 ```
 
-Add this entry to the top of `CHANGELOG.md`:
+- [ ] **Bước 3: Thêm nhiệm vụ bảo trì và mục nhật ký thay đổi**
+
+Nối nhiệm vụ này vào `TASKS.md`:
 
 ```markdown
-## 2026-07-22 - Correct rejected request status in member history
-
-- Exposed the owning borrow-request status in canonical detail history rows.
-- Displayed rejected requests as `Đã từ chối` while preserving persisted detail status `REQUESTED` and existing history filters.
+- [ ] **FE07-T041 - Hiển thị chính xác yêu cầu mượn bị từ chối trong lịch sử thành viên.**
+  - Bản đồ tới: BR-FE07-029, FR-FE07-029, AC-FE07-023.
+  - RED: từ chối yêu cầu thành viên, tải lại `/api/borrow-requests/me` và chứng minh phản hồi thiếu `requestStatus = REJECTED`; chứng minh giao diện người dùng ánh xạ hàng tới `Pending`.
+  - GREEN: hiển thị `requestStatus` trong các mô hình đọc SQL/trong bộ nhớ và chỉ thích nó để hiển thị lịch sử thành viên bị từ chối.
+  - Xác minh: kiểm tra hợp đồng/lộ trình máy chủ tập trung, kiểm tra mượn giao diện người dùng, tìm lỗi mã nguồn/xây dựng, truy vết và vượt qua vệ sinh khác biệt.
 ```
 
-- [ ] **Step 4: Verify documentation consistency**
+Thêm mục này vào đầu `CHANGELOG.md`:
 
-Run:
+```markdown
+## 2026-07-22 - Sửa trạng thái yêu cầu bị từ chối trong lịch sử Thành viên
+
+- Hiển thị trạng thái yêu cầu mượn sở hữu trong các hàng lịch sử chi tiết chuẩn.
+- Hiển thị các yêu cầu bị từ chối dưới dạng `Đã từ chối` trong khi vẫn duy trì trạng thái chi tiết liên tục `REQUESTED` và các bộ lọc lịch sử hiện có.
+```
+
+- [ ] **Bước 4: Xác minh tính nhất quán của tài liệu**
+
+Chạy:
 
 ```powershell
 rg -n "BR-FE07-029|FR-FE07-029|AC-FE07-023|FE07-T041|requestStatus" .sdd/specs/feat-borrowing-management
 git diff --check -- .sdd/specs/feat-borrowing-management
 ```
 
-Expected: all four identifiers are present, the API note names `requestStatus`, and `git diff --check` emits no output.
+Dự kiến: có tất cả bốn mã nhận dạng, tên nốt API là `requestStatus` và `git diff --check` không phát
+ra đầu ra.
 
-- [ ] **Step 5: Hold the documentation commit for human review**
+- [ ] **Bước 5: Giữ lại tài liệu đã cam kết để con người xem xét**
 
-After human review, the proposed documentation commit is:
+Sau khi được con người xem xét, cam kết tài liệu được đề xuất là:
 
 ```powershell
 git add -- .sdd/specs/feat-borrowing-management/SPEC.md .sdd/specs/feat-borrowing-management/TASKS.md .sdd/specs/feat-borrowing-management/CHANGELOG.md
 git commit -m "docs: define rejected borrow history status"
 ```
 
-### Task 2: Add The Backend Read-Model Regression
+### Nhiệm vụ 2: Thêm hồi quy mô hình đọc máy chủ
 
-**Files:**
-- Modify: `backend/tests/borrowingRoutes.test.js`
-- Modify: `backend/src/repositories/borrowingRepository.js`
-- Modify: `backend/tests/helpers/inMemoryBorrowingRepositories.js`
+**Tệp:**
+- Sửa đổi: `backend/tests/borrowingRoutes.test.js`
+- Sửa đổi: `backend/src/repositories/borrowingRepository.js`
+- Sửa đổi: `backend/tests/helpers/inMemoryBorrowingRepositories.js`
 
-**Interfaces:**
-- Consumes: the existing `RequestStatus` column selected by `borrowDetailSelect`; existing `BorrowDetail.status` remains the detail lifecycle.
-- Produces: `BorrowDetail.requestStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | 'COMPLETED' | 'CANCELLED'` in SQL and in-memory responses.
+**Giao diện:**
+- Tiêu thụ: cột `RequestStatus` hiện có được chọn bởi `borrowDetailSelect`; `BorrowDetail.status` hiện tại vẫn giữ nguyên vòng đời chi tiết.
+- Tạo ra: `BorrowDetail.requestStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | 'COMPLETED' | 'CANCELLED'` trong SQL và phản hồi trong bộ nhớ.
 
-- [ ] **Step 1: Write the failing HTTP regression test**
+- [ ] **Bước 1: Viết kiểm thử hồi quy HTTP không thành công**
 
-Add this test inside the existing FE07 route test suite:
+Thêm kiểm thử này vào bộ kiểm thử tuyến đường FE07 hiện có:
 
 ```javascript
 // @spec FR-FE07-029, AC-FE07-023
@@ -186,19 +192,20 @@ test('member history exposes a rejected owning request without changing detail s
 });
 ```
 
-- [ ] **Step 2: Run the test and verify RED**
+- [ ] **Bước 2: Chạy kiểm thử và xác minh RED**
 
-Run:
+Chạy:
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/borrowingRoutes.test.js -t "member history exposes a rejected owning request"
 ```
 
-Expected: FAIL because the returned row has no `requestStatus` property; request rejection itself must succeed.
+Dự kiến: THẤT BẠI vì hàng trả về không có thuộc tính `requestStatus`; bản thân việc từ chối yêu cầu
+phải thành công.
 
-- [ ] **Step 3: Add the minimal production and in-memory mappings**
+- [ ] **Bước 3: Thêm ánh xạ sản xuất tối thiểu và ánh xạ trong bộ nhớ**
 
-In `backend/src/repositories/borrowingRepository.js`, extend `mapBorrowDetail`:
+Trong `backend/src/repositories/borrowingRepository.js`, mở rộng `mapBorrowDetail`:
 
 ```javascript
 // @spec FR-FE07-029
@@ -206,7 +213,8 @@ requestStatus: row.RequestStatus,
 status: row.DetailStatus,
 ```
 
-In `backend/tests/helpers/inMemoryBorrowingRepositories.js`, extend `mapDetail` while preserving the persisted detail status:
+Trong `backend/tests/helpers/inMemoryBorrowingRepositories.js`, mở rộng `mapDetail` trong khi vẫn
+duy trì trạng thái chi tiết liên tục:
 
 ```javascript
 function mapDetail(detail) {
@@ -237,38 +245,38 @@ function mapDetail(detail) {
 }
 ```
 
-- [ ] **Step 4: Run focused backend tests and verify GREEN**
+- [ ] **Bước 4: Chạy kiểm thử máy chủ tập trung và xác minh GREEN**
 
-Run:
+Chạy:
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/borrowingRoutes.test.js -t "member history exposes a rejected owning request|member history excludes another member request|member history includes a request later on toDate"
 ```
 
-Expected: PASS for the new rejected-history case and the existing member-scope/date cases.
+Dự kiến: ĐẠT cho trường hợp lịch sử bị từ chối mới và các trường hợp ngày/phạm vi thành viên hiện có.
 
-- [ ] **Step 5: Hold the backend commit for human review**
+- [ ] **Bước 5: Giữ cam kết máy chủ để con người xem xét**
 
-After human review, the proposed backend commit is:
+Sau khi con người xem xét, cam kết máy chủ được đề xuất là:
 
 ```powershell
 git add -- backend/tests/borrowingRoutes.test.js backend/src/repositories/borrowingRepository.js backend/tests/helpers/inMemoryBorrowingRepositories.js
 git commit -m "fix: expose borrow request status in history"
 ```
 
-### Task 3: Lock The OpenAPI Response Contract
+### Nhiệm vụ 3: Khóa Hợp đồng phản hồi OpenAPI
 
-**Files:**
-- Modify: `backend/tests/borrowingContract.test.js`
-- Modify: `backend/src/docs/openapi.yaml`
+**Tệp:**
+- Sửa đổi: `backend/tests/borrowingContract.test.js`
+- Sửa đổi: `backend/src/docs/openapi.yaml`
 
-**Interfaces:**
-- Consumes: `BorrowDetail.requestStatus` produced by Task 2.
-- Produces: a documented response property with the FE07 request-status enum.
+**Giao diện:**
+- Tiêu thụ: `BorrowDetail.requestStatus` được tạo ra bởi Nhiệm vụ 2.
+- Tạo ra: một thuộc tính phản hồi được ghi lại với giá trị liệt kê trạng thái yêu cầu FE07.
 
-- [ ] **Step 1: Write the failing OpenAPI contract assertion**
+- [ ] **Bước 1: Viết xác nhận hợp đồng OpenAPI không thành công**
 
-Add to the existing FE07 schema contract test:
+Thêm vào kiểm thử hợp đồng lược đồ FE07 hiện có:
 
 ```javascript
 const borrowDetail = document.components.schemas.BorrowDetail;
@@ -279,19 +287,19 @@ expect(borrowDetail.properties.requestStatus).toEqual({
 });
 ```
 
-- [ ] **Step 2: Run the contract test and verify RED**
+- [ ] **Bước 2: Chạy kiểm thử hợp đồng và xác minh RED**
 
-Run:
+Chạy:
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/borrowingContract.test.js
 ```
 
-Expected: FAIL because `BorrowDetail.requestStatus` is not documented.
+Dự kiến: THẤT BẠI vì `BorrowDetail.requestStatus` không được ghi lại.
 
-- [ ] **Step 3: Add the OpenAPI property**
+- [ ] **Bước 3: Thêm thuộc tính OpenAPI**
 
-Update `BorrowDetail` in `backend/src/docs/openapi.yaml`:
+Cập nhật `BorrowDetail` trong `backend/src/docs/openapi.yaml`:
 
 ```yaml
 BorrowDetail:
@@ -312,38 +320,38 @@ BorrowDetail:
       description: OVERDUE is derived for reporting when status is BORROWED and dueDate is before today.
 ```
 
-- [ ] **Step 4: Run the contract test and verify GREEN**
+- [ ] **Bước 4: Chạy kiểm thử hợp đồng và xác minh GREEN**
 
-Run:
+Chạy:
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/borrowingContract.test.js
 ```
 
-Expected: PASS.
+Dự kiến: ĐẠT.
 
-- [ ] **Step 5: Hold the contract commit for human review**
+- [ ] **Bước 5: Giữ cam kết hợp đồng để con người xem xét**
 
-After human review, the proposed contract commit is:
+Sau khi xem xét con người, cam kết hợp đồng được đề xuất là:
 
 ```powershell
 git add -- backend/tests/borrowingContract.test.js backend/src/docs/openapi.yaml
 git commit -m "docs: expose borrow request status in detail responses"
 ```
 
-### Task 4: Render Rejected Status In Member History
+### Nhiệm vụ 4: Hiển thị trạng thái bị từ chối trong lịch sử thành viên
 
-**Files:**
-- Modify: `frontend/test/borrowingFrontend.test.js`
-- Modify: `frontend/src/utils/libraryFeatureViewModels.js`
+**Tệp:**
+- Sửa đổi: `frontend/test/borrowingFrontend.test.js`
+- Sửa đổi: `frontend/src/utils/libraryFeatureViewModels.js`
 
-**Interfaces:**
-- Consumes: `{ status: DetailStatus, requestStatus: RequestStatus }` from Tasks 2-3.
-- Produces: `mapBorrowDetailsToHistoryRows(details)` rows whose `status` is `Rejected` only when `requestStatus === 'REJECTED'`.
+**Giao diện:**
+- Tiêu thụ: `{ status: DetailStatus, requestStatus: RequestStatus }` từ Nhiệm vụ 2-3.
+- Tạo: các hàng `mapBorrowDetailsToHistoryRows(details)` có `status` là `Rejected` chỉ khi `requestStatus === 'REJECTED'`.
 
-- [ ] **Step 1: Write the failing frontend mapper regression**
+- [ ] **Bước 1: Viết hồi quy của trình ánh xạ giao diện người dùng không thành công**
 
-Add this Node test:
+Thêm kiểm thử nút này:
 
 ```javascript
 test('member history displays rejected requests without relabeling pending details', async () => {
@@ -372,19 +380,19 @@ test('member history displays rejected requests without relabeling pending detai
 });
 ```
 
-- [ ] **Step 2: Run the frontend test and verify RED**
+- [ ] **Bước 2: Chạy kiểm thử giao diện người dùng và xác minh RED**
 
-Run:
+Chạy:
 
 ```powershell
 node --test --test-name-pattern "member history displays rejected requests" frontend/test/borrowingFrontend.test.js
 ```
 
-Expected: FAIL because both rows currently map from detail status `REQUESTED` to `Pending`.
+Dự kiến: THẤT BẠI vì cả hai hàng hiện đang ánh xạ từ trạng thái chi tiết `REQUESTED` đến `Pending`.
 
-- [ ] **Step 3: Implement the narrow display precedence**
+- [ ] **Bước 3: Triển khai mức độ ưu tiên hiển thị hẹp**
 
-Update `mapBorrowDetailsToHistoryRows`:
+Cập nhật `mapBorrowDetailsToHistoryRows`:
 
 ```javascript
 // @spec FR-FE07-029
@@ -412,49 +420,50 @@ export function mapBorrowDetailsToHistoryRows(details = []) {
 }
 ```
 
-- [ ] **Step 4: Run the frontend borrowing suite and verify GREEN**
+- [ ] **Bước 4: Chạy bộ mượn giao diện người dùng và xác minh GREEN**
 
-Run:
+Chạy:
 
 ```powershell
 node --test frontend/test/borrowingFrontend.test.js
 ```
 
-Expected: all tests pass, including existing overdue, pending, pagination, and truthful-state cases.
+Dự kiến: tất cả các kiểm thử đều vượt qua, bao gồm các trường hợp quá hạn, đang chờ xử lý, phân
+trang và trạng thái trung thực hiện có.
 
-- [ ] **Step 5: Hold the frontend commit for human review**
+- [ ] **Bước 5: Giữ cam kết giao diện người dùng để con người xem xét**
 
-After human review, the proposed frontend commit is:
+Sau khi con người xem xét, cam kết giao diện người dùng được đề xuất là:
 
 ```powershell
 git add -- frontend/test/borrowingFrontend.test.js frontend/src/utils/libraryFeatureViewModels.js
 git commit -m "fix: show rejected borrow requests to members"
 ```
 
-### Task 5: Complete Verification And Human Review
+### Nhiệm vụ 5: Hoàn thành xác minh và đánh giá con người
 
-**Files:**
-- Modify: `.sdd/specs/feat-borrowing-management/TASKS.md`
-- Verify only: every file listed in the File Map.
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-borrowing-management/TASKS.md`
+- Chỉ xác minh: mọi tệp được liệt kê trong Bản đồ tệp.
 
-**Interfaces:**
-- Consumes: the completed backend, OpenAPI, and frontend slices.
-- Produces: focused and repository-level evidence for FE07-T041.
+**Giao diện:**
+- Tiêu thụ: phần máy chủ đã hoàn thành, OpenAPI và các phần giao diện người dùng.
+- Tạo ra: bằng chứng tập trung và cấp kho lưu trữ cho FE07-T041.
 
-- [ ] **Step 1: Run focused FE07 regression tests**
+- [ ] **Bước 1: Chạy kiểm thử hồi quy FE07 tập trung**
 
-Run:
+Chạy:
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/borrowingRoutes.test.js tests/borrowingContract.test.js
 node --test frontend/test/borrowingFrontend.test.js
 ```
 
-Expected: both backend test files and the frontend borrowing suite pass with zero failures.
+Dự kiến: cả tệp kiểm tra máy chủ và bộ công cụ mượn giao diện người dùng đều vượt qua mà không gặp lỗi nào.
 
-- [ ] **Step 2: Run broader static and build gates**
+- [ ] **Bước 2: Chạy cổng tĩnh và xây dựng rộng hơn**
 
-Run:
+Chạy:
 
 ```powershell
 npm.cmd --prefix frontend run lint
@@ -463,25 +472,30 @@ npm.cmd run trace:enforce
 git diff --check
 ```
 
-Expected: lint, build, and traceability pass; `git diff --check` emits no output.
+Dự kiến: vượt qua kiểm tra mã, bản dựng và truy vết; `git diff --check` không phát ra đầu ra.
 
-- [ ] **Step 3: Run the full backend regression suite**
+- [ ] **Bước 3: Chạy bộ hồi quy máy chủ đầy đủ**
 
-Run:
+Chạy:
 
 ```powershell
 npm.cmd --prefix backend test
 ```
 
-Expected: all backend suites pass. If an unrelated dirty authentication/admin change fails, record the exact failing test and prove the focused FE07 suites still pass; do not modify unrelated files.
+Dự kiến: tất cả các bộ máy chủ đều đạt. Nếu thay đổi xác thực không liên quan/admin không thành
+công, hãy ghi lại kiểm thử thất bại chính xác và chứng minh bộ FE07 tập trung vẫn đạt; không sửa đổi
+các tập tin không liên quan.
 
-- [ ] **Step 4: Record exact evidence and request human review**
+- [ ] **Bước 4: Ghi lại bằng chứng chính xác và yêu cầu con người xem xét**
 
-Replace the unchecked marker on `FE07-T041` with `[x]` only after recording the exact pass counts from Steps 1-3 beneath the task. Present the complete FE07 diff for human review before staging implementation files.
+Chỉ thay thế điểm đánh dấu không được chọn trên `FE07-T041` bằng `[x]` sau khi ghi lại số lần vượt
+qua chính xác từ Bước 1-3 bên dưới nhiệm vụ. Trình bày sự khác biệt hoàn chỉnh của FE07 để con người
+xem xét trước khi môi trường tiền sản xuất các tệp triển khai.
 
-- [ ] **Step 5: Commit the reviewed implementation**
+- [ ] **Bước 5: Cam kết triển khai đã được đánh giá**
 
-Only after the human confirms review, stage the exact FE07 files and verify the staged set before committing:
+Chỉ sau khi con người xác nhận xem xét, hãy tạo các tệp FE07 chính xác và xác minh tập hợp các giai
+đoạn trước khi cam kết:
 
 ```powershell
 git add -- .sdd/specs/feat-borrowing-management/SPEC.md .sdd/specs/feat-borrowing-management/TASKS.md .sdd/specs/feat-borrowing-management/CHANGELOG.md backend/src/repositories/borrowingRepository.js backend/tests/helpers/inMemoryBorrowingRepositories.js backend/tests/borrowingRoutes.test.js backend/src/docs/openapi.yaml backend/tests/borrowingContract.test.js frontend/src/utils/libraryFeatureViewModels.js frontend/test/borrowingFrontend.test.js docs/superpowers/plans/2026-07-22-member-rejected-borrow-status.md
@@ -490,4 +504,5 @@ git diff --cached --check
 git commit -m "fix: show rejected borrow requests to members"
 ```
 
-Expected staged files: exactly the eleven paths named by `git add`; no authentication or admin-console files are staged.
+Các tệp được phân loại dự kiến: chính xác là mười một đường dẫn được đặt tên bởi `git add`; không có
+tệp xác thực hoặc bảng điều khiển quản trị nào được tổ chức.

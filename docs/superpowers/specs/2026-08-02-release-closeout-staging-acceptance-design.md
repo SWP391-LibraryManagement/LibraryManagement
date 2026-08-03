@@ -1,414 +1,431 @@
-# Release Closeout & Staging Acceptance — Design
+# Kết thúc phát hành và chấp nhận giai đoạn — Thiết kế
 
-- Date: 2026-08-02
-- Baseline: `main@e01585a9aa7d603daf932f7ac6459eaa0752746c`
-- Batch: `RELEASE-CLOSEOUT-STAGING-ACCEPTANCE-2026-08-02`
-- Design branch: `codex/release-closeout-staging-acceptance-design`
-- Delivery method: Hybrid SDD + ADD
-- Depth: Standard/Full cho Core; Light cho Shell
-- Status: Design approved; implementation plan and execution require the next human gate
+- Ngày: 2026-08-02
+- mốc cơ sở: `main@e01585a9aa7d603daf932f7ac6459eaa0752746c`
+- Lô: `RELEASE-CLOSEOUT-STAGING-ACCEPTANCE-2026-08-02`
+- Nhánh thiết kế: `codex/release-closeout-staging-acceptance-design`
+- Phương thức phân phối: Lai SDD + ADD
+- Độ sâu: Tiêu chuẩn/Đầy đủ cho lõi; Ánh sáng cho lớp bao
+- Tình trạng: Đã phê duyệt thiết kế; kế hoạch thực hiện và thực hiện yêu cầu cổng tiếp theo của con người
 
-## 1. Outcome
+## 1. kết quả
 
-Batch này đóng ba khoảng trống còn lại của đợt release bằng bằng chứng kiểm chứng được:
+lô này đóng ba khoảng trống còn lại của đợt phát hành bằng bằng chứng kiểm chứng được:
 
-1. Đồng bộ task, changelog và review record với những gì đã merge ở PR #95 và những gì thật sự vượt qua staging acceptance.
-2. Chạy một acceptance flow có đăng nhập trên Azure staging bằng tài khoản và dữ liệu tổng hợp tạm thời, phủ chuỗi nghiệp vụ liên vai trò.
-3. Dọn các worktree cũ theo cách không làm mất 31 file đang thay đổi, đồng thời tái xác nhận ngoại lệ bảo mật React Router hiện có.
+1. Đồng bộ Nhiệm vụ, changelog và biên bản rà soát với những gì đã hợp nhất ở PR #95 và những gì thật sự vượt qua môi trường tiền sản xuất acceptance.
+2. Chạy một acceptance luồng có đăng nhập trên Azure môi trường tiền sản xuất bằng tài khoản và dữ liệu tổng hợp tạm thời, phủ chuỗi nghiệp vụ liên vai trò.
+3. Dọn các cây làm việc Git cũ theo cách không làm mất 31 tệp đang thay đổi, đồng thời tái xác nhận ngoại lệ bảo mật React Router hiện có.
 
-Kết quả mong muốn không phải là “mọi checkbox đều xanh”. Mỗi task chỉ được đóng khi có bằng chứng đúng với acceptance criteria của chính task đó; phần chưa được kiểm chứng vẫn giữ trạng thái mở.
+Kết quả mong muốn không phải là “mọi checkbox đều xanh”. Mỗi Nhiệm vụ chỉ được đóng khi có bằng chứng
+đúng với tiêu chí chấp nhận của chính Nhiệm vụ đó; phần chưa được kiểm chứng vẫn giữ trạng thái mở.
 
-## 2. Non-goals
+## 2. Không có mục tiêu
 
-Batch này không:
+lô này không:
 
-- thêm endpoint, route, role, schema, migration hay business rule mới;
+- thêm điểm cuối, tuyến, vai trò, lược đồ, di chuyển dữ liệu hay quy tắc nghiệp vụ mới;
 - tạo tài khoản dùng chung lâu dài hoặc lưu mật khẩu trong repo/log/artifact;
-- chạy trên production hoặc tạo production workflow;
+- chạy trên môi trường sản xuất hoặc tạo quy trình sản xuất;
 - nâng cấp/hạ cấp React Router một cách tự động;
-- hard-delete user, audit log hay lịch sử nghiệp vụ;
-- xóa thay đổi chưa commit trong worktree;
+- xóa vĩnh viễn người dùng, nhật ký kiểm toán hay lịch sử nghiệp vụ;
+- xóa thay đổi chưa bản ghi Git trong cây làm việc Git;
 - dùng `/health`, CI xanh hoặc smoke không đăng nhập thay thế cho kiểm thử nghiệp vụ thật.
 
-## 3. Delivery classification
+## 3. Phân loại bàn giao
 
-### 3.1 Core
+### 3.1 Cốt lõi
 
-Các phần sau có blast radius cao và dùng mức Standard/Full:
+Các phần sau có blast radius cao và dùng mức tiêu chuẩn/đầy đủ:
 
-- auth, session và token revocation;
-- role/permission của Member, Librarian và Admin;
-- seed/cleanup trực tiếp trên Azure SQL staging;
-- borrow, reservation queue, return, fine, notification và audit trail;
-- điều kiện đóng task dựa trên live acceptance.
+- xác thực, session và token revocation;
+- vai trò/permission của thành viên, thủ thư và quản trị viên;
+- seed/dọn dẹp trực tiếp trên Azure SQL môi trường tiền sản xuất;
+- mượn sách, hàng đợi đặt chỗ, trả sách, khoản phạt, thông báo và dấu vết kiểm toán;
+- điều kiện đóng Nhiệm vụ dựa trên nghiệm thu thực tế.
 
-Core phải có traceability, negative authorization checks, cleanup invariant và bằng chứng L1-L4.
+lõi phải có khả năng truy vết, negative ủy quyền kiểm tra, dọn dẹp điều kiện bất biến và bằng chứng L1-L4.
 
-### 3.2 Shell
+### 3.2 Vỏ
 
 Các phần sau có thể hoàn tác và dùng mức Light:
 
-- cập nhật task/changelog/review record;
-- tái xác nhận security exception đã tồn tại;
+- cập nhật Nhiệm vụ/changelog/biên bản rà soát;
+- tái xác nhận bảo mật exception đã tồn tại;
 - lưu bằng chứng QA không chứa bí mật;
-- đồng bộ root checkout và dọn worktree sau khi tạo recovery commit.
+- đồng bộ bản làm việc gốc và dọn cây làm việc Git sau khi tạo recovery bản ghi Git.
 
-Shell vẫn phải qua diff review, link được tới nguồn bằng chứng và không được đưa tuyên bố rộng hơn kết quả thực tế.
+lớp bao vẫn phải qua khác biệt rà soát, link được tới nguồn bằng chứng và không được đưa tuyên bố
+rộng hơn kết quả thực tế.
 
-## 4. Verified baseline and current gaps
+## 4. Khoảng cách cơ bản và hiện tại đã được xác minh
 
-Baseline trước khi thiết kế:
+mốc cơ sở trước khi thiết kế:
 
-- staging đang chạy đúng revision `e01585a9aa7d603daf932f7ac6459eaa0752746c`;
-- CI run `30711057582` và staging deployment run `30711210037` đã thành công;
-- public frontend, `/health`, schema readiness, SQL catalog, CORS và protected-route smoke đã qua;
-- backend có 1,175/1,175 tests, system 11/11, E2E 12/12 và deployment 20/20;
-- traceability hiện là 9 COMPLETE và 3 PARTIAL: auth, membership management, user-role management;
-- backend/root dependency audit không có finding; frontend còn advisory đã được kiểm soát cho `react-router` và `react-router-dom` 7.18.1;
-- worktree `h3-fe07-fe12-governance` có 31 file thay đổi chưa commit và tuyệt đối không được xóa trực tiếp.
+- môi trường tiền sản xuất đang chạy đúng revision `e01585a9aa7d603daf932f7ac6459eaa0752746c`;
+- Lượt chạy CI `30711057582` và lượt triển khai môi trường tiền sản xuất `30711210037` đã thành công;
+- Giao diện công khai, `/health`, mức sẵn sàng lược đồ, danh mục SQL, CORS và kiểm thử nhanh tuyến được bảo vệ đều đạt;
+- Máy chủ có 1.175/1.175 kiểm thử, hệ thống 11/11, E2E 12/12 và triển khai 20/20;
+- Khả năng truy vết hiện có 9 chức năng hoàn tất và 3 chức năng `PARTIAL`: xác thực, quản lý tư cách thành viên, quản lý người dùng-vai trò;
+- Kiểm toán phụ thuộc máy chủ/gốc không có phát hiện; giao diện còn cảnh báo đã được kiểm soát cho `react-router` và `react-router-dom` 7.18.1;
+- cây làm việc Git `h3-fe07-fe12-governance` có 31 tệp thay đổi chưa bản ghi Git và tuyệt đối không được xóa trực tiếp.
 
 Khoảng trống còn lại:
 
-- chưa có acceptance evidence có đăng nhập theo từng vai trò trên staging hiện tại;
-- task/changelog chưa phản ánh đầy đủ PR #95;
-- một số task cần human/runtime acceptance nên chưa thể đóng chỉ bằng test tự động;
-- advisory record React Router cần gắn current evidence, owner và review trigger;
-- worktree cũ cần được hợp nhất về trạng thái dễ khôi phục mà không làm mất nội dung.
+- chưa có bằng chứng nghiệm thu có đăng nhập theo từng vai trò trên môi trường tiền sản xuất hiện tại;
+- Nhiệm vụ/changelog chưa phản ánh đầy đủ PR #95;
+- một số Nhiệm vụ cần nghiệm thu của con người/thời gian chạy nên chưa thể đóng chỉ bằng kiểm thử tự động;
+- advisory bản ghi React Router cần gắn hiện tại bằng chứng, owner và rà soát trigger;
+- cây làm việc Git cũ cần được hợp nhất về trạng thái dễ khôi phục mà không làm mất nội dung.
 
-## 5. Operator-side acceptance architecture
+## 5. Kiến trúc chấp nhận phía nhà điều hành
 
 Không tạo đường seed trong ứng dụng. Acceptance dùng một operator harness tạm thời ở máy cục bộ và một lần thực thi giới hạn qua Azure Kudu/SCM:
 
 ```text
-Local operator process
+Quy trình của người vận hành cục bộ
   |-- generates runId + four random passwords in memory
   |-- sends parameterized seed/cleanup commands to staging Kudu
   |-- drives staging UI with Playwright/browser automation
   |-- records only non-secret IDs, observations and screenshots
-  `-- always executes cleanup/final verification
+`-- luôn thực hiện dọn dẹp/xác minh cuối
 
 Azure staging app/Kudu
   |-- reuses deployed runtime and staging connection configuration
-  `-- can mutate only rows tagged by the exact runId/manifest IDs
+`-- chỉ được thay đổi các bản ghi gắn với đúng runId/ID trong bảng kê khai
 ```
 
-Constraints:
+Hạn chế:
 
-- harness là file tạm, nằm ngoài source control và bị xóa sau run;
-- không có permanent API, backdoor, admin page hay CI workflow mới;
-- mọi SQL value phải parameterized; object names phải lấy từ schema đã kiểm tra, không ghép từ input;
+- harness là tệp tạm, nằm ngoài quản lý phiên bản và bị xóa sau lượt chạy;
+- không có permanent API, backdoor, quản trị viên page hay CI quy trình mới;
+- mọi SQL value phải parameterized; object names phải lấy từ lược đồ đã kiểm tra, không ghép từ input;
 - lệnh bắt buộc khai báo rõ `environment=staging` và đúng Azure resource;
 - mật khẩu chỉ tồn tại trong memory/environment của operator process, không xuất stdout/stderr;
-- manifest chỉ chứa non-secret identifiers, run timestamps và cleanup status;
-- artifact có token, cookie, connection string, password hoặc response header nhạy cảm phải bị loại bỏ/redact.
+- tệp kê khai chỉ chứa định danh không bí mật, dấu thời gian lượt chạy và trạng thái dọn dẹp;
+- artifact có token, cookie, connection string, mật khẩu hoặc phản hồi header nhạy cảm phải bị loại bỏ/redact.
 
-## 6. Synthetic fixture contract
+## 6. Hợp đồng cố định tổng hợp
 
-### 6.1 Run identity
+### 6.1 Chạy danh tính
 
-Mỗi run có marker duy nhất:
+Mỗi lượt chạy có dấu nhận diện duy nhất:
 
 ```text
 runId = lms-acceptance-20260802-<random-suffix>
 ```
 
-Mọi account, membership application, book/copy và nghiệp vụ được tạo phải truy ngược được về `runId` hoặc manifest ID chính xác. Cleanup không dùng wildcard theo tên/email.
+Mọi tài khoản, membership application, book/copy và nghiệp vụ được tạo phải truy ngược được về
+`runId` hoặc tệp kê khai ID chính xác. dọn dẹp không dùng wildcard theo tên/email.
 
-### 6.2 Accounts
+### 6.2 Tài khoản
 
-Bốn account tổng hợp:
+Bốn tài khoản tổng hợp:
 
-| Alias | Role | Purpose |
+| Bí danh | Vai trò | Mục đích |
 |---|---|---|
-| `member-a` | Member | membership approval, borrow, return/fine |
-| `member-b` | Member | reservation queue and notification |
-| `librarian` | Librarian | approve borrow, process return |
-| `admin` | Admin | approve membership, audit/report checks |
+| `member-a` | Thành viên | phê duyệt thành viên, vay, trả sách/phạt |
+| `member-b` | Thành viên | hàng đợi đặt chỗ và thông báo |
+| `librarian` | Thủ thư | phê duyệt lượt mượn, xử lý hoàn trả |
+| `admin` | Quản trị viên | phê duyệt thành viên, kiểm tra Audit/report |
 
-Account contract:
+Hợp đồng tài khoản:
 
 - email dùng domain `.invalid` và có `runId`;
-- tên, địa chỉ và dữ liệu profile đều là synthetic, không sao chép người thật;
-- mỗi account có mật khẩu ngẫu nhiên riêng, chỉ giữ trong memory;
-- role assignment là tối thiểu, không cấp role phụ để “cho test chạy”;
-- initial state chỉ đủ để UI/API thực hiện flow thật; các state nghiệp vụ phải chuyển qua product flow khi có thể.
+- tên, địa chỉ và dữ liệu hồ sơ đều là tổng hợp, không sao chép người thật;
+- mỗi tài khoản có mật khẩu ngẫu nhiên riêng, chỉ giữ trong memory;
+- gán vai trò là tối thiểu, không cấp vai trò phụ để “cho kiểm thử chạy”;
+- initial trạng thái chỉ đủ để UI/API thực hiện luồng thật; các trạng thái nghiệp vụ phải chuyển qua product luồng khi có thể.
 
-### 6.3 Catalog fixture
+### 6.3 Danh mục lịch thi đấu
 
-Tạo đúng một book và một copy chuyên dụng, có marker `runId`, không dùng catalog đang có. Copy này là đối tượng duy nhất được borrow/reserve/return trong run, giúp tránh cạnh tranh với dữ liệu demo hoặc người dùng staging khác.
+Tạo đúng một book và một copy chuyên dụng, có dấu nhận diện `runId`, không dùng danh mục đang có. Copy này
+là đối tượng duy nhất được mượn sách/reserve/trả sách trong lượt chạy, giúp tránh cạnh tranh với dữ liệu demo
+hoặc người dùng môi trường tiền sản xuất khác.
 
-### 6.4 Time-dependent setup
+### 6.4 Thiết lập phụ thuộc vào thời gian
 
-Nếu cần kiểm tra overdue/fine, operator chỉ được điều chỉnh due date của borrowing detail thuộc manifest sau khi borrow đã được approve qua product flow. Không sửa clock hệ thống, policy chung hoặc bản ghi ngoài manifest.
+Nếu cần kiểm tra quá hạn/khoản phạt, operator chỉ được điều chỉnh hạn trả của mượn sách detail thuộc
+tệp kê khai sau khi mượn sách đã được phê duyệt qua product luồng. Không sửa clock hệ thống, policy
+chung hoặc bản ghi ngoài tệp kê khai.
 
-## 7. Acceptance scenario
+## 7. Kịch bản chấp nhận
 
-### 7.1 Setup checks
+### 7.1 Kiểm tra thiết lập
 
 Trước khi seed:
 
 1. xác nhận frontend/API host và deployed revision;
-2. xác nhận database là staging target;
+2. xác nhận cơ sở dữ liệu là môi trường tiền sản xuất target;
 3. xác nhận không tồn tại `runId` trùng;
-4. chạy schema-readiness và kiểm tra các bảng/cột cần dùng;
-5. khởi tạo local manifest không chứa secret.
+4. chạy lược đồ-readiness và kiểm tra các bảng/cột cần dùng;
+5. khởi tạo cục bộ tệp kê khai không chứa secret.
 
-Nếu bất kỳ check nào không khớp, không seed.
+Nếu bất kỳ kiểm tra nào không khớp, không seed.
 
-### 7.2 Role and auth checks
+### 7.2 Kiểm tra vai trò và xác thực
 
-Với từng account:
+Với từng tài khoản:
 
 - đăng nhập bằng UI;
-- xác nhận identity/role từ product UI hoặc authenticated `/me` contract;
-- xác nhận route hợp lệ của role;
-- logout và xác nhận session kết thúc.
+- xác nhận identity/vai trò từ product UI hoặc authenticated `/me` hợp đồng;
+- xác nhận tuyến hợp lệ của vai trò;
+- đăng xuất và xác nhận session kết thúc.
 
-Negative checks tối thiểu:
+Negative kiểm tra tối thiểu:
 
-- Member không truy cập được admin/librarian operation;
-- Librarian không có admin-only membership/role operation;
-- unauthenticated request không truy cập protected operation;
-- permission denial phải là expected response, không phải client-only hidden UI.
+- thành viên không truy cập được Quản trị viên/Thủ thư operation;
+- thủ thư không có quản trị viên-chỉ membership/vai trò operation;
+- unauthenticated yêu cầu không truy cập protected operation;
+- từ chối quyền phải là phản hồi mong đợi, không phải giao diện chỉ bị ẩn ở phía máy khách.
 
-### 7.3 Cross-role business flow
+### 7.3 Luồng kinh doanh đa vai trò
 
-Flow chuẩn:
+luồng chuẩn:
 
 ```text
-Admin approves synthetic memberships
-  -> Member A requests borrow of synthetic copy
-  -> Librarian approves the borrowing request
-  -> Member B reserves the now-unavailable title
-  -> operator changes only the fixture due date
-  -> Librarian processes Member A return
-  -> system calculates applicable fine/state transition
-  -> reservation queue advances for Member B
-  -> notification/audit/report views reflect resulting state
+Quản trị viên phê duyệt tư cách thành viên tổng hợp
+-> Thành viên A yêu cầu mượn bản sao tổng hợp
+-> Thủ thư phê duyệt yêu cầu mượn
+-> Thành viên B đặt chỗ đầu sách vừa chuyển sang không sẵn có
+-> người vận hành chỉ thay đổi ngày đến hạn của dữ liệu kiểm thử
+-> Thủ thư xử lý việc trả sách của Thành viên A
+-> hệ thống tính khoản phạt/chuyển đổi trạng thái áp dụng
+-> hàng đợi đặt chỗ chuyển tiếp cho Thành viên B
+-> màn hình thông báo/kiểm toán/báo cáo phản ánh trạng thái kết quả
 ```
 
-Evidence cho mỗi bước phải ghi:
+bằng chứng cho mỗi bước phải ghi:
 
-- actor và route UI;
-- action/click;
+- tác nhân và tuyến UI;
+- hành động/nhấp chuột;
 - API method/path quan sát được;
-- request identifiers nhưng không chứa credential/token;
-- server-derived state trước/sau;
-- expected result và actual result;
+- yêu cầu identifiers nhưng không chứa credential/token;
+- server-derived trạng thái trước/sau;
+- kết quả mong đợi và kết quả thực tế;
 - screenshot hoặc structured observation khi hữu ích.
 
-### 7.4 Required invariants
+### 7.4 Bất biến bắt buộc
 
-Run chỉ PASS khi tất cả điều kiện sau đúng:
+lượt chạy chỉ đạt khi tất cả điều kiện sau đúng:
 
-- role isolation đúng ở cả UI và server response;
-- Member A không tự approve borrowing của mình;
-- Member B có queue state nhất quán khi copy không available;
-- return không tạo double-processing khi lặp request/refresh;
-- fine, borrowing status và copy availability không mâu thuẫn;
+- vai trò isolation đúng ở cả UI và server phản hồi;
+- thành viên A không tự phê duyệt mượn sách của mình;
+- thành viên B có queue trạng thái nhất quán khi copy không available;
+- trả sách không tạo xử lý hai lần khi lặp yêu cầu/refresh;
+- khoản phạt, mượn sách trạng thái và tình trạng sẵn có của bản sao không mâu thuẫn;
 - queue advancement/notification xuất hiện đúng người nhận;
-- audit/report view không để role ngoài phạm vi xem hoặc sửa dữ liệu;
-- không có row nghiệp vụ ngoài manifest bị thay đổi.
+- audit/report view không để vai trò ngoài phạm vi xem hoặc sửa dữ liệu;
+- không có row nghiệp vụ ngoài tệp kê khai bị thay đổi.
 
-## 8. Cleanup and retained audit
+## 8. Kiểm tra dọn dẹp và giữ lại
 
-Cleanup chạy trong `finally`, kể cả khi setup hoặc acceptance thất bại giữa chừng.
+dọn dẹp chạy trong `finally`, kể cả khi setup hoặc acceptance thất bại giữa chừng.
 
 Thứ tự:
 
-1. dừng hoặc terminalize các open reservation/borrow state của fixture theo contract hiện có;
-2. revoke toàn bộ refresh/access session có thể thu hồi của bốn account;
-3. logout browser contexts và xóa local cookies/storage;
-4. deactivate bốn account tổng hợp;
-5. deactivate/retire book và copy fixture, không hard-delete reference đã đi vào audit/history;
-6. giữ lại audit trail tối thiểu theo policy hiện hành;
-7. chạy post-cleanup queries theo exact IDs;
-8. xác nhận account không đăng nhập lại được và token cũ không dùng được.
+1. dừng hoặc terminalize các open đặt chỗ/mượn sách trạng thái của dữ liệu kiểm thử theo hợp đồng hiện có;
+2. revoke toàn bộ refresh/access session có thể thu hồi của bốn tài khoản;
+3. đăng xuất browser contexts và xóa cục bộ cookies/storage;
+4. vô hiệu hóa bốn tài khoản tổng hợp;
+5. vô hiệu hóa/retire book và copy dữ liệu kiểm thử, không xóa vĩnh viễn reference đã đi vào audit/history;
+6. giữ lại dấu vết kiểm toán tối thiểu theo policy hiện hành;
+7. chạy post-dọn dẹp queries theo chính xác IDs;
+8. xác nhận tài khoản không đăng nhập lại được và token cũ không dùng được.
 
-Post-cleanup invariants:
+Bất biến sau dọn dẹp:
 
-- không còn active synthetic account;
-- không còn active session/token của account;
-- không còn open borrow/reservation trên fixture;
-- synthetic book/copy không xuất hiện như catalog active;
-- audit trail vẫn truy ngược được actor, action và timestamp;
-- manifest ghi `CLEANED`, `PARTIAL_CLEANUP` hoặc `FAILED_CLEANUP` cho từng object.
+- không còn đang hoạt động tổng hợp tài khoản;
+- không còn phiên/mã thông báo đang hoạt động của tài khoản;
+- không còn lượt mượn/đặt chỗ mở trên dữ liệu kiểm thử;
+- sách/bản sao tổng hợp không xuất hiện trong danh mục đang hoạt động;
+- dấu vết kiểm toán vẫn truy ngược được tác nhân, hành động và dấu thời gian;
+- tệp kê khai ghi `CLEANED`, `PARTIAL_CLEANUP` hoặc `FAILED_CLEANUP` cho từng đối tượng.
 
-Nếu cleanup không hoàn tất:
+Nếu dọn dẹp không hoàn tất:
 
 - không chạy lại bằng runId mới;
-- không đóng các task phụ thuộc live acceptance;
-- báo exact non-secret IDs còn sót và bước remediation;
-- giữ manifest cho tới khi xác nhận sạch.
+- không đóng các Nhiệm vụ phụ thuộc nghiệm thu thực tế;
+- báo chính xác non-secret IDs còn sót và bước khắc phục;
+- giữ tệp kê khai cho tới khi xác nhận sạch.
 
-## 9. Evidence and task closeout
+## 9. Bằng chứng và kết thúc nhiệm vụ
 
-### 9.1 Evidence record
+### 9.1 Hồ sơ chứng cứ
 
-Tạo một review record mới tại:
+Tạo một biên bản rà soát mới tại:
 
 `.sdd/reviews/release-closeout-staging-acceptance-2026-08-02.md`
 
-Record phải chứa:
+bản ghi phải chứa:
 
-- baseline commit, deployment/CI run và staging hosts;
+- mốc cơ sở bản ghi Git, deployment/CI lượt chạy và môi trường tiền sản xuất hosts;
 - runId đã redact phần ngẫu nhiên nếu cần;
-- scenario matrix PASS/FAIL;
-- role/route/API/state evidence;
-- cleanup result;
-- link tới task/spec/changelog liên quan;
+- ma trận kịch bản ĐẠT/THẤT BẠI;
+- vai trò/tuyến đường/API/bằng chứng trạng thái;
+- kết quả dọn dẹp;
+- link tới Nhiệm vụ/spec/changelog liên quan;
 - unresolved items và owner;
 - không chứa secret, token, cookie hoặc PII.
 
-Screenshot/raw artifact nếu có được giữ ngoài Git trong output tạm; review record chỉ giữ bằng chứng đã redact và đủ tái kiểm tra.
+Screenshot/raw artifact nếu có được giữ ngoài Git trong output tạm; biên bản rà soát chỉ giữ bằng
+chứng đã redact và đủ tái kiểm tra.
 
-### 9.2 Existing PR #95 closeout
+### 9.2 Kết thúc PR #95 hiện tại
 
-Các task đã có merge/test evidence từ PR #95 được đối chiếu lại acceptance criteria rồi mới cập nhật:
+Các Nhiệm vụ đã có hợp nhất/kiểm thử bằng chứng từ PR #95 được đối chiếu lại tiêu chí chấp nhận rồi
+mới cập nhật:
 
 - FE02-T067;
 - FE05-T019;
 - FE11-CAT01.
 
-Việc cập nhật phải link tới commit/PR/run cụ thể, không dùng mô tả chung “đã hoàn thành”.
+Việc cập nhật phải link tới bản ghi Git/PR/lượt chạy cụ thể, không dùng mô tả chung “đã hoàn thành”.
 
-### 9.3 Live-acceptance-dependent closeout
+### 9.3 Kết thúc phụ thuộc vào sự chấp nhận trực tiếp
 
-Các task FE04/FE11 chỉ được đóng nếu scenario thật sự phủ toàn bộ criteria của task. Đặc biệt, các item về admin approval, cross-feature convergence, role UX, personal-data operation hoặc runtime catalog chỉ được chuyển trạng thái khi evidence record có mapping trực tiếp.
+Các Nhiệm vụ FE04/FE11 chỉ được đóng nếu scenario thật sự phủ toàn bộ criteria của Nhiệm vụ. Đặc biệt, các
+item về quản trị viên phê duyệt, cross-chức năng convergence, vai trò UX, personal-data operation hoặc
+danh mục thời gian chạy chỉ được chuyển trạng thái khi bằng chứng bản ghi có mapping trực tiếp.
 
-Các item chỉ yêu cầu human review/owner confirmation nhưng chưa có phê duyệt tương ứng vẫn để mở. Không tự động đóng FE02-T049, FE09-B7 hoặc item tương tự chỉ vì flow chính PASS.
+Các item chỉ yêu cầu human rà soát/owner confirmation nhưng chưa có phê duyệt tương ứng vẫn để mở.
+Không tự động đóng FE02-T049, FE09-B7 hoặc item tương tự chỉ vì luồng chính đạt.
 
-### 9.4 Documents to update
+### 9.4 Tài liệu cần cập nhật
 
 Phạm vi tối thiểu:
 
-- feature `TASKS.md` bị ảnh hưởng;
-- feature `CHANGELOG.md`/validation review tương ứng;
-- `.sdd/traceability.yaml` chỉ khi evidence mới thật sự thay đổi trạng thái feature;
-- release-closeout review record mới;
-- không sửa requirement text để phù hợp với implementation hiện tại.
+- chức năng `TASKS.md` bị ảnh hưởng;
+- chức năng `CHANGELOG.md`/xác thực rà soát tương ứng;
+- `.sdd/traceability.yaml` chỉ khi bằng chứng mới thật sự thay đổi trạng thái chức năng;
+- phát hành-khóa sổ biên bản rà soát mới;
+- không sửa yêu cầu text để phù hợp với triển khai hiện tại.
 
-## 10. React Router advisory revalidation
+## 10. Xác nhận lại tư vấn bộ định tuyến React
 
-Không tạo một ngoại lệ trùng lặp. Cập nhật record hiện có:
+Không tạo một ngoại lệ trùng lặp. Cập nhật bản ghi hiện có:
 
 `docs/security/react-router-rsc-audit-exception-2026-07-25.md`
 
-Required evidence:
+Bằng chứng cần thiết:
 
-- chạy lại full frontend audit trên lockfile hiện tại;
+- chạy lại đầy đủ giao diện audit trên lockfile hiện tại;
 - kiểm tra advisory ID/range từ nguồn upstream/official hiện hành;
 - xác nhận app vẫn dùng Declarative `BrowserRouter`/`Routes`/`Route`;
-- xác nhận không có RSC, Framework Mode, server actions hoặc data-router APIs bị chặn;
-- xác nhận `frontend/scripts/audit-high.js` vẫn fail với finding khác, version drift hoặc blocked API;
-- ghi owner, review date và trigger để gỡ exception.
+- xác nhận không có RSC, Framework Mode, server hành động hoặc data-router APIs bị chặn;
+- xác nhận `frontend/scripts/audit-high.js` vẫn không đạt với finding khác, phiên bản drift hoặc blocked API;
+- ghi owner, rà soát date và trigger để gỡ exception.
 
-Nếu có phiên bản ổn định đã vá và tương thích, việc upgrade là một batch riêng có regression plan. Batch này không thay đổi dependency chỉ để làm audit output xanh.
+Nếu có phiên bản ổn định đã vá và tương thích, việc nâng cấp là một lô riêng có kế hoạch hồi quy. lô
+này không thay đổi phụ thuộc chỉ để làm kết quả kiểm toán xanh.
 
-## 11. Worktree preservation and cleanup
+## 11. Bảo quản và dọn dẹp cây làm việc Git
 
-### 11.1 Dirty worktree
+### 11.1 cây làm việc bẩn
 
 Đối với `.worktrees/h3-fe07-fe12-governance`:
 
-1. xác nhận absolute path, branch, HEAD và 31 file thay đổi;
-2. chạy secret scan và diff review phạm vi;
-3. tạo local recovery branch có timestamp từ đúng HEAD;
-4. commit toàn bộ thay đổi hiện tại vào recovery branch với message chỉ rõ nguồn;
-5. xác nhận commit chứa đủ file và worktree sạch;
-6. không push recovery branch;
-7. chỉ sau đó mới remove worktree bằng Git;
-8. xác nhận recovery branch/commit còn đọc được từ root checkout.
+1. xác nhận absolute path, nhánh, HEAD và 31 tệp thay đổi;
+2. chạy secret quét và khác biệt rà soát phạm vi;
+3. tạo cục bộ recovery nhánh có dấu thời gian từ đúng HEAD;
+4. ghi nhận toàn bộ thay đổi hiện tại vào nhánh khôi phục bằng thông điệp chỉ rõ nguồn;
+5. xác nhận bản ghi Git chứa đủ tệp và cây làm việc Git sạch;
+6. không đẩy lên kho từ xa recovery nhánh;
+7. chỉ sau đó mới remove cây làm việc Git bằng Git;
+8. xác nhận recovery nhánh/bản ghi Git còn đọc được từ bản làm việc gốc.
 
-Nếu secret scan có finding thật, không commit/remove; dừng và báo vị trí đã redact, không in secret.
+Nếu quét bí mật có phát hiện thật, không ghi nhận/xóa thay đổi; dừng và báo vị trí đã che, không in bí mật.
 
-### 11.2 Clean merged worktrees
+### 11.2 Làm sạch các cây làm việc đã hợp nhất
 
 Đối với `audit-hardening` và `connected-circulation-flow`:
 
-- xác nhận worktree sạch;
-- xác nhận commit/PR tương ứng đã nằm trong `main` (kể cả squash mapping);
-- remove từng exact path;
-- không xóa branch nếu chưa có bằng chứng merge/recovery rõ ràng.
+- xác nhận cây làm việc Git sạch;
+- xác nhận bản ghi Git/PR tương ứng đã nằm trong `main` (kể cả squash mapping);
+- remove từng chính xác path;
+- không xóa nhánh nếu chưa có bằng chứng hợp nhất/recovery rõ ràng.
 
-### 11.3 Root checkout
+### 11.3 Kiểm tra gốc
 
-Root đã được fast-forward tới baseline trước khi tạo design branch. Sau batch, root phải:
+Root đã được tiến thẳng tới mốc cơ sở trước khi tạo thiết kế nhánh. Sau lô, root phải:
 
 - không có untracked secret/artifact;
-- có branch/commit rõ ràng;
-- không tham chiếu worktree path đã remove;
-- giữ recovery branch cục bộ cho tới khi người dùng chủ động yêu cầu xóa.
+- có nhánh/bản ghi Git rõ ràng;
+- không tham chiếu cây làm việc Git path đã remove;
+- giữ recovery nhánh cục bộ cho tới khi người dùng chủ động yêu cầu xóa.
 
-## 12. Failure handling
+## 12. Xử lý lỗi
 
-| Failure | Required response |
+| Thất bại | Phản hồi bắt buộc |
 |---|---|
-| Wrong host/revision/database | Abort before seed |
-| Partial seed | Cleanup exact created IDs; mark run failed |
-| Browser/API assertion fails | Capture redacted evidence; continue to cleanup |
-| Authorization unexpectedly succeeds | Treat as security failure; stop downstream flow; cleanup |
-| Cleanup incomplete | Mark `FAILED_CLEANUP`; do not close dependent tasks |
-| Advisory assumptions drift | Keep exception unresolved; do not edit dependency automatically |
-| Worktree secret finding | Do not commit or remove worktree |
-| Recovery commit verification fails | Do not remove worktree |
+| Máy chủ/sửa đổi/cơ sở dữ liệu sai | Phá thai trước khi gieo hạt |
+| Hạt giống một phần | Dọn dẹp các ID được tạo chính xác; đánh dấu chạy không thành công |
+| Xác nhận trình duyệt/API không thành công | Thu thập bằng chứng đã được biên tập lại; tiếp tục dọn dẹp |
+| Ủy quyền thành công bất ngờ | Coi như lỗi bảo mật; dừng dòng chảy hạ lưu; dọn dẹp |
+| Dọn dẹp chưa hoàn thành | Đánh dấu `FAILED_CLEANUP`; không đóng các nhiệm vụ phụ thuộc |
+| Các giả định tư vấn trôi dạt | Giữ ngoại lệ chưa được giải quyết; không tự động chỉnh sửa phần phụ thuộc |
+| Tìm kiếm bí mật cây làm việc Git | Không cam kết hoặc xóa cây làm việc Git |
+| Xác minh cam kết khôi phục không thành công | Không xóa cây làm việc Git |
 
-Không rollback bằng cách xóa hàng loạt hoặc reset repository. Mọi remediation phải giới hạn theo exact manifest IDs hoặc exact worktree path đã xác minh.
+Không hoàn tác bằng cách xóa hàng loạt hoặc đặt lại kho mã nguồn. Mọi khắc phục phải giới hạn theo
+chính xác tệp kê khai IDs hoặc chính xác cây làm việc Git path đã xác minh.
 
-## 13. Validation model
+## 13. Mô hình xác thực
 
-### L1 — Automated correctness
+### L1 - Tính chính xác tự động
 
-- existing unit/system/E2E/deployment suites;
-- traceability and contract checks;
-- frontend audit guard;
-- parameterized seed/cleanup assertions;
-- post-cleanup invariant queries;
-- `git diff --check` and changed-file review.
+- đơn vị/hệ thống/E2E/bộ triển khai hiện có;
+- truy vết và kiểm tra hợp đồng;
+- người bảo vệ kiểm toán giao diện;
+- xác nhận hạt giống/dọn dẹp được tham số hóa;
+- truy vấn bất biến sau dọn dẹp;
+- `git diff --check` và xem xét tệp đã thay đổi.
 
-### L2 — Spec and task conformance
+### L2 - Tuân thủ đặc tả và nhiệm vụ
 
-- map từng task được đóng tới acceptance criteria và evidence;
-- xác nhận không sửa business requirement;
-- xác nhận 3 việc ban đầu đều có result riêng, không gộp bằng một CI status.
+- map từng Nhiệm vụ được đóng tới tiêu chí chấp nhận và bằng chứng;
+- xác nhận không sửa nghiệp vụ yêu cầu;
+- xác nhận 3 việc ban đầu đều có kết quả riêng, không gộp bằng một CI trạng thái.
 
-### L3 — Security and privacy
+### L3 - Bảo mật và quyền riêng tư
 
-- synthetic-only identity/data;
-- no credential/token/log leakage;
-- server-side negative authorization;
-- least-privilege role assignment;
-- token revocation and account deactivation;
-- audit retained without hard-delete.
+- danh tính/dữ liệu chỉ tổng hợp;
+- không có rò rỉ thông tin xác thực/mã thông báo/nhật ký;
+- ủy quyền phủ định phía máy chủ;
+- phân công vai trò có đặc quyền ít nhất;
+- thu hồi mã thông báo và vô hiệu hóa tài khoản;
+- kiểm toán được giữ lại mà không cần xóa cứng.
 
-### L4 — Live staging acceptance
+### L4 - Chấp nhận môi trường tiền sản xuất trực tiếp
 
-- UI login and role navigation trên real staging hosts;
-- end-to-end cross-role business flow;
-- observed API/state transitions;
-- cleanup verified against staging database/runtime.
+- UI đăng nhập và vai trò navigation trên real môi trường tiền sản xuất hosts;
+- luồng kinh doanh đa vai trò từ đầu đến cuối;
+- quan sát sự chuyển đổi trạng thái/API;
+- đã xác minh dọn dẹp theo dàn database/runtime.
 
-## 14. Human gates and commit boundaries
+## 14. Cổng con người và ranh giới cam kết
 
-1. **Design gate:** tài liệu này được commit riêng và người dùng duyệt trước khi lập implementation plan.
-2. **Plan/H1 gate:** implementation plan phải liệt kê exact files, commands, Azure targets, run order và rollback. Phê duyệt plan mới cho phép tạo fixture, chạy live acceptance và tạo local recovery commit.
-3. **H2 gate:** sau khi chạy verification, review toàn bộ generated closeout diff và evidence trước khi commit/push implementation changes.
-4. **H3 gate:** merge PR chỉ sau CI/security/traceability checks và human approval theo project governance.
+1. **Cổng thiết kế:** tài liệu này được bản ghi Git riêng và người dùng duyệt trước khi lập triển khai kế hoạch.
+2. **Cổng kế hoạch/H1:** triển khai kế hoạch phải liệt kê chính xác tệp, commands, Azure targets, lượt chạy order và hoàn tác. Phê duyệt kế hoạch mới cho phép tạo dữ liệu kiểm thử, chạy nghiệm thu thực tế và tạo cục bộ recovery bản ghi Git.
+3. **Cổng H2:** sau khi chạy xác minh, rà soát toàn bộ generated khóa sổ khác biệt và bằng chứng trước khi bản ghi Git/đẩy lên kho từ xa triển khai changes.
+4. **H3 cổng:** hợp nhất PR chỉ sau CI/bảo mật/khả năng truy vết kiểm tra và human phê duyệt theo project quản trị.
 
-Staging fixture/cleanup là external state change nhưng nằm trong phạm vi đã thiết kế; nó vẫn không được thực thi ở design-only commit này.
+môi trường tiền sản xuất dữ liệu kiểm thử/dọn dẹp là external trạng thái change nhưng nằm trong phạm
+vi đã thiết
+kế; nó vẫn không được thực thi ở thiết kế-chỉ bản ghi Git này.
 
-## 15. Acceptance criteria for this batch
+## 15. Tiêu chí chấp nhận cho lô này
 
-Batch hoàn thành khi và chỉ khi:
+lô hoàn thành khi và chỉ khi:
 
-- PR #95 task/changelog closeout phản ánh đúng evidence;
-- authenticated staging flow có kết quả PASS, hoặc FAIL được ghi trung thực kèm cleanup đầy đủ;
-- mọi synthetic account/token/fixture đã inactive/terminal theo cleanup contract;
-- task chỉ đóng đúng phần có evidence, phần khác vẫn mở;
-- React Router exception có current evidence, owner và review trigger;
-- dirty worktree được bảo toàn bằng verified local recovery commit trước khi remove;
-- clean merged worktrees được remove an toàn;
-- full verification sau thay đổi không tạo regression;
-- final report nêu exact branch/commit/PR/run và các residual risks.
+- PR #95 Nhiệm vụ/changelog khóa sổ phản ánh đúng bằng chứng;
+- authenticated môi trường tiền sản xuất luồng có kết quả đạt, hoặc không đạt được ghi trung thực kèm dọn dẹp đầy đủ;
+- mọi tổng hợp tài khoản/token/dữ liệu kiểm thử đã không hoạt động/terminal theo dọn dẹp hợp đồng;
+- Nhiệm vụ chỉ đóng đúng phần có bằng chứng, phần khác vẫn mở;
+- React Router exception có hiện tại bằng chứng, owner và rà soát trigger;
+- dirty cây làm việc Git được bảo toàn bằng verified cục bộ recovery bản ghi Git trước khi remove;
+- clean merged cây làm việc Git được remove an toàn;
+- đầy đủ xác minh sau thay đổi không tạo regression;
+- final báo cáo nêu chính xác nhánh/bản ghi Git/PR/lượt chạy và các rủi ro còn lại.
 
-Nếu live scenario FAIL nhưng cleanup PASS, batch có thể hoàn thành về mặt điều tra/evidence nhưng không được tuyên bố release closeout thành công và không được đóng task phụ thuộc scenario.
+Nếu live scenario không đạt nhưng dọn dẹp đạt, lô có thể hoàn thành về mặt điều tra/bằng chứng
+nhưng không được tuyên bố khóa sổ phát hành thành công và không được đóng Nhiệm vụ phụ thuộc scenario.

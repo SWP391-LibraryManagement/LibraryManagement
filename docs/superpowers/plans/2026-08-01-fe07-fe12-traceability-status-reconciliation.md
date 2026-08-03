@@ -1,90 +1,94 @@
-# FE07-FE12 Traceability Status Reconciliation Implementation Plan
+# FE07-Kế hoạch thực hiện đối chiếu trạng thái truy vết FE12
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Đối với nhân viên đại lý:** SUB-SKILL BẮT BUỘC: Sử dụng siêu năng lực:phát triển theo định hướng phụ (được khuyến nghị) hoặc siêu năng lực:thực hiện các kế hoạch để triển khai kế hoạch này theo từng nhiệm vụ. Các bước sử dụng cú pháp hộp kiểm (`- [ ]`) để theo dõi.
 
 **Goal:** Đồng bộ trạng thái trong bốn ma trận truy vết với trạng thái phát hành `COMPLETE` và ngăn sai lệch quay lại.
 
-**Architecture:** Mở rộng kiểm tra trạng thái truy vết hiện có để phân tích riêng Phần 16 của bốn `SPEC.md`, sau đó chuẩn hóa duy nhất cột trạng thái của các hàng yêu cầu. Không thay đổi code sản phẩm hoặc hợp đồng nghiệp vụ.
+**kiến trúc:** Mở rộng kiểm tra trạng thái truy vết hiện có để phân tích riêng Phần 16 của bốn
+`SPEC.md`, sau đó chuẩn hóa duy nhất cột trạng thái của các hàng yêu cầu. Không thay đổi mã nguồn
+sản phẩm hoặc hợp đồng nghiệp vụ.
 
-**Tech Stack:** Node.js `node:test`, Markdown SDD, npm scripts hiện có.
+**Tech bộ công nghệ:** Node.js `node:test`, Markdown SDD, npm scripts hiện có.
 
-## Global Constraints
+## Ràng buộc toàn cầu
 
 - Chỉ sửa FE07, FE08, FE10, FE12 và kiểm tra trạng thái truy vết liên quan.
-- Giữ nguyên ID, ánh xạ use case, bằng chứng kiểm thử và trạng thái vòng đời nghiệp vụ.
-- Không bổ sung dependency.
-- Mọi feature có `Implementation State: COMPLETE` trong phạm vi phải có toàn bộ hàng ma trận ở trạng thái `Hoàn thành`.
+- Giữ nguyên ID, ánh xạ sử dụng case, bằng chứng kiểm thử và trạng thái vòng đời nghiệp vụ.
+- Không bổ sung phụ thuộc.
+- Mọi chức năng có `Implementation State: COMPLETE` trong phạm vi phải có toàn bộ hàng ma trận ở trạng thái `Hoàn thành`.
 
 ---
 
-### Task 1: Khóa quy tắc trạng thái ma trận bằng kiểm tra hồi quy
+### Nhiệm vụ 1: Khóa quy tắc trạng thái ma trận bằng kiểm tra hồi quy
 
-**Files:**
-- Modify: `scripts/traceability-state.test.js`
-- Test: `scripts/traceability-state.test.js`
+**Tệp:**
+- Sửa đổi: `scripts/traceability-state.test.js`
+- Kiểm tra: `scripts/traceability-state.test.js`
 
-**Interfaces:**
-- Consumes: Bốn `SPEC.md`, tiêu đề `## 16. Ma trận truy vết`, cột cuối `Trạng thái`.
-- Produces: Kiểm tra `node:test` thất bại nếu một hàng yêu cầu trong Phần 16 không kết thúc bằng `Hoàn thành`.
+**Giao diện:**
+- đầu vào: Bốn `SPEC.md`, tiêu đề `## 16. Ma trận truy vết`, cột cuối `Trạng thái`.
+- đầu ra: Kiểm tra `node:test` thất bại nếu một hàng yêu cầu trong Phần 16 không kết thúc bằng `Hoàn thành`.
 
-- [x] **Step 1: Viết kiểm tra thất bại**
+- [x] **Bước 1: Viết kiểm tra thất bại**
 
 Thêm helper lấy nội dung từ `## 16. Ma trận truy vết` đến `## 17.` và tách
 các hàng Markdown có ô đầu chứa ID `BR-`, `FR-`, `AC-` hoặc `NFR-`. Khẳng
 định ô cuối của mỗi hàng bằng `Hoàn thành`.
 
-- [x] **Step 2: Chạy kiểm tra để xác nhận RED**
+- [x] **Bước 2: Chạy kiểm tra để xác nhận RED**
 
-Run: `npm run test:traceability-state`
+Chạy: `npm run test:traceability-state`
 
-Expected: FAIL và nêu đúng feature/hàng còn trạng thái `Sẵn sàng`, `Đã lên kế hoạch` hoặc `Đang chờ`.
+mong đợi: không đạt và nêu đúng chức năng/hàng còn trạng thái `Sẵn sàng`, `Đã lên kế hoạch` hoặc `Đang chờ`.
 
-- [x] **Step 3: Căn chỉnh kỳ vọng tiêu đề đã Việt hóa**
+- [x] **Bước 3: Căn chỉnh kỳ vọng tiêu đề đã Việt hóa**
 
 Đổi biểu thức tiêu đề phát hành sang
 `Trạng thái: HOÀN THÀNH; PR #89 ĐÃ HỢP NHẤT; CI VÀ AZURE ĐÃ CHẠY THÀNH CÔNG TRÊN ĐÚNG COMMIT`
 để kiểm tra phản ánh văn bản chuẩn hiện tại.
 
-### Task 2: Chuẩn hóa bốn ma trận
+### Nhiệm vụ 2: Chuẩn hóa bốn ma trận
 
-**Files:**
-- Modify: `.sdd/specs/feat-borrowing-management/SPEC.md`
-- Modify: `.sdd/specs/feat-reservation-management/SPEC.md`
-- Modify: `.sdd/specs/feat-notification-management/SPEC.md`
-- Modify: `.sdd/specs/feat-reporting-statistics/SPEC.md`
-- Test: `scripts/traceability-state.test.js`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-borrowing-management/SPEC.md`
+- Sửa đổi: `.sdd/specs/feat-reservation-management/SPEC.md`
+- Sửa đổi: `.sdd/specs/feat-notification-management/SPEC.md`
+- Sửa đổi: `.sdd/specs/feat-reporting-statistics/SPEC.md`
+- Kiểm tra: `scripts/traceability-state.test.js`
 
-**Interfaces:**
-- Consumes: Các hàng yêu cầu trong Phần 16 và bằng chứng hiện có ở các cột trước.
-- Produces: Mọi hàng yêu cầu trong Phần 16 kết thúc bằng `| Hoàn thành |`.
+**Giao diện:**
+- đầu vào: Các hàng yêu cầu trong Phần 16 và bằng chứng hiện có ở các cột trước.
+- đầu ra: Mọi hàng yêu cầu trong Phần 16 kết thúc bằng `| Hoàn thành |`.
 
-- [x] **Step 1: Sửa tối thiểu cột trạng thái**
+- [x] **Bước 1: Sửa tối thiểu cột trạng thái**
 
 Thay duy nhất ô cuối của mỗi hàng yêu cầu trong Phần 16 thành `Hoàn thành`;
 không thay nội dung các ô trước.
 
-- [x] **Step 2: Chạy kiểm tra để xác nhận GREEN**
+- [x] **Bước 2: Chạy kiểm tra để xác nhận GREEN**
 
-Run: `npm run test:traceability-state`
+Chạy: `npm run test:traceability-state`
 
-Expected: PASS toàn bộ kiểm tra.
+mong đợi: đạt toàn bộ kiểm tra.
 
-- [x] **Step 3: Xác minh hồi quy tài liệu và truy vết**
+- [x] **Bước 3: Xác minh hồi quy tài liệu và truy vết**
 
-Run: `node --test scripts/fe07-fe12-vietnamese-semantics.test.js`
+Chạy: `node --test scripts/fe07-fe12-vietnamese-semantics.test.js`
 
-Expected: PASS 4/4.
+Dự kiến: ĐẠT 4/4.
 
-Run: `npm run trace:enforce`
+Chạy: `npm run trace:enforce`
 
-Expected: PASS; FE07 44/44, FE08 39/39, FE10 20/20, FE12 15/15.
+Dự kiến: ĐẠT; FE07 44/44, FE08 39/39, FE10 20/20, FE12 15/15.
 
-Run: `git diff --check`
+Chạy: `git diff --check`
 
-Expected: không có lỗi khoảng trắng.
+mong đợi: không có lỗi khoảng trắng.
 
-- [x] **Step 4: Rà soát phạm vi diff**
+- [x] **Bước 4: Rà soát phạm vi khác biệt**
 
-Run: `git diff --stat` và `git diff -- scripts/traceability-state.test.js .sdd/specs/feat-borrowing-management/SPEC.md .sdd/specs/feat-reservation-management/SPEC.md .sdd/specs/feat-notification-management/SPEC.md .sdd/specs/feat-reporting-statistics/SPEC.md`
+lượt chạy: `git diff --stat` và `git khác biệt -- scripts/traceability-state.test.js
+.sdd/specs/feat-borrowing-management/SPEC.md .sdd/specs/feat-reservation-management/SPEC.md
+.sdd/specs/feat-notification-management/SPEC.md .sdd/specs/feat-reporting-statistics/SPEC.md`
 
-Expected: chỉ có test trạng thái và cột cuối của bốn ma trận thay đổi.
+mong đợi: chỉ có kiểm thử trạng thái và cột cuối của bốn ma trận thay đổi.

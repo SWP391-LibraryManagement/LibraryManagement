@@ -1,41 +1,48 @@
-# Pre-Azure Release Remediation Implementation Plan
+# Kế hoạch triển khai khắc phục sự cố phát hành trước Azure
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:executing-plans` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Đối với nhân viên đại lý:** BẮT BUỘC SUB-SKILL: Sử dụng `superpowers:executing-plans` để triển khai kế hoạch này theo từng nhiệm vụ. Các bước sử dụng cú pháp hộp kiểm (`- [ ]`) để theo dõi.
 
-**Goal:** Hoàn tất các sửa chữa FE07/FE08, release preparation, credential rotation và governance không cần Azure SQL staging đang online.
+**Goal:** Hoàn tất các sửa chữa FE07/FE08, phát hành preparation, credential rotation và quản trị
+không cần Azure SQL môi trường tiền sản xuất đang online.
 
-**Architecture:** Giữ nguyên ownership hiện tại: FE07 sở hữu transaction mượn/trả, FE08 sở hữu queue/hold, FE10 sở hữu notification request và FE12 chỉ đọc aggregate. Handoff FE07 chỉ là read-only projection; không thêm API hoặc schema mới. Workflow chỉ xác minh migration/hash, còn việc chạy SQL vẫn do operator thực hiện sau khi database hết `Paused`.
+**kiến trúc:** Giữ nguyên quyền sở hữu hiện tại: FE07 sở hữu giao dịch mượn/trả, FE08 sở hữu
+queue/hold, FE10 sở hữu thông báo yêu cầu và FE12 chỉ đọc aggregate. bàn giao FE07 chỉ là
+chỉ đọc dữ liệu chiếu; không thêm API hoặc lược đồ mới. quy trình chỉ xác minh di chuyển dữ
+liệu/hash, còn việc
+chạy SQL vẫn do operator thực hiện sau khi cơ sở dữ liệu hết `Paused`.
 
-**Tech Stack:** Node.js + Express + Jest + React/Vite + Node test runner + GitHub Actions + Azure CLI + SQL Server.
+**bộ công nghệ công nghệ:** Node.js + Express + Jest + React/Vite + Trình chạy thử nút + Hành động
+GitHub + Azure CLI + SQL Server.
 
-## Global Constraints
+## Ràng buộc toàn cầu
 
-- Core behavior phải tuân theo SPEC/PLAN/TASKS hiện hành của FE07/FE08/FE10/FE12.
-- Không mở rộng schema, API, actor boundary hoặc transaction ownership.
-- `DAMAGED`/`LOST` không được phát ra queue handoff có thể xử lý như bản sao `AVAILABLE`.
-- Handoff FE08 lỗi thời không được tự chuyển sang `copyId` khác.
-- Không ghi credential vào repo, `.env`, fixture, log hoặc output.
-- Không bật tính phí, resume database, chạy `sqlcmd`, deploy staging hoặc tạo release tag trong plan này.
-- Mọi thay đổi behavior phải có test hồi quy và cập nhật CHANGELOG/SDD.
+- lõi behavior phải tuân theo SPEC/PLAN/TASKS hiện hành của FE07/FE08/FE10/FE12.
+- Không mở rộng lược đồ, API, tác nhân ranh giới hoặc giao dịch quyền sở hữu.
+- `DAMAGED`/`LOST` không được phát ra queue bàn giao có thể xử lý như bản sao `AVAILABLE`.
+- bàn giao FE08 lỗi thời không được tự chuyển sang `copyId` khác.
+- Không ghi credential vào repo, `.env`, dữ liệu kiểm thử, log hoặc output.
+- Không bật tính phí, resume cơ sở dữ liệu, chạy `sqlcmd`, deploy môi trường tiền sản xuất hoặc tạo phát hành tag trong kế hoạch này.
+- Mọi thay đổi behavior phải có kiểm thử hồi quy và cập nhật CHANGELOG/SDD.
 
 ---
 
-### Task 1: Khóa FE07 return handoff theo trạng thái bản sao
+### Nhiệm vụ 1: Khóa FE07 trả sách bàn giao theo trạng thái bản sao
 
-**Files:**
-- Modify: `backend/src/repositories/borrowingRepository.js:1435-1503`
-- Test: `backend/tests/borrowingRoutes.test.js` (các test return có reservation queue)
-- Test: `backend/tests/borrowingRepository.test.js` (contract/source assertions hiện hành)
-- Modify: `backend/tests/helpers/inMemoryBorrowingRepositories.js:818-827`
-- Modify: `.sdd/specs/feat-borrowing-management/CHANGELOG.md`
+**Tệp:**
+- Sửa đổi: `backend/src/repositories/borrowingRepository.js:1435-1503`
+- kiểm thử: `backend/tests/borrowingRoutes.test.js` (các kiểm thử trả sách có hàng đợi đặt chỗ)
+- kiểm thử: `backend/tests/borrowingRepository.test.js` (hợp đồng/nguồn assertions hiện hành)
+- Sửa đổi: `backend/tests/helpers/inMemoryBorrowingRepositories.js:818-827`
+- Sửa đổi: `.sdd/specs/feat-borrowing-management/CHANGELOG.md`
 
-**Interfaces:**
-- Consumes: `returnBorrowDetail({ borrowDetailId, condition, ... })`.
-- Produces: response `reservationQueueAction` giữ nguyên shape `{ copyId, hasActiveQueue, actionPath }`; chỉ thay đổi giá trị `hasActiveQueue`.
+**Giao diện:**
+- Tiêu thụ: `returnBorrowDetail({ borrowDetailId, condition, ... })`.
+- đầu ra: phản hồi `reservationQueueAction` giữ nguyên shape `{ copyId, hasActiveQueue, actionPath }`; chỉ thay đổi giá trị `hasActiveQueue`.
 
-- [ ] **Step 1: Add the failing regression assertions**
+- [ ] **Bước 1: Thêm các xác nhận hồi quy thất bại**
 
-Trong test return route, giữ test `NORMAL` hiện tại và thêm hai ca dùng cùng fixture có `ACTIVE` reservation:
+Trong kiểm thử trả sách tuyến, giữ kiểm thử `NORMAL` hiện tại và thêm hai ca dùng cùng dữ liệu kiểm
+thử có `ACTIVE` đặt chỗ:
 
 ```js
 test.each(['DAMAGED', 'LOST'])(
@@ -57,21 +64,23 @@ test.each(['DAMAGED', 'LOST'])(
 );
 ```
 
-Trong in-memory repository test/fixture, bảo đảm `hasActiveQueue` được tính từ điều kiện `detailStatus === 'RETURNED'`, để regression không chỉ phụ thuộc SQL implementation.
+Trong in-memory kho mã nguồn kiểm thử/dữ liệu kiểm thử, bảo đảm `hasActiveQueue` được tính từ điều
+kiện `detailStatus === 'RETURNED'`, để regression không chỉ phụ thuộc SQL triển khai.
 
-- [ ] **Step 2: Run the focused tests and verify RED**
+- [ ] **Bước 2: Chạy kiểm thử tập trung và xác minh RED**
 
-Run:
+Chạy:
 
 ```powershell
 npm --prefix backend test -- --runTestsByPath tests/borrowingRoutes.test.js tests/borrowingRepository.test.js
 ```
 
-Expected: test mới fail vì code hiện tại trả `hasActiveQueue: true` cho `DAMAGED/LOST`; các test cũ khác vẫn chạy để xác nhận failure cùng một root cause.
+mong đợi: kiểm thử mới không đạt vì mã nguồn hiện tại trả `hasActiveQueue: true` cho `DAMAGED/LOST`; các
+kiểm thử cũ khác vẫn chạy để xác nhận không đạt cùng một root cause.
 
-- [ ] **Step 3: Implement the smallest root-cause fix**
+- [ ] **Bước 3: Thực hiện khắc phục nguyên nhân gốc rễ nhỏ nhất**
 
-Trong `authoritativeReturn`, thay:
+Trong `authoritativeReturn`, thay thế:
 
 ```js
 hasActiveQueue: reservationQueueResult.recordset.some((row) => row.Status === 'ACTIVE'),
@@ -85,38 +94,40 @@ hasActiveQueue: detailStatus === 'RETURNED'
   && reservationQueueResult.recordset.some((row) => row.Status === 'ACTIVE'),
 ```
 
-Áp dụng cùng điều kiện trong `backend/tests/helpers/inMemoryBorrowingRepositories.js`. Không xóa hoặc tự chuyển reservation.
+Áp dụng cùng điều kiện trong `backend/tests/helpers/inMemoryBorrowingRepositories.js`. Không xóa
+hoặc tự chuyển đặt chỗ.
 
-- [ ] **Step 4: Run the focused tests and verify GREEN**
+- [ ] **Bước 4: Chạy kiểm thử tập trung và xác minh GREEN**
 
-Run:
+Chạy:
 
 ```powershell
 npm --prefix backend test -- --runTestsByPath tests/borrowingRoutes.test.js tests/borrowingRepository.test.js
 ```
 
-Expected: all focused tests pass, gồm `NORMAL` handoff `true` và `DAMAGED/LOST` handoff `false`.
+mong đợi: tất cả focused tests đạt, gồm `NORMAL` bàn giao `true` và `DAMAGED/LOST` bàn giao `false`.
 
-- [ ] **Step 5: Update traceability/changelog**
+- [ ] **Bước 5: Cập nhật khả năng truy vết/thay đổi**
 
-Ghi rõ `BR-FE07-012`, `BR-FE07-013`, `FR-FE07-007` và connected-flow handoff trong changelog; không thay đổi SPEC rule.
+Ghi rõ `BR-FE07-012`, `BR-FE07-013`, `FR-FE07-007` và connected-luồng bàn giao trong changelog;
+không thay đổi SPEC quy tắc.
 
 ---
 
-### Task 2: Giữ nguyên handoff `copyId` khi FE08 tải trạng thái lỗi thời
+### Nhiệm vụ 2: Giữ nguyên bàn giao `copyId` khi FE08 tải trạng thái lỗi thời
 
-**Files:**
-- Modify: `frontend/src/page/reservation/ReservationsLibrarianPage.jsx:7-126, 390-430`
-- Test: `frontend/test/*.test.js` (test FE08 librarian handoff hiện hành)
-- Modify: `.sdd/specs/feat-reservation-management/CHANGELOG.md`
+**Tệp:**
+- Sửa đổi: `frontend/src/page/reservation/ReservationsLibrarianPage.jsx:7-126, 390-430`
+- kiểm thử: `frontend/test/*.test.js` (kiểm thử FE08 thủ thư bàn giao hiện hành)
+- Sửa đổi: `.sdd/specs/feat-reservation-management/CHANGELOG.md`
 
-**Interfaces:**
-- Consumes: `location.state.copyId` từ FE07.
-- Produces: queue view đúng bản sao hoặc cảnh báo stale state; không thay đổi API payload/mutation.
+**Giao diện:**
+- đầu vào: `location.state.copyId` từ FE07.
+- đầu ra: queue view đúng bản sao hoặc cảnh báo stale trạng thái; không thay đổi API dữ liệu gửi/thao tác ghi.
 
-- [ ] **Step 1: Add the failing source-level regression test**
+- [ ] **Bước 1: Thêm kiểm thử hồi quy cấp nguồn không thành công**
 
-Thêm test đọc source để khóa hai hành vi:
+Thêm kiểm thử đọc nguồn để khóa hai hành vi:
 
 ```js
 test('FE08 does not fallback from a stale FE07 handoff to another active copy', () => {
@@ -131,21 +142,21 @@ test('FE08 does not fallback from a stale FE07 handoff to another active copy', 
 });
 ```
 
-Giữ nguyên test hiện hành chứng minh handoff hợp lệ mở đúng `copyId`.
+Giữ nguyên kiểm thử hiện hành chứng minh bàn giao hợp lệ mở đúng `copyId`.
 
-- [ ] **Step 2: Run the focused frontend test and verify RED**
+- [ ] **Bước 2: Chạy kiểm thử giao diện người dùng tập trung và xác minh RED**
 
-Run:
+Chạy:
 
 ```powershell
 npm --prefix frontend test -- --test-name-pattern "handoff"
 ```
 
-Expected: test mới fail vì `loadReservations()` đang fallback sang active copy đầu tiên.
+mong đợi: kiểm thử mới không đạt vì `loadReservations()` đang fallback sang bản sao đang mượn đầu tiên.
 
-- [ ] **Step 3: Implement exact-copy stale handling**
+- [ ] **Bước 3: Triển khai xử lý bản sao cũ chính xác**
 
-Thêm `useRef` để tiêu thụ handoff một lần:
+Thêm `useRef` để tiêu thụ bàn giao một lần:
 
 ```js
 const pendingHandoffCopyId = useRef(initialQueueCopyId);
@@ -180,41 +191,43 @@ if (requestedCopyId) {
 
 Render `queueNotice` bằng `DataNotice` trong queue panel, cùng nút chuyển về danh sách/chọn thủ công. Không gọi `processQueue` tự động.
 
-- [ ] **Step 4: Run the focused frontend tests and verify GREEN**
+- [ ] **Bước 4: Chạy kiểm thử giao diện người dùng tập trung và xác minh GREEN**
 
-Run:
+Chạy:
 
 ```powershell
 npm --prefix frontend test -- --test-name-pattern "handoff|queue"
 ```
 
-Expected: handoff hợp lệ vẫn đúng `copyId`, handoff stale không đổi sang copy khác, queue tests hiện hành pass.
+mong đợi: bàn giao hợp lệ vẫn đúng `copyId`, bàn giao stale không đổi sang copy khác, queue tests
+hiện hành đạt.
 
-- [ ] **Step 5: Update FE08 changelog**
+- [ ] **Bước 5: Cập nhật nhật ký thay đổi FE08**
 
-Ghi `FR-FE08-039` và connected-flow stale-state behavior; giữ action path allowlist hiện tại.
+Ghi `FR-FE08-039` và connected-luồng stale-trạng thái behavior; giữ hành động path danh sách cho
+phép hiện tại.
 
 ---
 
-### Task 3: Đưa migration FE10 mới vào release gate và đồng bộ SDD
+### Nhiệm vụ 3: Đưa di chuyển dữ liệu FE10 mới vào phát hành cổng và đồng bộ SDD
 
-**Files:**
-- Modify: `.github/workflows/deploy-staging.yml:45-78, 91`
-- Modify: `docs/deployment/azure-staging-guide.md:160-247, 381-390`
-- Modify: `.sdd/specs/feat-borrowing-management/{SPEC.md,PLAN.md,TASKS.md,TEST_PLAN.md,CONTEXT.md,CHANGELOG.md}`
-- Modify: `.sdd/specs/feat-reservation-management/{SPEC.md,PLAN.md,TASKS.md,TEST_PLAN.md,CONTEXT.md,CHANGELOG.md}`
-- Modify: `.sdd/specs/feat-notification-management/{SPEC.md,PLAN.md,TASKS.md,TEST_PLAN.md,CONTEXT.md,CHANGELOG.md}`
-- Modify: `.sdd/specs/feat-reporting-statistics/{SPEC.md,PLAN.md,TASKS.md,TEST_PLAN.md,CONTEXT.md,CHANGELOG.md}`
-- Test: `backend/tests/notificationInboxMigration.test.js`
-- Test: `tests/deployment/*.test.js`
+**Tệp:**
+- Sửa đổi: `.github/workflows/deploy-staging.yml:45-78, 91`
+- Sửa đổi: `docs/deployment/azure-staging-guide.md:160-247, 381-390`
+- Sửa đổi: `.sdd/specs/feat-borrowing-management/{SPEC.md,PLAN.md,TASKS.md,TEST_PLAN.md,CONTEXT.md,CHANGELOG.md}`
+- Sửa đổi: `.sdd/specs/feat-reservation-management/{SPEC.md,PLAN.md,TASKS.md,TEST_PLAN.md,CONTEXT.md,CHANGELOG.md}`
+- Sửa đổi: `.sdd/specs/feat-notification-management/{SPEC.md,PLAN.md,TASKS.md,TEST_PLAN.md,CONTEXT.md,CHANGELOG.md}`
+- Sửa đổi: `.sdd/specs/feat-reporting-statistics/{SPEC.md,PLAN.md,TASKS.md,TEST_PLAN.md,CONTEXT.md,CHANGELOG.md}`
+- Kiểm tra: `backend/tests/notificationInboxMigration.test.js`
+- Kiểm tra: `tests/deployment/*.test.js`
 
-**Interfaces:**
-- Consumes: `database/migrations/2026-07-29-fe10-borrowing-result-templates.sql`.
-- Produces: deterministic migration SHA gate for future deployment; no database execution in CI.
+**Giao diện:**
+- Tiêu thụ: `database/migrations/2026-07-29-fe10-borrowing-result-templates.sql`.
+- Tạo ra: cổng SHA di chuyển xác định để triển khai trong tương lai; không thực thi cơ sở dữ liệu trong CI.
 
-- [ ] **Step 1: Add the failing deployment/migration assertions**
+- [ ] **Bước 1: Thêm xác nhận triển khai/di chuyển không thành công**
 
-Add assertions that the deploy workflow and guide mention the new migration and expected SHA variable:
+Thêm xác nhận rằng quy trình triển khai và hướng dẫn đề cập đến việc di chuyển mới và biến SHA dự kiến:
 
 ```js
 assert.match(deployWorkflow, /2026-07-29-fe10-borrowing-result-templates\.sql/);
@@ -222,43 +235,47 @@ assert.match(deployWorkflow, /FE10_BORROWING_RESULT_TEMPLATES_SHA256/);
 assert.match(stagingGuide, /2026-07-29-fe10-borrowing-result-templates\.sql/);
 ```
 
-Run:
+Chạy:
 
 ```powershell
 npm run test:deployment
 ```
 
-Expected: new assertions fail before workflow/docs changes.
+Dự kiến: các xác nhận mới không thành công trước khi thay đổi quy trình làm việc/tài liệu.
 
-- [ ] **Step 2: Implement the migration hash gate**
+- [ ] **Bước 2: Triển khai cổng băm di chuyển**
 
-Extend the existing migration preflight to read the new file, normalize LF/CRLF exactly as the old gate does, compare to `FE10_BORROWING_RESULT_TEMPLATES_SHA256`, and fail before deployment if absent/mismatched. Keep the operator-owned “apply twice” instruction; do not call `sqlcmd` from the workflow.
+Mở rộng quá trình di chuyển trước hiện có để đọc tệp mới, chuẩn hóa LF/CRLF chính xác như cổng cũ,
+so sánh với `FE10_BORROWING_RESULT_TEMPLATES_SHA256` và không thành công trước khi triển khai nếu
+vắng mặt/không khớp. Giữ hướng dẫn “áp dụng hai lần” do nhà điều hành sở hữu; không gọi `sqlcmd` từ
+quy trình làm việc.
 
-- [ ] **Step 3: Update the Azure guide**
+- [ ] **Bước 3: Cập nhật hướng dẫn Azure**
 
-Add the migration to the ordered list and document:
+Thêm di chuyển vào danh sách và tài liệu được sắp xếp:
 
 ```text
-1. Apply 2026-07-29-fe10-borrowing-result-templates.sql twice with sqlcmd -b.
-2. Verify BORROW_REQUEST_APPROVED, BORROW_REQUEST_REJECTED and BORROW_RENEWED are active.
-3. Set FE10_BORROWING_RESULT_TEMPLATES_SHA256 to the exact normalized file hash.
+1. Áp dụng 2026-07-29-fe10-borrowing-result-templates.sql hai lần bằng sqlcmd -b.
+2. Xác minh BORROW_REQUEST_APPROVED, BORROW_REQUEST_REJECTED và BORROW_RENEWED đang hoạt động.
+3. Đặt FE10_BORROWING_RESULT_TEMPLATES_SHA256 thành đúng giá trị băm của tệp đã chuẩn hóa.
 ```
 
-Mark this step `BLOCKED` until Azure SQL is online; do not claim it was applied.
+Đánh dấu bước này `BLOCKED` cho đến khi Azure SQL trực tuyến; không cho rằng nó đã được áp dụng.
 
-- [ ] **Step 4: Synchronize feature statuses**
+- [ ] **Bước 4: Đồng bộ trạng thái chức năng**
 
-Replace stale “CHỜ H3/MERGE” and “UNCOMMITTED PENDING H2 APPROVAL” headers with a precise post-merge state:
+Replace stale “CHỜ H3/hợp nhất” và “UNCOMMITTED đang chờ H2 APPROVAL” headers với a precise post-hợp
+nhất trạng thái:
 
 ```text
 Trạng thái: MERGED ON MAIN; POST-MERGE CI PASSED; AZURE STAGING BLOCKED BY PAUSED SQL QUOTA
 ```
 
-Keep human Azure acceptance unchecked and preserve historical changelog entries.
+Không chọn việc chấp nhận Azure của con người và lưu giữ các mục nhật ký thay đổi lịch sử.
 
-- [ ] **Step 5: Run deployment/traceability checks**
+- [ ] **Bước 5: Chạy kiểm tra triển khai/truy vết**
 
-Run:
+Chạy:
 
 ```powershell
 npm run test:deployment
@@ -267,25 +284,27 @@ npm run trace:enforce
 git diff --check
 ```
 
-Expected: all automated checks pass; no statement says Azure migration or authenticated staging acceptance passed.
+Dự kiến: tất cả các bước kiểm tra tự động đều đạt; không có tuyên bố nào cho biết quá trình di
+chuyển Azure hoặc quá trình chấp nhận giai đoạn được xác thực đã được thông qua.
 
 ---
 
-### Task 4: Add tracked-file secret scanning without introducing a dependency
+### Nhiệm vụ 4: Thêm chức năng quét bí mật tệp được theo dõi mà không cần phụ thuộc
 
-**Files:**
-- Create: `scripts/check-tracked-secrets.js`
-- Create: `scripts/check-tracked-secrets.test.js`
-- Modify: `package.json`
-- Modify: `.github/workflows/ci.yml`
+**Tệp:**
+- Tạo: `scripts/check-tracked-secrets.js`
+- Tạo: `scripts/check-tracked-secrets.test.js`
+- Sửa đổi: `package.json`
+- Sửa đổi: `.github/workflows/ci.yml`
 
-**Interfaces:**
-- Consumes: Git tracked paths from `git ls-files -z`.
-- Produces: exit code `0` when no high-confidence secret pattern is found; non-zero with file path and pattern name only, never the matched value.
+**Giao diện:**
+- Tiêu thụ: Đường dẫn được theo dõi Git từ `git ls-files -z`.
+- Tạo ra: mã thoát `0` khi không tìm thấy mẫu bí mật có độ tin cậy cao; khác 0 chỉ có đường dẫn tệp và tên mẫu, không bao giờ có giá trị khớp.
 
-- [ ] **Step 1: Write the failing scanner tests**
+- [ ] **Bước 1: Viết các kiểm thử máy quét không thành công**
 
-Create tests with temporary files containing a synthetic AWS key and a database URL password, plus a safe fixture:
+Tạo kiểm thử với các tệp tạm thời chứa khóa AWS tổng hợp và mật khẩu cơ sở dữ liệu URL, cùng với một
+thiết bị cố định an toàn:
 
 ```js
 test('fails on high-confidence credential patterns without printing values', () => {
@@ -303,34 +322,37 @@ test('allows marked synthetic test passwords', () => {
 });
 ```
 
-- [ ] **Step 2: Run scanner tests and verify RED**
+- [ ] **Bước 2: Chạy kiểm thử máy quét và xác minh RED**
 
-Run:
+Chạy:
 
 ```powershell
 node --test scripts/check-tracked-secrets.test.js
 ```
 
-Expected: fail because the scanner script does not exist.
+Dự kiến: không thành công vì tập lệnh quét không tồn tại.
 
-- [ ] **Step 3: Implement the minimal scanner**
+- [ ] **Bước 3: Triển khai trình quét tối thiểu**
 
-Use Node built-ins only. Read tracked files as buffers, skip binary files, normalize text, detect only high-confidence patterns (AWS access key, private key header, Azure publish profile XML secret, connection string password, and JWT-like assignment), support one-line `secret-scan: allow-synthetic` only for that line, and print only `path: pattern-name`.
+Chỉ sử dụng các phần mềm tích hợp sẵn của Node. Đọc các tệp được theo dõi dưới dạng bộ đệm, bỏ qua
+tệp nhị phân, chuẩn hóa văn bản, chỉ phát hiện các mẫu có độ tin cậy cao (khóa truy cập AWS, tiêu đề
+khóa riêng, Azure xuất bản hồ sơ bí mật XML, mật khẩu chuỗi kết nối và gán giống JWT), chỉ hỗ trợ
+`secret-scan: allow-synthetic` một dòng cho dòng đó và chỉ in `path: pattern-name`.
 
-- [ ] **Step 4: Wire the scanner into CI**
+- [ ] **Bước 4: Đấu dây máy quét vào CI**
 
-Add:
+Thêm:
 
 ```yaml
 - name: Secret literal scan
   run: npm run test:secrets
 ```
 
-Run before dependency audits. Keep `npm audit --audit-level=high` unchanged.
+Chạy trước khi kiểm tra phần phụ thuộc. Giữ `npm audit --audit-level=high` không thay đổi.
 
-- [ ] **Step 5: Verify scanner and CI contract**
+- [ ] **Bước 5: Xác minh máy quét và hợp đồng CI**
 
-Run:
+Chạy:
 
 ```powershell
 node --test scripts/check-tracked-secrets.test.js
@@ -338,24 +360,25 @@ npm run test:deployment
 git grep -n -I -E "(AKIA[0-9A-Z]{16}|BEGIN (RSA|OPENSSH|EC) PRIVATE KEY|password=.{8,})" -- ':!scripts/check-tracked-secrets.test.js' ':!docs/superpowers/plans/2026-07-29-pre-azure-release-remediation.md'
 ```
 
-Expected: scanner tests pass, known synthetic fixtures are allowlisted, and the final grep produces no real credential value.
+Dự kiến: các kiểm thử máy quét đã vượt qua, các thiết bị cố định tổng hợp đã biết được đưa vào danh
+sách cho phép và grep cuối cùng không tạo ra giá trị thông tin xác thực thực sự.
 
 ---
 
-### Task 5: Rotate SQL credential without exposing the new value
+### Nhiệm vụ 5: Xoay thông tin xác thực SQL mà không làm lộ giá trị mới
 
-**Files:**
-- No repository file changes.
-- External state: Azure SQL logical server admin password and App Service `DB_PASSWORD`; update GitHub Actions secret only if an existing matching secret is present.
-- Evidence: `.sdd/reviews/` or task log must contain only masked names/status, never the value.
+**Tệp:**
+- Không có thay đổi tập tin kho lưu trữ.
+- Trạng thái bên ngoài: Azure SQL mật khẩu quản trị viên máy chủ logic và App Service `DB_PASSWORD`; chỉ cập nhật Bí mật hành động GitHub nếu có bí mật phù hợp hiện có.
+- Bằng chứng: `.sdd/reviews/` hoặc nhật ký tác vụ chỉ được chứa tên/trạng thái bị che, không bao giờ chứa giá trị.
 
-**Interfaces:**
-- Consumes: Azure resource group `rg-library-staging`, server `sql-library-staging-ea-nhat714`, app `app-library-api-staging-nhat714`.
-- Produces: new password applied to server and matching App Service setting; connection verification deferred while database remains `Paused`.
+**Giao diện:**
+- Tiêu thụ: Nhóm tài nguyên Azure `rg-library-staging`, máy chủ `sql-library-staging-ea-nhat714`, ứng dụng `app-library-api-staging-nhat714`.
+- Tạo ra: áp dụng mật khẩu mới cho máy chủ và khớp với cài đặt App Service; xác minh kết nối bị trì hoãn trong khi cơ sở dữ liệu vẫn là `Paused`.
 
-- [ ] **Step 1: Confirm names without reading secret values**
+- [ ] **Bước 1: Xác nhận tên mà không cần đọc giá trị bí mật**
 
-Run:
+Chạy:
 
 ```powershell
 az sql server show --resource-group rg-library-staging --name sql-library-staging-ea-nhat714 `
@@ -365,11 +388,11 @@ az webapp config appsettings list --resource-group rg-library-staging `
 gh secret list --app actions
 ```
 
-Expected: server/app names resolve; no command prints a value.
+Dự kiến: tên máy chủ/ứng dụng được giải quyết; không có lệnh nào in một giá trị.
 
-- [ ] **Step 2: Generate and apply a memory-only password**
+- [ ] **Bước 2: Tạo và áp dụng mật khẩu chỉ dành cho bộ nhớ**
 
-Use a single PowerShell process:
+Sử dụng một quy trình PowerShell duy nhất:
 
 ```powershell
 $newSqlPassword = 'Lib' + [Guid]::NewGuid().ToString('N') + '!A9'
@@ -381,38 +404,41 @@ az webapp config appsettings set --resource-group rg-library-staging `
 Remove-Variable newSqlPassword
 ```
 
-Do not echo `$newSqlPassword`, include it in a transcript, or write it to `.env`.
+Không lặp lại `$newSqlPassword`, đưa nó vào bản ghi hoặc ghi nó vào `.env`.
 
-- [ ] **Step 3: Verify only metadata**
+- [ ] **Bước 3: Chỉ xác minh siêu dữ liệu**
 
-Confirm the App Service setting name exists and the database remains `Paused`/unchanged; do not call a health endpoint and report it as passing while SQL is paused.
+Xác nhận tên cài đặt App Service tồn tại và cơ sở dữ liệu vẫn là `Paused`/không thay đổi; không gọi
+điểm cuối tình trạng và báo cáo điểm đó là đã đạt trong khi SQL bị tạm dừng.
 
 ---
 
-### Task 6: Apply governance and run non-Azure validation
+### Nhiệm vụ 6: Áp dụng quản trị và chạy xác thực không phải Azure
 
-**Files:**
-- External state: GitHub branch protection for `main`.
-- Test/evidence: CI, local suites, traceability output, clean diff.
+**Tệp:**
+- Trạng thái bên ngoài: Bảo vệ nhánh GitHub cho `main`.
+- Kiểm tra/bằng chứng: CI, bộ cục bộ, đầu ra truy vết, khác biệt rõ ràng.
 
-- [ ] **Step 1: Discover the required CI check context**
+- [ ] **Bước 1: Khám phá ngữ cảnh kiểm tra CI bắt buộc**
 
-Run:
+Chạy:
 
 ```powershell
 gh api repos/SWP391-LibraryManagement/LibraryManagement/commits/main/check-runs `
   --jq '.check_runs[].name' | Sort-Object -Unique
 ```
 
-Use the exact stable CI job name in branch protection; do not invent a context.
+Sử dụng tên công việc CI ổn định chính xác trong bảo vệ nhánh; không phát minh ra một bối cảnh.
 
-- [ ] **Step 2: Enable conservative main protection**
+- [ ] **Bước 2: Kích hoạt chức năng bảo vệ chính bảo thủ**
 
-Configure PR-required, strict up-to-date branches, conversation resolution, force-push/delete protection, and the discovered CI check. Do not require an unavailable external reviewer or bypass the check.
+Định cấu hình các nhánh cập nhật nghiêm ngặt theo yêu cầu PR, giải pháp hội thoại, bảo vệ cưỡng
+bức/xóa và kiểm tra CI được phát hiện. Không yêu cầu người đánh giá bên ngoài không có mặt hoặc bỏ
+qua việc kiểm tra.
 
-- [ ] **Step 3: Run the full non-Azure validation**
+- [ ] **Bước 3: Chạy xác thực đầy đủ không phải Azure**
 
-Run:
+Chạy:
 
 ```powershell
 npm --prefix backend test
@@ -426,11 +452,13 @@ git diff --check
 git status --short
 ```
 
-Expected: all commands pass; the only remaining acceptance blocker is Azure SQL/migration/staging.
+Dự kiến: tất cả các lệnh đều đạt; trình chặn chấp nhận duy nhất còn lại là Azure SQL/di chuyển/môi
+trường tiền sản xuất.
 
-- [ ] **Step 4: Review the final diff**
+- [ ] **Bước 4: Xem lại điểm khác biệt cuối cùng**
 
-Confirm changed files match this plan, no secret appears in the diff, and the SDD statuses do not claim Azure acceptance. Commit with:
+Xác nhận các tệp đã thay đổi phù hợp với kế hoạch này, không có bí mật nào xuất hiện trong phần khác
+biệt và trạng thái SDD không yêu cầu chấp nhận Azure. Cam kết với:
 
 ```powershell
 git add backend frontend scripts .github docs .sdd

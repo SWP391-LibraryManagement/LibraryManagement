@@ -1,37 +1,45 @@
-# FE07 FE08 FE10 FE12 100 Percent Closeout Implementation Plan
+# FE07 FE08 FE10 FE12 Kế hoạch thực hiện khóa 100 phần trăm
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use `executing-plans` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Đối với nhân viên đại lý:** BẮT BUỘC SUB-SKILL: Sử dụng `executing-plans` để triển khai kế hoạch này theo từng nhiệm vụ. Các bước sử dụng cú pháp hộp kiểm (`- [ ]`) để theo dõi.
 
-**Goal:** Make the current approved FE07, FE08, FE10, and FE12 implementation enforceable at 100% production-source FR traceability without changing business behavior, then produce fresh local acceptance evidence and an exact external staging blocker report.
+**Mục tiêu:** Làm cho việc triển khai FE07, FE08, FE10 và FE12 đã được phê duyệt hiện tại có thể
+thực thi được ở khả năng truy vết FR nguồn sản xuất 100% mà không làm thay đổi hành vi kinh doanh,
+sau đó tạo ra bằng chứng chấp nhận mới tại địa phương và báo cáo chặn giai đoạn chính xác bên ngoài.
 
-**Architecture:** Existing business behavior remains unchanged because the audited FRs are already implemented and covered by backend, frontend, and browser tests. The batch adds requirement tags at the owning production boundaries, strengthens the traceability gate so `COMPLETE` features require 100%, reconciles the four task headers, and validates the unchanged behavior from unit level through the connected browser flow. Azure mutation and publication remain behind the repository's H2/H3 human gates.
+**Kiến trúc:** Hành vi kinh doanh hiện tại không thay đổi vì các FR được kiểm tra đã được triển khai
+và bao phủ bởi các kiểm thử máy chủ, giao diện người dùng và trình duyệt. Lô này bổ sung thêm các
+thẻ yêu cầu tại ranh giới sản xuất sở hữu, tăng cường cổng truy vết để các chức năng của `COMPLETE`
+yêu cầu 100%, điều chỉnh bốn tiêu đề nhiệm vụ và xác thực hành vi không thay đổi từ cấp đơn vị thông
+qua luồng trình duyệt được kết nối. thao tác ghi và xuất bản Azure vẫn nằm sau cổng con người H2/H3 của
+kho lưu trữ.
 
-**Tech Stack:** Node.js 22, Express, React/Vite, SQL Server 2022, Node test runner, Jest, Playwright, GitHub Actions, Azure CLI.
+**bộ công nghệ công nghệ:** Node.js 22, Express, React/Vite, SQL Server 2022, Trình chạy kiểm thử
+nút, Jest, Playwright, GitHub hành động, Azure CLI.
 
-## Global Constraints
+## Ràng buộc toàn cầu
 
-- The approved source of truth remains each feature's `.sdd/specs/feat-*/SPEC.md`; no requirement, API, schema, role, state transition, or UI behavior is added by this batch.
-- Core business behavior and security boundaries must remain unchanged; production edits are limited to `@spec` annotations at already-tested ownership points.
-- `COMPLETE` implementation metadata requires 100% FR tags in `backend/src` and `frontend/src`; `PARTIAL` keeps the configured minimum floor.
-- No secret, credential, provider detail, or real PII may be written to source, tests, logs, or plan evidence.
-- SQL mutation tests may run only against a named disposable local database and must not target staging or a shared developer database.
-- No commit, push, PR publication, Azure resume/deploy, or merge occurs before the required human H2/H3 gates.
+- Nguồn xác thực đã được phê duyệt vẫn là `.sdd/specs/feat-*/SPEC.md` của mỗi chức năng; không có yêu cầu, API, lược đồ, vai trò, chuyển đổi trạng thái hoặc hành vi giao diện người dùng sẽ được thêm vào theo đợt này.
+- Hành vi kinh doanh cốt lõi và ranh giới bảo mật phải không thay đổi; các chỉnh sửa sản xuất được giới hạn ở các chú thích `@spec` tại các điểm sở hữu đã được kiểm thử.
+- Siêu dữ liệu triển khai `COMPLETE` yêu cầu 100% thẻ FR trong `backend/src` và `frontend/src`; `PARTIAL` giữ mức sàn tối thiểu được cấu hình.
+- Không có bí mật, thông tin xác thực, chi tiết nhà cung cấp hoặc PII thực nào có thể được ghi vào nguồn, kiểm tra, nhật ký hoặc bằng chứng kế hoạch.
+- Các kiểm thử thao tác ghi SQL chỉ có thể chạy trên cơ sở dữ liệu cục bộ dùng một lần được đặt tên và không được nhắm mục tiêu vào cơ sở dữ liệu môi trường tiền sản xuấth cho nhà phát triển hoặc cơ sở dữ liệu dùng chung.
+- Không có cam kết, đẩy, xuất bản PR, tiếp tục/triển khai hoặc hợp nhất Azure xảy ra trước cổng H2/H3 của con người.
 
 ---
 
-### Task 1: Enforce 100% traceability for COMPLETE features
+### Nhiệm vụ 1: Thực thi truy vết 100% cho các chức năng HOÀN THÀNH
 
-**Files:**
-- Modify: `scripts/traceability-state.test.js`
-- Modify: `scripts/traceability-state.js`
-- Modify: `scripts/check-traceability.js`
-- Modify: `.github/workflows/ci.yml`
+**Tệp:**
+- Sửa đổi: `scripts/traceability-state.test.js`
+- Sửa đổi: `scripts/traceability-state.js`
+- Sửa đổi: `scripts/check-traceability.js`
+- Sửa đổi: `.github/workflows/ci.yml`
 
-**Interfaces:**
-- Consumes: `parseImplementationState(taskText)` and the existing `--min=<number>` partial-feature floor.
-- Produces: `requiredCoverage(state, partialMinimum)` returning `100` for `COMPLETE`, the configured minimum for `PARTIAL`, and `null` for inactive states.
+**Giao diện:**
+- Tiêu thụ: `parseImplementationState(taskText)` và tầng chức năng một phần `--min=<number>` hiện có.
+- Tạo ra: `requiredCoverage(state, partialMinimum)` trả về `100` cho `COMPLETE`, mức tối thiểu được định cấu hình cho `PARTIAL` và `null` cho trạng thái không hoạt động.
 
-- [x] **Step 1: Write the failing threshold test**
+- [x] **Bước 1: Viết kiểm thử ngưỡng không đạt**
 
 ```js
 test('requires full traceability for COMPLETE features while preserving the PARTIAL floor', () => {
@@ -42,13 +50,13 @@ test('requires full traceability for COMPLETE features while preserving the PART
 });
 ```
 
-- [x] **Step 2: Run the threshold test and verify RED**
+- [x] **Bước 2: Chạy kiểm tra ngưỡng và xác minh RED**
 
-Run: `npm run test:traceability-state`
+Chạy: `npm run test:traceability-state`
 
-Expected: FAIL because `requiredCoverage` is not exported.
+Dự kiến: THẤT BẠI vì `requiredCoverage` không được xuất.
 
-- [x] **Step 3: Implement the per-state threshold**
+- [x] **Bước 3: Thực hiện ngưỡng cho mỗi trạng thái**
 
 ```js
 function requiredCoverage(state, partialMinimum) {
@@ -58,31 +66,34 @@ function requiredCoverage(state, partialMinimum) {
 }
 ```
 
-Update `check-traceability.js` so each row records `required`, fails when `pct < required`, and reports the per-row requirement. Rename the CI step to `Spec traceability gate (COMPLETE = 100%, PARTIAL >= 70%)`.
+Cập nhật `check-traceability.js` để mỗi hàng ghi lại `required`, không thành công khi `pct <
+bắt buộc` và báo cáo yêu cầu trên mỗi hàng. Đổi tên bước CI thành `Spec cổng truy vết (HOÀN THÀNH
+= 100%, MỘT PHẦN >= 70%)`.
 
-- [x] **Step 4: Run the threshold test and verify GREEN**
+- [x] **Bước 4: Chạy kiểm tra ngưỡng và xác minh GREEN**
 
-Run: `npm run test:traceability-state`
+Chạy: `npm run test:traceability-state`
 
-Expected: all traceability-state tests PASS.
+Dự kiến: tất cả các kiểm thử trạng thái truy nguyên đều ĐẠT.
 
-### Task 2: Close FE07 and FE08 production-source traceability
+### Nhiệm vụ 2: Đóng truy vết sản xuất FE07 và FE08
 
-**Files:**
-- Modify: `scripts/traceability-state.test.js`
-- Modify: `backend/src/services/borrowingService.js`
-- Modify: `frontend/src/api/apiErrorMessages.js`
-- Modify: `backend/src/repositories/reservationRepository.js`
-- Modify: `frontend/src/page/reservation/MyReservationsPage.jsx`
-- Modify: `frontend/src/page/reservation/ReservationsLibrarianPage.jsx`
+**Tệp:**
+- Sửa đổi: `scripts/traceability-state.test.js`
+- Sửa đổi: `backend/src/services/borrowingService.js`
+- Sửa đổi: `frontend/src/api/apiErrorMessages.js`
+- Sửa đổi: `backend/src/repositories/reservationRepository.js`
+- Sửa đổi: `frontend/src/page/reservation/MyReservationsPage.jsx`
+- Sửa đổi: `frontend/src/page/reservation/ReservationsLibrarianPage.jsx`
 
-**Interfaces:**
-- Consumes: approved `FR-FE07-040/041/042/044` and `FR-FE08-007/036/037/038` behavior already exercised by borrowing, reservation, frontend, contract, and connected E2E tests.
-- Produces: one production-source `@spec` owner for every listed FR, with no runtime code change.
+**Giao diện:**
+- Tiêu thụ: hành vi `FR-FE07-040/041/042/044` và `FR-FE08-007/036/037/038` đã được phê duyệt đã được thực hiện bằng cách mượn, đặt chỗ, giao diện người dùng, hợp đồng và các kiểm thử E2E được kết nối.
+- Sản xuất: một chủ sở hữu `@spec` nguồn sản xuất cho mỗi FR được liệt kê mà không thay đổi mã thời gian chạy.
 
-- [x] **Step 1: Write the failing target-feature coverage assertion**
+- [x] **Bước 1: Viết xác nhận phạm vi bao phủ chức năng mục tiêu không thành công**
 
-Add a test that reads the four target specs, scans only `backend/src` and `frontend/src` lines containing `@spec`, and asserts every declared target FR is tagged.
+Thêm một kiểm thử để đọc bốn thông số mục tiêu, chỉ quét các dòng `backend/src` và `frontend/src`
+chứa `@spec` và xác nhận mọi FR mục tiêu đã khai báo đều được gắn thẻ.
 
 ```js
 for (const featureDirectory of targetFeatureDirectories) {
@@ -92,15 +103,15 @@ for (const featureDirectory of targetFeatureDirectories) {
 }
 ```
 
-- [x] **Step 2: Run the coverage assertion and verify RED**
+- [x] **Bước 2: Chạy xác nhận phạm vi bảo hiểm và xác minh RED**
 
-Run: `npm run test:traceability-state`
+Chạy: `npm run test:traceability-state`
 
-Expected: FAIL listing FE07 and FE08 missing IDs alongside the FE10/FE12 IDs closed in Task 3.
+Dự kiến: KHÔNG Liệt kê các ID bị thiếu FE07 và FE08 cùng với các ID FE10/FE12 đã đóng trong Nhiệm vụ 3.
 
-- [x] **Step 3: Add minimal FE07/FE08 annotations at ownership points**
+- [x] **Bước 3: Thêm chú thích FE07/FE08 tối thiểu tại các điểm sở hữu**
 
-Add comments only:
+Chỉ thêm nhận xét:
 
 ```js
 // @spec FR-FE07-040 - approved/rejected requests create an idempotent FE10 result notification.
@@ -112,35 +123,35 @@ Add comments only:
 // @spec FR-FE08-037, FR-FE08-038 - staff explicitly triggers processing and receives only safe warning data.
 ```
 
-- [x] **Step 4: Run focused FE07/FE08 regressions**
+- [x] **Bước 4: Chạy hồi quy FE07/FE08 tập trung**
 
-Run:
+Chạy:
 
 ```powershell
 npm --prefix backend test -- --runInBand --runTestsByPath tests/borrowingRoutes.test.js tests/reservationRoutes.test.js tests/reservationService.test.js tests/borrowingContract.test.js
 npm --prefix frontend test -- test/borrowingFrontend.test.js test/reservationFrontend.test.js
 ```
 
-Expected: all selected tests PASS with unchanged response and UI behavior.
+Dự kiến: tất cả các kiểm thử đã chọn ĐẠT với phản hồi và hành vi giao diện người dùng không thay đổi.
 
-### Task 3: Close FE10 and FE12 traceability and reconcile implementation metadata
+### Nhiệm vụ 3: Đóng khả năng truy vết FE10 và FE12 và đối chiếu siêu dữ liệu triển khai
 
-**Files:**
-- Modify: `backend/src/services/notificationService.js`
-- Modify: `backend/src/utils/notificationInbox.js`
-- Modify: `frontend/src/context/NotificationInboxContext.jsx`
-- Modify: `frontend/src/page/dashboard/RoleDashboardPage.jsx`
-- Modify: `.sdd/specs/feat-borrowing-management/TASKS.md`
-- Modify: `.sdd/specs/feat-reservation-management/TASKS.md`
-- Modify: `.sdd/specs/feat-notification-management/TASKS.md`
-- Modify: `.sdd/specs/feat-reporting-statistics/TASKS.md`
-- Modify: the four matching `CHANGELOG.md` files
+**Tệp:**
+- Sửa đổi: `backend/src/services/notificationService.js`
+- Sửa đổi: `backend/src/utils/notificationInbox.js`
+- Sửa đổi: `frontend/src/context/NotificationInboxContext.jsx`
+- Sửa đổi: `frontend/src/page/dashboard/RoleDashboardPage.jsx`
+- Sửa đổi: `.sdd/specs/feat-borrowing-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-reservation-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-notification-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-reporting-statistics/TASKS.md`
+- Sửa đổi: bốn tệp `CHANGELOG.md` phù hợp
 
-**Interfaces:**
-- Consumes: approved `FR-FE10-015..020`, `FR-FE12-015`, merged browser/integration evidence, and the stronger COMPLETE gate from Task 1.
-- Produces: 100% target FR traceability and `Implementation State: COMPLETE` for the four approved implementation scopes while preserving the separate Azure staging blocker line.
+**Giao diện:**
+- Tiêu thụ: `FR-FE10-015..020`, `FR-FE12-015` đã được phê duyệt, bằng chứng tích hợp/trình duyệt đã hợp nhất và cổng HOÀN THÀNH mạnh hơn từ Nhiệm vụ 1.
+- Tạo ra: khả năng truy vết FR mục tiêu 100% và `Implementation State: COMPLETE` cho bốn phạm vi triển khai đã được phê duyệt trong khi vẫn duy trì dòng chặn theo giai đoạn Azure riêng biệt.
 
-- [x] **Step 1: Add minimal FE10/FE12 annotations at ownership points**
+- [x] **Bước 1: Thêm chú thích FE10/FE12 tối thiểu tại các điểm sở hữu**
 
 ```js
 // @spec FR-FE10-017 - FE10 accepts the four FE07 result templates owned by FE07.
@@ -150,50 +161,54 @@ Expected: all selected tests PASS with unchanged response and UI behavior.
 // @spec FR-FE12-015 - staff KPI cards render the FE12 snapshot and use fixed approved drill-down paths.
 ```
 
-- [x] **Step 2: Reconcile target TASKS metadata and changelogs**
+- [x] **Bước 2: Đối chiếu siêu dữ liệu và nhật ký thay đổi TASKS mục tiêu**
 
-Change exactly one metadata line per target file:
+Thay đổi chính xác một dòng siêu dữ liệu cho mỗi tệp mục tiêu:
 
 ```text
 Implementation State: COMPLETE
 ```
 
-Add a `2026-08-01` changelog entry explaining that the closeout adds no product behavior and that Azure acceptance remains separately blocked until the paused database can be resumed.
+Thêm mục nhập nhật ký thay đổi `2026-08-01` giải thích rằng việc đóng cửa không thêm hành vi sản
+phẩm nào và việc chấp nhận Azure vẫn bị chặn riêng cho đến khi cơ sở dữ liệu bị tạm dừng có thể được
+tiếp tục lại.
 
-- [x] **Step 3: Run traceability-state and enforced traceability gates**
+- [x] **Bước 3: Chạy trạng thái truy nguyên nguồn gốc và cổng truy vết bắt buộc**
 
-Run:
+Chạy:
 
 ```powershell
 npm run test:traceability-state
 npm run trace:enforce
 ```
 
-Expected: all four target features show 100% and `COMPLETE`; other PARTIAL features retain the 70% floor.
+Dự kiến: tất cả bốn chức năng mục tiêu đều hiển thị 100% và `COMPLETE`; các chức năng MỘT PHẦN khác
+giữ lại mức sàn 70%.
 
-- [x] **Step 4: Run focused FE10/FE12 regressions**
+- [x] **Bước 4: Chạy hồi quy FE10/FE12 tập trung**
 
-Run:
+Chạy:
 
 ```powershell
 npm --prefix backend test -- --runInBand --runTestsByPath tests/notificationRoutes.test.js tests/notificationInboxRepository.test.js tests/reportRoutes.test.js tests/reportService.test.js
 npm --prefix frontend test -- test/notificationInboxFrontend.test.js test/reportOperationalFrontend.test.js
 ```
 
-Expected: all selected tests PASS with unchanged privacy, idempotency, report, and drill-down behavior.
+Dự kiến: tất cả các kiểm thử đã chọn ĐẠT với quyền riêng tư, tính tạm thời, báo cáo và hành vi chi
+tiết không thay đổi.
 
-### Task 4: Produce complete local evidence and stop at the external gates
+### Nhiệm vụ 4: Đưa ra bằng chứng địa phương đầy đủ và dừng lại ở cổng ngoài
 
-**Files:**
-- Create: `.sdd/reviews/fe07-fe08-fe10-fe12-100-percent-closeout-2026-08-01.md`
+**Tệp:**
+- Tạo: `.sdd/reviews/fe07-fe08-fe10-fe12-100-percent-closeout-2026-08-01.md`
 
-**Interfaces:**
-- Consumes: the exact uncommitted diff and all validation outputs from Tasks 1-3.
-- Produces: a review packet suitable for H2, followed by H3/merge/deploy only after explicit human approval.
+**Giao diện:**
+- Tiêu thụ: độ khác biệt chính xác không được cam kết và tất cả kết quả đầu ra xác thực từ Nhiệm vụ 1-3.
+- Tạo ra: gói đánh giá phù hợp với H2, tiếp theo là H3/hợp nhất/triển khai chỉ sau khi có sự chấp thuận rõ ràng của con người.
 
-- [x] **Step 1: Run full automated verification**
+- [x] **Bước 1: Chạy xác minh hoàn toàn tự động**
 
-Run:
+Chạy:
 
 ```powershell
 npm --prefix backend test
@@ -208,32 +223,41 @@ npm run trace:enforce
 git diff --check
 ```
 
-Expected: every command exits `0`; target traceability is 100%.
+Dự kiến: mọi lệnh đều thoát `0`; khả năng truy vết mục tiêu là 100%.
 
-- [x] **Step 2: Run SQL mutation suites only on a disposable local database**
+- [x] **Bước 2: Chỉ chạy bộ thao tác ghi SQL trên cơ sở dữ liệu cục bộ dùng một lần**
 
-Create a uniquely named local database, apply `database/Librarymanagement.sql` through the existing Azure-schema preparation path, configure a temporary least-privilege SQL login only for that database, run the FE07 and system SQL suites with both mutation flags set, then drop the exact disposable database and login after evidence capture.
+Tạo cơ sở dữ liệu cục bộ được đặt tên duy nhất, áp dụng `database/Librarymanagement.sql` thông qua
+đường dẫn chuẩn bị lược đồ Azure hiện có, định cấu hình đăng nhập SQL có đặc quyền tối thiểu tạm
+thời chỉ cho cơ sở dữ liệu đó, chạy bộ FE07 và hệ thống SQL với cả hai cờ thao tác ghi được đặt, sau đó
+loại bỏ cơ sở dữ liệu dùng một lần chính xác và đăng nhập sau khi thu thập bằng chứng.
 
-Expected: both guarded SQL suites PASS and the named disposable resources are removed.
+Dự kiến: cả bộ SQL được bảo vệ đạt và các tài nguyên dùng một lần được đặt tên đều bị xóa.
 
-- [x] **Step 3: Run browser acceptance**
+- [x] **Bước 3: Chạy chấp nhận trình duyệt**
 
-Run:
+Chạy:
 
 ```powershell
 npx playwright test tests/e2e/fe07-fe12-connected-demo-flow.spec.js tests/e2e/fe08-reservation-candidate-catalog.spec.js tests/e2e/fe10-notification-inbox.spec.js tests/e2e/system-golden-path.spec.js --project=chromium
 ```
 
-Expected: six Chromium scenarios PASS with no browser errors.
+Dự kiến: sáu kịch bản Chrome ĐẠT mà không có lỗi trình duyệt.
 
-- [x] **Step 4: Record the exact Azure state without mutating it**
+- [x] **Bước 4: Ghi lại trạng thái Azure chính xác mà không làm thay đổi nó**
 
-Run Azure CLI read-only queries for the Web App and `LibraryManagementStaging` status. Record `Running`, `Paused`, quota errors, or other live values exactly. Do not resume, deploy, or spend quota before H2/H3 authorization.
+Chạy truy vấn chỉ đọc Azure CLI cho Ứng dụng web và trạng thái `LibraryManagementStaging`. Ghi lại
+chính xác `Running`, `Paused`, lỗi hạn ngạch hoặc các giá trị trực tiếp khác. Không tiếp tục, triển
+khai hoặc chi tiêu hạn ngạch trước khi được cấp phép H2/H3.
 
-- [x] **Step 5: Write the H2 review packet**
+- [x] **Bước 5: Viết gói đánh giá H2**
 
-Record the source ledger, actor boundaries, exact diff, target requirement mapping, commands and counts, SQL cleanup evidence, Azure state, unresolved external blocker, and required human decisions. Do not label Azure acceptance complete while the database is paused.
+Ghi lại sổ cái nguồn, ranh giới tác nhân, độ khác biệt chính xác, ánh xạ yêu cầu mục tiêu, lệnh và
+số lượng, bằng chứng dọn dẹp SQL, trạng thái Azure, trình chặn bên ngoài chưa được giải quyết và các
+quyết định bắt buộc của con người. Không dán nhãn hoàn tất chấp nhận Azure trong khi cơ sở dữ liệu
+bị tạm dừng.
 
-- [x] **Step 6: Stop before commit/publication**
+- [x] **Bước 6: Dừng trước khi cam kết/xuất bản**
 
-Present the exact diff fingerprint and request H2. Only after H2 may the reviewed files be committed and pushed; H3 remains mandatory before merge and Azure deployment verification.
+Trình bày dấu vân tay khác biệt chính xác và yêu cầu H2. Chỉ sau H2, các tệp được xem xét mới có thể
+được cam kết và đẩy; H3 vẫn là bắt buộc trước khi hợp nhất và xác minh triển khai Azure.

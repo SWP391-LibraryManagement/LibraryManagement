@@ -1,39 +1,46 @@
-# FE11 Admin Role UI Contract Design
+# FE11 Thiết kế hợp đồng UI vai trò quản trị viên
 
-Status: APPROVED BY HUMAN - 2026-07-18
+Trạng thái: ĐƯỢC PHÊ DUYỆT BỞI HUMAN - 2026-07-18
 
-Date: 2026-07-18
+Ngày: 2026-07-18
 
-Feature: FE11 User & Role Management
+chức năng: Quản lý vai trò và người dùng FE11
 
-Debt: `TD-022`
+Nợ: `TD-022`
 
-## 1. Decision
+## 1. Quyết định
 
-Use SDD Full depth for the role-mutation contract and bounded ADD for the frontend adapter. Keep the approved backend API unchanged and make the Admin UI translate selected role names through the authoritative role catalog before sending numeric role IDs.
+Sử dụng SDD Độ sâu đầy đủ cho hợp đồng chuyển đổi vai trò và ADD giới hạn cho bộ điều hợp giao diện
+người dùng. Giữ nguyên phần máy chủ API đã được phê duyệt và làm cho Giao diện người dùng quản trị
+dịch các tên vai trò đã chọn thông qua danh mục vai trò có thẩm quyền trước khi gửi ID vai trò dạng
+số.
 
-This slice is Core at the API boundary because role mutations affect authorization and must not depend on guessed or hardcoded identifiers. The checkbox presentation and name-to-ID adapter are Shell behavior once the contract and failure rules are locked.
+Phần này là Lõi ở ranh giới API vì thao tác ghi vai trò ảnh hưởng đến ủy quyền và không được phụ thuộc
+vào số nhận dạng được đoán hoặc mã hóa cứng. Trình bày hộp kiểm và bộ chuyển đổi tên thành ID là
+hành vi của lớp bao sau khi các quy tắc hợp đồng và lỗi bị khóa.
 
-## 2. Source Requirements
+## 2. Yêu cầu nguồn
 
-This design implements the frontend acceptance path for the existing approved requirements:
+Thiết kế này triển khai đường dẫn chấp nhận giao diện người dùng cho các yêu cầu đã được phê duyệt hiện có:
 
-- `BR-FE11-001`, `BR-FE11-007..010`: Admin-only role management, at least one role, multiple roles, last-Admin protection, and auditability.
-- `FR-FE11-012..014`: role assignment/revocation and concurrency-safe last-Admin protection.
-- `FR-FE11-024..027`: deterministic missing-role, duplicate, absent-mapping, and final-role outcomes.
-- `AC-FE11-013..015`: successful role assignment/revocation and last-Admin rejection.
-- `NFR-FE11-SEC-001..005`: server-side RBAC, validation, safe errors, and approved identifiers.
-- FE11 API contract: `POST /api/users/{userId}/roles` with `{ roleId: number }` and `DELETE /api/users/{userId}/roles/{roleId}`.
+- `BR-FE11-001`, `BR-FE11-007..010`: Quản lý vai trò chỉ dành cho quản trị viên, ít nhất một vai trò, nhiều vai trò, bảo vệ quản trị viên cuối cùng và khả năng kiểm tra.
+- `FR-FE11-012..014`: phân công/thu hồi vai trò và bảo vệ quản trị viên cuối cùng an toàn đồng thời.
+- `FR-FE11-024..027`: các kết quả xác định thiếu vai trò, trùng lặp, vắng mặt và vai trò cuối cùng.
+- `AC-FE11-013..015`: gán/thu hồi vai trò thành công và từ chối quản trị viên cuối cùng.
+- `NFR-FE11-SEC-001..005`: RBAC phía máy chủ, xác thực, lỗi an toàn và số nhận dạng được phê duyệt.
+- FE11 Hợp đồng API: `POST /api/users/{userId}/roles` với `{ roleId: number }` và `DELETE /api/users/{userId}/roles/{roleId}`.
 
-Primary source: `.sdd/specs/feat-user-role-management/SPEC.md`.
+Nguồn chính: `.sdd/specs/feat-user-role-management/SPEC.md`.
 
-The canonical contract is already approved, so this slice does not modify `SPEC.md` or backend behavior.
+Hợp đồng chuẩn đã được phê duyệt, vì vậy lát cắt này không sửa đổi `SPEC.md` hoặc hành vi máy chủ.
 
-## 3. Current Problem
+## 3. Vấn đề hiện tại
 
-The backend transactional role slice is B7-complete and requires positive numeric role IDs. The Admin frontend still sends `{ roleName }` for assignment and places the role name in the revocation URL. Both calls fail route validation and cannot satisfy `AC-FE11-013/014`.
+Phần vai trò giao dịch máy chủ là B7-đầy đủ và yêu cầu ID vai trò bằng số dương. Giao diện quản trị
+viên vẫn gửi `{ roleName }` để phân công và đặt tên vai trò trong lệnh thu hồi URL. Cả hai cuộc gọi
+đều không xác thực được tuyến đường và không thể đáp ứng `AC-FE11-013/014`.
 
-The role-list endpoint already returns the required catalog entries:
+Điểm cuối danh sách vai trò đã trả về các mục danh mục bắt buộc:
 
 ```json
 {
@@ -45,214 +52,230 @@ The role-list endpoint already returns the required catalog entries:
 }
 ```
 
-No schema, endpoint, or backend service change is needed.
+Không cần thay đổi lược đồ, điểm cuối hoặc dịch vụ máy chủ.
 
-## 4. Scope
+## 4. Phạm vi
 
-### In Scope
+### Trong phạm vi
 
-- Treat `GET /api/users/roles` as the only source of role IDs.
-- Keep role selection display/state compatible with role names in `UserManagementView.roles`.
-- Map each changed role name to a positive numeric role ID before mutation.
-- Send `{ roleId }` for assignment and numeric `roleId` in the revocation path.
-- Apply assignments before revocations.
-- Block role editing when the catalog is unavailable or invalid; never use hardcoded IDs.
-- Reconcile the modal with authoritative server state after a partial mutation failure.
-- Add focused frontend RED-GREEN tests and update FE11 planning/evidence records during implementation.
+- Hãy coi `GET /api/users/roles` là nguồn ID vai trò duy nhất.
+- Giữ trạng thái/hiển thị lựa chọn vai trò tương thích với tên vai trò trong `UserManagementView.roles`.
+- Ánh xạ từng tên vai trò đã thay đổi thành ID vai trò số dương trước khi thao tác ghi.
+- Gửi `{ roleId }` để phân công và `roleId` dạng số trong đường dẫn thu hồi.
+- Áp dụng bài tập trước khi thu hồi.
+- Chặn chỉnh sửa vai trò khi danh mục không có sẵn hoặc không hợp lệ; không bao giờ sử dụng ID được mã hóa cứng.
+- Điều chỉnh phương thức với trạng thái máy chủ có thẩm quyền sau lỗi thao tác ghi một phần.
+- Thêm các kiểm thử RED-GREEN giao diện người dùng tập trung và cập nhật hồ sơ lập kế hoạch/bằng chứng FE11 trong quá trình triển khai.
 
-### Out Of Scope
+### Ngoài phạm vi
 
-- Backend role transaction, validators, service outcomes, or error codes.
-- Database/schema changes.
-- Role creation, role editing, permission editing, or role hierarchy.
-- FE11 navigation, Permissions, Audit Logs, Request Management, update, or deactivation debt.
-- A batch role-replacement endpoint or cross-request transaction.
-- Changes to the approved FE11 `SPEC.md` contract.
+- Giao dịch vai trò máy chủ, trình xác thực, kết quả dịch vụ hoặc mã lỗi.
+- Thay đổi cơ sở dữ liệu/lược đồ.
+- Tạo vai trò, chỉnh sửa vai trò, chỉnh sửa quyền hoặc phân cấp vai trò.
+- FE11 điều hướng, Quyền, Nhật ký kiểm tra, Quản lý yêu cầu, cập nhật hoặc hủy kích hoạt.
+- Điểm cuối thay thế vai trò hàng loạt hoặc giao dịch yêu cầu chéo.
+- Những thay đổi đối với hợp đồng FE11 `SPEC.md` đã được phê duyệt.
 
-## 5. Architecture
+## 5. Kiến trúc
 
-The bounded request flow is:
+Luồng yêu cầu bị giới hạn là:
 
 ```text
 GET /api/users/roles
-  -> role catalog [{ roleId, roleName }]
-  -> RoleModal displays roleName checkboxes
-  -> saveRoles computes addedNames and removedNames
-  -> validate complete roleName -> roleId mapping
-  -> POST assignments by roleId
+-> danh mục vai trò [{ roleId, roleName }]
+-> RoleModal hiển thị các hộp chọn roleName
+-> saveRoles tính addedNames và removedNames
+-> xác thực ánh xạ đầy đủ roleName -> roleId
+-> POST các phép gán theo roleId
   -> DELETE revocations by roleId
-  -> reload authoritative user/list state
+-> tải lại trạng thái người dùng/danh sách có thẩm quyền
 ```
 
-`RoleModal` continues to use role names because the managed-user DTO exposes role names. The page-level save orchestration owns the mapping because it already owns the role catalog and API mutations.
+`RoleModal` tiếp tục sử dụng tên vai trò vì DTO của người dùng được quản lý hiển thị tên vai trò.
+Điều phối lưu cấp trang sở hữu ánh xạ vì nó đã sở hữu danh mục vai trò và các thao tác ghi API.
 
-## 6. Role Catalog Contract
+## 6. Hợp đồng danh mục vai trò
 
-Each editable catalog item must have:
+Mỗi mục danh mục có thể chỉnh sửa phải có:
 
-- `roleName`: one of `ADMIN`, `LIBRARIAN`, or `MEMBER`.
-- `roleId`: a positive integer.
+- `roleName`: một trong các `ADMIN`, `LIBRARIAN` hoặc `MEMBER`.
+- `roleId`: số nguyên dương.
 
-`GUEST` and unknown roles are not editable in this Admin flow. An existing non-editable role on the target user is preserved and is not silently revoked.
+Không thể chỉnh sửa `GUEST` và các vai trò không xác định trong quy trình Quản trị viên này. Vai trò
+không thể chỉnh sửa hiện có của người dùng mục tiêu sẽ được giữ nguyên và không bị thu hồi âm thầm.
 
-The UI must not synthesize catalog entries containing only role names. If the catalog request fails, returns an invalid item, or omits an ID required by the requested diff, the UI blocks the save before sending any mutation.
+Giao diện người dùng không được tổng hợp các mục danh mục chỉ chứa tên vai trò. Nếu yêu cầu danh mục
+không thành công, trả về một mục không hợp lệ hoặc bỏ qua ID mà khác biệt được yêu cầu, giao diện
+người dùng sẽ chặn việc lưu trước khi gửi bất kỳ thao tác ghi nào.
 
-## 7. API Adapter Contract
+## 7. Hợp đồng bộ chuyển đổi API
 
-The frontend API functions become:
+Các chức năng API của giao diện người dùng trở thành:
 
 ```js
 assignManagedUserRole(userId, roleId)
 revokeManagedUserRole(userId, roleId)
 ```
 
-Assignment sends:
+Bài tập gửi:
 
 ```json
 { "roleId": 2 }
 ```
 
-Revocation calls:
+Cuộc gọi thu hồi:
 
 ```text
 DELETE /api/users/{userId}/roles/2
 ```
 
-The adapter does not accept or translate role names. Name-to-ID translation occurs before the API boundary so tests can prove that no role name enters the mutation contract.
+Bộ điều hợp không chấp nhận hoặc dịch tên vai trò. Quá trình dịch tên sang ID xảy ra trước ranh giới
+API nên các kiểm thử có thể chứng minh rằng không có tên vai trò nào tham gia hợp đồng thao tác ghi.
 
-## 8. Mutation Ordering And No-Op Behavior
+## 8. Thứ tự thao tác ghi và hành vi không hoạt động
 
-The UI computes two deterministic lists:
+Giao diện người dùng tính toán hai danh sách xác định:
 
-- `addedNames`: selected editable roles absent from the current role set.
-- `removedNames`: current editable roles absent from the selected role set.
+- `addedNames`: các vai trò có thể chỉnh sửa được chọn không có trong nhóm vai trò hiện tại.
+- `removedNames`: các vai trò có thể chỉnh sửa hiện tại không có trong nhóm vai trò đã chọn.
 
-Both lists follow the role catalog order. The UI performs every assignment first, followed by revocations. This avoids a transient zero-role state when replacing one role with another and leaves the backend as the final authority for last-user-role and last-Admin rules.
+Cả hai danh sách đều tuân theo thứ tự danh mục vai trò. Giao diện người dùng thực hiện mọi nhiệm vụ
+trước tiên, sau đó là thu hồi. Điều này tránh trạng thái không có vai trò nhất thời khi thay thế vai
+trò này bằng vai trò khác và để phần máy chủ là quyền cuối cùng đối với các quy tắc vai trò người
+dùng cuối cùng và Quản trị viên cuối cùng.
 
-When both lists are empty, Save is a successful no-op: no mutation request is sent, the modal closes, and no misleading role-change audit or success claim is created by the client.
+Khi cả hai danh sách đều trống, Lưu là một lệnh không hoạt động thành công: không có yêu cầu đột
+biến nào được gửi, phương thức đóng và không có yêu cầu kiểm tra thay đổi vai trò gây hiểu lầm hoặc
+yêu cầu thành công nào được khách hàng tạo ra.
 
-## 9. Failure And Reconciliation Behavior
+## 9. Thất Bại Và Hành Vi Hòa Giải
 
-### Catalog Failure
+### Lỗi danh mục
 
-- Do not open or save an actionable role form without a valid catalog.
-- When the Admin clicks the role action without a valid catalog, retry `fetchRoles`; open the modal only after a valid response, otherwise keep it closed and show a safe load error.
-- Do not fall back to hardcoded IDs or role-name mutation calls.
+- Không mở hoặc lưu biểu mẫu vai trò có thể thực hiện mà không có danh mục hợp lệ.
+- Khi Quản trị viên nhấp vào hành động vai trò mà không có danh mục hợp lệ, hãy thử lại `fetchRoles`; chỉ mở phương thức sau khi có phản hồi hợp lệ, nếu không hãy đóng nó và hiển thị lỗi tải an toàn.
+- Đừng quay lại với các ID được mã hóa cứng hoặc các cuộc gọi thao tác ghi tên vai trò.
 
-### Preflight Mapping Failure
+### Lỗi lập bản đồ trước khi bay
 
-- Resolve every added/removed role name to a valid role ID before the first mutation.
-- If any mapping is missing or invalid, send no mutation request and keep the modal state unchanged.
+- Giải quyết mọi tên vai trò được thêm/xóa thành ID vai trò hợp lệ trước lần thao tác ghi đầu tiên.
+- Nếu bất kỳ ánh xạ nào bị thiếu hoặc không hợp lệ, hãy không gửi yêu cầu thao tác ghi và giữ nguyên trạng thái phương thức.
 
-### Partial Mutation Failure
+### Thất bại thao tác ghi một phần
 
-Role mutations are separate backend transactions; the client must not claim that the whole checkbox save is atomic.
+thao tác ghi vai trò là các giao dịch máy chủ riêng biệt; khách hàng không được khẳng định rằng toàn bộ
+hộp kiểm được lưu là nguyên tử.
 
-If any mutation fails:
+Nếu bất kỳ thao tác ghi nào thất bại:
 
-1. Stop immediately; do not attempt remaining mutations.
-2. Fetch the target user through `GET /api/users/{userId}`.
-3. Replace the page-level target user and the modal's selected roles with the authoritative server response; `RoleModal` must synchronize its local selection when refreshed user roles arrive.
-4. Keep the modal open.
-5. Display the safe mapped API error.
+1. Dừng lại ngay lập tức; không cố gắng thao tác ghi còn lại.
+2. Tìm nạp người dùng mục tiêu thông qua `GET /api/users/{userId}`.
+3. Thay thế người dùng mục tiêu cấp trang và các vai trò đã chọn của phương thức bằng phản hồi của máy chủ có thẩm quyền; `RoleModal` phải đồng bộ hóa lựa chọn cục bộ của nó khi có vai trò người dùng được làm mới.
+4. Giữ phương thức mở.
+5. Hiển thị lỗi API được ánh xạ an toàn.
 
-If the reconciliation fetch also fails, keep the modal open, display the original mutation error, and mark the modal unsynchronized. Save remains disabled until an authoritative target-user reload succeeds or the Admin closes the modal and starts a fresh role action. Do not display success.
+Nếu quá trình tìm nạp đối chiếu cũng không thành công, hãy tiếp tục mở phương thức, hiển thị lỗi đột
+biến ban đầu và đánh dấu phương thức là không đồng bộ hóa. Lưu vẫn bị vô hiệu hóa cho đến khi tải
+lại người dùng mục tiêu có thẩm quyền thành công hoặc Quản trị viên đóng phương thức và bắt đầu một
+hành động vai trò mới. Không hiển thị thành công.
 
-### Concurrent Submission
+### Gửi đồng thời
 
-Disable Save and modal-closing actions while the mutation sequence or reconciliation read is running. A second sequence must not start concurrently from the same modal.
+Tắt các hành động Lưu và đóng phương thức trong khi trình tự thao tác ghi hoặc đọc đối chiếu đang chạy.
+Trình tự thứ hai không được bắt đầu đồng thời từ cùng một phương thức.
 
-## 10. Component Responsibilities
+## 10. Trách nhiệm của thành phần
 
 ### `frontend/src/api/userManagementApi.js`
 
-- Accept numeric `roleId` for both mutation helpers.
-- Send the canonical body/path.
-- Preserve existing safe error mapping.
+- Chấp nhận số `roleId` cho cả hai trình trợ giúp thao tác ghi.
+- Gửi nội dung/đường dẫn chuẩn.
+- Bảo tồn bản đồ lỗi an toàn hiện có.
 
 ### `frontend/src/page/UserManagement.jsx`
 
-- Store role catalog success/error state.
-- Reject actionable role editing without a valid catalog.
-- Keep checkbox state as role names.
-- Synchronize checkbox state when an authoritative refreshed target user replaces the modal user state.
-- Build and validate the complete name-to-ID diff before mutation.
-- Run assignments before revocations.
-- On failure, reload the target user and keep the modal open with server roles.
-- On success, close the modal and reload canonical list/detail state.
+- Lưu trữ trạng thái thành công/lỗi của danh mục vai trò.
+- Từ chối chỉnh sửa vai trò có thể thực hiện mà không có danh mục hợp lệ.
+- Giữ trạng thái hộp kiểm làm tên vai trò.
+- Đồng bộ hóa trạng thái hộp kiểm khi người dùng mục tiêu được làm mới có thẩm quyền thay thế trạng thái người dùng phương thức.
+- Xây dựng và xác thực sự khác biệt hoàn chỉnh giữa tên và ID trước khi thao tác ghi.
+- Chạy bài tập trước khi thu hồi.
+- Nếu không thành công, hãy tải lại người dùng mục tiêu và giữ chế độ mở với các vai trò máy chủ.
+- Nếu thành công, hãy đóng phương thức và tải lại trạng thái chi tiết/danh sách chuẩn.
 
-### Frontend Tests
+### Kiểm tra giao diện người dùng
 
-- Prove the adapter body/path use numeric role IDs.
-- Prove name-to-ID mapping and deterministic assignment-before-revocation order.
-- Prove invalid/missing catalog entries block all mutations.
-- Prove no-op Save sends no mutation.
-- Prove partial failure stops the sequence, fetches the target user, and keeps authoritative roles in the modal.
-- Prove a failed reconciliation read leaves Save disabled and never displays success.
+- Chứng minh phần nội dung/đường dẫn của bộ điều hợp sử dụng ID vai trò dạng số.
+- Chứng minh ánh xạ tên-ID và thứ tự gán xác định trước khi thu hồi.
+- Chứng minh các mục danh mục không hợp lệ/thiếu sẽ chặn tất cả các thao tác ghi.
+- Chứng minh no-op Save không gửi thao tác ghi.
+- Chứng minh lỗi một phần sẽ dừng trình tự, tìm nạp người dùng mục tiêu và giữ vai trò có thẩm quyền trong phương thức.
+- Chứng minh việc đọc đối chiếu không thành công sẽ khiến chức năng Lưu bị vô hiệu hóa và không bao giờ hiển thị thành công.
 
-## 11. Testing Strategy
+## 11. Chiến lược kiểm thử
 
-Implementation follows RED-GREEN TDD.
+Việc triển khai tuân theo RED-GREEN TDD.
 
-### API Contract Tests
+### Kiểm tra hợp đồng API
 
-- Assignment calls `/users/{userId}/roles` with `{ roleId }`.
-- Revocation calls `/users/{userId}/roles/{roleId}`.
-- Mutation helpers contain no `roleName` request field/path interpolation.
+- Nhiệm vụ gọi `/users/{userId}/roles` bằng `{ roleId }`.
+- Cuộc gọi thu hồi `/users/{userId}/roles/{roleId}`.
+- Trình trợ giúp thao tác ghi không chứa nội suy đường dẫn/trường yêu cầu `roleName`.
 
-### UI Orchestration Tests
+### Kiểm tra điều phối giao diện người dùng
 
-- Role catalog entries expose both ID and name to the save flow.
-- Assignments run before revocations for a mixed diff.
-- Unknown names, missing IDs, zero IDs, and catalog load failure send no mutation.
-- Existing non-editable roles are preserved.
-- A mutation failure prevents later calls and triggers authoritative target-user reload.
-- A reconciliation result replaces stale modal roles while the modal remains open.
-- A reconciliation-read failure never converts the operation to success.
-- Save is disabled while work is in flight.
+- Các mục nhập danh mục vai trò hiển thị cả ID và tên trong luồng lưu.
+- Bài tập chạy trước khi thu hồi đối với sự khác biệt hỗn hợp.
+- Tên không xác định, ID bị thiếu, ID không và lỗi tải danh mục không gửi thao tác ghi.
+- Các vai trò không thể chỉnh sửa hiện tại được giữ nguyên.
+- Lỗi thao tác ghi sẽ ngăn chặn các cuộc gọi sau này và kích hoạt tải lại người dùng mục tiêu có thẩm quyền.
+- Kết quả điều chỉnh sẽ thay thế các vai trò phương thức cũ trong khi phương thức vẫn mở.
+- Lỗi đọc đối chiếu không bao giờ chuyển đổi hoạt động thành thành công.
+- chức năng lưu bị vô hiệu hóa khi công việc đang được thực hiện.
 
-### Regression Validation
+### Xác thực hồi quy
 
-- Focused FE11 frontend tests.
-- Full frontend tests, lint, and production build.
-- Focused backend FE11 role tests to confirm the public contract remains unchanged.
-- Project traceability enforcement and `git diff --check`.
-- Existing browser E2E through CI; no new visual layout is introduced by this slice.
+- Các kiểm thử giao diện người dùng FE11 tập trung.
+- Kiểm tra giao diện người dùng đầy đủ, tìm lỗi mã nguồn và xây dựng sản xuất.
+- Các kiểm thử vai trò FE11 máy chủ tập trung để xác nhận hợp đồng công khai vẫn không thay đổi.
+- Thực thi truy vết dự án và `git diff --check`.
+- Trình duyệt hiện có E2E thông qua CI; không có bố cục hình ảnh mới nào được giới thiệu bởi lát cắt này.
 
-## 12. Documentation And Traceability
+## 12. Tài liệu và truy vết
 
-During implementation:
+Trong quá trình thực hiện:
 
-- Add a separately reviewable FE11 role-UI task group to `PLAN.md` and `TASKS.md`.
-- Update `TEST_PLAN.md` and `CHANGELOG.md` with the bounded evidence.
-- Mark `TD-022` `IN PROGRESS`, then `RESOLVED` only after human review, merge, and post-merge CI.
-- Preserve whole-feature `Implementation State: DEFERRED` and every unrelated FE11 debt.
-- Do not update `SPEC.md`; the existing numeric-ID contract is already authoritative.
+- Thêm nhóm tác vụ vai trò-UI FE11 có thể xem xét riêng vào `PLAN.md` và `TASKS.md`.
+- Cập nhật `TEST_PLAN.md` và `CHANGELOG.md` với bằng chứng có giới hạn.
+- Đánh dấu `TD-022` `IN PROGRESS`, sau đó là `RESOLVED` chỉ sau khi con người xem xét, hợp nhất và CI sau hợp nhất.
+- Bảo toàn toàn bộ chức năng `Implementation State: DEFERRED` và mọi khoản nợ FE11 không liên quan.
+- Không cập nhật `SPEC.md`; hợp đồng ID số hiện có đã có thẩm quyền.
 
-## 13. Risks And Mitigations
+## 13. Rủi ro và giảm thiểu
 
-| Risk | Mitigation |
+| Rủi ro | Giảm nhẹ |
 | --- | --- |
-| Hardcoded IDs differ across environments | Use only the authenticated role catalog. |
-| Role names enter the mutation API again | Make API helpers accept `roleId` and add source-contract tests. |
-| Save partially succeeds | Stop at first failure and reconcile from the server. |
-| Revocation briefly leaves no role | Execute assignments before revocations; backend remains authoritative. |
-| Catalog is stale or incomplete | Validate the complete diff before the first mutation and surface a retryable error. |
-| Scope expands into Permissions or role editing | Keep the slice limited to the existing Manage Roles modal and endpoints. |
+| ID mã hóa cứng khác nhau giữa các môi trường | Chỉ sử dụng danh mục vai trò đã được xác thực. |
+| Tên vai trò lại nhập thao tác ghi API | Làm cho người trợ giúp API chấp nhận `roleId` và thêm các kiểm thử hợp đồng nguồn. |
+| Lưu thành công một phần | Dừng lại ở lỗi đầu tiên và điều chỉnh từ máy chủ. |
+| Việc thu hồi không còn vai trò nào trong thời gian ngắn | Thực hiện các nhiệm vụ trước khi bị thu hồi; chương trình máy chủ vẫn có thẩm quyền. |
+| Danh mục đã cũ hoặc chưa đầy đủ | Xác thực sự khác biệt hoàn chỉnh trước thao tác ghi đầu tiên và hiển thị lỗi có thể thử lại. |
+| Phạm vi mở rộng sang Quyền hoặc chỉnh sửa vai trò | Giữ lát cắt được giới hạn ở các điểm cuối và phương thức Quản lý vai trò hiện có. |
 
-## 14. Definition Of Done
+## 14. Định nghĩa xong
 
-This slice is complete only when:
+Phần này chỉ hoàn thành khi:
 
-- Every frontend role mutation uses a positive numeric role ID from the server catalog.
-- No hardcoded role ID or role-name mutation fallback exists.
-- Mixed changes assign before revoke.
-- Catalog and mapping failures send no mutation.
-- Partial failures reconcile the modal to authoritative server roles without a false success message.
-- Focused/full frontend checks, focused backend role regression, traceability, diff hygiene, and CI pass.
-- FE11 planning, evidence, changelog, and technical debt are synchronized.
-- Human implementation review, merge, and post-merge CI are recorded.
+- Mọi thao tác ghi vai trò giao diện người dùng đều sử dụng ID vai trò số dương từ danh mục máy chủ.
+- Không tồn tại ID vai trò được mã hóa cứng hoặc dự phòng thao tác ghi tên vai trò.
+- Các thay đổi hỗn hợp được chỉ định trước khi thu hồi.
+- Lỗi danh mục và ánh xạ không gửi thao tác ghi.
+- Lỗi một phần sẽ điều chỉnh phương thức với các vai trò máy chủ có thẩm quyền mà không có thông báo thành công sai.
+- Kiểm tra giao diện người dùng tập trung/đầy đủ, hồi quy vai trò máy chủ tập trung, truy vết, vệ sinh khác biệt và vượt qua CI.
+- FE11 lập kế hoạch, bằng chứng, nhật ký thay đổi và nợ kỹ thuật được đồng bộ hóa.
+- Đánh giá triển khai của con người, hợp nhất và CI sau hợp nhất được ghi lại.
 
-## 15. Open Questions
+## 15. Câu hỏi mở
 
-None. The user approved the name-to-ID adapter approach and authoritative reload behavior for partial failures on 2026-07-18.
+Không. Người dùng đã phê duyệt phương pháp tiếp cận bộ chuyển đổi tên thành ID và hành vi tải lại có
+thẩm quyền đối với các lỗi một phần vào ngày 18 tháng 07 năm 2026.

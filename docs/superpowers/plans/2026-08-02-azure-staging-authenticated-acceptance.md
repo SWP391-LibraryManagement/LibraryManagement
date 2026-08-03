@@ -1,158 +1,166 @@
-# Azure Staging Authenticated Acceptance Implementation Plan
+# Kế hoạch triển khai chấp nhận được xác thực theo giai đoạn Azure
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Đối với nhân viên đại lý:** SUB-SKILL BẮT BUỘC: Sử dụng siêu năng lực:phát triển theo định hướng phụ (được khuyến nghị) hoặc siêu năng lực:thực hiện các kế hoạch để triển khai kế hoạch này theo từng nhiệm vụ. Các bước sử dụng cú pháp hộp kiểm (`- [ ]`) để theo dõi.
 
-**Goal:** Prove the deployed staging system's authenticated, cross-role circulation behavior with four disposable synthetic accounts, then revoke/deactivate every fixture while preserving audit history.
+**Mục tiêu:** Chứng minh hành vi lưu thông chéo, được xác thực của hệ thống môi trường tiền sản xuất
+đã triển khai bằng bốn tài khoản tổng hợp dùng một lần, sau đó thu hồi/hủy kích hoạt mọi thiết bị cố
+định trong khi vẫn lưu giữ lịch sử kiểm tra.
 
-**Architecture:** A temporary local operator harness uploads a short-lived Node fixture utility through the authenticated Kudu VFS/command APIs. Product behavior is exercised through the real staging UI; SQL is limited to seed, due-date setup, exact-ID inspection, and cleanup. No harness, credential, endpoint, workflow, or fixture remains active after the run.
+**Kiến trúc:** Khai thác toán tử cục bộ tạm thời tải lên tiện ích cố định Node tồn tại trong thời
+gian ngắn thông qua API lệnh/API Kudu VFS đã được xác thực. Hành vi của sản phẩm được thực hiện
+thông qua giao diện người dùng môi trường tiền sản xuất thực tế; SQL được giới hạn ở hạt giống,
+thiết lập ngày đến hạn, kiểm tra ID chính xác và dọn dẹp. Không có khai thác, thông tin xác thực,
+điểm cuối, quy trình làm việc hoặc thiết bị cố định nào vẫn hoạt động sau khi chạy.
 
-**Tech Stack:** Azure CLI, Azure App Service Kudu, Node.js 22, `mssql`, `bcrypt`, Playwright/Chromium, React/Vite staging UI, Express staging API, SQL Server, PowerShell on Windows.
+**bộ công nghệ công nghệ:** Azure CLI, Azure App Service Kudu, Node.js 22, `mssql`, `bcrypt`,
+Playwright/Chromium, React/Giao diện người dùng môi trường tiền sản xuất Vite, Express dàn API, SQL
+Server, PowerShell trên Windows.
 
-## Global Constraints
+## Ràng buộc toàn cầu
 
-- Baseline/deployed SHA must be `e01585a9aa7d603daf932f7ac6459eaa0752746c`; approved design is commit `944c584c4867cc1d8abfd992537d089e04468638`.
-- Staging frontend is `https://www.thuvienhub.io.vn`; API is `https://app-library-api-staging-nhat714.azurewebsites.net`.
-- Azure target is resource group `rg-library-staging`, app `app-library-api-staging-nhat714`, SQL server `sql-library-staging-ea-nhat714`, database `LibraryManagementStaging`.
-- Use exactly four synthetic `.invalid` accounts: Member A, Member B, Librarian, and Admin; every account gets a distinct runtime-random password.
-- Never print, persist, screenshot, commit, or send a raw password, token, cookie, connection string, publishing credential, or authorization header. Password hashes may exist only in the database user row and the short-lived seed input that is deleted immediately after seed; they never enter logs, screenshots, evidence, or Git.
-- Use one run-specific book/copy. SQL mutations must be parameterized and restricted to manifest IDs.
-- No production access, new app endpoint, schema, migration, workflow, role, dependency, or product behavior.
-- Cleanup runs in `finally`; incomplete cleanup blocks task closeout and any rerun.
-- Staging mutations and the temporary harness require the user's H1 approval of this plan before execution.
-- Do not commit generated evidence/task changes before the combined H2 review.
-
----
-
-## Execution status — 2026-08-02
-
-- Status: `STOPPED_BEFORE_STAGING_MUTATION`; the authenticated scenario was not executed and no live-acceptance task is eligible for closeout.
-- Three deterministic bootstrap attempts were consumed. The first two stopped because the Windows Node process could not launch the Azure CLI shim. The third stopped before its first Kudu request because Azure returned an SCM URI containing user information and the request constructor rejected it.
-- The publishing credential was exposed only in local task tool output during that rejected request construction. It was immediately rotated with the App Service `newpassword` action and the replacement credential was verified without printing its value.
-- The harness now removes username/password components from the SCM URI before constructing any request. A read-only post-incident check confirmed the web app is `Running`, HTTPS-only, `/health` is `ok`, and `/home/data/staging-acceptance` is absent (`404`).
-- No synthetic user, membership, book, copy, loan, reservation, fine, notification, audit fixture, Kudu runtime, or seed-input file was created by these attempts.
-- A fresh H1 review is required before another staging mutation attempt because the approved three-attempt limit is exhausted. Until then, FE04-ADM05, FE04-CONV-002, FE11-UXR07, FE11-UXR08, FE11-UXR09, and FE11-PDO04 remain open.
-
-### Fresh H1 retry outcome
-
-- The user granted a fresh H1 for one additional staging acceptance attempt.
-- Read-only preflight passed after Azure SQL serverless resumed asynchronously: deployed SHA `e01585a9aa7d603daf932f7ac6459eaa0752746c`, public smoke `PASS`, database `Online`, Kudu Node `v18.17.1`, and the sanitized SCM URL contained no user information.
-- Pre-mutation verification recorded one non-reproducible backend test failure (`1174/1175`), then the isolated owning suite passed `73/73` and the one allowed full rerun passed backend `1175/1175` plus frontend `273/273` without a source change.
-- Run `lms-acceptance-20260802-72e4f014` stopped in `prepareRemoteRuntime`: Kudu returned HTTP `504` while extracting the deployed `node_modules.tar.gz`. The fixture script was not uploaded, `preflight`/`seed` were not called, and no synthetic database row was created.
-- The in-runtime cleanup helper could not complete after the timed-out command. A separately placed fixed-target helper removed only `/home/data/staging-acceptance`; both that runtime path and the external helper then returned `404`. App Service remained `Running`, the database remained `Online`, `/health` returned `200`, and a public book read returned `200`.
-- The focused local Playwright command for FE04/FE11 exited cleanly with `2/2` passing. This supplies new local clean-exit evidence but does not substitute for authenticated Azure staging acceptance.
-- No Azure acceptance task is eligible for closeout. Another live attempt requires a new reviewed execution approach that avoids synchronous full-archive extraction through the Kudu command timeout.
-- Read-only diagnosis confirmed `/home/site/wwwroot/migration-runtime/node_modules/mssql/package.json` exists. The ignored harness was prepared by setting `NODE_PATH` to that deployed runtime and removing the archive extraction step.
-
-### No-extraction H1 retry outcome
-
-- The user granted one H1 attempt for the no-extraction approach. Preflight passed: deployed SHA matched, Azure SQL auto-resumed to `Online`, public smoke passed, and the previous runtime/helper paths returned `404`.
-- Fresh local baseline passed backend `1175/1175`, frontend `273/273`, and the ignored harness contract checks.
-- Run `lms-acceptance-20260802-b4f7910a` prepared the no-extraction runtime, then stopped during fixture `preflight`; `seed` was never called. The external helper removed the runtime and itself, with both paths returning `404`.
-- Root cause is runtime compatibility: Kudu's default Node is `v18.17.1`, while deployed `mssql 12.5.5` requires Node `>=18.19.0` and failed with `dc.tracingChannel is not a function`. A parameterized read-only SQL check returned zero users and zero copies for the run ID.
-- Read-only diagnosis found the App Service Oryx Node `v22.22.2`, and proved it loads the deployed `mssql`. The ignored harness now discovers that compatible binary and uses it for fixture phases; contract tests pass `5/5` and transport preflight passes. This prepared path has not been executed live. Do not rerun without a new H1.
-
-### Oryx Node 22 H1 retry outcome
-
-- The user granted one H1 attempt for the prepared Oryx Node 22 path. Read-only preflight passed: the branch contained the deployed baseline, there was no product/dependency diff, harness contracts passed `5/5`, App Service was `Running` and HTTPS-only, Azure SQL resumed to `Online`, the deployed SHA matched, public smoke passed, Node `v22.22.2` loaded the deployed `mssql`, and both previous remote paths returned `404`.
-- Run `lms-acceptance-20260802-d6ecf326` prepared the runtime and seeded exactly four synthetic users plus one book/copy. All four actor logins and both member application submissions completed before the Admin membership-review step stopped on a locator timeout.
-- The timeout is a deterministic harness responsive-locator mismatch: every actor context uses viewport `1440x900`, while deployed CSS applies `@media (max-width: 1440px)` and hides `.admin-membership-table` in favor of `.admin-membership-cards`. The locator targeted the matching table `<tr>`, which repeatedly resolved but remained hidden. This run does not establish a product membership-review defect.
-- Mandatory cleanup returned `CLEANED`: four retained users but zero active users/tokens/members/open loans/open reservations/active books/active copies, with the run-specific copy retained only as inactive history. All four synthetic logins returned `401`, the retained old token returned `401`, and the runtime/helper paths returned `404`.
-- Fresh read-only post-run checks showed App Service `Running`, Azure SQL `Online`, `/health=200`, `/api/books=200`, and remote residue `404/404`. The single H1 attempt is consumed; do not rerun until the harness locator is reviewed under a new H1. No live-acceptance task is eligible for closeout.
-
-### Responsive-locator H1 retry outcome
-
-- The user granted one H1 to repair the responsive membership locator with a regression test and execute one additional live attempt. TDD recorded the new contract failing against the table-only selector, then passing `6/6` after the ignored harness selected the visible table row or responsive card. No product/dependency diff was introduced.
-- Fresh preflight passed: focused FE04/FE11 Playwright `2/2` with a clean process exit, public smoke `PASS`, deployed SHA matched, App Service was `Running` and HTTPS-only, Azure SQL was `Online`, Node `v22.22.2` loaded the deployed `mssql`, and remote residue was `404/404`.
-- Run `lms-acceptance-20260802-6ee409c5` passed the repaired Admin locator, approved both membership applications, passed the eight-item Admin navigation/responsive overflow checks, created and approved Member A's borrow request, created Member B's active reservation, and aged BorrowDetail `59`.
-- The run stopped before return mutation because the harness expected `Quá hạn 3 ngày`. At execution time the Vietnam business date was `2026-08-02` while UTC was `2026-08-01`; fixture `age` used `DATEADD(DAY, -3, CAST(GETDATE() AS DATE))`, producing due date `2026-07-29`. The deployed `Asia/Ho_Chi_Minh` due-status helper deterministically maps that date to `Quá hạn 4 ngày`. This is a fixture business-date mismatch, not a product due-status defect.
-- Mandatory cleanup returned `CLEANED`: four retained users but zero active users/tokens/members/open loans/open reservations/active books/active copies, with the run-specific copy retained only as inactive history. Four login attempts returned `401`, the old token returned `401`, and the runtime/helper paths returned `404`.
-- Fresh post-run checks showed App Service `Running`, Azure SQL `Online`, `/health=200`, `/api/books=200`, remote residue `404/404`, and no local run manifest/artifact. The single H1 attempt is consumed; do not fix or rerun without a new H1. No live-acceptance task is eligible for closeout.
-
-### Business-date fixture H1 retry outcome
-
-- The user granted one H1 to replace SQL server-calendar aging with an exact `Asia/Ho_Chi_Minh` business-date input, add a UTC/Vietnam boundary regression, and execute one additional live attempt.
-- TDD recorded six existing contracts passing while the new boundary test failed because the helper did not exist. After the ignored harness added the helper and parameterized `sql.Date` input, syntax checks and all contracts passed `7/7`. The regression maps `2026-08-01T21:20Z` to Vietnam date `2026-08-02` and subtracts three days to `2026-07-30`.
-- Fresh preflight passed: focused FE04/FE11 Playwright `2/2` in `27.0s` with a clean process exit, public smoke `PASS`, deployed SHA matched, App Service was `Running` and HTTPS-only, Azure SQL was `Online`, Node `v22.22.2` loaded deployed `mssql`, and remote residue was `404/404`.
-- Run `lms-acceptance-20260802-2e3a025d` seeded exactly four synthetic users plus one book/copy, repeated the proven membership/Admin/borrow/reservation milestones, and aged BorrowDetail `60`. The live UI rendered the correct literal `Quá hạn 3 ngày` in three visible locations.
-- The run stopped before return mutation because page-wide `getByText(/Quá hạn 3 ngày/i)` resolved to the selected row badge, return-detail badge, and strong summary element; Playwright strict mode requires a unique match. This proves the business-date fix live and identifies a new ignored-harness selector blocker, not a product defect.
-- Mandatory cleanup returned `CLEANED`: four retained users but zero active users/tokens/members/open loans/open reservations/active books/active copies, with the run-specific copy retained only as inactive history. Four login attempts returned `401`, the old token returned `401`, and the runtime/helper paths returned `404`.
-- Fresh post-run checks showed App Service `Running`, Azure SQL `Online`, `/health=200`, `/api/books=200`, and transport residue `404/404`. The single H1 attempt is consumed; do not fix or rerun without a new H1. No live-acceptance task is eligible for closeout.
-
-### Overdue-label locator H1 retry outcome
-
-- The user granted one H1 to scope the overdue assertion to a unique return-detail region, add a regression for three duplicate visible labels, and execute one additional live attempt.
-- TDD recorded seven existing contracts passing while the new locator contract failed against the page-wide assertion. After the ignored harness used `.return-detail .return-dates` with exact text, syntax checks and all contracts passed `8/8`. No product/dependency diff was introduced.
-- Fresh preflight passed: focused FE04/FE11 Playwright `2/2` in `23.7s` with a clean process exit, public smoke `PASS`, deployed SHA matched, App Service was `Running` and HTTPS-only, Azure SQL was `Online`, Node `v22.22.2` loaded deployed `mssql`, and remote residue was `404/404`.
-- Run `lms-acceptance-20260802-9a3f0f98` seeded exactly four synthetic users plus one book/copy, repeated the membership/Admin/borrow/reservation milestones, aged BorrowDetail `61`, passed the exact `Quá hạn 3 ngày` assertion, committed the return, displayed the queue handoff, and navigated to the reservation workspace.
-- The run stopped before fine mutation because the FE09 workflow button's accessible name is `2 Tính tiền phạt`, while the harness required exact name `Tính tiền phạt`. A read-only local Playwright accessibility probe returned exact-name count `0` and suffix-name count `1`. This is a deterministic ignored-harness locator mismatch, not a product FE09 defect.
-- Mandatory cleanup returned `CLEANED`: four retained users but zero active users/tokens/members/open loans/open reservations/active books/active copies, with the run-specific copy retained only as inactive history. Four login attempts returned `401`, the old token returned `401`, and the runtime/helper paths returned `404`.
-- Fresh post-run checks showed App Service `Running`, Azure SQL `Online`, `/health=200`, `/api/books=200`, transport residue `404/404`, product diff `0`, and local run artifact count `0`. The single H1 attempt is consumed; do not fix or rerun without a new H1. No live-acceptance task is eligible for closeout.
-
-### FE09 workflow-tab locator H1 retry outcome
-
-- The user granted one H1 to match the numbered FE09 tab by its stable accessible-name suffix, add an accessibility regression, and execute one additional live attempt.
-- TDD recorded eight existing contracts passing while the ninth failed against the old exact-name locator. After the ignored harness scoped the tab under `Quy trình quản lý tiền phạt` and used `/Tính tiền phạt$/`, syntax checks and all contracts passed `9/9`. No product/dependency diff was introduced.
-- Fresh preflight passed: focused FE04/FE11 Playwright `2/2` in `23.9s` with a clean process exit, public smoke `PASS`, deployed SHA matched `e01585a9aa7d603daf932f7ac6459eaa0752746c`, App Service was `Running` and HTTPS-only, Azure SQL was `Online`, Node `v22.22.2` loaded deployed `mssql`, and remote residue was `404/404`.
-- Run `lms-acceptance-20260802-e941b470` seeded exactly four synthetic users plus one book/copy, repeated the membership/Admin/borrow/reservation milestones, aged BorrowDetail `62`, passed the exact `Quá hạn 3 ngày` assertion, committed the return, passed the numbered FE09 tab, advanced through fine calculation, and navigated to the reservation workspace.
-- The run stopped before FE08 queue mutation because the harness filtered the generic `.reservation-queue-card` by the run-specific book title. The card does not render that title as card text; it appears only in a copy-selector option. The canonical connected-flow E2E locates the unique `Giữ sách & thông báo` button directly after handoff. This is a deterministic ignored-harness locator mismatch, not a demonstrated product FE08 defect.
-- Mandatory cleanup returned `CLEANED`: four retained users but zero active users/tokens/members/open loans/open reservations/active books/active copies, with the run-specific copy retained only as inactive history. Four login attempts returned `401`, the old token returned `401`, and the runtime/helper paths returned `404`.
-- Fresh post-run checks showed App Service `Running`, Azure SQL `Online`, `/health=200`, `/api/books=200`, transport residue `404/404`, syntax and harness contracts `9/9`, product diff `0`, and local run artifact count `0`. The single H1 attempt is consumed; no rerun or full L1-L4 closeout gate is permitted from this failed L4 acceptance. No live-acceptance task is eligible for closeout.
-
-### FE08 reservation-queue locator H1 retry outcome
-
-- The user granted one H1 to select the exact fixture copy instead of filtering the generic queue card by book title, add a regression aligned with the queue UI, and execute one additional live attempt.
-- TDD recorded nine existing contracts passing while the tenth failed against the old `bookTitle` card filter. After the ignored harness selected `seed.copyId`, waited for the queue head carrying `ACC-${runId}`, and scoped `Giữ sách & thông báo` to that head, syntax checks and all contracts passed `10/10`. No product/dependency diff was introduced.
-- Fresh preflight passed: focused FE04/FE11 Playwright `2/2` in `23.3s` with a clean process exit, public smoke `PASS`, deployed SHA matched `e01585a9aa7d603daf932f7ac6459eaa0752746c`, App Service was `Running` and HTTPS-only, Azure SQL was `Online`, required `DB_*` setting names were present without values, Node `v22.22.2` loaded deployed `mssql`, and remote residue was `404/404`.
-- Run `lms-acceptance-20260802-372b4ded` seeded exactly four synthetic users plus book `29`/copy `53`, repeated the membership/Admin/borrow/reservation milestones, aged BorrowDetail `63`, passed return and fine calculation, processed the exact-copy FE08 queue, and observed the subsequent Member B notification badge.
-- The run stopped on FE12 report readiness because the harness required heading `/Báo cáo mượn sách/i`, while `BorrowingReportPage` renders `Báo cáo mượn/trả`. The canonical system golden-path E2E verifies the `Tổng bản ghi` KPI instead of that stale heading. This is a deterministic ignored-harness locator mismatch, not a demonstrated product FE12 defect.
-- Mandatory cleanup returned `CLEANED`: four retained users but zero active users/tokens/members/open loans/open reservations/active books/active copies, with the run-specific copy retained only as inactive history. Four login attempts returned `401`, the old token returned `401`, and the runtime/helper paths returned `404`.
-- Fresh post-run checks showed App Service `Running`, Azure SQL `Online`, `/health=200`, `/api/books=200`, transport residue `404/404`, syntax and harness contracts `10/10`, product diff `0`, and local run artifact count `0`. The single H1 attempt is consumed; no rerun or full L1-L4 closeout gate is permitted from this failed L4 acceptance. No live-acceptance task is eligible for closeout.
-
-### FE12 borrowing-report KPI locator H1 retry outcome
-
-- The user granted one H1 to replace the stale FE12 heading locator with the canonical `Tổng bản ghi` KPI, add a regression, and execute one additional live attempt.
-- TDD recorded ten existing contracts passing while the eleventh failed against `/Báo cáo mượn sách/i`. After the ignored harness waited for the report `.kpi-card` containing `Tổng bản ghi` and rejected the stale locator, syntax checks and all contracts passed `11/11`. No product/dependency diff was introduced.
-- Fresh preflight passed: focused FE04/FE11 Playwright `2/2` in `20.9s` with a clean process exit, public smoke `PASS`, deploy workflow run `30711210037` succeeded for exact SHA `e01585a9aa7d603daf932f7ac6459eaa0752746c`, App Service was `Running` and HTTPS-only, Azure SQL was `Online`, required `DB_*` setting names were present without values, Node `v22.22.2` loaded deployed `mssql`, and remote residue was `404/404`.
-- Run `lms-acceptance-20260802-3ea0d609` seeded user IDs `118-121`, book `30`, and copy `54`; aged BorrowDetail `64`; passed every prior locator boundary, exact-copy queue processing, Member B notification, FE12 KPI readiness, Admin audit loading, and all planned negative-authorization/no-mutation assertions.
-- The final inspect failed the three-day fine invariant. Exact retained SQL history after cleanup is `FineId=6`, `UserId=118`, `BorrowDetailId=64`, `OverdueDays=2`, `Amount=10000`, `Status=CANCELLED`, `DueDate=2026-07-30`, and `ReturnDate=2026-08-01`. The live return UI had correctly shown `Quá hạn 3 ngày` on Vietnam business date `2026-08-02`.
-- Read-only root-cause tracing found that `borrowingService.returnBorrow` computes `returnBusinessDate` but passes raw UTC `returnDate=clock()` to `borrowingRepository.returnBorrowDetail`, which binds it as `sql.Date`. FE09 correctly calculates from the persisted `detail.returnDate`, so this is a genuine FE07 business-date persistence defect exposed downstream in FE09.
-- Mandatory cleanup returned `CLEANED`: four retained users but zero active users/tokens/members/open loans/open reservations/active books/active copies, with one run-specific copy retained only as inactive history. Four login attempts and the old token returned `401`; remote residue was `404/404`; local artifact count and product diff were `0`.
-- The single H1 attempt is consumed. Do not rerun, change product code, execute full L1-L4 closeout gates, or close tasks under this H1. Product remediation needs a new reviewed H1 with a persisted-date regression, focused FE07/FE09 verification, and a subsequent clean staging acceptance.
+- SHA cơ sở/đã triển khai phải là `e01585a9aa7d603daf932f7ac6459eaa0752746c`; thiết kế được phê duyệt là cam kết `944c584c4867cc1d8abfd992537d089e04468638`.
+- Giao diện môi trường tiền sản xuất là `https://www.thuvienhub.io.vn`; API là `https://app-library-api-staging-nhat714.azurewebsites.net`.
+- Mục tiêu Azure là nhóm tài nguyên `rg-library-staging`, ứng dụng `app-library-api-staging-nhat714`, máy chủ SQL `sql-library-staging-ea-nhat714`, cơ sở dữ liệu `LibraryManagementStaging`.
+- Sử dụng chính xác bốn tài khoản `.invalid` tổng hợp: Thành viên A, Thành viên B, Thủ thư và Quản trị viên; mọi tài khoản đều nhận được một mật khẩu ngẫu nhiên trong thời gian chạy riêng biệt.
+- Không bao giờ in, lưu giữ, chụp màn hình, cam kết hoặc gửi mật khẩu thô, mã thông báo, cookie, chuỗi kết nối, thông tin xác thực xuất bản hoặc tiêu đề ủy quyền. Băm mật khẩu chỉ có thể tồn tại trong hàng người dùng cơ sở dữ liệu và đầu vào hạt giống tồn tại trong thời gian ngắn sẽ bị xóa ngay sau hạt giống; họ không bao giờ nhập nhật ký, ảnh chụp màn hình, bằng chứng hoặc Git.
+- Sử dụng một cuốn sách/bản sao dành riêng cho từng lần chạy. Các thao tác ghi SQL phải được tham số hóa và giới hạn ở ID tệp kê khai.
+- Không có quyền truy cập sản xuất, điểm cuối ứng dụng mới, lược đồ, di chuyển, quy trình làm việc, vai trò, sự phụ thuộc hoặc hành vi sản phẩm.
+- Quá trình dọn dẹp chạy trong `finally`; việc dọn dẹp chưa hoàn tất sẽ chặn việc đóng nhiệm vụ và bất kỳ lần chạy lại nào.
+- thao tác ghi giai đoạn và khai thác tạm thời yêu cầu sự chấp thuận H1 của người dùng đối với kế hoạch này trước khi thực hiện.
+- Không cam kết thay đổi bằng chứng/nhiệm vụ được tạo ra trước khi xem xét H2 kết hợp.
 
 ---
 
-## File Responsibility Map
+## Trạng thái thực thi — 2026-08-02
 
-### Temporary and ignored — never commit
+- Trạng thái: `STOPPED_BEFORE_STAGING_MUTATION`; kịch bản đã xác thực không được thực thi và không có tác vụ chấp nhận trực tiếp nào đủ điều kiện để kết thúc.
+- Ba lần thử khởi động xác định đã được thực hiện. Hai cái đầu tiên dừng lại vì quá trình Windows Node không thể khởi chạy miếng chêm Azure CLI. Lệnh thứ ba dừng trước yêu cầu Kudu đầu tiên vì Azure trả về SCM URI chứa thông tin người dùng và trình tạo yêu cầu đã từ chối nó.
+- Thông tin đăng nhập xuất bản chỉ được hiển thị ở đầu ra của công cụ tác vụ cục bộ trong quá trình xây dựng yêu cầu bị từ chối đó. Nó ngay lập tức được luân chuyển bằng hành động App Service `newpassword` và thông tin xác thực thay thế đã được xác minh mà không in giá trị của nó.
+- Giờ đây, dây nịt sẽ loại bỏ các thành phần tên người dùng/mật khẩu khỏi SCM URI trước khi xây dựng bất kỳ yêu cầu nào. Kiểm tra sau sự cố chỉ đọc đã xác nhận ứng dụng web là `Running`, HTTPS-chỉ, `/health` là `ok` và `/home/data/staging-acceptance` không có (`404`).
+- Không có người dùng tổng hợp, tư cách thành viên, cuốn sách, bản sao, lượt mượn, đặt chỗ, khoản phạt, thông báo, lịch kiểm tra, thời gian chạy Kudu hoặc tệp đầu vào hạt giống nào được tạo bởi những nỗ lực này.
+- Cần phải có đánh giá H1 mới trước một lần thử thao tác ghi theo giai đoạn khác vì đã hết giới hạn ba lần thử được phê duyệt. Cho đến lúc đó, FE04-ADM05, FE04-CONV-002, FE11-UXR07, FE11-UXR08, FE11-UXR09, và FE11-PDO04 vẫn mở.
 
-- `tmp/staging-acceptance/orchestrate.js`: hold Kudu publishing credentials only in memory and own one process-lifetime for runId, raw passwords, seed, browser automation, and mandatory cleanup.
-- `tmp/staging-acceptance/fixture.js`: implement `preflight`, `seed`, `inspect`, `age`, `cleanup`, and `verify-cleanup` against deployed staging configuration.
-- The temporary implementation intentionally keeps the runner and browser flow in one ignored Node process so raw passwords never cross a process or file boundary.
-- `output/playwright/staging-acceptance/<runId>/*.png`: redacted screenshots; excluded from Git.
+### Kết quả thử lại H1 mới
 
-### Persistent evidence — eligible for commit after H2
+- Người dùng đã cấp H1 mới cho một lần thử chấp nhận giai đoạn bổ sung.
+- Kiểm tra trước chỉ đọc đã đạt sau khi Azure SQL không máy chủ tiếp tục hoạt động bất đồng bộ: SHA `e01585a9aa7d603daf932f7ac6459eaa0752746c` đã triển khai, kiểm thử nhanh công khai `PASS`, cơ sở dữ liệu `Online`, Kudu Node `v18.17.1` và URL SCM đã được loại bỏ thông tin người dùng.
+- Quá trình xác minh trước thao tác ghi đã ghi lại một lỗi kiểm tra phần máy chủ không thể tái tạo (`1174/1175`), sau đó bộ sở hữu bị cô lập đã vượt qua `73/73` và một lỗi cho phép chạy lại toàn bộ đã vượt qua phần máy chủ `1175/1175` cùng với giao diện người dùng `273/273` mà không cần thay đổi nguồn.
+- Chạy `lms-acceptance-20260802-72e4f014` đã dừng trong `prepareRemoteRuntime`: Kudu trả về HTTP `504` trong khi giải nén `node_modules.tar.gz` đã triển khai. Tập lệnh cố định không được tải lên, `preflight`/`seed` không được gọi và không có hàng cơ sở dữ liệu tổng hợp nào được tạo.
+- Trình trợ giúp dọn dẹp trong thời gian chạy không thể hoàn thành sau lệnh hết thời gian. Trình trợ giúp mục tiêu cố định được đặt riêng chỉ loại bỏ `/home/data/staging-acceptance`; cả đường dẫn thời gian chạy đó và trình trợ giúp bên ngoài đều trả về `404`. App Service vẫn là `Running`, cơ sở dữ liệu vẫn là `Online`, `/health` trả về `200` và một cuốn sách công khai đã đọc trả về `200`.
+- Lệnh Playwright cục bộ tập trung cho FE04/FE11 đã thoát hoàn toàn với việc chuyển `2/2`. Điều này cung cấp bằng chứng thoát khỏi cục bộ mới nhưng không thay thế cho việc chấp nhận Môi trường tiền sản xuất Azure đã được xác thực.
+- Không có nhiệm vụ chấp nhận Azure nào đủ điều kiện để kết thúc. Một lần thử trực tiếp khác yêu cầu một phương pháp thực thi được đánh giá mới nhằm tránh việc trích xuất toàn bộ kho lưu trữ đồng bộ thông qua thời gian chờ của lệnh Kudu.
+- Chẩn đoán chỉ đọc đã xác nhận tồn tại `/home/site/wwwroot/migration-runtime/node_modules/mssql/package.json`. Khai thác bị bỏ qua đã được chuẩn bị bằng cách đặt `NODE_PATH` cho thời gian chạy đã triển khai đó và xóa bước trích xuất kho lưu trữ.
 
-- `.sdd/reviews/release-closeout-staging-acceptance-2026-08-02.md`: single source of live acceptance and cleanup evidence.
-- `.sdd/specs/feat-membership-management/{PLAN,TASKS,CHANGELOG}.md`: update only FE04 items fully covered by the run and later H2.
-- `.sdd/specs/feat-user-role-management/{TASKS,CHANGELOG}.md`: update only FE11 acceptance items fully covered by the run and later H2.
-- `.sdd/traceability.yaml`: change only if all required evidence changes a feature status under its existing rules.
+### Kết quả thử lại H1 không trích xuất
 
-### Task 1: Fail-closed Azure and repository preflight
+- Người dùng đã cấp một lần thử H1 cho phương pháp không trích xuất. Kiểm tra trước đã thành công: SHA đã triển khai khớp, Azure SQL tự động tiếp tục thành `Online`, kiểm thử nhanh công khai đạt và đường dẫn thời gian chạy/trợ giúp trước đó trả về `404`.
+- mốc cơ sở cục bộ mới đã vượt qua `1175/1175` máy chủ, `273/273` giao diện người dùng và kiểm tra hợp đồng khai thác bị bỏ qua.
+- Chạy `lms-acceptance-20260802-b4f7910a` đã chuẩn bị thời gian chạy không trích xuất, sau đó dừng trong quá trình cố định `preflight`; `seed` chưa bao giờ được gọi. Trình trợ giúp bên ngoài đã xóa thời gian chạy và chính nó, với cả hai đường dẫn đều trả về `404`.
+- Nguyên nhân cốt lõi là khả năng tương thích thời gian chạy: Nút mặc định của Kudu là `v18.17.1`, trong khi `mssql 12.5.5` được triển khai yêu cầu Nút `>=18.19.0` và không thành công với `dc.tracingChannel is not a function`. Kiểm tra SQL chỉ đọc được tham số hóa đã trả về 0 người dùng và 0 bản sao cho ID chạy.
+- Chẩn đoán chỉ đọc đã tìm thấy App Service Oryx Node `v22.22.2` và chứng minh rằng nó tải `mssql` đã triển khai. Giờ đây, bộ khai thác bị bỏ qua sẽ phát hiện ra mã nhị phân tương thích đó và sử dụng nó cho các pha cố định; các cuộc kiểm tra hợp đồng đã vượt qua `5/5` và các chuyến bay trước khi vận chuyển. Đường dẫn đã chuẩn bị này chưa được thực thi trực tiếp. Đừng chạy lại mà không có H1 mới.
 
-**Files:**
+### Kết quả thử lại Oryx Node 22 H1
 
-- Read: `docs/deployment/azure-staging-guide.md`
-- Read: `.github/workflows/deploy-staging.yml`
-- Read: `database/Librarymanagement.sql`
-- Read: `backend/src/config/db.js`
-- Read: `backend/src/routes/{membership,borrowing,reservation,notification,report,fine}Routes.js`
+- Người dùng đã cấp một lần thử H1 cho đường dẫn Oryx Node 22 đã chuẩn bị. Kiểm tra trước chỉ đọc đã đạt: nhánh chứa mốc cơ sở đã triển khai, không có khác biệt về sản phẩm/phụ thuộc, hợp đồng khai thác đạt `5/5`, App Service ở trạng thái `Running` và chỉ dùng HTTPS, Azure SQL tiếp tục thành `Online`, SHA đã triển khai khớp, kiểm thử nhanh công khai đạt, Node `v22.22.2` tải được `mssql` đã triển khai và cả hai đường dẫn từ xa trước đó đều trả về `404`.
+- Chạy `lms-acceptance-20260802-d6ecf326` đã chuẩn bị thời gian chạy và tạo chính xác bốn người dùng tổng hợp cộng với một cuốn sách/bản sao. Tất cả bốn lần đăng nhập của tác nhân và cả việc gửi đơn đăng ký thành viên đều hoàn tất trước khi bước đánh giá tư cách thành viên của Quản trị viên dừng lại khi hết thời gian chờ của bộ định vị.
+- Timeout do locator responsive không khớp: mọi actor context đều dùng viewport `1440x900`, trong khi CSS áp dụng `@media (max-width: 1440px)` và ẩn `.admin-membership-table` để hiển thị `.admin-membership-cards`. Locator nhắm vào `<tr>` đúng dữ liệu nhưng phần tử vẫn bị ẩn. Lần chạy này không cho thấy lỗi nghiệp vụ đánh giá tư cách thành viên.
+- Việc dọn dẹp bắt buộc đã trả về `CLEANED`: giữ lại 4 người dùng nhưng không còn người dùng đang hoạt động, mã thông báo, tư cách thành viên, lượt mượn mở, đặt chỗ mở, sách đang hoạt động hoặc bản sao đang hoạt động; bản sao dành riêng cho lượt chạy chỉ được giữ dưới dạng lịch sử không hoạt động. Cả bốn thông tin đăng nhập tổng hợp đều trả về `401`, mã thông báo cũ được giữ lại trả về `401` và đường dẫn thời gian chạy/trợ giúp trả về `404`.
+- Các lần kiểm tra mới sau khi chạy chỉ đọc cho thấy App Service `Running`, Azure SQL `Online`, `/health=200`, `/api/books=200` và dư lượng từ xa `404/404`. Lần thử H1 duy nhất đã bị tiêu tốn; không chạy lại cho đến khi bộ định vị dây đai được xem xét theo H1 mới. Không có nhiệm vụ chấp nhận trực tiếp nào đủ điều kiện để kết thúc.
 
-**Interfaces:**
+### Kết quả thử lại H1 của bộ định vị đáp ứng
 
-- Consumes: Azure login, exact resource names, merge/deploy evidence, clean local design branch.
-- Produces: `PRECHECK_PASS` or an abort before any staging mutation.
+- Người dùng đã cấp một H1 để sửa chữa bộ định vị tư cách thành viên đáp ứng bằng kiểm thử hồi quy và thực hiện thêm một lần thử trực tiếp. TDD đã ghi lại hợp đồng mới không thành công đối với bộ chọn chỉ trong bảng, sau đó vượt qua `6/6` sau khi khai thác bị bỏ qua đã chọn hàng trong bảng hiển thị hoặc thẻ phản hồi. Không có sự khác biệt về sản phẩm/phụ thuộc nào được giới thiệu.
+- Kiểm tra trước mới đã đạt: FE04/FE11 Playwright tập trung `2/2` với mã thoát quy trình sạch, kiểm thử nhanh công khai `PASS`, SHA đã triển khai khớp, App Service là `Running` và chỉ cho phép HTTPS, Azure SQL là `Online`, Node `v22.22.2` tải được `mssql` đã triển khai và kiểm tra dữ liệu còn sót từ xa trả về `404/404`.
+- Chạy `lms-acceptance-20260802-6ee409c5` đã vượt qua công cụ định vị Quản trị viên đã sửa chữa, phê duyệt cả hai đơn đăng ký thành viên, vượt qua tám mục điều hướng Quản trị viên/kiểm tra tràn phản hồi, tạo và phê duyệt yêu cầu mượn của Thành viên A, tạo đặt chỗ hoạt động của Thành viên B và BorrowDetail `59` cũ.
+- Quá trình chạy đã dừng trước khi thao tác ghi quay trở lại vì dây nịt dự kiến là `Quá hạn 3 ngày`. Tại thời điểm thực hiện, ngày kinh doanh tại Việt Nam là `2026-08-02` trong khi UTC là `2026-08-01`; lịch thi đấu `age` sử dụng `DATEADD(DAY, -3, CAST(GETDATE() AS DATE))`, tạo ra ngày đáo hạn `2026-07-29`. Trình trợ giúp trạng thái phù hợp `Asia/Ho_Chi_Minh` được triển khai sẽ ánh xạ xác định ngày đó tới `Quá hạn 4 ngày`. Đây là sự cố không khớp về ngày làm việc chứ không phải lỗi về trạng thái của sản phẩm.
+- Việc dọn dẹp bắt buộc đã trả về `CLEANED`: 4 người dùng được giữ lại nhưng không có người dùng đang hoạt động/mã thông báo/members/open cho vay/đặt chỗ mở/sách đang hoạt động/bản sao đang hoạt động, với bản sao dành riêng cho lần chạy chỉ được giữ lại dưới dạng lịch sử không hoạt động. Bốn lần đăng nhập trả về `401`, mã thông báo cũ trả về `401` và đường dẫn thời gian chạy/trợ giúp trả về `404`.
+- Các lần kiểm tra mới sau khi chạy cho thấy App Service `Running`, Azure SQL `Online`, `/health=200`, `/api/books=200`, `404/404` dư lượng từ xa và không có bản kê khai/tạo phẩm chạy cục bộ. Lần thử H1 duy nhất đã bị tiêu tốn; không sửa hoặc chạy lại mà không có H1 mới. Không có nhiệm vụ chấp nhận trực tiếp nào đủ điều kiện để kết thúc.
 
-- [ ] **Step 1: Confirm local branch and baseline**
+### Kết quả thử lại lịch thi đấu ngày làm việc H1
+
+- Người dùng đã cấp một H1 để thay thế lịch cũ của máy chủ SQL bằng thông tin đầu vào ngày làm việc chính xác của `Asia/Ho_Chi_Minh`, thêm hồi quy ranh giới UTC/Việt Nam và thực hiện thêm một lần thử trực tiếp.
+- TDD đã ghi lại sáu hợp đồng hiện có đã được thông qua trong khi kiểm thử ranh giới mới không thành công do người trợ giúp không tồn tại. Sau khi khai thác bị bỏ qua đã thêm trình trợ giúp và đầu vào `sql.Date` được tham số hóa, kiểm tra cú pháp và tất cả các hợp đồng đều vượt qua `7/7`. Hồi quy ánh xạ `2026-08-01T21:20Z` tới ngày `2026-08-02` của Việt Nam và trừ ba ngày cho `2026-07-30`.
+- Kiểm tra trước mới đã đạt: FE04/FE11 Playwright tập trung `2/2` trong `27.0s` với mã thoát quy trình sạch, kiểm thử nhanh công khai `PASS`, SHA đã triển khai khớp, App Service là `Running` và chỉ cho phép HTTPS, Azure SQL là `Online`, Node `v22.22.2` tải được `mssql` đã triển khai và kiểm tra dữ liệu còn sót từ xa trả về `404/404`.
+- Chạy `lms-acceptance-20260802-2e3a025d` đã tạo ra chính xác bốn người dùng tổng hợp cùng với một cuốn sách/bản sao, lặp lại các cột mốc thành viên/Quản trị viên/borrow/reservation đã được chứng minh và BorrowDetail `60` được lão hóa. Giao diện người dùng trực tiếp hiển thị `Quá hạn 3 ngày` theo đúng nghĩa đen ở ba vị trí hiển thị.
+- Quá trình chạy đã dừng trước thao tác ghi trả về vì `getByText(/Quá hạn 3 ngày/i)` trên toàn trang đã phân giải thành huy hiệu hàng đã chọn, huy hiệu chi tiết trả về và phần tử tóm tắt mạnh mẽ; Chế độ nghiêm ngặt của Playwright yêu cầu một kết quả khớp duy nhất. Điều này chứng tỏ bản sửa lỗi ngày làm việc đang hoạt động và xác định trình chặn bộ chọn khai thác bị bỏ qua mới chứ không phải lỗi sản phẩm.
+- Việc dọn dẹp bắt buộc đã trả về `CLEANED`: 4 người dùng được giữ lại nhưng không có người dùng đang hoạt động/mã thông báo/members/open cho vay/đặt chỗ mở/sách đang hoạt động/bản sao đang hoạt động, với bản sao dành riêng cho lần chạy chỉ được giữ lại dưới dạng lịch sử không hoạt động. Bốn lần đăng nhập trả về `401`, mã thông báo cũ trả về `401` và đường dẫn thời gian chạy/trợ giúp trả về `404`.
+- Các lần kiểm tra mới sau khi chạy cho thấy App Service `Running`, Azure SQL `Online`, `/health=200`, `/api/books=200` và cặn vận chuyển `404/404`. Lần thử H1 duy nhất đã bị tiêu tốn; không sửa hoặc chạy lại mà không có H1 mới. Không có nhiệm vụ chấp nhận trực tiếp nào đủ điều kiện để kết thúc.
+
+### Kết quả thử lại công cụ định vị nhãn quá hạn H1
+
+- Người dùng đã cấp một H1 để xác định phạm vi xác nhận quá hạn cho một vùng chi tiết trả về duy nhất, thêm hồi quy cho ba nhãn hiển thị trùng lặp và thực hiện thêm một lần thử trực tiếp.
+- TDD đã ghi lại bảy hợp đồng hiện có được thông qua trong khi hợp đồng định vị mới không thành công so với xác nhận trên toàn trang. Sau khi khai thác bị bỏ qua, `.return-detail .return-dates` đã sử dụng với văn bản chính xác, kiểm tra cú pháp và tất cả các hợp đồng đều vượt qua `8/8`. Không có sự khác biệt về sản phẩm/phụ thuộc nào được giới thiệu.
+- Kiểm tra trước mới đã đạt: FE04/FE11 Playwright tập trung `2/2` trong `23.7s` với mã thoát quy trình sạch, kiểm thử nhanh công khai `PASS`, SHA đã triển khai khớp, App Service là `Running` và chỉ cho phép HTTPS, Azure SQL là `Online`, Node `v22.22.2` tải được `mssql` đã triển khai và kiểm tra dữ liệu còn sót từ xa trả về `404/404`.
+- Chạy `lms-acceptance-20260802-9a3f0f98` đã gieo mầm chính xác bốn người dùng tổng hợp cộng với một cuốn sách/bản sao, lặp lại các mốc thành viên/Quản trị viên/mượn/reservation, BorrowDetail `61` cũ, đã vượt qua xác nhận `Quá hạn 3 ngày` chính xác, cam kết trả sách, hiển thị chuyển bàn giao đợi và điều hướng đến không gian làm việc đặt chỗ.
+- Quá trình chạy đã dừng trước khi có thao tác ghi tốt vì tên có thể truy cập được của nút quy trình làm việc FE09 là `2 Tính tiền phạt`, trong khi dây nịt yêu cầu tên chính xác là `Tính tiền phạt`. Đầu dò khả năng truy cập Playwright cục bộ chỉ đọc trả về số lượng tên chính xác `0` và số lượng tên hậu tố `1`. Đây là lỗi định vị bộ khai thác bị bỏ qua mang tính xác định, không phải lỗi FE09 của sản phẩm.
+- Việc dọn dẹp bắt buộc đã trả về `CLEANED`: 4 người dùng được giữ lại nhưng không có người dùng đang hoạt động/mã thông báo/members/open cho vay/đặt chỗ mở/sách đang hoạt động/bản sao đang hoạt động, với bản sao dành riêng cho lần chạy chỉ được giữ lại dưới dạng lịch sử không hoạt động. Bốn lần đăng nhập trả về `401`, mã thông báo cũ trả về `401` và đường dẫn thời gian chạy/trợ giúp trả về `404`.
+- Các lần kiểm tra mới sau khi chạy cho thấy App Service `Running`, Azure SQL `Online`, `/health=200`, `/api/books=200`, cặn vận chuyển `404/404`, độ khác biệt của sản phẩm `0` và số lượng tạo tác chạy cục bộ `0`. Lần thử H1 duy nhất đã bị tiêu tốn; không sửa hoặc chạy lại mà không có H1 mới. Không có nhiệm vụ chấp nhận trực tiếp nào đủ điều kiện để kết thúc.
+
+### FE09 kết quả thử lại định vị tab quy trình công việc H1
+
+- Người dùng đã cấp một H1 để khớp với tab FE09 được đánh số theo hậu tố tên có thể truy cập ổn định của nó, thêm hồi quy khả năng truy cập và thực hiện một lần thử trực tiếp bổ sung.
+- TDD đã ghi lại tám hợp đồng hiện có được thông qua trong khi hợp đồng thứ chín không thành công so với công cụ định vị tên chính xác cũ. Sau khi khai thác bị bỏ qua trong phạm vi tab trong `Quy trình quản lý tiền phạt` và sử dụng `/Tính tiền phạt$/`, kiểm tra cú pháp và tất cả các hợp đồng đều vượt qua `9/9`. Không có sự khác biệt về sản phẩm/phụ thuộc nào được giới thiệu.
+- Kiểm tra trước mới đã đạt: FE04/FE11 Playwright tập trung `2/2` trong `23.9s` với mã thoát quy trình sạch, kiểm thử nhanh công khai `PASS`, SHA đã triển khai khớp với `e01585a9aa7d603daf932f7ac6459eaa0752746c`, App Service là `Running` và chỉ cho phép HTTPS, Azure SQL là `Online`, Node `v22.22.2` tải được `mssql` đã triển khai và kiểm tra dữ liệu còn sót từ xa trả về `404/404`.
+- Chạy `lms-acceptance-20260802-e941b470` đã gieo mầm chính xác bốn người dùng tổng hợp cộng với một cuốn sách/bản sao, lặp lại các cột mốc thành viên/Quản trị viên/mượn/reservation, BorrowDetail `62` cũ, đã vượt qua xác nhận `Quá hạn 3 ngày` chính xác, đã cam kết trả sách, đã vượt qua tab FE09 được đánh số, nâng cao thông qua tính toán tinh tế và điều hướng đến không gian làm việc đặt chỗ.
+- Quá trình chạy đã dừng trước thao tác ghi hàng đợi FE08 do dây nịt đã lọc `.reservation-queue-card` chung theo tên sách dành riêng cho lần chạy. Thẻ không hiển thị tiêu đề đó dưới dạng văn bản thẻ; nó chỉ xuất hiện trong tùy chọn bộ chọn sao chép. Luồng kết nối chuẩn E2E định vị nút `Giữ sách & thông báo` duy nhất ngay sau khi chuyển giao. Đây là lỗi định vị bộ khai thác bị bỏ qua mang tính xác định, không phải là lỗi FE08 của sản phẩm đã được chứng minh.
+- Việc dọn dẹp bắt buộc đã trả về `CLEANED`: 4 người dùng được giữ lại nhưng không có người dùng đang hoạt động/mã thông báo/members/open cho vay/đặt chỗ mở/sách đang hoạt động/bản sao đang hoạt động, với bản sao dành riêng cho lần chạy chỉ được giữ lại dưới dạng lịch sử không hoạt động. Bốn lần đăng nhập trả về `401`, mã thông báo cũ trả về `401` và đường dẫn thời gian chạy/trợ giúp trả về `404`.
+- Các lần kiểm tra mới sau khi chạy cho thấy App Service `Running`, Azure SQL `Online`, `/health=200`, `/api/books=200`, dư lượng vận chuyển `404/404`, hợp đồng cú pháp và khai thác `9/9`, khác biệt về sản phẩm `0` và số lượng tạo phẩm chạy cục bộ `0`. Lần thử H1 duy nhất đã bị tiêu tốn; không được phép chạy lại hoặc đóng cổng L1-L4 đầy đủ từ việc chấp nhận L4 không thành công này. Không có nhiệm vụ chấp nhận trực tiếp nào đủ điều kiện để kết thúc.
+
+### FE08 kết quả thử lại của bộ định vị hàng đợi đặt chỗ H1
+
+- Người dùng đã cấp một H1 để chọn bản sao lịch thi đấu chính xác thay vì lọc thẻ hàng đợi chung theo tên sách, thêm hồi quy phù hợp với giao diện người dùng hàng đợi và thực hiện một lần thử trực tiếp bổ sung.
+- TDD đã ghi nhận chín hợp đồng hiện có được thông qua trong khi hợp đồng thứ mười không thành công trước bộ lọc thẻ `bookTitle` cũ. Sau khi khai thác bị bỏ qua đã chọn `seed.copyId`, đợi đầu hàng đợi mang `ACC-${runId}` và đưa `Giữ sách & thông báo` vào đầu đó, kiểm tra cú pháp và tất cả các hợp đồng đều vượt qua `10/10`. Không có sự khác biệt về sản phẩm/phụ thuộc nào được giới thiệu.
+- Kiểm tra trước mới đã đạt: FE04/FE11 Playwright tập trung `2/2` trong `23.3s` với mã thoát quy trình sạch, kiểm thử nhanh công khai `PASS`, SHA đã triển khai khớp với `e01585a9aa7d603daf932f7ac6459eaa0752746c`, App Service là `Running` và chỉ cho phép HTTPS, Azure SQL là `Online`, các tên cài đặt `DB_*` bắt buộc không có giá trị, Node `v22.22.2` tải được `mssql` đã triển khai và kiểm tra dữ liệu còn sót từ xa trả về `404/404`.
+- Chạy `lms-acceptance-20260802-372b4ded` đã gieo mầm chính xác bốn người dùng tổng hợp cộng với sách `29`/sao chép `53`, lặp lại các cột mốc thành viên/Quản trị viên/borrow/reservation, BorrowDetail `63` cũ, đã vượt qua tính toán trả sách và tính phạt, xử lý hàng đợi FE08 sao chép chính xác và quan sát huy hiệu thông báo Thành viên B tiếp theo.
+- Quá trình chạy đã dừng khi báo cáo FE12 sẵn sàng vì dây nịt yêu cầu tiêu đề `/Báo cáo mượn sách/i`, trong khi `BorrowingReportPage` hiển thị `Báo cáo mượn/trả`. luồng nghiệp vụ chuẩn của hệ thống chuẩn E2E xác minh `Tổng bản ghi` KPI thay vì tiêu đề cũ đó. Đây là lỗi định vị bộ khai thác bị bỏ qua mang tính xác định, không phải là lỗi FE12 của sản phẩm đã được chứng minh.
+- Việc dọn dẹp bắt buộc đã trả về `CLEANED`: 4 người dùng được giữ lại nhưng không có người dùng đang hoạt động/mã thông báo/members/open cho vay/đặt chỗ mở/sách đang hoạt động/bản sao đang hoạt động, với bản sao dành riêng cho lần chạy chỉ được giữ lại dưới dạng lịch sử không hoạt động. Bốn lần đăng nhập trả về `401`, mã thông báo cũ trả về `401` và đường dẫn thời gian chạy/trợ giúp trả về `404`.
+- Các lần kiểm tra mới sau khi chạy cho thấy App Service `Running`, Azure SQL `Online`, `/health=200`, `/api/books=200`, dư lượng vận chuyển `404/404`, hợp đồng cú pháp và khai thác `10/10`, khác biệt về sản phẩm `0` và số lượng tạo phẩm chạy cục bộ `0`. Lần thử H1 duy nhất đã bị tiêu tốn; không được phép chạy lại hoặc đóng cổng L1-L4 đầy đủ từ việc chấp nhận L4 không thành công này. Không có nhiệm vụ chấp nhận trực tiếp nào đủ điều kiện để kết thúc.
+
+### FE12 báo cáo vay mượn kết quả thử lại công cụ định vị KPI H1
+
+- Người dùng đã cấp một H1 để thay thế bộ định vị tiêu đề FE12 cũ bằng `Tổng bản ghi` KPI chuẩn, thêm một hồi quy và thực hiện một lần thử trực tiếp bổ sung.
+- TDD ghi nhận 10 hợp đồng hiện có được thông qua trong khi hợp đồng thứ 11 thất bại trước `/Báo cáo mượn sách/i`. Sau khi khai thác bị bỏ qua, hãy đợi báo cáo `.kpi-card` chứa `Tổng bản ghi` và từ chối bộ định vị cũ, kiểm tra cú pháp và tất cả các hợp đồng đều vượt qua `11/11`. Không có sự khác biệt về sản phẩm/phụ thuộc nào được giới thiệu.
+- Kiểm tra trước mới đã đạt: FE04/FE11 Playwright `2/2` trong `20.9s` với mã thoát quy trình sạch, kiểm thử nhanh công khai `PASS`, lượt triển khai `30711210037` thành công cho đúng SHA `e01585a9aa7d603daf932f7ac6459eaa0752746c`, App Service là `Running` và chỉ cho phép HTTPS, Azure SQL là `Online`, các tên cài đặt `DB_*` bắt buộc không có giá trị, Node `v22.22.2` tải được `mssql` đã triển khai và kiểm tra dữ liệu còn sót từ xa trả về `404/404`.
+- Chạy ID người dùng được tạo hạt giống `lms-acceptance-20260802-3ea0d609` `118-121`, đặt `30` và sao chép `54`; tuổi BorrowDetail `64`; đã vượt qua mọi ranh giới của bộ định vị trước đó, xử lý hàng đợi sao chép chính xác, thông báo Thành viên B, mức độ sẵn sàng của FE12 KPI, tải kiểm tra của quản trị viên và tất cả các xác nhận ủy quyền phủ định/không thay đổi theo kế hoạch.
+- Việc kiểm tra cuối cùng thất bại trong ba ngày khoản phạt bất biến. Lịch sử SQL được giữ lại chính xác sau khi dọn dẹp là `FineId=6`, `UserId=118`, `BorrowDetailId=64`, `OverdueDays=2`, `Amount=10000`, `Status=CANCELLED`, `DueDate=2026-07-30` và `ReturnDate=2026-08-01`. Giao diện người dùng trả sách trực tiếp đã hiển thị chính xác `Quá hạn 3 ngày` vào ngày giao dịch `2026-08-02` tại Việt Nam.
+- Truy tìm nguyên nhân gốc chỉ đọc cho thấy `borrowingService.returnBorrow` tính toán `returnBusinessDate` nhưng chuyển UTC `returnDate=clock()` thô sang `borrowingRepository.returnBorrowDetail`, liên kết nó dưới dạng `sql.Date`. FE09 tính toán chính xác từ `detail.returnDate` vẫn tồn tại, vì vậy đây là lỗi tồn tại trong ngày làm việc của FE07 chính hãng đã bộc lộ ở phía dưới trong FE09.
+- Việc dọn dẹp bắt buộc đã trả sách `CLEANED`: bốn người dùng được giữ lại nhưng không có người dùng đang hoạt động/mã thông báo/members/open cho vay/đặt chỗ mở/sách đang hoạt động/bản sao đang hoạt động, với một bản sao dành riêng cho lần chạy chỉ được giữ lại dưới dạng lịch sử không hoạt động. Bốn lần đăng nhập và mã thông báo cũ đã trả về `401`; dư lượng từ xa là `404/404`; số lượng tạo tác cục bộ và độ khác biệt của sản phẩm là `0`.
+- Lần thử H1 duy nhất được tiêu thụ. Không chạy lại, thay đổi mã sản phẩm, thực hiện đầy đủ các cổng đóng L1-L4 hoặc đóng các tác vụ trong H1 này. Việc khắc phục sản phẩm cần một H1 được đánh giá mới với hồi quy theo ngày liên tục, xác minh FE07/FE09 tập trung và chấp nhận giai đoạn rõ ràng sau đó.
+
+---
+
+## Bản đồ trách nhiệm nộp hồ sơ
+
+### Tạm thời và bị bỏ qua - không bao giờ cam kết
+
+- `tmp/staging-acceptance/orchestrate.js`: chỉ giữ thông tin đăng nhập xuất bản Kudu trong bộ nhớ và sở hữu một vòng đời quy trình cho runId, mật khẩu thô, hạt giống, tự động hóa trình duyệt và dọn dẹp bắt buộc.
+- `tmp/staging-acceptance/fixture.js`: triển khai `preflight`, `seed`, `inspect`, `age`, `cleanup` và `verify-cleanup` dựa trên cấu hình môi trường tiền sản xuất đã triển khai.
+- Việc triển khai tạm thời có chủ đích giữ cho trình chạy và trình duyệt chạy trong một quy trình Node bị bỏ qua để mật khẩu thô không bao giờ vượt qua ranh giới quy trình hoặc tệp.
+- `output/playwright/staging-acceptance/<runId>/*.png`: ảnh chụp màn hình được biên tập lại; bị loại khỏi Git.
+
+### Bằng chứng liên tục - đủ điều kiện để cam kết sau H2
+
+- `.sdd/reviews/release-closeout-staging-acceptance-2026-08-02.md`: nguồn duy nhất của bằng chứng xử lý và chấp nhận trực tiếp.
+- `.sdd/specs/feat-membership-management/{PLAN,TASKS,CHANGELOG}.md`: chỉ cập nhật các mục FE04 được bao gồm đầy đủ trong lần chạy và H2 sau này.
+- `.sdd/specs/feat-user-role-management/{TASKS,CHANGELOG}.md`: chỉ cập nhật các mục chấp nhận FE11 được bao gồm đầy đủ trong lần chạy và H2 sau này.
+- `.sdd/traceability.yaml`: chỉ thay đổi nếu tất cả bằng chứng bắt buộc đều thay đổi trạng thái đối tượng theo các quy tắc hiện có của nó.
+
+### Nhiệm vụ 1: Azure đóng lỗi và kiểm tra trước kho lưu trữ
+
+**Tệp:**
+
+- Đọc: `docs/deployment/azure-staging-guide.md`
+- Đọc: `.github/workflows/deploy-staging.yml`
+- Đọc: `database/Librarymanagement.sql`
+- Đọc: `backend/src/config/db.js`
+- Đọc: `backend/src/routes/{membership,borrowing,reservation,notification,report,fine}Routes.js`
+
+**Giao diện:**
+
+- Tiêu thụ: đăng nhập Azure, tên tài nguyên chính xác, bằng chứng hợp nhất/triển khai, nhánh thiết kế cục bộ sạch sẽ.
+- Tạo ra: `PRECHECK_PASS` hoặc hủy bỏ trước bất kỳ thao tác ghi giai đoạn nào.
+
+- [ ] **Bước 1: Xác nhận nhánh địa phương và mốc cơ sở**
 
 ```powershell
 git status --short --branch
@@ -160,9 +168,10 @@ git rev-parse e01585a9aa7d603daf932f7ac6459eaa0752746c
 git merge-base --is-ancestor e01585a9aa7d603daf932f7ac6459eaa0752746c HEAD
 ```
 
-Expected: current branch contains the baseline; only approved plan documents may be uncommitted.
+Dự kiến: nhánh hiện tại chứa mốc cơ sở; chỉ những tài liệu kế hoạch đã được phê duyệt mới có thể
+được cung cấp.
 
-- [ ] **Step 2: Confirm the live Azure targets without reading secret values**
+- [ ] **Bước 2: Xác nhận mục tiêu Azure trực tiếp mà không cần đọc các giá trị bí mật**
 
 ```powershell
 az account show --query "{subscription:id,tenant:tenantId}" -o json
@@ -171,9 +180,12 @@ az sql db show --resource-group rg-library-staging --server sql-library-staging-
 az webapp config appsettings list --resource-group rg-library-staging --name app-library-api-staging-nhat714 --query "[?starts_with(name,'DB_')].name" -o tsv
 ```
 
-Expected: the intended subscription/tenant IDs, web app `Running`, exact host, `httpsOnly=true`, database `Online`, and the required DB setting names exist. Do not add Azure account identity fields or remove the query projections; either change would expose PII or secrets.
+Dự kiến: tồn tại ID đăng ký/đối tượng thuê dự định, ứng dụng web `Running`, máy chủ chính xác,
+`httpsOnly=true`, cơ sở dữ liệu `Online` và tên cài đặt DB bắt buộc. Không thêm các trường nhận dạng
+tài khoản Azure hoặc xóa các phép chiếu truy vấn; một trong hai thay đổi sẽ làm lộ PII hoặc các bí
+mật.
 
-- [ ] **Step 3: Confirm the deployed SHA and public smoke**
+- [ ] **Bước 3: Xác nhận SHA đã triển khai và public smoke**
 
 ```powershell
 gh run view 30711210037 --json headSha,conclusion,url
@@ -182,38 +194,40 @@ $env:STAGING_API_URL='https://app-library-api-staging-nhat714.azurewebsites.net'
 npm run smoke:staging
 ```
 
-Expected: deployed run head is the exact baseline and smoke exits `0`. Clear the two non-secret URL variables after the batch.
+Dự kiến: SHA đã triển khai là mốc cơ sở chính xác và kiểm thử nhanh kết thúc với mã `0`. Xóa hai biến URL không
+bí mật sau đợt.
 
-- [ ] **Step 4: Confirm no previous acceptance residue matches the new run marker**
+- [ ] **Bước 4: Xác nhận không có dư lượng chấp nhận trước đó khớp với điểm đánh dấu lần chạy mới**
 
-Generate a non-secret run ID in memory:
+Tạo ID chạy không bí mật trong bộ nhớ:
 
 ```powershell
 $acceptanceRunId = 'lms-acceptance-20260802-' + ([guid]::NewGuid().ToString('N').Substring(0,8))
 ```
 
-The fixture `preflight` phase must query exact normalized usernames/emails, title, and barcode for this run ID and return zero rows. Any collision aborts.
+Giai đoạn `preflight` của lịch thi đấu phải truy vấn chính xác tên người dùng/email, tiêu đề và mã
+vạch được chuẩn hóa cho ID lần chạy này và trả về 0 hàng. Mọi va chạm đều bị hủy bỏ.
 
 ---
 
-### Task 2: Build and validate the temporary operator harness
+### Nhiệm vụ 2: Xây dựng và xác nhận khai thác vận hành tạm thời
 
-**Files:**
+**Tệp:**
 
-- Create temporarily: `tmp/staging-acceptance/kudu-runner.ps1`
-- Create temporarily: `tmp/staging-acceptance/orchestrate.ps1`
-- Create temporarily: `tmp/staging-acceptance/fixture.js`
-- Create temporarily: `tmp/staging-acceptance/acceptance.spec.js`
-- Create temporarily: `tmp/staging-acceptance/playwright.config.js`
+- Tạo tạm thời: `tmp/staging-acceptance/kudu-runner.ps1`
+- Tạo tạm thời: `tmp/staging-acceptance/orchestrate.ps1`
+- Tạo tạm thời: `tmp/staging-acceptance/fixture.js`
+- Tạo tạm thời: `tmp/staging-acceptance/acceptance.spec.js`
+- Tạo tạm thời: `tmp/staging-acceptance/playwright.config.js`
 
-**Interfaces:**
+**Giao diện:**
 
-- Consumes: `runId`, Azure resource names, deployed `backend/src/config/db.js`, local `bcrypt`, Kudu credentials held in memory.
-- Produces: manifest IDs, distinct Playwright password environment variables, phase results, cleanup verification.
+- Tiêu thụ: tên tài nguyên `runId`, Azure, `backend/src/config/db.js` đã triển khai, `bcrypt` cục bộ, thông tin xác thực Kudu được lưu trong bộ nhớ.
+- Tạo ra: ID tệp kê khai, biến môi trường mật khẩu Playwright riêng biệt, kết quả giai đoạn, xác minh dọn dẹp.
 
-- [ ] **Step 1: Create the ignored directory and prove Git ignores it**
+- [ ] **Bước 1: Tạo thư mục bị bỏ qua và chứng minh Git bỏ qua nó**
 
-Create files with `apply_patch`, not shell redirection. Then run:
+Tạo tệp bằng `apply_patch`, không phải chuyển hướng lớp bao. Sau đó chạy:
 
 ```powershell
 git check-ignore -v tmp/staging-acceptance/kudu-runner.ps1
@@ -223,11 +237,13 @@ git check-ignore -v tmp/staging-acceptance/acceptance.spec.js
 git check-ignore -v tmp/staging-acceptance/playwright.config.js
 ```
 
-Expected: all five paths are ignored by the root `tmp/` rule.
+Dự kiến: tất cả năm đường dẫn đều bị bỏ qua bởi quy tắc `tmp/` gốc.
 
-- [ ] **Step 2: Implement the Kudu runner contract**
+- [ ] **Bước 2: Thực hiện hợp đồng Kudu runner**
 
-`orchestrate.ps1` must run the credential generation, seed, Playwright scenario, inspection, cleanup, token/login verification, and environment clearing in one PowerShell process. It accepts one non-secret parameter:
+`orchestrate.ps1` phải chạy tạo thông tin xác thực, hạt giống, kịch bản Playwright, kiểm tra, dọn
+dẹp, xác minh mã thông báo/đăng nhập và xóa môi trường trong một quy trình PowerShell. Nó chấp nhận
+một tham số không bí mật:
 
 ```powershell
 param(
@@ -237,7 +253,7 @@ param(
 )
 ```
 
-Its top-level structure is fixed:
+Cấu trúc cấp cao nhất của nó được cố định:
 
 ```powershell
 $ErrorActionPreference = 'Stop'
@@ -255,9 +271,10 @@ try {
 }
 ```
 
-The comments state the only allowed contents of those two blocks; the implementation must use the exact commands and invariants in Tasks 2-4. It must never return before `finally`.
+Các bình luận nêu rõ nội dung được phép duy nhất của hai khối đó; việc triển khai phải sử dụng các
+lệnh và bất biến chính xác trong Nhiệm vụ 2-4. Nó không bao giờ được quay lại trước `finally`.
 
-`kudu-runner.ps1` must expose these exact parameters:
+`kudu-runner.ps1` phải hiển thị các thông số chính xác sau:
 
 ```powershell
 param(
@@ -269,21 +286,21 @@ param(
 )
 ```
 
-It must:
+Nó phải:
 
-1. call `az webapp deployment list-publishing-credentials` and assign the JSON directly to a PowerShell object;
-2. build the Basic header in memory without writing or displaying it;
-3. upload `fixture.js` to `/home/site/wwwroot/tmp-staging-acceptance/fixture.js` through Kudu VFS;
-4. for `seed`, upload an input JSON containing only runId, account email/username/profile values, password hashes, and role names;
-5. for `inspect`, `age`, `cleanup`, and `verify-cleanup`, upload the local non-secret manifest to a run-specific remote input path and delete it after the phase;
-6. call Kudu `/api/command` with `node /home/site/wwwroot/tmp-staging-acceptance/fixture.js <phase>` and a fixed working directory;
-7. parse stdout as JSON and reject any non-JSON output;
-8. delete the remote seed-input file immediately after seed;
-9. delete the remote fixture script after `verify-cleanup` or on failure;
-10. overwrite credential variables with `$null` in `finally`;
-11. never use `Write-Host`, `Write-Output`, `ConvertTo-Json`, or exception dumps on secret-bearing objects.
+1. gọi `az webapp deployment list-publishing-credentials` và gán trực tiếp JSON cho đối tượng PowerShell;
+2. xây dựng tiêu đề Cơ bản trong bộ nhớ mà không cần ghi hoặc hiển thị nó;
+3. tải `fixture.js` lên `/home/site/wwwroot/tmp-staging-acceptance/fixture.js` thông qua Kudu VFS;
+4. đối với `seed`, hãy tải lên JSON đầu vào chỉ chứa runId, giá trị email/tên người dùng/hồ sơ tài khoản, băm mật khẩu và tên vai trò;
+5. đối với `inspect`, `age`, `cleanup` và `verify-cleanup`, hãy tải tệp kê khai không bí mật cục bộ lên đường dẫn đầu vào từ xa dành riêng cho lần chạy và xóa nó sau giai đoạn;
+6. gọi Kudu `/api/command` bằng `node /home/site/wwwroot/tmp-staging-acceptance/fixture.js <phase>` và một thư mục làm việc cố định;
+7. phân tích thiết bị xuất chuẩn dưới dạng JSON và từ chối mọi đầu ra không phải JSON;
+8. xóa tệp đầu vào hạt giống từ xa ngay sau hạt giống;
+9. xóa tập lệnh cố định từ xa sau `verify-cleanup` hoặc do lỗi;
+10. ghi đè các biến thông tin xác thực bằng `$null` trong `finally`;
+11. không bao giờ sử dụng `Write-Host`, `Write-Output`, `ConvertTo-Json` hoặc các bãi chứa ngoại lệ trên các vật thể mang bí mật.
 
-Expected phase output is the following non-secret envelope:
+Đầu ra của pha dự kiến ​​là đường bao không bí mật sau:
 
 ```json
 {
@@ -301,60 +318,63 @@ Expected phase output is the following non-secret envelope:
 }
 ```
 
-- [ ] **Step 3: Implement the fixture SQL contract**
+- [ ] **Bước 3: Triển khai hợp đồng SQL**
 
-`fixture.js` must use `sql.Transaction`, `new sql.Request(transaction)`, and `.input(...)` for every dynamic value. Its phases are exact:
+`fixture.js` phải sử dụng `sql.Transaction`, `new sql.Request(transaction)` và `.input(...)` cho mọi
+giá trị động. Các giai đoạn của nó là chính xác:
 
 ```text
 preflight:
   assert DB_NAME() = LibraryManagementStaging
-  assert required tables/columns and roles ADMIN/LIBRARIAN/MEMBER exist
-  assert no normalized username/email/title/barcode collision for runId
+  xác nhận các bảng/cột bắt buộc và vai trò ADMIN/LIBRARIAN/MEMBER đều tồn tại
+  xác nhận không có xung đột tên đăng nhập/email/tiêu đề/mã vạch đã chuẩn hóa cho runId
 
 seed (one transaction):
-  insert four ACTIVE, email-verified Users with four supplied bcrypt hashes
-  insert four complete UserProfiles (FullName, Address, DateOfBirth)
-  assign one exact role per User through UserRoles
-  select one existing ACTIVE Category, Author, Publisher or abort
-  insert one ACTIVE Book titled with runId and CreatedBy=adminUserId
-  insert one AVAILABLE BookCopy with runId barcode
-  return only IDs; do not create Members or MembershipApplications
+  chèn bốn Users ở trạng thái ACTIVE, đã xác minh email, bằng bốn giá trị băm bcrypt được cung cấp
+  chèn bốn UserProfiles đầy đủ (FullName, Address, DateOfBirth)
+  gán đúng một vai trò cho mỗi User qua UserRoles
+  chọn một Category, Author, Publisher ACTIVE hiện có hoặc dừng
+  chèn một Book ACTIVE có tiêu đề chứa runId và CreatedBy=adminUserId
+  chèn một BookCopy AVAILABLE có mã vạch chứa runId
+  chỉ trả về các ID; không tạo Members hoặc MembershipApplications
 
 inspect:
-  select exact manifest Users/UserRoles/Members/MembershipApplications
-  select exact Book/BookCopy/BorrowRequests/BorrowDetails/Reservations/Fines
-  select Notifications and AuditLogs linked to manifest user/entity IDs
-  return counts/statuses only; redact metadata text and recipient addresses
+  chọn chính xác Users/UserRoles/Members/MembershipApplications trong bảng kê khai
+  chọn chính xác Book/BookCopy/BorrowRequests/BorrowDetails/Reservations/Fines
+  chọn Notifications và AuditLogs liên kết với ID người dùng/thực thể trong bảng kê khai
+  chỉ trả về số lượng/trạng thái; che nội dung siêu dữ liệu và địa chỉ người nhận
 
 age:
-  require BorrowDetailId belongs to Member A and manifest CopyId
+  yêu cầu BorrowDetailId thuộc Thành viên A và CopyId trong bảng kê khai
   require Status='BORROWED'
-  require dueDate is a valid YYYY-MM-DD value derived by the operator harness
-    from the current Asia/Ho_Chi_Minh business date minus three calendar days
-  bind dueDate as a parameterized sql.Date value
-  set only DueDate=@dueDate and UpdatedAt=GETDATE()
+  yêu cầu dueDate là giá trị YYYY-MM-DD hợp lệ do bộ công cụ vận hành suy ra
+    từ ngày nghiệp vụ Asia/Ho_Chi_Minh hiện tại trừ ba ngày lịch
+  gắn dueDate dưới dạng giá trị sql.Date được tham số hóa
+  chỉ đặt DueDate=@dueDate và UpdatedAt=GETDATE()
 
 cleanup (one transaction):
-  CANCEL active/notified Reservations for manifest users/copy
-  terminalize open BorrowDetails and BorrowRequests for manifest users/copy
-  set unpaid fixture Fines to CANCELLED with an acceptance-cleanup reason
-  revoke every active AuthToken for the four user IDs
-  set Members.Status='INACTIVE'
-  set BookCopies.Status='INACTIVE' and Books.Status='INACTIVE'
-  set Users.Status='INACTIVE', DeactivatedAt=GETDATE(), UpdatedAt=GETDATE()
-  do not delete Notifications, AuditLogs, applications, borrow, reservation, or fine history
+  chuyển các Reservations đang active/notified của người dùng/bản sao trong bảng kê khai thành CANCEL
+  đưa BorrowDetails và BorrowRequests đang mở của người dùng/bản sao trong bảng kê khai về trạng thái kết thúc
+  đặt các Fines chưa thanh toán của dữ liệu kiểm thử thành CANCELLED với lý do acceptance-cleanup
+  thu hồi mọi AuthToken đang hoạt động của bốn ID người dùng
+  đặt Members.Status='INACTIVE'
+  đặt BookCopies.Status='INACTIVE' và Books.Status='INACTIVE'
+  đặt Users.Status='INACTIVE', DeactivatedAt=GETDATE(), UpdatedAt=GETDATE()
+  không xóa lịch sử Notifications, AuditLogs, đơn đăng ký, lượt mượn, đặt chỗ hoặc khoản phạt
 
 verify-cleanup:
-  assert zero active Users/AuthTokens/open loans/open reservations/active catalog rows
-  assert all four User rows and the book/copy history still exist
-  return CLEANED, PARTIAL_CLEANUP, or FAILED_CLEANUP by object ID
+  xác nhận không còn Users/AuthTokens/lượt mượn mở/đặt chỗ mở/bản ghi danh mục đang hoạt động
+  xác nhận cả bốn bản ghi User và lịch sử sách/bản sao vẫn tồn tại
+  trả về CLEANED, PARTIAL_CLEANUP hoặc FAILED_CLEANUP theo ID đối tượng
 ```
 
-The script must reject phase/input IDs not belonging to the exact run manifest. It must call `transaction.rollback()` on every failed mutating phase and close the pool in `finally`.
+Tập lệnh phải từ chối các ID giai đoạn/đầu vào không thuộc tệp kê khai chạy chính xác. Nó phải gọi
+`transaction.rollback()` trong mỗi giai đoạn thao tác ghi không thành công và đóng nhóm trong `finally`.
 
-- [ ] **Step 4: Generate four distinct credentials in memory**
+- [ ] **Bước 4: Tạo bốn thông tin xác thực riêng biệt trong bộ nhớ**
 
-Use local Node/bcrypt from the installed backend dependencies; capture stdout into a PowerShell variable and never echo it:
+Sử dụng Node/bcrypt cục bộ từ các phần phụ thuộc máy chủ đã cài đặt; ghi thiết bị xuất chuẩn vào
+biến PowerShell và không bao giờ lặp lại nó:
 
 ```powershell
 $credentialJson = node -e "const c=require('crypto');const b=require('./backend/node_modules/bcrypt');(async()=>{const names=['memberA','memberB','librarian','admin'];const o={};for(const n of names){const p='Acc-'+c.randomBytes(24).toString('base64url')+'!Aa1';o[n]={password:p,hash:await b.hash(p,12)}}process.stdout.write(JSON.stringify(o))})().catch(()=>process.exit(1))"
@@ -362,9 +382,12 @@ $acceptanceCredentials = $credentialJson | ConvertFrom-Json
 $credentialJson = $null
 ```
 
-Expected: four unequal passwords, four hashes beginning with `$2`, and no credential output. The seed input receives hashes only; Playwright receives passwords through process environment only.
+Dự kiến: 4 mật khẩu không giống nhau, 4 hàm băm bắt đầu bằng `$2` và không có đầu ra thông tin xác
+thực. Đầu vào hạt giống chỉ nhận được giá trị băm; Playwright chỉ nhận mật khẩu thông qua môi trường
+xử lý.
 
-Use these exact synthetic identities; `<suffix>` is the final eight characters of `$acceptanceRunId` and is not a free-form value:
+Sử dụng các danh tính tổng hợp chính xác này; `<suffix>` là tám ký tự cuối cùng của
+`$acceptanceRunId` và không phải là giá trị dạng tự do:
 
 ```text
 memberA: username=acc_member_a_<suffix>; email=member-a.<suffix>@lms.invalid; fullName=Acceptance Member A
@@ -376,9 +399,9 @@ book: Title=Acceptance Book <runId>; ISBN is null
 copy: Barcode=ACC-<runId>; Location=STAGING-ACCEPTANCE
 ```
 
-- [ ] **Step 5: Validate temporary files before Azure execution**
+- [ ] **Bước 5: Xác thực các tệp tạm thời trước khi thực thi Azure**
 
-Create `playwright.config.js` with this exact content:
+Tạo `playwright.config.js` với nội dung chính xác này:
 
 ```javascript
 const { defineConfig } = require('@playwright/test');
@@ -422,35 +445,37 @@ if ($parseErrors.Count) { throw 'Temporary acceptance orchestrator has PowerShel
 git status --short
 ```
 
-Expected: syntax checks pass and the ignored temporary files do not appear in Git status.
+Dự kiến: quá trình kiểm tra cú pháp đã vượt qua và các tệp tạm thời bị bỏ qua không xuất hiện ở
+trạng thái Git.
 
 ---
 
-### Task 3: Seed, authenticate, and execute the live UI scenario
+### Nhiệm vụ 3: Chọn, xác thực và thực thi kịch bản giao diện người dùng trực tiếp
 
-**Files:**
+**Tệp:**
 
-- Execute temporarily: `tmp/staging-acceptance/acceptance.spec.js`
-- Write ignored artifacts: `output/playwright/staging-acceptance/<runId>/*.png`
-- Update ignored manifest: `tmp/staging-acceptance/run/<runId>/manifest.json`
+- Thực hiện tạm thời: `tmp/staging-acceptance/acceptance.spec.js`
+- Viết các tạo phẩm bị bỏ qua: `output/playwright/staging-acceptance/<runId>/*.png`
+- Cập nhật bảng kê khai bị bỏ qua: `tmp/staging-acceptance/run/<runId>/manifest.json`
 
-**Interfaces:**
+**Giao diện:**
 
-- Consumes: seeded manifest IDs and four runtime password environment variables.
-- Produces: role/auth/UI/API/state observations for the exact run.
+- Tiêu thụ: ID tệp kê khai được tạo hạt giống và bốn biến môi trường mật khẩu thời gian chạy.
+- Tạo ra: các quan sát role/auth/UI/API/state cho lần chạy chính xác.
 
-- [ ] **Step 1: Run preflight and seed**
+- [ ] **Bước 1: Chạy kiểm tra trước và gieo hạt**
 
-Invoke the temporary runner in this order:
+Gọi runner tạm thời theo thứ tự sau:
 
 ```powershell
 & tmp/staging-acceptance/kudu-runner.ps1 -Phase preflight -RunId $acceptanceRunId
 & tmp/staging-acceptance/kudu-runner.ps1 -Phase seed -RunId $acceptanceRunId
 ```
 
-Expected: both phases return `PASS`; seed returns exactly six positive IDs. Write only those IDs, timestamps, baseline SHA, host names, and phase status to the local manifest.
+Dự kiến: cả hai giai đoạn đều trả về `PASS`; hạt giống trả về chính xác sáu ID tích cực. Chỉ ghi các
+ID, dấu thời gian, SHA cơ sở, tên máy chủ và trạng thái giai đoạn đó vào bảng kê khai cục bộ.
 
-Define the manifest and Playwright process environment without printing values:
+Xác định tệp kê khai và môi trường xử lý Playwright mà không in các giá trị:
 
 ```powershell
 $manifestDirectory = Join-Path 'tmp/staging-acceptance/run' $acceptanceRunId
@@ -468,74 +493,79 @@ $env:STAGING_LIBRARIAN_PASSWORD = $acceptanceCredentials.librarian.password
 $env:STAGING_ADMIN_PASSWORD = $acceptanceCredentials.admin.password
 ```
 
-The manifest directory and JSON are created with `apply_patch`/the operator harness, never shell redirection. The JSON excludes all eight password/hash fields.
+Thư mục tệp kê khai và JSON được tạo bằng `apply_patch`/khai thác toán tử, không bao giờ chuyển
+hướng lớp bao. JSON loại trừ tất cả tám trường mật khẩu/băm.
 
-Run the remote acceptance spec with no local web server:
+Chạy thông số chấp nhận từ xa mà không cần máy chủ web cục bộ:
 
 ```powershell
 npx playwright test --config tmp/staging-acceptance/playwright.config.js --workers=1
 ```
 
-Expected: exactly one temporary acceptance test is collected. A test assertion failure is recorded as scenario `FAIL` and still triggers Task 4 cleanup.
+Dự kiến: thu thập đúng một kiểm kiểm thử thu tạm thời. Lỗi xác nhận kiểm tra được ghi lại dưới dạng
+kịch bản `FAIL` và vẫn kích hoạt quá trình dọn dẹp Nhiệm vụ 4.
 
-- [ ] **Step 2: Execute role/auth and membership behavior through the UI**
+- [ ] **Bước 2: Thực thi vai trò/auth và hành vi thành viên thông qua giao diện người dùng**
 
-The Playwright spec must use the exact deployed URLs and perform:
+Thông số Playwright phải sử dụng các URL được triển khai chính xác và thực hiện:
 
 ```text
-Member A login -> /home -> /membership -> Gửi đơn đăng ký -> PENDING
-Member A logout; old protected UI context no longer works
-Member B login -> /membership -> Gửi đơn đăng ký -> PENDING -> logout
-Admin login -> /admin/users -> Duyệt hội viên
-  -> approve Member A and Member B through the review dialogs
-  -> verify both membership rows/state are APPROVED
-Admin UI at 1440x900, 1366x768, 1280x720, 390x844:
-  -> exactly eight sidebar items
-  -> Membership Review follows All Users
-  -> Permissions absent
-  -> user and membership cards appear before horizontal overflow
-  -> audit action labels are Vietnamese and row detail remains allowlisted/read-only
+Thành viên A đăng nhập -> /home -> /membership -> Gửi đơn đăng ký -> PENDING
+Thành viên A đăng xuất; ngữ cảnh giao diện được bảo vệ trước đó không còn hoạt động
+Thành viên B đăng nhập -> /membership -> Gửi đơn đăng ký -> PENDING -> đăng xuất
+Quản trị viên đăng nhập -> /admin/users -> Duyệt hội viên
+  -> phê duyệt Thành viên A và Thành viên B qua các hộp thoại rà soát
+  -> xác minh cả hai bản ghi/trạng thái thành viên đều là APPROVED
+Giao diện Quản trị viên ở 1440x900, 1366x768, 1280x720, 390x844:
+  -> có đúng tám mục thanh bên
+  -> Duyệt hội viên nằm sau Tất cả người dùng
+  -> không có mục Quyền hạn
+  -> thẻ người dùng và thành viên xuất hiện trước khi có tràn ngang
+  -> nhãn hành động kiểm toán bằng tiếng Việt và chi tiết bản ghi vẫn theo danh sách cho phép/chỉ đọc
 ```
 
-Capture screenshots only after ensuring credential fields, tokens, cookies, emails, and raw audit metadata are not visible.
+Chỉ chụp ảnh màn hình sau khi đảm bảo các trường thông tin xác thực, mã thông báo, cookie, email và
+siêu dữ liệu kiểm tra thô không hiển thị.
 
-- [ ] **Step 3: Execute negative server authorization checks**
+- [ ] **Bước 3: Thực hiện kiểm tra ủy quyền máy chủ phủ định**
 
-Capture access tokens only inside the Playwright process and assert:
+Chỉ thu thập mã thông báo truy cập bên trong quy trình Playwright và xác nhận:
 
 ```text
-unauthenticated GET /api/admin/audit-logs -> 401
-Member A GET /api/admin/audit-logs -> 403
-Member A GET /api/users?page=1 -> 403
-Librarian GET /api/users?page=1 -> 403
-Member A POST /api/reservations/process-queue -> 403
-Admin PUT /api/users/<synthetic-librarian-id> with fullName + exact expectedUpdatedAt -> 404 and no profile change, matching the retired route in approved Q-FE11-029/FR-FE11-028
+chưa xác thực GET /api/admin/audit-logs -> 401
+Thành viên A GET /api/admin/audit-logs -> 403
+Thành viên A GET /api/users?page=1 -> 403
+Thủ thư GET /api/users?page=1 -> 403
+Thành viên A POST /api/reservations/process-queue -> 403
+Quản trị viên PUT /api/users/<synthetic-librarian-id> với fullName + expectedUpdatedAt chính xác -> 404 và hồ sơ không thay đổi, khớp với tuyến đã ngừng dùng trong Q-FE11-029/FR-FE11-028 đã phê duyệt
 ```
 
-Record method/path/status only. Never attach request headers or bodies containing tokens.
+Chỉ ghi lại phương thức/đường dẫn/trạng thái. Không bao giờ đính kèm tiêu đề hoặc nội dung yêu cầu
+có chứa mã thông báo.
 
-- [ ] **Step 4: Execute the cross-role circulation flow**
+- [ ] **Bước 4: Thực hiện quy trình tuần hoàn giữa các vai trò**
 
-Use these UI actions/selectors and expected transitions:
+Sử dụng các hành động/bộ chọn giao diện người dùng này và các chuyển đổi dự kiến:
 
 ```text
-Member A /borrowing/new
-  -> choose the run-specific title/copy
+Thành viên A /borrowing/new
+  -> chọn tiêu đề/bản sao dành riêng cho lượt chạy
   -> click Gửi yêu cầu mượn
   -> success Yêu cầu #<id> đã được tạo
 
-Librarian /librarian/borrow-requests
-  -> locate run-specific request
+Thủ thư /librarian/borrow-requests
+  -> tìm yêu cầu dành riêng cho lượt chạy
   -> Duyệt -> Duyệt và cấp sách
   -> success Đã duyệt yêu cầu
 
-Member B /reservations/mine
-  -> locate run-specific candidate
+Thành viên B /reservations/mine
+  -> tìm ứng viên dành riêng cho lượt chạy
   -> Đặt chỗ
-  -> success and ACTIVE queue state
+  -> thành công và hàng đợi ở trạng thái ACTIVE
 ```
 
-Run `inspect`, extract the exact Member A `BorrowDetailId`, then run `age` for that ID. Refresh `/librarian/returns` and assert the row is overdue.
+Chạy `inspect`, trích xuất chính xác Thành viên A `BorrowDetailId`, sau đó chạy `age` cho ID đó. Làm
+mới `/librarian/returns` và xác nhận hàng đã quá hạn.
 
 ```powershell
 $inspection = & tmp/staging-acceptance/kudu-runner.ps1 -Phase inspect -RunId $acceptanceRunId -ManifestPath $manifestPath
@@ -544,96 +574,102 @@ if ($borrowDetailId -le 0) { throw 'Member A borrow detail was not found in the 
 & tmp/staging-acceptance/kudu-runner.ps1 -Phase age -RunId $acceptanceRunId -ManifestPath $manifestPath -BorrowDetailId $borrowDetailId
 ```
 
-Continue through UI:
+Tiếp tục thông qua giao diện người dùng:
 
 ```text
-Librarian /librarian/returns
+Thủ thư /librarian/returns
   -> Xác nhận trả sách -> Ghi nhận trả sách
-  -> returned success and queue handoff visible
+  -> trả sách thành công và thao tác bàn giao hàng đợi hiển thị
 
-Librarian /librarian/fines
+Thủ thư /librarian/fines
   -> Tính tiền phạt
-  -> enter exact BorrowDetailId
+  -> nhập chính xác BorrowDetailId
   -> Tính từ dữ liệu mượn trả
-  -> one UNPAID fine with positive overdueDays and amount
+  -> một khoản phạt UNPAID có overdueDays và số tiền lớn hơn 0
 
-Librarian /librarian/reservations
+Thủ thư /librarian/reservations
   -> Giữ sách & thông báo -> Xác nhận giữ sách
-  -> Member B reservation becomes NOTIFIED/ready
+  -> đặt chỗ của Thành viên B chuyển thành NOTIFIED/sẵn sàng
 
-Member B /notifications
-  -> reservation-ready notification belongs to Member B
-  -> link opens /reservations/mine and run-specific row is ready
+Thành viên B /notifications
+  -> thông báo đặt chỗ sẵn sàng thuộc về Thành viên B
+  -> liên kết mở /reservations/mine và bản ghi dành riêng cho lượt chạy ở trạng thái sẵn sàng
 
-Librarian /reports/borrowing and /home
-  -> report/operations cards reflect server state without browser errors
+Thủ thư /reports/borrowing và /home
+  -> các thẻ báo cáo/vận hành phản ánh trạng thái máy chủ mà không có lỗi trình duyệt
 
-Admin /admin/users -> Audit
-  -> expected membership/circulation actors/actions appear without secret fields
+Quản trị viên /admin/users -> Kiểm toán
+  -> các tác nhân/hành động thành viên và lưu thông dự kiến xuất hiện mà không có trường bí mật
 ```
 
-- [ ] **Step 5: Assert manifest invariants**
+- [ ] **Bước 5: Khẳng định bất biến của bảng kê khai**
 
-Run `inspect` and require:
+Chạy `inspect` và yêu cầu:
 
 ```text
-Member A and Member B membership = APPROVED
-Member A BorrowDetail = RETURNED
-run-specific copy = RESERVED after queue processing
-Member B reservation = NOTIFIED
-exactly one fixture fine = UNPAID with amount > 0
-Member B has reservation-ready notification
-all four users retain exactly one intended role
-no row outside manifest IDs is reported as changed by fixture phases
-browser console/page errors = []
+Tư cách thành viên của Thành viên A và Thành viên B = APPROVED
+BorrowDetail của Thành viên A = RETURNED
+bản sao dành riêng cho lượt chạy = RESERVED sau khi xử lý hàng đợi
+đặt chỗ của Thành viên B = NOTIFIED
+đúng một khoản phạt của dữ liệu kiểm thử = UNPAID với số tiền > 0
+Thành viên B có thông báo đặt chỗ sẵn sàng
+cả bốn người dùng giữ đúng một vai trò dự kiến
+không có bản ghi ngoài các ID trong bảng kê khai bị báo cáo là đã thay đổi bởi các giai đoạn dữ liệu kiểm thử
+lỗi bảng điều khiển/trang trình duyệt = []
 ```
 
-Any mismatch marks the scenario `FAIL` but still proceeds to Task 4 cleanup.
+Bất kỳ sự không khớp nào sẽ đánh dấu kịch bản `FAIL` nhưng vẫn tiến hành dọn dẹp Nhiệm vụ 4.
 
 ---
 
-### Task 4: Cleanup in finally and prove deactivation
+### Nhiệm vụ 4: Dọn dẹp cuối cùng và chứng minh việc hủy kích hoạt
 
-**Files:**
+**Tệp:**
 
-- Execute temporarily: `tmp/staging-acceptance/{kudu-runner.ps1,fixture.js}`
-- Update ignored manifest: cleanup status per exact object ID.
+- Thực hiện tạm thời: `tmp/staging-acceptance/{kudu-runner.ps1,fixture.js}`
+- Cập nhật bảng kê khai bị bỏ qua: trạng thái dọn dẹp trên mỗi ID đối tượng chính xác.
 
-**Interfaces:**
+**Giao diện:**
 
-- Consumes: exact manifest IDs whether Task 3 passed or failed.
-- Produces: `CLEANED`, `PARTIAL_CLEANUP`, or `FAILED_CLEANUP` plus post-cleanup auth checks.
+- Tiêu thụ: ID tệp kê khai chính xác cho dù Nhiệm vụ 3 đã thành công hay thất bại.
+- Tạo ra: `CLEANED`, `PARTIAL_CLEANUP` hoặc `FAILED_CLEANUP` cùng với các bước kiểm tra xác thực sau khi dọn dẹp.
 
-- [ ] **Step 1: Logout every browser context and clear local auth state**
+- [ ] **Bước 1: Đăng xuất mọi bối cảnh trình duyệt và xóa trạng thái xác thực cục bộ**
 
-The Playwright `finally` block must call the product logout flow where reachable, then clear cookies, localStorage, and sessionStorage for every context. It must retain one previously issued token only in memory for the revocation assertion.
+Khối Playwright `finally` phải gọi luồng đăng xuất sản phẩm ở nơi có thể truy cập, sau đó xóa
+cookie, localStorage và sessionStorage cho mọi ngữ cảnh. Nó chỉ được giữ lại một mã thông báo đã
+phát hành trước đó trong bộ nhớ để xác nhận thu hồi.
 
-- [ ] **Step 2: Run exact-ID cleanup and verification**
+- [ ] **Bước 2: Chạy chức năng dọn dẹp và xác minh ID chính xác**
 
 ```powershell
 & tmp/staging-acceptance/kudu-runner.ps1 -Phase cleanup -RunId $acceptanceRunId -ManifestPath $manifestPath
 & tmp/staging-acceptance/kudu-runner.ps1 -Phase verify-cleanup -RunId $acceptanceRunId -ManifestPath $manifestPath
 ```
 
-Expected: every object status is `CLEANED`; no wildcard cleanup and no physical delete occurred.
+Dự kiến: mọi trạng thái đối tượng là `CLEANED`; không có thao tác dọn dẹp ký tự đại diện và không có
+thao tác xóa vật lý nào xảy ra.
 
-- [ ] **Step 3: Prove credentials and tokens no longer work**
+- [ ] **Bước 3: Chứng minh thông tin đăng nhập và mã thông báo không còn hoạt động**
 
-Through Playwright/API request context:
+Thông qua ngữ cảnh yêu cầu Playwright/API:
 
 ```text
-login for each of four accounts -> 401 INVALID_CREDENTIALS
-GET /api/auth/me with the retained old token -> 401
-GET /api/books does not expose the run-specific inactive book
+đăng nhập bằng từng tài khoản trong bốn tài khoản -> 401 INVALID_CREDENTIALS
+GET /api/auth/me bằng mã thông báo cũ được giữ lại -> 401
+GET /api/books không hiển thị sách không hoạt động dành riêng cho lượt chạy
 ```
 
-Record status/error code only.
+Chỉ ghi lại trạng thái/mã lỗi.
 
-- [ ] **Step 4: Remove all secret-bearing temporary state**
+- [ ] **Bước 4: Xóa tất cả trạng thái tạm thời chứa bí mật**
 
-Clear `$acceptanceCredentials` and all `STAGING_*_PASSWORD` variables, delete the exact remote input/script through Kudu, then delete local temporary source files with `apply_patch`. Keep only the non-secret manifest until the review record is complete; then remove it after verifying the persistent record contains all required evidence.
+Xóa `$acceptanceCredentials` và tất cả các biến `STAGING_*_PASSWORD`, xóa chính xác đầu vào/tập lệnh
+từ xa thông qua Kudu, sau đó xóa các tệp nguồn tạm thời cục bộ bằng `apply_patch`. Chỉ giữ bản kê
+khai không bí mật cho đến khi hồ sơ xem xét hoàn tất; sau đó xóa nó sau khi xác minh hồ sơ liên tục
+chứa tất cả bằng chứng cần thiết.
 
-Clear environment variables explicitly:
+Xóa các biến môi trường một cách rõ ràng:
 
 ```powershell
 $acceptanceCredentials = $null
@@ -643,83 +679,90 @@ $acceptanceCredentials = $null
 ) | ForEach-Object { Remove-Item -LiteralPath "Env:$_" -ErrorAction SilentlyContinue }
 ```
 
-If cleanup is not `CLEANED`, stop: do not rerun, do not remove the manifest, and do not close any live-acceptance task.
+Nếu việc dọn dẹp không phải là `CLEANED`, hãy dừng: không chạy lại, không xóa bảng kê khai và không
+đóng bất kỳ tác vụ chấp nhận trực tiếp nào.
 
 ---
 
-### Task 5: Write evidence and conditionally reconcile task status
+### Nhiệm vụ 5: Viết dẫn chứng và đối chiếu có điều kiện tình trạng nhiệm vụ
 
-**Files:**
+**Tệp:**
 
-- Create: `.sdd/reviews/release-closeout-staging-acceptance-2026-08-02.md`
-- Modify conditionally: `.sdd/specs/feat-membership-management/{PLAN,TASKS,CHANGELOG}.md`
-- Modify conditionally: `.sdd/specs/feat-user-role-management/{TASKS,CHANGELOG}.md`
-- Modify conditionally: `.sdd/traceability.yaml`
+- Tạo: `.sdd/reviews/release-closeout-staging-acceptance-2026-08-02.md`
+- Sửa đổi có điều kiện: `.sdd/specs/feat-membership-management/{PLAN,TASKS,CHANGELOG}.md`
+- Sửa đổi có điều kiện: `.sdd/specs/feat-user-role-management/{TASKS,CHANGELOG}.md`
+- Sửa đổi có điều kiện: `.sdd/traceability.yaml`
 
-**Interfaces:**
+**Giao diện:**
 
-- Consumes: redacted scenario matrix, exact SHA/run URLs, cleanup proof, H2 decision.
-- Produces: truthful persistent evidence and only supported checkbox/status changes.
+- Tiêu thụ: ma trận kịch bản được sắp xếp lại, SHA/URL chạy chính xác, bằng chứng dọn dẹp, quyết định H2.
+- Tạo ra: bằng chứng trung thực liên tục và chỉ hỗ trợ các thay đổi về hộp kiểm/trạng thái.
 
-- [ ] **Step 1: Create the review record with the exact section structure**
+- [ ] **Bước 1: Tạo bản ghi đánh giá với cấu trúc phần chính xác**
 
-Before writing the live closeout decision, rerun the two focused local browser suites that own the historical Windows teardown gap:
+Trước khi viết quyết định kết thúc trực tiếp, hãy chạy lại hai bộ trình duyệt cục bộ tập trung sở
+hữu lỗ hổng phân tích lịch sử của Windows:
 
 ```powershell
 npx playwright test tests/e2e/fe04-admin-membership-review.spec.js tests/e2e/fe11-admin-request-management.spec.js --project=chromium --workers=1
 ```
 
-Expected: assertions pass and the Playwright process exits `0` without a webServer teardown timeout. Preserve the exit result and responsive screenshot/overflow evidence; do not mark the local gap complete if the process hangs or times out.
+Dự kiến: các xác nhận đã vượt qua và quy trình Playwright thoát khỏi `0` mà không hết thời gian chờ
+phân tách webServer. Bảo toàn kết quả thoát và bằng chứng ảnh chụp màn hình/tràn đáp ứng; không đánh
+dấu khoảng trống cục bộ là hoàn thành nếu quá trình bị treo hoặc hết thời gian.
 
 ```markdown
-# Release Closeout Staging Acceptance - 2026-08-02
+# Nghiệm thu tiền sản xuất khi kết thúc phát hành - 2026-08-02
 
-## Decision
-## Baseline and deployed targets
-## Synthetic fixture contract
-## Authenticated role matrix
-## Cross-role scenario matrix
-## Desktop/mobile UX matrix
-## Negative authorization matrix
-## Server-derived invariant evidence
-## Cleanup and token revocation evidence
-## Task closeout decision table
-## Residual risks and owners
+## Quyết định
+## Mốc cơ sở và mục tiêu đã triển khai
+## Hợp đồng dữ liệu kiểm thử tổng hợp
+## Ma trận vai trò đã xác thực
+## Ma trận kịch bản liên vai trò
+## Ma trận trải nghiệm máy tính/di động
+## Ma trận từ chối ủy quyền
+## Bằng chứng bất biến do máy chủ suy ra
+## Bằng chứng dọn dẹp và thu hồi mã thông báo
+## Bảng quyết định kết thúc nhiệm vụ
+## Rủi ro còn lại và người sở hữu
 ```
 
-Every matrix row includes actor, UI route, API method/path, expected state, actual state, PASS/FAIL, and redacted artifact name. Do not include credentials, token/cookie/header values, raw audit metadata, or full synthetic emails.
+Mỗi hàng ma trận bao gồm tác nhân, tuyến giao diện người dùng, phương thức/đường dẫn API, trạng thái
+dự kiến, trạng thái thực tế, đạt/không đạt và tên tạo tác được xử lý lại. Không bao gồm thông tin xác
+thực, giá trị mã thông báo/cookie/tiêu đề, siêu dữ liệu kiểm tra thô hoặc email tổng hợp đầy đủ.
 
-- [ ] **Step 2: Apply the closeout decision table exactly**
+- [ ] **Bước 2: Áp dụng chính xác bảng quyết định khóa sổ**
 
 ```text
 FE04-ADM05:
-  eligible only after FE04-ADM04 and FE04-CONV-001 are eligible, scenario PASS, cleanup CLEANED, desktop/mobile PASS, and combined H2 approval.
+  chỉ đủ điều kiện sau khi FE04-ADM04 và FE04-CONV-001 đủ điều kiện, kịch bản PASS, dọn dẹp CLEANED, máy tính/di động PASS và H2 tổng hợp được phê duyệt.
 
 FE04-CONV-001:
-  eligible only if the focused local FE04/FE11 Playwright command exits 0 without the historical Windows webServer teardown timeout and preserves responsive screenshot/overflow evidence.
+  chỉ đủ điều kiện nếu lệnh Playwright cục bộ tập trung FE04/FE11 thoát với mã 0, không lặp lại lỗi hết thời gian dừng webServer trên Windows và vẫn có bằng chứng ảnh chụp/tràn giao diện thích ứng.
 
 FE04-ADM04:
-  eligible only under the same clean-exit focused local Playwright evidence as FE04-CONV-001.
+  chỉ đủ điều kiện với cùng bằng chứng Playwright cục bộ tập trung, thoát sạch như FE04-CONV-001.
 
 FE04-CONV-002:
-  remains open unless the same evidence also contains explicit cross-feature owner confirmation and final human release approval.
+  vẫn để mở trừ khi cùng bộ bằng chứng có xác nhận rõ ràng của chủ sở hữu liên chức năng và phê duyệt phát hành cuối cùng của con người.
 
 FE11-UXR07:
-  eligible after authenticated Azure desktop/mobile PASS + cleanup CLEANED + combined H2 approval.
+  đủ điều kiện sau khi Azure có xác thực trên máy tính/di động PASS + dọn dẹp CLEANED + H2 tổng hợp được phê duyệt.
 
 FE11-UXR08:
-  eligible only if all eight-item sidebar, no Permissions, responsive users, audit density/filter/allowlist, and four viewport assertions PASS.
+  chỉ đủ điều kiện nếu các xác nhận về thanh bên đủ tám mục, không có Quyền hạn, người dùng thích ứng, mật độ/bộ lọc/danh sách cho phép kiểm toán và bốn kích thước khung nhìn đều PASS.
 
 FE11-UXR09:
-  eligible only if FE04-ADM05 is also eligible and Membership Review is proven in the native eight-item Admin shell at all four viewports.
+  chỉ đủ điều kiện nếu FE04-ADM05 cũng đủ điều kiện và Duyệt hội viên được chứng minh trong lớp bao Quản trị viên tám mục gốc ở cả bốn kích thước khung nhìn.
 
 FE11-PDO04:
-  eligible only if existing source/test evidence is revalidated and live Admin UI exposes no profile-edit action, while a direct request to the retired personal-profile route returns 404 without changing data.
+  chỉ đủ điều kiện nếu bằng chứng mã nguồn/kiểm thử hiện có được xác minh lại, giao diện Quản trị viên trực tiếp không có hành động sửa hồ sơ và yêu cầu trực tiếp tới tuyến hồ sơ cá nhân đã ngừng dùng trả về 404 mà không thay đổi dữ liệu.
 ```
 
-Failed or uncovered items keep `[ ]`; add evidence text without converting them to complete.
+Các mục bị lỗi hoặc không được phát hiện sẽ giữ `[ ]`; thêm văn bản bằng chứng mà không cần chuyển
+đổi chúng để hoàn thành.
 
-- [ ] **Step 3: Run four-layer validation**
+- [ ] **Bước 3: Chạy xác thực bốn lớp**
 
 ```powershell
 npm --prefix backend test -- --runInBand
@@ -736,8 +779,11 @@ npm run test:secrets
 git diff --check
 ```
 
-Expected: every configured gate exits `0`; frontend audit may print only the already-controlled React Router advisory and its guard must pass.
+Dự kiến: mọi cổng được định cấu hình đều thoát khỏi `0`; Kiểm tra giao diện người dùng chỉ có thể in
+lời khuyên về Bộ định tuyến React đã được kiểm soát và phần bảo vệ của nó phải vượt qua.
 
-- [ ] **Step 4: Stop for combined H2 review**
+- [ ] **Bước 4: Dừng để xem xét H2 tổng hợp**
 
-Present the persistent diff, exact validation counts, scenario decision, cleanup decision, and list of tasks kept open. Do not commit, push, open a PR, merge, or remove remaining evidence until the user grants H2.
+Trình bày sự khác biệt liên tục, số lượng xác thực chính xác, quyết định kịch bản, quyết định dọn
+dẹp và danh sách các nhiệm vụ được giữ mở. Không cam kết, đẩy, mở PR, hợp nhất hoặc xóa bằng chứng
+còn lại cho đến khi người dùng cấp H2.

@@ -1,61 +1,84 @@
-# Week 11-12 Quality Sprint Design
+# Tuần 11-12 Thiết kế Sprint chất lượng
 
-## Goal
+## Mục tiêu
 
-Complete the next playbook quality gates after system integration: measurable coverage, focused gap closure, an enforced coverage threshold, one critical browser journey, and a recorded security audit.
+Hoàn thành các cổng chất lượng cẩm nang tiếp theo sau khi tích hợp hệ thống: phạm vi có thể đo
+lường, thu hẹp khoảng cách tập trung, ngưỡng phạm vi được thực thi, một hành trình duyệt web quan
+trọng và kiểm tra bảo mật được ghi lại.
 
-## Scope
+## Phạm vi
 
-The sprint covers completed production-aligned modules FE07 Borrowing, FE08 Reservation, FE10 Notification, and FE12 Reporting, plus the FE09 server-side fine handoff used by the integrated journey.
+Chạy nước rút bao gồm các mô-đun hoàn chỉnh phù hợp với sản xuất FE07 Vay, đặt chỗ FE08, Thông báo
+FE10 và Báo cáo FE12, cùng với chuyển giao tốt phía máy chủ FE09 được hành trình tích hợp sử dụng.
 
-The sprint does not add new business behavior, redesign pages, align the legacy FE09 frontend, change the SQL schema, or introduce production-only test endpoints.
+Chạy nước rút không thêm hành vi kinh doanh mới, thiết kế lại trang, căn chỉnh giao diện người dùng
+FE09 cũ, thay đổi lược đồ SQL hoặc giới thiệu các điểm cuối kiểm thử chỉ dành cho sản xuất.
 
-## Approach
+## Cách tiếp cận
 
-### Coverage
+### Bảo hiểm
 
-Use the existing Jest coverage scope in `backend/package.json` as the authoritative Week 11 module set. Generate a baseline, identify uncovered branches/functions by file, add spec-traceable tests for meaningful gaps, then enforce at least 80 percent for statements, branches, functions, and lines.
+Sử dụng độ bao phủ Jest hiện có trong `backend/package.json` làm bộ mô-đun Tuần 11 chính thức. Tạo
+mốc cơ sở, xác định các nhánh/hàm chưa được phát hiện theo tệp, thêm các kiểm thử có thể theo dõi
+đặc tả để tìm các khoảng trống có ý nghĩa, sau đó thực thi ít nhất 80 phần trăm cho các câu lệnh,
+nhánh, hàm và dòng.
 
-Coverage evidence is recorded separately from generated `backend/coverage/` artifacts. Generated HTML/LCOV output remains untracked.
+Bằng chứng bảo hiểm được ghi lại riêng biệt với các tạo phẩm `backend/coverage/` được tạo. Đầu ra
+HTML/LCOV đã tạo vẫn không bị theo dõi.
 
-### Browser E2E
+### Trình duyệt E2E
 
-Add Playwright at the repository root. A test-only Express host starts the existing `makeSystemIntegrationApp()` services and in-memory repositories. The host exposes control endpoints under `/__e2e__` before mounting the production app; these endpoints seed runtime-generated accounts, make the selected loan overdue, synchronize the FE07 return into FE09 input state, and expose non-sensitive IDs needed by the test.
+Thêm Playwright vào thư mục gốc của kho lưu trữ. Máy chủ Express chỉ dành cho kiểm thử khởi động các
+dịch vụ `makeSystemIntegrationApp()` hiện có và kho lưu trữ trong bộ nhớ. Máy chủ hiển thị các điểm
+cuối kiểm soát trong `/__e2e__` trước khi cài đặt ứng dụng sản xuất; các điểm cuối này tạo tài khoản
+do thời gian chạy tạo, khiến lượt mượn đã chọn quá hạn, đồng bộ hóa FE07 trở về trạng thái đầu vào
+FE09 và hiển thị các ID không nhạy cảm cần thiết cho quá trình kiểm tra.
 
-The browser journey uses the real React frontend for:
+Hành trình của trình duyệt sử dụng giao diện React thực sự cho:
 
-1. Member login.
-2. Borrow request creation.
-3. Librarian login and approval.
-4. Librarian return processing.
-5. FE12 borrowing report display.
+1. Đăng nhập thành viên.
+2. Tạo yêu cầu mượn.
+3. Đăng nhập và phê duyệt thư viện.
+4. Thủ thư xử lý trả sách.
+5. FE12 hiển thị báo cáo vay mượn.
 
-Playwright's API context performs FE09 calculate and paid transitions because the current `FineManagement.jsx` remains a local prototype. The test must state this boundary and must not claim full FE09 UI coverage.
+Ngữ cảnh API của Playwright thực hiện tính toán FE09 và chuyển đổi thanh toán vì
+`FineManagement.jsx` hiện tại vẫn là nguyên mẫu cục bộ. kiểm thử phải nêu rõ ranh giới này và không
+được yêu cầu độ bao phủ giao diện người dùng FE09 đầy đủ.
 
-The E2E server is reachable only on localhost during tests. It uses runtime-generated passwords and synthetic `example.test` emails. No credential is committed.
+Máy chủ E2E chỉ có thể truy cập được trên localhost trong quá trình kiểm thử. Nó sử dụng mật khẩu
+được tạo trong thời gian chạy và email `example.test` tổng hợp. Không có thông tin xác thực được cam
+kết.
 
-### Security Audit
+### Kiểm tra an ninh
 
-Run production dependency audits for root, backend, and frontend; inspect any Critical/High finding before changing dependencies. Review tracked files for credential patterns, confirm protected route middleware and validator coverage, and record accepted lower-severity risks with owner/action.
+Chạy kiểm tra phụ thuộc sản xuất cho root, máy chủ và giao diện; kiểm tra mọi phát hiện Quan
+trọng/Cao trước khi thay đổi các phần phụ thuộc. Xem lại các tệp được theo dõi để tìm các mẫu thông
+tin xác thực, xác nhận phạm vi bảo hiểm của phần mềm trung gian và trình xác thực tuyến đường được
+bảo vệ, đồng thời ghi lại các rủi ro ở mức độ nghiêm trọng thấp hơn được chấp nhận với chủ sở
+hữu/hành động.
 
-Security fixes are limited to verified Critical/High blockers or minimal dependency updates that preserve the approved stack. No blanket `npm audit fix --force` is allowed.
+Các bản sửa lỗi bảo mật được giới hạn ở các trình chặn Quan trọng/Cao đã được xác minh hoặc các bản
+cập nhật phụ thuộc tối thiểu để duy trì bộ công nghệ đã được phê duyệt. Không được phép sử dụng chăn
+`npm audit fix --force`.
 
-## Evidence
+## Bằng chứng
 
-Create:
+Tạo:
 
 - `.sdd/reviews/week11-coverage-evidence-2026-07-14.md`
 - `.sdd/reviews/week12-security-audit-2026-07-14.md`
 - `tests/e2e/system-golden-path.spec.js`
-- Playwright HTML/report artifacts under ignored output directories.
+- Các tạo phẩm Playwright HTML/report trong các thư mục đầu ra bị bỏ qua.
 
-CI runs the coverage gate and Playwright Chromium journey. The SQL mutation suite remains local-only because CI has no disposable SQL Server service.
+CI chạy cổng phủ sóng và hành trình Playwright Chrome. Bộ thao tác ghi SQL vẫn chỉ cục bộ vì CI không có
+dịch vụ SQL Server dùng một lần.
 
-## Success Criteria
+## Tiêu chí thành công
 
-- Coverage for the configured completed backend modules is at least 80 percent for statements, branches, functions, and lines.
-- Coverage thresholds run in CI and block regression.
-- The Playwright golden path passes on Chromium and produces trace/screenshot artifacts on failure.
-- No Critical/High production dependency vulnerability remains undocumented.
-- Secret, RBAC, validation, and safe-error checks are recorded with concrete commands and findings.
-- Existing backend, frontend, SQL integration, lint, build, and traceability gates remain green.
+- Phạm vi bao phủ cho các mô-đun máy chủ đã hoàn thành đã được định cấu hình ít nhất là 80 phần trăm cho các câu lệnh, nhánh, hàm và dòng.
+- Ngưỡng bảo hiểm chạy trong CI và chặn hồi quy.
+- luồng nghiệp vụ chuẩn Playwright đi qua Chrome và tạo ra các tạo phẩm dấu vết/ảnh chụp màn hình khi bị lỗi.
+- Không có lỗ hổng phụ thuộc sản xuất nghiêm trọng/cao nào vẫn chưa được ghi lại.
+- Kiểm tra bí mật, RBAC, xác thực và lỗi an toàn được ghi lại bằng các lệnh và phát hiện cụ thể.
+- Các cổng máy chủ, giao diện người dùng, tích hợp SQL, kiểm tra mã, bản dựng và truy vết hiện tại vẫn có màu xanh.

@@ -1,83 +1,79 @@
-# Staging Free Keepalive Implementation Plan
+# Kế hoạch triển khai Keepalive miễn phí theo giai đoạn
 
-**Status:** H1 APPROVED 2026-07-28
+**Trạng thái:** H1 ĐƯỢC PHÊ DUYỆT 2026-07-28
 
-**Goal:** Replace the paid B1/Always On staging workaround with a
-repository-controlled, best-effort GitHub Actions keepalive and safely return
-Azure App Service to F1.
+**Mục tiêu:** Thay thế giải pháp B1 trả phí/Luôn bật theo giai đoạn bằng giải pháp GitHub được kiểm
+soát bằng kho lưu trữ, duy trì và đưa Azure App Service về F1 một cách an toàn.
 
-**Design:**
-`docs/superpowers/specs/2026-07-28-staging-free-keepalive-design.md`
+**Thiết kế:** `docs/superpowers/specs/2026-07-28-staging-free-keepalive-design.md`
 
-**Branch:** `codex/chore-staging-free-keepalive`
+**nhánh:** `codex/chore-staging-free-keepalive`
 
-**Baseline:** `origin/main` at
-`2c0b169cbb81421b17ad43580a8688dddffa328c`
+**mốc cơ sở:** `origin/main` và `2c0b169cbb81421b17ad43580a8688dddffa328c`
 
-## Task 1: Establish RED Workflow Policy Evidence
+## Nhiệm vụ 1: Thiết lập bằng chứng chính sách quy trình làm việc RED
 
-**Files:**
+**Tệp:**
 
-- Create: `tests/deployment/stagingKeepalivePolicy.test.js`
-- Test: `.github/workflows/staging-keepalive.yml`
-- Test: `docs/deployment/azure-staging-guide.md`
+- Tạo: `tests/deployment/stagingKeepalivePolicy.test.js`
+- Kiểm tra: `.github/workflows/staging-keepalive.yml`
+- Kiểm tra: `docs/deployment/azure-staging-guide.md`
 
-- [ ] Write a Node test that reads the planned workflow and deployment guide.
-- [ ] Require the exact six 10-minute cron offsets.
-- [ ] Require `workflow_dispatch`, `permissions: contents: read`, bounded
-      concurrency, job timeout, fail-closed `curl`, retry count, retry delay,
-      request timeout, and the exact HTTPS `/health` endpoint.
-- [ ] Require the guide to state that the approach is best-effort and that a
-      successful manual workflow run precedes the F1 downgrade.
-- [ ] Run:
+- [ ] Viết kiểm thử Node để đọc hướng dẫn triển khai và quy trình làm việc theo kế hoạch.
+- [ ] Yêu cầu chính xác sáu lần bù cron 10 phút.
+- [ ] Yêu cầu `workflow_dispatch`, `permissions: contents: read`, có giới hạn
+      đồng thời, hết thời gian chờ công việc, `curl` không đóng, số lần thử lại, độ trễ thử lại,
+      yêu cầu hết thời gian chờ và điểm cuối HTTPS `/health` chính xác.
+- [ ] Yêu cầu người hướng dẫn nêu rõ rằng cách tiếp cận này là nỗ lực tốt nhất và
+      chạy quy trình làm việc thủ công thành công trước khi hạ cấp F1.
+- [ ] Chạy:
 
 ```powershell
 node --test tests/deployment/stagingKeepalivePolicy.test.js
 ```
 
-Expected RED: the test fails because
-`.github/workflows/staging-keepalive.yml` does not exist.
+RED dự kiến: kiểm thử thất bại vì `.github/workflows/staging-keepalive.yml` không tồn tại.
 
-## Task 2: Add The Minimal Keepalive Workflow
+## Nhiệm vụ 2: Thêm quy trình làm việc Keepalive tối thiểu
 
-**Files:**
+**Tệp:**
 
-- Create: `.github/workflows/staging-keepalive.yml`
+- Tạo: `.github/workflows/staging-keepalive.yml`
 
-- [ ] Add the approved scheduled and manual triggers.
-- [ ] Grant only read-only contents permission.
-- [ ] Add one three-minute Ubuntu job.
-- [ ] Call only the public staging `/health` endpoint.
-- [ ] Use bounded retries and fail on non-2xx responses.
-- [ ] Run the focused test from Task 1.
+- [ ] Thêm trình kích hoạt theo lịch trình và thủ công đã được phê duyệt.
+- [ ] Chỉ cấp quyền cho nội dung chỉ đọc.
+- [ ] Thêm một công việc Ubuntu kéo dài ba phút.
+- [ ] Chỉ gọi điểm cuối `/health` môi trường tiền sản xuất công khai.
+- [ ] Sử dụng số lần thử có giới hạn và không thành công đối với các phản hồi không phải 2xx.
+- [ ] Chạy kiểm thử tập trung từ Nhiệm vụ 1.
 
-Expected GREEN: the focused workflow policy test passes.
+Dự kiến GREEN: kiểm thử chính sách quy trình làm việc tập trung đã vượt qua.
 
-## Task 3: Document F1 Operation And Rollback
+## Nhiệm vụ 3: Tài liệu F1 Thao tác và khôi phục
 
-**Files:**
+**Tệp:**
 
-- Modify: `docs/deployment/azure-staging-guide.md`
+- Sửa đổi: `docs/deployment/azure-staging-guide.md`
 
-- [ ] Add a `Free-Tier Staging Keepalive` section.
-- [ ] State that GitHub schedule delivery and F1 wakefulness are best-effort.
-- [ ] Document merge -> successful manual dispatch -> disable Always On ->
-      scale to F1.
-- [ ] Document post-change health, public catalog, worker-setting, and queue
-      verification.
-- [ ] Document B1 + Always On rollback.
-- [ ] Re-run the focused workflow policy test.
+- [ ] Thêm phần `Free-Tier Staging Keepalive`.
+- [ ] Nói rõ rằng việc phân phối theo lịch trình GitHub và tình trạng thức giấc của F1 là nỗ lực tốt nhất.
+- [ ] Hợp nhất tài liệu -> gửi thủ công thành công -> tắt Luôn bật ->
+      chia tỷ lệ thành F1.
+- [ ] Ghi lại tình trạng sau thay đổi, danh mục công khai, cài đặt công nhân và hàng đợi
+      xác minh.
+- [ ] Tài liệu B1 + Luôn bật hoàn tác.
+- [ ] Chạy lại kiểm tra chính sách quy trình làm việc tập trung.
 
-Expected GREEN: workflow and documentation policy assertions pass.
+Dự kiến ​​GREEN: xác nhận chính sách quy trình làm việc và tài liệu đã vượt qua.
 
-## Task 4: Validate And Stop For H2
+## Nhiệm vụ 4: Xác thực và dừng đối với H2
 
-**Files:**
+**Tệp:**
 
-- Create:
+- Tạo:
   `.sdd/reviews/staging-free-keepalive-validation-2026-07-28.md`
 
-- [ ] Run:
+- [ ] Chạy:
 
 ```powershell
 node --test tests/deployment/stagingKeepalivePolicy.test.js
@@ -87,39 +83,38 @@ git diff --name-only
 git status --short
 ```
 
-- [ ] Scan the diff for credentials, tokens, recipient addresses, SMTP values,
-      mutation endpoints, and unrelated files.
-- [ ] Record the RED failure and GREEN command results in the validation file.
-- [ ] Present the complete uncommitted implementation diff and evidence for H2.
+- [ ] Quét sự khác biệt để tìm thông tin xác thực, mã thông báo, địa chỉ người nhận, giá trị SMTP,
+      điểm cuối thao tác ghi và các tập tin không liên quan.
+- [ ] Ghi lại lỗi RED và kết quả lệnh GREEN trong tệp xác thực.
+- [ ] Trình bày sự khác biệt hoàn toàn khi triển khai và bằng chứng cho H2.
 
-H2 authorizes only the reviewed commit set, branch push, and draft pull-request
-publication.
+H2 chỉ cho phép xuất bản bộ cam kết đã được xem xét, đẩy nhánh và xuất bản yêu cầu hợp nhất dự thảo.
 
-## Task 5: Publish And Complete H3
+## Nhiệm vụ 5: Xuất bản và hoàn thành H3
 
-- [ ] After explicit H2 approval, commit the reviewed files.
-- [ ] Push `codex/chore-staging-free-keepalive`.
-- [ ] Open a draft pull request and wait for all required checks.
-- [ ] Confirm the pull request remains mergeable.
-- [ ] Present exact check and diff evidence for H3.
-- [ ] Merge only after explicit H3 approval.
-- [ ] Verify post-merge `main` CI for the exact merge commit.
+- [ ] Sau khi phê duyệt H2 rõ ràng, hãy cam kết các tệp đã được xem xét.
+- [ ] Đẩy `codex/chore-staging-free-keepalive`.
+- [ ] Mở một yêu cầu hợp nhất dự thảo và chờ tất cả các bước kiểm tra cần thiết.
+- [ ] Xác nhận yêu cầu hợp nhất vẫn có thể hợp nhất được.
+- [ ] Trình bày kiểm tra chính xác và bằng chứng khác biệt cho H3.
+- [ ] Chỉ hợp nhất sau khi được phê duyệt H3 rõ ràng.
+- [ ] Xác minh CI `main` sau hợp nhất để biết cam kết hợp nhất chính xác.
 
-## Task 6: Activate Keepalive Before Downgrade
+## Nhiệm vụ 6: Kích hoạt Keepalive trước khi hạ cấp
 
-- [ ] Manually dispatch `Staging keepalive` from `main`.
-- [ ] Wait for the exact run to complete successfully.
-- [ ] Verify the job called the expected HTTPS `/health` endpoint and exposed no
-      secret.
+- [ ] Gửi thủ công `Staging keepalive` từ `main`.
+- [ ] Đợi quá trình chạy chính xác hoàn tất thành công.
+- [ ] Xác minh công việc được gọi là điểm cuối HTTPS `/health` dự kiến và không hiển thị
+      bí mật.
 
-If the run fails, keep B1/Always On and stop the downgrade.
+Nếu quá trình chạy không thành công, hãy giữ B1/Luôn bật và dừng hạ cấp.
 
-## Task 7: Return Azure To F1 And Verify
+## Nhiệm vụ 7: Trả Azure về F1 và xác minh
 
-- [ ] Set `alwaysOn=false` for
+- [ ] Đặt `alwaysOn=false` cho
       `app-library-api-staging-nhat714`.
-- [ ] Scale `plan-library-staging` from B1 to F1.
-- [ ] Verify:
+- [ ] Chia tỷ lệ `plan-library-staging` từ B1 đến F1.
+- [ ] Xác minh:
 
 ```text
 App Service plan SKU = F1
@@ -129,17 +124,17 @@ GET /api/books = 200
 NOTIFICATION_WORKER_ENABLED = true
 NOTIFICATION_WORKER_INTERVAL_MS = 60000
 NOTIFICATION_WORKER_BATCH_SIZE = 20
-PENDING/PROCESSING queue counts are recorded without PII
+số lượng hàng đợi PENDING/PROCESSING được ghi lại mà không chứa PII
 ```
 
-- [ ] Record the GitHub run, Azure state, endpoint results, and aggregate queue
-      counts in the validation record without secret values.
+- [ ] Ghi lại quá trình chạy GitHub, trạng thái Azure, kết quả điểm cuối và hàng đợi tổng hợp
+      được tính trong bản ghi xác thực mà không có giá trị bí mật.
 
-## Task 8: Roll Back If Live Verification Fails
+## Nhiệm vụ 8: Quay lại nếu xác minh trực tiếp không thành công
 
-If the post-downgrade checks repeatedly fail:
+Nếu quá trình kiểm tra sau hạ cấp liên tục không thành công:
 
-- [ ] Scale `plan-library-staging` back to B1.
-- [ ] Set `alwaysOn=true`.
-- [ ] Re-run health, catalog, worker-setting, and aggregate queue checks.
-- [ ] Report the exact failure and rollback evidence.
+- [ ] Chia tỷ lệ `plan-library-staging` trở lại B1.
+- [ ] Đặt `alwaysOn=true`.
+- [ ] Chạy lại kiểm tra tình trạng, danh mục, cài đặt công nhân và hàng đợi tổng hợp.
+- [ ] Báo cáo chính xác sự thất bại và bằng chứng khôi phục.

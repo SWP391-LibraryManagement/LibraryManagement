@@ -1,303 +1,311 @@
-# Library Operational Page Patterns Design
+# Thiết kế mẫu trang hoạt động của thư viện
 
-Status: APPROVED - HUMAN DESIGN GATE PASSED
+Trạng thái: ĐÃ ĐƯỢC PHÊ DUYỆT - HUMAN DESIGN GATE ĐÃ ĐẠT
 
-Date: 2026-07-15
+Ngày: 2026-07-15
 
-Branch: `docs/ux-slice3-operational-patterns`
+nhánh: `docs/ux-slice3-operational-patterns`
 
-## 1. Purpose
+## 1. Mục đích
 
-Define the executable UX contract for Slice 3 of the Library Management System UX program. This slice standardizes operational page headers, data states, toolbars, tables, confirmations, and completion feedback without changing business behavior.
+Xác định hợp đồng UX có thể thực thi cho Phần 3 của chương trình UX Hệ thống quản lý thư viện. Phần
+này chuẩn hóa các tiêu đề trang vận hành, trạng thái dữ liệu, thanh công cụ, bảng, xác nhận và phản
+hồi hoàn thành mà không thay đổi hành vi kinh doanh.
 
-The design follows the Hybrid Spec-Driven and Agent-Driven workflow:
+Thiết kế tuân theo quy trình làm việc theo hướng thông số kết hợp và hướng tác nhân:
 
-1. The consistency analysis is recorded in `.sdd/reviews/library-ux-slice3-operational-consistency-analysis-2026-07-15.md`.
-2. Nhat approved the presentation-only boundary for FE06 and FE09.
-3. Nhat approved the shared-primitives and FE07-tracer design on 2026-07-15.
-4. An implementation plan and production changes remain behind separate review gates.
+1. Phân tích tính nhất quán được ghi lại trong `.sdd/reviews/library-ux-slice3-operational-consistency-analysis-2026-07-15.md`.
+2. Nhật phê duyệt ranh giới chỉ trình chiếu cho FE06 và FE09.
+3. Nhất phê duyệt thiết kế nguyên thủy dùng chung và thiết kế FE07 vào ngày 15/07/2026.
+4. Kế hoạch thực hiện và những thay đổi trong sản xuất vẫn được giữ lại ở các cổng xem xét riêng biệt.
 
-## 2. Source Requirements
+## 2. Yêu cầu nguồn
 
-This design refines, but does not replace, the approved master UX design:
+Thiết kế này tinh chỉnh nhưng không thay thế thiết kế UX chính đã được phê duyệt:
 
-- `UX-FE-006`: API-backed pages expose loading, empty, success, and failed states without unstable layout shifts.
-- `NFR-UX-001`: Primary actions, status messages, and page content remain reachable at approved viewport widths.
-- `NFR-UX-002`: Interactive controls have accessible names and visible keyboard focus.
-- `NFR-UX-003`: Presentation motion is short and respects reduced-motion preferences.
-- `AC-UX-004`: Protected page content remains reachable at 390px.
-- `AC-UX-005`: The matching data state is visible and stable.
-- `AC-UX-007`: Navigation, dialogs, forms, and actions remain keyboard operable.
-- `AC-UX-008`: API, business, security, and privacy contracts remain unchanged.
+- `UX-FE-006`: Các trang được API hỗ trợ hiển thị các trạng thái tải, trống, thành công và không thành công mà không thay đổi bố cục không ổn định.
+- `NFR-UX-001`: Các hành động chính, thông báo trạng thái và nội dung trang vẫn có thể truy cập được ở độ rộng khung nhìn được phê duyệt.
+- `NFR-UX-002`: Điều khiển tương tác có tên dễ truy cập và tiêu điểm bàn phím hiển thị.
+- `NFR-UX-003`: Chuyển động của bản trình bày ngắn và tôn trọng các tùy chọn giảm chuyển động.
+- `AC-UX-004`: Nội dung trang được bảo vệ vẫn có thể truy cập được ở 390px.
+- `AC-UX-005`: Trạng thái dữ liệu phù hợp hiển thị và ổn định.
+- `AC-UX-007`: Điều hướng, hộp thoại, biểu mẫu và hành động vẫn có thể sử dụng được bằng bàn phím.
+- `AC-UX-008`: API, các hợp đồng kinh doanh, bảo mật và quyền riêng tư không thay đổi.
 
-Feature-specific UX requirements remain authoritative:
+Các yêu cầu UX dành riêng cho chức năng vẫn có hiệu lực:
 
-- FE06: `NFR-FE06-UX-001` and `NFR-FE06-UX-002`.
-- FE07: `NFR-FE07-UX-001` and frontend tasks `FE07-T20` through `FE07-T27`.
-- FE08: `NFR-FE08-UX-001` and `NFR-FE08-UX-002`.
-- FE09: `NFR-FE09-UX-001`, `NFR-FE09-UX-002`, and deferred frontend task `FE09-T012`.
-- FE12: `NFR-FE12-UX-001` and `NFR-FE12-UX-002`.
+- FE06: `NFR-FE06-UX-001` và `NFR-FE06-UX-002`.
+- FE07: `NFR-FE07-UX-001` và các tác vụ giao diện người dùng `FE07-T20` đến `FE07-T27`.
+- FE08: `NFR-FE08-UX-001` và `NFR-FE08-UX-002`.
+- FE09: `NFR-FE09-UX-001`, `NFR-FE09-UX-002` và tác vụ giao diện người dùng bị trì hoãn `FE09-T012`.
+- FE12: `NFR-FE12-UX-001` và `NFR-FE12-UX-002`.
 
-## 3. Goals
+## 3. Bàn thắng
 
-- Give operational pages one recognizable structure for titles, actions, loading, errors, empty results, filters, tables, confirmation, and completion feedback.
-- Reuse the current app shell and warm library visual system instead of introducing another design language.
-- Establish FE07 Borrowing as the tracer before migrating other operational pages.
-- Keep page-owned API calls, view models, business calculations, and route authorization intact.
-- Make FE06 Inventory and FE09 Fines visually consistent while preserving their current prototype data sources and limitations.
-- Keep the solution small enough for the student team to understand, review, and maintain.
+- Cung cấp cho các trang vận hành một cấu trúc dễ nhận biết cho tiêu đề, hành động, tải, lỗi, kết quả trống, bộ lọc, bảng, xác nhận và phản hồi hoàn thành.
+- Tái sử dụng giao diện ứng dụng hiện tại và hệ thống hình ảnh thư viện ấm áp thay vì giới thiệu một ngôn ngữ thiết kế khác.
+- Thiết lập FE07 mượn sách làm công cụ theo dõi trước khi di chuyển các trang hoạt động khác.
+- Giữ nguyên các lệnh gọi API thuộc sở hữu của trang, xem mô hình, tính toán kinh doanh và ủy quyền tuyến đường.
+- Làm cho Hàng tồn kho FE06 và khoản phạt FE09 nhất quán về mặt trực quan trong khi vẫn duy trì các giới hạn và nguồn dữ liệu nguyên mẫu hiện tại của chúng.
+- Giữ giải pháp đủ nhỏ để nhóm sinh viên có thể hiểu, xem xét và duy trì.
 
-## 4. Non-Goals
+## 4. Không có mục tiêu
 
-- No backend, API contract, database schema, or business-rule change.
-- No change to fine calculation, borrowing eligibility, renewal rules, reservation queue order, report metrics, or inventory status transitions.
-- No new client role or server authorization behavior.
-- No FE06 API delivery or task completion claim while its `PLAN.md` and `TASKS.md` remain not started.
-- No FE09 frontend API alignment; that remains `FE09-T012`.
-- No replacement of Bootstrap, MUI, React Router, Axios, or the existing icon library.
-- No full responsive and accessibility acceptance pass; that remains Slice 4, although new primitives must be designed to support it.
-- No redesign of unrelated public, authentication, profile, user-management, or book-management pages.
+- Không có máy chủ, hợp đồng API, lược đồ cơ sở dữ liệu hoặc thay đổi quy tắc nghiệp vụ.
+- Không có thay đổi nào về cách tính khoản phạt, tính đủ điều kiện vay, quy tắc gia hạn, thứ tự xếp hàng đặt chỗ, số liệu báo cáo hoặc chuyển đổi trạng thái hàng tồn kho.
+- Không có vai trò khách hàng mới hoặc hành vi ủy quyền máy chủ.
+- Không có yêu cầu phân phối hoặc hoàn thành nhiệm vụ FE06 API trong khi `PLAN.md` và `TASKS.md` của nó vẫn chưa bắt đầu.
+- Không có giao diện FE09 liên kết API; đó vẫn là `FE09-T012`.
+- Không thay thế Bootstrap, MUI, React Router, Axios hoặc thư viện biểu tượng hiện có.
+- Không có đáp ứng đầy đủ và chấp nhận khả năng tiếp cận; vẫn là phần việc 4, mặc dù các nguyên thủy mới phải được thiết kế để hỗ trợ nó.
+- Không thiết kế lại các trang công khai, xác thực, hồ sơ, quản lý người dùng hoặc quản lý sách không liên quan.
 
-## 5. Chosen Approach
+## 5. Phương pháp được lựa chọn
 
-Use shared structural primitives with page-owned content and behavior.
+Sử dụng cấu trúc nguyên thủy được chia sẻ với nội dung và hành vi do trang sở hữu.
 
-- Shared components own layout, semantics, visual state, focus behavior, and duplicate-action prevention.
-- Feature pages continue to own API requests, view-model mapping, filters, selected rows, and mutation handlers.
-- The shared table is compositional rather than a schema-driven data-grid framework. Pages retain control over row and cell rendering.
-- Existing exports remain available during migration to avoid a repository-wide rename in one commit.
+- Các thành phần được chia sẻ có bố cục, ngữ nghĩa, trạng thái trực quan, hành vi tập trung và ngăn chặn hành động trùng lặp.
+- Các trang chức năng tiếp tục sở hữu các yêu cầu API, ánh xạ mô hình chế độ xem, bộ lọc, hàng đã chọn và trình xử lý thao tác ghi.
+- Bảng chia sẻ có tính chất tổng hợp chứ không phải là khung lưới dữ liệu dựa trên lược đồ. Các trang giữ quyền kiểm soát việc hiển thị hàng và ô.
+- Các bản xuất hiện có vẫn có sẵn trong quá trình di chuyển để tránh việc đổi tên toàn bộ kho lưu trữ trong một lần xác nhận.
 
-This approach was selected over CSS-only normalization because CSS cannot enforce state or confirmation contracts. It was selected over a simultaneous page rewrite because the five target modules have different delivery maturity and risk.
+Cách tiếp cận này đã được chọn thay vì chuẩn hóa chỉ CSS vì CSS không thể thực thi các hợp đồng
+trạng thái hoặc xác nhận. Nó được chọn qua việc viết lại trang đồng thời vì năm mô-đun mục tiêu có
+thời hạn phân phối và rủi ro khác nhau.
 
-## 6. Component Architecture
+## 6. Kiến trúc thành phần
 
 ### 6.1 `PageHeader`
 
-Responsibilities:
+Trách nhiệm:
 
-- Render one page title, optional supporting context, and optional primary/secondary actions.
-- Keep action placement stable on desktop and stack actions below the title on narrow screens.
-- Preserve one `h1` for the page.
+- Hiển thị một tiêu đề trang, bối cảnh hỗ trợ tùy chọn và các hành động chính/phụ tùy chọn.
+- Giữ vị trí hành động ổn định trên máy tính để bàn và xếp chồng các hành động bên dưới tiêu đề trên màn hình hẹp.
+- Giữ lại một `h1` cho trang.
 
-Integration:
+Tích hợp:
 
-- `AppLayout` composes `PageHeader` from its current `title`, `subtitle`, and `actions` props.
-- Pages do not render a second page-level heading inside their content.
-- Existing `AppLayout` call sites remain compatible.
+- `AppLayout` tổng hợp `PageHeader` từ các đạo cụ `title`, `subtitle` và `actions` hiện tại của nó.
+- Các trang không hiển thị tiêu đề cấp trang thứ hai trong nội dung của chúng.
+- Các trang web cuộc gọi `AppLayout` hiện tại vẫn tương thích.
 
 ### 6.2 `StatusNotice`
 
-Responsibilities:
+Trách nhiệm:
 
-- Render persistent `info`, `warning`, `error`, or `success` state.
-- Accept a title, body, and optional action such as retry.
-- Use alert semantics for errors and status semantics for non-error messages.
-- Describe the user outcome and next action, not implementation details or endpoint names.
+- Hiển thị trạng thái `info`, `warning`, `error` hoặc `success` liên tục.
+- Chấp nhận tiêu đề, nội dung và hành động tùy chọn, chẳng hạn như thử lại.
+- Sử dụng ngữ nghĩa cảnh báo cho các lỗi và ngữ nghĩa trạng thái cho các thông báo không có lỗi.
+- Mô tả kết quả của người dùng và hành động tiếp theo chứ không phải chi tiết triển khai hoặc tên điểm cuối.
 
-Compatibility:
+Khả năng tương thích:
 
-- `DataNotice` remains as a temporary compatible export or wrapper during migration.
+- `DataNotice` vẫn là bản xuất hoặc trình bao bọc tương thích tạm thời trong quá trình di chuyển.
 
 ### 6.3 `LoadingBlock`
 
-Responsibilities:
+Trách nhiệm:
 
-- Reserve a stable content region while data is loading.
-- Expose an accessible busy label.
-- Support a small set of row-count variants instead of page-specific skeleton implementations.
-- Stop decorative animation under reduced-motion preferences.
+- Dự trữ vùng nội dung ổn định trong khi dữ liệu đang tải.
+- Hiển thị nhãn bận có thể truy cập.
+- Hỗ trợ một tập hợp nhỏ các biến thể đếm hàng thay vì triển khai khung theo trang cụ thể.
+- Dừng hoạt ảnh trang trí theo tùy chọn giảm chuyển động.
 
 ### 6.4 `EmptyState`
 
-Responsibilities:
+Trách nhiệm:
 
-- Distinguish an empty dataset from a filtered no-result state.
-- Render an icon, short title, optional explanation, and optional relevant next action.
-- Avoid generic dead ends when a user can clear filters, retry, or begin a workflow.
+- Phân biệt tập dữ liệu trống với trạng thái không có kết quả được lọc.
+- Hiển thị biểu tượng, tiêu đề ngắn, giải thích tùy chọn và hành động tiếp theo có liên quan tùy chọn.
+- Tránh ngõ cụt chung khi người dùng có thể xóa bộ lọc, thử lại hoặc bắt đầu quy trình làm việc.
 
 ### 6.5 `DataToolbar`
 
-Responsibilities:
+Trách nhiệm:
 
-- Provide structural slots for search, tabs, filters, result summary, reset, and page-level data actions.
-- Keep controls usable when wrapping to multiple rows.
-- Give reset controls an accessible name and disable them when no filter is active.
+- Cung cấp các vị trí cấu trúc cho tìm kiếm, tab, bộ lọc, tóm tắt kết quả, đặt lại và hành động dữ liệu cấp trang.
+- Giữ các điều khiển có thể sử dụng được khi gói thành nhiều hàng.
+- Đặt tên cho các điều khiển đặt lại có thể truy cập được và tắt chúng khi không có bộ lọc nào hoạt động.
 
-Constraints:
+Hạn chế:
 
-- The component does not own query state, filter logic, pagination, or API requests.
-- Each page passes the controls it needs; unused regions are omitted.
+- Thành phần này không sở hữu các yêu cầu trạng thái truy vấn, logic lọc, phân trang hoặc API.
+- Mỗi trang đều vượt qua các điều khiển mà nó cần; những vùng không sử dụng sẽ bị bỏ qua.
 
 ### 6.6 `DataTable`
 
-Responsibilities:
+Trách nhiệm:
 
-- Provide a semantic table wrapper with caption, header, body, loading, and empty-state regions.
-- Preserve page-owned row rendering and existing keyboard-selectable row behavior.
-- Support mobile row/card presentation through shared responsive classes and page-provided cell labels.
-- Keep numeric and status columns readable without changing sort order or data values.
+- Cung cấp trình bao bọc bảng ngữ nghĩa với các vùng chú thích, tiêu đề, nội dung, tải và trạng thái trống.
+- Giữ nguyên kết xuất hàng thuộc sở hữu của trang và hành vi hàng có thể chọn bằng bàn phím hiện có.
+- Hỗ trợ trình bày hàng/thẻ trên thiết bị di động thông qua các lớp phản hồi được chia sẻ và nhãn ô do trang cung cấp.
+- Giữ các cột số và trạng thái có thể đọc được mà không thay đổi thứ tự sắp xếp hoặc giá trị dữ liệu.
 
-Constraints:
+Hạn chế:
 
-- Do not introduce a generic sorting, selection, virtualization, or server-pagination engine.
-- Do not hide columns that contain required operational context.
-- Horizontal overflow may remain as a fallback for unusually wide content, but the primary mobile presentation uses labeled rows/cards.
+- Không giới thiệu công cụ sắp xếp, lựa chọn, ảo hóa hoặc phân trang máy chủ chung chung.
+- Không ẩn các cột chứa ngữ cảnh hoạt động cần thiết.
+- Tràn ngang có thể vẫn là giải pháp dự phòng cho nội dung rộng bất thường nhưng bản trình bày chính trên thiết bị di động sử dụng các hàng/thẻ được gắn nhãn.
 
 ### 6.7 `ConfirmAction`
 
-Responsibilities:
+Trách nhiệm:
 
-- Compose the existing accessible `Modal` for approval, rejection, return, renewal, reservation cancellation, fine collection, payment completion, and other consequential actions.
-- Render action-specific context, cancel text, confirm text, and visual tone.
-- Disable duplicate confirmation while the mutation is pending.
-- Preserve focus restoration and keyboard trapping from the existing modal.
-- Keep the dialog open and show actionable feedback when the mutation fails.
+- Soạn thảo `Modal` có thể truy cập hiện có để phê duyệt, từ chối, trả sách, gia hạn, hủy đặt chỗ, thu khoản phạt, hoàn thành thanh toán và các hành động tiếp theo khác.
+- Hiển thị bối cảnh hành động cụ thể, hủy văn bản, xác nhận văn bản và tông màu trực quan.
+- Tắt xác nhận trùng lặp trong khi thao tác ghi đang chờ xử lý.
+- Giữ nguyên khả năng khôi phục tiêu điểm và bẫy bàn phím từ phương thức hiện có.
+- Giữ hộp thoại mở và hiển thị phản hồi có thể thực hiện được khi thao tác ghi không thành công.
 
-Constraints:
+Hạn chế:
 
-- The component does not perform the API mutation itself.
-- Page handlers remain responsible for canonical server results and local state updates.
+- Thành phần này không tự thực hiện thao tác ghi API.
+- Trình xử lý trang vẫn chịu trách nhiệm về kết quả của máy chủ chuẩn và cập nhật trạng thái cục bộ.
 
 ### 6.8 `Toast`
 
-Responsibilities:
+Trách nhiệm:
 
-- Confirm short-lived mutation completion or show a recoverable mutation error.
-- Avoid replacing persistent inline state when the current page remains failed or incomplete.
-- Use the existing shared hook and styling; FE09 removes its duplicate implementation during migration.
+- Xác nhận hoàn thành thao tác ghi trong thời gian ngắn hoặc hiển thị lỗi thao tác ghi có thể phục hồi.
+- Tránh thay thế trạng thái nội tuyến liên tục khi trang hiện tại vẫn bị lỗi hoặc chưa hoàn thiện.
+- Sử dụng móc và kiểu dáng được chia sẻ hiện có; FE09 loại bỏ việc triển khai trùng lặp trong quá trình di chuyển.
 
-## 7. Operational State Model
+## 7. Mô hình trạng thái hoạt động
 
-Every API-backed collection or report surface uses one visible primary state:
+Mỗi bộ sưu tập hoặc bề mặt báo cáo được hỗ trợ bởi API đều sử dụng một trạng thái chính hiển thị:
 
-1. `loading`: show `LoadingBlock`; keep the page header and reload action stable.
-2. `error`: show `StatusNotice` with safe copy and a retry action; do not display stale data as canonical unless it is explicitly labeled as demo fallback.
-3. `empty`: show `EmptyState` for a successful response with no records.
-4. `success`: show the toolbar, data presentation, and relevant inline status.
+1. `loading`: hiển thị `LoadingBlock`; giữ tiêu đề trang và tải lại hành động ổn định.
+2. `error`: hiển thị `StatusNotice` với bản sao an toàn và hành động thử lại; không hiển thị dữ liệu cũ dưới dạng chuẩn trừ khi nó được gắn nhãn rõ ràng là dự phòng demo.
+3. `empty`: hiển thị `EmptyState` để phản hồi thành công mà không có bản ghi.
+4. `success`: hiển thị thanh công cụ, trình bày dữ liệu và trạng thái nội tuyến có liên quan.
 
-Filtered collections additionally distinguish:
+Các bộ sưu tập được lọc cũng phân biệt:
 
-- Dataset empty: no records exist for the current user or module.
-- No results: records exist, but active search or filters match none; offer reset when appropriate.
+- Tập dữ liệu trống: không có bản ghi nào tồn tại cho người dùng hoặc mô-đun hiện tại.
+- Không có kết quả nào: bản ghi tồn tại nhưng tìm kiếm hoặc bộ lọc đang hoạt động không khớp; đề nghị thiết lập lại khi thích hợp.
 
-Mutations use a separate state:
+thao tác ghi sử dụng một trạng thái riêng biệt:
 
-1. `idle`: action available when business state permits it.
-2. `pending`: confirm action disabled and labeled as processing.
-3. `success`: dialog closes after the canonical state updates; show a concise toast.
-4. `error`: dialog remains available or returns focus to the failed control; show safe actionable feedback without pretending the action succeeded.
+1. `idle`: hành động khả dụng khi trạng thái doanh nghiệp cho phép.
+2. `pending`: hành động xác nhận bị vô hiệu hóa và được gắn nhãn là đang xử lý.
+3. `success`: hộp thoại đóng sau khi cập nhật trạng thái chuẩn; chúc mừng ngắn gọn.
+4. `error`: hộp thoại vẫn khả dụng hoặc trả sách tiêu điểm cho điều khiển bị lỗi; hiển thị phản hồi an toàn có thể hành động mà không giả vờ hành động đã thành công.
 
-## 8. Feature Application
+## 8. Ứng dụng chức năng
 
-### 8.1 FE07 Borrowing - tracer
+### 8.1 FE07 Vay - theo dõi
 
-Apply the complete primitive set first:
+Trước tiên hãy áp dụng bộ nguyên thủy hoàn chỉnh:
 
-- Borrow request: shared toolbar/search and empty state; preserve the current catalog source and create-request API.
-- Borrowing history: shared toolbar, tabs, data table, pagination shell, renewal confirmation, and mutation pending state.
-- Staff borrow requests: shared data table and explicit approve/reject confirmations; preserve selectable-row behavior.
-- Return processing: shared toolbar and data table; require confirmation before submitting the existing return mutation.
-- Member borrowing details: shared lookup toolbar and all three table states.
+- Yêu cầu mượn: thanh công cụ/tìm kiếm được chia sẻ và trạng thái trống; giữ nguyên nguồn danh mục hiện tại và tạo yêu cầu API.
+- Lịch sử mượn: thanh công cụ dùng chung, tab, bảng dữ liệu, vỏ phân trang, xác nhận gia hạn và trạng thái chờ thao tác ghi.
+- Yêu cầu mượn của nhân viên: bảng dữ liệu dùng chung và xác nhận phê duyệt/từ chối rõ ràng; duy trì hành vi của hàng có thể chọn.
+- Xử lý trả về: thanh công cụ và bảng dữ liệu dùng chung; yêu cầu xác nhận trước khi gửi thao tác ghi trả về hiện có.
+- Chi tiết mượn của thành viên: thanh công cụ tra cứu được chia sẻ và cả ba trạng thái bảng.
 
-No FE07 API method, eligibility rule, date calculation, role guard, or mapping function changes in this slice.
+Không có thay đổi nào về phương thức FE07 API, quy tắc đủ điều kiện, tính toán ngày, bảo vệ vai trò
+hoặc chức năng ánh xạ trong phần này.
 
-### 8.2 FE08 Reservations
+### 8.2 FE08 Đặt chỗ
 
-- Use the shared toolbar, data table, status notice, empty state, confirmation, and toast patterns.
-- Preserve reservation creation, cancellation, queue processing, hold expiration, and notification APIs.
-- Keep current demo fallback behavior during this presentation slice, but label it persistently as non-canonical and keep server-only actions disabled when required.
-- Do not change queue ordering, hold rules, notification behavior, or route authorization.
+- Sử dụng thanh công cụ dùng chung, bảng dữ liệu, thông báo trạng thái, trạng thái trống, xác nhận và mẫu bánh mì nướng.
+- Giữ nguyên các API tạo, hủy, xử lý hàng đợi, hết hạn lưu giữ và thông báo.
+- Giữ nguyên hành vi dự phòng demo hiện tại trong lát bản trình bày này nhưng liên tục gắn nhãn nó là không chuẩn và tắt các hành động chỉ dành cho máy chủ khi được yêu cầu.
+- Không thay đổi thứ tự hàng đợi, quy tắc giữ, hành vi thông báo hoặc ủy quyền tuyến đường.
 
-### 8.3 FE06 Inventory - presentation-only
+### 8.3 FE06 Khoảng không quảng cáo - chỉ dành cho bản trình bày
 
-- Keep `InventoryPage` inside `AppLayout` and remove the duplicate inner page header.
-- Replace page-specific table, empty state, filter layout, and modal presentation with shared patterns where compatible.
-- Preserve `MOCK_BOOKS`, `MOCK_COPIES`, current edit behavior, and existing in-memory state.
-- Clearly avoid any claim that the screen is the canonical FE06 API implementation.
-- Do not create, update, deactivate, or transition real book-copy records as part of this slice.
+- Giữ `InventoryPage` bên trong `AppLayout` và xóa tiêu đề trang bên trong trùng lặp.
+- Thay thế bảng dành riêng cho trang, trạng thái trống, bố cục bộ lọc và cách trình bày theo phương thức bằng các mẫu được chia sẻ nếu tương thích.
+- Giữ nguyên `MOCK_BOOKS`, `MOCK_COPIES`, hành vi chỉnh sửa hiện tại và trạng thái trong bộ nhớ hiện có.
+- Rõ ràng hãy tránh mọi tuyên bố rằng màn hình là triển khai FE06 API chuẩn.
+- Không tạo, cập nhật, vô hiệu hóa hoặc chuyển trạng thái bản ghi bản sao sách thực trong lát cắt này.
 
-### 8.4 FE09 Fines - presentation-only
+### 8.4 FE09 khoản phạt - chỉ trình bày
 
-- Move the existing fine workspace into `AppLayout` and remove its duplicate global shell/navigation presentation.
-- Preserve the local workflow navigation as page-level tabs or segmented operational views.
-- Reuse shared toolbar, table, status, empty, confirmation, and toast patterns.
-- Preserve existing localStorage/sample-data behavior until `FE09-T012` is separately planned and approved.
-- Keep existing calculation and collection behavior untouched; do not present it as canonical server-side fine processing.
-- Preserve access to any currently embedded book-management workspace during this presentation migration; do not redesign that module.
+- Di chuyển không gian làm việc tốt hiện có vào `AppLayout` và xóa bản trình bày điều hướng/lớp bao toàn cầu trùng lặp của nó.
+- Giữ nguyên điều hướng quy trình làm việc cục bộ dưới dạng tab cấp trang hoặc dạng xem hoạt động được phân đoạn.
+- Tái sử dụng các mẫu thanh công cụ, bảng, trạng thái, trống, xác nhận và bánh mì nướng được chia sẻ.
+- Bảo toàn hành vi localStorage/dữ liệu mẫu hiện có cho đến khi `FE09-T012` được lên kế hoạch và phê duyệt riêng.
+- Giữ nguyên hoạt động tính toán và thu thập hiện có; không trình bày nó dưới dạng xử lý chính tắc phía máy chủ.
+- Duy trì quyền truy cập vào mọi không gian làm việc quản lý sách hiện được nhúng trong quá trình di chuyển bản trình bày này; không thiết kế lại mô-đun đó.
 
-### 8.5 FE12 Reports
+### 8.5 FE12 Báo cáo
 
-- Consolidate repeated date/category filter layouts under `DataToolbar`.
-- Use shared tables for top books, low inventory, and role/membership summaries.
-- Preserve report guards, filter parameter builders, chart data, metrics, and read-only semantics.
-- Replace endpoint-oriented success copy with outcome-oriented feedback.
+- Hợp nhất các bố cục bộ lọc ngày/danh mục lặp lại trong `DataToolbar`.
+- Sử dụng các bảng được chia sẻ cho những cuốn sách hay nhất, lượng tồn kho thấp và bản tóm tắt role/membership.
+- Giữ nguyên các trình bảo vệ báo cáo, trình tạo tham số bộ lọc, dữ liệu biểu đồ, số liệu và ngữ nghĩa chỉ đọc.
+- Thay thế bản sao thành công hướng đến điểm cuối bằng phản hồi hướng đến kết quả.
 
-## 9. Navigation Integration
+## 9. Tích hợp điều hướng
 
-- Add Inventory and Fines to the existing staff navigation group using the already-approved `LIBRARIAN` and `ADMIN` visibility rule.
-- Derive active navigation state from their existing routes.
-- Do not add a role, broaden visibility, or replace server authorization.
-- Keep feature-local workflow tabs inside the page content; do not introduce a second application shell.
+- Thêm Hàng tồn kho và khoản phạt vào nhóm điều hướng nhân viên hiện có bằng cách sử dụng quy tắc hiển thị `LIBRARIAN` và `ADMIN` đã được phê duyệt.
+- Lấy trạng thái điều hướng đang hoạt động từ các tuyến đường hiện có của họ.
+- Không thêm vai trò, mở rộng khả năng hiển thị hoặc thay thế ủy quyền máy chủ.
+- Giữ các tab quy trình làm việc cục bộ bên trong nội dung trang; không giới thiệu lớp bao ứng dụng thứ hai.
 
-## 10. Error and Copy Rules
+## 10. Quy tắc lỗi và sao chép
 
-- Protected operational pages use Vietnamese user-facing labels consistently.
-- API identifiers, source identifiers, test names, and spec IDs remain English.
-- Do not show raw stack traces, SQL messages, tokens, SMTP details, or endpoint connectivity messages.
-- Validation and conflict messages explain the blocking reason when the approved feature contract supplies it.
-- Unknown failures remain generic and actionable: retry, check the session/connection, or contact a librarian depending on context.
-- Toasts do not claim completion until the canonical mutation succeeds.
+- Các trang hoạt động được bảo vệ sử dụng nhãn tiếng Việt một cách nhất quán cho người dùng.
+- Mã định danh API, mã định danh nguồn, tên kiểm tra và ID đặc tả vẫn là tiếng Anh.
+- Không hiển thị dấu vết bộ công nghệ thô, thông báo SQL, mã thông báo, chi tiết SMTP hoặc thông báo kết nối điểm cuối.
+- Thông báo xác thực và xung đột giải thích lý do chặn khi hợp đồng chức năng được phê duyệt cung cấp nó.
+- Các lỗi không xác định vẫn chung chung và có thể xử lý được: thử lại, kiểm tra phiên/kết nối hoặc liên hệ với thủ thư tùy theo ngữ cảnh.
+- Lời chúc mừng không yêu cầu hoàn thành cho đến khi thao tác ghi chuẩn thành công.
 
-## 11. Testing Strategy
+## 11. Chiến lược kiểm thử
 
-Use the repository's current Node test style and avoid new testing dependencies.
+Sử dụng kiểu kiểm tra Nút hiện tại của kho lưu trữ và tránh các phụ thuộc kiểm tra mới.
 
-- Add focused shared-component source contracts for semantics, compatibility exports, pending confirmation behavior, and responsive table hooks.
-- Extend FE07 tests first to prove tracer adoption without changing API calls, route guards, or canonical mappings.
-- Add focused adoption tests for FE08, FE06, FE09, and FE12 as each module migrates.
-- Keep feature utility and API tests intact.
-- Run targeted frontend tests during each task, then frontend lint and build at the slice validation gate.
-- Use `git diff --check` and final diff inspection before each review commit.
-- Defer full viewport and keyboard acceptance evidence to Slice 4, while preventing known structural blockers in Slice 3.
+- Thêm các hợp đồng nguồn thành phần được chia sẻ tập trung cho ngữ nghĩa, xuất khả năng tương thích, hành vi xác nhận đang chờ xử lý và móc bảng phản hồi.
+- Trước tiên, hãy mở rộng các kiểm thử FE07 để chứng minh việc áp dụng công cụ theo dõi mà không thay đổi lệnh gọi API, bộ bảo vệ tuyến đường hoặc ánh xạ chuẩn.
+- Thêm các kiểm thử áp dụng tập trung cho FE08, FE06, FE09 và FE12 khi mỗi mô-đun di chuyển.
+- Giữ nguyên tiện ích chức năng và các kiểm thử API.
+- Chạy kiểm thử giao diện người dùng có mục tiêu trong mỗi tác vụ, sau đó tìm lỗi mã nguồn cho giao diện người dùng và xây dựng tại cổng xác thực lát cắt.
+- Sử dụng `git diff --check` và kiểm tra khác biệt lần cuối trước mỗi lần cam kết đánh giá.
+- Trì hoãn bằng chứng chấp nhận toàn bộ khung nhìn và bàn phím cho phần việc 4, đồng thời ngăn chặn các trình chặn cấu trúc đã biết trong phần việc 3.
 
-## 12. Acceptance Criteria
+## 12. Tiêu chí chấp nhận
 
-- `AC-UX-S3-001`: Given an operational page, when it renders in the protected shell, then it has one page header with title, context, and reachable actions.
-- `AC-UX-S3-002`: Given an API-backed surface, when it is loading, failed, empty, filtered to no results, or successful, then exactly the relevant state and recovery action are visible.
-- `AC-UX-S3-003`: Given a consequential action, when the user confirms it, then duplicate submission is prevented while pending and success is shown only after the handler succeeds.
-- `AC-UX-S3-004`: Given a data table at mobile width, when rows render, then required cell context remains understandable through shared labeled row/card presentation without incoherent overlap.
-- `AC-UX-S3-005`: Given the FE07 tracer pages, when the shared patterns are applied, then existing API calls, view models, route guards, and business outcomes remain unchanged.
-- `AC-UX-S3-006`: Given FE08 demo fallback, when a backend request fails, then the fallback is visibly non-canonical and server-only actions remain constrained as before.
-- `AC-UX-S3-007`: Given FE06 Inventory, when presentation migration completes, then its duplicated header and page-specific state/table presentation are replaced while mock data and in-memory behavior remain unchanged.
-- `AC-UX-S3-008`: Given FE09 Fines, when presentation migration completes, then it uses the shared application shell and feedback patterns while localStorage/sample-data behavior remains unchanged and `FE09-T012` remains open.
-- `AC-UX-S3-009`: Given FE12 Reports, when shared patterns are applied, then filters, report values, guards, and read-only behavior remain unchanged.
-- `AC-UX-S3-010`: Given the final Slice 3 diff, when reviewed, then it contains no API/schema changes, business calculation changes, role broadening, secrets, or new production dependencies.
+- `AC-UX-S3-001`: Với một trang hoạt động, khi nó hiển thị trong lớp bao được bảo vệ thì nó có một tiêu đề trang với tiêu đề, ngữ cảnh và các hành động có thể truy cập.
+- `AC-UX-S3-002`: Với bề mặt được hỗ trợ bởi API, khi nó đang tải, bị lỗi, trống, bị lọc không có kết quả hoặc thành công thì sẽ hiển thị chính xác trạng thái liên quan và hành động khôi phục.
+- `AC-UX-S3-003`: Đưa ra một hành động mang tính hệ quả, khi người dùng xác nhận hành động đó thì việc gửi trùng lặp sẽ bị ngăn chặn trong khi đang chờ xử lý và thành công chỉ được hiển thị sau khi trình xử lý thành công.
+- `AC-UX-S3-004`: Với một bảng dữ liệu có chiều rộng di động, khi các hàng hiển thị, ngữ cảnh ô bắt buộc vẫn có thể hiểu được thông qua việc trình bày hàng/thẻ được gắn nhãn chung mà không có sự chồng chéo không mạch lạc.
+- `AC-UX-S3-005`: Với các trang theo dõi FE07, khi áp dụng các mẫu chia sẻ, thì các lệnh gọi API hiện có, xem mô hình, bảo vệ tuyến đường và kết quả kinh doanh sẽ không thay đổi.
+- `AC-UX-S3-006`: Với dự phòng demo FE08, khi yêu cầu máy chủ không thành công thì dự phòng rõ ràng là không chuẩn và các hành động chỉ dành cho máy chủ vẫn bị hạn chế như trước.
+- `AC-UX-S3-007`: Với Kho lưu trữ FE06, khi quá trình di chuyển bản trình bày hoàn tất, thì tiêu đề trùng lặp và bản trình bày trạng thái/bảng theo trang cụ thể sẽ được thay thế trong khi dữ liệu mô phỏng và hành vi trong bộ nhớ không thay đổi.
+- `AC-UX-S3-008`: Đưa ra các mức phạt FE09, khi quá trình di chuyển bản trình bày hoàn tất, nó sẽ sử dụng vỏ ứng dụng dùng chung và các mẫu phản hồi trong khi localStorage/hành vi dữ liệu mẫu không thay đổi và `FE09-T012` vẫn mở.
+- `AC-UX-S3-009`: Đưa ra các Báo cáo FE12, khi áp dụng các mẫu chia sẻ thì các bộ lọc, giá trị báo cáo, bộ bảo vệ và hành vi chỉ đọc sẽ không thay đổi.
+- `AC-UX-S3-010`: Với sự khác biệt cuối cùng của phần việc 3, khi được xem xét, nó không chứa các thay đổi về API/lược đồ, các thay đổi về tính toán kinh doanh, mở rộng vai trò, các bí mật hoặc các phần phụ thuộc sản xuất mới.
 
-## 13. Rollout and Review Gates
+## 13. Cổng triển khai và đánh giá
 
-Implementation order remains:
+Trình tự thực hiện vẫn như sau:
 
-1. Shared primitives and compatibility layer.
-2. FE07 Borrowing tracer.
-3. FE08 Reservations.
-4. FE06 Inventory presentation-only migration.
-5. FE09 Fines presentation-only migration.
-6. FE12 Reports.
-7. Targeted validation and human review.
+1. Lớp nguyên thủy và lớp tương thích được chia sẻ.
+2. FE07 Máy theo dõi mượn.
+3. FE08 Đặt chỗ.
+4. FE06 Di chuyển chỉ trình bày khoảng không quảng cáo.
+5. FE09 khoản phạt di chuyển chỉ trình bày.
+6. FE12 Báo cáo.
+7. Xác nhận có mục tiêu và đánh giá của con người.
 
-Each stage must remain reviewable and traceable. A later stage does not begin if the earlier stage exposes a business-contract regression or requires an unapproved scope expansion.
+Mỗi giai đoạn phải luôn được xem xét và theo dõi. Giai đoạn sau sẽ không bắt đầu nếu giai đoạn trước
+cho thấy sự thoái lui trong hợp đồng kinh doanh hoặc yêu cầu mở rộng phạm vi không được phê duyệt.
 
-## 14. Resolved Decisions
+## 14. Quyết định đã được giải quyết
 
-- `DEC-UX-S3-001`: Use shared compositional primitives, not CSS-only normalization or a generic data-grid framework.
-- `DEC-UX-S3-002`: FE07 Borrowing is the tracer slice.
-- `DEC-UX-S3-003`: FE06 and FE09 receive presentation-only migration; their feature/API delivery remains separate.
-- `DEC-UX-S3-004`: Keep page-owned data and mutation logic.
-- `DEC-UX-S3-005`: Preserve compatibility exports while pages migrate incrementally.
-- `DEC-UX-S3-006`: Add Inventory and Fines to existing staff navigation without changing role rules.
+- `DEC-UX-S3-001`: Sử dụng các nguyên hàm tổng hợp được chia sẻ, không phải chuẩn hóa chỉ CSS hoặc khung lưới dữ liệu chung.
+- `DEC-UX-S3-002`: FE07 Vay là lát đánh dấu.
+- `DEC-UX-S3-003`: FE06 và FE09 nhận di chuyển chỉ dành cho bản trình bày; chức năng/phân phối API của họ vẫn riêng biệt.
+- `DEC-UX-S3-004`: Giữ dữ liệu thuộc sở hữu của trang và logic thao tác ghi.
+- `DEC-UX-S3-005`: Duy trì khả năng xuất tương thích trong khi các trang di chuyển tăng dần.
+- `DEC-UX-S3-006`: Thêm Hàng tồn kho và khoản phạt vào điều hướng nhân viên hiện có mà không thay đổi quy tắc vai trò.
 
-## 15. Approval Record
+## 15. Hồ sơ phê duyệt
 
-Nhat approved the recommended presentation-only boundary for FE06/FE09 and approved this shared-primitives, FE07-tracer design in the Codex task on 2026-07-15.
+Nhật đã phê duyệt ranh giới chỉ trình bày được đề xuất cho FE06/FE09 và phê duyệt thiết kế theo dõi
+nguyên thủy chung này, FE07 trong nhiệm vụ Codex vào ngày 15 tháng 7 năm 2026.
 
-This approval authorizes writing the implementation plan after the committed design receives written-spec review. It does not authorize production implementation, merge, or changes outside the scope above.
+Sự phê duyệt này cho phép viết kế hoạch thực hiện sau khi thiết kế đã cam kết nhận được đánh giá
+bằng văn bản. Nó không cho phép triển khai sản xuất, hợp nhất hoặc thay đổi ngoài phạm vi trên.

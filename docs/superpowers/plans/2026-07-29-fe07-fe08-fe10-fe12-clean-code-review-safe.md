@@ -1,44 +1,49 @@
-# FE07-FE08-FE10-FE12 Clean-Code Review-Safe Implementation Plan
+# FE07-FE08-FE10-FE12 Kế hoạch triển khai an toàn-đánh giá mã sạch
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use `executing-plans` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Đối với nhân viên đại lý:** BẮT BUỘC SUB-SKILL: Sử dụng `executing-plans` để triển khai kế hoạch này theo từng nhiệm vụ. Các bước sử dụng cú pháp hộp kiểm (`- [ ]`) để theo dõi.
 
-**Goal:** Improve reviewability of FE07, FE08, FE10, and FE12 without changing business behavior, API contracts, SQL schema, UI routes, or Azure runtime configuration.
+**Mục tiêu:** Cải thiện khả năng xem xét của FE07, FE08, FE10 và FE12 mà không thay đổi hành vi kinh
+doanh, hợp đồng API, lược đồ SQL, tuyến giao diện người dùng hoặc cấu hình thời gian chạy Azure.
 
-**Architecture:** Extract only pure access, mapping, sanitization, and report-projection logic from large services/repositories. Keep SQL, transactions, orchestration, state transitions, and public exports in their current owners. Stabilize the FE08 loader with a callback/ref boundary that removes the existing hook warning without adding a reload loop.
+**Kiến trúc:** Chỉ trích xuất logic truy cập, ánh xạ, dọn dẹp và trình chiếu báo cáo thuần túy từ
+các dịch vụ/kho lưu trữ lớn. Giữ SQL, các giao dịch, điều phối, chuyển đổi trạng thái và xuất khẩu
+công khai trong chủ sở hữu hiện tại của chúng. Ổn định trình tải FE08 bằng ranh giới gọi lại/ref
+giúp loại bỏ cảnh báo hook hiện có mà không cần thêm vòng lặp tải lại.
 
-**Tech Stack:** Node.js 22, CommonJS backend, Express, Jest, React 19, Vite, ESLint, Node built-in frontend tests.
+**Tech bộ công nghệ:** Node.js 22, phần máy chủ CommonJS, Express, Jest, React 19, Vite, ESLint, các kiểm
+thử giao diện người dùng tích hợp Node.
 
-## Global Constraints
+## Ràng buộc toàn cầu
 
-- Baseline is `origin/main@7dc563a95ff178239a90e47fe1899e21c24a49ef`.
-- Preserve all FE07/FE08/FE10/FE12 API request/response shapes and error codes.
-- Preserve SQL query text, locks, transaction ordering, audit ordering, schema, and Azure configuration.
-- Preserve `Asia/Ho_Chi_Minh` business-date semantics.
-- Preserve FE10 post-commit notification behavior and FE08 stale-handoff behavior.
-- Add no dependency and perform no unrelated formatting or shared-shell refactor.
-- Follow RED-GREEN for every production extraction.
-- Do not commit generated production changes until the complete diff passes H2.
+- mốc cơ sở là `origin/main@7dc563a95ff178239a90e47fe1899e21c24a49ef`.
+- Giữ nguyên tất cả các hình dạng yêu cầu/phản hồi FE07/FE08/FE10/FE12 API và mã lỗi.
+- Giữ nguyên văn bản truy vấn SQL, khóa, thứ tự giao dịch, thứ tự kiểm tra, lược đồ và cấu hình Azure.
+- Giữ nguyên ngữ nghĩa ngày làm việc của `Asia/Ho_Chi_Minh`.
+- Duy trì hành vi thông báo sau cam kết của FE10 và hành vi chuyển giao cũ của FE08.
+- Không thêm phần phụ thuộc và không thực hiện định dạng không liên quan hoặc trình tái cấu trúc lớp bao chung.
+- Theo dõi RED-GREEN cho mỗi lần trích xuất sản xuất.
+- Không cam kết các thay đổi sản xuất đã tạo cho đến khi khác biệt hoàn chỉnh vượt qua H2.
 
 ---
 
-### Task 1: Extract the shared feature-access boundary
+### Nhiệm vụ 1: Trích xuất ranh giới truy cập chức năng dùng chung
 
-**Files:**
+**Tệp:**
 
-- Create: `backend/src/utils/featureAccess.js`
-- Create: `backend/tests/featureAccess.test.js`
-- Modify: `backend/src/services/borrowingService.js`
-- Modify: `backend/src/services/reservationService.js`
-- Modify: `backend/src/services/notificationService.js`
-- Modify: `backend/src/services/reportService.js`
+- Tạo: `backend/src/utils/featureAccess.js`
+- Tạo: `backend/tests/featureAccess.test.js`
+- Sửa đổi: `backend/src/services/borrowingService.js`
+- Sửa đổi: `backend/src/services/reservationService.js`
+- Sửa đổi: `backend/src/services/notificationService.js`
+- Sửa đổi: `backend/src/services/reportService.js`
 
-**Interfaces:**
+**Giao diện:**
 
-- Produces: `normalizeRole(role)`, `hasAnyRole(user, allowedRoles)`, and `toPositiveInteger(value, fieldName)`.
-- Consumers keep their current role lists and error handling.
-- `toPositiveInteger` keeps error code `INVALID_ID` and the existing English message.
+- Sản xuất: `normalizeRole(role)`, `hasAnyRole(user, allowedRoles)` và `toPositiveInteger(value, fieldName)`.
+- Người tiêu dùng giữ danh sách vai trò hiện tại của họ và xử lý lỗi.
+- `toPositiveInteger` giữ mã lỗi `INVALID_ID` và thông báo tiếng Anh hiện có.
 
-- [ ] **Step 1: Write the failing utility test**
+- [ ] **Bước 1: Viết kiểm thử tiện ích không thành công**
 
 ```js
 const {
@@ -67,13 +72,13 @@ describe('featureAccess', () => {
 });
 ```
 
-- [ ] **Step 2: Verify RED**
+- [ ] **Bước 2: Xác minh RED**
 
-Run: `npm --prefix backend test -- --runInBand tests/featureAccess.test.js`
+Chạy: `npm --prefix backend test -- --runInBand tests/featureAccess.test.js`
 
-Expected: FAIL because `backend/src/utils/featureAccess.js` does not exist.
+Dự kiến: THẤT BẠI vì `backend/src/utils/featureAccess.js` không tồn tại.
 
-- [ ] **Step 3: Add the minimal utility**
+- [ ] **Bước 3: Thêm tiện ích tối thiểu**
 
 ```js
 const errors = require('./safeErrors');
@@ -98,42 +103,41 @@ function toPositiveInteger(value, fieldName) {
 module.exports = { normalizeRole, hasAnyRole, toPositiveInteger };
 ```
 
-Remove only the identical local definitions. Import
-`hasAnyRole`/`toPositiveInteger` in FE07 and FE08; import `hasAnyRole` in FE10
-and FE12.
+Chỉ xóa các định nghĩa cục bộ giống hệt nhau. Nhập `hasAnyRole`/`toPositiveInteger` vào FE07 và
+FE08; nhập `hasAnyRole` trong FE10 và FE12.
 
-- [ ] **Step 4: Verify GREEN and feature authorization**
+- [ ] **Bước 4: Xác minh GREEN và ủy quyền chức năng**
 
-Run:
+Chạy:
 
 ```powershell
 npm --prefix backend test -- --runInBand tests/featureAccess.test.js tests/borrowingRoutes.test.js tests/reservationRoutes.test.js tests/notificationRoutes.test.js tests/reportRoutes.test.js
 ```
 
-Expected: all selected suites PASS with unchanged role/error assertions.
+Dự kiến: tất cả các bộ đã chọn ĐẠT với xác nhận vai trò/lỗi không thay đổi.
 
-- [ ] **Step 5: Review checkpoint**
+- [ ] **Bước 5: Xem lại điểm kiểm tra**
 
-Run: `git diff --check`
+Chạy: `git diff --check`
 
-Expected: no whitespace error. Leave the product diff uncommitted.
+Dự kiến: không có lỗi khoảng trắng. Để lại sự khác biệt của sản phẩm không được cam kết.
 
-### Task 2: Extract FE07 borrowing projections
+### Nhiệm vụ 2: Trích xuất dự báo vay FE07
 
-**Files:**
+**Tệp:**
 
-- Create: `backend/src/utils/borrowingProjection.js`
-- Create: `backend/tests/borrowingProjection.test.js`
-- Modify: `backend/src/repositories/borrowingRepository.js`
+- Tạo: `backend/src/utils/borrowingProjection.js`
+- Tạo: `backend/tests/borrowingProjection.test.js`
+- Sửa đổi: `backend/src/repositories/borrowingRepository.js`
 
-**Interfaces:**
+**Giao diện:**
 
-- Produces: `mapCopy`, `mapBorrowability`, `mapMember`, `toDateOnly`,
-  `toExclusiveNextDay`, `mapBorrowDetail`, and `mapBorrowRequests`.
-- FE07 repository exports, SQL, transaction methods, and returned JSON fields
-  remain unchanged.
+- Sản xuất: `mapCopy`, `mapBorrowability`, `mapMember`, `toDateOnly`,
+  `toExclusiveNextDay`, `mapBorrowDetail` và `mapBorrowRequests`.
+- FE07 xuất kho lưu trữ, SQL, phương thức giao dịch và các trường JSON được trả về
+  vẫn không thay đổi.
 
-- [ ] **Step 1: Write failing projection tests**
+- [ ] **Bước 1: Viết kiểm thử trình chiếu không thành công**
 
 ```js
 const {
@@ -181,18 +185,16 @@ test('keeps FE07 exclusive end-date calculation in UTC', () => {
 });
 ```
 
-- [ ] **Step 2: Verify RED**
+- [ ] **Bước 2: Xác minh RED**
 
-Run: `npm --prefix backend test -- --runInBand tests/borrowingProjection.test.js`
+Chạy: `npm --prefix backend test -- --runInBand tests/borrowingProjection.test.js`
 
-Expected: FAIL because the projection module does not exist.
+Dự kiến: THẤT BẠI vì mô-đun trình chiếu không tồn tại.
 
-- [ ] **Step 3: Move the existing pure functions verbatim**
+- [ ] **Bước 3: Di chuyển nguyên văn các hàm thuần túy hiện có**
 
-Move the seven existing functions from `borrowingRepository.js` into
-`borrowingProjection.js`. Keep the current `// @spec FR-FE07-029` annotation
-on `mapBorrowDetail`. Export the seven names and import them at the repository
-top:
+Di chuyển bảy chức năng hiện có từ `borrowingRepository.js` sang `borrowingProjection.js`. Giữ chú
+thích `// @spec FR-FE07-029` hiện tại trên `mapBorrowDetail`. Xuất bảy tên và nhập chúng ở đầu kho:
 
 ```js
 function mapCopy(row) {
@@ -307,7 +309,7 @@ module.exports = {
 };
 ```
 
-Then import the repository consumers:
+Sau đó nhập kho lưu trữ của người tiêu dùng:
 
 ```js
 const {
@@ -318,44 +320,44 @@ const {
 } = require('../utils/borrowingProjection');
 ```
 
-Import only functions used directly by the repository; internal projection
-functions remain private to the new utility where possible.
+Chỉ nhập các chức năng được kho lưu trữ sử dụng trực tiếp; các chức năng chiếu nội bộ vẫn ở chế độ
+riêng tư đối với tiện ích mới nếu có thể.
 
-- [ ] **Step 4: Verify GREEN and repository behavior**
+- [ ] **Bước 4: Xác minh GREEN và hoạt động của kho lưu trữ**
 
-Run:
+Chạy:
 
 ```powershell
 npm --prefix backend test -- --runInBand tests/borrowingProjection.test.js tests/borrowingRepository.test.js tests/borrowingRoutes.test.js
 ```
 
-Expected: all selected suites PASS.
+Dự kiến: tất cả các dãy được chọn ĐẠT.
 
-- [ ] **Step 5: Review checkpoint**
+- [ ] **Bước 5: Xem lại điểm kiểm tra**
 
-Run: `git diff --check`
+Chạy: `git diff --check`
 
-Expected: no whitespace error. Leave the product diff uncommitted.
+Dự kiến: không có lỗi khoảng trắng. Để lại sự khác biệt của sản phẩm không được cam kết.
 
-### Task 3: Extract FE10 notification policy
+### Nhiệm vụ 3: Trích xuất chính sách thông báo FE10
 
-**Files:**
+**Tệp:**
 
-- Create: `backend/src/utils/notificationPolicy.js`
-- Create: `backend/tests/notificationPolicy.test.js`
-- Modify: `backend/src/services/notificationService.js`
+- Tạo: `backend/src/utils/notificationPolicy.js`
+- Tạo: `backend/tests/notificationPolicy.test.js`
+- Sửa đổi: `backend/src/services/notificationService.js`
 
-**Interfaces:**
+**Giao diện:**
 
-- Produces: `normalizePayloadKey`, `containsSensitivePayloadKey`,
-  `sanitizePayload`, `normalizeSourceFeature`, `isValidRecipientEmail`,
-  `isSensitiveQueueNotification`, `extractVariables`,
-  `validateStoredTemplateDefinition`, and `renderTemplate`.
-- `notificationService.js` continues to export `sanitizePayload`.
-- Delivery, persistence, retry, audit, and service factory interfaces remain
-  unchanged.
+- Sản xuất: `normalizePayloadKey`, `containsSensitivePayloadKey`,
+`sanitizePayload`, `normalizeSourceFeature`, `isValidRecipientEmail`,
+`isSensitiveQueueNotification`, `extractVariables`, `validateStoredTemplateDefinition` và
+`renderTemplate`.
+- `notificationService.js` tiếp tục xuất `sanitizePayload`.
+- Các giao diện phân phối, kiên trì, thử lại, kiểm tra và dịch vụ của nhà máy vẫn còn
+  không thay đổi.
 
-- [ ] **Step 1: Write failing policy tests**
+- [ ] **Bước 1: Viết các kiểm thử chính sách không thành công**
 
 ```js
 const {
@@ -390,21 +392,19 @@ test('rejects unsafe stored templates and renders safe text', () => {
 });
 ```
 
-- [ ] **Step 2: Verify RED**
+- [ ] **Bước 2: Xác minh RED**
 
-Run: `npm --prefix backend test -- --runInBand tests/notificationPolicy.test.js`
+Chạy: `npm --prefix backend test -- --runInBand tests/notificationPolicy.test.js`
 
-Expected: FAIL because the policy module does not exist.
+Dự kiến: THẤT BẠI vì mô-đun chính sách không tồn tại.
 
-- [ ] **Step 3: Move the pure policy verbatim**
+- [ ] **Bước 3: Di chuyển nguyên văn chính sách thuần tuý**
 
-Move `sensitiveQueueIdentifiers`, `sensitiveKeyFragments`, and the nine
-interface functions from `notificationService.js` into
-`notificationPolicy.js`. Keep `safeInternalError` and
-`isUniqueConstraintViolation` in the service because they belong to service
-orchestration.
+Di chuyển `sensitiveQueueIdentifiers`, `sensitiveKeyFragments` và chín chức năng giao diện từ
+`notificationService.js` sang `notificationPolicy.js`. Giữ `safeInternalError` và
+`isUniqueConstraintViolation` trong dịch vụ vì chúng thuộc về điều phối dịch vụ.
 
-Create the policy with the exact existing behavior:
+Tạo chính sách với hành vi hiện có chính xác:
 
 ```js
 const errors = require('./safeErrors');
@@ -525,7 +525,7 @@ module.exports = {
 };
 ```
 
-At the service top import the exact policy names:
+Ở đầu dịch vụ, nhập tên chính sách chính xác:
 
 ```js
 const {
@@ -541,41 +541,40 @@ const {
 } = require('../utils/notificationPolicy');
 ```
 
-- [ ] **Step 4: Verify GREEN and FE10 behavior**
+- [ ] **Bước 4: Xác minh hành vi GREEN và FE10**
 
-Run:
+Chạy:
 
 ```powershell
 npm --prefix backend test -- --runInBand tests/notificationPolicy.test.js tests/notificationRoutes.test.js tests/notificationInboxRepository.test.js
 ```
 
-Expected: all selected suites PASS with unchanged FE10 error and redaction
-contracts.
+Dự kiến: tất cả các bộ đã chọn ĐẠT với các hợp đồng biên tập và lỗi FE10 không thay đổi.
 
-- [ ] **Step 5: Review checkpoint**
+- [ ] **Bước 5: Xem lại điểm kiểm tra**
 
-Run: `git diff --check`
+Chạy: `git diff --check`
 
-Expected: no whitespace error. Leave the product diff uncommitted.
+Dự kiến: không có lỗi khoảng trắng. Để lại sự khác biệt của sản phẩm không được cam kết.
 
-### Task 4: Extract FE12 report projections
+### Nhiệm vụ 4: Trích xuất các phép chiếu báo cáo FE12
 
-**Files:**
+**Tệp:**
 
-- Create: `backend/src/utils/reportProjection.js`
-- Create: `backend/tests/reportProjection.test.js`
-- Modify: `backend/src/repositories/reportRepository.js`
-- Modify: `backend/src/services/reportService.js`
+- Tạo: `backend/src/utils/reportProjection.js`
+- Tạo: `backend/tests/reportProjection.test.js`
+- Sửa đổi: `backend/src/repositories/reportRepository.js`
+- Sửa đổi: `backend/src/services/reportService.js`
 
-**Interfaces:**
+**Giao diện:**
 
-- Produces: `toDateKey`, `normalizeStatus`, `pagination`, `buildReport`,
-  `getResultset`, `toCountMap`, and `toExclusiveNextDay`.
-- FE12 report envelopes remain `{ metrics, rows, page, limit, totalRows }`.
-- The duplicate `requireAdminOrApprovedStaff` wrapper is removed; all four
-  report reads continue to call the same `requireStaff` role policy.
+- Sản xuất: `toDateKey`, `normalizeStatus`, `pagination`, `buildReport`,
+  `getResultset`, `toCountMap` và `toExclusiveNextDay`.
+- FE12 phong bì báo cáo vẫn còn `{ metrics, rows, page, limit, totalRows }`.
+- Trình bao bọc `requireAdminOrApprovedStaff` trùng lặp bị xóa; cả bốn
+  báo cáo đọc tiếp tục gọi chính sách vai trò `requireStaff` tương tự.
 
-- [ ] **Step 1: Write failing projection tests**
+- [ ] **Bước 1: Viết kiểm thử trình chiếu không thành công**
 
 ```js
 const {
@@ -607,21 +606,19 @@ test('keeps FE12 resultset, count, and UTC date projections stable', () => {
 });
 ```
 
-- [ ] **Step 2: Verify RED**
+- [ ] **Bước 2: Xác minh RED**
 
-Run: `npm --prefix backend test -- --runInBand tests/reportProjection.test.js`
+Chạy: `npm --prefix backend test -- --runInBand tests/reportProjection.test.js`
 
-Expected: FAIL because the projection module does not exist.
+Dự kiến: THẤT BẠI vì mô-đun trình chiếu không tồn tại.
 
-- [ ] **Step 3: Move existing pure functions verbatim**
+- [ ] **Bước 3: Di chuyển nguyên văn các hàm thuần túy hiện có**
 
-Move the seven existing projection functions from `reportRepository.js` into
-`reportProjection.js`, retaining `// @spec FR-FE12-010` on `buildReport`.
-Import all seven at the repository top. Remove only
-`requireAdminOrApprovedStaff` from `reportService.js` and call `requireStaff`
-from `getUserStatistics`.
+Di chuyển bảy chức năng chiếu hiện có từ `reportRepository.js` sang `reportProjection.js`, giữ lại
+`// @spec FR-FE12-010` trên `buildReport`. Nhập tất cả bảy ở đầu kho lưu trữ. Chỉ xóa
+`requireAdminOrApprovedStaff` khỏi `reportService.js` và gọi `requireStaff` từ `getUserStatistics`.
 
-Create the projection module:
+Tạo mô-đun chiếu:
 
 ```js
 function toDateKey(value) {
@@ -682,40 +679,39 @@ module.exports = {
 };
 ```
 
-- [ ] **Step 4: Verify GREEN and FE12 behavior**
+- [ ] **Bước 4: Xác minh hành vi GREEN và FE12**
 
-Run:
+Chạy:
 
 ```powershell
 npm --prefix backend test -- --runInBand tests/reportProjection.test.js tests/reportRepository.test.js tests/reportInMemoryParity.test.js tests/reportRoutes.test.js
 ```
 
-Expected: all selected suites PASS with unchanged FE12 envelopes and role
-errors.
+Dự kiến: tất cả các bộ đã chọn ĐẠT với các lỗi vai trò và phong bì FE12 không thay đổi.
 
-- [ ] **Step 5: Review checkpoint**
+- [ ] **Bước 5: Xem lại điểm kiểm tra**
 
-Run: `git diff --check`
+Chạy: `git diff --check`
 
-Expected: no whitespace error. Leave the product diff uncommitted.
+Dự kiến: không có lỗi khoảng trắng. Để lại sự khác biệt của sản phẩm không được cam kết.
 
-### Task 5: Stabilize the FE08 reservation loader
+### Nhiệm vụ 5: Ổn định bộ tải đặt chỗ FE08
 
-**Files:**
+**Tệp:**
 
-- Modify: `frontend/src/page/reservation/ReservationsLibrarianPage.jsx`
-- Modify: `frontend/test/reservationFrontend.test.js`
+- Sửa đổi: `frontend/src/page/reservation/ReservationsLibrarianPage.jsx`
+- Sửa đổi: `frontend/test/reservationFrontend.test.js`
 
-**Interfaces:**
+**Giao diện:**
 
-- `loadReservations()` remains the handler for initial load, manual refresh,
-  conflict reload, notification reload, and hold-expiration workflow.
-- The loader reads the latest selected queue copy through
+- `loadReservations()` vẫn là trình xử lý tải ban đầu, làm mới thủ công,
+  tải lại xung đột, tải lại thông báo và quy trình làm việc hết hạn.
+- Trình tải đọc bản sao hàng đợi được chọn mới nhất thông qua
   `queueCopyIdRef.current`.
-- The initial load effect depends on the stable callback and does not run for
-  ordinary queue selection changes.
+- Hiệu ứng tải ban đầu phụ thuộc vào lệnh gọi lại ổn định và không chạy trong
+  thay đổi lựa chọn hàng đợi thông thường.
 
-- [ ] **Step 1: Add the failing source contract**
+- [ ] **Bước 1: Thêm hợp đồng nguồn bị lỗi**
 
 ```js
 test('FE08 loader has a stable hook boundary without queue-selection reloads', () => {
@@ -733,20 +729,19 @@ test('FE08 loader has a stable hook boundary without queue-selection reloads', (
 });
 ```
 
-- [ ] **Step 2: Verify RED**
+- [ ] **Bước 2: Xác minh RED**
 
-Run:
+Chạy:
 
 ```powershell
 npm --prefix frontend test -- --test-name-pattern "stable hook boundary"
 ```
 
-Expected: FAIL because `loadReservations` is currently an unstable local
-function and the effect dependency is empty.
+Dự kiến: THẤT BẠI vì `loadReservations` hiện là hàm cục bộ không ổn định và phần phụ thuộc hiệu ứng trống.
 
-- [ ] **Step 3: Implement the stable callback/ref boundary**
+- [ ] **Bước 3: Triển khai ranh giới gọi lại/ref ổn định**
 
-Use the following complete loader shape:
+Sử dụng hình dạng bộ tải hoàn chỉnh sau:
 
 ```jsx
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -804,40 +799,40 @@ useEffect(() => {
 }, [loadReservations]);
 ```
 
-- [ ] **Step 4: Verify GREEN, lint, and FE08 behavior**
+- [ ] **Bước 4: Xác minh hành vi GREEN, kiểm tra mã và FE08**
 
-Run:
+Chạy:
 
 ```powershell
 npm --prefix frontend test -- --test-name-pattern "stable hook boundary|handoff|reservation"
 npm --prefix frontend run lint
 ```
 
-Expected: focused tests PASS and ESLint reports zero warnings.
+Dự kiến: các kiểm thử tập trung đạt và ESLint không báo cáo cảnh báo nào.
 
-- [ ] **Step 5: Review checkpoint**
+- [ ] **Bước 5: Xem lại điểm kiểm tra**
 
-Run: `git diff --check`
+Chạy: `git diff --check`
 
-Expected: no whitespace error. Leave the product diff uncommitted.
+Dự kiến: không có lỗi khoảng trắng. Để lại sự khác biệt của sản phẩm không được cam kết.
 
-### Task 6: Full verification and H2 handoff
+### Nhiệm vụ 6: Xác minh đầy đủ và chuyển giao H2
 
-**Files:** Verify only; update this plan's checkboxes/evidence only if the
-repository governance requires it before H2.
+**Tệp:** Chỉ xác minh; chỉ cập nhật các hộp kiểm/bằng chứng của kế hoạch này nếu quản trị kho lưu
+trữ yêu cầu nó trước H2.
 
-**Interfaces:** No new runtime interface.
+**Giao diện:** Không có giao diện thời gian chạy mới.
 
-- [ ] **Step 1: Run focused target-feature tests**
+- [ ] **Bước 1: Chạy kiểm thử chức năng mục tiêu tập trung**
 
 ```powershell
 npm --prefix backend test -- --runInBand tests/featureAccess.test.js tests/borrowingProjection.test.js tests/borrowingRepository.test.js tests/borrowingRoutes.test.js tests/reservationRoutes.test.js tests/notificationPolicy.test.js tests/notificationRoutes.test.js tests/notificationInboxRepository.test.js tests/reportProjection.test.js tests/reportRepository.test.js tests/reportInMemoryParity.test.js tests/reportRoutes.test.js
 npm --prefix frontend test -- --test-name-pattern "FE07|FE08|FE10|FE12|borrowing|reservation|notification|report"
 ```
 
-Expected: all focused tests PASS.
+Dự kiến: tất cả các kiểm thử tập trung ĐẠT.
 
-- [ ] **Step 2: Run full repository gates**
+- [ ] **Bước 2: Chạy cổng kho đầy đủ**
 
 ```powershell
 npm --prefix backend test -- --runInBand
@@ -850,12 +845,12 @@ npm run trace:enforce
 git diff --check
 ```
 
-Expected: all commands exit `0`, backend remains at least 1,127 tests,
-frontend remains at least 271 tests, and lint has zero warnings.
+Dự kiến: tất cả các lệnh đều thoát khỏi `0`, phần máy chủ còn lại ít nhất 1.127 lượt kiểm tra, giao
+diện người dùng còn lại ít nhất 271 lượt kiểm tra và kiểm tra mã không có cảnh báo nào.
 
-- [ ] **Step 3: Verify scope and contracts**
+- [ ] **Bước 3: Xác minh phạm vi và hợp đồng**
 
-Run:
+Chạy:
 
 ```powershell
 git status --short
@@ -863,13 +858,11 @@ git diff --stat
 git diff --name-only
 ```
 
-Expected: only the approved FE07/FE08/FE10/FE12 utilities, services,
-repositories, FE08 page/tests, and design/plan evidence are present. No
-controller, route, API adapter, SQL, migration, `.env`, workflow, or Azure file
-changes.
+Dự kiến: chỉ có các tiện ích, dịch vụ, kho lưu trữ FE07/FE08/FE10/FE12 đã được phê duyệt, trang/kiểm
+tra FE08 và bằng chứng thiết kế/kế hoạch. Không có bộ điều khiển, tuyến đường, bộ chuyển đổi API,
+SQL, di chuyển, `.env`, quy trình công việc hoặc thay đổi tệp Azure.
 
-- [ ] **Step 4: Prepare H2 evidence**
+- [ ] **Bước 4: Chuẩn bị bằng chứng H2**
 
-Compute the staged diff fingerprint only after the complete uncommitted diff
-has been reviewed. Do not commit, push, publish a PR, merge, or deploy before
-the required H2/H3 gates.
+Chỉ tính toán dấu vân tay khác biệt theo giai đoạn sau khi xem xét khác biệt hoàn toàn không được
+cam kết. Không cam kết, đẩy, xuất bản PR, hợp nhất hoặc triển khai trước cổng H2/H3 được yêu cầu.

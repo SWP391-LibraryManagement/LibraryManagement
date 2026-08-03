@@ -1,41 +1,43 @@
-# FE08 Frontend Correctness Design
+# FE08 Thiết kế chính xác của giao diện
 
-Status: APPROVED
+Trạng thái: ĐÃ ĐƯỢC PHÊ DUYỆT
 
-Owner: Nhat
+Chủ sở hữu: Nhật
 
-Date: 2026-07-12
+Ngày: 2026-07-12
 
-## 1. Goal
+## 1. Mục tiêu
 
-Bring the existing FE08 reservation frontend into alignment with the approved reservation lifecycle and backend contract. This change corrects misleading UI behavior without adding new reservation capabilities or backend contracts.
+Điều chỉnh giao diện đặt chỗ FE08 hiện tại phù hợp với vòng đời đặt chỗ và hợp đồng máy chủ đã được
+phê duyệt. Thay đổi này khắc phục hành vi giao diện người dùng gây hiểu lầm mà không cần thêm các
+khả năng đặt chỗ hoặc hợp đồng máy chủ mới.
 
-## 2. Scope
+## 2. Phạm vi
 
-Included:
+Bao gồm:
 
-- Map every FE08 reservation state to the intended UI state, including `NOTIFIED` as `Ready to pick up` and terminal states as non-active states.
-- Provide Vietnamese reservation-specific API errors without changing error behavior for borrowing, reports, inventory, or other feature APIs.
-- Expose the existing staff hold-expiration endpoint through `reservationApi`.
-- Let librarians trigger hold expiration, see the expired and promoted counts, and reload the reservation list from the server.
-- Remove controls that claim to fulfill or delete a reservation while only mutating local React state.
-- Update FE08 planning, traceability, and changelog documentation to reflect the implemented frontend slice.
+- Ánh xạ mọi trạng thái đặt chỗ FE08 sang trạng thái UI dự kiến, bao gồm `NOTIFIED` là `Ready to pick up` và các trạng thái đầu cuối là trạng thái không hoạt động.
+- Cung cấp các lỗi API dành riêng cho tiếng Việt mà không thay đổi hành vi lỗi đối với việc mượn, báo cáo, kiểm kê hoặc các API chức năng khác.
+- Hiển thị điểm cuối hết hạn giữ nhân viên hiện có thông qua `reservationApi`.
+- Cho phép thủ thư kích hoạt hết hạn giữ, xem số lượng đã hết hạn và được thăng cấp, đồng thời tải lại danh sách đặt chỗ từ máy chủ.
+- Xóa các điều khiển yêu cầu thực hiện hoặc xóa đặt chỗ trong khi chỉ thay đổi trạng thái React cục bộ.
+- Cập nhật tài liệu lập kế hoạch, truy vết và nhật ký thay đổi của FE08 để phản ánh phần giao diện người dùng đã triển khai.
 
-Excluded:
+Đã loại trừ:
 
-- FE07 borrowing or fulfillment behavior.
-- Server-side reservation pagination.
-- New backend endpoints, status values, database changes, or automatic scheduled expiration.
-- FE10 notification delivery changes.
-- Broad UI redesign or unrelated refactoring.
+- FE07 hành vi vay mượn hoặc thực hiện.
+- Phân trang đặt chỗ phía máy chủ.
+- Điểm cuối máy chủ mới, giá trị trạng thái, thay đổi cơ sở dữ liệu hoặc hết hạn theo lịch trình tự động.
+- FE10 thay đổi gửi thông báo.
+- Thiết kế lại giao diện người dùng rộng rãi hoặc tái cấu trúc không liên quan.
 
-## 3. Design
+## 3. Thiết kế
 
-### 3.1 Reservation Status Mapping
+### 3.1 Ánh xạ trạng thái đặt chỗ
 
-`statusToUi()` remains the shared status conversion boundary. It will explicitly map the FE08 state set:
+`statusToUi()` vẫn là ranh giới chuyển đổi trạng thái được chia sẻ. Nó sẽ ánh xạ rõ ràng bộ trạng thái FE08:
 
-| Backend state | UI state |
+| Trạng thái máy chủ | Trạng thái giao diện người dùng |
 | --- | --- |
 | `ACTIVE` | `Waiting` |
 | `NOTIFIED` | `Ready to pick up` |
@@ -43,82 +45,97 @@ Excluded:
 | `CANCELLED` | `Cancelled` |
 | `EXPIRED` | `Expired` |
 
-The existing legacy handling of `ACTIVE` with `notifiedAt` remains compatible, but the canonical `NOTIFIED` state no longer falls through to `Unknown`. The librarian queue will include only `Waiting` rows because only backend `ACTIVE` reservations are selectable. `Ready to pick up` remains visible in the all-reservations list as the UI state for `NOTIFIED`, but cannot receive queue actions.
+Việc xử lý cũ hiện có của `ACTIVE` với `notifiedAt` vẫn tương thích, nhưng trạng thái `NOTIFIED`
+chuẩn không còn rơi vào `Unknown` nữa. Hàng đợi thủ thư sẽ chỉ bao gồm các hàng `Waiting` vì chỉ có
+thể chọn đặt chỗ `ACTIVE` máy chủ. `Ready to pick up` vẫn hiển thị trong danh sách tất cả đặt chỗ
+dưới dạng trạng thái giao diện người dùng cho `NOTIFIED`, nhưng không thể nhận các hành động xếp
+hàng.
 
-### 3.2 Reservation Error Isolation
+### 3.2 Cách ly lỗi đặt chỗ
 
-A dedicated `getReservationErrorMessage(error, fallbackMessage)` resolver will live beside the existing feature error resolvers. It will translate known FE08 backend error codes and use the supplied Vietnamese fallback for unknown or unavailable responses.
+Trình giải quyết `getReservationErrorMessage(error, fallbackMessage)` chuyên dụng sẽ hoạt động bên
+cạnh các trình giải quyết lỗi chức năng hiện có. Nó sẽ dịch các mã lỗi máy chủ FE08 đã biết và sử
+dụng bản dự phòng tiếng Việt được cung cấp cho các phản hồi không xác định hoặc không có sẵn.
 
-Only `reservationApi` will call `authorizedRequest()` through a reservation-specific wrapper. Other API modules keep their current error resolver, preventing FE08 wording from leaking into FE07 or shared requests. Authentication refresh and token-clearing behavior remain unchanged.
+Chỉ `reservationApi` mới gọi `authorizedRequest()` thông qua trình bao bọc dành riêng cho đặt chỗ.
+Các mô-đun API khác giữ nguyên trình giải quyết lỗi hiện tại, ngăn chặn từ ngữ FE08 rò rỉ vào FE07
+hoặc các yêu cầu được chia sẻ. Hành vi làm mới xác thực và xóa mã thông báo vẫn không thay đổi.
 
-### 3.3 Hold Expiration Flow
+### 3.3 Giữ luồng hết hạn
 
-`reservationApi.expireHolds()` will call:
+`reservationApi.expireHolds()` sẽ gọi:
 
 ```text
 POST /api/reservations/expire-holds
 ```
 
-The librarian page will expose one explicit staff command for this existing backend operation. On success it will:
+Trang thủ thư sẽ hiển thị một lệnh nhân viên rõ ràng cho hoạt động máy chủ hiện có này. Khi thành công nó sẽ:
 
-1. Read `expiredCount` and the length of `promoted` from the response.
-2. Reload reservations from the backend instead of predicting state changes locally.
-3. Show a Vietnamese success message with both counts only after the canonical reload succeeds.
+1. Đọc `expiredCount` và độ dài của `promoted` từ phản hồi.
+2. Tải lại các đặt chỗ từ phần máy chủ thay vì dự đoán các thay đổi trạng thái cục bộ.
+3. Hiển thị thông báo thành công bằng tiếng Việt với cả hai lần đếm chỉ sau khi tải lại chuẩn thành công.
 
-If the expiration request or canonical reload fails, the page will show the reservation-specific error, keep the current rows unchanged, and avoid a false success message. The command will be disabled while a request or list reload is in progress to avoid duplicate submissions.
+Nếu yêu cầu hết hạn hoặc tải lại chuẩn không thành công, trang sẽ hiển thị lỗi cụ thể dành riêng,
+giữ nguyên các hàng hiện tại và tránh thông báo thành công sai. Lệnh sẽ bị vô hiệu hóa trong khi
+đang tiến hành tải lại yêu cầu hoặc danh sách để tránh gửi trùng lặp.
 
-### 3.4 Unsupported Actions
+### 3.4 Hành động không được hỗ trợ
 
-The `Đã giao` and `Xóa` controls will be removed from the librarian queue. Their current handlers only remove rows from local state and therefore falsely imply a successful server-side transition.
+Các điều khiển `Đã giao` và `Xóa` sẽ bị xóa khỏi hàng đợi thủ thư. Trình xử lý hiện tại của họ chỉ
+xóa các hàng khỏi trạng thái cục bộ và do đó ngụ ý sai về quá trình chuyển đổi phía máy chủ thành
+công.
 
-FE08 will not invent fulfillment or deletion endpoints. A reservation becomes `FULFILLED` through the approved FE07 borrowing flow, which is outside this change.
+FE08 sẽ không phát minh ra điểm cuối thực hiện hoặc xóa. Việc đặt chỗ sẽ trở thành `FULFILLED` thông
+qua quy trình mượn FE07 đã được phê duyệt, nằm ngoài thay đổi này.
 
-### 3.5 Data Flow
+### 3.5 Luồng dữ liệu
 
 ```text
-Librarian action
+Hành động của Thủ thư
   -> reservationApi.expireHolds()
   -> existing POST /api/reservations/expire-holds
-  -> backend expires overdue NOTIFIED holds and promotes eligible reservations
-  -> GET /api/reservations reloads canonical server state
-  -> mapReservation()/statusToUi() renders the updated lifecycle states
-  -> frontend reports counts after the canonical reload succeeds
+-> máy chủ làm hết hạn các lượt giữ NOTIFIED quá hạn và đưa các đặt chỗ đủ điều kiện lên trước
+-> GET /api/reservations tải lại trạng thái máy chủ chuẩn
+-> mapReservation()/statusToUi() hiển thị các trạng thái vòng đời đã cập nhật
+-> giao diện báo cáo số lượng sau khi tải lại trạng thái chuẩn thành công
 ```
 
-No optimistic mutation is used for hold expiration, fulfillment, or deletion. The backend response and reload remain the source of truth.
+Không có thao tác ghi lạc quan nào được sử dụng để hết hạn, thực hiện hoặc xóa. Phản hồi máy chủ và tải
+lại vẫn là nguồn chuẩn.
 
-## 4. Testing Strategy
+## 4. Chiến lược kiểm thử
 
-Tests will be written before implementation where practical.
+Các kiểm thử sẽ được viết trước khi thực hiện nếu thực tế.
 
-- Add focused frontend unit coverage proving `NOTIFIED` maps to `Ready to pick up` and FE08 terminal states map consistently.
-- Add API error tests proving known reservation codes receive Vietnamese messages and unrelated API requests retain their existing resolver behavior.
-- Add focused page/API coverage for the `expire-holds` request and response counts if supported by the existing frontend test structure.
-- Keep existing backend reservation route and integration tests as regression coverage for expiration and promotion behavior.
+- Thêm vùng phủ sóng đơn vị giao diện người dùng tập trung chứng minh ánh xạ `NOTIFIED` vào bản đồ trạng thái thiết bị đầu cuối `Ready to pick up` và FE08 một cách nhất quán.
+- Thêm các kiểm tra lỗi API chứng minh các mã đặt chỗ đã biết nhận được thông báo tiếng Việt và các yêu cầu API không liên quan vẫn giữ nguyên hành vi giải quyết hiện có của chúng.
+- Thêm phạm vi trang/API tập trung cho số lượng yêu cầu và phản hồi `expire-holds` nếu được cấu trúc kiểm tra giao diện người dùng hiện có hỗ trợ.
+- Giữ lộ trình đặt chỗ máy chủ hiện có và các kiểm thử tích hợp làm phạm vi hồi quy cho hành vi hết hạn và khuyến mại.
 
-Verification commands will cover:
+Các lệnh xác minh sẽ bao gồm:
 
-- Frontend tests.
-- Frontend lint.
-- Frontend production build.
-- Backend tests.
-- FE08 traceability/document consistency checks.
+- Kiểm tra giao diện người dùng.
+- giao diện kiểm tra mã.
+- Xây dựng sản xuất giao diện.
+- Kiểm tra máy chủ.
+- FE08 kiểm tra tính nhất quán của tài liệu/khả năng truy vết.
 
-## 5. Documentation Updates
+## 5. Cập nhật tài liệu
 
-- Revise `.sdd/specs/feat-reservation-management/PLAN.md` so it no longer claims the feature is backend-only or excludes the already implemented frontend.
-- Add the correctness tasks and current validation evidence to `.sdd/specs/feat-reservation-management/TASKS.md` without erasing historical completed work.
-- Record the FE08 frontend correctness change in `.sdd/specs/feat-reservation-management/CHANGELOG.md`.
+- Sửa đổi `.sdd/specs/feat-reservation-management/PLAN.md` để không còn tuyên bố rằng chức năng này chỉ dành cho phần máy chủ hoặc loại trừ giao diện người dùng đã được triển khai.
+- Thêm các nhiệm vụ về tính chính xác và bằng chứng xác thực hiện tại vào `.sdd/specs/feat-reservation-management/TASKS.md` mà không xóa công việc đã hoàn thành trước đây.
+- Ghi lại thay đổi về độ chính xác của giao diện người dùng FE08 trong `.sdd/specs/feat-reservation-management/CHANGELOG.md`.
 
-`SPEC.md` does not require a behavior change because the approved state lifecycle and hold-expiration requirements already describe the target behavior.
+`SPEC.md` không yêu cầu thay đổi hành vi vì các yêu cầu về vòng đời trạng thái và thời gian giữ hết
+hạn đã được phê duyệt đã mô tả hành vi mục tiêu.
 
-## 6. Acceptance Criteria
+## 6. Tiêu chí chấp nhận
 
-- A backend reservation with status `NOTIFIED` renders as ready for pickup, never `Unknown`.
-- Only `Waiting` reservations appear in the active librarian queue; `Ready to pick up` remains visible in the all-reservations list but is excluded from queue actions.
-- Librarians can invoke the existing hold-expiration endpoint and receive clear expired/promoted counts.
-- The page reloads canonical server state after a successful expiration run.
-- No visible control claims to fulfill or delete a reservation without a backend operation.
-- Reservation errors are localized in Vietnamese and remain isolated to `reservationApi`.
-- No FE07 fulfillment, pagination, schema, or backend contract expansion is introduced.
-- Relevant frontend and backend verification passes.
+- đặt chỗ máy chủ có trạng thái `NOTIFIED` hiển thị là sẵn sàng để nhận, không bao giờ là `Unknown`.
+- Chỉ các đặt chỗ `Waiting` mới xuất hiện trong hàng đợi thủ thư đang hoạt động; `Ready to pick up` vẫn hiển thị trong danh sách tất cả đặt chỗ nhưng bị loại khỏi hành động xếp hàng.
+- Thủ thư có thể gọi điểm cuối tạm dừng hết hạn hiện có và nhận được số lượng đã hết hạn/được thăng cấp rõ ràng.
+- Trang tải lại trạng thái máy chủ chuẩn sau khi chạy hết hạn thành công.
+- Không có kiểm soát hữu hình nào yêu cầu thực hiện hoặc xóa đặt chỗ mà không cần thao tác máy chủ.
+- Lỗi đặt chỗ được bản địa hóa bằng tiếng Việt và vẫn được cách ly với `reservationApi`.
+- Không có việc thực hiện, phân trang, lược đồ hoặc mở rộng hợp đồng máy chủ FE07 nào được giới thiệu.
+- Các thẻ xác minh giao diện người dùng và máy chủ có liên quan.

@@ -1,129 +1,139 @@
-# FE11 Transactional Role Management Implementation Plan
+# FE11 Kế hoạch thực hiện quản lý vai trò giao dịch
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Đối với nhân viên đại lý:** SUB-SKILL BẮT BUỘC: Sử dụng siêu năng lực:phát triển theo định hướng phụ (được khuyến nghị) hoặc siêu năng lực:thực hiện các kế hoạch để triển khai kế hoạch này theo từng nhiệm vụ. Các bước sử dụng cú pháp hộp kiểm (`- [ ]`) để theo dõi.
 
-**Goal:** Make FE11 role assignment and revocation deterministic, concurrency-safe, and atomically audited without expanding into the remaining deferred FE11 work.
+**Mục tiêu:** Làm cho việc phân công và thu hồi vai trò FE11 mang tính xác định, an toàn đồng thời
+và được kiểm tra nguyên tử mà không cần mở rộng sang công việc FE11 bị trì hoãn còn lại.
 
-**Architecture:** Add a focused `userRoleRepository` that owns the locked SQL transaction and returns business outcomes. Keep HTTP validation at the route boundary, map outcomes to safe errors in `userManagementService`, and read back the existing safe managed-user DTO only after a successful commit.
+**Kiến trúc:** Thêm `userRoleRepository` tập trung sở hữu giao dịch SQL bị khóa và trả về kết quả
+kinh doanh. Giữ xác thực HTTP ở ranh giới tuyến đường, ánh xạ kết quả tới các lỗi an toàn trong
+`userManagementService` và chỉ đọc lại DTO của người dùng được quản lý an toàn hiện có sau khi cam
+kết thành công.
 
-**Tech Stack:** Node.js CommonJS, Express 5, express-validator, Jest 30, SQL Server via `mssql`, Markdown SDD artifacts.
+**bộ công nghệ công nghệ:** Node.js CommonJS, Express 5, trình xác thực nhanh, Jest 30, SQL Server
+thông qua các tạo phẩm `mssql`, Markdown SDD.
 
-## Global Constraints
+## Ràng buộc toàn cầu
 
-- Approved stack remains Node.js + Express.js, React + Bootstrap, SQL Server, and RESTful API.
-- Implement only `BR-FE11-001`, `BR-FE11-007..010`, `FR-FE11-012..017`, `FR-FE11-024..027`, `AC-FE11-013..015`, `NFR-FE11-SEC-001..005`, `NFR-FE11-TXN-003`, and `NFR-FE11-TXN-006` for this slice.
-- Keep FE11's remaining work deferred and record this completed slice separately. Do not modify the repository-wide traceability checker in this FE11-only plan.
-- Do not change database schema, public endpoint paths, role hierarchy, user update/deactivation behavior, librarian fields, or Admin UI.
-- Authenticate and authorize before exposing input-validation details.
-- Use only parameterized SQL; never persist or return credentials, tokens, sessions, or setup links.
-- Every production behavior change must have an observed failing test first.
-- Preserve unrelated user changes and untracked files.
+- bộ công nghệ được phê duyệt vẫn là Node.js + Express.js, React + Bootstrap, SQL Server và RESTful API.
+- Chỉ triển khai `BR-FE11-001`, `BR-FE11-007..010`, `FR-FE11-012..017`, `FR-FE11-024..027`, `AC-FE11-013..015`, `NFR-FE11-SEC-001..005`, `NFR-FE11-TXN-003` và `NFR-FE11-TXN-006` cho lát này.
+- Trì hoãn công việc còn lại của FE11 và ghi riêng phần đã hoàn thành này. Không sửa đổi trình kiểm tra truy vết trên toàn kho lưu trữ trong gói chỉ dành cho FE11 này.
+- Không thay đổi lược đồ cơ sở dữ liệu, đường dẫn điểm cuối công khai, phân cấp vai trò, hành vi cập nhật/hủy kích hoạt của người dùng, trường thủ thư hoặc Giao diện người dùng quản trị.
+- Xác thực và ủy quyền trước khi tiết lộ chi tiết xác thực đầu vào.
+- Chỉ sử dụng SQL được tham số hóa; không bao giờ tồn tại hoặc trả sách thông tin xác thực, mã thông báo, phiên hoặc liên kết thiết lập.
+- Mọi thay đổi về hành vi sản xuất trước tiên phải có một kiểm thử thất bại được quan sát.
+- Giữ nguyên những thay đổi không liên quan của người dùng và các tập tin không bị theo dõi.
 
 ---
 
-### Task 1: Activate The Approved FE11 Role Slice
+### Nhiệm vụ 1: Kích hoạt Phần vai trò FE11 đã được phê duyệt
 
-**Files:**
-- Modify: `docs/superpowers/specs/2026-07-18-fe11-transactional-role-management-design.md`
-- Modify: `.sdd/specs/feat-user-role-management/PLAN.md`
-- Modify: `.sdd/specs/feat-user-role-management/TASKS.md`
-- Modify: `.sdd/specs/feat-user-role-management/TEST_PLAN.md`
-- Modify: `.sdd/specs/feat-user-role-management/CHANGELOG.md`
+**Tệp:**
+- Sửa đổi: `docs/superpowers/specs/2026-07-18-fe11-transactional-role-management-design.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/TEST_PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/CHANGELOG.md`
 
-**Interfaces:**
-- Consumes: approved FE11 design and current account-setup task group `FE11-S01..S08`.
-- Produces: approved task IDs `FE11-R01..R05` and explicit evidence expectations used by later tasks.
+**Giao diện:**
+- Tiêu thụ: thiết kế FE11 đã được phê duyệt và nhóm nhiệm vụ thiết lập tài khoản hiện tại `FE11-S01..S08`.
+- Tạo ra: ID nhiệm vụ được phê duyệt `FE11-R01..R05` và những kỳ vọng bằng chứng rõ ràng được sử dụng bởi các nhiệm vụ sau này.
 
-- [ ] **Step 1: Mark the written design approved and record the metadata exception**
+- [ ] **Bước 1: Đánh dấu thiết kế bằng văn bản đã được phê duyệt và ghi lại ngoại lệ siêu dữ liệu**
 
-Ensure the design status is:
-
-```markdown
-Status: APPROVED BY HUMAN - 2026-07-18
-```
-
-Its traceability section must state that remaining whole-feature work stays deferred and that the current `main` checker still uses its existing top-status heuristic.
-
-- [ ] **Step 2: Add the bounded role slice to FE11 PLAN.md**
-
-Append this scope after the account-setup plan:
+Đảm bảo trạng thái thiết kế là:
 
 ```markdown
-## 10. Transactional Role Management Slice
-
-### In Scope
-
-- Validate positive-integer target and role IDs.
-- Revalidate the acting active Admin under the SQL transaction.
-- Assign/revoke role mappings with deterministic duplicate/missing errors.
-- Protect the final user role and last active Admin under `UPDLOCK, HOLDLOCK`.
-- Commit role mutation and audit together.
-- Add route, service, and repository tests.
-
-### Out Of Scope
-
-- User update/deactivation, librarian fields, safe detail DTO reconciliation, and Admin UI.
-- Schema changes, role creation/editing, permission editing, and role hierarchy.
-
-### Validation Gate
-
-- Focused RED-GREEN tests prove each repository outcome and API mapping.
-- Full backend tests and `trace:enforce` pass.
-- Remaining FE11 work stays deferred; completed role-slice evidence is recorded separately.
+Trạng thái: ĐƯỢC PHÊ DUYỆT BỞI HUMAN - 2026-07-18
 ```
 
-Update the top status to mention that account setup is complete, the transactional role slice is approved for implementation, and remaining FE11 work is deferred.
+Phần truy vết của nó phải nêu rõ rằng công việc toàn bộ chức năng còn lại vẫn bị trì hoãn và trình
+kiểm tra `main` hiện tại vẫn sử dụng phương pháp phỏng đoán trạng thái hàng đầu hiện có của nó.
 
-- [ ] **Step 3: Add task group FE11-R01..R05**
+- [ ] **Bước 2: Thêm lát vai trò giới hạn vào FE11 PLAN.md**
 
-Insert before `## Deferred FE11 Work`:
+Nối phạm vi này sau kế hoạch thiết lập tài khoản:
 
 ```markdown
-## Transactional Role Management Tasks
+## 10. Lát cắt quản lý vai trò theo giao dịch
 
-- [ ] **FE11-R01 - Validate role mutation request IDs.**
-  - Maps to: NFR-FE11-SEC-004; FR-FE11-012..013, FR-FE11-024..026.
-  - DoD: authenticated Admin requests receive normalized positive integer IDs; invalid IDs return `400 VALIDATION_ERROR` before the service is called.
+### Trong phạm vi
 
-- [ ] **FE11-R02 - Add RED transactional repository tests.**
-  - Maps to: BR-FE11-007..010; FR-FE11-014, FR-FE11-017, FR-FE11-024..027; NFR-FE11-TXN-003/006.
-  - DoD: failing tests cover actor/target/role lookup, duplicate/missing mapping, final-role guards, locked Admin count, atomic audit, and rollback.
+- Xác thực ID vai trò và mục tiêu số nguyên dương.
+- Xác nhận lại quyền Quản trị viên đang hoạt động trong giao dịch SQL.
+- Chỉ định/thu hồi ánh xạ vai trò có lỗi trùng lặp/thiếu xác định.
+- Bảo vệ vai trò người dùng cuối cùng và Quản trị viên hoạt động cuối cùng trong `UPDLOCK, HOLDLOCK`.
+- Cam kết thay đổi vai trò và kiểm toán cùng nhau.
+- Thêm các kiểm thử tuyến đường, dịch vụ và kho lưu trữ.
 
-- [ ] **FE11-R03 - Implement transactional role mutation.**
-  - Dependencies: FE11-R02.
-  - DoD: one parameterized SQL transaction returns deterministic outcomes, uses required lock hints, and commits or rolls back mapping plus audit together.
+### Ngoài phạm vi
 
-- [ ] **FE11-R04 - Map repository outcomes through the FE11 service.**
-  - Dependencies: FE11-R03.
-  - DoD: service-level RED-GREEN tests prove safe status/code/message mapping and successful safe-user readback without a second audit.
+- Cập nhật/hủy kích hoạt người dùng, trường thủ thư, đối chiếu chi tiết an toàn DTO và Giao diện người dùng quản trị.
+- Thay đổi lược đồ, tạo/chỉnh sửa vai trò, chỉnh sửa quyền và phân cấp vai trò.
 
-- [ ] **FE11-R05 - Pass the transactional role-management validation gate.**
-  - Dependencies: FE11-R01..R04.
-  - DoD: focused/full backend tests, traceability, diff hygiene, security review, documentation, debt reconciliation, and human review evidence are complete.
+### Cổng xác nhận
+
+- Các kiểm thử RED-GREEN tập trung chứng minh từng kết quả của kho lưu trữ và ánh xạ API.
+- Kiểm tra máy chủ đầy đủ và vượt qua `trace:enforce`.
+- Công việc FE11 còn lại vẫn bị trì hoãn; bằng chứng lát vai trò đã hoàn thành được ghi lại riêng biệt.
 ```
 
-Keep the existing line exactly:
+Cập nhật trạng thái hàng đầu để đề cập rằng quá trình thiết lập tài khoản đã hoàn tất, phần vai trò
+giao dịch được phê duyệt để triển khai và công việc FE11 còn lại bị hoãn lại.
+
+- [ ] **Bước 3: Thêm nhóm nhiệm vụ FE11-R01..R05**
+
+Chèn trước `## Deferred FE11 Work`:
 
 ```markdown
-Implementation State: DEFERRED
+## Nhiệm vụ quản lý vai trò theo giao dịch
+
+- [ ] **FE11-R01 - Xác thực ID yêu cầu thay đổi vai trò.**
+  - Bản đồ tới: NFR-FE11-SEC-004; FR-FE11-012..013, FR-FE11-024..026.
+  - DoD: Yêu cầu quản trị viên đã được xác thực nhận ID số nguyên dương được chuẩn hóa; ID không hợp lệ trả về `400 VALIDATION_ERROR` trước khi dịch vụ được gọi.
+
+- [ ] **FE11-R02 - Thêm các kiểm thử kho lưu trữ giao dịch RED.**
+  - Bản đồ tới: BR-FE11-007..010; FR-FE11-014, FR-FE11-017, FR-FE11-024..027; NFR-FE11-TXN-003/006.
+  - DoD: các kiểm thử không thành công bao gồm tra cứu tác nhân/mục tiêu/vai trò, ánh xạ trùng lặp/thiếu, bảo vệ vai trò cuối cùng, số lượng Quản trị viên bị khóa, kiểm tra nguyên tử và khôi phục.
+
+- [ ] **FE11-R03 - Thực hiện thao tác ghi vai trò giao dịch.**
+  - Phụ thuộc: FE11-R02.
+  - DoD: một giao dịch SQL được tham số hóa trả về kết quả xác định, sử dụng các gợi ý khóa bắt buộc và cam kết hoặc khôi phục ánh xạ cùng với kiểm tra cùng nhau.
+
+- [ ] **FE11-R04 - Kết quả bản đồ kho lưu trữ thông qua dịch vụ FE11.**
+  - Phụ thuộc: FE11-R03.
+  - DoD: các kiểm thử RED-GREEN cấp dịch vụ chứng minh ánh xạ trạng thái/mã/thông báo an toàn và khả năng đọc lại thành công của người dùng an toàn mà không cần kiểm tra lần thứ hai.
+
+- [ ] **FE11-R05 - Vượt qua cổng xác thực quản lý vai trò giao dịch.**
+  - Các phần phụ thuộc: FE11-R01..R04.
+  - DoD: các kiểm thử máy chủ tập trung/đầy đủ, truy vết, vệ sinh khác biệt, đánh giá bảo mật, tài liệu, đối chiếu nợ và bằng chứng đánh giá con người đã hoàn tất.
 ```
 
-- [ ] **Step 4: Update TEST_PLAN.md and CHANGELOG.md**
+Giữ chính xác dòng hiện có:
 
-Add the approved role slice to Current Evidence/Gaps and add a dated changelog entry stating that design and task planning were approved but implementation evidence is not yet claimed.
+```markdown
+Trạng thái thực hiện: TRÌ HOÃN
+```
 
-- [ ] **Step 5: Run documentation checks**
+- [ ] **Bước 4: Cập nhật TEST_PLAN.md và CHANGELOG.md**
 
-Run:
+Thêm phần vai trò đã được phê duyệt vào Bằng chứng/Khoảng trống hiện tại và thêm mục nhập nhật ký
+thay đổi ghi ngày tháng cho biết rằng thiết kế và lập kế hoạch nhiệm vụ đã được phê duyệt nhưng bằng
+chứng triển khai vẫn chưa được xác nhận.
+
+- [ ] **Bước 5: Chạy kiểm tra tài liệu**
+
+Chạy:
 
 ```powershell
 npm.cmd run trace:enforce
 git diff --check -- docs/superpowers/specs/2026-07-18-fe11-transactional-role-management-design.md .sdd/specs/feat-user-role-management
 ```
 
-Expected: traceability reports FE11 coverage and remains PASS under the current `main` status heuristic; Markdown diff check is clean.
+Dự kiến: truy vết báo cáo phạm vi bao phủ FE11 và vẫn ĐẠT theo phương pháp phỏng đoán trạng thái
+`main` hiện tại; Kiểm tra khác biệt Markdown sạch sẽ.
 
-- [ ] **Step 6: Commit the approved planning checkpoint**
+- [ ] **Bước 6: Cam kết điểm kiểm tra quy hoạch đã được phê duyệt**
 
 ```powershell
 git add -- docs/superpowers/specs/2026-07-18-fe11-transactional-role-management-design.md .sdd/specs/feat-user-role-management/PLAN.md .sdd/specs/feat-user-role-management/TASKS.md .sdd/specs/feat-user-role-management/TEST_PLAN.md .sdd/specs/feat-user-role-management/CHANGELOG.md
@@ -132,21 +142,21 @@ git commit -m "docs: plan transactional FE11 role management"
 
 ---
 
-### Task 2: Validate Role Mutation Inputs At The Route Boundary
+### Nhiệm vụ 2: Xác thực đầu vào thao tác ghi vai trò tại ranh giới tuyến đường
 
-**Files:**
-- Modify: `backend/tests/userManagementRoutes.test.js`
-- Modify: `backend/src/validators/userManagementValidators.js`
-- Modify: `backend/src/routes/userManagementRoutes.js`
-- Modify: `.sdd/specs/feat-user-role-management/TASKS.md`
+**Tệp:**
+- Sửa đổi: `backend/tests/userManagementRoutes.test.js`
+- Sửa đổi: `backend/src/validators/userManagementValidators.js`
+- Sửa đổi: `backend/src/routes/userManagementRoutes.js`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/TASKS.md`
 
-**Interfaces:**
-- Consumes: existing `handleValidationErrors` and Admin-first route middleware.
-- Produces: `assignRoleValidators` and `revokeRoleValidators`; controllers receive numeric IDs and assignment body `{ roleId: number }`.
+**Giao diện:**
+- Tiêu thụ: `handleValidationErrors` hiện có và phần mềm trung gian tuyến đầu tiên dành cho quản trị viên.
+- Sản xuất: `assignRoleValidators` và `revokeRoleValidators`; bộ điều khiển nhận ID số và nội dung gán `{ roleId: number }`.
 
-- [ ] **Step 1: Write failing assignment and revocation route tests**
+- [ ] **Bước 1: Viết kiểm thử lộ trình chuyển nhượng và thu hồi không thành công**
 
-Add successful normalization cases:
+Thêm các trường hợp chuẩn hóa thành công:
 
 ```js
 test('POST /api/users/:userId/roles passes normalized IDs and Admin context', async () => {
@@ -187,21 +197,25 @@ test('DELETE /api/users/:userId/roles/:roleId passes normalized IDs and Admin co
 });
 ```
 
-Add table-driven invalid cases for `userId` values `0`, `-1`, `not-a-user`, assignment body role IDs `0`, `-1`, `missing`, and revocation role parameter values `0`, `-1`, `not-a-role`. Each test must expect `400`, code `VALIDATION_ERROR`, field-specific details, and no service call.
+Thêm các trường hợp không hợp lệ dựa trên bảng cho các giá trị `userId` `0`, `-1`, `not-a-user`, ID
+vai trò nội dung gán `0`, `-1`, `missing` và các giá trị tham số vai trò thu hồi `0`, `-1`,
+`not-a-role`. Mỗi cuộc kiểm tra phải yêu cầu `400`, mã `VALIDATION_ERROR`, thông tin chi tiết theo
+trường cụ thể và không có cuộc gọi dịch vụ.
 
-- [ ] **Step 2: Run RED**
+- [ ] **Bước 2: Chạy RED**
 
-Run:
+Chạy:
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/userManagementRoutes.test.js
 ```
 
-Expected: new invalid-ID tests fail because role routes have no validators and controllers receive string parameters.
+Dự kiến: các kiểm thử ID không hợp lệ mới không thành công do các tuyến vai trò không có trình xác
+thực và bộ điều khiển nhận tham số chuỗi.
 
-- [ ] **Step 3: Implement focused validators**
+- [ ] **Bước 3: Triển khai trình xác thực tập trung**
 
-Update the validator module:
+Cập nhật mô-đun xác thực:
 
 ```js
 const { body, param } = require('express-validator');
@@ -233,9 +247,9 @@ const revokeRoleValidators = [
 ];
 ```
 
-Retain `resendSetupValidators` using the same helper. Export all three validator arrays.
+Giữ lại `resendSetupValidators` bằng cách sử dụng cùng một trình trợ giúp. Xuất cả ba mảng trình xác thực.
 
-Wire routes after Admin authentication/authorization:
+Các tuyến dây sau khi xác thực Quản trị viên/authorization:
 
 ```js
 router.post('/:userId/roles', ...requireAdmin, assignRoleValidators, controller.assignRole);
@@ -247,13 +261,14 @@ router.delete(
 );
 ```
 
-- [ ] **Step 4: Run GREEN and regression route tests**
+- [ ] **Bước 4: Chạy GREEN và kiểm tra lộ trình hồi quy**
 
-Run the focused command from Step 2.
+Chạy lệnh tập trung từ Bước 2.
 
-Expected: all `userManagementRoutes.test.js` tests pass; unauthenticated/non-Admin tests still return `401`/`403` before validation details.
+Dự kiến: tất cả các kiểm thử `userManagementRoutes.test.js` đều vượt qua; các kiểm thử không được
+xác thực/không phải của quản trị viên vẫn trả về `401`/`403` trước chi tiết xác thực.
 
-- [ ] **Step 5: Mark FE11-R01 complete and commit**
+- [ ] **Bước 5: Đánh dấu FE11-R01 là hoàn thành và cam kết**
 
 ```powershell
 git add -- backend/tests/userManagementRoutes.test.js backend/src/validators/userManagementValidators.js backend/src/routes/userManagementRoutes.js .sdd/specs/feat-user-role-management/TASKS.md
@@ -262,22 +277,24 @@ git commit -m "fix: validate FE11 role mutation inputs"
 
 ---
 
-### Task 3: Build The Transactional Role Repository
+### Nhiệm vụ 3: Xây dựng kho lưu trữ vai trò giao dịch
 
-**Files:**
-- Create: `backend/tests/userRoleRepository.test.js`
-- Create: `backend/src/repositories/userRoleRepository.js`
-- Modify: `.sdd/specs/feat-user-role-management/TASKS.md`
+**Tệp:**
+- Tạo: `backend/tests/userRoleRepository.test.js`
+- Tạo: `backend/src/repositories/userRoleRepository.js`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/TASKS.md`
 
-**Interfaces:**
-- Consumes: `getPool`, `sql.Transaction`, `sql.Request`, and SQL tables `Users`, `Roles`, `UserRoles`, `AuditLogs`.
-- Produces: `mutateUserRole({ operation, adminUserId, userId, roleId, ipAddress, userAgent, now }) -> { outcome, role? }`.
+**Giao diện:**
+- Tiêu thụ: các bảng `getPool`, `sql.Transaction`, `sql.Request` và SQL các bảng `Users`, `Roles`, `UserRoles`, `AuditLogs`.
+- Sản xuất: `mutateUserRole({ operation, adminUserId, userId, roleId, ipAddress, userAgent, now }) -> { outcome, role? }`.
 
-- [ ] **Step 1: Create the mocked SQL transaction harness**
+- [ ] **Bước 1: Tạo khai thác giao dịch SQL mô phỏng**
 
-In `userRoleRepository.test.js`, mock `../src/config/db` with a `Transaction` that records `commitCount` and `rollbackCount`, and a `Request` that records typed inputs then delegates each SQL string to `pool.transactionQuery(query, inputs)`.
+Trong `userRoleRepository.test.js`, mô phỏng `../src/config/db` bằng `Transaction` ghi lại
+`commitCount` và `rollbackCount`, và `Request` ghi lại các đầu vào đã nhập sau đó ủy quyền từng
+chuỗi SQL cho `pool.transactionQuery(query, inputs)`.
 
-Use a queue helper:
+Sử dụng trình trợ giúp hàng đợi:
 
 ```js
 function useTransactionResults(results) {
@@ -294,11 +311,11 @@ function useTransactionResults(results) {
 }
 ```
 
-Reset `getPool` and `sql.Transaction.instances` before each test.
+Đặt lại `getPool` và `sql.Transaction.instances` trước mỗi lần kiểm tra.
 
-- [ ] **Step 2: Write RED outcome and atomicity tests**
+- [ ] **Bước 2: Viết kết quả RED và kiểm tra tính nguyên tử**
 
-Add tests for:
+Thêm kiểm thử cho:
 
 ```js
 test('assigns a missing mapping and audits in one committed transaction', async () => {
@@ -325,23 +342,28 @@ test('assigns a missing mapping and audits in one committed transaction', async 
 });
 ```
 
-Add corresponding successful revocation. Add table-driven expected outcomes for `ADMIN_NOT_FOUND`, `ADMIN_REQUIRED`, `USER_NOT_FOUND`, `ROLE_NOT_FOUND`, `USER_ALREADY_HAS_ROLE`, `USER_ROLE_NOT_FOUND`, `LAST_USER_ROLE`, and `LAST_ADMIN_ROLE`. Expected business outcomes must roll back read-only transactions and must not execute mutation/audit SQL.
+Thêm thu hồi thành công tương ứng. Thêm kết quả dự kiến ​​theo bảng cho `ADMIN_NOT_FOUND`,
+`ADMIN_REQUIRED`, `USER_NOT_FOUND`, `ROLE_NOT_FOUND`, `USER_ALREADY_HAS_ROLE`,
+`USER_ROLE_NOT_FOUND`, `LAST_USER_ROLE` và `LAST_ADMIN_ROLE`. Kết quả kinh doanh dự kiến ​​phải khôi
+phục các giao dịch chỉ đọc và không được thực hiện thao tác ghi/kiểm tra SQL.
 
-Add an audit-insert failure case that expects the original error, `commitCount = 0`, and `rollbackCount = 1` after the mapping SQL was attempted.
+Thêm một trường hợp lỗi chèn kiểm tra có thể xảy ra lỗi ban đầu, `commitCount = 0` và `rollbackCount
+= 1` sau khi thử ánh xạ SQL.
 
-Assert protected select SQL contains `UPDLOCK` and `HOLDLOCK`, and assert input values are present in the captured typed input maps rather than interpolated into SQL.
+Xác nhận lựa chọn được bảo vệ SQL chứa `UPDLOCK` và `HOLDLOCK`, đồng thời xác nhận các giá trị đầu
+vào có trong sơ đồ đầu vào đã nhập đã ghi thay vì được nội suy vào SQL.
 
-- [ ] **Step 3: Run RED**
+- [ ] **Bước 3: Chạy RED**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/userRoleRepository.test.js
 ```
 
-Expected: FAIL because `userRoleRepository.js` does not exist.
+Dự kiến: THẤT BẠI vì `userRoleRepository.js` không tồn tại.
 
-- [ ] **Step 4: Implement the transaction and deterministic outcomes**
+- [ ] **Bước 4: Thực hiện giao dịch và kết quả xác định**
 
-Create the repository with the complete transaction below:
+Tạo kho lưu trữ với giao dịch hoàn chỉnh bên dưới:
 
 ```js
 const { sql, getPool } = require('../config/db');
@@ -505,18 +527,19 @@ async function mutateUserRole({
 module.exports = { mutateUserRole };
 ```
 
-Add trace tags above the mutation function:
+Thêm thẻ theo dõi phía trên hàm thao tác ghi:
 
 ```js
 // @spec BR-FE11-007, BR-FE11-009, BR-FE11-010, FR-FE11-012, FR-FE11-013, FR-FE11-014
 // @spec FR-FE11-017, FR-FE11-024, FR-FE11-025, FR-FE11-026, FR-FE11-027
 ```
 
-- [ ] **Step 5: Run GREEN**
+- [ ] **Bước 5: Chạy GREEN**
 
-Run the focused repository command. Expected: all repository tests pass with no console warnings.
+Chạy lệnh kho lưu trữ tập trung. Dự kiến: tất cả các kiểm thử kho lưu trữ đều vượt qua mà không có
+cảnh báo trên bảng điều khiển.
 
-- [ ] **Step 6: Mark FE11-R02/R03 complete and commit**
+- [ ] **Bước 6: Đánh dấu FE11-R02/R03 là hoàn thành và cam kết**
 
 ```powershell
 git add -- backend/tests/userRoleRepository.test.js backend/src/repositories/userRoleRepository.js .sdd/specs/feat-user-role-management/TASKS.md
@@ -525,21 +548,21 @@ git commit -m "feat: add transactional FE11 role mutations"
 
 ---
 
-### Task 4: Map Transaction Outcomes In The Service
+### Nhiệm vụ 4: Lập bản đồ kết quả giao dịch trong dịch vụ
 
-**Files:**
-- Modify: `backend/tests/userManagementService.test.js`
-- Modify: `backend/src/services/userManagementService.js`
-- Modify: `backend/src/repositories/userRepository.js`
-- Modify: `.sdd/specs/feat-user-role-management/TASKS.md`
+**Tệp:**
+- Sửa đổi: `backend/tests/userManagementService.test.js`
+- Sửa đổi: `backend/src/services/userManagementService.js`
+- Sửa đổi: `backend/src/repositories/userRepository.js`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/TASKS.md`
 
-**Interfaces:**
-- Consumes: `userRoleRepository.mutateUserRole` outcomes from Task 3.
-- Produces: `assignRole(userId, { roleId }, context)` and `revokeRole(userId, roleId, context)` with deterministic `AppException` mappings and safe-user readback.
+**Giao diện:**
+- Tiêu thụ: Kết quả `userRoleRepository.mutateUserRole` từ Nhiệm vụ 3.
+- Tạo ra: `assignRole(userId, { roleId }, context)` và `revokeRole(userId, roleId, context)` với ánh xạ `AppException` xác định và khả năng đọc lại an toàn cho người dùng.
 
-- [ ] **Step 1: Write the service RED harness and outcome tests**
+- [ ] **Bước 1: Viết kiểm thử kết quả và khai thác dịch vụ RED**
 
-Add a focused harness:
+Thêm dây nịt tập trung:
 
 ```js
 function makeRoleHarness(outcome) {
@@ -569,7 +592,8 @@ function makeRoleHarness(outcome) {
 }
 ```
 
-Write success tests proving `operation`, numeric IDs, Admin context, and readback. Add table-driven outcome assertions:
+Viết các kiểm thử thành công chứng minh `operation`, ID số, ngữ cảnh của Quản trị viên và đọc lại.
+Thêm xác nhận kết quả theo bảng:
 
 ```js
 test.each([
@@ -590,21 +614,23 @@ test.each([
 });
 ```
 
-Add direct-input tests for invalid target, role, and acting Admin IDs; they must reject before repository access.
+Thêm các kiểm thử đầu vào trực tiếp cho mục tiêu, vai trò và ID quản trị viên hoạt động không hợp
+lệ; họ phải từ chối trước khi truy cập kho lưu trữ.
 
-- [ ] **Step 2: Run RED**
+- [ ] **Bước 2: Chạy RED**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/userManagementService.test.js
 ```
 
-Expected: new role tests fail because the factory does not consume `userRoleRepository` and old role methods silently mutate through `userRepository`.
+Dự kiến: các kiểm thử vai trò mới không thành công do nhà máy không sử dụng `userRoleRepository` và
+các phương thức vai trò cũ âm thầm biến đổi thông qua `userRepository`.
 
-- [ ] **Step 3: Implement service injection and outcome mapping**
+- [ ] **Bước 3: Triển khai đưa dịch vụ vào và lập bản đồ kết quả**
 
-Add `userRoleRepository` to the factory dependencies and default it to `../repositories/userRoleRepository`.
+Thêm `userRoleRepository` vào phần phụ thuộc của nhà máy và mặc định là `../repositories/userRoleRepository`.
 
-Add a positive-ID helper and outcome mapper:
+Thêm trình trợ giúp ID tích cực và trình ánh xạ kết quả:
 
 ```js
 function parsePositiveId(value, code, message, errorFactory = errors.badRequest) {
@@ -632,19 +658,24 @@ function throwRoleMutationError(outcome) {
 }
 ```
 
-Implement assignment/revocation through one private service helper. It must parse `adminUserId`, `userId`, and `roleId`, call `mutateUserRole`, map non-success outcomes, and call `getManagedUserById` only after `ASSIGNED`/`REVOKED`.
+Thực hiện chuyển nhượng/thu hồi thông qua một người trợ giúp dịch vụ riêng. Nó phải phân tích cú
+pháp `adminUserId`, `userId` và `roleId`, gọi `mutateUserRole`, ánh xạ các kết quả không thành công
+và chỉ gọi `getManagedUserById` sau `ASSIGNED`/`REVOKED`.
 
-Remove role-specific preflight helpers and separate audit calls from the old methods. After `rg` confirms no consumer remains, remove obsolete `findRoleById`, `findRoleByName`, `assignRole`, `revokeRole`, `countUsersByRole`, and `countRolesByUserId` exports and implementations from `userRepository.js`.
+Loại bỏ những người trợ giúp trước chuyến bay theo vai trò cụ thể và tách các cuộc gọi kiểm tra khỏi
+các phương pháp cũ. Sau khi `rg` xác nhận không còn người tiêu dùng nào, hãy xóa các bản xuất và
+triển khai `findRoleById`, `findRoleByName`, `assignRole`, `revokeRole`, `countUsersByRole` và
+`countRolesByUserId` lỗi thời khỏi `userRepository.js`.
 
-- [ ] **Step 4: Run GREEN and affected tests**
+- [ ] **Bước 4: Chạy GREEN và các kiểm thử bị ảnh hưởng**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/userManagementService.test.js tests/userRoleRepository.test.js tests/userManagementRoutes.test.js
 ```
 
-Expected: all focused tests pass; account-setup creation/resend tests remain green.
+Dự kiến: tất cả các kiểm thử tập trung đều đạt; các kiểm thử tạo/gửi lại thiết lập tài khoản vẫn có màu xanh.
 
-- [ ] **Step 5: Mark FE11-R04 complete and commit**
+- [ ] **Bước 5: Đánh dấu FE11-R04 là hoàn thành và cam kết**
 
 ```powershell
 git add -- backend/tests/userManagementService.test.js backend/src/services/userManagementService.js backend/src/repositories/userRepository.js .sdd/specs/feat-user-role-management/TASKS.md
@@ -653,20 +684,20 @@ git commit -m "fix: enforce deterministic FE11 role errors"
 
 ---
 
-### Task 5: Validate, Reconcile Debt, And Record Evidence
+### Nhiệm vụ 5: Xác thực, đối chiếu khoản nợ và ghi lại bằng chứng
 
-**Files:**
-- Modify: `.sdd/specs/feat-user-role-management/TASKS.md`
-- Modify: `.sdd/specs/feat-user-role-management/TEST_PLAN.md`
-- Modify: `.sdd/specs/feat-user-role-management/CHANGELOG.md`
-- Modify: `TECH_DEBT.md`
-- Create: `.sdd/reviews/fe11-transactional-role-management-validation-2026-07-18.md`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-user-role-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/TEST_PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/CHANGELOG.md`
+- Sửa đổi: `TECH_DEBT.md`
+- Tạo: `.sdd/reviews/fe11-transactional-role-management-validation-2026-07-18.md`
 
-**Interfaces:**
-- Consumes: completed FE11-R01..R04 implementation and test evidence.
-- Produces: FE11-R05 validation record, narrowed technical debt, and reviewer-ready handoff.
+**Giao diện:**
+- Tiêu thụ: đã hoàn thành bằng chứng kiểm thử và triển khai FE11-R01..R04.
+- Tạo ra: bản ghi xác thực FE11-R05, thu hẹp nợ kỹ thuật và chuyển giao sẵn sàng cho người đánh giá.
 
-- [ ] **Step 1: Run focused and full automated checks**
+- [ ] **Bước 1: Chạy kiểm tra tập trung và hoàn toàn tự động**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/userRoleRepository.test.js tests/userManagementService.test.js tests/userManagementRoutes.test.js
@@ -675,9 +706,11 @@ npm.cmd --prefix backend run test:coverage:ci
 npm.cmd run trace:enforce
 ```
 
-Expected: focused and full backend suites pass; existing coverage thresholds pass; traceability reports FE11's tagged FRs and remains PASS under the current `main` status heuristic.
+Dự kiến: vượt qua bộ máy chủ tập trung và đầy đủ; ngưỡng bảo hiểm hiện có vượt qua; truy vết báo cáo
+các FR được gắn thẻ của FE11 và vẫn duy trì ĐẠT theo phương pháp phỏng đoán trạng thái `main` hiện
+tại.
 
-- [ ] **Step 2: Run security and diff hygiene checks**
+- [ ] **Bước 2: Chạy kiểm tra bảo mật và vệ sinh khác**
 
 ```powershell
 rg -n "password|token|secret|api[_-]?key|private[_-]?key" backend/src/repositories/userRoleRepository.js backend/src/services/userManagementService.js backend/tests/userRoleRepository.test.js backend/tests/userManagementService.test.js
@@ -685,58 +718,65 @@ git diff --check
 git status --short
 ```
 
-Expected: any matches are field names or existing account-setup code only; no credential value is introduced. Diff check is clean. Status still shows the user's pre-existing unrelated changes, which must not be staged.
+Dự kiến: mọi kết quả trùng khớp chỉ là tên trường hoặc mã thiết lập tài khoản hiện có; không có giá
+trị thông tin nào được giới thiệu. Kiểm tra khác biệt là sạch sẽ. Trạng thái vẫn hiển thị những thay
+đổi không liên quan đã tồn tại trước đó của người dùng và không được thực hiện theo giai đoạn.
 
-- [ ] **Step 3: Reconcile FE11 documentation and debt**
+- [ ] **Bước 3: Đối chiếu tài liệu và công nợ FE11**
 
-Mark `FE11-R05` complete only after all evidence passes. Update TEST_PLAN Current Evidence with route/service/repository files and note the absence of disposable SQL Server concurrency testing as a residual gap.
+Đánh dấu `FE11-R05` chỉ hoàn thành sau khi tất cả bằng chứng được thông qua. Cập nhật Bằng chứng
+hiện tại của TEST_PLAN bằng các tệp tuyến đường/dịch vụ/kho lưu trữ và lưu ý rằng việc thiếu kiểm
+thử đồng thời SQL Server dùng một lần như một khoảng trống còn sót lại.
 
-Add a changelog entry describing deterministic errors, transactional audit, last-Admin locking, and test evidence.
+Thêm mục nhập nhật ký thay đổi mô tả các lỗi xác định, kiểm tra giao dịch, khóa Quản trị viên cuối
+cùng và bằng chứng kiểm tra.
 
-Update `TECH_DEBT.md`:
+Cập nhật `TECH_DEBT.md`:
 
-- Mark `TD-013` resolved with the implementation commit/evidence.
-- Narrow `TD-014` to remaining non-role actions whose acting-admin/not-found semantics are not yet reconciled.
-- Narrow `TD-015` to remaining FE11 service rules; remove the stale claim that `userManagementService.test.js` is missing.
-- Leave `TD-012`, `TD-016`, and any genuinely remaining `TD-017` concern unchanged unless separately proven obsolete.
+- Đánh dấu `TD-013` đã được giải quyết bằng cam kết/bằng chứng thực hiện.
+- Thu hẹp `TD-014` vào các hành động không có vai trò còn lại mà ngữ nghĩa của quyền quản trị viên/không tìm thấy vẫn chưa được đối chiếu.
+- Thu hẹp `TD-015` thành các quy tắc dịch vụ FE11 còn lại; xóa xác nhận cũ rằng `userManagementService.test.js` bị thiếu.
+- Giữ nguyên `TD-012`, `TD-016` và mọi mối lo ngại thực sự còn lại về `TD-017` trừ khi được chứng minh là lỗi thời.
 
-- [ ] **Step 4: Write the B1-B7 validation record**
+- [ ] **Bước 4: Viết bản ghi xác nhận B1-B7**
 
-Create the review with these sections:
+Tạo đánh giá với các phần sau:
 
 ```markdown
-# FE11 Transactional Role Management Validation
+# Xác nhận quản lý vai trò theo giao dịch FE11
 
-Date: 2026-07-18
-Scope: FE11-R01..R05 only
+Ngày: 2026-07-18
+Phạm vi: chỉ FE11-R01..R05
 
-## L1 Automated Evidence
-## L2 Spec Compliance
-## L3 Constitution And Safety
-## L4 Acceptance And Residual Risks
-## Files Changed
-## Remaining FE11 Work
+## Bằng chứng tự động L1
+## L2 Tuân thủ đặc tả
+## L3 Hiến chương và an toàn
+## L4 Nghiệm thu và rủi ro còn lại
+## Tệp đã thay đổi
+## Công việc FE11 còn lại
 ```
 
-Record exact command counts/results. State that SQL lock behavior is unit-tested through emitted SQL and transaction branches but real concurrent SQL Server acceptance remains a residual environment gap. Do not claim whole-feature FE11 completion.
+Ghi lại số lượng lệnh/kết quả chính xác. Nêu rõ rằng hành vi khóa SQL đã được kiểm tra đơn vị thông
+qua SQL và các nhánh giao dịch được phát ra nhưng việc chấp nhận SQL Server đồng thời thực sự vẫn là
+một khoảng trống môi trường còn sót lại. Không yêu cầu hoàn thành toàn bộ chức năng FE11.
 
-- [ ] **Step 5: Commit validation evidence**
+- [ ] **Bước 5: Cam kết bằng chứng xác thực**
 
 ```powershell
 git add -- .sdd/specs/feat-user-role-management/TASKS.md .sdd/specs/feat-user-role-management/TEST_PLAN.md .sdd/specs/feat-user-role-management/CHANGELOG.md TECH_DEBT.md .sdd/reviews/fe11-transactional-role-management-validation-2026-07-18.md
 git commit -m "docs: record FE11 role management validation"
 ```
 
-## Final Review Checklist
+## Danh sách kiểm tra đánh giá cuối cùng
 
-- [ ] The written design remains human-approved and records the `DEFERRED` metadata decision.
-- [ ] Every production change was preceded by a focused failing test.
-- [ ] Authentication and Admin authorization run before role input validation.
-- [ ] Acting Admin, target user, requested role, target mappings, and active Admin holders are locked and validated in one transaction.
-- [ ] Duplicate assignment and absent revocation return deterministic errors without audit or mutation.
-- [ ] Final user role and final active Admin cannot be revoked.
-- [ ] Mapping mutation and audit commit or roll back together.
-- [ ] Service returns only the safe managed-user readback.
-- [ ] Focused/full backend tests, coverage, traceability, security scan, and diff checks pass.
-- [ ] `TD-013` is closed; `TD-014/015` are narrowed without hiding remaining FE11 gaps.
-- [ ] No unrelated user files are staged or committed.
+- [ ] Thiết kế bằng văn bản vẫn được con người phê duyệt và ghi lại quyết định siêu dữ liệu `DEFERRED`.
+- [ ] Mọi thay đổi trong sản xuất đều được thực hiện trước một cuộc kiểm thử thất bại tập trung.
+- [ ] Xác thực và ủy quyền quản trị viên chạy trước khi xác thực vai trò đầu vào.
+- [ ] Quyền Quản trị viên, người dùng mục tiêu, vai trò được yêu cầu, ánh xạ mục tiêu và chủ sở hữu Quản trị viên đang hoạt động đều bị khóa và xác thực trong một giao dịch.
+- [ ] Việc gán trùng lặp và sự vắng mặt của việc thu hồi sẽ trả về các lỗi xác định mà không cần kiểm tra hoặc thao tác ghi.
+- [ ] Không thể thu hồi vai trò người dùng cuối cùng và Quản trị viên hoạt động cuối cùng.
+- [ ] Lập bản đồ thao tác ghi và cam kết kiểm toán hoặc quay lại với nhau.
+- [ ] Dịch vụ chỉ trả về thông tin đọc lại của người dùng được quản lý an toàn.
+- [ ] Các kiểm thử máy chủ tập trung/đầy đủ, phạm vi bao phủ, truy vết, quét bảo mật và kiểm tra khác biệt đều vượt qua.
+- [ ] `TD-013` đã đóng; `TD-014/015` được thu hẹp mà không che giấu những khoảng trống FE11 còn lại.
+- [ ] Không có tệp người dùng không liên quan nào được môi trường tiền sản xuất hoặc cam kết.

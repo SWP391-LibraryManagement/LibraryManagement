@@ -1,137 +1,146 @@
-# FE08 Borrowing-Reservation Integration Implementation Plan
+# FE08 Kế hoạch thực hiện tích hợp vay-dự trữ
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. Do not use subagents for this plan.
+> **Đối với nhân viên đại lý:** BẮT BUỘC SUB-SKILL: Sử dụng siêu năng lực:thực thi các kế hoạch để thực hiện kế hoạch này theo từng nhiệm vụ. Các bước sử dụng cú pháp hộp kiểm (`- [ ]`) để theo dõi. Không sử dụng đại lý phụ cho kế hoạch này.
 
-**Goal:** Close the FE07-FE08 lifecycle gap so reservation priority blocks ordinary borrowing, the notified owner can request the held copy, and FE07 approval atomically fulfills the matching reservation.
+**Mục tiêu:** Thu hẹp khoảng cách trong vòng đời của FE07-FE08 để ưu tiên đặt chỗ chặn việc vay
+thông thường, chủ sở hữu được thông báo có thể yêu cầu bản sao được lưu giữ và phê duyệt FE07 hoàn
+toàn đáp ứng việc đặt chỗ phù hợp.
 
-**Architecture:** FE07 remains the only owner of borrow request creation and approval. Borrowability is classified from copy state plus `ACTIVE`/`NOTIFIED` reservation claims at create time and revalidated under SQL locks at approval time. All copy-reservation mutations use the shared `BookCopies -> Reservations` lock order; no endpoint or schema is added.
+**Kiến trúc:** FE07 vẫn là chủ sở hữu duy nhất trong việc tạo và phê duyệt yêu cầu mượn. Khả năng
+vay được phân loại từ trạng thái sao chép cộng với các yêu cầu đặt chỗ `ACTIVE`/`NOTIFIED` tại thời
+điểm tạo và được xác nhận lại theo khóa SQL tại thời điểm phê duyệt. Tất cả các thao tác ghi bảo lưu bản
+sao đều sử dụng thứ tự khóa `BookCopies -> Reservations` được chia sẻ; không có điểm cuối hoặc lược
+đồ nào được thêm vào.
 
-**Tech Stack:** Node.js, Express.js, SQL Server through `mssql`, Jest/Supertest, React/Vite frontend error mapping, Markdown SDD artifacts.
+**bộ công nghệ công nghệ:** Node.js, Express.js, SQL Server đến `mssql`, Jest/Supertest, React/Vite
+ánh xạ lỗi giao diện người dùng, tạo phẩm Markdown SDD.
 
-## Global Constraints
+## Ràng buộc toàn cầu
 
-- Preserve Phase 1 copy-level reservations by `CopyId`.
-- Preserve manual librarian queue processing.
-- Preserve FE07 all-or-nothing multi-copy requests and approvals.
-- Preserve maximum 5 active borrowed copies, 14-day loan duration, one renewal, overdue/fine blockers, and role checks.
-- Do not expose another reservation owner's identity in an error response.
-- Do not add a fulfillment endpoint, table, column, dependency, or automatic queue job.
-- Update specs before behavior and write every production change through RED -> GREEN TDD.
-- Use `BookCopies -> Reservations` lock order for queue hold, cancellation, expiration, and borrow approval.
-- Do not modify FE09 fine calculation or FE10 delivery behavior.
-
----
-
-## File Map
-
-### Specification And Traceability
-
-- `.sdd/specs/feat-borrowing-management/SPEC.md`: FE07 reservation-aware borrowability and approval rules.
-- `.sdd/specs/feat-borrowing-management/PLAN.md`: FE07 implementation boundary and transaction plan.
-- `.sdd/specs/feat-borrowing-management/TASKS.md`: executable integration tasks and validation gate.
-- `.sdd/specs/feat-borrowing-management/CHANGELOG.md`: behavior change record.
-- `.sdd/specs/feat-reservation-management/SPEC.md`: final CopyId/cancellation language and FE07 fulfillment trigger.
-- `.sdd/specs/feat-reservation-management/PLAN.md`: remove the old fulfillment exclusion and describe FE07 handoff.
-- `.sdd/specs/feat-reservation-management/TASKS.md`: mark the integration work explicitly.
-- `.sdd/specs/feat-reservation-management/CHANGELOG.md`: behavior change record.
-
-### Backend
-
-- `backend/src/services/borrowingService.js`: classify copy borrowability for the current member and map repository outcomes.
-- `backend/src/repositories/borrowingRepository.js`: copy/reservation read model and atomic approval fulfillment.
-- `backend/src/repositories/reservationRepository.js`: align cancel/expiration lock ordering.
-- `backend/tests/helpers/inMemoryBorrowingRepositories.js`: mirror borrowability and atomic rollback behavior.
-- `backend/tests/borrowingRoutes.test.js`: create/approval/rollback regression tests.
-- `backend/tests/sql/borrowingConcurrency.sqltest.js`: real SQL lock and transaction tests.
-- `backend/tests/reservationRoutes.test.js`: cancellation/expiration behavior after lock-order alignment.
-- `backend/src/docs/openapi.yaml`: document the two new safe conflict codes without changing endpoint shapes.
-
-### Frontend And Validation
-
-- `frontend/src/api/apiErrorMessages.js`: actionable Vietnamese messages.
-- `frontend/test/apiErrorMessages.test.js`: source contract for those messages.
-- `.sdd/reviews/fe07-fe08-borrowing-reservation-integration-validation-2026-07-15.md`: final automated evidence and review checklist.
+- Bảo lưu dự trữ cấp bản sao Giai đoạn 1 trước `CopyId`.
+- Duy trì việc xử lý hàng đợi thủ thư thủ công.
+- Bảo toàn các yêu cầu và phê duyệt nhiều bản sao của FE07.
+- Bảo quản tối đa 5 bản mượn đang hoạt động, thời hạn mượn 14 ngày, một lần gia hạn, chặn quá hạn/phạt và kiểm tra vai trò.
+- Không để lộ danh tính của chủ sở hữu đặt chỗ khác trong phản hồi lỗi.
+- Không thêm điểm cuối thực hiện, bảng, cột, phần phụ thuộc hoặc công việc xếp hàng tự động.
+- Cập nhật đặc tả trước hành vi và ghi lại mọi thay đổi sản xuất thông qua RED -> GREEN TDD.
+- Sử dụng lệnh khóa `BookCopies -> Reservations` để giữ hàng đợi, hủy, hết hạn và phê duyệt mượn.
+- Không sửa đổi tính toán tinh tế của FE09 hoặc hành vi phân phối FE10.
 
 ---
 
-### Task 1: Align FE07 And FE08 Source-Of-Truth Contracts
+## Bản đồ tệp
 
-**Files:**
-- Modify: `.sdd/specs/feat-borrowing-management/SPEC.md`
-- Modify: `.sdd/specs/feat-borrowing-management/PLAN.md`
-- Modify: `.sdd/specs/feat-borrowing-management/TASKS.md`
-- Modify: `.sdd/specs/feat-borrowing-management/CHANGELOG.md`
-- Modify: `.sdd/specs/feat-reservation-management/SPEC.md`
-- Modify: `.sdd/specs/feat-reservation-management/PLAN.md`
-- Modify: `.sdd/specs/feat-reservation-management/TASKS.md`
-- Modify: `.sdd/specs/feat-reservation-management/CHANGELOG.md`
+### đặc tả và truy vết
 
-**Interfaces:**
-- Consumes: approved design `docs/superpowers/specs/2026-07-15-fe08-borrowing-reservation-integration-design.md`.
-- Produces: stable `BR`/`FR`/`AC` identifiers used by code comments and tests in Tasks 2-5.
+- `.sdd/specs/feat-borrowing-management/SPEC.md`: FE07 quy tắc phê duyệt và khả năng mượn có thể nhận biết trước.
+- `.sdd/specs/feat-borrowing-management/PLAN.md`: Kế hoạch giao dịch và ranh giới thực hiện FE07.
+- `.sdd/specs/feat-borrowing-management/TASKS.md`: nhiệm vụ tích hợp thực thi và cổng xác thực.
+- `.sdd/specs/feat-borrowing-management/CHANGELOG.md`: bản ghi thay đổi hành vi.
+- `.sdd/specs/feat-reservation-management/SPEC.md`: CopyId/ngôn ngữ hủy cuối cùng và trình kích hoạt thực hiện FE07.
+- `.sdd/specs/feat-reservation-management/PLAN.md`: xóa loại trừ thực hiện cũ và mô tả chuyển giao FE07.
+- `.sdd/specs/feat-reservation-management/TASKS.md`: đánh dấu công việc tích hợp một cách rõ ràng.
+- `.sdd/specs/feat-reservation-management/CHANGELOG.md`: bản ghi thay đổi hành vi.
 
-- [ ] **Step 1: Update FE07 rules and version**
+### Phần máy chủ
 
-Bump FE07 `SPEC.md` from `0.3.2` to `0.4.0`, set `Last Updated: 2026-07-15`, and add these requirements:
+- `backend/src/services/borrowingService.js`: phân loại khả năng mượn bản sao cho thành viên hiện tại và kết quả kho bản đồ.
+- `backend/src/repositories/borrowingRepository.js`: copy/reservation mô hình đọc và thực hiện phê duyệt nguyên tử.
+- `backend/src/repositories/reservationRepository.js`: sắp xếp thứ tự khóa hủy/hết hạn.
+- `backend/tests/helpers/inMemoryBorrowingRepositories.js`: khả năng vay mượn phản chiếu và hành vi khôi phục nguyên tử.
+- `backend/tests/borrowingRoutes.test.js`: kiểm tra hồi quy tạo/phê duyệt/khôi phục.
+- `backend/tests/sql/borrowingConcurrency.sqltest.js`: kiểm tra giao dịch và khóa SQL thực.
+- `backend/tests/reservationRoutes.test.js`: hành vi hủy/hết hạn sau khi căn chỉnh lệnh khóa.
+- `backend/src/docs/openapi.yaml`: ghi lại hai mã xung đột an toàn mới mà không thay đổi hình dạng điểm cuối.
 
-```markdown
-- BR-FE07-023: FE07 may accept a copy only when it is `AVAILABLE` with no `ACTIVE`/`NOTIFIED` reservation claim, or when it is `RESERVED` by a `NOTIFIED` reservation owned by the requesting member.
-- BR-FE07-024: An `ACTIVE` reservation queue for a copy blocks ordinary borrow-request creation and approval until staff processes or resolves that queue.
-- BR-FE07-025: Approving a borrow request for a requester-owned `NOTIFIED` reservation must atomically change the matching reservation to `FULFILLED` with the borrow request, details, copy status, and audit records.
+### Giao diện người dùng và xác thực
 
-- FR-FE07-023: IF a requested copy has an `ACTIVE` reservation queue, FE07 shall reject create/approve with `RESERVATION_QUEUE_PRIORITY` and shall change no record.
-- FR-FE07-024: IF a copy is `RESERVED` by a `NOTIFIED` reservation owned by the borrowing member, FE07 shall allow request creation and shall revalidate that ownership during approval.
-- FR-FE07-025: WHEN staff approves a held owner's request, FE07 shall update every matching `NOTIFIED` reservation to `FULFILLED` in the approval transaction.
+- `frontend/src/api/apiErrorMessages.js`: thông điệp tiếng Việt hữu ích.
+- `frontend/test/apiErrorMessages.test.js`: hợp đồng nguồn cho những tin nhắn đó.
+- `.sdd/reviews/fe07-fe08-borrowing-reservation-integration-validation-2026-07-15.md`: danh sách kiểm tra đánh giá và bằng chứng tự động cuối cùng.
 
-- AC-FE07-015: Given an active reservation queue, when another member creates or approves a borrow request, then FE07 returns `409 RESERVATION_QUEUE_PRIORITY` and preserves all state.
-- AC-FE07-016: Given a requester-owned notified reservation and reserved copy, when the owner creates a borrow request, then FE07 creates the normal pending request without releasing the hold.
-- AC-FE07-017: Given that pending request, when staff approves it, then borrowing records, copy status, reservation fulfillment, and audits commit atomically.
-```
+---
 
-Replace the old absolute-availability wording with the approved borrowability contract. Keep `OVERDUE` derived and keep the five-copy limit unchanged.
+### Nhiệm vụ 1: Căn chỉnh các hợp đồng nguồn gốc của FE07 và FE08
 
-- [ ] **Step 2: Update FE08 rules and remove stale ambiguity**
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-borrowing-management/SPEC.md`
+- Sửa đổi: `.sdd/specs/feat-borrowing-management/PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-borrowing-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-borrowing-management/CHANGELOG.md`
+- Sửa đổi: `.sdd/specs/feat-reservation-management/SPEC.md`
+- Sửa đổi: `.sdd/specs/feat-reservation-management/PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-reservation-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-reservation-management/CHANGELOG.md`
 
-Bump FE08 `SPEC.md` from `0.3.1` to `0.4.0`, set `Last Updated: 2026-07-15`, and add/replace:
+**Giao diện:**
+- Tiêu thụ: thiết kế `docs/superpowers/specs/2026-07-15-fe08-borrowing-reservation-integration-design.md` đã được phê duyệt.
+- Tạo ra: mã định danh `BR`/`FR`/`AC` ổn định được sử dụng bởi các nhận xét và kiểm tra mã trong Nhiệm vụ 2-5.
 
-```markdown
-- BR-FE08-003: A member may cancel only their own reservation while its status is `ACTIVE` or `NOTIFIED`.
-- BR-FE08-015: Only FE07 approval for the same member and copy may transition a `NOTIFIED` reservation to `FULFILLED`.
-- BR-FE08-016: An `ACTIVE` queue entry grants reservation priority and blocks ordinary FE07 create/approve actions for that copy until queue processing or terminal resolution.
+- [ ] **Bước 1: Cập nhật quy tắc và phiên bản FE07**
 
-- FR-FE08-025: WHEN FE07 approves the notified reservation owner's borrow request, FE08 shall transition the matching reservation to `FULFILLED` in the same transaction.
-- FR-FE08-026: IF FE07 evaluates a copy with an active queue or another member's notified hold, FE08 reservation state shall prevent the ordinary borrow operation without exposing the reservation owner.
-
-- AC-FE08-011: Given a notified owner borrows the held copy through FE07 approval, then the reservation becomes `FULFILLED` and the copy becomes `BORROWED` atomically.
-- AC-FE08-012: Given a copy has active reservation priority, when another member attempts to borrow it, then the operation is denied and queue order is preserved.
-```
-
-Set `copyId` to required in Section 10.2 and change `POST /api/reservations` to `{ copyId: number }`. Remove “team may change” and “depends on database decision.”
-
-- [ ] **Step 3: Update plans, tasks, and changelogs**
-
-Add an integration section to both plans. Add checked/unchecked task rows using these IDs:
+Chuyển FE07 `SPEC.md` từ `0.3.2` sang `0.4.0`, đặt `Last Updated: 2026-07-15` và thêm các yêu cầu sau:
 
 ```markdown
-| FE07-T029 | Enforce reservation-aware borrowability for create and approval. | BR-FE07-023/024; AC-FE07-015/016 | FE08 queue state | RED/GREEN route tests pass. |
-| FE07-T030 | Fulfill matching notified reservations in the approval transaction. | BR-FE07-025; AC-FE07-017 | FE07-T029 | SQL and in-memory rollback tests pass. |
-| FE08-T025 | Align cancellation/expiration lock order and FE07 fulfillment handoff. | BR-FE08-015/016; AC-FE08-011/012 | FE07-T029/T030 | Concurrency tests pass without deadlock. |
+- BR-FE07-023: FE07 chỉ có thể chấp nhận một bản sao khi đó là `AVAILABLE` không có yêu cầu đặt chỗ `ACTIVE`/`NOTIFIED` hoặc khi đó là `RESERVED` theo đặt chỗ `NOTIFIED` thuộc sở hữu của thành viên yêu cầu.
+- BR-FE07-024: Hàng đợi đặt chỗ `ACTIVE` cho một bản sao chặn việc tạo và phê duyệt yêu cầu mượn thông thường cho đến khi nhân viên xử lý hoặc giải quyết hàng đợi đó.
+- BR-FE07-025: Phê duyệt yêu cầu mượn đối với đặt chỗ `NOTIFIED` do người yêu cầu sở hữu phải thay đổi nguyên tắc đặt chỗ phù hợp thành `FULFILLED` kèm theo yêu cầu mượn, chi tiết, trạng thái sao chép và nhật ký kiểm toán.
+
+- FR-FE07-023: NẾU bản sao được yêu cầu có hàng đợi đặt chỗ `ACTIVE`, FE07 sẽ từ chối việc tạo/phê duyệt với `RESERVATION_QUEUE_PRIORITY` và sẽ không thay đổi bản ghi nào.
+- FR-FE07-024: NẾU bản sao là `RESERVED` theo đặt chỗ `NOTIFIED` thuộc sở hữu của thành viên bên vay, FE07 sẽ cho phép tạo yêu cầu và sẽ xác nhận lại quyền sở hữu đó trong quá trình phê duyệt.
+- FR-FE07-025: Nhân viên WHEN phê duyệt yêu cầu của chủ sở hữu đã nắm giữ, FE07 sẽ cập nhật mọi đặt chỗ `NOTIFIED` phù hợp thành `FULFILLED` trong giao dịch phê duyệt.
+
+- AC-FE07-015: Với hàng đợi đặt chỗ đang hoạt động, khi một thành viên khác tạo hoặc phê duyệt yêu cầu mượn, thì FE07 sẽ trả về `409 RESERVATION_QUEUE_PRIORITY` và giữ nguyên tất cả trạng thái.
+- AC-FE07-016: Đưa ra bản sao dành riêng và đặt chỗ được thông báo thuộc sở hữu của người yêu cầu, khi chủ sở hữu tạo yêu cầu mượn thì FE07 sẽ tạo yêu cầu đang chờ xử lý thông thường mà không giải phóng khoản giữ.
+- AC-FE07-017: Đưa ra yêu cầu đang chờ xử lý, khi nhân viên phê duyệt, sau đó mượn hồ sơ, trạng thái sao chép, thực hiện đặt chỗ và cam kết kiểm tra nguyên tử.
 ```
 
-Record the design decision and no-schema/no-endpoint boundary in both changelogs.
+Thay thế cách diễn đạt khả năng sẵn sàng tuyệt đối cũ bằng hợp đồng mượn sách đã được phê duyệt. Giữ
+nguyên `OVERDUE` và giữ nguyên giới hạn năm bản sao.
 
-- [ ] **Step 4: Run documentation checks**
+- [ ] **Bước 2: Cập nhật các quy tắc FE08 và loại bỏ sự mơ hồ cũ**
 
-Run:
+Chuyển FE08 `SPEC.md` từ `0.3.1` sang `0.4.0`, đặt `Last Updated: 2026-07-15` và thêm/thay thế:
+
+```markdown
+- BR-FE08-003: Thành viên chỉ có thể hủy đặt chỗ của chính mình khi trạng thái là `ACTIVE` hoặc `NOTIFIED`.
+- BR-FE08-015: Chỉ có sự chấp thuận của FE07 cho cùng một thành viên và bản sao mới có thể chuyển đổi đặt chỗ `NOTIFIED` sang `FULFILLED`.
+- BR-FE08-016: Mục nhập hàng đợi `ACTIVE` cấp mức ưu tiên đặt chỗ và chặn các hành động tạo/phê duyệt FE07 thông thường cho bản sao đó cho đến khi xử lý hàng đợi hoặc giải quyết thiết bị đầu cuối.
+
+- FR-FE08-025: WHEN FE07 phê duyệt yêu cầu mượn của chủ sở hữu đặt chỗ đã được thông báo, FE08 sẽ chuyển đổi đặt chỗ phù hợp sang `FULFILLED` trong cùng một giao dịch.
+- FR-FE08-026: NẾU FE07 đánh giá một bản sao có hàng đợi đang hoạt động hoặc thông báo lưu giữ của thành viên khác, trạng thái đặt chỗ FE08 sẽ ngăn hoạt động mượn thông thường mà không làm lộ thông tin của chủ sở hữu đặt chỗ.
+
+- AC-FE08-011: Nếu chủ sở hữu được thông báo mượn bản sao được giữ thông qua phê duyệt FE07, thì phần đặt chỗ sẽ trở thành `FULFILLED` và bản sao nguyên tử sẽ trở thành `BORROWED`.
+- AC-FE08-012: Cho một bản sao có mức độ ưu tiên đặt chỗ đang hoạt động, khi một thành viên khác cố gắng mượn nó thì hoạt động sẽ bị từ chối và thứ tự hàng đợi được giữ nguyên.
+```
+
+Đặt `copyId` thành yêu cầu trong Phần 10.2 và thay đổi `POST /api/reservations` thành `{ copyId:
+number }`. Xóa “nhóm có thể thay đổi” và “phụ thuộc vào quyết định của cơ sở dữ liệu”.
+
+- [ ] **Bước 3: Cập nhật kế hoạch, nhiệm vụ và nhật ký thay đổi**
+
+Thêm phần tích hợp vào cả hai gói. Thêm các hàng nhiệm vụ đã chọn/bỏ chọn bằng các ID sau:
+
+```markdown
+| FE07-T029 |Thực thi khả năng vay mượn nhận biết trước để tạo và phê duyệt.| BR-FE07-023/024; AC-FE07-015/016 |Trạng thái hàng đợi FE08|Đã vượt qua các kiểm thử tuyến đường RED/GREEN.|
+| FE07-T030 |Thực hiện khớp các đặt chỗ đã được thông báo trong giao dịch phê duyệt.| BR-FE07-025; AC-FE07-017 | FE07-T029 |SQL và các kiểm thử khôi phục trong bộ nhớ đã vượt qua.|
+| FE08-T025 |Căn chỉnh thứ tự hủy/khóa hết hạn và chuyển giao thực hiện FE07.| BR-FE08-015/016; AC-FE08-011/012 | FE07-T029/T030 |Kiểm tra đồng thời vượt qua mà không bế tắc.|
+```
+
+Ghi lại quyết định thiết kế và ranh giới không có lược đồ/không có điểm cuối trong cả hai nhật ký thay đổi.
+
+- [ ] **Bước 4: Chạy kiểm tra tài liệu**
+
+Chạy:
 
 ```powershell
 rg -n "depends on database decision|team may change|cancel only their own active reservations|FE07 borrow/return or fulfillment implementation" .sdd/specs/feat-borrowing-management .sdd/specs/feat-reservation-management
 git diff --check
 ```
 
-Expected: the stale scans return no active requirement text; `git diff --check` exits `0`.
+Dự kiến: các bản quét cũ không trả về văn bản yêu cầu hiện hoạt; `git diff --check` thoát khỏi `0`.
 
-- [ ] **Step 5: Commit Task 1**
+- [ ] **Bước 5: Cam kết nhiệm vụ 1**
 
 ```powershell
 git add .sdd/specs/feat-borrowing-management .sdd/specs/feat-reservation-management
@@ -140,21 +149,21 @@ git commit -m "docs: align borrowing reservation contracts"
 
 ---
 
-### Task 2: Enforce Reservation Priority At Borrow-Request Creation
+### Nhiệm vụ 2: Thực thi ưu tiên đặt chỗ khi tạo yêu cầu mượn
 
-**Files:**
-- Modify: `backend/tests/borrowingRoutes.test.js`
-- Modify: `backend/tests/helpers/inMemoryBorrowingRepositories.js`
-- Modify: `backend/src/repositories/borrowingRepository.js`
-- Modify: `backend/src/services/borrowingService.js`
+**Tệp:**
+- Sửa đổi: `backend/tests/borrowingRoutes.test.js`
+- Sửa đổi: `backend/tests/helpers/inMemoryBorrowingRepositories.js`
+- Sửa đổi: `backend/src/repositories/borrowingRepository.js`
+- Sửa đổi: `backend/src/services/borrowingService.js`
 
-**Interfaces:**
-- Produces: `borrowingRepository.findBorrowabilityByCopyIds(copyIds, userId)` returning copy state plus reservation claim fields.
-- Produces: `validateCopiesBorrowable(copyIds, userId)` used by both create and approve.
+**Giao diện:**
+- Tạo ra: `borrowingRepository.findBorrowabilityByCopyIds(copyIds, userId)` trả về trạng thái sao chép cộng với các trường yêu cầu đặt chỗ.
+- Sản xuất: `validateCopiesBorrowable(copyIds, userId)` được sử dụng bởi cả người tạo và phê duyệt.
 
-- [ ] **Step 1: Add RED route tests**
+- [ ] **Bước 1: Thêm các kiểm thử lộ trình RED**
 
-Append focused tests with this setup pattern:
+Nối các kiểm thử tập trung với mẫu thiết lập này:
 
 ```js
 test('active reservation queue blocks ordinary borrow request creation', async () => {
@@ -204,21 +213,23 @@ test('notified owner can request their reserved copy', async () => {
 });
 ```
 
-Add a third test asserting another member receives `COPY_NOT_AVAILABLE` for the same `RESERVED` copy and the response does not contain the owner's email/user ID.
+Thêm kiểm thử thứ ba xác nhận một thành viên khác nhận được `COPY_NOT_AVAILABLE` cho cùng một bản
+sao `RESERVED` và phản hồi không chứa email/ID người dùng của chủ sở hữu.
 
-- [ ] **Step 2: Verify RED**
+- [ ] **Bước 2: Xác minh RED**
 
-Run:
+Chạy:
 
 ```powershell
 npm.cmd --prefix backend test -- --runInBand borrowingRoutes.test.js -t "reservation queue|reserved copy"
 ```
 
-Expected: active queue currently allows creation and notified owner currently receives `COPY_NOT_AVAILABLE`.
+Dự kiến: hàng đợi đang hoạt động hiện cho phép tạo và chủ sở hữu được thông báo hiện nhận được
+`COPY_NOT_AVAILABLE`.
 
-- [ ] **Step 3: Add the repository read model**
+- [ ] **Bước 3: Thêm mô hình đọc kho lưu trữ**
 
-Replace the private FE07 copy lookup with:
+Thay thế tra cứu bản sao FE07 riêng tư bằng:
 
 ```js
 async function findBorrowabilityByCopyIds(copyIds, userId) {
@@ -229,7 +240,7 @@ async function findBorrowabilityByCopyIds(copyIds, userId) {
 }
 ```
 
-The SQL projection must use:
+Phép chiếu SQL phải sử dụng:
 
 ```sql
 OUTER APPLY (
@@ -246,11 +257,12 @@ OUTER APPLY (
 ) notifiedHold
 ```
 
-Mirror those fields in `inMemoryBorrowingRepositories.js` and include `reservations` in `snapshotMutationState()` / `restoreMutationState()`.
+Phản ánh các trường đó trong `inMemoryBorrowingRepositories.js` và bao gồm `reservations` trong
+`snapshotMutationState()` / `restoreMutationState()`.
 
-- [ ] **Step 4: Implement the minimal service classifier**
+- [ ] **Bước 4: Triển khai trình phân loại dịch vụ tối thiểu**
 
-Use one classifier for create and approval:
+Sử dụng một trình phân loại để tạo và phê duyệt:
 
 ```js
 function classifyCopyBorrowability(copy, userId) {
@@ -278,19 +290,20 @@ function classifyCopyBorrowability(copy, userId) {
 }
 ```
 
-`validateCopiesBorrowable(copyIds, userId)` must still return `COPY_NOT_FOUND` for missing IDs and must classify every copy before request creation.
+`validateCopiesBorrowable(copyIds, userId)` vẫn phải trả sách `COPY_NOT_FOUND` cho các ID bị thiếu
+và phải phân loại mọi bản sao trước khi tạo yêu cầu.
 
-- [ ] **Step 5: Verify GREEN**
+- [ ] **Bước 5: Xác minh GREEN**
 
-Run the same focused command, then:
+Chạy lệnh tập trung tương tự, sau đó:
 
 ```powershell
 npm.cmd --prefix backend test -- --runInBand borrowingRoutes.test.js
 ```
 
-Expected: all FE07 route tests pass.
+Dự kiến: tất cả các kiểm thử lộ trình FE07 đều vượt qua.
 
-- [ ] **Step 6: Commit Task 2**
+- [ ] **Bước 6: Cam kết nhiệm vụ 2**
 
 ```powershell
 git add backend/src/services/borrowingService.js backend/src/repositories/borrowingRepository.js backend/tests/helpers/inMemoryBorrowingRepositories.js backend/tests/borrowingRoutes.test.js
@@ -299,21 +312,21 @@ git commit -m "feat: enforce reservation priority in borrowing"
 
 ---
 
-### Task 3: Fulfill Notified Reservations Inside Borrow Approval
+### Nhiệm vụ 3: Thực hiện các đặt chỗ đã được thông báo trong phê duyệt lượt mượn
 
-**Files:**
-- Modify: `backend/tests/borrowingRoutes.test.js`
-- Modify: `backend/tests/helpers/inMemoryBorrowingRepositories.js`
-- Modify: `backend/src/services/borrowingService.js`
-- Modify: `backend/src/repositories/borrowingRepository.js`
+**Tệp:**
+- Sửa đổi: `backend/tests/borrowingRoutes.test.js`
+- Sửa đổi: `backend/tests/helpers/inMemoryBorrowingRepositories.js`
+- Sửa đổi: `backend/src/services/borrowingService.js`
+- Sửa đổi: `backend/src/repositories/borrowingRepository.js`
 
-**Interfaces:**
-- Extends: `approveBorrowRequest(...)` result outcomes.
-- Produces: `{ outcome: 'APPROVED', borrowRequest, fulfilledReservationIds }`.
+**Giao diện:**
+- Mở rộng: Kết quả kết quả `approveBorrowRequest(...)`.
+- Sản xuất: `{ outcome: 'APPROVED', borrowRequest, fulfilledReservationIds }`.
 
-- [ ] **Step 1: Add RED approval and rollback tests**
+- [ ] **Bước 1: Thêm các kiểm thử phê duyệt và khôi phục RED**
 
-Add tests proving:
+Thêm kiểm thử chứng minh:
 
 ```js
 expect(approveResponse.status).toBe(200);
@@ -322,7 +335,7 @@ expect(heldCopy.status).toBe('BORROWED');
 expect(auditActions).toEqual(expect.arrayContaining(['BORROW_REQUEST_APPROVE', 'RESERVATION_FULFILL']));
 ```
 
-Add a rollback repository wrapper that throws only after writing `RESERVATION_FULFILL`:
+Thêm trình bao bọc kho lưu trữ khôi phục chỉ gửi sau khi viết `RESERVATION_FULFILL`:
 
 ```js
 const reservationAuditFailingRepository = {
@@ -335,23 +348,26 @@ const reservationAuditFailingRepository = {
 };
 ```
 
-After the failed approval assert request `PENDING`, detail `REQUESTED`, copy `RESERVED`, reservation `NOTIFIED`, and no surviving approval/fulfillment audit.
+Sau khi yêu cầu xác nhận phê duyệt không thành công `PENDING`, chi tiết `REQUESTED`, sao chép
+`RESERVED`, đặt chỗ `NOTIFIED` và không có kiểm tra phê duyệt/thực hiện nào còn sót lại.
 
-- [ ] **Step 2: Verify RED**
+- [ ] **Bước 2: Xác minh RED**
 
-Run:
+Chạy:
 
 ```powershell
 npm.cmd --prefix backend test -- --runInBand borrowingRoutes.test.js -t "fulfills reservation|reservation audit"
 ```
 
-Expected: approval rejects `RESERVED` or leaves reservation `NOTIFIED`.
+Dự kiến: phê duyệt từ chối `RESERVED` hoặc rời khỏi `NOTIFIED`.
 
-- [ ] **Step 3: Update the in-memory approval transaction**
+- [ ] **Bước 3: Cập nhật giao dịch phê duyệt trong bộ nhớ**
 
-For each requested detail, classify the copy under the same rules. Collect matching notified reservations, update them only after every validation passes, and write both audit types before returning. The snapshot must restore reservations and logs on failure.
+Đối với mỗi chi tiết được yêu cầu, hãy phân loại bản sao theo cùng một quy tắc. Thu thập các thông
+tin đặt chỗ được thông báo trùng khớp, chỉ cập nhật chúng sau mỗi lần xác thực thành công và viết cả
+hai loại kiểm tra trước khi quay lại. Ảnh chụp nhanh phải khôi phục các đặt chỗ và nhật ký thất bại.
 
-Return repository outcomes exactly as follows:
+Trả về kết quả kho lưu trữ chính xác như sau:
 
 ```js
 { outcome: 'RESERVATION_QUEUE_PRIORITY' }
@@ -360,9 +376,9 @@ Return repository outcomes exactly as follows:
 { outcome: 'APPROVED', borrowRequest, fulfilledReservationIds }
 ```
 
-- [ ] **Step 4: Update the SQL approval transaction**
+- [ ] **Bước 4: Cập nhật giao dịch phê duyệt SQL**
 
-Inside `approveBorrowRequest`, after locking each copy, lock its queue claims:
+Bên trong `approveBorrowRequest`, sau khi khóa từng bản sao, hãy khóa các yêu cầu hàng đợi của nó:
 
 ```sql
 SELECT ReservationId, UserId, Status
@@ -374,7 +390,8 @@ ORDER BY CASE WHEN Status = 'NOTIFIED' THEN 0 ELSE 1 END,
          ReservationId ASC;
 ```
 
-Apply the borrowability matrix under those locks. After request/detail/copy updates, update every matching notified reservation:
+Áp dụng ma trận khả năng vay mượn theo các khóa đó. Sau khi cập nhật yêu cầu/chi tiết/sao chép, hãy
+cập nhật mọi đặt chỗ được thông báo phù hợp:
 
 ```sql
 UPDATE Reservations
@@ -385,9 +402,10 @@ WHERE ReservationId = @ReservationId
   AND Status = 'NOTIFIED';
 ```
 
-Require one affected row for each expected fulfillment. A mismatch returns `RESERVATION_STATE_CONFLICT` after rollback.
+Yêu cầu một hàng bị ảnh hưởng cho mỗi lần thực hiện dự kiến. Sự không khớp sẽ trả về
+`RESERVATION_STATE_CONFLICT` sau khi khôi phục.
 
-For each fulfilled reservation, clone the service-provided audit base with:
+Đối với mỗi lần đặt chỗ đã hoàn thành, hãy sao chép cơ sở kiểm tra do dịch vụ cung cấp với:
 
 ```js
 {
@@ -398,9 +416,9 @@ For each fulfilled reservation, clone the service-provided audit base with:
 }
 ```
 
-- [ ] **Step 5: Map outcomes in the service**
+- [ ] **Bước 5: Lập bản đồ kết quả trong dịch vụ**
 
-Add explicit mappings before the generic fallback:
+Thêm ánh xạ rõ ràng trước dự phòng chung:
 
 ```js
 if (approvalResult?.outcome === 'RESERVATION_QUEUE_PRIORITY') {
@@ -411,16 +429,16 @@ if (approvalResult?.outcome === 'RESERVATION_STATE_CONFLICT') {
 }
 ```
 
-- [ ] **Step 6: Verify GREEN and commit**
+- [ ] **Bước 6: Xác minh GREEN và cam kết**
 
-Run:
+Chạy:
 
 ```powershell
 npm.cmd --prefix backend test -- --runInBand borrowingRoutes.test.js borrowingRepository.test.js
 git diff --check
 ```
 
-Then commit:
+Sau đó cam kết:
 
 ```powershell
 git add backend/src/services/borrowingService.js backend/src/repositories/borrowingRepository.js backend/tests/helpers/inMemoryBorrowingRepositories.js backend/tests/borrowingRoutes.test.js
@@ -429,20 +447,21 @@ git commit -m "feat: fulfill reservations during borrow approval"
 
 ---
 
-### Task 4: Align Reservation Lock Order And Add SQL Concurrency Evidence
+### Nhiệm vụ 4: Căn chỉnh thứ tự khóa đặt chỗ và thêm bằng chứng đồng thời SQL
 
-**Files:**
-- Modify: `backend/src/repositories/reservationRepository.js`
-- Modify: `backend/tests/reservationRoutes.test.js`
-- Modify: `backend/tests/sql/borrowingConcurrency.sqltest.js`
+**Tệp:**
+- Sửa đổi: `backend/src/repositories/reservationRepository.js`
+- Sửa đổi: `backend/tests/reservationRoutes.test.js`
+- Sửa đổi: `backend/tests/sql/borrowingConcurrency.sqltest.js`
 
-**Interfaces:**
-- Preserves all FE08 endpoint and DTO shapes.
-- Makes every copy-reservation mutation lock `BookCopies` before `Reservations`.
+**Giao diện:**
+- Bảo toàn tất cả các hình dạng điểm cuối FE08 và DTO.
+- Làm cho mọi thao tác ghi bảo lưu bản sao khóa `BookCopies` trước `Reservations`.
 
-- [ ] **Step 1: Add RED cancellation/expiration regression tests**
+- [ ] **Bước 1: Thêm các kiểm thử hồi quy hủy/hết hạn RED**
 
-Keep existing route expectations and add source/behavior tests proving cancellation of `NOTIFIED` releases only its `RESERVED` copy, while an already fulfilled reservation cannot be cancelled.
+Giữ nguyên các kỳ vọng về tuyến đường hiện có và thêm các kiểm thử nguồn/hành vi chứng minh việc hủy
+`NOTIFIED` chỉ phát hành bản sao `RESERVED` của nó, trong khi không thể hủy đặt chỗ đã hoàn thành.
 
 ```js
 expect(cancelResponse.status).toBe(409);
@@ -450,21 +469,23 @@ expect(cancelResponse.body.error.code).toBe('RESERVATION_NOT_ACTIVE');
 expect(state.reservations.find(({ reservationId }) => reservationId === fulfilledId).status).toBe('FULFILLED');
 ```
 
-- [ ] **Step 2: Align SQL lock order**
+- [ ] **Bước 2: Căn chỉnh thứ tự khóa SQL**
 
-Refactor `cancelReservation` to:
+Tái cấu trúc `cancelReservation` thành:
 
-1. Read `CopyId` without mutation.
-2. Begin transaction.
-3. Lock `BookCopies` by `CopyId` using `UPDLOCK, HOLDLOCK`.
-4. Re-read and lock the reservation using `UPDLOCK, HOLDLOCK` with `Status IN ('ACTIVE','NOTIFIED')`.
-5. Cancel and release only when the re-read state remains valid.
+1. Đọc `CopyId` mà không bị thao tác ghi.
+2. Bắt đầu giao dịch.
+3. Khóa `BookCopies` bằng `CopyId` bằng `UPDLOCK, HOLDLOCK`.
+4. Đọc lại và khóa đặt chỗ bằng `UPDLOCK, HOLDLOCK` với `Status IN ('ACTIVE','NOTIFIED')`.
+5. Chỉ hủy và nhả khi trạng thái đọc lại vẫn còn hiệu lực.
 
-Refactor `expireOverdueHolds` to identify candidate copy/reservation IDs, sort by `CopyId`, lock copies first, revalidate each `NOTIFIED` expiration, then update reservations/copies in the same transaction.
+Tái cấu trúc `expireOverdueHolds` để xác định ID bản sao/reservation ứng viên, sắp xếp theo
+`CopyId`, khóa bản sao trước, xác thực lại mỗi lần hết hạn `NOTIFIED`, sau đó cập nhật bản đặt
+chỗ/bản sao trong cùng một giao dịch.
 
-- [ ] **Step 3: Add SQL seed helpers**
+- [ ] **Bước 3: Thêm người trợ giúp hạt giống SQL**
 
-Extend the SQL test seed with `reservationIds` and:
+Mở rộng hạt giống kiểm thử SQL với `reservationIds` và:
 
 ```js
 async function insertReservation(seed, { userId, copyId, status, reservedAt, notifiedAt = null, expiresAt = null }) {
@@ -486,27 +507,27 @@ async function insertReservation(seed, { userId, copyId, status, reservedAt, not
 }
 ```
 
-Delete reservation audits and reservations before deleting copies/users in `cleanSeed`.
+Xóa kiểm tra đặt chỗ và đặt chỗ trước khi xóa bản sao/người dùng trong `cleanSeed`.
 
-- [ ] **Step 4: Add SQL RED/GREEN scenarios**
+- [ ] **Bước 4: Thêm kịch bản SQL RED/GREEN**
 
-Add these tests:
+Thêm các kiểm thử này:
 
-- Active queue plus ordinary pending request: approval returns `RESERVATION_QUEUE_PRIORITY`, queue hold succeeds, final copy `RESERVED`, reservation `NOTIFIED`, request `PENDING`.
-- Held owner approval: final request `APPROVED`, copy `BORROWED`, reservation `FULFILLED`.
-- Two approvals for one held copy: exactly one `APPROVED`; the other remains `PENDING` with safe conflict outcome.
-- Cancellation/expiration versus approval: no deadlock; final state matches serialized order and any remaining `ACTIVE` queue still blocks ordinary approval.
+- Hàng đợi đang hoạt động cộng với yêu cầu đang chờ xử lý thông thường: phê duyệt trả về `RESERVATION_QUEUE_PRIORITY`, giữ hàng đợi thành công, bản sao cuối cùng `RESERVED`, đặt chỗ `NOTIFIED`, yêu cầu `PENDING`.
+- Được chủ sở hữu chấp thuận: yêu cầu cuối cùng `APPROVED`, sao chép `BORROWED`, đặt chỗ `FULFILLED`.
+- Hai phê duyệt cho một bản sao được giữ: chính xác một `APPROVED`; cái còn lại vẫn là `PENDING` với kết quả xung đột an toàn.
+- Hủy/hết hạn so với phê duyệt: không bế tắc; trạng thái cuối cùng khớp với thứ tự được xê-ri hóa và mọi hàng đợi `ACTIVE` còn lại vẫn chặn phê duyệt thông thường.
 
-Run only when the mutation-safe SQL environment is configured:
+Chỉ chạy khi môi trường SQL an toàn thao tác ghi được định cấu hình:
 
 ```powershell
 $env:FE07_SQL_TEST_ALLOW_MUTATION='true'
 npm.cmd --prefix backend test -- --runTestsByPath tests/sql/borrowingConcurrency.sqltest.js
 ```
 
-Expected: all targeted SQL tests pass; no timeout/deadlock.
+Dự kiến: tất cả các kiểm thử SQL được nhắm mục tiêu đều vượt qua; không có thời gian chờ/bế tắc.
 
-- [ ] **Step 5: Commit Task 4**
+- [ ] **Bước 5: Giao nhiệm vụ 4**
 
 ```powershell
 git add backend/src/repositories/reservationRepository.js backend/tests/reservationRoutes.test.js backend/tests/sql/borrowingConcurrency.sqltest.js
@@ -515,41 +536,42 @@ git commit -m "fix: serialize reservation and borrowing transitions"
 
 ---
 
-### Task 5: Publish Error And API Contracts
+### Nhiệm vụ 5: Xuất bản lỗi và hợp đồng API
 
-**Files:**
-- Modify: `frontend/test/apiErrorMessages.test.js`
-- Modify: `frontend/src/api/apiErrorMessages.js`
-- Modify: `backend/src/docs/openapi.yaml`
+**Tệp:**
+- Sửa đổi: `frontend/test/apiErrorMessages.test.js`
+- Sửa đổi: `frontend/src/api/apiErrorMessages.js`
+- Sửa đổi: `backend/src/docs/openapi.yaml`
 
-**Interfaces:**
-- Produces Vietnamese handling for `RESERVATION_QUEUE_PRIORITY` and `RESERVATION_STATE_CONFLICT`.
-- Preserves API endpoint/request/response shapes.
+**Giao diện:**
+- Sản xuất bộ xử lý tiếng Việt cho `RESERVATION_QUEUE_PRIORITY` và `RESERVATION_STATE_CONFLICT`.
+- Giữ nguyên hình dạng điểm cuối/yêu cầu/phản hồi API.
 
-- [ ] **Step 1: Add RED frontend message assertions**
+- [ ] **Bước 1: Thêm xác nhận tin nhắn giao diện người dùng RED**
 
-Add to `expectedMessages`:
+Thêm vào `expectedMessages`:
 
 ```js
 RESERVATION_QUEUE_PRIORITY: 'Bản sao này đang có hàng đợi đặt chỗ. Thủ thư cần xử lý hàng đợi trước khi duyệt mượn.',
 RESERVATION_STATE_CONFLICT: 'Trạng thái giữ chỗ vừa thay đổi. Vui lòng tải lại dữ liệu và thử lại.',
 ```
 
-Run:
+Chạy:
 
 ```powershell
 node --test frontend/test/apiErrorMessages.test.js
 ```
 
-Expected: FAIL because the new codes fall through to backend copy.
+Dự kiến: THẤT BẠI vì các mã mới được chuyển sang bản sao máy chủ.
 
-- [ ] **Step 2: Add the messages and OpenAPI notes**
+- [ ] **Bước 2: Thêm tin nhắn và ghi chú OpenAPI**
 
-Add the same entries to `BORROWING_ERROR_MESSAGES`. Document both `409` codes on borrow-request create/approve responses; do not add endpoints or fields.
+Thêm các mục tương tự vào `BORROWING_ERROR_MESSAGES`. Ghi lại cả hai mã `409` trên các phản hồi
+tạo/phê duyệt yêu cầu mượn; không thêm điểm cuối hoặc trường.
 
-- [ ] **Step 3: Verify and commit**
+- [ ] **Bước 3: Xác minh và cam kết**
 
-Run:
+Chạy:
 
 ```powershell
 node --test frontend/test/apiErrorMessages.test.js
@@ -557,7 +579,7 @@ npm.cmd --prefix backend test -- --runInBand borrowingContract.test.js
 git diff --check
 ```
 
-Commit:
+Cam kết:
 
 ```powershell
 git add frontend/src/api/apiErrorMessages.js frontend/test/apiErrorMessages.test.js backend/src/docs/openapi.yaml
@@ -566,24 +588,24 @@ git commit -m "docs: expose reservation priority conflicts"
 
 ---
 
-### Task 6: Full Validation And Human Review Gate
+### Nhiệm vụ 6: Cổng xác thực đầy đủ và đánh giá con người
 
-**Files:**
-- Create: `.sdd/reviews/fe07-fe08-borrowing-reservation-integration-validation-2026-07-15.md`
-- Modify only when evidence requires: files from Tasks 1-5.
+**Tệp:**
+- Tạo: `.sdd/reviews/fe07-fe08-borrowing-reservation-integration-validation-2026-07-15.md`
+- Chỉ sửa đổi khi yêu cầu bằng chứng: hồ sơ từ Nhiệm vụ 1-5.
 
-**Interfaces:**
-- Produces final automated evidence; does not merge or push.
+**Giao diện:**
+- Tạo ra bằng chứng tự động cuối cùng; không hợp nhất hoặc đẩy.
 
-- [ ] **Step 1: Run focused backend suites**
+- [ ] **Bước 1: Chạy bộ máy chủ tập trung**
 
 ```powershell
 npm.cmd --prefix backend test -- --runInBand borrowingRoutes.test.js borrowingRepository.test.js reservationRoutes.test.js reservationService.test.js systemIntegration.test.js
 ```
 
-Expected: all focused suites pass with 0 failures.
+Dự kiến: tất cả các bộ tập trung đều đạt với 0 lần thất bại.
 
-- [ ] **Step 2: Run full non-SQL suites**
+- [ ] **Bước 2: Chạy các bộ đầy đủ không phải SQL**
 
 ```powershell
 npm.cmd --prefix backend test -- --runInBand
@@ -592,11 +614,11 @@ npm.cmd --prefix frontend run lint
 npm.cmd --prefix frontend run build
 ```
 
-Expected: all commands exit `0`; the existing non-blocking Vite chunk warning may remain.
+Dự kiến: tất cả các lệnh thoát `0`; cảnh báo đoạn Vite không chặn hiện có có thể vẫn còn.
 
-- [ ] **Step 3: Run SQL and traceability gates**
+- [ ] **Bước 3: Chạy SQL và cổng truy vết**
 
-When the configured mutation-safe SQL environment is available:
+Khi có sẵn môi trường SQL an toàn thao tác ghi được định cấu hình:
 
 ```powershell
 $env:FE07_SQL_TEST_ALLOW_MUTATION='true'
@@ -604,9 +626,9 @@ npm.cmd --prefix backend run test:sql:fe07
 npm.cmd run trace:enforce
 ```
 
-Expected: no SQL failures, deadlocks, or missing traceability IDs.
+Dự kiến: không có lỗi SQL, bế tắc hoặc thiếu ID truy vết.
 
-- [ ] **Step 4: Verify scope and whitespace**
+- [ ] **Bước 4: Xác minh phạm vi và khoảng trắng**
 
 ```powershell
 git diff main...HEAD --check
@@ -614,60 +636,63 @@ git diff main...HEAD --name-only
 git diff main...HEAD -- database frontend/src/page frontend/src/component backend/src/routes
 ```
 
-Expected: no schema, page/component, or route changes; changed files remain inside approved specs, FE07/FE08 service/repositories/tests, OpenAPI, frontend error mapping, and review evidence.
+Dự kiến: không có thay đổi về lược đồ, trang/thành phần hoặc tuyến đường; các tệp đã thay đổi vẫn
+nằm trong đặc tả đã được phê duyệt, dịch vụ/kho lưu trữ/kiểm tra FE07/FE08, OpenAPI, ánh xạ lỗi giao
+diện người dùng và xem xét bằng chứng.
 
-- [ ] **Step 5: Write the validation record**
+- [ ] **Bước 5: Viết bản ghi xác nhận**
 
-Create the review file with:
+Tạo tệp đánh giá với:
 
 ```markdown
-# FE07-FE08 Borrowing-Reservation Integration Validation - 2026-07-15
+# Xác nhận tích hợp Mượn sách - Đặt chỗ FE07-FE08 - 2026-07-15
 
-Status: READY FOR HUMAN REVIEW
+Trạng thái: SẴN SÀNG ĐỂ CON NGƯỜI RÀ SOÁT
 
-## Automated Evidence
+## Bằng chứng tự động
 
-| Check | Result |
+| Kiểm tra | Kết quả |
 | --- | --- |
-| Focused backend tests | PASS |
-| Full backend tests | PASS |
-| Frontend tests/lint/build | PASS |
-| SQL concurrency | PASS or NOT RUN with exact environment reason |
-| Traceability | PASS |
-| Diff whitespace/scope | PASS |
+|Kiểm tra máy chủ tập trung|ĐẠT|
+|Kiểm tra máy chủ đầy đủ|ĐẠT|
+|Giao diện người dùng tests/lint/build|ĐẠT|
+|Đồng thời SQL|ĐẠT hoặc KHÔNG RUN với lý do chính xác về môi trường|
+|truy vết|ĐẠT|
+|Khoảng trắng/phạm vi khác biệt|ĐẠT|
 
-## Human Review Checklist
+## Danh sách rà soát của con người
 
-- Active queue blocks ordinary member borrow request.
-- Notified owner can request the held copy.
-- Staff approval changes reservation to fulfilled and copy to borrowed.
-- Cancellation/expiration releases holds without bypassing the remaining queue.
-- Errors reveal no other member identity.
+- Hàng đợi đang hoạt động chặn yêu cầu mượn thông thường của thành viên.
+- Chủ sở hữu được thông báo có thể yêu cầu bản sao được giữ.
+- Sự chấp thuận của nhân viên thay đổi việc đặt chỗ thành đã hoàn thành và sao chép thành đã mượn.
+- Việc hủy bỏ/hết hạn sẽ được giữ nguyên mà không bỏ qua hàng đợi còn lại.
+- Lỗi không tiết lộ danh tính thành viên nào khác.
 
-## Review Outcome
+## Kết quả rà soát
 
-Verdict: Automated evidence is complete; Nhat review is required before integration.
+Phán quyết: Bằng chứng tự động đã hoàn tất; Nhất phải xem xét trước khi hội nhập.
 ```
 
-- [ ] **Step 6: Commit validation evidence and stop**
+- [ ] **Bước 6: Cam kết bằng chứng xác thực và dừng**
 
 ```powershell
 git add .sdd/reviews/fe07-fe08-borrowing-reservation-integration-validation-2026-07-15.md
 git commit -m "docs: validate borrowing reservation integration"
 ```
 
-Provide the branch, commit list, evidence path, and review checklist. Do not merge or push until Nhat explicitly requests it.
+Cung cấp nhánh, danh sách cam kết, đường dẫn bằng chứng và danh sách kiểm tra đánh giá. Không hợp
+nhất hoặc đẩy cho đến khi Nhật yêu cầu rõ ràng.
 
 ---
 
-## Traceability Summary
+## Tóm tắt truy vết
 
-| Requirement | Tasks |
+| Yêu cầu | Nhiệm vụ |
 | --- | --- |
 | BR-FE07-023 / FR-FE07-024 / AC-FE07-016 | 1-3 |
 | BR-FE07-024 / FR-FE07-023 / AC-FE07-015 | 1-5 |
 | BR-FE07-025 / FR-FE07-025 / AC-FE07-017 | 1, 3-4 |
 | BR-FE08-015 / FR-FE08-025 / AC-FE08-011 | 1, 3-4 |
 | BR-FE08-016 / FR-FE08-026 / AC-FE08-012 | 1-5 |
-| Transaction lock order and rollback | 3-4, 6 |
-| Safe user-facing conflicts | 5-6 |
+| Lệnh khóa giao dịch và khôi phục | 3-4, 6 |
+| Xung đột an toàn đối với người dùng | 5-6 |

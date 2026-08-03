@@ -1,201 +1,190 @@
-# FE10 Notification Inbox Expansion Design
+# FE10 Thiết kế mở rộng hộp thư đến thông báo
 
-**Status:** COMPLETE - PR #75 MERGED, POST-MERGE CI/AZURE PASS
+**Trạng thái:** HOÀN THÀNH - PR #75 MERGED, POST-MERGE CI/AZURE đạt
 
-**Design approved:** 2026-07-27
+**Thiết kế đã được phê duyệt:** 2026-07-27
 
-**Written review approved:** 2026-07-27
+**Đánh giá bằng văn bản đã được phê duyệt:** 2026-07-27
 
-**Implementation plan/H1 approved:** 2026-07-28
+**Kế hoạch thực hiện/H1 được phê duyệt:** 28-07-2026
 
-**Approver:** User in the active task
+**Người phê duyệt:** Người dùng trong tác vụ đang hoạt động
 
-**Delivery method:** SDD first, Full depth for Core notification data, API,
-authorization, and migration; bounded ADD may later implement the approved UI
-shell.
+**Phương thức phân phối:** SDD đầu tiên, Chiều sâu đầy đủ cho dữ liệu thông báo cốt lõi, API, ủy
+quyền và di chuyển; giới hạn ADD sau này có thể triển khai giao diện người dùng đã được phê duyệt.
 
-**Implementation baseline:** governance PR #70 merged to `main` as
-`25c09ec5f90d21e4ab0228cccd838b3548d4d90d`. FE10-I01 through FE10-I08,
-the migration-hash remediation, and the bounded H3 round-one remediation are
-complete. After the documentation-only rebase to `main@30f936d`, H2 approved
-fingerprint `e123345be05b59a9e519d182b301ab5464160e8fc32aed8d17d3c463e28e0a15`.
-PR #75 head `778e0a470d8a1083bf571a8007b3c058eee4bb22` passed exact-head CI
-`30317424995` and Azure staging `30317621429`, received clean two-axis H3 and
-explicit approval, then merged as `b75776b10d6cf4b6868d2ba51eb3268073483b8b`.
-Exact post-merge CI `30341279111` and automatic Azure staging `30341540847`
-passed. Historical three-role API/browser evidence remains recorded for
-`28c4f80`.
+**Cơ sở triển khai:** quản trị PR #70 đã hợp nhất với `main` dưới dạng
+`25c09ec5f90d21e4ab0228cccd838b3548d4d90d`. FE10-I01 đến FE10-I08, quá trình khắc phục băm di chuyển
+và khắc phục vòng một H3 bị chặn đã hoàn tất. Sau khi rebase chỉ có tài liệu thành `main@30f936d`,
+dấu vân tay `e123345be05b59a9e519d182b301ab5464160e8fc32aed8d17d3c463e28e0a15` đã được H2 phê duyệt.
+Đầu PR #75 `778e0a470d8a1083bf571a8007b3c058eee4bb22` đã vượt qua đầu chính xác CI `30317424995` và
+Azure môi trường tiền sản xuất `30317621429`, nhận được H3 hai trục sạch và phê duyệt rõ ràng, sau
+đó hợp nhất thành `b75776b10d6cf4b6868d2ba51eb3268073483b8b`. CI `30341279111` sau hợp nhất chính
+xác và Môi trường tiền sản xuất Azure tự động đã vượt qua. Bằng chứng trình duyệt/API/ba vai trò
+lịch sử vẫn được ghi lại
+cho `28c4f80`.
 
-**H1 deployment addendum approved 2026-07-28:** preserve upstream CI-gated
-automatic staging deployment plus manual reruns. Both paths fail closed unless
-the exact checked-out FE10 migration SHA-256 matches
-`FE10_INBOX_MIGRATION_SHA256` in the GitHub `staging` Environment; manual runs
-also require `fe10_inbox_migration_confirmed=true`. Backend still precedes
-frontend and smoke, and the migration proof must exist before H3/merge.
+**Phụ lục triển khai H1 được phê duyệt ngày 28 tháng 07 năm 2026:** duy trì hoạt động triển khai
+theo giai đoạn tự động được kiểm soát bởi CI ngược dòng cùng với các lần chạy lại thủ công. Cả hai
+đường dẫn đều không đóng được trừ khi quá trình di chuyển FE10 được kiểm tra chính xác SHA-256 khớp
+với `FE10_INBOX_MIGRATION_SHA256` trong Môi trường GitHub `staging`; chạy thủ công cũng yêu cầu
+`fe10_inbox_migration_confirmed=true`. máy chủ vẫn đứng trước máy chủ và máy chủ, đồng thời bằng
+chứng di chuyển phải tồn tại trước H3/hợp nhất.
 
-**H1 Core-drift addendum approved 2026-07-28:** reconcile with
-`main@5a3c84b` while preserving the newly packaged
-`add_change_password_otp_token_type.sql` startup migration, its readiness
-guide/tests, and the canonical Vietnamese account-verification seed. Reapply
-the FE10 migration preflight/order without weakening either upstream contract,
-then run complete validation and obtain a new H2 fingerprint.
+**Phụ lục H1 lõi-drift được phê duyệt ngày 28-07-2026:** phù hợp với `main@5a3c84b` trong khi vẫn
+bảo toàn quá trình di chuyển khởi động `add_change_password_otp_token_type.sql` mới được đóng gói,
+hướng dẫn/kiểm tra mức độ sẵn sàng của nó và hạt giống xác minh tài khoản chuẩn tiếng Việt. Áp dụng
+lại lệnh/đặt hàng di chuyển FE10 mà không làm suy yếu hợp đồng ngược dòng, sau đó chạy xác thực hoàn
+chỉnh và lấy dấu vân tay H2 mới.
 
-**Second H1 Core-drift addendum approved 2026-07-28:** reconcile with
-`main@db97f17` while preserving its Vietnamese default reservation-cancellation
-reason, responsive return/reservation controls, and all other round-two
-FE07/FE08/FE10/FE12 corrections. Retain the FE10 inbox client and scoped
-notification styles, then run complete validation and obtain a new H2
-fingerprint.
+**Phụ lục lõi-drift H1 thứ hai được phê duyệt ngày 28-07-2026:** đối chiếu với `main@db97f17` trong
+khi vẫn giữ nguyên lý do hủy đặt chỗ mặc định ở Việt Nam, các điều khiển return/reservation đáp ứng
+và tất cả các chỉnh sửa FE07/FE08/FE10/FE12 vòng hai khác. Giữ lại ứng dụng khách hộp thư đến FE10
+và các kiểu thông báo trong phạm vi, sau đó chạy xác thực hoàn chỉnh và lấy dấu vân tay H2 mới.
 
-**Third H1 drift addendum approved 2026-07-28:** reconcile with
-`main@12faead`, whose incoming changes delete only retired `document/`
-artifacts. There is no FE10 file or Core-contract overlap. Rebase the
-remediation without changing its contract, rerun complete validation, obtain a
-new H2 fingerprint, and redeploy the new exact head to Azure before repeated
-H3 because current staging serves the newer `main`.
+**Phụ lục trôi dạt H1 thứ ba được phê duyệt ngày 28-07-2026:** đối chiếu với `main@12faead`, những
+thay đổi sắp tới chỉ xóa các tạo phẩm `document/` đã ngừng hoạt động. Không có tệp FE10 hoặc chồng
+chéo hợp đồng cốt lõi. Khởi động lại biện pháp khắc phục mà không thay đổi hợp đồng, chạy lại quá
+trình xác thực hoàn chỉnh, lấy dấu vân tay H2 mới và triển khai lại đầu chính xác mới cho Azure
+trước khi lặp lại H3 vì giai đoạn hiện tại phục vụ `main` mới hơn.
 
-**Fourth H1 drift addendum approved 2026-07-28:** reconcile with
-`main@a240705`, which removes the FE11 Admin user-edit API, UI, and tests. The
-FE11 contract is independent from FE10 and has no path overlap with the H3
-remediation; the committed merge-tree is clean. Preserve both contracts, rerun
-complete validation, obtain a new H2 fingerprint, and redeploy the exact FE10
-head because upstream CI `30311801599` and Azure run `30311973740` now serve
-that newer `main`.
+**Phụ lục trôi dạt H1 thứ tư được phê duyệt ngày 28 tháng 07 năm 2026:** đối chiếu với
+`main@a240705`, loại bỏ FE11 do quản trị viên API, giao diện người dùng và các kiểm thử chỉnh sửa.
+Hợp đồng FE11 độc lập với FE10 và không có đường dẫn chồng chéo với biện pháp khắc phục H3; cây hợp
+nhất đã cam kết sạch sẽ. Giữ nguyên cả hai hợp đồng, chạy lại xác thực hoàn chỉnh, lấy dấu vân tay
+H2 mới và triển khai lại đầu FE10 chính xác vì CI `30311801599` và Azure ngược dòng chạy
+`30311973740` hiện phục vụ `main` mới hơn đó.
 
-**Fifth H1 drift addendum approved 2026-07-28:** reconcile with
-`main@30f936d`, which translates SDD documentation to Vietnamese without FE10
-runtime, API, migration, UI, or test changes. Exact upstream CI `30315665010`
-and automatic Azure staging `30315842152` passed. Preserve the Vietnamese
-translation and implemented v0.5.0 contract, invalidate the earlier H2
-authority, and require a fresh fingerprint/H2 plus exact-head CI/Azure and
-repeated H3 before merge. Those gates later completed through PR #75 as
-recorded in the implementation baseline above.
+**Phụ lục drift H1 thứ năm được phê duyệt ngày 28-07-2026:** đối chiếu với `main@30f936d`, dịch tài
+liệu SDD sang tiếng Việt mà không có các thay đổi về thời gian chạy FE10, API, di chuyển, giao diện
+người dùng hoặc kiểm thử. CI `30315665010` ngược dòng chính xác và Môi trường tiền sản xuất Azure tự
+động đã vượt qua.
+Giữ nguyên bản dịch tiếng Việt và triển khai hợp đồng v0.5.0, vô hiệu hóa quyền H2 trước đó và yêu
+cầu dấu vân tay/H2 mới cùng với CI/Azure đầu chính xác và H3 lặp lại trước khi hợp nhất. Những cổng
+này sau đó đã hoàn thành thông qua PR #75 như được ghi trong mốc cơ sở thực hiện ở trên.
 
-## 1. Outcome And Scope
+## 1. Kết quả và phạm vi
 
-This revision adds a safe personal notification inbox to the existing FE10
-email-delivery feature. Every authenticated `MEMBER`, `LIBRARIAN`, and `ADMIN`
-account can view only its own non-sensitive notifications, see an unread badge,
-mark one or all notifications as read, and follow a server-approved link to the
-related business screen.
+Bản sửa đổi này bổ sung hộp thư thông báo cá nhân an toàn vào chức năng gửi email FE10 hiện có. Mọi
+tài khoản `MEMBER`, `LIBRARIAN` và `ADMIN` đã xác thực chỉ có thể xem các thông báo không nhạy cảm
+của riêng mình, xem huy hiệu chưa đọc, đánh dấu một hoặc tất cả thông báo là đã đọc và đi theo liên
+kết được máy chủ phê duyệt đến màn hình doanh nghiệp liên quan.
 
-The inbox is a second presentation surface for the existing non-sensitive
-notification record. It does not create a second notification, introduce an
-`IN_APP` delivery channel, or change the email lifecycle. One accepted source
-event still owns one notification record and one idempotency key.
+Hộp thư đến là bề mặt trình bày thứ hai cho bản ghi thông báo không nhạy cảm hiện có. Nó không tạo
+thông báo thứ hai, giới thiệu kênh gửi `IN_APP` hoặc thay đổi vòng đời email. Một sự kiện nguồn được
+chấp nhận vẫn sở hữu một bản ghi thông báo và một khóa tạm thời.
 
-Included:
+Bao gồm:
 
-- an authenticated header bell with unread count and five-item preview;
-- a paginated `/notifications` page with all/unread/read filters;
-- personal list, unread-count, mark-one-read, and mark-all-read APIs;
-- nullable read state on the current `Notifications` record;
-- allowlisted action paths derived by the backend;
-- migration/backfill that treats historical rows as already read;
-- automated, SQL integration, and browser acceptance coverage.
+- chuông tiêu đề đã được xác thực với số lượng chưa đọc và bản xem trước năm mục;
+- một trang `/notifications` được phân trang với các bộ lọc tất cả/chưa đọc/đã đọc;
+- danh sách cá nhân, API chưa đọc, đánh dấu một lần đọc và đánh dấu tất cả đã đọc;
+- trạng thái đọc không thể đọc được trên bản ghi `Notifications` hiện tại;
+- đường dẫn hành động được đưa vào danh sách cho phép do chương trình máy chủ tạo ra;
+- di chuyển/chèn lấp xử lý các hàng lịch sử như đã đọc;
+- tự động, tích hợp SQL và phạm vi chấp nhận của trình duyệt.
 
-Out of scope:
+Ngoài phạm vi:
 
-- user deletion, archive, or retention cleanup;
-- global Admin/Librarian notification-log screens;
-- manual retry or template-management UI;
-- WebSocket, Server-Sent Events, mobile push, SMS, or marketing messages;
-- caller-supplied action URLs or a new delivery channel;
-- exposing sensitive authentication/setup notifications in the inbox.
+- xóa người dùng, lưu trữ hoặc dọn dẹp lưu giữ;
+- màn hình nhật ký thông báo Quản trị viên/Thủ thư toàn cầu;
+- thử lại thủ công hoặc giao diện người dùng quản lý mẫu;
+- WebSocket, Sự kiện do máy chủ gửi, thông báo đẩy trên thiết bị di động, SMS hoặc thông điệp tiếp thị;
+- URL hành động do người gọi cung cấp hoặc kênh phân phối mới;
+- hiển thị thông báo xác thực/thiết lập nhạy cảm trong hộp thư đến.
 
-## 2. Approved Decisions
+## 2. Quyết định được phê duyệt
 
-| ID | Question | Approved decision | Rationale |
+| ID | Câu hỏi | Quyết định phê duyệt | Cơ sở lý luận |
 | --- | --- | --- | --- |
-| BD-001 | Who receives an inbox? | Every authenticated `MEMBER`, `LIBRARIAN`, and `ADMIN`; each sees only records whose `UserId` is its own. | One consistent personal boundary avoids role-specific leaks and keeps the UI reusable. |
-| BD-002 | Which records appear? | Every non-sensitive business notification appears in both email processing and the web inbox. | Reuses the current source event and avoids divergent channel decisions. |
-| BD-003 | What happens on click? | Mark the record read, then navigate to a backend-derived allowlisted business route. | Gives an actionable inbox without accepting open-redirect input. |
-| BD-004 | How is history retained? | Keep all rows, paginate them, and expose no delete/archive operation. | Preserves traceability and avoids a second lifecycle in this bounded revision. |
-| BD-005 | Where is read state stored? | Add nullable `ReadAt` to `Notifications`; do not create a projection table. | Each notification has one recipient, so a separate inbox table adds unnecessary dual-write risk. |
-| BD-006 | How are old rows handled? | Backfill eligible existing rows with `ReadAt = CreatedAt`. | Deployment must not turn the complete historical queue into unread alerts. |
-| BD-007 | Is real-time transport required? | No. Load at authenticated shell start, refresh on focus and mutations, and poll every 60 seconds. | Meets the user outcome without introducing another runtime service. |
+| BD-001 | Ai nhận được hộp thư đến? | Mọi `MEMBER`, `LIBRARIAN` và `ADMIN` đã được xác thực; mỗi cái chỉ nhìn thấy các bản ghi có `UserId` của riêng nó. | Một ranh giới cá nhân nhất quán sẽ tránh rò rỉ theo vai trò cụ thể và giữ cho giao diện người dùng có thể sử dụng lại được. |
+| BD-002 | Những bản ghi nào xuất hiện? | Mọi thông báo kinh doanh không nhạy cảm đều xuất hiện trong cả quá trình xử lý email và hộp thư đến trên web. | Tái sử dụng sự kiện nguồn hiện tại và tránh các quyết định kênh khác nhau. |
+| BD-003 | Điều gì xảy ra khi nhấp chuột? | Đánh dấu bản ghi đã đọc, sau đó chuyển đến lộ trình kinh doanh trong danh sách cho phép bắt nguồn từ phần máy chủ. | Cung cấp hộp thư đến có thể thao tác mà không chấp nhận đầu vào chuyển hướng mở. |
+| BD-004 | Lịch sử được giữ lại như thế nào? | Giữ tất cả các hàng, phân trang chúng và không hiển thị thao tác xóa/lưu trữ. | Duy trì khả năng truy vết và tránh vòng đời thứ hai trong bản sửa đổi có giới hạn này. |
+| BD-005 | Trạng thái đọc được lưu trữ ở đâu? | Thêm `ReadAt` có thể vô hiệu vào `Notifications`; không tạo bảng chiếu. | Mỗi thông báo có một người nhận, do đó, bảng hộp thư đến riêng sẽ tăng thêm rủi ro ghi kép không cần thiết. |
+| BD-006 | Các hàng cũ được xử lý như thế nào? | Chèn lấp các hàng hiện có đủ điều kiện bằng `ReadAt = CreatedAt`. | Việc triển khai không được biến hàng đợi lịch sử hoàn chỉnh thành cảnh báo chưa đọc. |
+| BD-007 | Có cần vận chuyển theo thời gian thực không? | Không. Tải khi khởi động lớp bao đã xác thực, làm mới tiêu điểm và thao tác ghi, đồng thời thăm dò ý kiến ​​sau mỗi 60 giây. | Đáp ứng kết quả của người dùng mà không cần giới thiệu một dịch vụ thời gian chạy khác. |
 
-## 3. Actor And Ownership Contract
+## 3. Hợp đồng sở hữu và tác nhân
 
-| Actor | May do | Must not do | Failure behavior |
+| Diễn viên | Có thể làm | Không được làm | Hành vi thất bại |
 | --- | --- | --- | --- |
-| Authenticated account | List, count, and mark read its own non-sensitive notifications. | Read another user's row, query sensitive types, change email status, delete history, or supply an action URL. | Unowned, sensitive, or missing IDs return the same safe `404`. |
-| Guest | None of the inbox operations. | Read a personal inbox before authentication. | Safe `401`. |
-| Source feature | Continue creating one canonical FE10 request. | Decide inbox read state or provide a navigation URL. | Existing source failure-isolation contract remains unchanged. |
-| FE10 | Own delivery status, read state, safe DTO projection, and action mapping. | Expose sensitive content or decide FE04/FE07/FE08/FE09 outcomes. | Safe validation/internal errors with no secret-bearing fields. |
-| Email worker/provider | Continue the current delivery lifecycle. | Change `ReadAt`. | Delivery failure remains independent of web visibility and source state. |
+| Tài khoản được xác thực | Liệt kê, đếm và đánh dấu các thông báo không nhạy cảm đã đọc của chính nó. | Đọc hàng của người dùng khác, truy vấn các loại nhạy cảm, thay đổi trạng thái email, xóa lịch sử hoặc cung cấp hành động URL. | ID không xác định, nhạy cảm hoặc bị thiếu sẽ trả về cùng một `404` an toàn. |
+| Khách | Không có thao tác nào trong hộp thư đến. | Đọc hộp thư đến cá nhân trước khi xác thực. | `401` an toàn. |
+| chức năng nguồn | Tiếp tục tạo một yêu cầu FE10 chuẩn. | Quyết định trạng thái đọc hộp thư đến hoặc cung cấp điều hướng URL. | Hợp đồng cách ly lỗi nguồn hiện tại vẫn không thay đổi. |
+| FE10 | Trạng thái phân phối riêng, trạng thái đọc, trình chiếu DTO an toàn và ánh xạ hành động. | Tiết lộ nội dung nhạy cảm hoặc quyết định kết quả FE04/FE07/FE08/FE09. | Xác thực an toàn/lỗi nội bộ không có trường chứa bí mật. |
+| Nhân viên/nhà cung cấp email | Tiếp tục vòng đời phân phối hiện tại. | Thay đổi `ReadAt`. | Lỗi phân phối vẫn độc lập với khả năng hiển thị web và trạng thái nguồn. |
 
-## 4. Orthogonal State Model
+## 4. Mô hình trạng thái trực giao
 
-Email delivery state and inbox read state are independent:
+Trạng thái gửi email và trạng thái đọc hộp thư đến là độc lập:
 
-- delivery: `PENDING -> PROCESSING -> SENT` or
+- bàn giao: `PENDING -> PROCESSING -> SENT` hoặc
   `PENDING -> PROCESSING -> FAILED`;
-- inbox: `UNREAD (ReadAt = NULL) -> READ (ReadAt = server timestamp)`.
+- hộp thư đến: `UNREAD (ReadAt = NULL) -> READ (ReadAt = server timestamp)`.
 
-Only non-sensitive records with a persisted non-null `UserId` are
-inbox-eligible. Email-only records addressed without a user identity have no
-personal owner and therefore remain outside the web inbox. A read mutation never changes
-`Status`, `SentAt`, `AttemptCount`, `NotificationAttempts`, source state, or
-idempotency data. Repeating a read mutation returns the same final record and
-does not create an audit/delivery attempt.
+Chỉ những bản ghi không nhạy cảm có `UserId` không có giá trị tồn tại mới đủ điều kiện trong hộp thư
+đến. Các bản ghi chỉ gửi qua email được xử lý mà không có danh tính người dùng thì không có chủ sở
+hữu cá nhân và do đó vẫn nằm ngoài hộp thư đến trên web. thao tác ghi đọc không bao giờ thay đổi
+`Status`, `SentAt`, `AttemptCount`, `NotificationAttempts`, trạng thái nguồn hoặc dữ liệu tạm thời.
+Việc lặp lại thao tác ghi đọc sẽ trả về cùng một bản ghi cuối cùng và không tạo ra nỗ lực kiểm tra/phân
+phối.
 
-## 5. Data Design And Migration
+## 5. Thiết kế và di chuyển dữ liệu
 
-Add `Notifications.ReadAt DATETIME2 NULL`. New non-sensitive records start with
-`ReadAt = NULL`. Sensitive records remain excluded regardless of `ReadAt`.
+Thêm `Notifications.ReadAt DATETIME2 NULL`. Các bản ghi không nhạy cảm mới bắt đầu bằng `ReadAt =
+NULL`. Các hồ sơ nhạy cảm vẫn bị loại trừ bất kể `ReadAt`.
 
-The idempotent migration shall:
+Việc di cư bình thường sẽ:
 
-1. add `ReadAt` only when it does not exist;
-2. set `ReadAt = CreatedAt` for rows that existed before the migration and are
-   inbox-eligible;
-3. leave sensitive rows excluded instead of converting them into inbox items;
-4. add an index supporting `(UserId, ReadAt, CreatedAt DESC)` queries;
-5. run twice with the same schema and data result;
-6. use the required SQL Server session options for filtered/indexed objects.
+1. chỉ thêm `ReadAt` khi nó không tồn tại;
+2. đặt `ReadAt = CreatedAt` cho các hàng tồn tại trước khi di chuyển và
+   đủ điều kiện trong hộp thư đến;
+3. loại trừ các hàng nhạy cảm thay vì chuyển đổi chúng thành các mục trong hộp thư đến;
+4. thêm chỉ mục hỗ trợ truy vấn `(UserId, ReadAt, CreatedAt DESC)`;
+5. chạy hai lần với cùng một lược đồ và kết quả dữ liệu;
+6. sử dụng các tùy chọn phiên SQL Server cần thiết cho các đối tượng được lọc/lập chỉ mục.
 
-Inbox eligibility requires a non-null `UserId` and exactly one of these types:
+Tính đủ điều kiện của hộp thư đến yêu cầu `UserId` không rỗng và chính xác một trong các loại sau:
 
-- `GENERAL_SYSTEM` with canonical `MEMBERSHIP_RESULT`;
-- `RESERVATION_AVAILABLE` with canonical `RESERVATION_READY`;
+- `GENERAL_SYSTEM` với `MEMBERSHIP_RESULT` chuẩn;
+- `RESERVATION_AVAILABLE` với `RESERVATION_READY` chuẩn;
 - `DUE_DATE_REMINDER`;
 - `OVERDUE_NOTICE`;
 - `FINE_NOTICE`.
 
-`ACCOUNT_VERIFICATION`, `PASSWORD_RESET`, and `ACCOUNT_SETUP` never enter list,
-count, or read queries.
+`ACCOUNT_VERIFICATION`, `PASSWORD_RESET` và `ACCOUNT_SETUP` không bao giờ nhập truy vấn danh sách,
+đếm hoặc đọc.
 
-## 6. Safe Action Mapping
+## 6. Lập bản đồ hành động an toàn
 
-The backend returns an `actionPath` derived from the persisted canonical type
-and source metadata:
+Phần máy chủ trả về `actionPath` có nguồn gốc từ siêu dữ liệu nguồn và loại chính tắc vẫn tồn tại:
 
-| Canonical notification | Action path |
+| Thông báo chuẩn | Con đường hành động |
 | --- | --- |
-| Membership result | `/membership` |
-| Reservation ready | `/reservations/mine` |
-| Due-date reminder or overdue notice | `/borrowing/history` |
-| Fine notice | `/fines/mine` |
+| Kết quả thành viên | `/membership` |
+| Đặt phòng đã sẵn sàng | `/reservations/mine` |
+| Nhắc nhở ngày đến hạn hoặc thông báo quá hạn | `/borrowing/history` |
+| Thông báo phạt | `/fines/mine` |
 
-Unknown or incompatible mappings return `actionPath: null`. No request,
-template, payload, database row, or frontend query parameter can override this
-allowlist. Only relative application paths are returned.
+Ánh xạ không xác định hoặc không tương thích trả về `actionPath: null`. Không có yêu cầu, mẫu, tải
+trọng, hàng cơ sở dữ liệu hoặc tham số truy vấn giao diện người dùng nào có thể ghi đè danh sách cho
+phép này. Chỉ các đường dẫn ứng dụng tương đối mới được trả về.
 
-## 7. API Contract
+## 7. Hợp đồng API
 
-### 7.1 List Personal Notifications
+### 7.1 Liệt kê thông báo cá nhân
 
 `GET /api/notifications/mine?page=1&limit=20&readState=all&type=...`
 
-- authenticated `MEMBER`, `LIBRARIAN`, or `ADMIN`;
-- default `page=1`, `limit=20`, maximum `limit=100`;
-- `readState` is `all`, `unread`, or `read`;
-- optional `type` must be inbox-eligible;
-- newest `CreatedAt` first, then `NotificationId` descending;
-- filtering and pagination occur in SQL.
+- `MEMBER`, `LIBRARIAN` hoặc `ADMIN` được xác thực;
+- mặc định `page=1`, `limit=20`, `limit=100` tối đa;
+- `readState` là `all`, `unread` hoặc `read`;
+- `type` tùy chọn phải đủ điều kiện cho hộp thư đến;
+- `CreatedAt` mới nhất trước, sau đó là `NotificationId` giảm dần;
+- lọc và phân trang xảy ra trong SQL.
 
-Response:
+Phản hồi:
 
 ```json
 {
@@ -219,110 +208,105 @@ Response:
 }
 ```
 
-The DTO never returns recipient email, safe payload, idempotency key, template
-data, source metadata, provider identifiers/errors, attempts, or sensitive
-content.
+DTO không bao giờ trả sách email người nhận, tải trọng an toàn, khóa bình thường, dữ liệu mẫu, siêu
+dữ liệu nguồn, số nhận dạng/lỗi của nhà cung cấp, nỗ lực hoặc nội dung nhạy cảm.
 
-### 7.2 Unread Count
+### 7.2 Số lượng chưa đọc
 
 `GET /api/notifications/mine/unread-count`
 
-Returns `200 { "unreadCount": <non-negative integer> }` for the current user
-and inbox-eligible rows only.
+Trả về `200 { "unreadCount": <non-negative integer> }` chỉ cho người dùng hiện tại và các hàng đủ
+điều kiện trong hộp thư đến.
 
-### 7.3 Mark One Read
+### 7.3 Đánh dấu một lần đọc
 
 `PATCH /api/notifications/{notificationId}/read`
 
-The guarded update requires the current `UserId`, an inbox-eligible type, and
-`ReadAt IS NULL`. It returns the safe item summary. Missing, sensitive, and
-other-user rows return the same safe `404`. Repeating the request is idempotent.
+Bản cập nhật được bảo vệ yêu cầu `UserId` hiện tại, loại đủ điều kiện cho hộp thư đến và `ReadAt IS
+NULL`. Nó trả về bản tóm tắt mục an toàn. Các hàng bị thiếu, nhạy cảm và của người dùng khác trả về
+cùng một `404` an toàn. Việc lặp lại yêu cầu là bình thường.
 
-### 7.4 Mark All Read
+### 7.4 Đánh dấu tất cả đã đọc
 
 `PATCH /api/notifications/mine/read-all`
 
-The update affects only the current user's unread, inbox-eligible rows and uses
-one server timestamp. It returns `200 { "updated": <count> }`; repeating it
-returns `updated: 0`.
+Bản cập nhật chỉ ảnh hưởng đến các hàng chưa đọc, đủ điều kiện trong hộp thư đến của người dùng hiện
+tại và sử dụng một dấu thời gian của máy chủ. Nó trả về `200 { "updated": <count> }`; lặp lại nó sẽ
+trả về `updated: 0`.
 
-## 8. Frontend Design
+## 8. Thiết kế giao diện người dùng
 
-The authenticated app shell displays a bell for every login role:
+lớp bao ứng dụng đã được xác thực sẽ hiển thị chuông cho mỗi vai trò đăng nhập:
 
-- badge value is the unread count, displayed as `99+` above 99;
-- opening the bell loads the five newest unread items;
-- loading, empty, and safe-error states are explicit;
-- `Xem tất cả` routes to `/notifications`.
+- giá trị huy hiệu là số lượng chưa đọc, được hiển thị là `99+` trên 99;
+- mở chuông sẽ tải năm mục chưa đọc mới nhất;
+- trạng thái tải, trống và lỗi an toàn là rõ ràng;
+- `Xem tất cả` định tuyến đến `/notifications`.
 
-The `/notifications` page provides `Tất cả`, `Chưa đọc`, and `Đã đọc` filters,
-20-row pagination, newest-first ordering, a read/unread visual state, and
-`Đánh dấu tất cả đã đọc`. It exposes no delete/archive control.
+Trang `/notifications` cung cấp các bộ lọc `Tất cả`, `Chưa đọc` và `Đã đọc`, phân trang 20 hàng, thứ
+tự mới nhất đầu tiên, trạng thái hình ảnh đọc/chưa đọc và `Đánh dấu tất cả đã đọc`. Nó không cho
+thấy sự kiểm soát xóa/lưu trữ.
 
-Clicking an item attempts the read mutation and then navigates to the returned
-`actionPath`. A read-update failure must not block access to the business
-screen; the item remains unread and the shared shell shows a safe non-blocking
-warning.
+Nhấp vào một mục sẽ thử thao tác ghi đọc và sau đó điều hướng đến `actionPath` được trả về. Lỗi đọc cập
+nhật không được chặn quyền truy cập vào màn hình doanh nghiệp; mục này vẫn chưa được đọc và lớp bao
+được chia sẻ hiển thị cảnh báo không chặn an toàn.
 
-The shell refreshes unread count after authentication, on window focus, after
-read mutations, and every 60 seconds while mounted. This revision adds no
-WebSocket or service worker.
+lớp bao làm mới số lượng chưa đọc sau khi xác thực, trên tiêu điểm cửa sổ, sau khi thao tác ghi đọc và cứ
+sau 60 giây khi được gắn kết. Bản sửa đổi này không thêm WebSocket hoặc nhân viên dịch vụ.
 
-## 9. Error And Security Contract
+## 9. Hợp đồng lỗi và bảo mật
 
-| Condition | Result |
+| Tình trạng | Kết quả |
 | --- | --- |
-| Missing/invalid authentication | `401` |
-| Invalid page, limit, read state, or type | `400` |
-| Missing, sensitive, or other-user notification ID | indistinguishable `404` |
-| Repository/provider/internal failure | safe `500`, no stack/provider detail |
+| Xác thực thiếu/không hợp lệ | `401` |
+| Trang, giới hạn, trạng thái đọc hoặc loại không hợp lệ | `400` |
+| ID thông báo bị thiếu, nhạy cảm hoặc của người dùng khác | không thể phân biệt được `404` |
+| Kho lưu trữ/nhà cung cấp/lỗi nội bộ | `500` an toàn, không có thông tin chi tiết về bộ công nghệ/nhà cung cấp |
 
-All authorization is server-side. Repository queries include `UserId` and the
-inbox-eligible allowlist before materialization. The frontend role guard is
-only a usability aid and is not an authorization boundary.
+Tất cả ủy quyền là phía máy chủ. Các truy vấn kho lưu trữ bao gồm `UserId` và danh sách cho phép đủ
+điều kiện trong hộp thư đến trước khi hiện thực hóa. Vai trò bảo vệ giao diện người dùng chỉ là một
+công cụ hỗ trợ khả năng sử dụng và không phải là ranh giới ủy quyền.
 
-## 10. Acceptance And Verification
+## 10. Chấp nhận và xác minh
 
-Required evidence:
+Bằng chứng cần thiết:
 
-1. route/service/repository tests for authentication, ownership, IDOR, safe
-   projection, filters, pagination, count, and both idempotent read mutations;
-2. tests proving all three sensitive types are absent from list/count/read;
-3. FE04/FE07/FE08 integration cases proving one source event creates one email
-   record that is also visible in the recipient inbox;
-4. frontend tests for badge cap, preview, list states, filters, pagination,
-   mark-all, click navigation, and non-blocking read failure;
-5. disposable SQL Server migration executed twice, with legacy backfill and
-   index/postcondition evidence;
-6. browser E2E for `MEMBER`, `LIBRARIAN`, and `ADMIN`, plus cross-user negative
-   API evidence;
-7. full backend/frontend/deployment/traceability gates;
-8. backend-first then frontend deployment, readiness, smoke, and browser
-   verification on Azure staging.
+1. kiểm tra tuyến đường/dịch vụ/kho lưu trữ để xác thực, quyền sở hữu, IDOR, an toàn
+   phép chiếu, bộ lọc, phân trang, đếm và cả các thao tác ghi đọc bình thường;
+2. kiểm tra chứng minh cả ba loại nhạy cảm đều vắng mặt trong danh sách/đếm/đọc;
+3. Các trường hợp tích hợp FE04/FE07/FE08 chứng minh một sự kiện nguồn tạo ra một email
+   bản ghi cũng hiển thị trong hộp thư đến của người nhận;
+4. kiểm tra giao diện người dùng cho giới hạn huy hiệu, xem trước, trạng thái danh sách, bộ lọc, phân trang,
+   lỗi đánh dấu tất cả, điều hướng nhấp chuột và lỗi đọc không chặn;
+5. quá trình di chuyển SQL Server dùng một lần được thực hiện hai lần, với chức năng chèn lấp cũ và
+   bằng chứng chỉ số/hậu điều kiện;
+6. trình duyệt E2E dành cho `MEMBER`, `LIBRARIAN` và `ADMIN`, cộng với phủ định người dùng chéo
+   Bằng chứng API;
+7. đầy đủ cổng backend/frontend/deployment/traceability;
+8. máy chủ đầu tiên sau đó triển khai giao diện người dùng, tính sẵn sàng, kiểm thử nhanh và trình duyệt
+   xác minh trên Môi trường tiền sản xuất Azure.
 
-## 11. Rollout And Reversibility
+## 11. Triển khai và đảo ngược
 
-Deploy the additive migration and backend API before the frontend shell. The
-old frontend remains compatible because existing FE10 routes and DTOs do not
-change. The new frontend must treat an unavailable inbox endpoint as a safe
-error state, not as anonymous access or an empty successful inbox.
+Triển khai quá trình di chuyển phụ gia và phần máy chủ API trước lớp bao giao diện người dùng. Giao
+diện người dùng cũ vẫn tương thích vì các tuyến và DTO FE10 hiện tại không thay đổi. Giao diện người
+dùng mới phải coi điểm cuối hộp thư đến không khả dụng là trạng thái lỗi an toàn chứ không phải là
+quyền truy cập ẩn danh hoặc hộp thư đến thành công trống.
 
-Rollback may remove the frontend entry points and stop using the new API while
-leaving nullable `ReadAt` in place. Destructive column removal is not required
-for application rollback.
+Khôi phục có thể xóa các điểm nhập giao diện người dùng và ngừng sử dụng API mới trong khi vẫn giữ
+nguyên `ReadAt` có thể rỗng. Việc loại bỏ cột phá hủy là không cần thiết để khôi phục ứng dụng.
 
-## 12. Required Documentation Fan-Out
+## 12. Phân phát tài liệu bắt buộc
 
-Before implementation planning, update and human-review:
+Trước khi lập kế hoạch triển khai, cập nhật và đánh giá con người:
 
 - `.sdd/specs/feat-notification-management/SPEC.md`;
 - `.sdd/specs/feat-notification-management/CONTEXT.md`;
 - `.sdd/specs/feat-notification-management/CHANGELOG.md`;
-- FE10 `PLAN.md` and `TASKS.md` only after written SPEC approval;
-- current agent/test-planning memory in `.agents/CLAUDE.md` and
+- FE10 `PLAN.md` và `TASKS.md` chỉ sau khi có sự chấp thuận bằng văn bản của SPEC;
+- bộ nhớ lập kế hoạch kiểm tra/tác nhân hiện tại trong `.agents/CLAUDE.md` và
   `docs/testing/master-test-plan.md`;
-- schema, migration, OpenAPI/API contract, architecture map, user manual, and
-  traceability artifacts during implementation.
+- lược đồ, di chuyển, hợp đồng OpenAPI/API, bản đồ kiến trúc, hướng dẫn sử dụng và
+  tạo tác truy vết trong quá trình thực hiện.
 
-No product-code, schema, or public-API implementation is authorized by this
-design document alone.
+Không có mã sản phẩm, lược đồ hoặc triển khai API công khai nào được cho phép chỉ bằng tài liệu thiết kế này.

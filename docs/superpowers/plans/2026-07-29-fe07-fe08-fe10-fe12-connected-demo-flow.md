@@ -1,200 +1,199 @@
-# FE07/FE08/FE10/FE12 Connected Demo Flow Implementation Plan
+# Kế hoạch triển khai luồng trình diễn liên hoàn FE07/FE08/FE10/FE12
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use `executing-plans` to implement
-> this plan task-by-task. Do not dispatch subagents unless the user explicitly
-> requests delegation. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Đối với tác nhân thực thi:** BẮT BUỘC DÙNG KỸ NĂNG PHỤ: Sử dụng `executing-plans` để triển khai
+> kế hoạch này theo từng nhiệm vụ. Không gửi đại lý phụ trừ khi người dùng rõ ràng
+> yêu cầu ủy quyền. Các bước sử dụng cú pháp hộp kiểm (`- [ ]`) để theo dõi.
 
-**Goal:** Xây dựng một luồng demo web desktop liên hoàn từ yêu cầu mượn, đặt chỗ,
+**Mục tiêu:** Xây dựng một luồng trình diễn web trên máy tính liên hoàn từ yêu cầu mượn, đặt chỗ,
 thông báo đến tổng quan vận hành mà không thay đổi giới hạn nghiệp vụ hiện hành,
 không thêm bảng dữ liệu và không tự động xử lý hàng đợi.
 
-**Architecture:** FE07 và FE08 tiếp tục sở hữu transaction nguồn; FE10 nhận các
-yêu cầu thông báo lũy đẳng sau commit và ánh xạ action path ở backend; FE12 đọc
-một snapshot tổng hợp trực tiếp từ SQL Server. Frontend chỉ trình bày trạng thái
-chuẩn, hiển thị handoff thủ công và không tự tính KPI từ danh sách phân trang.
+**Kiến trúc:** FE07 và FE08 tiếp tục sở hữu giao dịch nguồn; FE10 nhận các
+yêu cầu thông báo lũy đẳng sau khi giao dịch được ghi nhận và ánh xạ đường dẫn hành động ở máy chủ; FE12 đọc
+một ảnh chụp trạng thái tổng hợp trực tiếp từ SQL Server. Giao diện chỉ trình bày trạng thái
+chuẩn, hiển thị bàn giao thủ công và không tự tính KPI từ danh sách phân trang.
 
-**Tech Stack:** Node.js 22, Express 5, SQL Server/Azure SQL, Jest 30, React 19,
-React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromium.
+**Bộ công nghệ:** Node.js 22, Express 5, SQL Server/Azure SQL, Jest 30, React 19,
+React Router 7, Bootstrap/CSS hiện hữu, trình chạy kiểm thử Node.js và Playwright Chromium.
 
-## Global Constraints
+## Ràng buộc toàn cầu
 
-- Batch ID: `BATCH-FE07-FE12-CONNECTED-DEMO-2026-07-29`.
-- Desktop acceptance viewport: `1440x900`.
-- Business timezone: `Asia/Ho_Chi_Minh`.
-- Borrow limit: tối đa `5` bản sao đang mượn.
-- Daily borrow limit: `5` với FE04 `APPROVED`, `3` với tài khoản `MEMBER` hoạt
+- ID lô: `BATCH-FE07-FE12-CONNECTED-DEMO-2026-07-29`.
+- Khung nhìn chấp nhận máy tính để bàn: `1440x900`.
+- Múi giờ kinh doanh: `Asia/Ho_Chi_Minh`.
+- Giới hạn mượn: tối đa `5` bản sao đang mượn.
+- Giới hạn mượn hằng ngày: `5` với FE04 `APPROVED`, `3` với tài khoản `MEMBER` hoạt
   động khác.
-- Loan duration: `14` ngày theo lịch; renewal limit: `1`.
-- Open reservation limit: `3`; pickup hold: `2` ngày; queue order: FIFO.
+- Thời hạn mượn: `14` ngày theo lịch; giới hạn gia hạn: `1`.
+- Giới hạn đặt chỗ mở: `3`; thời gian giữ để nhận sách: `2` ngày; thứ tự hàng đợi: FIFO.
 - Mỗi tài khoản lưu trữ có đúng một vai trò.
-- Không thêm bảng, kênh thông báo, scheduler, WebSocket, SSE, push hoặc SMS.
-- Không tự động xử lý FE08 khi FE07 trả sách; Librarian phải xác nhận.
-- FE10 failure không rollback transaction FE07/FE08.
+- Không thêm bảng, kênh thông báo, bộ lập lịch, WebSocket, SSE, thông báo đẩy hoặc SMS.
+- Không tự động xử lý FE08 khi FE07 trả sách; thủ thư phải xác nhận.
+- FE10 không đạt không hoàn tác giao dịch FE07/FE08.
 - FE12 chỉ đọc và không hiển thị KPI thiếu/lỗi thành số `0`.
 - FE12 chỉ tính bản sao khả dụng hiệu lực khi `Books.Status = 'ACTIVE'` và
   `BookCopies.Status = 'AVAILABLE'`; sách không hoạt động không được tính vào
   `availableCopies` hoặc `lowStockBooks`.
-- Không nhận action URL từ caller; backend chỉ trả fixed relative allowlist.
-- Không đưa lý do từ chối, email, token, OTP, stack hoặc provider detail vào
-  notification payload/inbox.
-- Product code của batch phải để uncommitted đến khi H2 duyệt toàn bộ diff cùng
-  L1-L4 evidence. Chỉ governance activation diff được commit sau H1.
-- Không stage hoặc sửa các thay đổi cục bộ có trước batch nếu chúng không nằm
-  trong danh sách file của task hiện tại.
+- Không nhận hành động URL từ caller; máy chủ chỉ trả fixed relative danh sách cho phép.
+- Không đưa lý do từ chối, email, token, OTP, bộ công nghệ hoặc nhà cung cấp detail vào
+  tải trọng thông báo/hộp thư đến.
+- Product mã nguồn của lô phải để uncommitted đến khi H2 duyệt toàn bộ khác biệt cùng
+  L1-L4 bằng chứng. Chỉ quản trị activation khác biệt được bản ghi Git sau H1.
+- Không stage hoặc sửa các thay đổi cục bộ có trước lô nếu chúng không nằm
+  trong danh sách tệp của Nhiệm vụ hiện tại.
 
 ---
 
-## File Structure
+## Cấu trúc tệp
 
-### Governance
+### Quản trị
 
-- Modify: `.sdd/specs/feat-borrowing-management/{SPEC,CONTEXT,PLAN,TASKS,TEST_PLAN,CHANGELOG}.md`
-- Modify: `.sdd/specs/feat-reservation-management/{SPEC,CONTEXT,PLAN,TASKS,TEST_PLAN,CHANGELOG}.md`
-- Modify: `.sdd/specs/feat-notification-management/{SPEC,CONTEXT,PLAN,TASKS,TEST_PLAN,CHANGELOG}.md`
-- Modify: `.sdd/specs/feat-reporting-statistics/{SPEC,CONTEXT,PLAN,TASKS,TEST_PLAN,CHANGELOG}.md`
-- Modify: `docs/architecture/feature-integration-map.md`
-- Modify: `docs/api/api-contract.md`
-- Modify: `docs/testing/master-test-plan.md`
+- Sửa đổi: `.sdd/specs/feat-borrowing-management/{SPEC,CONTEXT,PLAN,TASKS,TEST_PLAN,CHANGELOG}.md`
+- Sửa đổi: `.sdd/specs/feat-reservation-management/{SPEC,CONTEXT,PLAN,TASKS,TEST_PLAN,CHANGELOG}.md`
+- Sửa đổi: `.sdd/specs/feat-notification-management/{SPEC,CONTEXT,PLAN,TASKS,TEST_PLAN,CHANGELOG}.md`
+- Sửa đổi: `.sdd/specs/feat-reporting-statistics/{SPEC,CONTEXT,PLAN,TASKS,TEST_PLAN,CHANGELOG}.md`
+- Sửa đổi: `docs/architecture/feature-integration-map.md`
+- Sửa đổi: `docs/api/api-contract.md`
+- Sửa đổi: `docs/testing/master-test-plan.md`
 
-### FE10 notification contract
+### FE10 hợp đồng thông báo
 
-- Create: `database/migrations/2026-07-29-fe10-borrowing-result-templates.sql`
-- Modify: `database/Librarymanagement.sql`
-- Modify: `backend/src/services/notificationService.js`
-- Modify: `backend/src/utils/notificationInbox.js`
-- Modify: `backend/src/repositories/notificationRepository.js`
-- Modify: `backend/tests/helpers/inMemoryNotificationRepositories.js`
-- Test: `backend/tests/notificationRoutes.test.js`
-- Test: `backend/tests/notificationRepository.test.js`
-- Test: `backend/tests/notificationInboxRepository.test.js`
-- Test: `backend/tests/notificationInboxMigration.test.js`
-- Test: `frontend/test/notificationInboxFrontend.test.js`
+- Tạo: `database/migrations/2026-07-29-fe10-borrowing-result-templates.sql`
+- Sửa đổi: `database/Librarymanagement.sql`
+- Sửa đổi: `backend/src/services/notificationService.js`
+- Sửa đổi: `backend/src/utils/notificationInbox.js`
+- Sửa đổi: `backend/src/repositories/notificationRepository.js`
+- Sửa đổi: `backend/tests/helpers/inMemoryNotificationRepositories.js`
+- Kiểm tra: `backend/tests/notificationRoutes.test.js`
+- Kiểm tra: `backend/tests/notificationRepository.test.js`
+- Kiểm tra: `backend/tests/notificationInboxRepository.test.js`
+- Kiểm tra: `backend/tests/notificationInboxMigration.test.js`
+- Kiểm tra: `frontend/test/notificationInboxFrontend.test.js`
 
-### FE07 borrowing journey and handoff
+### FE07 hành trình mượn và bàn giao
 
-- Modify: `backend/src/services/borrowingService.js`
-- Modify: `backend/src/repositories/borrowingRepository.js`
-- Test: `backend/tests/borrowingRoutes.test.js`
-- Test: `backend/tests/borrowingRepository.test.js`
-- Create: `frontend/src/component/borrowing/BorrowingJourneyTimeline.jsx`
-- Create: `frontend/src/utils/borrowingJourney.js`
-- Modify: `frontend/src/utils/libraryFeatureViewModels.js`
-- Modify: `frontend/src/page/borrowing/BorrowingHistoryPage.jsx`
-- Modify: `frontend/src/page/borrowing/ProcessReturnsPage.jsx`
-- Modify: `frontend/src/api/apiErrorMessages.js`
-- Modify: `frontend/src/styles/app-shell.css`
-- Create: `frontend/test/borrowingJourneyFrontend.test.js`
-- Test: `frontend/test/borrowingFrontend.test.js`
-- Test: `frontend/test/apiErrorMessages.test.js`
+- Sửa đổi: `backend/src/services/borrowingService.js`
+- Sửa đổi: `backend/src/repositories/borrowingRepository.js`
+- Kiểm tra: `backend/tests/borrowingRoutes.test.js`
+- Kiểm tra: `backend/tests/borrowingRepository.test.js`
+- Tạo: `frontend/src/component/borrowing/BorrowingJourneyTimeline.jsx`
+- Tạo: `frontend/src/utils/borrowingJourney.js`
+- Sửa đổi: `frontend/src/utils/libraryFeatureViewModels.js`
+- Sửa đổi: `frontend/src/page/borrowing/BorrowingHistoryPage.jsx`
+- Sửa đổi: `frontend/src/page/borrowing/ProcessReturnsPage.jsx`
+- Sửa đổi: `frontend/src/api/apiErrorMessages.js`
+- Sửa đổi: `frontend/src/styles/app-shell.css`
+- Tạo: `frontend/test/borrowingJourneyFrontend.test.js`
+- Kiểm tra: `frontend/test/borrowingFrontend.test.js`
+- Kiểm tra: `frontend/test/apiErrorMessages.test.js`
 
-### FE08 truthful queue surface
+### FE08 bề mặt hàng đợi trung thực
 
-- Modify: `backend/src/services/reservationService.js`
-- Test: `backend/tests/reservationService.test.js`
-- Test: `backend/tests/reservationRoutes.test.js`
-- Modify: `frontend/src/page/reservation/ReservationsLibrarianPage.jsx`
-- Modify: `frontend/src/utils/notificationFeedback.js`
-- Test: `frontend/test/reservationFrontend.test.js`
+- Sửa đổi: `backend/src/services/reservationService.js`
+- Kiểm tra: `backend/tests/reservationService.test.js`
+- Kiểm tra: `backend/tests/reservationRoutes.test.js`
+- Sửa đổi: `frontend/src/page/reservation/ReservationsLibrarianPage.jsx`
+- Sửa đổi: `frontend/src/utils/notificationFeedback.js`
+- Kiểm tra: `frontend/test/reservationFrontend.test.js`
 
-### FE12 operations summary
+### FE12 tóm tắt hoạt động
 
-- Modify: `backend/src/repositories/reportRepository.js`
-- Modify: `backend/src/services/reportService.js`
-- Modify: `backend/src/controllers/reportController.js`
-- Modify: `backend/src/routes/reportRoutes.js`
-- Modify: `backend/src/validators/reportValidators.js`
-- Modify: `backend/tests/helpers/inMemoryReportRepositories.js`
-- Modify: `backend/tests/helpers/systemIntegrationHarness.js`
-- Test: `backend/tests/reportRepository.test.js`
-- Test: `backend/tests/reportService.test.js`
-- Test: `backend/tests/reportRoutes.test.js`
-- Test: `backend/tests/reportContract.test.js`
-- Modify: `frontend/src/api/libraryFeatureApi.js`
-- Modify: `frontend/src/page/dashboard/dashboardViewModel.js`
-- Modify: `frontend/src/page/dashboard/RoleDashboardPage.jsx`
-- Test: `frontend/test/appShellFrontend.test.js`
-- Test: `frontend/test/reportOperationalFrontend.test.js`
+- Sửa đổi: `backend/src/repositories/reportRepository.js`
+- Sửa đổi: `backend/src/services/reportService.js`
+- Sửa đổi: `backend/src/controllers/reportController.js`
+- Sửa đổi: `backend/src/routes/reportRoutes.js`
+- Sửa đổi: `backend/src/validators/reportValidators.js`
+- Sửa đổi: `backend/tests/helpers/inMemoryReportRepositories.js`
+- Sửa đổi: `backend/tests/helpers/systemIntegrationHarness.js`
+- Kiểm tra: `backend/tests/reportRepository.test.js`
+- Kiểm tra: `backend/tests/reportService.test.js`
+- Kiểm tra: `backend/tests/reportRoutes.test.js`
+- Kiểm tra: `backend/tests/reportContract.test.js`
+- Sửa đổi: `frontend/src/api/libraryFeatureApi.js`
+- Sửa đổi: `frontend/src/page/dashboard/dashboardViewModel.js`
+- Sửa đổi: `frontend/src/page/dashboard/RoleDashboardPage.jsx`
+- Kiểm tra: `frontend/test/appShellFrontend.test.js`
+- Kiểm tra: `frontend/test/reportOperationalFrontend.test.js`
 
-### Cross-feature evidence
+### Bằng chứng đa chức năng
 
-- Modify serially during product tasks: `backend/src/docs/openapi.yaml`.
-- Modify: `backend/tests/systemIntegration.test.js`
-- Modify: `tests/e2e/support/systemTestServer.js`
-- Create: `tests/e2e/fe07-fe12-connected-demo-flow.spec.js`
-- Modify: `docs/user-manual.md`
-- Modify: `docs/testing/system-integration-demo-runbook.md`
-- Modify: the four feature `TEST_PLAN.md`, `TASKS.md`, and `CHANGELOG.md` files
-  listed under Governance with exact evidence after execution.
+- Sửa đổi liên tục trong các tác vụ của sản phẩm: `backend/src/docs/openapi.yaml`.
+- Sửa đổi: `backend/tests/systemIntegration.test.js`
+- Sửa đổi: `tests/e2e/support/systemTestServer.js`
+- Tạo: `tests/e2e/fe07-fe12-connected-demo-flow.spec.js`
+- Sửa đổi: `docs/user-manual.md`
+- Sửa đổi: `docs/testing/system-integration-demo-runbook.md`
+- Sửa đổi: bốn tệp chức năng `TEST_PLAN.md`, `TASKS.md` và `CHANGELOG.md`
+  được liệt kê trong Quản trị với bằng chứng chính xác sau khi thực hiện.
 
 ---
 
-### Task 1: Activate the approved design in SDD and obtain H1
+### Nhiệm vụ 1: Kích hoạt thiết kế đã được phê duyệt trong SDD và đạt H1
 
-**Files:**
+**Tệp:**
 
-- Modify: all Governance files listed above.
-- Modify: `docs/superpowers/specs/2026-07-29-fe07-fe08-fe10-fe12-connected-demo-flow-design.md`
+- Sửa đổi: tất cả các tệp Quản trị được liệt kê ở trên.
+- Sửa đổi: `docs/superpowers/specs/2026-07-29-fe07-fe08-fe10-fe12-connected-demo-flow-design.md`
 
-**Interfaces:**
+**Giao diện:**
 
-- Consumes: approved written design revision published in PR #80 on branch
+- Tiêu thụ: bản sửa đổi thiết kế đã được phê duyệt được xuất bản trong PR #80 trên nhánh
   `codex/impl-fe07-fe12-connected-demo-flow`.
-- Produces: approved versions FE07 `0.9.0`, FE08 `0.6.0`, FE10 `0.6.0`,
-  FE12 `0.3.0`; batch contract
-  `BATCH-FE07-FE12-CONNECTED-DEMO-2026-07-29`.
+- Sản xuất: các phiên bản được phê duyệt FE07 `0.9.0`, FE08 `0.6.0`, FE10 `0.6.0`,
+FE12 `0.3.0`; hợp đồng lô `BATCH-FE07-FE12-CONNECTED-DEMO-2026-07-29`.
 
-- [x] **Step 1: Allocate stable requirement IDs and write the SPEC fan-out**
+- [x] **Bước 1: Phân bổ ID yêu cầu ổn định và ghi phân xuất SPEC**
 
-  Add these exact IDs and definitions:
+  Thêm các ID và định nghĩa chính xác sau:
 
   ```text
   FE07
-  BR-FE07-035 post-commit borrowing-result notification is idempotent and non-blocking
-  BR-FE07-036 return response may expose only a read-only manual FE08 handoff
-  BR-FE07-037 journey timeline uses canonical states/timestamps only
-  FR-FE07-040 request approved/rejected notifications
-  FR-FE07-041 renewed/returned notifications
-  FR-FE07-042 reservationQueueAction return DTO
-  FR-FE07-043 member journey timeline
-  FR-FE07-044 stale/blocker guidance
-  AC-FE07-033..036 map to AT-002, AT-003, AT-004, AT-009
+  BR-FE07-035 thông báo kết quả mượn sau giao dịch có tính lũy đẳng và không chặn luồng chính
+  BR-FE07-036 phản hồi trả sách chỉ được cung cấp bàn giao FE08 thủ công ở chế độ chỉ đọc
+  BR-FE07-037 dòng thời gian hành trình chỉ dùng trạng thái/dấu thời gian chuẩn
+  FR-FE07-040 thông báo yêu cầu được phê duyệt/từ chối
+  FR-FE07-041 thông báo gia hạn/trả sách
+  FR-FE07-042 DTO trả về `reservationQueueAction`
+  FR-FE07-043 dòng thời gian hành trình thành viên
+  FR-FE07-044 hướng dẫn khi dữ liệu cũ hoặc có điều kiện chặn
+  AC-FE07-033..036 ánh xạ tới AT-002, AT-003, AT-004, AT-009
 
   FE08
-  BR-FE08-021 only the owner of a NOTIFIED hold sees the held-copy borrow CTA
-  BR-FE08-022 notification failure is shown truthfully without rolling back hold
-  FR-FE08-036 held-copy CTA and exact copy handoff
-  FR-FE08-037 staff decision surface and manual processing
-  FR-FE08-038 notification warning DTO
-  FR-FE08-039 stale 409 refresh
-  AC-FE08-023..025 map to AT-005, AT-007, AT-008/AT-009
+  BR-FE08-021 chỉ chủ sở hữu lượt giữ `NOTIFIED` mới thấy nút mượn bản sao đang được giữ
+  BR-FE08-022 lỗi thông báo được hiển thị trung thực mà không hoàn tác lượt giữ
+  FR-FE08-036 nút mượn bản sao đang giữ và bàn giao đúng bản sao
+  FR-FE08-037 màn hình quyết định cho nhân viên và xử lý thủ công
+  FR-FE08-038 DTO cảnh báo thông báo
+  FR-FE08-039 làm mới dữ liệu khi gặp phản hồi 409 do trạng thái cũ
+  AC-FE08-023..025 ánh xạ tới AT-005, AT-007, AT-008/AT-009
 
   FE10
-  BR-FE10-021 GENERAL_SYSTEM ownership is checked per template, not per type only
-  BR-FE10-022 borrowing-result inbox rows map only to /borrowing/history
-  BR-FE10-023 borrowing-result payloads contain no rejection reason or sensitive data
-  FR-FE10-017 accept four FE07 GENERAL_SYSTEM templates
-  FR-FE10-018 persist/replay each source key once
-  FR-FE10-019 include four templates in personal inbox eligibility
-  FR-FE10-020 return fixed borrowing action path
-  AC-FE10-017..020 map to AT-002, AT-003, AT-006, AT-009
+  BR-FE10-021 quyền sở hữu `GENERAL_SYSTEM` được kiểm tra theo từng mẫu, không chỉ theo loại
+  BR-FE10-022 các bản ghi kết quả mượn trong hộp thư chỉ ánh xạ tới `/borrowing/history`
+  BR-FE10-023 dữ liệu gửi của kết quả mượn không chứa lý do từ chối hoặc dữ liệu nhạy cảm
+  FR-FE10-017 chấp nhận bốn mẫu `GENERAL_SYSTEM` của FE07
+  FR-FE10-018 lưu/phát lại mỗi khóa nguồn đúng một lần
+  FR-FE10-019 đưa bốn mẫu vào điều kiện hiển thị của hộp thư cá nhân
+  FR-FE10-020 trả về đường dẫn hành động mượn cố định
+  AC-FE10-017..020 ánh xạ tới AT-002, AT-003, AT-006, AT-009
 
   FE12
-  BR-FE12-017 operations summary is one authorized read-only snapshot
-  BR-FE12-018 six KPI definitions match canonical source states
-  BR-FE12-019 missing/failed KPI is never rendered as zero
-  BR-FE12-020 every overdue projection uses one service-owned business date
+  BR-FE12-017 bản tóm tắt vận hành là một ảnh chụp nhanh chỉ đọc đã được cấp quyền
+  BR-FE12-018 sáu định nghĩa KPI khớp với các trạng thái nguồn chuẩn
+  BR-FE12-019 KPI bị thiếu/lỗi không bao giờ được hiển thị thành số không
+  BR-FE12-020 mọi phép chiếu quá hạn dùng cùng một ngày nghiệp vụ do dịch vụ sở hữu
   FR-FE12-012 GET /api/reports/operations-summary
-  FR-FE12-013 staff role enforcement and empty query allowlist
-  FR-FE12-014 deterministic KPI projection, generatedAt and injected business date
-  FR-FE12-015 fixed dashboard drill-down
-  AC-FE12-012..016 map to AT-010..AT-013 and KPI failure behavior
+  FR-FE12-013 thực thi vai trò nhân viên và danh sách cho phép truy vấn rỗng
+  FR-FE12-014 phép chiếu KPI xác định, `generatedAt` và ngày nghiệp vụ được truyền vào
+  FR-FE12-015 đường dẫn xem chi tiết cố định từ bảng điều khiển
+  AC-FE12-012..016 ánh xạ tới AT-010..AT-013 và hành vi khi KPI bị lỗi
   ```
 
-- [x] **Step 2: Synchronize CONTEXT, CHANGELOG, integration map and API contract**
+- [x] **Bước 2: Đồng bộ hóa CONTEXT, CHANGELOG, bản đồ tích hợp và hợp đồng API**
 
-  Record the exact endpoint and response in SDD and `docs/api/api-contract.md`.
-  Do not publish the new path in runtime OpenAPI until Task 6 implements the
-  matching route; the FE07 return schema is added to OpenAPI with Task 3.
+Ghi lại điểm cuối và phản hồi chính xác trong SDD và `docs/api/api-contract.md`. Không xuất bản
+đường dẫn mới trong thời gian chạy OpenAPI cho đến khi Nhiệm vụ 6 triển khai tuyến đường phù hợp;
+lược đồ trả về FE07 được thêm vào OpenAPI với Nhiệm vụ 3.
 
   ```yaml
   /api/reports/operations-summary:
@@ -217,7 +216,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
                   - generatedAt
   ```
 
-  Record the additive FE07 return member:
+  Ghi lại thành viên trả về FE07 phụ gia:
 
   ```json
   {
@@ -229,25 +228,25 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   }
   ```
 
-- [x] **Step 3: Write PLAN/TASKS boundaries and H1 contract**
+- [x] **Bước 3: Viết ranh giới PLAN/TASKS và hợp đồng H1**
 
-  Use these slices and ownership:
+  Sử dụng các lát cắt và quyền sở hữu này:
 
   ```text
-  SL-001 governance activation
-  SL-002 FE10 contract and templates
-  SL-003 FE07 source events, timeline and return handoff
-  SL-004 FE08 truthful queue/pickup UI
-  SL-005 FE12 operations summary
-  SL-006 cross-feature browser and Azure staging evidence
+  SL-001 kích hoạt quản trị
+  SL-002 hợp đồng và mẫu FE10
+  SL-003 sự kiện nguồn FE07, dòng thời gian và bàn giao sau khi trả sách
+  SL-004 giao diện hàng đợi/nhận sách trung thực của FE08
+  SL-005 bản tóm tắt vận hành FE12
+  SL-006 bằng chứng trình duyệt liên chức năng và môi trường tiền sản xuất Azure
   ```
 
-  Set a single Core builder lane. Other lanes remain read-only unless the user
-  explicitly requests delegation.
+Đặt một làn đường xây dựng cốt lõi duy nhất. Các làn khác vẫn ở chế độ chỉ đọc trừ khi người dùng
+yêu cầu ủy quyền một cách rõ ràng.
 
-- [x] **Step 4: Run governance validation**
+- [x] **Bước 4: Chạy xác thực quản trị**
 
-  Run:
+  Chạy:
 
   ```powershell
   npm run trace:enforce
@@ -255,17 +254,17 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   git diff --check
   ```
 
-  Expected: both trace commands exit `0`; diff check is empty; manual document
-  review finds no unresolved requirement content.
+Dự kiến: cả hai lệnh theo dõi đều thoát `0`; kiểm tra khác biệt trống; xem xét tài liệu thủ công
+không tìm thấy nội dung yêu cầu nào chưa được giải quyết.
 
-- [x] **Step 5: Stop for human H1 review**
+- [x] **Bước 5: Dừng để xem xét H1 của con người**
 
-  H1 and its reviewed addendum were approved by Nhat on 2026-07-29. Product
-  work remains blocked until this activation PR merges.
+H1 và phụ lục được xem xét của nó đã được Nhật phê duyệt vào ngày 29-07-2026. Công việc sản phẩm vẫn
+bị chặn cho đến khi PR kích hoạt này hợp nhất.
 
-- [x] **Step 6: Commit and publish only the H1-reviewed governance activation**
+- [x] **Bước 6: Cam kết và chỉ xuất bản kích hoạt quản trị đã được H1 xem xét**
 
-  After H1:
+  Sáu H1:
 
   ```powershell
   git add -- .sdd/specs/feat-borrowing-management .sdd/specs/feat-reservation-management .sdd/specs/feat-notification-management .sdd/specs/feat-reporting-statistics docs/architecture/feature-integration-map.md docs/api/api-contract.md docs/testing/master-test-plan.md docs/superpowers/specs/2026-07-29-fe07-fe08-fe10-fe12-connected-demo-flow-design.md docs/superpowers/plans/2026-07-29-fe07-fe08-fe10-fe12-connected-demo-flow.md
@@ -273,23 +272,23 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   git commit -m "docs: activate connected circulation demo batch"
   ```
 
-  Governance-only PR #80 was published. H3 remediation removes the unauthorized
-  test-only commit, corrects source-of-truth drift and requires a reviewed H1
-  drift addendum before its replacement commit is pushed.
+PR #80 chỉ dành cho quản trị đã được xuất bản. Biện pháp khắc phục H3 loại bỏ cam kết chỉ dành cho
+kiểm thử trái phép, sửa lỗi sai lệch nguồn gốc sự thật và yêu cầu phụ lục sai lệch H1 được xem xét
+trước khi cam kết thay thế của nó được đẩy.
 
 ---
 
-### Task 2: Extend FE10 with FE07-owned borrowing-result templates
+### Nhiệm vụ 2: Mở rộng FE10 với các mẫu kết quả vay do FE07 sở hữu
 
-**Files:**
+**Tệp:**
 
-- Create/Modify/Test: FE10 files listed in File Structure.
+- Tạo/Sửa đổi/Kiểm tra: Các tệp FE10 được liệt kê trong Cấu trúc tệp.
 
-**Interfaces:**
+**Giao diện:**
 
-- Consumes:
+- Tiêu thụ:
   `notificationService.createSourceNotificationRequester('FE07')`.
-- Produces:
+- Sản xuất:
 
   ```js
   GENERAL_SYSTEM_TEMPLATES = new Set([
@@ -301,11 +300,11 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   ]);
   ```
 
-  Each new FE07-owned row returns `actionPath: '/borrowing/history'`.
+  Mỗi hàng mới thuộc sở hữu của FE07 trả về `actionPath: '/borrowing/history'`.
 
-- [x] **Step 1: Write failing canonical-pair and source-ownership tests**
+- [x] **Bước 1: Viết các kiểm thử quyền sở hữu nguồn và cặp chuẩn không thành công**
 
-  Add table-driven cases to `backend/tests/notificationRoutes.test.js`:
+  Thêm các trường hợp điều khiển theo bảng vào `backend/tests/notificationRoutes.test.js`:
 
   ```js
   test.each([
@@ -330,23 +329,22 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   });
   ```
 
-  Add negative cases proving FE04 cannot send the four FE07 templates, FE07
-  cannot send `MEMBERSHIP_RESULT`, and public HTTP cannot provide a bound
-  `GENERAL_SYSTEM` source.
+Thêm các trường hợp tiêu cực chứng minh FE04 không thể gửi bốn mẫu FE07, FE07 không thể gửi
+`MEMBERSHIP_RESULT` và HTTP công khai không thể cung cấp nguồn `GENERAL_SYSTEM` bị ràng buộc.
 
-- [x] **Step 2: Run RED FE10 tests**
+- [x] **Bước 2: Chạy kiểm thử RED FE10**
 
-  Run:
+  Chạy:
 
   ```powershell
   npm --prefix backend test -- --runTestsByPath tests/notificationRoutes.test.js tests/notificationRepository.test.js tests/notificationInboxRepository.test.js
   ```
 
-  Expected: FAIL because new templates are not canonical/seeded/eligible.
+  Dự kiến: THẤT BẠI vì các mẫu mới không chuẩn/được chọn/đủ điều kiện.
 
-- [x] **Step 3: Implement per-template canonical ownership**
+- [x] **Bước 3: Triển khai quyền sở hữu chuẩn theo từng mẫu**
 
-  Refactor the FE10 constants to preserve exact ownership:
+  Tái cấu trúc các hằng số FE10 để duy trì quyền sở hữu chính xác:
 
   ```js
   const canonicalTemplateKeys = {
@@ -375,7 +373,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   };
   ```
 
-  Replace scalar equality with:
+  Thay thế đẳng thức vô hướng bằng:
 
   ```js
   if (!canonicalTemplateKeys[type]?.has(templateKey)) {
@@ -396,9 +394,9 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   }
   ```
 
-- [x] **Step 4: Add inbox eligibility and fixed action mappings**
+- [x] **Bước 4: Thêm tính đủ điều kiện của hộp thư đến và ánh xạ hành động cố định**
 
-  Add four `ACTION_MAPPINGS` entries:
+  Thêm bốn mục `ACTION_MAPPINGS`:
 
   ```js
   ...[
@@ -414,12 +412,11 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   }))
   ```
 
-  Add the same exact pairs to `INBOX_ELIGIBILITY_SQL` and the in-memory
-  `inboxTypeTemplatePairs`.
+Thêm các cặp chính xác tương tự vào `INBOX_ELIGIBILITY_SQL` và `inboxTypeTemplatePairs` trong bộ nhớ.
 
-- [x] **Step 5: Add idempotent Azure SQL template migration and base seed**
+- [x] **Bước 5: Thêm di chuyển mẫu Azure SQL idempotent và hạt giống cơ sở**
 
-  The migration must upsert these exact definitions:
+  Việc di chuyển phải nâng cao các định nghĩa chính xác sau:
 
   ```sql
   VALUES
@@ -433,12 +430,12 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
       N'Khoản mượn #{{borrowDetailId}} đã được ghi nhận trả với trạng thái {{returnStatus}}.');
   ```
 
-  Use one transaction, `SET XACT_ABORT ON`, and update-or-insert per
-  `TemplateCode`. Add the same rows to `database/Librarymanagement.sql`.
+Sử dụng một giao dịch, `SET XACT_ABORT ON` và cập nhật hoặc chèn cho mỗi `TemplateCode`. Thêm các
+hàng tương tự vào `database/Librarymanagement.sql`.
 
-- [x] **Step 6: Run GREEN FE10 and migration tests**
+- [x] **Bước 6: Chạy GREEN FE10 và kiểm tra di chuyển**
 
-  Run:
+  Chạy:
 
   ```powershell
   npm --prefix backend test -- --runTestsByPath tests/notificationRoutes.test.js tests/notificationRepository.test.js tests/notificationInboxRepository.test.js tests/notificationInboxMigration.test.js
@@ -446,26 +443,26 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   git diff --check
   ```
 
-  Expected: focused FE10 backend/frontend tests pass; migration replay assertions
-  pass; diff check is empty.
+Dự kiến: vượt qua các kiểm thử FE10 backend/frontend tập trung; xác nhận phát lại di chuyển đã vượt
+qua; kiểm tra khác biệt trống rỗng.
 
-- [x] **Step 7: Record the slice checkpoint without committing product code**
+- [x] **Bước 7: Ghi điểm kiểm tra lát bánh mà không cần nhập mã sản phẩm**
 
-  Save RED/GREEN commands and output in FE10 `TEST_PLAN.md`/`TASKS.md`.
-  Leave product changes uncommitted for H2.
+Lưu lệnh RED/GREEN và xuất ra trong FE10 `TEST_PLAN.md`/`TASKS.md`. Để lại các thay đổi sản phẩm
+không được cam kết cho H2.
 
 ---
 
-### Task 3: Emit FE07 result notifications and authoritative return handoff
+### Nhiệm vụ 3: Phát ra thông báo kết quả FE07 và chuyển giao trả sách có thẩm quyền
 
-**Files:**
+**Tệp:**
 
-- Modify/Test: FE07 backend files listed in File Structure.
+- Sửa đổi/Kiểm tra: Các tệp máy chủ FE07 được liệt kê trong Cấu trúc tệp.
 
-**Interfaces:**
+**Giao diện:**
 
-- Consumes: Task 2 FE10 template contract.
-- Produces:
+- Tiêu thụ: Hợp đồng mẫu FE10 của Nhiệm vụ 2.
+- Sản xuất:
 
   ```js
   {
@@ -485,9 +482,9 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   }
   ```
 
-- [x] **Step 1: Write failing service/route tests for all four source events**
+- [x] **Bước 1: Viết kiểm thử dịch vụ/tuyến đường không thành công cho cả bốn sự kiện nguồn**
 
-  Capture requester calls and assert:
+  Ghi lại cuộc gọi của người yêu cầu và khẳng định:
 
   ```js
   expect(notificationRequests).toContainEqual(expect.objectContaining({
@@ -499,30 +496,28 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   }));
   ```
 
-  Repeat for rejected, renewed and returned. Assert rejected payload does not
-  include `reason`; make requester throw and prove committed source status is
-  preserved while response contains a safe `notificationWarning`.
+Lặp lại cho từ chối, gia hạn và trả sách. Xác nhận tải trọng bị từ chối không bao gồm `reason`;
+khiến người yêu cầu loại bỏ và chứng minh trạng thái nguồn đã cam kết được giữ nguyên trong khi phản
+hồi chứa `notificationWarning` an toàn.
 
-- [x] **Step 2: Write failing repository test for locked queue evidence**
+- [x] **Bước 2: Viết kiểm thử kho lưu trữ không thành công để tìm bằng chứng về hàng đợi bị khóa**
 
-  Assert the return transaction reads `Reservations` under
-  `UPDLOCK, HOLDLOCK`, and maps only `Status = 'ACTIVE'` to
-  `authoritativeReturn.hasActiveQueue`.
+Xác nhận giao dịch trả sách đọc `Reservations` theo `UPDLOCK, HOLDLOCK` và chỉ ánh xạ `trạng thái =
+'ACTIVE'` tới `authoritativeReturn.hasActiveQueue`.
 
-- [x] **Step 3: Run RED FE07 backend tests**
+- [x] **Bước 3: Chạy kiểm thử máy chủ RED FE07**
 
-  Run:
+  Chạy:
 
   ```powershell
   npm --prefix backend test -- --runTestsByPath tests/borrowingRoutes.test.js tests/borrowingRepository.test.js
   ```
 
-  Expected: FAIL on missing FE07 result requests and missing
-  `reservationQueueAction`.
+Dự kiến: THẤT BẠI khi thiếu yêu cầu kết quả FE07 và thiếu `reservationQueueAction`.
 
-- [x] **Step 4: Implement one safe post-commit requester helper**
+- [x] **Bước 4: Triển khai một trình trợ giúp người yêu cầu sau cam kết an toàn**
 
-  Add:
+  Thêm:
 
   ```js
   async function requestBorrowingResultNotification({
@@ -556,11 +551,11 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   }
   ```
 
-  Invoke it only after repository mutation resolves successfully.
+  Chỉ gọi nó sau khi thao tác ghi kho lưu trữ được giải quyết thành công.
 
-- [x] **Step 5: Preserve queue evidence inside the return transaction**
+- [x] **Bước 5: Lưu giữ bằng chứng xếp hàng bên trong giao dịch hoàn trả**
 
-  Replace the discarded reservation lock query with:
+  Thay thế truy vấn khóa đặt chỗ bị loại bỏ bằng:
 
   ```js
   const reservationQueueResult = await new sql.Request(transaction)
@@ -576,7 +571,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
     .some((row) => row.Status === 'ACTIVE');
   ```
 
-  Project the service response with a server-owned path:
+  Chiếu phản hồi của dịch vụ bằng đường dẫn do máy chủ sở hữu:
 
   ```js
   reservationQueueAction: {
@@ -586,34 +581,34 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   }
   ```
 
-- [x] **Step 6: Run GREEN FE07 backend tests**
+- [x] **Bước 6: Chạy kiểm thử máy chủ GREEN FE07**
 
-  Run:
+  Chạy:
 
   ```powershell
   npm --prefix backend test -- --runTestsByPath tests/borrowingRoutes.test.js tests/borrowingRepository.test.js tests/notificationRoutes.test.js
   git diff --check
   ```
 
-  Expected: all focused suites pass; mutation success survives notification
-  failure; no rejection reason appears in persisted/request payload.
+Dự kiến: tất cả các dãy tập trung đều đạt; thao tác ghi thành công tồn tại thất bại thông báo; không có
+lý do từ chối nào xuất hiện trong tải trọng liên tục/yêu cầu.
 
-- [x] **Step 7: Record the slice checkpoint without committing product code**
+- [x] **Bước 7: Ghi điểm kiểm tra lát bánh mà không cần nhập mã sản phẩm**
 
-  Update FE07 `TEST_PLAN.md`/`TASKS.md` evidence and leave code uncommitted.
+  Cập nhật bằng chứng FE07 `TEST_PLAN.md`/`TASKS.md` và để lại mã không được cam kết.
 
 ---
 
-### Task 4: Add FE07 desktop journey timeline and return-to-queue handoff
+### Nhiệm vụ 4: Thêm dòng thời gian hành trình trên máy tính để bàn FE07 và chuyển giao quay lại hàng đợi
 
-**Files:**
+**Tệp:**
 
-- Create/Modify/Test: FE07 frontend files listed in File Structure.
+- Tạo/Sửa đổi/Kiểm tra: Các tệp giao diện FE07 được liệt kê trong Cấu trúc tệp.
 
-**Interfaces:**
+**Giao diện:**
 
-- Consumes: Task 3 response DTOs.
-- Produces:
+- Tiêu thụ: DTO phản hồi của Nhiệm vụ 3.
+- Sản xuất:
 
   ```js
   buildBorrowingJourney(row) -> Array<{
@@ -624,9 +619,9 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   }>
   ```
 
-- [x] **Step 1: Write failing pure-view-model tests**
+- [x] **Bước 1: Viết các kiểm thử mô hình chế độ xem thuần túy thất bại**
 
-  Add cases:
+  Thêm trường hợp:
 
   ```js
   assert.deepEqual(
@@ -643,21 +638,21 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   );
   ```
 
-  Add BORROWED and RETURNED cases and assert missing timestamps remain `null`.
+  Thêm các trường hợp BORROWED và RETURNED và xác nhận dấu thời gian bị thiếu vẫn là `null`.
 
-- [x] **Step 2: Run RED frontend tests**
+- [x] **Bước 2: Chạy kiểm thử giao diện người dùng RED**
 
-  Run:
+  Chạy:
 
   ```powershell
   node --test --test-name-pattern="borrowing journey|return queue handoff" frontend/test/*.test.js
   ```
 
-  Expected: FAIL because the journey helper/component and handoff UI do not exist.
+  Dự kiến: THẤT BẠI vì trình trợ giúp/thành phần hành trình và giao diện người dùng chuyển giao không tồn tại.
 
-- [x] **Step 3: Implement canonical row projection and timeline component**
+- [x] **Bước 3: Triển khai thành phần dòng thời gian và phép chiếu hàng chuẩn**
 
-  Preserve these raw members in `mapBorrowDetailsToHistoryRows`:
+  Bảo toàn các thành viên thô này trong `mapBorrowDetailsToHistoryRows`:
 
   ```js
   rawStatus: String(detail.status || '').toUpperCase(),
@@ -669,12 +664,12 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   updatedAt: detail.updatedAt || null,
   ```
 
-  Render an ordered list with `aria-label={`Hành trình ${row.title}`}`. Do not
-  synthesize timestamps or infer a completed step from client time.
+  Render an ordered list với `aria-label={`Hành trình ${row.title}`}`. Do not
+  tổng hợp dấu thời gian hoặc suy ra một bước đã hoàn thành từ thời gian của khách hàng.
 
-- [x] **Step 4: Implement return handoff and truthful notification warning**
+- [x] **Bước 4: Thực hiện cảnh báo chuyển giao trả sách và thông báo trung thực**
 
-  In `ProcessReturnsPage`:
+  Trong `ProcessReturnsPage`:
 
   ```js
   const navigate = useNavigate();
@@ -688,7 +683,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   }
   ```
 
-  Render a persistent post-success panel with button:
+  Hiển thị bảng điều khiển sau thành công liên tục bằng nút:
 
   ```jsx
   <button
@@ -702,17 +697,17 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   </button>
   ```
 
-  Validate the server path against the fixed literal before navigation.
+  Xác thực đường dẫn máy chủ theo chữ cố định trước khi điều hướng.
 
-- [x] **Step 5: Extend blocker copy and stale guidance**
+- [x] **Bước 5: Mở rộng bản sao chặn và hướng dẫn cũ**
 
-  Add `BORROW_STATE_CONFLICT` and update FE07 conflict messages so every 409
-  tells the user to reload, reject a stale request, resolve fines/overdue items,
-  or process the FE08 queue as appropriate. Never display backend raw messages.
+Thêm `BORROW_STATE_CONFLICT` và cập nhật các thông báo xung đột FE07 để mỗi thông báo 409 yêu cầu
+người dùng tải lại, từ chối yêu cầu cũ, giải quyết các khoản phạt/mục quá hạn hoặc xử lý hàng đợi
+FE08 nếu thích hợp. Không bao giờ hiển thị tin nhắn thô máy chủ.
 
-- [x] **Step 6: Add desktop CSS**
+- [x] **Bước 6: Thêm máy tính để bàn CSS**
 
-  Use focused classes:
+  Sử dụng các lớp tập trung:
 
   ```css
   .borrow-journey { display: flex; align-items: flex-start; gap: 10px; min-width: 320px; }
@@ -720,12 +715,12 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   .return-queue-handoff { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
   ```
 
-  Do not alter notification popover width/z-index or add mobile-specific
-  redesign in this batch.
+Không thay đổi độ rộng/chỉ mục z của cửa sổ bật lên thông báo hoặc thêm thiết kế lại dành riêng cho
+thiết bị di động trong đợt này.
 
-- [x] **Step 7: Run GREEN FE07 frontend tests**
+- [x] **Bước 7: Chạy kiểm thử giao diện người dùng GREEN FE07**
 
-  Run:
+  Chạy:
 
   ```powershell
   node --test --test-name-pattern="borrowing|api error" frontend/test/*.test.js
@@ -734,24 +729,24 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   git diff --check
   ```
 
-  Expected: focused tests, lint and production build pass.
+  Dự kiến: các kiểm thử tập trung, kiểm tra mã và bản dựng sản xuất đã vượt qua.
 
-- [x] **Step 8: Record the slice checkpoint without committing product code**
+- [x] **Bước 8: Ghi điểm kiểm tra lát bánh mà không cần nhập mã sản phẩm**
 
-  Update FE07 evidence files; leave implementation uncommitted.
+  Cập nhật tệp bằng chứng FE07; không cam kết thực hiện.
 
 ---
 
-### Task 5: Make FE08 queue processing truthful under warning and stale state
+### Nhiệm vụ 5: Làm cho quá trình xử lý hàng đợi FE08 trở nên trung thực trong trạng thái cảnh báo và cũ
 
-**Files:**
+**Tệp:**
 
-- Modify/Test: FE08 files listed in File Structure.
+- Sửa đổi/Kiểm tra: Các tệp FE08 được liệt kê trong Cấu trúc tệp.
 
-**Interfaces:**
+**Giao diện:**
 
-- Consumes: existing `processQueue(copyId)` and held-copy CTA.
-- Produces:
+- Tiêu thụ: `processQueue(copyId)` hiện có và CTA được giữ lại.
+- Sản xuất:
 
   ```js
   {
@@ -764,9 +759,9 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   }
   ```
 
-- [x] **Step 1: Write failing backend warning-isolation tests**
+- [x] **Bước 1: Viết các kiểm thử cách ly cảnh báo máy chủ không thành công**
 
-  Make the requester throw while audit succeeds and assert:
+  Làm cho người yêu cầu ném đi trong khi kiểm tra thành công và khẳng định:
 
   ```js
   expect(result.selectedReservation.status).toBe('NOTIFIED');
@@ -776,11 +771,11 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   });
   ```
 
-  Preserve the stronger audit-failure warning when both operations fail.
+  Duy trì cảnh báo lỗi kiểm tra mạnh mẽ hơn khi cả hai thao tác đều thất bại.
 
-- [x] **Step 2: Write failing frontend stale/warning tests**
+- [x] **Bước 2: Viết các kiểm thử cảnh báo/cũ ở giao diện người dùng không thành công**
 
-  Assert `ReservationsLibrarianPage`:
+  Khẳng định `ReservationsLibrarianPage`:
 
   ```js
   if (result.notificationWarning) {
@@ -791,41 +786,41 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   }
   ```
 
-  Also retain the existing CTA condition:
+  Đồng thời giữ lại tình trạng CTA hiện có:
 
   ```jsx
   item.rawStatus === 'NOTIFIED' && item.bookId
   ```
 
-  and the exact link with both `bookId` and `copyId`.
+  và liên kết chính xác với cả `bookId` và `copyId`.
 
-- [x] **Step 3: Run RED FE08 tests**
+- [x] **Bước 3: Chạy kiểm thử RED FE08**
 
-  Run:
+  Chạy:
 
   ```powershell
   npm --prefix backend test -- --runTestsByPath tests/reservationService.test.js tests/reservationRoutes.test.js
   node --test --test-name-pattern="reservation" frontend/test/*.test.js
   ```
 
-  Expected: warning test fails because request failure is currently hidden when
-  audit succeeds; stale reload assertion fails.
+Dự kiến: kiểm tra cảnh báo không thành công vì lỗi yêu cầu hiện bị ẩn khi kiểm tra thành công; xác
+nhận tải lại cũ không thành công.
 
-- [x] **Step 4: Implement enumerable safe warnings**
+- [x] **Bước 4: Thực hiện vô số cảnh báo an toàn**
 
-  Always set a request-failure warning after the hold commits. If audit also
-  fails, replace it with `RESERVATION_NOTIFY_AUDIT_FAILED`. Keep the warning
-  outside `selectedReservation`; expose it only at the response envelope.
+Luôn đặt cảnh báo lỗi yêu cầu sau khi cam kết giữ. Nếu kiểm tra cũng không thành công, hãy thay thế
+nó bằng `RESERVATION_NOTIFY_AUDIT_FAILED`. Giữ cảnh báo bên ngoài `selectedReservation`; chỉ phơi
+bày nó ở phong bì phản hồi.
 
-- [x] **Step 5: Implement UI warning and 409 refresh**
+- [x] **Bước 5: Triển khai cảnh báo giao diện người dùng và làm mới 409**
 
-  After a successful hold, show success only when no warning exists. When a
-  warning exists, say the hold succeeded but notification has not been created.
-  On 409, reload canonical reservation data before closing the confirmation.
+Sau khi giữ thành công, chỉ hiển thị thành công khi không có cảnh báo nào tồn tại. Khi có cảnh báo,
+hãy nói rằng việc giữ đã thành công nhưng thông báo chưa được tạo. Trên 409, tải lại dữ liệu đặt chỗ
+chuẩn trước khi đóng xác nhận.
 
-- [x] **Step 6: Run GREEN FE08 tests**
+- [x] **Bước 6: Chạy kiểm thử GREEN FE08**
 
-  Run:
+  Chạy:
 
   ```powershell
   npm --prefix backend test -- --runTestsByPath tests/reservationService.test.js tests/reservationRoutes.test.js
@@ -833,25 +828,24 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   git diff --check
   ```
 
-  Expected: focused FE08 suites pass and no notification failure rolls back a
-  `NOTIFIED` hold.
+Dự kiến: các bộ FE08 tập trung đã vượt qua và không có lỗi thông báo khôi phục trạng thái giữ `NOTIFIED`.
 
-- [x] **Step 7: Record the slice checkpoint without committing product code**
+- [x] **Bước 7: Ghi điểm kiểm tra lát bánh mà không cần nhập mã sản phẩm**
 
-  Update FE08 evidence files; leave implementation uncommitted.
+  Cập nhật tệp bằng chứng FE08; không cam kết thực hiện.
 
 ---
 
-### Task 6: Add FE12 read-only operations summary and desktop dashboard
+### Nhiệm vụ 6: Thêm bản tóm tắt hoạt động chỉ đọc và bảng điều khiển trên máy tính để bàn của FE12
 
-**Files:**
+**Tệp:**
 
-- Modify/Test: FE12 files listed in File Structure.
+- Sửa đổi/Kiểm tra: Các tệp FE12 được liệt kê trong Cấu trúc tệp.
 
-**Interfaces:**
+**Giao diện:**
 
-- Consumes: canonical SQL tables and `formatBusinessDate(clock())`.
-- Produces:
+- Tiêu thụ: bảng SQL chuẩn và `formatBusinessDate(clock())`.
+- Sản xuất:
 
   ```js
   getOperationsSummary(businessDate) -> {
@@ -864,11 +858,11 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   }
   ```
 
-  HTTP adds `generatedAt` from the service clock.
+  HTTP thêm `generatedAt` từ đồng hồ dịch vụ.
 
-- [x] **Step 1: Write failing repository/service/route tests**
+- [x] **Bước 1: Viết các kiểm thử kho lưu trữ/dịch vụ/tuyến đường bị lỗi**
 
-  Assert exact body:
+  Khẳng định nội dung chính xác:
 
   ```js
   expect(response.body).toEqual({
@@ -882,26 +876,25 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   });
   ```
 
-  Add role matrix for `LIBRARIAN=200`, `ADMIN=200`, `MEMBER=403`,
-  unauthenticated `401`. Add `?bogus=secret` => `400` before repository call and
-  prove source fixtures remain byte-for-byte unchanged. Add the baseline
-  regression first: with the service clock frozen at `2026-07-14`, a due date of
-  `2026-07-28` remains `BORROWED` in both SQL-contract and in-memory report
-  projections even when the host date is later.
+Thêm ma trận vai trò cho `LIBRARIAN=200`, `ADMIN=200`, `MEMBER=403`, `401` chưa được xác thực. Thêm
+`?bogus=secret` => `400` trước lệnh gọi kho lưu trữ và chứng minh các nguồn cố định vẫn không thay
+đổi từng byte. Trước tiên, hãy thêm hồi quy cơ sở: với đồng hồ dịch vụ bị đóng băng ở `2026-07-14`,
+ngày đáo hạn của `2026-07-28` vẫn là `BORROWED` trong cả các dự báo báo cáo trong bộ nhớ và hợp đồng
+SQL ngay cả khi ngày lưu trữ muộn hơn.
 
-- [x] **Step 2: Run RED FE12 backend tests**
+- [x] **Bước 2: Chạy kiểm thử máy chủ RED FE12**
 
-  Run:
+  Chạy:
 
   ```powershell
   npm --prefix backend test -- --runTestsByPath tests/reportRepository.test.js tests/reportService.test.js tests/reportRoutes.test.js tests/reportContract.test.js
   ```
 
-  Expected: FAIL because endpoint/repository/service methods do not exist.
+  Dự kiến: THẤT BẠI vì các phương thức điểm cuối/kho lưu trữ/dịch vụ không tồn tại.
 
-- [x] **Step 3: Implement the parameterized read-only SQL snapshot**
+- [x] **Bước 3: Triển khai ảnh chụp nhanh SQL chỉ đọc được tham số hóa**
 
-  Add one repository query using `@BusinessDate`:
+  Thêm một truy vấn kho lưu trữ bằng `@BusinessDate`:
 
   ```sql
   SELECT
@@ -931,11 +924,11 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
       AS LowStockBooks;
   ```
 
-  Map all SQL `BIGINT` values through `Number(...)`. Do not accept raw filters.
+  Ánh xạ tất cả các giá trị SQL `BIGINT` thông qua `Number(...)`. Không chấp nhận bộ lọc thô.
 
-- [x] **Step 4: Add service/controller/route/validator**
+- [x] **Bước 4: Thêm dịch vụ/bộ điều khiển/tuyến/trình xác thực**
 
-  Service:
+  Dịch vụ:
 
   ```js
   async function getOperationsSummary(actor, context = {}) {
@@ -952,12 +945,11 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   }
   ```
 
-  Apply the same one-read clock rule to the existing borrowing report:
-  `getBorrowingReport()` must compute `businessDate` in the service and pass it
-  explicitly to its repository. Repository defaults based on `new Date()` are
-  forbidden for overdue classification.
+Áp dụng cùng một quy tắc đồng hồ một lần đọc cho báo cáo mượn hiện có: `getBorrowingReport()` phải
+tính toán `businessDate` trong dịch vụ và chuyển nó một cách rõ ràng đến kho lưu trữ của nó. Mặc
+định kho lưu trữ dựa trên `new Date()` bị cấm phân loại quá hạn.
 
-  Route:
+  Lộ trình:
 
   ```js
   router.get(
@@ -968,7 +960,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   );
   ```
 
-  Validator must be exactly:
+  Trình xác nhận phải chính xác:
 
   ```js
   const operationsSummaryValidators = [
@@ -977,9 +969,9 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   ];
   ```
 
-- [x] **Step 5: Implement in-memory parity**
+- [x] **Bước 5: Triển khai tính chẵn lẻ trong bộ nhớ**
 
-  Extend the helper signature without breaking report-only tests:
+  Mở rộng chữ ký của người trợ giúp mà không vi phạm các kiểm thử chỉ báo cáo:
 
   ```js
   function makeInMemoryReportDependencies(
@@ -989,25 +981,24 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   ) {
   ```
 
-  Count from the same `borrowingState` and `reservationState` supplied by
-  `systemIntegrationHarness.js`. Do not clone then mutate fixtures; return a new
-  plain object. Both the existing borrowing report and operations summary must
-  consume the explicit `businessDate` argument so in-memory parity cannot drift
-  with the host clock.
+Đếm từ cùng một `borrowingState` và `reservationState` do `systemIntegrationHarness.js` cung cấp.
+Không sao chép rồi thay đổi đồ đạc; trả về một đối tượng đơn giản mới. Cả báo cáo vay mượn hiện tại
+và tóm tắt hoạt động đều phải sử dụng đối số `businessDate` rõ ràng để tính chẵn lẻ trong bộ nhớ
+không thể trôi theo đồng hồ máy chủ.
 
-- [x] **Step 6: Run GREEN FE12 backend tests**
+- [x] **Bước 6: Chạy kiểm thử máy chủ GREEN FE12**
 
-  Run:
+  Chạy:
 
   ```powershell
   npm --prefix backend test -- --runTestsByPath tests/reportRepository.test.js tests/reportService.test.js tests/reportRoutes.test.js tests/reportContract.test.js tests/reportInMemoryParity.test.js
   ```
 
-  Expected: all focused report suites pass.
+  Dự kiến: tất cả các bộ báo cáo tập trung đều đạt.
 
-- [x] **Step 7: Write failing frontend summary tests**
+- [x] **Bước 7: Viết các kiểm thử tóm tắt giao diện người dùng không thành công**
 
-  Assert API and view model:
+  Xác nhận API và xem mô hình:
 
   ```js
   assert.match(apiSource, /operationsSummary\\(\\)/);
@@ -1021,11 +1012,11 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   }).map((item) => item.value), [1, 2, 1, 3, 4, 2]);
   ```
 
-  Add a missing-field case whose card value is `null`, never `0`.
+  Thêm trường hợp thiếu trường có giá trị thẻ là `null`, không bao giờ là `0`.
 
-- [x] **Step 8: Replace staff dashboard fan-out with FE12 summary**
+- [x] **Bước 8: Thay thế phân bổ bảng điều khiển nhân viên bằng bản tóm tắt FE12**
 
-  Keep Member dashboard behavior unchanged. For staff:
+  Giữ nguyên hành vi của trang tổng quan Thành viên. Đối với nhân viên:
 
   ```js
   const request = audience === 'member'
@@ -1033,7 +1024,7 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
     : reportApi.operationsSummary();
   ```
 
-  Build six fixed cards:
+  Xây dựng sáu thẻ cố định:
 
   ```js
   [
@@ -1046,12 +1037,12 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   ]
   ```
 
-  Render `Không tải được` for a `null` value and provide per-card retry by
-  reloading the single snapshot. Do not derive counts from paginated rows.
+Kết xuất `Không tải được` cho giá trị `null` và cung cấp chức năng thử lại trên mỗi thẻ bằng cách
+tải lại một ảnh chụp nhanh. Không lấy số đếm từ các hàng được phân trang.
 
-- [x] **Step 9: Run GREEN FE12 frontend tests**
+- [x] **Bước 9: Chạy kiểm thử giao diện người dùng GREEN FE12**
 
-  Run:
+  Chạy:
 
   ```powershell
   node --test --test-name-pattern="report|dashboard|app shell" frontend/test/*.test.js
@@ -1060,24 +1051,24 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   git diff --check
   ```
 
-  Expected: focused frontend tests, lint and build pass.
+  Dự kiến: kiểm tra giao diện người dùng tập trung, tìm lỗi mã nguồn và xây dựng.
 
-- [x] **Step 10: Record the slice checkpoint without committing product code**
+- [x] **Bước 10: Ghi điểm kiểm tra lát bánh mà không cần nhập mã sản phẩm**
 
-  Update FE12 evidence files; leave implementation uncommitted.
+  Cập nhật tệp bằng chứng FE12; không cam kết thực hiện.
 
 ---
 
-### Task 7: Prove the connected flow with integration and desktop browser tests
+### Nhiệm vụ 7: Chứng minh luồng được kết nối bằng các kiểm thử tích hợp và trình duyệt trên máy tính để bàn
 
-**Files:**
+**Tệp:**
 
-- Modify/Create: Cross-feature evidence files listed in File Structure.
+- Sửa đổi/Tạo: Các tệp bằng chứng đa chức năng được liệt kê trong Cấu trúc Tệp.
 
-**Interfaces:**
+**Giao diện:**
 
-- Consumes: Tasks 2-6.
-- Produces: one deterministic fixture and browser path:
+- Tiêu thụ: Nhiệm vụ 2-6.
+- Tạo ra: một lịch thi đấu xác định và đường dẫn trình duyệt:
 
   ```text
   FE07 PENDING
@@ -1086,30 +1077,29 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   -> FE07 RETURNED + reservationQueueAction
   -> FE08 NOTIFIED + FE10 RESERVATION_READY
   -> FE07 BORROWED + FE08 FULFILLED
-  -> FE12 operations summary matches final source state
+  -> bản tóm tắt vận hành FE12 khớp với trạng thái nguồn cuối cùng
   ```
 
-- [x] **Step 1: Write a failing backend cross-feature integration test**
+- [x] **Bước 1: Viết kiểm thử tích hợp đa chức năng máy chủ không thành công**
 
-  Extend `backend/tests/systemIntegration.test.js` to use Member A, Member B and
-  Librarian. Assert source state and notification count after every transition.
-  Snapshot the FE12 body before and after; assert no duplicate notification after
-  replaying an identical source request.
+Mở rộng `backend/tests/systemIntegration.test.js` để sử dụng Thành viên A, Thành viên B và Thủ thư.
+Xác nhận trạng thái nguồn và số lượng thông báo sau mỗi lần chuyển đổi. Chụp nhanh thân máy FE12
+trước và sau; khẳng định không có thông báo trùng lặp sau khi phát lại yêu cầu nguồn giống hệt nhau.
 
-- [x] **Step 2: Run RED system test**
+- [x] **Bước 2: Chạy kiểm thử hệ thống RED**
 
-  Run:
+  Chạy:
 
   ```powershell
   npm --prefix backend run test:integration:system
   ```
 
-  Expected: new connected case fails until all slices are wired into the shared
-  in-memory harness.
+Dự kiến: trường hợp kết nối mới không thành công cho đến khi tất cả các lát cắt được nối vào khai
+thác trong bộ nhớ dùng chung.
 
-- [x] **Step 3: Extend the deterministic E2E harness**
+- [x] **Bước 3: Mở rộng dây nịt E2E xác định**
 
-  Add setup helpers only under `/__e2e__/` for:
+  Chỉ thêm người trợ giúp thiết lập trong `/__e2e__/` cho:
 
   ```js
   {
@@ -1121,59 +1111,60 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   }
   ```
 
-  Use production routes for every business mutation. Harness-only endpoints may
-  seed dates or inspect state; they must not perform the mutation being tested.
+Sử dụng các lộ trình sản xuất cho mọi thao tác ghi kinh doanh. Các điểm cuối chỉ khai thác có thể chọn
+ngày tháng hoặc kiểm tra trạng thái; họ không được thực hiện thao tác ghi đang được kiểm tra.
 
-- [x] **Step 4: Write the desktop Playwright golden flow**
+- [x] **Bước 4: Viết dòng vàng Playwright lên desktop**
 
-  Set:
+  Đặt:
 
   ```js
   await page.setViewportSize({ width: 1440, height: 900 });
   ```
 
-  Verify:
+  Xác minh:
 
   ```text
-  Member A creates borrow request.
-  Librarian approves.
-  Member A opens FE10 result and lands on /borrowing/history.
-  Member B reserves the borrowed copy.
-  Librarian returns the copy and uses the visible queue handoff.
-  Librarian processes FIFO queue.
-  Member B opens RESERVATION_READY, sees NOTIFIED expiry and creates exact-copy request.
-  Librarian approves that request; reservation becomes FULFILLED.
-  Librarian /home shows FE12 KPI values matching the final backend snapshot.
+  Thành viên A tạo yêu cầu mượn.
+  Thủ thư phê duyệt.
+  Thành viên A mở kết quả FE10 và được dẫn tới `/borrowing/history`.
+  Thành viên B đặt chỗ bản sao đang được mượn.
+  Thủ thư trả bản sao và dùng thao tác bàn giao hàng đợi đang hiển thị.
+  Thủ thư xử lý hàng đợi FIFO.
+  Thành viên B mở `RESERVATION_READY`, thấy thời hạn `NOTIFIED` và tạo yêu cầu mượn đúng bản sao.
+  Thủ thư phê duyệt yêu cầu đó; đặt chỗ chuyển thành `FULFILLED`.
+  Trang `/home` của Thủ thư hiển thị các KPI FE12 khớp với ảnh chụp nhanh cuối cùng từ máy chủ.
   documentElement.scrollWidth <= documentElement.clientWidth.
-  browser console contains no unexpected error.
+  bảng điều khiển trình duyệt không có lỗi ngoài dự kiến.
   ```
 
-- [x] **Step 5: Run GREEN integration and browser tests**
+- [x] **Bước 5: Chạy kiểm thử trình duyệt và tích hợp GREEN**
 
-  Run:
+  Chạy:
 
   ```powershell
   npm --prefix backend run test:integration:system
   npx playwright test tests/e2e/fe07-fe12-connected-demo-flow.spec.js --project=chromium
   ```
 
-  Expected: both pass at `1440x900`.
+  Dự kiến: cả hai đều đạt `1440x900`.
 
-- [x] **Step 6: Update user/demo documentation**
+- [x] **Bước 6: Cập nhật tài liệu người dùng/bản demo**
 
-  Add exact routes, roles, setup data, clicks and expected state transitions to:
+  Thêm các tuyến đường, vai trò, dữ liệu thiết lập, số lần nhấp chuột và chuyển đổi trạng thái dự
+  kiến chính xác vào:
 
   ```text
   docs/user-manual.md
   docs/testing/system-integration-demo-runbook.md
   ```
 
-  State that Azure staging uses Azure SQL and that `/health` alone is not
-  business-flow evidence.
+Nêu rõ rằng Môi trường tiền sản xuất Azure sử dụng Azure SQL và chỉ riêng `/health` không phải là
+bằng chứng về luồng kinh doanh.
 
-- [x] **Step 7: Run the full local verification gate**
+- [x] **Bước 7: Chạy cổng xác minh cục bộ đầy đủ**
 
-  Run:
+  Chạy:
 
   ```powershell
   npm --prefix backend test
@@ -1189,50 +1180,50 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   git diff --check
   ```
 
-  Expected: every command exits `0`; backend coverage remains above global
-  `80%` branches/functions/lines/statements; traceability stays at or above
-  `70%`; Azure-compatible schema is generated without database create/switch.
+Dự kiến: mọi lệnh đều thoát `0`; phạm vi bảo hiểm máy chủ vẫn ở trên các nhánh/chức năng/dòng/câu
+lệnh `80%` toàn cầu; khả năng truy vết vẫn ở mức hoặc cao hơn `70%`; Lược đồ tương thích Azure được
+tạo mà không cần tạo/chuyển đổi cơ sở dữ liệu.
 
-- [x] **Step 8: Record complete L1-L4 evidence and stop for H2**
+- [x] **Bước 8: Ghi lại bằng chứng L1-L4 đầy đủ và dừng xét nghiệm H2**
 
-  Record exact counts, command output, browser screenshot paths, migration hash
-  and the complete local diff. Do not stage or commit product implementation
-  before the user approves H2.
+Ghi lại số lượng chính xác, đầu ra lệnh, đường dẫn ảnh chụp màn hình trình duyệt, hàm băm di chuyển
+và khác biệt cục bộ hoàn chỉnh. Không thực hiện giai đoạn hoặc cam kết triển khai sản phẩm trước khi
+người dùng phê duyệt H2.
 
 ---
 
-### Task 8: H2 commit, PR, H3 merge and Azure staging verification
+### Nhiệm vụ 8: Cam kết H2, PR, hợp nhất H3 và xác minh Môi trường tiền sản xuất Azure
 
-**Files:**
+**Tệp:**
 
-- Modify: feature `TASKS.md`, `TEST_PLAN.md`, `CHANGELOG.md` only for exact
-  evidence substitutions allowed by H3.
+- Sửa đổi: chỉ chức năng `TASKS.md`, `TEST_PLAN.md`, `CHANGELOG.md` chính xác
+  thay thế bằng chứng được cho phép bởi H3.
 
-**Interfaces:**
+**Giao diện:**
 
-- Consumes: complete H2-reviewed local diff and L1-L4 evidence.
-- Produces: exact-head PR, merged `main`, exact post-merge CI and Azure staging
-  evidence against Azure SQL.
+- Tiêu thụ: bằng chứng L1-L4 và khác biệt cục bộ được H2 xem xét đầy đủ.
+- Tạo ra: PR chính xác, `main` được hợp nhất, CI sau hợp nhất chính xác và môi trường tiền sản xuất Azure
+  bằng chứng chống lại Azure SQL.
 
-- [x] **Step 1: Present the H2 packet**
+- [x] **Bước 1: Trình bày gói H2**
 
-  Include:
+  Bao gồm:
 
   ```text
-  branch and base commit
-  complete changed-file list
+  nhánh và bản ghi Git cơ sở
+  danh sách đầy đủ các tệp đã thay đổi
   git diff --check result
-  RED/GREEN commands and counts per slice
-  full backend/frontend/coverage/lint/build/system results
-  traceability result
-  migration SHA-256
-  Playwright 1440x900 evidence
-  known limitations and out-of-scope confirmation
+  lệnh và số lượng RED/GREEN theo từng lát triển khai
+  kết quả đầy đủ của máy chủ/giao diện/độ bao phủ/lint/bản dựng/hệ thống
+  kết quả kiểm tra khả năng truy vết
+  SHA-256 của tệp di chuyển dữ liệu
+  bằng chứng Playwright ở kích thước 1440x900
+  xác nhận các giới hạn đã biết và nội dung ngoài phạm vi
   ```
 
-- [ ] **Step 2: Stage only reviewed batch files after H2 approval**
+- [ ] **Bước 2: Giai đoạn chỉ xem xét các tệp lô sau khi được phê duyệt H2**
 
-  Run:
+  Chạy:
 
   ```powershell
   git add -- backend/src backend/tests frontend/src frontend/test database docs .sdd tests/e2e
@@ -1240,89 +1231,88 @@ React Router 7, Bootstrap/CSS hiện hữu, Node test runner, Playwright Chromiu
   git diff --cached --name-only
   ```
 
-  Remove any unrelated pre-existing file from the index before commit. Expected:
-  staged list matches the H2 packet exactly.
+Xóa mọi tệp có sẵn không liên quan khỏi chỉ mục trước khi xác nhận. Dự kiến: danh sách theo giai
+đoạn khớp chính xác với gói H2.
 
-- [ ] **Step 3: Commit and push the exact H2-reviewed diff**
+- [ ] **Bước 3: Cam kết và đẩy mức chênh lệch chính xác được H2 đánh giá**
 
-  Run:
+  Chạy:
 
   ```powershell
   git commit -m "feat: connect borrowing reservation notifications and reporting"
   git push -u origin feat/connected-circulation-flow
   ```
 
-  Open a draft PR, wait for required CI, then mark ready only when the exact head
-  remains unchanged and checks pass.
+Mở một PR dự thảo, đợi CI được yêu cầu, sau đó chỉ đánh dấu sẵn sàng khi phần đầu chính xác không
+thay đổi và các bước kiểm tra đã vượt qua.
 
-- [ ] **Step 4: Stop for H3 integration review**
+- [ ] **Bước 4: Dừng để xem xét tích hợp H3**
 
-  Review Standards and Spec axes, PR mergeability, required checks, schema
-  migration instructions, secret scan and exact head SHA. Do not merge until the
-  user explicitly approves H3.
+Xem lại các trục Tiêu chuẩn và đặc tả, khả năng hợp nhất PR, kiểm tra bắt buộc, hướng dẫn di chuyển
+lược đồ, quét bí mật và đầu chính xác SHA. Không hợp nhất cho đến khi người dùng chấp thuận rõ ràng
+H3.
 
-- [ ] **Step 5: Merge and monitor exact post-merge CI**
+- [ ] **Bước 5: Hợp nhất và theo dõi CI sau hợp nhất chính xác**
 
-  After H3:
+  Sáu H3:
 
   ```text
-  merge reviewed PR
-  capture merge SHA
-  wait for CI on that exact main SHA
-  wait for deploy-staging on that exact main SHA
+  hợp nhất PR đã được rà soát
+  ghi lại SHA hợp nhất
+  chờ CI chạy trên đúng SHA của `main`
+  chờ triển khai môi trường tiền sản xuất trên đúng SHA của `main`
   ```
 
-  Do not treat a different commit's green run as evidence.
+  Đừng coi hoạt động xanh của một cam kết khác là bằng chứng.
 
-- [ ] **Step 6: Apply/verify Azure SQL migration and staging flow**
+- [ ] **Bước 6: Áp dụng/xác minh quy trình di chuyển và môi trường tiền sản xuất Azure SQL**
 
-  Use the reviewed idempotent migration against the configured Azure SQL staging
-  database through the existing deployment workflow. Verify migration twice,
-  then run:
+Sử dụng quá trình di chuyển tạm thời đã được đánh giá dựa trên cơ sở dữ liệu môi trường tiền sản
+xuất Azure SQL đã được định cấu hình thông qua quy trình triển khai hiện có. Xác minh di chuyển hai
+lần, sau đó chạy:
 
   ```powershell
   npm run smoke:staging
   ```
 
-  Execute the bounded live role flow on the Azure Static Web Apps frontend and
-  Azure App Service backend. Confirm FE10 inbox rows, FE08 manual queue handoff
-  and FE12 KPI values from Azure SQL; `/health` is only the entry gate.
+Thực thi luồng vai trò trực tiếp được giới hạn trên giao diện Azure Static Web Apps và máy chủ Azure
+App Service. Xác nhận các hàng trong hộp thư đến FE10, chuyển bàn giao đợi thủ công FE08 và các giá
+trị FE12 KPI từ Azure SQL; `/health` chỉ là cổng vào.
 
-- [ ] **Step 7: Close evidence only after exact staging success**
+- [ ] **Bước 7: Chỉ đóng bằng chứng sau khi môi trường tiền sản xuất thành công chính xác**
 
-  Record PR number, H2/H3 approvals, implementation head, merge SHA, exact CI
-  run, exact Azure run, migration hash and bounded live verification. If any
-  required check or live business step fails, keep the batch open and report the
-  precise failing boundary.
+Ghi lại số PR, phê duyệt H2/H3, người đứng đầu triển khai, hợp nhất SHA, chạy CI chính xác, chạy
+Azure chính xác, hàm băm di chuyển và xác minh trực tiếp có giới hạn. Nếu bất kỳ bước kiểm tra bắt
+buộc hoặc bước kinh doanh trực tiếp nào không thành công, hãy giữ lô ở trạng thái mở và báo cáo ranh
+giới thất bại chính xác.
 
 ---
 
-## Self-Review
+## Tự xem xét
 
-### Spec coverage
+### Phạm vi bảo hiểm đặc tả
 
-- AT-001/AT-002/AT-003: Tasks 2-4.
-- AT-004: Tasks 3-4.
-- AT-005/AT-006/AT-007/AT-008/AT-009: Tasks 2, 3 and 5.
-- AT-010/AT-011: Task 6.
-- AT-012: Task 7.
-- Azure SQL and staging truth: Task 8.
+- AT-001/AT-002/AT-003: Nhiệm vụ 2-4.
+- AT-004: Nhiệm vụ 3-4.
+- AT-005/AT-006/AT-007/AT-008/AT-009: Nhiệm vụ 2, 3 và 5.
+- AT-010/AT-011: Nhiệm vụ 6.
+- AT-012: Nhiệm vụ 7.
+- Azure SQL và môi trường tiền sản xuất sự thật: Nhiệm vụ 8.
 
-### Placeholder scan
+### Quét giữ chỗ
 
-The plan assigns exact file paths, API names, requirement IDs, commands,
-response members, template keys, action paths and expected outcomes. It contains
-no deferred implementation marker.
+Kế hoạch chỉ định đường dẫn tệp chính xác, tên API, ID yêu cầu, lệnh, thành viên phản hồi, khóa mẫu,
+đường dẫn hành động và kết quả mong đợi. Nó không chứa điểm đánh dấu triển khai bị trì hoãn.
 
-### Type consistency
+### Tính nhất quán của loại
 
-- `reservationQueueAction.copyId` is a positive integer end-to-end.
-- `reservationQueueAction.hasActiveQueue` is boolean.
-- `reservationQueueAction.actionPath` is always
+- `reservationQueueAction.copyId` là số nguyên dương nối đầu.
+- `reservationQueueAction.hasActiveQueue` là boolean.
+- `reservationQueueAction.actionPath` luôn là
   `/librarian/reservations`.
-- FE10 action path for all four FE07 result templates is always
+- FE10 đường dẫn hành động cho tất cả bốn mẫu kết quả FE07 luôn
   `/borrowing/history`.
-- FE12 KPI fields are numbers at the backend boundary and `number | null` only
-  in the frontend view model to represent invalid/missing fields without false
-  zero.
-- `generatedAt` is an ISO-8601 server timestamp.
+- FE12 Các trường KPI là các số ở ranh giới máy chủ và chỉ `number | null`
+trong mô hình chế độ xem giao diện người dùng để thể hiện các trường không hợp lệ/bị thiếu mà không
+có số 0 sai.
+- `generatedAt` là dấu thời gian của máy chủ ISO-8601.
