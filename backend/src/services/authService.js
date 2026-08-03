@@ -26,13 +26,10 @@ function normalizeUsername(username) {
 }
 
 function deriveUsername(email) {
-  const base = normalizeEmail(email)
+  return normalizeEmail(email)
     .split('@')[0]
     .replace(/[^a-z0-9._-]/g, '')
-    .slice(0, 20) || 'user';
-
-  const suffix = crypto.randomBytes(2).toString('hex');
-  return `${base}_${suffix}`;
+    .slice(0, 50) || 'user';
 }
 
 function maskEmail(email) {

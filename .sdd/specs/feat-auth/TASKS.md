@@ -325,3 +325,7 @@ Bằng chứng này chỉ đóng nhóm nhiệm vụ UX Xác thực/OTP. Phần g
   - Ánh xạ tới: BR-FE02-005, BR-FE02-011, BR-FE02-016, BR-FE02-017, BR-FE02-020; AC-FE02-024; NFR-FE02-SEC-001/003/015, NFR-FE02-TXN-002, NFR-FE02-LOG-001/002.
   - Bằng chứng: commit `3a87ee8`, PR #95, foundation checks thành công, CI sau merge `30711057582` và staging deployment `30711210037` trên `e01585a`; kiểm thử auth/config/HTTPS tập trung, backend đầy đủ, coverage, system/E2E/deployment, traceability và secret scan đạt trong lô đã duyệt.
   - Ranh giới: hoàn tất fail-fast bcrypt, loại debug OTP, HTTPS `/api`, audit nguyên tử cho đăng nhập thành công/đăng xuất; audit login attempt/failure/lock/auto-unlock vẫn ngoài phạm vi và không được suy diễn là fail-closed.
+
+- [x] **FE02-T068 - Sửa username suy ra từ email khi tự đăng ký.**
+  - Ánh xạ tới: BR-FE02-001; FR-FE02-001; AC-FE02-001.
+  - DoD: request đăng ký không có `username` lưu phần local trước `@` của email đã chuẩn hóa mà không nối hậu tố ngẫu nhiên; username được gửi rõ ràng và quy tắc xung đột duy nhất không đổi; có kiểm thử hồi quy tập trung.
