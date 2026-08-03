@@ -1,8 +1,8 @@
-# .agentignore — Library Management System
-# Patterns listed here must be skipped by AI/agent tooling when scanning,
-# indexing, or modifying the repository. Mirrors common ignore semantics.
+# .agentignore — Hệ thống Quản lý Thư viện
+# Công cụ AI/agent phải bỏ qua các mẫu dưới đây khi quét, lập chỉ mục
+# hoặc chỉnh sửa kho mã nguồn. Ngữ nghĩa tương tự các file ignore thông dụng.
 
-# Build outputs
+# Đầu ra build
 target/
 dist/
 build/
@@ -10,27 +10,27 @@ out/
 bin/
 obj/
 
-# Dependencies
+# Phần phụ thuộc
 node_modules/
 vendor/
 
-# IDE / editor
+# IDE / trình soạn thảo
 .idea/
 .vscode/
 
-# OS noise
+# File phụ của hệ điều hành
 .DS_Store
 Thumbs.db
 
-# Secrets and environment
+# Bí mật và biến môi trường
 .env
 .env.*
 *.secret
 secrets/
 credentials/
 
-# Logs
+# Nhật ký
 *.log
 
-# Local agent scratch space
+# Vùng tạm cục bộ của agent
 _commit_msg.txt
