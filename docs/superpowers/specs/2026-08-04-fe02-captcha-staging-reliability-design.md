@@ -102,9 +102,10 @@ No unbounded retry loop or background request storm is allowed.
 
 The deployment workflow shall resolve the current remote `main` SHA immediately
 before deployment and compare it with the checked-out event SHA. A stale run
-shall complete without executing backend or frontend deployment steps. The
-workflow shall also cancel an in-progress older run when a newer run enters the
-same staging concurrency group.
+shall complete without executing backend or frontend deployment steps. Keep the
+staging concurrency group serialized without unconditional cancellation because
+GitHub may start an older queued event after a newer event; start order alone is
+not a safe proxy for commit freshness.
 
 The guard must apply to both backend and frontend deployment jobs so a `main`
 advance between jobs cannot publish a mixed version. Manual dispatch remains
