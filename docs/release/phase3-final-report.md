@@ -1,27 +1,27 @@
-# Phase 3 Final Report - Polish and Delivery
+# Báo cáo Cuối cùng Giai đoạn 3 - Hoàn thiện và bàn giao
 
-Date: 2026-07-19  
-Branch: `docs/phase3-polish-delivery`  
-Decision: **Integrated on `main`**
+Ngày: 2026-07-19
+nhánh: `docs/phase3-polish-delivery`
+Quyết định: **Tích hợp trên `main`**
 
-## Scope
+## Phạm vi
 
-Phase 3 hardens and demonstrates the accepted FE01-FE12 release without adding
-new business scope. Work covered Azure staging evidence, Live SQL reconciliation,
-frontend performance polish, synthetic browser rehearsal, release documentation,
-and a source-linked defense deck.
+Giai đoạn 3 tăng cường và chứng minh bản phát hành FE01-FE12 được chấp nhận mà không cần thêm phạm
+vi kinh doanh mới. Công việc bao gồm bằng chứng môi trường tiền sản xuất Azure, đối chiếu SQL trực
+tiếp, hoàn thiện hiệu suất giao diện người dùng, diễn tập trình duyệt tổng hợp và tài liệu phát hành.
+Tại thời điểm Giai đoạn 3, bộ slide bảo vệ đồ án có liên kết nguồn cũng là một phần của bàn giao;
+artifact này về sau đã được xóa theo quyết định của người dùng như ghi tại phần tài liệu bên dưới.
 
-Integration evidence: PR #48 merged as `4d02fc4`; post-merge `main` CI
-`29696519912` passed; staging workflow `29696612260` passed its quality gate,
-both deployments, and the SQL-aware six-check smoke.
+Bằng chứng tích hợp: PR #48 được hợp nhất thành `4d02fc4`; `main` CI `29696519912` sau hợp nhất đã
+được thông qua; Quy trình môi trường tiền sản xuất `29696612260` đã vượt qua ngưỡng chất lượng, cả
+hai quá trình triển khai và kiểm thử nhanh sáu bước có truy vấn SQL.
 
-At the time of this report, `v1.0.2` was the next canonical source release.
-It is now published at `c988af1`; `main@cce59d0` is the validated post-release
-application baseline after PR #57/#58, not a pre-authorized `v1.0.3` release
-SHA. Any future `v1.0.3` must use the later reviewed post-reconciliation `main`
-SHA after H2, H3, and exact post-merge CI.
+Tại thời điểm thực hiện báo cáo này, `v1.0.2` là bản phát hành nguồn chuẩn tiếp theo. Hiện nó đã
+được xuất bản tại `c988af1`; `main@cce59d0` là cơ sở ứng dụng sau phát hành đã được xác thực sau PR
+#57/#58, không phải là bản phát hành `v1.0.3` được ủy quyền trước SHA. Mọi `v1.0.3` trong tương lai
+đều phải sử dụng `main` SHA sau H2, H3 và CI chính xác sau hợp nhất.
 
-## Architecture and traceability
+## Kiến trúc và truy vết
 
 The approved Node.js/Express, React/Bootstrap, SQL Server, and REST stack is
 unchanged. Runtime boundaries are React on Azure Static Web Apps, Express on
@@ -29,23 +29,23 @@ Azure App Service, and Azure SQL. The historical PR #48 snapshot recorded all
 12 feature packages at 100% FR traceability; the 2026-08-02 closeout refresh
 below supersedes that count. Route guards and backend authorization remain authoritative.
 
-## Evidence summary
+## Tóm tắt bằng chứng
 
-The table below preserves the historical PR #48 Phase 3 snapshot. Its 916
-backend and 151 frontend test counts are not the current reconciliation totals.
+Bảng bên dưới lưu giữ ảnh chụp nhanh PR #48 Giai đoạn 3 lịch sử. Số lượng kiểm tra 916 máy chủ và
+151 giao diện người dùng của nó không phải là tổng số đối chiếu hiện tại.
 
-| Area | Observed result |
+| Khu vực | Kết quả quan sát |
 | --- | --- |
-| Backend quality | 916 tests across 53 suites; coverage statements 92.68%, branches 81.66%, functions 96.59%, lines 92.61%. |
-| Frontend quality | 151 tests, lint pass, production build pass. |
-| Deployment utilities | 8/8 tests pass. |
-| System integration | 10/10 tests pass. |
-| Browser rehearsal | 4/4 Playwright flows pass in 24.4 seconds on custom ports. |
-| Frontend bundle | Initial entry reduced from 999,203 to 320,688 bytes (-67.9%); 57 route-level assets. |
-| Local auth timing | Login p95 66.95 ms; `/auth/me` p95 1.45 ms with bcrypt cost 10. |
-| Azure staging | Frontend, health, SQL catalog, exact CORS allow/deny, and anonymous protected-route checks pass. |
-| Authenticated Azure | Live run `c6e0c46421f0` passed Admin/Member/Librarian login, protected reads, borrow request, approval, and return. |
-| SMTP delivery | Notification `8` was `SENT` in one attempt; provider acceptance and Gmail IMAP message search passed. |
+| Chất lượng máy chủ | 916 kiểm thử trên 53 bộ kiểm thử; số liệu độ bao phủ 92,68%, nhánh 81,66%, chức năng 96,59%, dòng 92,61%. |
+| Chất lượng giao diện người dùng | 151 kiểm thử, vượt qua kiểm tra mã, vượt qua bản dựng sản xuất. |
+| Tiện ích triển khai | Các kiểm thử 8/8 đã vượt qua. |
+| Tích hợp hệ thống | Các kiểm thử 10/10 đã vượt qua. |
+| Diễn tập trình duyệt | 4/4 luồng Playwright đạt trong 24,4 giây trên các cổng tùy chỉnh. |
+| Gói giao diện người dùng | Mục nhập ban đầu giảm từ 999.203 xuống 320.688 byte (-67,9%); 57 tệp JavaScript theo tuyến. |
+| Thời gian xác thực cục bộ | Đăng nhập p95 66,95 ms; `/auth/me` p95 1,45 ms với bcrypt với hệ số 10. |
+| Môi trường tiền sản xuất Azure | Giao diện người dùng, sức khỏe, danh mục SQL, CORS cho phép/từ chối chính xác và vượt qua kiểm tra tuyến đường được bảo vệ ẩn danh. |
+| Azure đã được xác thực | `c6e0c46421f0` chạy trực tiếp đã vượt qua thông tin đăng nhập quản trị viên/thành viên/thủ thư, các lần đọc được bảo vệ, yêu cầu mượn, phê duyệt và trả sách. |
+| bàn giao SMTP | Thông báo `8` là `SENT` trong một lần thử; sự chấp nhận của nhà cung cấp và tìm kiếm tin nhắn Gmail IMAP đã được thông qua. |
 
 ## Full-project closeout refresh — 2026-08-02
 
@@ -57,28 +57,27 @@ The remaining work is governed by the approved four-PR design: PR B FE11 Core, P
 
 Historical localized desktop/mobile acceptance passed on 2026-07-21. The later responsive corrections are integrated in the current pre-batch candidate and covered by its exact CI/deployment evidence, but they remain outside published `v1.0.2` until the final closeout release decision.
 
-## Live SQL and migration result
+## SQL trực tiếp và kết quả di chuyển
 
-The SQL-aware smoke exposed missing `Books.RowVersion` and a filtered ISBN
-index dependency in the FE05 migration. The migration now drops and recreates
-the filtered index in the same transaction. FE04, FE05, FE06, FE10, and FE11
-migrations ran twice against `LibraryManagementStaging`; 20 tables and the
-required rowversion/width columns were validated. The temporary firewall rule
-was removed and SQL connection policy restored to `Default`.
+kiểm thử nhanh có truy vấn SQL đã làm lộ ra `Books.RowVersion` bị thiếu và phần phụ thuộc chỉ mục
+ISBN được lọc
+trong quá trình di chuyển FE05. Quá trình di chuyển hiện giảm xuống và tạo lại chỉ mục đã lọc trong
+cùng một giao dịch. Quá trình di chuyển FE04, FE05, FE06, FE10 và FE11 đã chạy hai lần so với
+`LibraryManagementStaging`; 20 bảng và các cột rowversion/width bắt buộc đã được xác thực. Quy tắc
+tường lửa tạm thời đã bị xóa và chính sách kết nối SQL được khôi phục về `Default`.
 
-## Acceptance boundaries
+## Ranh giới chấp nhận
 
-The public staging surface, authenticated Azure role flow, and real SMTP inbox
-delivery are observed as passing. The live run used ephemeral synthetic
-fixtures; cleanup returned zero auth, book, and notification fixtures. Durable
-avatar storage, shared SQL CI, and production SLA remain documented
-limitations.
+Bề mặt môi trường tiền sản xuất công khai, luồng vai trò Azure đã được xác thực và phân phối hộp thư
+đến SMTP thực được coi là đã vượt qua. Cuộc chạy trực tiếp sử dụng dữ liệu kiểm thử tổng hợp tạm
+thời; việc dọn dẹp không trả về xác thực, sách và thông báo cố định. Bộ lưu trữ hình đại diện bền
+bỉ, SQL CI dùng chung và SLA sản xuất vẫn còn những hạn chế được ghi nhận.
 
-The SMTP issue was traced to a malformed `SMTP_USER` configuration shape. The
-App Service setting was corrected to the valid `MAIL_FROM` address and the app
-was restarted; no credential or message content is included in this report.
+Sự cố SMTP được bắt nguồn từ cấu trúc cấu hình `SMTP_USER` không đúng định dạng. Cài đặt App
+Service đã được sửa thành địa chỉ `MAIL_FROM` hợp lệ và ứng dụng đã được khởi động lại; không có
+thông tin xác thực hoặc nội dung tin nhắn nào được đưa vào báo cáo này.
 
-## Reproduction commands
+## Lệnh tái hiện
 
 ```powershell
 npm.cmd run trace:enforce
@@ -97,12 +96,11 @@ $env:STAGING_API_URL='https://app-library-api-staging-nhat714.azurewebsites.net'
 npm.cmd run smoke:staging
 ```
 
-## Delivery artifacts
+## Tệp bàn giao
 
-- Staging and SQL evidence: `docs/release/phase3-staging-evidence-2026-07-19.md`.
-- Performance report: `docs/performance/phase3-performance-report-2026-07-19.md`.
-- User testing record: `docs/release/phase3-user-testing-record-2026-07-19.md`.
-- Rehearsal record: `docs/release/phase3-rehearsal-record.md`.
-- Defense deck and source record: `docs/presentation/phase3-defense-deck.pptx` and `docs/presentation/phase3-defense-deck-source.md`.
-- Vietnamese project presentation briefing: `docs/briefing-thuyet-trinh-du-an-vi.docx`.
-- Four-layer validation: `.sdd/reviews/phase3-final-validation-2026-07-19.md`.
+- Bằng chứng môi trường tiền sản xuất và SQL: `docs/release/phase3-staging-evidence-2026-07-19.md`.
+- Báo cáo hiệu suất: `docs/performance/phase3-performance-report-2026-07-19.md`.
+- Nhật ký kiểm toán người dùng: `docs/release/phase3-user-testing-record-2026-07-19.md`.
+- Biên bản diễn tập: `docs/release/phase3-rehearsal-record.md`.
+- Các tệp DOCX/PPTX hỗ trợ thuyết trình đã được xóa theo yêu cầu; dùng bộ tài liệu Markdown đã Việt hóa khi cần tra cứu.
+- Xác thực bốn lớp: `.sdd/reviews/phase3-final-validation-2026-07-19.md`.
