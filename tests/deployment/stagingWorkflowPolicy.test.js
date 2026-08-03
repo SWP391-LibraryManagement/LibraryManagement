@@ -62,10 +62,14 @@ test('staging deployment skips stale workflow heads before every Azure write', (
     (workflow.match(/name: Verify deployment head is current main/g) || []).length,
     3
   );
-  assert.equal((workflow.match(/git rev-parse HEAD/g) || []).length, 3);
+  assert.equal(
+    (workflow.match(/name: Confirm deployment head is still current main/g) || []).length,
+    2
+  );
+  assert.equal((workflow.match(/git rev-parse HEAD/g) || []).length, 5);
   assert.equal(
     (workflow.match(/git ls-remote origin refs\/heads\/main/g) || []).length,
-    3
+    5
   );
   assert.match(
     workflow,
@@ -73,11 +77,11 @@ test('staging deployment skips stale workflow heads before every Azure write', (
   );
   assert.match(
     workflow,
-    /deploy-backend:[\s\S]*?outputs:[\s\S]*?deployed:[\s\S]*?steps\.deployment-head\.outputs\.should_deploy/
+    /deploy-backend:[\s\S]*?outputs:[\s\S]*?deployed:[\s\S]*?steps\.final-deployment-head\.outputs\.should_deploy/
   );
   assert.match(
     workflow,
-    /name: Deploy backend[\s\S]*?if:\s*steps\.deployment-head\.outputs\.should_deploy == 'true'/
+    /name: Install backend production dependencies[\s\S]*?name: Confirm deployment head is still current main[\s\S]*?id: final-deployment-head[\s\S]*?name: Deploy backend[\s\S]*?if:\s*steps\.final-deployment-head\.outputs\.should_deploy == 'true'/
   );
   assert.match(
     workflow,
@@ -85,7 +89,11 @@ test('staging deployment skips stale workflow heads before every Azure write', (
   );
   assert.match(
     workflow,
-    /name: Deploy frontend[\s\S]*?if:\s*steps\.deployment-head\.outputs\.should_deploy == 'true'/
+    /deploy-frontend:[\s\S]*?outputs:[\s\S]*?deployed:[\s\S]*?steps\.final-deployment-head\.outputs\.should_deploy/
+  );
+  assert.match(
+    workflow,
+    /name: Build staging frontend[\s\S]*?name: Confirm deployment head is still current main[\s\S]*?id: final-deployment-head[\s\S]*?name: Deploy frontend[\s\S]*?if:\s*steps\.final-deployment-head\.outputs\.should_deploy == 'true'/
   );
   assert.match(
     workflow,

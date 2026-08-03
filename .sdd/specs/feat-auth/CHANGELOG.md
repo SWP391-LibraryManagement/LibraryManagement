@@ -7,7 +7,8 @@
 - Chặn run staging cũ trước preflight/backend/frontend Azure write bằng so sánh SHA với remote `main`; không dùng hủy concurrency vô điều kiện vì thứ tự khởi chạy không chứng minh độ mới của commit.
 - Bổ sung smoke check bắt buộc `GET /api/auth/captcha` trả image/token/expiry đúng hợp đồng và không có trường answer/digest/hash.
 - Ghi nhận nguyên nhân staging: run `30847497053` của SHA cũ `908f067` chạy sau run `30855663766` của merge SHA `1f0905f` và ghi đè deployment CAPTCHA.
-- Trạng thái FE02-T071: focused RED-GREEN, full local gate và H2 đạt; implementation được phép commit/publish để chờ exact-head CI và H3.
+- H3 remediation bổ sung lần kiểm tra remote `main` ngay trước từng Azure action và chỉ retry lỗi CAPTCHA tạm thời; HTTP cố định như `404` không retry.
+- Trạng thái FE02-T071: commit `c80c1d8` đã đạt H2 và exact-head CI `30858849852`; remediation cho hai blocker H3 đã đạt relevant/full gates cục bộ và H2 re-review trước commit, đang chờ exact-head CI/H3 mới.
 
 ## 2026-08-04 - Khắc phục bảo mật CAPTCHA dùng một lần
 

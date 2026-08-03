@@ -191,3 +191,16 @@ backend import, workflow YAML parse, and diff checks also passed.
 The first coverage attempt ran concurrently with Playwright and one unrelated
 FE05 test exceeded its 5-second timeout. The policy-allowed isolated rerun
 passed completely; no production change was made for that timing-only failure.
+
+## 10. H3 Remediation
+
+Exact-head CI `30858849852` passed on PR #115 head `c80c1d8`. H3 Standards found
+no violation. H3 Spec found two blockers: the SHA comparison was not repeated
+immediately before each Azure action, and the frontend retried permanent HTTP
+errors as well as transient failures.
+
+The local remediation adds a second backend/frontend SHA comparison after
+package/build work and directly before each Azure action. CAPTCHA retry now
+allows only network/no-response failures, HTTP 408, 425, 429, and 5xx; a 404 is
+attempted once. RED-GREEN and affected full gates pass, but the remediation
+received H2 re-review approval before its implementation commit.

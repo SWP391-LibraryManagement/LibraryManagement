@@ -15,10 +15,11 @@
 - [x] **FE02-T071 - Ổn định hiển thị CAPTCHA, phục hồi frontend và thứ tự deploy staging.**
   - Ánh xạ tới: FR-FE02-028; FR-FE02-030; AC-FE02-027; EC-FE02-019; SAFE-005.
   - Tệp: `backend/src/utils/captchaRenderer.js`, `backend/tests/captchaService.test.js`, `frontend/src/utils/captchaRecovery.js`, `frontend/src/component/auth/CaptchaField.jsx`, test frontend CAPTCHA, `.github/workflows/deploy-staging.yml`, `scripts/smoke-staging.js`, test deployment và tài liệu FE02 liên quan.
-  - DoD: challenge 4-6 glyph nằm trọn viewport 180x54; tải ban đầu retry đúng một lần; đổi mã thủ công thất bại giữ challenge còn dùng được; run staging cũ không chạm bước ghi Azure; smoke test bắt buộc route CAPTCHA và response công khai an toàn.
-  - Bằng chứng local: CAPTCHA service/route `11/11`; frontend recovery/wiring `5/5`; deployment `27/27`; backend `78 suite/1223 test`; system `11/11`; coverage `78 suite/1223 test` với statements `91.98%`, branches `81.28%`, functions `97.08%`, lines `91.94%`; frontend `288/288`, lint/build; Playwright `16/16`; secret/audit/trace/import/YAML/diff gates đạt. H2 đã phê duyệt complete diff trước commit.
+  - DoD: challenge 4-6 glyph nằm trọn viewport 180x54; tải ban đầu retry đúng một lần chỉ với lỗi tạm thời; đổi mã thủ công thất bại giữ challenge còn dùng được; backend/frontend kiểm tra lại remote `main` sát ngay trước Azure action; smoke test bắt buộc route CAPTCHA và response công khai an toàn.
+  - Bằng chứng trước H3: CAPTCHA service/route `11/11`; frontend `288/288`; deployment `27/27`; backend `78 suite/1223 test`; system `11/11`; coverage đạt; Playwright `16/16`; secret/audit/trace/import/YAML/diff gates đạt; H2 và exact-head CI `30858849852` xanh trên `c80c1d8`.
+  - H3 remediation: Spec review phát hiện P1 final SHA guard và P2 transient retry classification. RED-GREEN mới đạt frontend focused `6/6`, frontend full `289/289` cùng lint/build, deployment `27/27`, Playwright `16/16`, secret/trace/YAML/diff gates. H2 re-review đã phê duyệt complete remediation diff trước commit.
 
-Trạng thái: FE02-T071 H2 APPROVED - PENDING EXACT-HEAD CI/H3
+Trạng thái: FE02-T071 H3 REMEDIATION H2 APPROVED - PENDING EXACT-HEAD CI/H3
 Implementation State: PARTIAL
 Ghi chú baseline: FE02 và CAPTCHA PR #111 đã merge; trạng thái PARTIAL chỉ áp dụng cho remediation FE02-T071 chưa tích hợp.
 Ngày: 2026-08-04

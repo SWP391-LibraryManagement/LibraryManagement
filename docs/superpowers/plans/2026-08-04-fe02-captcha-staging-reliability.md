@@ -452,3 +452,5 @@ Request multiple challenges and inspect only image bounds/response structure; ne
 - [x] H2 approves the complete implementation diff before commit.
 - [ ] Exact-head CI and H3 pass before merge.
 - [ ] Exact post-merge staging serves the CAPTCHA route reliably.
+- [x] H3 blockers are reproduced and remediated with RED-GREEN.
+- [x] H2 re-approves the uncommitted H3 remediation diff.

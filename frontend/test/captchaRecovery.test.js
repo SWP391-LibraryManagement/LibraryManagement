@@ -33,3 +33,19 @@ test('stops after the configured CAPTCHA attempts', async () => {
 
   assert.equal(calls, 2);
 });
+
+test('does not retry a permanent CAPTCHA HTTP 404 response', async () => {
+  let calls = 0;
+  const error = new Error('not found');
+  error.response = { status: 404 };
+
+  await assert.rejects(
+    loadCaptchaWithRetry(async () => {
+      calls += 1;
+      throw error;
+    }, { attempts: 2, retryDelayMs: 0, wait: async () => {} }),
+    /not found/
+  );
+
+  assert.equal(calls, 1);
+});
