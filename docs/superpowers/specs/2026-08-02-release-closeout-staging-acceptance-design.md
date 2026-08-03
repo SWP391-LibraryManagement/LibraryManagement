@@ -217,28 +217,29 @@ lượt chạy chỉ đạt khi tất cả điều kiện sau đúng:
 - audit/report view không để vai trò ngoài phạm vi xem hoặc sửa dữ liệu;
 - không có row nghiệp vụ ngoài tệp kê khai bị thay đổi.
 
-## 8. Kiểm tra dọn dẹp và giữ lại
+## 8. Kiểm tra dọn dẹp và xóa dữ liệu tổng hợp
+
+> Sửa đổi 2026-08-04: Phần này thay thế chính sách terminalize/giữ lại cho mọi lần chạy mới. Các
+> lần chạy lịch sử ngày 2026-08-02 đã terminalize dữ liệu theo thiết kế cũ và phải được xử lý bằng
+> công cụ operator exact-run đã review.
 
 dọn dẹp chạy trong `finally`, kể cả khi setup hoặc acceptance thất bại giữa chừng.
 
 Thứ tự:
 
-1. dừng hoặc terminalize các open đặt chỗ/mượn sách trạng thái của dữ liệu kiểm thử theo hợp đồng hiện có;
-2. revoke toàn bộ refresh/access session có thể thu hồi của bốn tài khoản;
-3. đăng xuất browser contexts và xóa cục bộ cookies/storage;
-4. vô hiệu hóa bốn tài khoản tổng hợp;
-5. vô hiệu hóa/retire book và copy dữ liệu kiểm thử, không xóa vĩnh viễn reference đã đi vào audit/history;
-6. giữ lại dấu vết kiểm toán tối thiểu theo policy hiện hành;
-7. chạy post-dọn dẹp queries theo chính xác IDs;
-8. xác nhận tài khoản không đăng nhập lại được và token cũ không dùng được.
+1. đăng xuất browser contexts và xóa cục bộ cookies/storage;
+2. xác minh chính xác bốn người dùng `.invalid`, một sách có tiêu đề theo run ID và một bản sao có barcode theo run ID;
+3. xóa `NotificationAttempts`, `Notifications`, `Fines`, `Reservations`, `BorrowDetails`, `BorrowRequests`, membership/auth/audit liên quan theo thứ tự khóa ngoại;
+4. xóa chính xác bản sao, sách, hồ sơ/vai trò và bốn tài khoản tổng hợp trong cùng transaction;
+5. rollback nếu graph không đầy đủ, có tham chiếu ngoài dự kiến hoặc còn residue sau xóa;
+6. chạy post-dọn dẹp queries theo run ID và xác nhận không còn hàng người dùng/sách/bản sao tổng hợp.
 
 Bất biến sau dọn dẹp:
 
-- không còn đang hoạt động tổng hợp tài khoản;
-- không còn phiên/mã thông báo đang hoạt động của tài khoản;
-- không còn lượt mượn/đặt chỗ mở trên dữ liệu kiểm thử;
-- sách/bản sao tổng hợp không xuất hiện trong danh mục đang hoạt động;
-- dấu vết kiểm toán vẫn truy ngược được tác nhân, hành động và dấu thời gian;
+- không còn tài khoản tổng hợp;
+- không còn phiên, thông báo, lượt mượn, đặt chỗ, phạt hoặc hồ sơ membership của run;
+- không còn sách/bản sao tổng hợp trong danh mục quản lý;
+- không còn audit row do tác nhân tổng hợp hoặc target exact-run tạo ra;
 - tệp kê khai ghi `CLEANED`, `PARTIAL_CLEANUP` hoặc `FAILED_CLEANUP` cho từng đối tượng.
 
 Nếu dọn dẹp không hoàn tất:
