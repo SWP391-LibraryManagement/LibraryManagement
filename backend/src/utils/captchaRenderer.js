@@ -1,5 +1,12 @@
 const crypto = require('crypto');
 
+const VIEWBOX_WIDTH = 180;
+const VIEWBOX_HEIGHT = 54;
+const GLYPH_START_X = 8;
+const DEFAULT_GLYPH_STEP = 34;
+// Reserve space for the rotated 24px glyph, round line caps, and 3.2px stroke.
+const MAX_GLYPH_TRANSLATE_X = 152;
+
 const SEGMENTS = {
   a: [4, 4, 22, 4],
   b: [24, 6, 24, 22],
@@ -44,7 +51,16 @@ const GLYPHS = {
   Z: ['a', 'd', 'i', 'j'],
 };
 
+function glyphStep(answerLength) {
+  if (answerLength <= 1) return 0;
+  return Math.min(
+    DEFAULT_GLYPH_STEP,
+    (MAX_GLYPH_TRANSLATE_X - GLYPH_START_X) / (answerLength - 1)
+  );
+}
+
 function renderCaptchaSvgDataUri(answer, { randomInt = crypto.randomInt } = {}) {
+  const step = glyphStep(answer.length);
   const glyphs = [...answer].map((letter, index) => {
     const rotation = randomInt(9) - 4;
     const offsetY = randomInt(5) - 2;
@@ -53,18 +69,18 @@ function renderCaptchaSvgDataUri(answer, { randomInt = crypto.randomInt } = {}) 
       return `<path d="M${x1} ${y1} L${x2} ${y2}"/>`;
     }).join('');
 
-    return `<g transform="translate(${8 + index * 34} ${3 + offsetY}) rotate(${rotation} 13 24)">${paths}</g>`;
+    return `<g transform="translate(${GLYPH_START_X + index * step} ${3 + offsetY}) rotate(${rotation} 13 24)">${paths}</g>`;
   }).join('');
 
   const noise = Array.from({ length: 7 }, () => {
-    const x1 = randomInt(180);
-    const y1 = randomInt(54);
-    const x2 = randomInt(180);
-    const y2 = randomInt(54);
+    const x1 = randomInt(VIEWBOX_WIDTH);
+    const y1 = randomInt(VIEWBOX_HEIGHT);
+    const x2 = randomInt(VIEWBOX_WIDTH);
+    const y2 = randomInt(VIEWBOX_HEIGHT);
     return `<path class="noise" d="M${x1} ${y1} L${x2} ${y2}"/>`;
   }).join('');
 
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="180" height="54" viewBox="0 0 180 54"><rect width="180" height="54" fill="#f4eadb"/><g fill="none" stroke="#6d4c41" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">${glyphs}</g><g fill="none" stroke="#b58b68" stroke-width="1" opacity="0.55">${noise}</g></svg>`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${VIEWBOX_WIDTH}" height="${VIEWBOX_HEIGHT}" viewBox="0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}"><rect width="${VIEWBOX_WIDTH}" height="${VIEWBOX_HEIGHT}" fill="#f4eadb"/><g fill="none" stroke="#6d4c41" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">${glyphs}</g><g fill="none" stroke="#b58b68" stroke-width="1" opacity="0.55">${noise}</g></svg>`;
   return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
 }
 

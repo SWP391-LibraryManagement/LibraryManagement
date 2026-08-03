@@ -12,6 +12,8 @@ function normalizeUrl(value, name) {
   return parsed.origin;
 }
 
+const CAPTCHA_PUBLIC_FIELDS = new Set(['image', 'captchaToken', 'expiresIn']);
+
 async function request(fetchImpl, checkName, url, options, timeoutMs, attempts, retryDelayMs) {
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     const controller = new AbortController();
@@ -77,6 +79,33 @@ async function runStagingSmoke({
     throw new Error(`API health check failed with HTTP ${healthResponse.status}.`);
   }
   checks.push('health');
+
+  const captchaResponse = await request(
+    fetchImpl,
+    'CAPTCHA route',
+    `${api}/api/auth/captcha`,
+    {},
+    timeoutMs,
+    requestAttempts,
+    retryDelayMs
+  );
+  const captcha = await captchaResponse.json().catch(() => ({}));
+  const captchaObject = captcha && typeof captcha === 'object' && !Array.isArray(captcha);
+  const captchaFields = captchaObject ? Object.keys(captcha) : [];
+  const hasExactPublicShape = captchaFields.length === CAPTCHA_PUBLIC_FIELDS.size
+    && captchaFields.every((field) => CAPTCHA_PUBLIC_FIELDS.has(field));
+  if (
+    captchaResponse.status !== 200
+    || !captchaObject
+    || !hasExactPublicShape
+    || typeof captcha.image !== 'string'
+    || !captcha.image.startsWith('data:image/svg+xml;base64,')
+    || !/^[A-Za-z0-9_-]{43}$/.test(captcha.captchaToken)
+    || captcha.expiresIn !== 300
+  ) {
+    throw new Error(`CAPTCHA route check failed with HTTP ${captchaResponse.status}.`);
+  }
+  checks.push('captcha');
 
   const readinessResponse = await request(
     fetchImpl,

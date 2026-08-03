@@ -1,5 +1,16 @@
 # CHANGELOG.md - Xác thực FE02
 
+## 2026-08-04 - Ổn định hiển thị và triển khai CAPTCHA
+
+- Co khoảng cách glyph theo độ dài để challenge 6 chữ cái không bị cắt trong viewport SVG 180x54; test kiểm tra hai biên xoay cùng stroke.
+- Thêm retry đúng một lần cho tải CAPTCHA ban đầu và giữ challenge còn dùng được khi thao tác đổi mã thủ công thất bại.
+- Chặn run staging cũ trước preflight/backend/frontend Azure write bằng so sánh SHA với remote `main`; không dùng hủy concurrency vô điều kiện vì thứ tự khởi chạy không chứng minh độ mới của commit.
+- Bổ sung smoke check bắt buộc `GET /api/auth/captcha` trả đúng ba trường công khai `image`, `captchaToken`, `expiresIn`; mọi trường bổ sung đều bị từ chối fail-closed.
+- Ghi nhận nguyên nhân staging: run `30847497053` của SHA cũ `908f067` chạy sau run `30855663766` của merge SHA `1f0905f` và ghi đè deployment CAPTCHA.
+- H3 remediation bổ sung lần kiểm tra remote `main` ngay trước từng Azure action và chỉ retry lỗi CAPTCHA tạm thời; HTTP cố định như `404` không retry.
+- H3 round 2 trên head `9ff8555` đạt exact-head CI `30860111663`; Standards không có finding, Spec phát hiện smoke blacklist không chặn tên trường lạ như `solution`. RED-GREEN chuyển sang whitelist đúng ba trường công khai và H2 đã phê duyệt diff trước commit.
+- Trạng thái FE02-T071: H3 REMEDIATION ROUND 2 H2 APPROVED - PENDING EXACT-HEAD CI/H3.
+
 ## 2026-08-04 - Khắc phục bảo mật CAPTCHA dùng một lần
 
 - Thay token CAPTCHA tự chứa dữ liệu bằng token opaque ngẫu nhiên 32 byte và kho challenge process-local giới hạn 5.000 bản ghi, TTL 5 phút.
@@ -7,7 +18,7 @@
 - Render CAPTCHA bằng SVG path không chứa `<text>`, đáp án hoặc metadata bộ xác minh; loại bỏ phụ thuộc CAPTCHA vào khóa ký JWT.
 - Loại bypass theo `NODE_ENV`, bổ sung dependency injection rõ ràng cho test và giữ endpoint đáp án E2E chỉ trong test-control server.
 - Vô hiệu hóa submit đăng nhập/đăng ký khi chưa có challenge, giữ dữ liệu biểu mẫu và đồng bộ `EC-FE02-019`, `AC-FE02-027`, FE02-T070 cùng tài liệu liên quan.
-- Trạng thái amendment: full local gate và H2 đã hoàn tất; exact-head CI và H3 PR #111 vẫn bắt buộc trước merge.
+- Trạng thái amendment: full local gate, H2, exact-head CI và H3 đã hoàn tất; PR #111 merge thành `1f0905f`.
 
 ## 2026-08-03 - Kích hoạt CAPTCHA ảnh chữ cho đăng nhập và đăng ký
 

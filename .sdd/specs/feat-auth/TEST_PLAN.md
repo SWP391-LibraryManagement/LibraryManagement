@@ -7,9 +7,12 @@
 - `POST /api/auth/register` và `POST /api/auth/login` thiếu/sai/replay CAPTCHA trả `400 CAPTCHA_INVALID` trước khi gọi auth service, kể cả trong `NODE_ENV=test`; challenge hợp lệ vẫn đi theo happy path hiện có.
 - Frontend kiểm tra payload `captchaToken`/`captchaAnswer`, submit bị vô hiệu hóa khi chưa có token, dữ liệu biểu mẫu được giữ và CAPTCHA được làm mới sau lỗi tải hoặc `CAPTCHA_INVALID`.
 - Browser E2E lấy đáp án qua endpoint `/__e2e__/captcha-answer` của test server; production Express app không có endpoint trả đáp án hoặc fake CAPTCHA service.
+- Renderer test biến đổi endpoint của path tại hai biên xoay và chứng minh cả 6 glyph cùng stroke nằm trong viewport 180px.
+- Frontend utility test chứng minh lần tải ban đầu thử tối đa 2 lần với lỗi tạm thời nhưng chỉ 1 lần với HTTP `404`; source-contract test chứng minh đổi mã thủ công không xóa challenge còn dùng được khi request thay thế thất bại.
+- Deployment policy test chứng minh preflight/backend/frontend đều so sánh SHA với remote `main`, đồng thời backend/frontend kiểm tra lại ngay trước Azure action; smoke test từ chối route CAPTCHA thiếu, giá trị sai hoặc bất kỳ trường ngoài `image`, `captchaToken`, `expiresIn`.
 
-Phiên bản: 0.3.18
-Trạng thái: IMPLEMENTED - H2 APPROVED; PENDING EXACT-HEAD CI/H3
+Phiên bản: 0.3.20
+Trạng thái: FE02-T071 H3 REMEDIATION ROUND 2 H2 APPROVED - PENDING EXACT-HEAD CI/H3
 Cập nhật lần cuối: 2026-08-04
 
 Đặc tả nguồn: `.sdd/specs/feat-auth/SPEC.md`
@@ -72,7 +75,9 @@ Hành vi đăng ký, xác minh email, đăng nhập, làm mới token/đăng xu�
 - Candidate lịch sử T043: commit `241907d`, PR #60 head `50e9091`, merge `c052b50`; exact-head CI `29875668029`, post-merge CI `29875885463` và staging `29876046500` đều thành công; PR #60 không có GitHub review record.
 - Focused current rerun 2026-08-03: backend `authRoutes`, `authUtils`, `httpsEnforcement` đạt 3 suite/68 kiểm thử; frontend `authUxFrontend` + `loginFrontend` đạt 17/17.
 - L1 amendment trước H2 vòng 2: backend 75 suite/1202 test PASS; frontend 281/281, lint/build PASS; Playwright 16/16; deployment 20/20; secret/audit/trace/diff gates PASS.
-- CAPTCHA remediation 2026-08-04: service/renderer và route regression đạt 2 suite/9 kiểm thử sau RED-GREEN; backend full/coverage đạt 78 suite/1221 test; system 11/11; frontend 285/285 cùng lint/build; browser E2E 16/16; deployment 20/20; secret/audit/trace/import/diff gates đạt. H2 đã được phê duyệt; exact-head CI và H3 PR #111 vẫn còn.
+- CAPTCHA security remediation 2026-08-04: service/renderer và route regression đạt 2 suite/9 kiểm thử sau RED-GREEN; backend full/coverage đạt 78 suite/1221 test; system 11/11; frontend 285/285 cùng lint/build; browser E2E 16/16; deployment 20/20; secret/audit/trace/import/diff gates đạt. PR #111 sau đó đạt exact-head CI/H3 và merge thành `1f0905f`.
+- FE02-T071 2026-08-04: focused CAPTCHA service/route `11/11`, frontend recovery/wiring `5/5`, deployment `27/27`; full backend `78 suite/1223 test`; system `11/11`; coverage isolated rerun `78 suite/1223 test` với statements `91.98%`, branches `81.28%`, functions `97.08%`, lines `91.94%`; frontend `288/288` cùng lint/build; Playwright `16/16`; secret/audit/trace/import/YAML/diff gates đạt. Lần coverage đầu chạy đồng thời với E2E có một timeout 5 giây ở test FE05 không liên quan; rerun riêng theo policy flake đã đạt toàn bộ. H2 đã phê duyệt complete diff trước commit.
+- Exact-head CI `30858849852` đạt trên PR #115 head `c80c1d8`. H3 Standards không có finding; H3 Spec nêu P1 final SHA guard và P2 retry mọi HTTP error. H3 remediation RED-GREEN đạt frontend focused `6/6`, frontend full `289/289` cùng lint/build, deployment `27/27`, Playwright `16/16`, secret/trace/YAML/diff gates; H2 re-review đã phê duyệt complete remediation diff trước commit.
 - Traceability: tất cả 27 ID FR của FE02 có độ bao phủ `@spec` (**100%**) khi chạy `npm run trace:enforce`.
 - Bằng chứng hiệu năng: `npm.cmd run phase3:performance` ngày 2026-07-27 vượt qua NFR-FE02-PERF-001/004 trong môi trường cục bộ xác định đã ghi nhận: 30 mẫu đăng nhập hợp lệ có p95 `61.46 ms` và 50 mẫu `/api/auth/me` có p95 `1.52 ms`, với chi phí bcrypt 10; kiểm thử harness vượt qua 3/3 và các giới hạn SQL/mạng vẫn được ghi nhận.
 
@@ -80,11 +85,11 @@ Hành vi đăng ký, xác minh email, đăng nhập, làm mới token/đăng xu�
 
 - Các ngưỡng độ bao phủ toàn cục của Jest đã cấu hình đều đạt đối với statement, branch, function và line.
 - Nghiệm thu thủ công, tích hợp PR và CI chính xác sau merge trên `main` đã vượt qua cho ranh giới gửi FE10 được inject; việc gửi SMTP thực sau đó được quan sát là PASS trong lần chạy `c6e0c46421f0`.
-- H3 hồi cứu tại PR #107 chỉ áp dụng cho baseline FE02 cũ; amendment CAPTCHA PR #111 vẫn yêu cầu exact-head CI và H3 mới.
+- Staging run `30855663766` đã deploy merge SHA `1f0905f`, nhưng run cũ `30847497053` cho SHA `908f067` chạy sau và ghi đè; FE02-T071 phải chứng minh guard SHA và smoke CAPTCHA trước khi đóng khoảng trống vận hành này.
 
 Chủ sở hữu cổng tích hợp còn lại:
 
-- PR #111: full local gate, H2, exact-head CI và H3 cuối trước merge; không suy diễn trạng thái từ H3 lịch sử của FE02.
+- FE02-T071: full local gate, H2, exact-head CI, H3, merge và exact post-merge staging verification; không dùng trạng thái xanh của `/health` thay cho route CAPTCHA.
 
 ## 7. Lệnh/bằng chứng bắt buộc trước khi merge
 

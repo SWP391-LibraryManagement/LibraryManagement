@@ -7,6 +7,29 @@ function decodeSvg(image) {
   return Buffer.from(image.split(',')[1], 'base64').toString('utf8');
 }
 
+function renderedGlyphXBounds(svg) {
+  const points = [];
+  const groups = svg.matchAll(
+    /<g transform="translate\(([-\d.]+) ([-\d.]+)\) rotate\(([-\d.]+) 13 24\)">([\s\S]*?)<\/g>/g
+  );
+
+  for (const [, translateX, , rotation, paths] of groups) {
+    const radians = Number(rotation) * Math.PI / 180;
+    for (const path of paths.matchAll(/M([\d.]+) ([\d.]+) L([\d.]+) ([\d.]+)/g)) {
+      for (const [x, y] of [[path[1], path[2]], [path[3], path[4]]]) {
+        const dx = Number(x) - 13;
+        const dy = Number(y) - 24;
+        points.push(
+          Number(translateX) + 13 + dx * Math.cos(radians) - dy * Math.sin(radians)
+        );
+      }
+    }
+  }
+
+  if (points.length === 0) throw new Error('No CAPTCHA glyph points were rendered.');
+  return { min: Math.min(...points) - 1.6, max: Math.max(...points) + 1.6 };
+}
+
 function deterministicOptions(overrides = {}) {
   let now = 1_800_000_000_000;
   const values = [0, 0, 1, 2, 3]; // Four letters: A, B, C, D.
@@ -99,3 +122,16 @@ test('renders SVG paths without answer text or text nodes', () => {
   expect(svg).not.toContain('ABCD');
   expect(svg).not.toMatch(/answer|captcha-answer/i);
 });
+
+test.each([0, 8])(
+  'keeps six glyphs inside the 180px viewport at rotation random value %i',
+  (rotationValue) => {
+    const image = renderCaptchaSvgDataUri('ABCDEF', {
+      randomInt: (maximum) => (maximum === 9 ? rotationValue : 0),
+    });
+    const bounds = renderedGlyphXBounds(decodeSvg(image));
+
+    expect(bounds.min).toBeGreaterThanOrEqual(0);
+    expect(bounds.max).toBeLessThanOrEqual(180);
+  }
+);

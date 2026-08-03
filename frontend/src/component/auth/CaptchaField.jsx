@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Button, Stack, TextField } from '@mui/material';
 import { getCaptcha } from '../../api/authApi';
+import { loadCaptchaWithRetry } from '../../utils/captchaRecovery';
 
 export default function CaptchaField({ onChange, refreshKey = 0, disabled = false }) {
   // @spec FR-FE02-030
@@ -8,21 +9,34 @@ export default function CaptchaField({ onChange, refreshKey = 0, disabled = fals
   const [answer, setAnswer] = useState('');
   const [error, setError] = useState('');
 
-  const loadCaptcha = async () => {
-    setChallenge(null);
-    setAnswer('');
-    onChange?.({ captchaToken: '', captchaAnswer: '' });
+  const loadCaptcha = async ({ retry = false, discardCurrent = false } = {}) => {
+    const hasFallback = Boolean(challenge) && !discardCurrent;
+    if (discardCurrent) {
+      setChallenge(null);
+      setAnswer('');
+      onChange?.({ captchaToken: '', captchaAnswer: '' });
+    }
+
     try {
-      const next = await getCaptcha();
+      const next = await loadCaptchaWithRetry(getCaptcha, { attempts: retry ? 2 : 1 });
       setChallenge(next);
+      setAnswer('');
+      onChange?.({ captchaToken: '', captchaAnswer: '' });
       setError('');
     } catch {
+      if (!hasFallback) {
+        setChallenge(null);
+        setAnswer('');
+        onChange?.({ captchaToken: '', captchaAnswer: '' });
+      }
       setError('Không tải được CAPTCHA. Vui lòng thử lại.');
     }
   };
 
   useEffect(() => {
-    const timer = window.setTimeout(() => { void loadCaptcha(); }, 0);
+    const timer = window.setTimeout(() => {
+      void loadCaptcha({ retry: true, discardCurrent: refreshKey > 0 });
+    }, 0);
     return () => window.clearTimeout(timer);
     // The challenge must be reloaded only when the parent rejects it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -48,7 +62,7 @@ export default function CaptchaField({ onChange, refreshKey = 0, disabled = fals
           helperText={error || 'Nhập đúng chữ cái hiển thị trong ảnh.'}
           slotProps={{ htmlInput: { autoComplete: 'off', maxLength: 6 } }}
         />
-        <Button type="button" onClick={loadCaptcha} disabled={disabled}>Đổi mã</Button>
+        <Button type="button" onClick={() => { void loadCaptcha(); }} disabled={disabled}>Đổi mã</Button>
       </Stack>
     </Stack>
   );

@@ -10,11 +10,19 @@
   - Ánh xạ tới: BR-FE02-029; FR-FE02-028..030; AC-FE02-027; EC-FE02-019; SAFE-003; SAFE-005.
   - Tệp: `backend/src/services/captchaService.js`, `backend/src/utils/captchaRenderer.js`, `backend/src/app.js`, `backend/src/controllers/authController.js`, `backend/src/routes/authRoutes.js`, `backend/src/middleware/captchaMiddleware.js`, `backend/src/utils/safeErrors.js`, test backend liên quan, `tests/e2e/support/`, hai form frontend, test frontend và toàn bộ tài liệu CAPTCHA FE02.
   - DoD: token công khai là định danh opaque ngẫu nhiên; challenge process-local TTL 5 phút, tối đa 5.000 bản ghi và dùng một lần; SVG không chứa text/đáp án; route không có bypass theo môi trường; test không liên quan inject fake service rõ ràng; E2E answer chỉ tồn tại dưới `/__e2e__/`; submit bị vô hiệu hóa khi chưa có challenge; traceability dùng `EC-FE02-019` duy nhất.
-  - Bằng chứng local: RED-GREEN cho service, route, E2E và trạng thái submit đã được quan sát; focused CAPTCHA service/route hiện đạt 9/9. Full L1-L4, exact-head CI và H3 integration vẫn là cổng bắt buộc trước merge.
+  - Bằng chứng: RED-GREEN cho service, route, E2E và trạng thái submit đạt; full L1-L4, exact-head CI và H3 đã hoàn tất, PR #111 merge thành `1f0905f`.
 
-Trạng thái: IMPLEMENTED - H2 APPROVED; PENDING EXACT-HEAD CI/H3
-Implementation State: COMPLETE
-Ghi chú baseline: Baseline FE02 trước CAPTCHA vẫn hoàn tất; trạng thái trên chỉ áp dụng cho amendment PR #111.
+- [x] **FE02-T071 - Ổn định hiển thị CAPTCHA, phục hồi frontend và thứ tự deploy staging.**
+  - Ánh xạ tới: FR-FE02-028; FR-FE02-030; AC-FE02-027; EC-FE02-019; SAFE-005.
+  - Tệp: `backend/src/utils/captchaRenderer.js`, `backend/tests/captchaService.test.js`, `frontend/src/utils/captchaRecovery.js`, `frontend/src/component/auth/CaptchaField.jsx`, test frontend CAPTCHA, `.github/workflows/deploy-staging.yml`, `scripts/smoke-staging.js`, test deployment và tài liệu FE02 liên quan.
+  - DoD: challenge 4-6 glyph nằm trọn viewport 180x54; tải ban đầu retry đúng một lần chỉ với lỗi tạm thời; đổi mã thủ công thất bại giữ challenge còn dùng được; backend/frontend kiểm tra lại remote `main` sát ngay trước Azure action; smoke test bắt buộc route CAPTCHA và chỉ chấp nhận đúng ba trường công khai `image`, `captchaToken`, `expiresIn`.
+  - Bằng chứng trước H3: CAPTCHA service/route `11/11`; frontend `288/288`; deployment `27/27`; backend `78 suite/1223 test`; system `11/11`; coverage đạt; Playwright `16/16`; secret/audit/trace/import/YAML/diff gates đạt; H2 và exact-head CI `30858849852` xanh trên `c80c1d8`.
+  - H3 remediation: Spec review phát hiện P1 final SHA guard và P2 transient retry classification. RED-GREEN mới đạt frontend focused `6/6`, frontend full `289/289` cùng lint/build, deployment `27/27`, Playwright `16/16`, secret/trace/YAML/diff gates. H2 re-review đã phê duyệt complete remediation diff trước commit.
+  - H3 round 2: exact-head CI `30860111663` xanh trên `9ff8555`; Standards không có finding, Spec phát hiện P2 smoke còn dùng blacklist tên trường. RED chứng minh payload có `solution` bị chấp nhận; GREEN chuyển sang whitelist đúng ba trường và focused smoke đạt `14/14`; H2 đã phê duyệt diff round 2 trước commit.
+
+Trạng thái: FE02-T071 H3 REMEDIATION ROUND 2 H2 APPROVED - PENDING EXACT-HEAD CI/H3
+Implementation State: PARTIAL
+Ghi chú baseline: FE02 và CAPTCHA PR #111 đã merge; trạng thái PARTIAL chỉ áp dụng cho remediation FE02-T071 chưa tích hợp.
 Ngày: 2026-08-04
 Chủ sở hữu: Dat
 
