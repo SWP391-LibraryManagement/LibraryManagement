@@ -125,6 +125,10 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
       - name: Prepare backend deployment package
         shell: pwsh
         run: |
@@ -135,6 +139,11 @@ jobs:
           Copy-Item database/migrations/2026-07-22-library-metadata-compatibility.sql,database/migrations/add_change_password_otp_token_type.sql,database/migrations/2026-07-29-fe10-borrowing-result-templates.sql deploy/backend/database/migrations/
           New-Item -ItemType Directory -Force deploy/backend/scripts | Out-Null
           Copy-Item backend/scripts/stagingBorrowCandidates.js deploy/backend/scripts/
+
+      - name: Install backend production dependencies
+        shell: pwsh
+        working-directory: deploy/backend
+        run: npm ci --omit=dev
 
       - name: Deploy backend
         uses: azure/webapps-deploy@v3
