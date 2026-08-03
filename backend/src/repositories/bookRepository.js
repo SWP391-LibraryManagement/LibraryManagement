@@ -403,6 +403,39 @@ async function changeBookStatus(
   }
 }
 
+async function deleteBook(bookId, expectedVersion, { onBeforeCommit } = {}) {
+  const pool = await getPool();
+  const transaction = new sql.Transaction(pool);
+  await transaction.begin();
+  try {
+    const current = await lockBook(transaction, bookId, expectedVersion);
+    if (!current || current.outcome) {
+      await transaction.rollback();
+      return current;
+    }
+
+    const book = await getBookById(bookId, transaction);
+    const dependencyResult = await new sql.Request(transaction)
+      .input('BookId', sql.Int, bookId)
+      .query('SELECT TOP 1 CopyId FROM BookCopies WITH (UPDLOCK, HOLDLOCK) WHERE BookId = @BookId;');
+    if (dependencyResult.recordset.length > 0) {
+      await transaction.rollback();
+      return { outcome: 'DEPENDENCIES' };
+    }
+
+    if (typeof onBeforeCommit === 'function') await onBeforeCommit({ book, transaction });
+    await new sql.Request(transaction)
+      .input('BookId', sql.Int, bookId)
+      .query('DELETE FROM Books WHERE BookId = @BookId;');
+    await transaction.commit();
+    return book;
+  } catch (error) {
+    await transaction.rollback();
+    if (Number(error?.number) === 547) return { outcome: 'DEPENDENCIES' };
+    throw error;
+  }
+}
+
 module.exports = {
   getHomeBooks,
   getCategories,
@@ -414,4 +447,5 @@ module.exports = {
   createBook,
   updateBook,
   changeBookStatus,
+  deleteBook,
 };

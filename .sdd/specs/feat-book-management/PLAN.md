@@ -34,7 +34,7 @@ Duy trì catalog FE05 đã đối soát theo hợp đồng v0.6.13 đã phê duy
 | Mutation sách hiện có yêu cầu `If-Match`/SQL `rowversion` | `Books.RowVersion` và lệnh metadata/trạng thái nhận biết phiên bản đã được triển khai. |
 | Thay đổi trạng thái dùng lệnh hủy kích hoạt/kích hoạt lại riêng với lý do | Cả hai lệnh yêu cầu phiên bản khớp và lý do đã trim; PUT metadata không thể thay đổi trạng thái. |
 | Danh sách công khai và nhân viên sử dụng chính sách phân trang/sắp xếp xác định | Các filter, cấu trúc endpoint và xác thực đã phê duyệt được triển khai và kiểm thử. |
-| Create/update/deactivate/reactivate cùng audit là nguyên tử | Transaction repository và độ bao phủ rollback chứng minh tính nguyên tử mutation/audit. |
+| Create/update/deactivate/reactivate/delete cùng audit là nguyên tử | Transaction repository và độ bao phủ rollback chứng minh tính nguyên tử mutation/audit. |
 | Khả dụng công khai chỉ đọc `AVAILABLE`/`UNAVAILABLE` | Frontend kết xuất khả dụng suy ra mà không phân loại mọi hàng không khả dụng là đã mượn. |
 | Endpoint công khai và nhân viên có mức hiển thị khác nhau | Tìm kiếm Khách/Thành viên chỉ theo tiêu đề/tác giả và DTO công khai loại ISBN; danh sách/chi tiết nhân viên vẫn giữ ISBN có thể tìm kiếm sau phân quyền Thủ thư/Quản trị viên. |
 | Admin Console FE11 không được sao chép mutation FE05 | `UserManagement` giữ bảng Thư viện chỉ đọc; `BookManagement` chuẩn sở hữu create/update/deactivate/reactivate. |
@@ -87,6 +87,7 @@ Duy trì catalog FE05 đã đối soát theo hợp đồng v0.6.13 đã phê duy
 | `PUT` | `/api/books/{bookId}` | Thủ thư/Quản trị viên cập nhật chỉ metadata bằng `If-Match`; không bao giờ thay đổi trạng thái hoặc bản sao. |
 | `PATCH` | `/api/books/{bookId}/deactivate` | `If-Match` khớp cùng `{ reason }`; chỉ thay `Books.Status` thành `INACTIVE`. |
 | `PATCH` | `/api/books/{bookId}/reactivate` | `If-Match` khớp cùng `{ reason }`; chỉ thay `Books.Status` thành `ACTIVE`. |
+| `DELETE` | `/api/books/{bookId}` | `If-Match` khớp cùng `{ reason }`; xóa vật lý chỉ khi sách chưa có bản sao, nếu không trả `BOOK_HAS_DEPENDENCIES`. |
 
 Route `/api/books/{bookId}/availability` cũ và các phương thức mutation controller/service/repository của nó phải bị loại. Lời gọi đến route chưa đăng ký đó trả về response `404` an toàn tiêu chuẩn và không bao giờ ghi `Books` hoặc `BookCopies`.
 

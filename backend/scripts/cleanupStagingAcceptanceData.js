@@ -24,7 +24,6 @@ IF DB_NAME() <> 'LibraryManagementStaging'
 CandidateRuns AS (
   SELECT
     candidate.RunId,
-    RIGHT(candidate.RunId, 8) AS Suffix,
     COUNT(DISTINCT candidate.BookId) AS BookCount,
     COUNT(DISTINCT candidate.CopyId) AS CopyCount,
     MAX(candidate.StoredIsbn) AS StoredIsbn
@@ -37,14 +36,14 @@ SELECT
   (
     SELECT COUNT(*)
     FROM Users u
-    WHERE (u.Username = CONCAT('acc_member_a_', candidate.Suffix)
-        AND u.Email = CONCAT('member-a.', candidate.Suffix, '@lms.invalid'))
-       OR (u.Username = CONCAT('acc_member_b_', candidate.Suffix)
-        AND u.Email = CONCAT('member-b.', candidate.Suffix, '@lms.invalid'))
-       OR (u.Username = CONCAT('acc_librarian_', candidate.Suffix)
-        AND u.Email = CONCAT('librarian.', candidate.Suffix, '@lms.invalid'))
-       OR (u.Username = CONCAT('acc_admin_', candidate.Suffix)
-        AND u.Email = CONCAT('admin.', candidate.Suffix, '@lms.invalid'))
+    WHERE (u.Username = CONCAT('acc_member_a_', candidate.RunId)
+        AND u.Email = CONCAT('member-a.', candidate.RunId, '@lms.invalid'))
+       OR (u.Username = CONCAT('acc_member_b_', candidate.RunId)
+        AND u.Email = CONCAT('member-b.', candidate.RunId, '@lms.invalid'))
+       OR (u.Username = CONCAT('acc_librarian_', candidate.RunId)
+        AND u.Email = CONCAT('librarian.', candidate.RunId, '@lms.invalid'))
+       OR (u.Username = CONCAT('acc_admin_', candidate.RunId)
+        AND u.Email = CONCAT('admin.', candidate.RunId, '@lms.invalid'))
   ) AS UserCount,
   candidate.BookCount,
   candidate.CopyCount,
@@ -57,7 +56,6 @@ const CLEANUP_SQL = `
 IF DB_NAME() <> 'LibraryManagementStaging'
   THROW 51000, 'Acceptance cleanup is restricted to LibraryManagementStaging.', 1;
 
-DECLARE @Suffix NVARCHAR(8) = RIGHT(@RunId, 8);
 DECLARE @FixtureUsers TABLE (UserId INT PRIMARY KEY);
 DECLARE @FixtureBooks TABLE (BookId INT PRIMARY KEY);
 DECLARE @FixtureCopies TABLE (CopyId INT PRIMARY KEY);
@@ -72,14 +70,14 @@ DECLARE @FixtureMembers TABLE (MemberId INT PRIMARY KEY);
 INSERT INTO @FixtureUsers (UserId)
 SELECT u.UserId
 FROM Users u
-WHERE (u.Username = CONCAT('acc_member_a_', @Suffix)
-    AND u.Email = CONCAT('member-a.', @Suffix, '@lms.invalid'))
-   OR (u.Username = CONCAT('acc_member_b_', @Suffix)
-    AND u.Email = CONCAT('member-b.', @Suffix, '@lms.invalid'))
-   OR (u.Username = CONCAT('acc_librarian_', @Suffix)
-    AND u.Email = CONCAT('librarian.', @Suffix, '@lms.invalid'))
-   OR (u.Username = CONCAT('acc_admin_', @Suffix)
-    AND u.Email = CONCAT('admin.', @Suffix, '@lms.invalid'));
+WHERE (u.Username = CONCAT('acc_member_a_', @RunId)
+    AND u.Email = CONCAT('member-a.', @RunId, '@lms.invalid'))
+   OR (u.Username = CONCAT('acc_member_b_', @RunId)
+    AND u.Email = CONCAT('member-b.', @RunId, '@lms.invalid'))
+   OR (u.Username = CONCAT('acc_librarian_', @RunId)
+    AND u.Email = CONCAT('librarian.', @RunId, '@lms.invalid'))
+   OR (u.Username = CONCAT('acc_admin_', @RunId)
+    AND u.Email = CONCAT('admin.', @RunId, '@lms.invalid'));
 
 INSERT INTO @FixtureBooks (BookId)
 SELECT b.BookId
@@ -199,14 +197,14 @@ WHERE UserId IN (SELECT UserId FROM @FixtureUsers);
 IF EXISTS (
   SELECT 1
   FROM Users u
-  WHERE (u.Username = CONCAT('acc_member_a_', @Suffix)
-      AND u.Email = CONCAT('member-a.', @Suffix, '@lms.invalid'))
-     OR (u.Username = CONCAT('acc_member_b_', @Suffix)
-      AND u.Email = CONCAT('member-b.', @Suffix, '@lms.invalid'))
-     OR (u.Username = CONCAT('acc_librarian_', @Suffix)
-      AND u.Email = CONCAT('librarian.', @Suffix, '@lms.invalid'))
-     OR (u.Username = CONCAT('acc_admin_', @Suffix)
-      AND u.Email = CONCAT('admin.', @Suffix, '@lms.invalid'))
+  WHERE (u.Username = CONCAT('acc_member_a_', @RunId)
+      AND u.Email = CONCAT('member-a.', @RunId, '@lms.invalid'))
+     OR (u.Username = CONCAT('acc_member_b_', @RunId)
+      AND u.Email = CONCAT('member-b.', @RunId, '@lms.invalid'))
+     OR (u.Username = CONCAT('acc_librarian_', @RunId)
+      AND u.Email = CONCAT('librarian.', @RunId, '@lms.invalid'))
+     OR (u.Username = CONCAT('acc_admin_', @RunId)
+      AND u.Email = CONCAT('admin.', @RunId, '@lms.invalid'))
 )
    OR EXISTS (SELECT 1 FROM Books WHERE Title = @Title)
    OR EXISTS (SELECT 1 FROM BookCopies WHERE Barcode = @Barcode)

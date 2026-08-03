@@ -295,6 +295,7 @@ export default function BookManagement() {
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
   const [pendingStatusChange, setPendingStatusChange] = useState(null);
+  const [pendingDelete, setPendingDelete] = useState(null);
   const [pendingStatusFromUpdate, setPendingStatusFromUpdate] = useState(null);
   const requestGuard = useRef(createLatestRequestGuard());
 
@@ -564,6 +565,7 @@ export default function BookManagement() {
             : 'Ngừng hoạt động từ biểu mẫu cập nhật thông tin sách.',
         }),
       });
+      // @spec FR-FE05-029 - reload all canonical statuses without relabeling other books.
       // @spec FR-FE05-029 - reload mixed statuses so unaffected rows stay visibly independent.
       setStatusFilter('');
       setAppliedStatusFilter('');
@@ -615,6 +617,7 @@ export default function BookManagement() {
           body,
         });
       }
+      // @spec FR-FE05-029 - reload all canonical statuses without relabeling other books.
       // @spec FR-FE05-029 - reload mixed statuses so unaffected rows stay visibly independent.
       setStatusFilter('');
       setAppliedStatusFilter('');
@@ -637,6 +640,35 @@ export default function BookManagement() {
         ? 'Đã kích hoạt lại sách. Danh sách đã trở về tất cả trạng thái.'
         : 'Đã ngừng hoạt động sách. Danh sách đã trở về tất cả trạng thái.');
       setPendingStatusChange(null);
+    } catch (error) {
+      showToast(error.message, 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteBook = async () => {
+    if (!pendingDelete) return;
+
+    try {
+      setSaving(true);
+      await apiRequest(`/books/${pendingDelete.id}`, {
+        method: 'DELETE',
+        headers: { 'If-Match': pendingDelete.version },
+        body: JSON.stringify({ reason: 'Xóa sách khỏi giao diện quản lý sách.' }),
+      });
+      setPendingDelete(null);
+      setSelectedBookId('');
+      setDetailBook(null);
+      const nextPage = books.length === 1 && page > 1 ? page - 1 : page;
+      setPage(nextPage);
+      await loadBooks({
+        status: appliedStatusFilter,
+        categoryId: appliedCategoryFilter,
+        q: appliedSearchQuery,
+        pageNumber: nextPage,
+      });
+      showToast('Đã xóa sách khỏi hệ thống.');
     } catch (error) {
       showToast(error.message, 'error');
     } finally {
@@ -779,6 +811,20 @@ export default function BookManagement() {
             : <>Thông tin của <strong>{pendingStatusFromUpdate.bookTitle}</strong> đã được lưu. Xác nhận để ngừng hoạt động (sách ẩn khỏi tra cứu công khai, vẫn giữ bản ghi kiểm toán)?</>}
         </ConfirmAction>
       )}
+      {pendingDelete && (
+        <ConfirmAction
+          title="Xóa vĩnh viễn sách"
+          eyebrow="Thao tác không thể hoàn tác"
+          tone="danger"
+          pending={saving}
+          cancelLabel="Hủy bỏ"
+          confirmLabel="Xác nhận xóa"
+          onCancel={() => setPendingDelete(null)}
+          onConfirm={handleDeleteBook}
+        >
+          Bạn sắp xóa vĩnh viễn <strong>{pendingDelete.title}</strong>. Chỉ sách chưa có bản sao hoặc lịch sử liên quan mới có thể xóa.
+        </ConfirmAction>
+      )}
       <main className="bm-main">
         <div className="bm-top-actions">
           <button className="bm-soft" onClick={handleRefreshList} disabled={loading}>
@@ -886,6 +932,27 @@ export default function BookManagement() {
             </div>
           ) : (
             <div className="bm-empty">Chọn sách trước khi thay đổi trạng thái.</div>
+          )}
+        </section>
+
+        <section className="bm-panel">
+          <div className="bm-panel-head">
+            <div><p>Xóa bản ghi</p><h2>Xóa sách</h2></div>
+          </div>
+          {selectedBook ? (
+            <div className="bm-danger-box">
+              <Trash2 size={22} aria-hidden="true" />
+              <div>
+                <h3>{selectedBook.title}</h3>
+                <p>Xóa vĩnh viễn sách chưa có bản sao hoặc lịch sử liên quan. Thao tác này không thể hoàn tác.</p>
+                <button className="bm-danger" onClick={() => setPendingDelete(selectedBook)} disabled={saving}>
+                  <RefreshCw size={17} aria-hidden="true" />
+                  Xóa sách
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="bm-empty">Chọn sách trước khi xóa.</div>
           )}
         </section>
       </main>
