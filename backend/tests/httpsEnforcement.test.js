@@ -1,7 +1,15 @@
 process.env.BCRYPT_COST = '4';
+process.env.JWT_SECRET = process.env.JWT_SECRET || require('crypto').randomBytes(32).toString('hex');
 
 const request = require('supertest');
 const { createApp } = require('../src/app');
+const { createCaptcha } = require('../src/utils/captchaUtils');
+
+function captchaPayload() {
+  const { captchaToken, image } = createCaptcha();
+  const answer = Buffer.from(image.split(',')[1], 'base64').toString('utf8').match(/<text[^>]*>([A-Z]+)<\/text>/)[1];
+  return { captchaToken, captchaAnswer: answer };
+}
 
 function withProductionHttps(overrides = {}) {
   process.env.NODE_ENV = 'production';
@@ -112,7 +120,7 @@ test('trusted HTTPS termination via X-Forwarded-Proto allows the auth request to
     const response = await request(app)
       .post('/api/auth/login')
       .set('X-Forwarded-Proto', 'https')
-      .send({ email: 'member@example.test', password: 'Password1!' });
+      .send({ email: 'member@example.test', password: 'Password1!', ...captchaPayload() });
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual({ ok: true });
