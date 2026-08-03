@@ -161,6 +161,7 @@ test('FE10 Unicode repair migration is exact, transactional, scoped, and repeata
   );
   const migration = fs.readFileSync(migrationPath, 'utf8');
 
+  expect(migration).toMatch(/SET QUOTED_IDENTIFIER ON/i);
   expect(migration).toMatch(/SET XACT_ABORT ON/i);
   expect(migration).toMatch(/BEGIN TRANSACTION/i);
   expect(migration).toMatch(/COMMIT TRANSACTION/i);
