@@ -262,7 +262,7 @@ Không in publishing credential hoặc connection string. Bất kỳ mismatch n�
 
 Tên endpoint review chính xác phải được đọc từ frontend/src/api/libraryFeatureApi.js và backend route trước khi khóa contract; không hard-code alias mới.
 
-- [ ] **Step 1: Seed đúng ba tài khoản tổng hợp**
+- [x] **Step 1: Seed đúng ba tài khoản tổng hợp**
 
 Quy ước:
 
@@ -275,7 +275,7 @@ Quy ước:
 
 Sau seed, inspect phải trả đúng ba user ACTIVE, đúng ba role mapping và chưa có MembershipApplications/Member active cho ba ID.
 
-- [ ] **Step 2: Chứng minh phân quyền server trước happy path**
+- [x] **Step 2: Chứng minh phân quyền server trước happy path**
 
 Assert:
 
@@ -287,7 +287,7 @@ Assert:
 
 Nếu status khác do UI masking nhưng server cho phép sai, acceptance FAIL và cleanup; không tiếp tục.
 
-- [ ] **Step 3: Chạy reject -> resubmit -> approve**
+- [x] **Step 3: Chạy reject -> resubmit -> approve**
 
 1. Member submit body rỗng; expect 201/response chuẩn và application A trạng thái PENDING.
 2. Mở Admin context R mới, chờ navigation visible và đủ tám mục, xác nhận Duyệt hội viên nằm sau Người dùng.
@@ -301,7 +301,7 @@ Nếu status khác do UI masking nhưng server cho phép sai, acceptance FAIL v�
 10. Inspect: B APPROVED, Members APPROVED/ACTIVE theo contract, ApprovedAt/ReviewedAt nhất quán, audit tăng đúng một và không còn application PENDING.
 11. Thử lại quyết định trên record terminal; expect conflict an toàn, không thêm audit hoặc notification.
 
-- [ ] **Step 4: Nghiệm thu responsive UI**
+- [x] **Step 4: Nghiệm thu responsive UI**
 
 Tại từng viewport:
 
@@ -314,7 +314,7 @@ Tại từng viewport:
 
 Mỗi viewport assert document.documentElement.scrollWidth <= clientWidth. Không phụ thuộc screenshot thủ công; screenshot redacted chỉ giữ local đến khi ghi kết quả tổng hợp rồi xóa.
 
-- [ ] **Step 5: Cleanup bắt buộc trong finally**
+- [x] **Step 5: Cleanup bắt buộc trong finally**
 
 Theo exact manifest ba ID:
 
@@ -353,7 +353,7 @@ Expected: preflight PASS, acceptance PASS, cleanup PASS, exit code 0. Nếu --ru
 
 **Giao diện:** Tài liệu chỉ ghi facts đã quan sát: exact SHA/run/host, số test, actor/status transition, viewport, cleanup count và reviewer decision.
 
-- [ ] **Step 1: Ghi validation record FE04**
+- [x] **Step 1: Ghi validation record FE04**
 
 Validation record phải có:
 
@@ -368,7 +368,7 @@ Validation record phải có:
 - không có PII/secret/artifact thô;
 - mục Nhat/manual acceptance chờ phê duyệt H2 nếu chưa được duyệt.
 
-- [ ] **Step 2: Đồng bộ trạng thái FE04**
+- [x] **Step 2: Đồng bộ trạng thái FE04**
 
 Chỉ sau staging PASS và cleanup PASS:
 
@@ -382,12 +382,12 @@ Chỉ sau staging PASS và cleanup PASS:
 
 SPEC/PLAN/TEST_PLAN/CHANGELOG phải bỏ câu nói staging/clean exit chưa tồn tại và thay bằng bằng chứng exact; không đổi requirement.
 
-- [ ] **Step 3: Xác nhận chủ sở hữu liên tính năng**
+- [~] **Step 3: Xác nhận chủ sở hữu liên tính năng**
 
 Chạy tập trung FE07/FE08/FE10/FE12 có sử dụng membership state và ghi kết quả vào validation record. Xác nhận:
 
-- FE07/FE08 chỉ nhận member canonical APPROVED/ACTIVE;
-- rejected/pending/inactive không vượt eligibility;
+- FE07 đọc trạng thái FE04 chuẩn để áp dụng hạn mức ngày: `APPROVED` là 5 bản, còn `NONE/PENDING/REJECTED/INACTIVE` là 3 bản; FE04 không tự chặn tài khoản `MEMBER` đang hoạt động;
+- FE08 không dùng trạng thái FE04 để chặn đặt chỗ; eligibility yêu cầu vai trò `MEMBER` và `Users.Status = ACTIVE`;
 - FE10 notification failure không rollback quyết định FE04;
 - FE12 chỉ đọc trạng thái phát sinh, không sở hữu transition FE04.
 
@@ -416,7 +416,7 @@ Không sửa tài liệu owner khác trong PR C; mismatch phải dừng và lậ
 - Post-merge staging deploy 29876046500: success.
 - GitHub không có review record lịch sử cho PR #60; không được tuyên bố ngược lại.
 
-- [ ] **Step 1: Ghi reconciliation candidate trung thực**
+- [x] **Step 1: Ghi reconciliation candidate trung thực**
 
 Trong validation record:
 
@@ -458,7 +458,7 @@ Amendment này làm đổi HEAD nên phải chạy lại cổng, H2 lần 2 và 
 
 **Tệp:** Toàn bộ diff bền vững trong ranh giới.
 
-- [ ] **Step 1: Chạy L1 đầy đủ trước H2 đầu tiên**
+- [x] **Step 1: Chạy L1 đầy đủ trước H2 đầu tiên**
 
 ~~~powershell
 npm.cmd run trace:enforce
@@ -485,7 +485,7 @@ Expected:
 - Playwright thoát sạch;
 - trace FE02/FE04 100% và trạng thái task khớp bằng chứng, không bị tô xanh giả.
 
-- [ ] **Step 2: Audit diff và secret**
+- [x] **Step 2: Audit diff và secret**
 
 ~~~powershell
 git status --short
@@ -503,7 +503,7 @@ Expected:
 - git ls-files cho harness trả rỗng;
 - không token, password, connection string, publishing credential, account thật hoặc artifact screenshot.
 
-- [ ] **Step 3: Trình H2 lần 1**
+- [x] **Step 3: Trình H2 lần 1**
 
 Trình cho Nhat:
 

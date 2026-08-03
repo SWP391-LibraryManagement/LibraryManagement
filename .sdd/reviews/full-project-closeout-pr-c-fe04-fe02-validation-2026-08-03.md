@@ -2,7 +2,7 @@
 
 Date: 2026-08-03
 
-Status: IN PROGRESS - ARCHITECTURE AMENDMENT WRITTEN REVIEW REQUIRED
+Status: IN PROGRESS - H2 ROUND 1 PASS; FE04 MANUAL AND FE02 H3 OPEN
 
 ## Scope
 
@@ -11,8 +11,8 @@ This record tracks PR C evidence for FE04 staging acceptance and FE02 closeout r
 ## Exact baseline
 
 - Baseline SHA: `850b01b55e4e9091751402a7ef8678906159f173`.
-- Main CI: run `30779430709`, success on the exact SHA.
-- Staging deployment: run `30779592574`, success on the exact SHA.
+- Main CI: run [`30779430709`](https://github.com/SWP391-LibraryManagement/LibraryManagement/actions/runs/30779430709), success on the exact SHA.
+- Staging deployment: run [`30779592574`](https://github.com/SWP391-LibraryManagement/LibraryManagement/actions/runs/30779592574), success on the exact SHA.
 - Frontend: `https://www.thuvienhub.io.vn`.
 - Backend: `https://app-library-api-staging-nhat714.azurewebsites.net`.
 - Azure target: `rg-library-staging/app-library-api-staging-nhat714`, database `LibraryManagementStaging` on `sql-library-staging-ea-nhat714.database.windows.net`.
@@ -104,9 +104,85 @@ The three-attempt deterministic stop condition was reached. The user approved th
 5. Add a RED contract assertion for context isolation/readiness waiting before changing the ignored harness.
 6. After written review, authorize exactly one new run ID. Any failure must cleanup and stop; no automatic fifth attempt is allowed.
 
+The written amendment was committed as `2272ed654e10ba0536ea803380e04c551011eb7f` and approved by the user before implementation.
+
+## Pre-mutation runtime setup interruption
+
+- Setup run ID: `lms-fe04-acceptance-20260803-dbf6e600`.
+- Kudu reported a non-zero exit during Node archive extraction even though the pinned archive passed checksum verification and the extracted `node` binary subsequently returned `v22.22.2`.
+- The mutation marker was absent and `runAcceptance()`/seed had not started; no synthetic database state was created.
+- The exact temporary runtime/helper residue was removed and verified at `404/404`.
+- A RED-GREEN contract added false-negative recovery only when the exact Node 22 binary is executable, plus automatic cleanup for failures before the mutation marker.
+
+## Successful amended staging acceptance
+
+- Run ID: `lms-fe04-acceptance-20260803-90ac1d5b`.
+- Deployed application SHA: `850b01b55e4e9091751402a7ef8678906159f173`.
+- Synthetic actors: exactly one Member, Librarian and Admin using `.invalid` identities and distinct runtime-only passwords; no real PII was used or retained.
+- Final harness contract: 14/14 PASS; `orchestrate.js` and `fixture.js` both pass `node --check`.
+- Server authorization matrix passed before the business flow: anonymous list/review `401`, Member list/review `403`, Librarian/Admin canonical list `200`; Member status response passed privacy assertions.
+- UI flow passed with separate Admin contexts: application A was submitted and rejected, the Member observed the rejection reason and resubmitted application B, and application B was approved.
+- Final state assertions passed: A remained `REJECTED`, B became `APPROVED`, canonical Member state became `APPROVED`, audit counts were submit x2/reject x1/approve x1, and terminal replay returned `409` without extra audit/notification effects.
+- Responsive review passed at `1440x900`, `1366x768`, `1280x720` and `390x844`; the Admin navigation contained exactly eight approved entries in order and document overflow remained false.
+- Browser console/page error collection was empty.
+
+## Successful cleanup and post-cleanup verification
+
+- Cleanup event: `cleanup_verified`, count `0`.
+- Active refresh/setup tokens: 0.
+- Active synthetic users: 0.
+- Active/PENDING synthetic members: 0.
+- PENDING synthetic membership applications: 0.
+- All three old passwords were rejected with `401`; the retained pre-cleanup bearer token was rejected by `/api/auth/me` with `401`.
+- Temporary runtime VFS status: 404.
+- Temporary cleanup helper VFS status: 404.
+- A fresh read-only preflight passed after cleanup on the same exact staging SHA.
+- No raw password, bearer token, connection string, publishing credential, real account or screenshot artifact was persisted in the durable diff.
+
+## Local and cross-feature evidence
+
+- Existing closeout baseline: backend FE04 + system integration 31/31 PASS; frontend FE04/Admin 36/36 PASS; Playwright FE04 + FE11 2/2 PASS with clean exit in 31.5 seconds.
+- Current focused owner run: `borrowingRoutes`, `reservationService`, `membershipRoutes`, `reportContract`, `reportInMemoryParity` and `systemIntegration` all passed: 6 suites, 162/162 tests.
+- FE07 contract: canonical FE04 `APPROVED` selects the five-copy daily tier; other FE04 states select the three-copy tier and do not independently block an active `MEMBER` account.
+- FE08 contract: FE04 status does not block reservation; role `MEMBER` plus active FE02 account status owns eligibility.
+- FE10 contract: membership notification requester failure is non-blocking after the FE04 decision commits.
+- FE12 contract: membership status is read for reporting/filtering; FE12 does not own FE04 transitions.
+
+## FE02-T049 reconciliation candidate
+
+- Implementation commit: [`241907d09760055022393bdc9176da85bbeff3f4`](https://github.com/SWP391-LibraryManagement/LibraryManagement/commit/241907d09760055022393bdc9176da85bbeff3f4), `fix: harden login validation feedback`.
+- Historical PR: [#60](https://github.com/SWP391-LibraryManagement/LibraryManagement/pull/60), head `50e9091362777d3892d5d4e048a21118326b2dd9`, merge commit `c052b5051deb1e29b66cde2668bca612cc27dc35`.
+- Exact-head CI: [`29875668029`](https://github.com/SWP391-LibraryManagement/LibraryManagement/actions/runs/29875668029), success on PR head.
+- Post-merge CI: [`29875885463`](https://github.com/SWP391-LibraryManagement/LibraryManagement/actions/runs/29875885463), success on merge commit.
+- Post-merge staging: [`29876046500`](https://github.com/SWP391-LibraryManagement/LibraryManagement/actions/runs/29876046500), success on merge commit.
+- GitHub currently returns an empty `reviews` array for PR #60. No historical H3 record is claimed.
+- Source-to-requirement review remains consistent: backend login validation accepts identifiers through 255 characters and rejects invalid boundaries; frontend field validation handles blank/overlength values, prevents duplicate pending submissions and maps stable safe error codes without account enumeration or raw backend messages.
+- Current focused evidence: backend auth/HTTPS 3 suites, 68/68 PASS; frontend auth UX/login 17/17 PASS.
+- Proposed resolution: H3 round 1 on PR C performs a current retrospective Standards + Spec review of T043 and explicitly decides whether that review may resolve CG-FE02-003. Until a real permalink exists, FE02-T049 remains unchecked and FE02 remains `PARTIAL`.
+
+## L1 full-gate evidence before H2 round 1
+
+- `trace:enforce`: PASS; FE02 27/27, FE04 14/14 and FE11 43/43, with all three correctly remaining `PARTIAL` at this checkpoint.
+- Secret scanner: 5/5 contract tests PASS and tracked-tree scan PASS.
+- Root/backend audit: 0 vulnerabilities; frontend high-audit guard accepted only the pinned React Router RSC advisory for unused unstable APIs.
+- Backend full: 75/75 suites, 1202/1202 tests PASS.
+- Backend system integration: 11/11 PASS.
+- Backend coverage: statements 91.98%, branches 81.28%, functions 97.08%, lines 91.94%; configured thresholds PASS.
+- Frontend: 281/281 tests PASS; ESLint PASS; Vite production build PASS.
+- Playwright Chromium: 16/16 PASS with clean process exit, including FE04 Admin membership review and connected FE07/FE08/FE10/FE12 flow.
+- Deployment contracts: 20/20 PASS.
+- `git diff --check`: PASS; ignored staging harness is not tracked.
+
+## H2 round 1
+
+- Decision: APPROVED by Nhat in Codex chat on 2026-08-03.
+- Reviewed diff fingerprint: `8cef30463f1e4cd2f4ee80862cca282c297f902a`.
+- Reviewed scope: 12 durable FE04/FE02/PR C documentation files; no product code, test source, workflow, dependency or lockfile changes; temporary staging harness remains ignored/untracked.
+- H2 authorizes the mechanical status updates recording H2, the reviewed documentation commit, branch push, Draft PR publication and ready-for-review transition after exact-head checks pass.
+- H2 does not approve FE04 manual acceptance, FE02 retrospective H3 resolution, merge or final completion.
+
 ## Open gates
 
-- Commit and review `docs/superpowers/specs/2026-08-03-pr-c-fe04-acceptance-context-isolation-amendment-design.md` before changing the harness or running another mutation.
-- After written review, the amendment permits exactly one additional staging mutation with a fresh run ID; it does not erase or relabel the three failed attempts.
-- FE04 remains PARTIAL until reject -> resubmit -> approve, responsive evidence, post-cleanup login/token rejection and H2/manual acceptance pass on one complete run.
+- FE04 staging/browser/cleanup, full L1 and H2 evidence are present, but FE04 remains PARTIAL until explicit manual acceptance/owner confirmation passes.
+- Dat/FE07/FE08 human owner confirmation remains open; automated cross-feature evidence is present.
 - FE02-T049 and CG-FE02-003 remain open; no FE02 completion state changed across these attempts.

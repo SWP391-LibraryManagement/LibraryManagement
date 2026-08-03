@@ -1,15 +1,15 @@
 # TASKS.md - Quản lý thành viên FE04
 
-Trạng thái: COMPLETE - PHẠM VI GIAI ĐOẠN 2 CỐT LÕI; ĐANG CHỜ MỞ RỘNG QUẢN TRỊ
+Trạng thái: COMPLETE - PHẠM VI CỐT LÕI; ADMIN EXTENSION H2 PASS, MANUAL PENDING
 Implementation State: PARTIAL
 
 Chủ sở hữu: Dat
 
-Cập nhật: 2026-07-23
+Cập nhật: 2026-08-03
 
 Trạng thái quy trình: COMPLETE cho phạm vi Giai đoạn 2 đã phê duyệt; H3, merge và CI `main` chính xác sau merge được ghi tại `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. Các phát biểu cổng đang chờ/mở bên dưới là snapshot thực thi lịch sử đã được bằng chứng đó thay thế.
 
-Trạng thái mở rộng: `FE04-ADM01..ADM04` được triển khai với bằng chứng nguồn/kiểm thử cục bộ; `FE04-ADM04` vẫn mở để chờ việc thoát tiến trình trình duyệt Windows sạch, còn `FE04-ADM05` vẫn mở cho Azure Staging, H2 và nghiệm thu thủ công.
+Trạng thái mở rộng: `FE04-ADM01..ADM04`, L1 đầy đủ và H2 vòng 1 đã đạt; Azure Staging run `lms-fe04-acceptance-20260803-90ac1d5b` đã cleanup sạch; `FE04-ADM05` và `FE04-CONV-002` vẫn chờ nghiệm thu thủ công/xác nhận owner.
 
 ---
 
@@ -96,13 +96,13 @@ Trạng thái mở rộng: `FE04-ADM01..ADM04` được triển khai với bằn
   - DoD: lỗi mạng không bao giờ bịa đặt trạng thái thành viên hoặc đơn nhân viên.
   - Bằng chứng: 5/5 kiểm thử frontend tập trung vượt qua việc sử dụng response chuẩn, lỗi đúng sự thật, tìm kiếm server, làm mới mutation, không bịa đặt demo/`NONE` và giới hạn lý do từ chối 500 ký tự.
 
-- [~] **FE04-T009 - Chốt bằng chứng traceability và xác thực.**
+- [x] **FE04-T009 - Chốt bằng chứng traceability và xác thực.**
   - Ánh xạ tới: mọi ID BR/FR/AC FE04 và Định nghĩa hoàn tất.
   - Tệp: phần triển khai/kiểm thử FE04 đã thay đổi, `.sdd/specs/feat-membership-management/TEST_PLAN.md`, `.sdd/specs/feat-membership-management/CHANGELOG.md`.
   - Phụ thuộc: FE04-T001 đến FE04-T008.
   - Xác minh: backend, SQL, frontend tập trung, `npm.cmd run trace:enforce` và `git diff --check` đều vượt qua; toàn bộ suite chỉ chạy ở cổng merge.
   - DoD: bằng chứng ghi chính xác số lượng/kết quả kiểm thử, rủi ro phụ thuộc bên ngoài còn lại và trạng thái rà soát thủ công mà không tuyên bố các kiểm tra chưa chạy.
-  - Bằng chứng: trace FE04 là 12/12 và xác thực SQL Server disposable vượt qua 10/10 trường hợp SQL FE04 có dọn dẹp. Các lần chạy lại cuối cùng của kho mã nguồn, nghiệm thu trình duyệt, rà soát liên tính năng và nghiệm thu thủ công vẫn đang mở.
+  - Bằng chứng: trace FE04 là 14/14; SQL Server disposable vượt qua 10/10; backend full 75 suite/1202 test và coverage gate đạt; frontend 281/281, lint/build đạt; Playwright 16/16; deployment 20/20; staging run `lms-fe04-acceptance-20260803-90ac1d5b` và cleanup đạt; suite liên tính năng FE04/FE07/FE08/FE10/FE12 đạt 162/162; H2 vòng 1 được duyệt trên fingerprint `8cef30463f1e4cd2f4ee80862cca282c297f902a`.
 
 - [x] **FE04-T010 - Yêu cầu hồ sơ cá nhân đầy đủ trước khi nộp đơn.**
   - Ánh xạ tới: BR-FE04-019, FR-FE04-013, AC-FE04-012, NFR-FE04-UX-004.
@@ -137,10 +137,10 @@ Trạng thái mở rộng: `FE04-ADM01..ADM04` được triển khai với bằn
 
 ## Cổng hoàn tất
 
-- [ ] FE04-T001 đến FE04-T009 hoàn tất và được rà soát độc lập.
-- [ ] Backend, SQL, frontend, traceability và kiểm tra diff tập trung vượt qua.
+- [x] FE04-T001 đến FE04-T009 hoàn tất và được rà soát độc lập.
+- [x] Backend, SQL, frontend, traceability và kiểm tra diff tập trung vượt qua.
 - [x] Toàn bộ suite cổng merge không-SQL đã cấu hình vượt qua cục bộ; chạy lại sau thay đổi SQL/fan-in.
-- [ ] Không thêm secret, thông tin xác thực thông báo thô hoặc dữ liệu cá nhân thực.
+- [x] Không thêm secret, thông tin xác thực thông báo thô hoặc dữ liệu cá nhân thực.
 - [ ] Dat và chủ sở hữu liên tính năng FE07/FE08 xác nhận hợp đồng điều kiện chuẩn.
 ## batch khắc phục 2026-07-22
 
@@ -158,22 +158,23 @@ Trạng thái mở rộng: `FE04-ADM01..ADM04` được triển khai với bằn
 - [x] **FE04-ADM03 - Thêm phê duyệt, từ chối, tải lại khi conflict và phản hồi FE10.**
   - Phụ thuộc: FE04-ADM02.
   - DoD: chỉ hàng `PENDING` hiển thị quyết định; lý do từ chối dài 1..500 ký tự; thành công/thất bại tải lại sự thật server; việc gửi `FAILED` là cảnh báo sau quyết định đã commit.
-- [~] **FE04-ADM04 - Vượt qua nghiệm thu trình duyệt responsive đã xác thực.**
+- [x] **FE04-ADM04 - Vượt qua nghiệm thu trình duyệt responsive đã xác thực.**
   - Phụ thuộc: FE04-ADM03.
-  - Bằng chứng: `tests/e2e/fe04-admin-membership-review.spec.js` bao phủ từ chối FE04 thực, nộp lại đơn, phê duyệt và kiểm tra không tràn ở 1440/1366/1280/390; teardown webServer Windows vẫn ngăn lệnh thoát sạch.
+  - Bằng chứng: local Playwright FE04 + FE11 đạt 2/2 và thoát sạch; staging run `lms-fe04-acceptance-20260803-90ac1d5b` đạt reject -> resubmit -> approve, sidebar tám mục và không tràn ở 1440/1366/1280/390.
   - DoD: từ chối FE04 thực, nộp lại đơn và phê duyệt vượt qua trong shell Admin; bằng chứng bảng/thẻ và không tràn vượt qua; lệnh tập trung thoát sạch.
-- [ ] **FE04-ADM05 - Vượt qua L1-L4, H2, Azure Staging và nghiệm thu thủ công.**
+- [~] **FE04-ADM05 - Vượt qua L1-L4, H2, Azure Staging và nghiệm thu thủ công.**
   - Phụ thuộc: FE04-ADM01..FE04-ADM04.
+  - Bằng chứng candidate: L1 đầy đủ, Azure Staging, kiểm tra HTTP/auth/responsive/cleanup và H2 vòng 1 đã đạt; đang chờ phê duyệt thủ công desktop/mobile và xác nhận owner.
   - DoD: kiểm thử tập trung/đầy đủ, lint/build/trace/browser, commit đã rà soát, lần triển khai, kiểm tra HTTP và phê duyệt thủ công desktop/mobile đã xác thực rõ ràng được ghi nhận.
 
 ## Giai đoạn 3: Hội tụ
 
-- [ ] **FE04-CONV-001 - Ghi nhận việc thoát sạch khi nghiệm thu trình duyệt Windows.**
+- [x] **FE04-CONV-001 - Ghi nhận việc thoát sạch khi nghiệm thu trình duyệt Windows.**
   - Ánh xạ tới: FR-FE04-014, AC-FE04-013, FE04-ADM04.
-  - Bằng chứng: `tests/e2e/fe04-admin-membership-review.spec.js` hiện bao phủ từ chối, nộp lại đơn, phê duyệt và kiểm tra responsive 1440/1366/1280/390; assertion Playwright đến được kiểm thử mà không lỗi assertion, nhưng teardown `webServer` Windows đã cấu hình timeout trước khi tiến trình thoát sạch.
+  - Bằng chứng: FE04 + FE11 Playwright tập trung đạt 2/2 và tiến trình thoát sạch trong 31,5 giây; staging acceptance độc lập cũng đạt bốn viewport.
   - DoD: chạy lại spec trình duyệt FE04 và FE11 tập trung với kết thúc sạch, đồng thời lưu bằng chứng screenshot/overflow.
 
-- [ ] **FE04-CONV-002 - Hoàn tất nghiệm thu FE04 bên ngoài và bằng chứng phát hành.**
+- [~] **FE04-CONV-002 - Hoàn tất nghiệm thu FE04 bên ngoài và bằng chứng phát hành.**
   - Ánh xạ tới: mọi tiêu chí nghiệm thu FE04, FE04-ADM05 và Định nghĩa hoàn tất.
-  - Bằng chứng: cổng backend/frontend/lint/build/trace cục bộ vượt qua; triển khai Azure Staging, rà soát L1-L4/H2, xác nhận chủ sở hữu liên tính năng và phê duyệt thủ công desktop/mobile đã xác thực không có trong workspace này.
+  - Bằng chứng candidate: exact CI/deploy `850b01b`, staging acceptance, cleanup, L1 đầy đủ và H2 vòng 1 đạt; suite liên tính năng đạt 162/162. Xác nhận chủ sở hữu và phê duyệt thủ công vẫn mở.
   - DoD: ghi SHA đã triển khai, kiểm tra HTTP, quyết định người rà soát và phê duyệt rõ ràng trước khi đánh dấu FE04 hoàn tất.

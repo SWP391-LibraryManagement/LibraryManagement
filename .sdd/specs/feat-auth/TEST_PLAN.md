@@ -1,8 +1,8 @@
 # Kế hoạch kiểm thử FE02 - Xác thực
 
-Phiên bản: 0.3.15
+Phiên bản: 0.3.16
 Trạng thái: ĐANG ĐỐI SOÁT - ĐÃ GHI NHẬN BẰNG CHỨNG BASELINE; CÁC KHOẢNG TRỐNG ĐANG MỞ
-Cập nhật lần cuối: 2026-07-28
+Cập nhật lần cuối: 2026-08-03
 
 Đặc tả nguồn: `.sdd/specs/feat-auth/SPEC.md`
 ID tính năng: `BR-FE02-*`, `FR-FE02-*`, `AC-FE02-*`
@@ -61,6 +61,9 @@ Hành vi đăng ký, xác minh email, đăng nhập, làm mới token/đăng xu�
 - Lần chạy lại toàn bộ backend: 60/61 suite và 1048/1050 kiểm thử vượt qua; mọi suite FE02 đều vượt qua và chỉ có hai assertion về tách biệt DNS/mock tồn tại từ trước trong `dbConfig.test.js` đối với `sql.example.test` thất bại.
 - Bằng chứng giao thức tập trung: `backend/tests/httpsEnforcement.test.js` vượt qua `3/3`.
 - FE02-T043 ghi lại snapshot lịch sử gồm 924/924 kiểm thử backend đầy đủ và 209/209 kiểm thử frontend đầy đủ; phần FE02/FE10 tập trung trong lịch sử vượt qua 170/170 trước khi các kiểm thử hồi quy xác thực về sau được thêm vào. Các số liệu này không phải kết quả xác minh hiện tại cho đợt đối soát đang mở.
+- Candidate lịch sử T043: commit `241907d`, PR #60 head `50e9091`, merge `c052b50`; exact-head CI `29875668029`, post-merge CI `29875885463` và staging `29876046500` đều thành công; PR #60 không có GitHub review record.
+- Focused current rerun 2026-08-03: backend `authRoutes`, `authUtils`, `httpsEnforcement` đạt 3 suite/68 kiểm thử; frontend `authUxFrontend` + `loginFrontend` đạt 17/17.
+- L1 PR C hiện tại: backend 75 suite/1202 test PASS và coverage gate đạt; frontend 281/281, lint/build PASS; Playwright 16/16; deployment 20/20; secret/audit/trace/diff gates PASS.
 - Traceability: tất cả 27 ID FR của FE02 có độ bao phủ `@spec` (**100%**) khi chạy `npm run trace:enforce`.
 - Bằng chứng hiệu năng: `npm.cmd run phase3:performance` ngày 2026-07-27 vượt qua NFR-FE02-PERF-001/004 trong môi trường cục bộ xác định đã ghi nhận: 30 mẫu đăng nhập hợp lệ có p95 `61.46 ms` và 50 mẫu `/api/auth/me` có p95 `1.52 ms`, với chi phí bcrypt 10; kiểm thử harness vượt qua 3/3 và các giới hạn SQL/mạng vẫn được ghi nhận.
 
@@ -68,7 +71,7 @@ Hành vi đăng ký, xác minh email, đăng nhập, làm mới token/đăng xu�
 
 - Các ngưỡng độ bao phủ toàn cục của Jest đã cấu hình đều đạt đối với statement, branch, function và line.
 - Nghiệm thu thủ công, tích hợp PR và CI chính xác sau merge trên `main` đã vượt qua cho ranh giới gửi FE10 được inject; việc gửi SMTP thực sau đó được quan sát là PASS trong lần chạy `c6e0c46421f0`.
-- Ghi nhận hoặc liên kết phần chốt tích hợp H3 riêng cho FE02-T043.
+- Liên kết một H3 hồi cứu hiện tại có permalink thật cho FE02-T043; không tồn tại H3 lịch sử để backdate.
 
 Chủ sở hữu khoảng trống:
 

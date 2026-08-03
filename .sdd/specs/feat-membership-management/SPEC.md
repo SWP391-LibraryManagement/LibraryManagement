@@ -1,32 +1,31 @@
 # SPEC.md - Quản lý thành viên FE04
 
-# Phiên bản: 0.3.4
+# Phiên bản: 0.3.5
 
 # Trạng thái: ĐÃ PHÊ DUYỆT - BASELINE 2026-07-17
 
 # Chủ sở hữu: Dat
 
-# Cập nhật lần cuối: 2026-07-25
+# Cập nhật lần cuối: 2026-08-03
 
 # ID tính năng: FE04
 
 # Thư mục tính năng: `.sdd/specs/feat-membership-management/`
 
-> Trạng thái phân phối hiện tại (2026-07-20): `COMPLETE` cho phạm vi Giai đoạn 1 đã được phê duyệt.
-> `TASKS.md` và `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`
-> là nguồn có thẩm quyền về trạng thái triển khai hiện tại. Các nhãn cũ hơn như `Not Started`,
-> `PARTIAL`, `READY FOR REVIEW` hoặc đang chờ review được giữ lại bên dưới chỉ là
-> ảnh chụp nhanh lịch sử về kế hoạch/bằng chứng, không phải trạng thái phân phối hiện tại.
+> Trạng thái phân phối hiện tại (2026-08-03): `COMPLETE` cho phạm vi cốt lõi đã phê duyệt;
+> phần mở rộng Admin Console đã vượt qua kiểm thử local và acceptance Azure Staging trên
+> `850b01b` và H2 vòng 1 đã được phê duyệt. Feature vẫn `PARTIAL` cho đến khi nghiệm thu
+> thủ công/xác nhận owner được phê duyệt. `TASKS.md` và hồ sơ validation PR C là nguồn có thẩm quyền về trạng thái này.
 
 > Nguồn sự thật cho Quản lý thành viên FE04. Bản sửa đổi v0.2.2 đồng bộ quy trình đã được phê duyệt với baseline mã hiện tại mà không mở rộng phạm vi triển khai.
 
 > Lớp trình bày bổ sung được phê duyệt vào 2026-07-22: Quản trị viên đã xác thực có một phần review FE04 nhúng trong Bảng điều khiển quản trị. Không gian làm việc `/membership` hiện có của Thành viên/Thủ thư, API FE04, máy trạng thái, lược đồ, phân quyền, audit và các hợp đồng thông báo đều không thay đổi. Xem `docs/superpowers/specs/2026-07-22-admin-membership-review-integration-design.md`.
 >
 > Phần cốt lõi của Giai đoạn 2 đã hoàn tất. Lớp bổ sung cho Bảng điều khiển quản trị đã được phê duyệt và triển khai
-> cục bộ cho `FR-FE04-014` và `AC-FE04-013`, có kiểm thử nguồn tập trung và
-> một kịch bản trình duyệt đã xác thực. Việc kết thúc sạch tiến trình trình duyệt, Azure
-> Staging, H2 và nghiệm thu thủ công vẫn là các cổng phát hành, không phải hành vi sản phẩm
-> FE04 còn thiếu. Mức truy vết nguồn hiện tại là `14/14 FR`.
+> cho `FR-FE04-014` và `AC-FE04-013`; kiểm thử trình duyệt local thoát sạch và run staging
+> `lms-fe04-acceptance-20260803-90ac1d5b` đã chứng minh từ chối, nộp lại, phê duyệt,
+> phân quyền server, bốn viewport và cleanup. Nghiệm thu thủ công/xác nhận owner vẫn là cổng phát hành,
+> không phải hành vi sản phẩm FE04 còn thiếu. Mức truy vết nguồn hiện tại là `14/14 FR`.
 
 ---
 
@@ -401,7 +400,7 @@ Tính năng này không bao gồm:
 | FR-FE04-011 | UC14, UC15 | Các ca review đơn đăng ký/thành viên/audit nguyên tử | Kiểm thử tự động đạt; đang chờ review thủ công |
 | FR-FE04-012 | UC14, UC15 | Lỗi FE10 vẫn giữ nguyên quyết định | Kiểm thử tự động đạt; đang chờ review thủ công |
 | FR-FE04-013 | UC13 | Thực thi hồ sơ đầy đủ và hướng dẫn Thành viên | Kiểm thử tự động đạt; đang chờ review thủ công |
-| FR-FE04-014 | UC14, UC15 | Hợp đồng nguồn/trình duyệt FE04 nhúng trong Bảng điều khiển quản trị | Hoàn tất cục bộ về nguồn/kiểm thử tự động; đang chờ trình duyệt đáp ứng/Azure/review thủ công |
+| FR-FE04-014 | UC14, UC15 | Hợp đồng nguồn/trình duyệt FE04 nhúng trong Bảng điều khiển quản trị | Local, Azure Staging và H2 đạt; đang chờ review thủ công/xác nhận owner |
 | AC-FE04-001 | UC13 | Luồng đăng ký thành công | Kiểm thử tự động đạt; đang chờ review thủ công |
 | AC-FE04-002 | UC13 | Từ chối đơn chờ xử lý trùng lặp | Kiểm thử tự động đạt; đang chờ review thủ công |
 | AC-FE04-003 | UC14 | Phê duyệt + thông báo | Kiểm thử tự động đạt; đang chờ review thủ công |
@@ -414,7 +413,7 @@ Tính năng này không bao gồm:
 | AC-FE04-010 | UC14, UC15 | Lỗi thông báo vẫn giữ nguyên quyết định | Kiểm thử tự động đạt; đang chờ review thủ công |
 | AC-FE04-011 | UC29, UC36 | Tài khoản đang hoạt động + điều kiện chuẩn đã phê duyệt | Kiểm thử tự động đạt; đang chờ review thủ công |
 | AC-FE04-012 | UC13 | Từ chối hồ sơ chưa đầy đủ và luồng khôi phục qua `/profile` | Kiểm thử tự động đạt; đang chờ review thủ công |
-| AC-FE04-013 | UC14, UC15 | Các ca điều hướng, review, xung đột, thông báo và đáp ứng trong Bảng điều khiển quản trị | Hoàn tất cục bộ về nguồn/kiểm thử tự động; đang chờ trình duyệt đáp ứng/Azure/review thủ công |
+| AC-FE04-013 | UC14, UC15 | Các ca điều hướng, review, xung đột, thông báo và đáp ứng trong Bảng điều khiển quản trị | Local, Azure Staging và H2 đạt; đang chờ review thủ công/xác nhận owner |
 
 ### 16.1 Tóm tắt độ bao phủ
 

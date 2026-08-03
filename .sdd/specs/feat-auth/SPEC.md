@@ -1,18 +1,18 @@
 # SPEC.md - Xác thực FE02
 
-# Phiên bản: 0.6.20
+# Phiên bản: 0.6.21
 
 # Trạng thái: BASELINE ĐÃ PHÊ DUYỆT 2026-07-17 - ĐỐI SOÁT HỢP ĐỒNG ĐANG CHỜ RÀ SOÁT THỦ CÔNG
 
 # Chủ sở hữu: Dat
 
-# Cập nhật lần cuối: 2026-08-01
+# Cập nhật lần cuối: 2026-08-03
 
 # ID tính năng: FE02
 
 # Thư mục tính năng: `.sdd/specs/feat-auth/`
 
-> Trạng thái phân phối được ghi nhận (2026-07-23): `COMPLETE` chỉ áp dụng cho baseline Giai đoạn 1 đã được phê duyệt.
+> Trạng thái phân phối được ghi nhận (2026-08-03): `COMPLETE` chỉ áp dụng cho baseline Giai đoạn 1 đã được phê duyệt.
 > `TASKS.md` và `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`
 > là nguồn có thẩm quyền về trạng thái triển khai hiện tại. Mục 16 ghi nhận
 > bằng chứng nghiệm thu hiện có và các khoảng trống còn lại về tính tuân thủ của kho mã nguồn.
@@ -20,7 +20,7 @@
 > hoàn tất hoặc được phê duyệt rõ ràng để hoãn lại. Bằng chứng hiệu năng của FE02-T048
 > được ghi nhận trong danh sách nhiệm vụ và kế hoạch kiểm thử của tính năng.
 
-> Nguồn sự thật cho Xác thực FE02. Phiên bản 0.6.16 đồng bộ các luồng thay đổi mật khẩu, bước kiểm tra yêu cầu được bảo vệ, cơ chế khôi phục phiên ở giao diện người dùng, ranh giới giao dịch và các tạo phẩm lập kế hoạch FE02 hiện có với `CONTEXT.md` mà không thay đổi hành vi nghiệp vụ đã được phê duyệt. Commit tăng cường bảo mật đăng nhập đã được tích hợp vào `main`; không tìm thấy bằng chứng chốt H3 riêng cho FE02-T043, vì vậy vẫn còn một khoảng trống về bằng chứng quản trị. Đặc tả này được chủ đích viết chi tiết vì FE02 là nền tảng cho mọi cơ chế kiểm soát truy cập và bảo mật của hệ thống.
+> Nguồn sự thật cho Xác thực FE02. Phiên bản 0.6.21 ghi nhận candidate đối soát FE02-T043: commit `241907d`, PR #60 và CI/deploy lịch sử đều tồn tại và đã tích hợp, nhưng GitHub không có review record H3 lịch sử. PR C phải yêu cầu một H3 hồi cứu hiện tại có permalink thật; không được backdate hoặc suy diễn phê duyệt cũ. Đặc tả này được chủ đích viết chi tiết vì FE02 là nền tảng cho mọi cơ chế kiểm soát truy cập và bảo mật của hệ thống.
 >
 > Các quyết định trong đặc tả này đã được xem xét và phê duyệt trên 2026-06-10. Xem `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`.
 >
@@ -686,7 +686,7 @@ Các quyết định sau đây đã được phê duyệt trong gói đánh giá
 
 ### Khoảng trống về mức độ phù hợp hiện tại (2026-07-27)
 
-- CG-FE02-003: FE02-T043 đã được tích hợp vào `main`, nhưng không tìm thấy bản ghi chốt H3 riêng cho phần triển khai đó trong tài liệu tính năng/review.
+- CG-FE02-003: FE02-T043 commit `241907d09760055022393bdc9176da85bbeff3f4` đã được tích hợp qua PR [#60](https://github.com/SWP391-LibraryManagement/LibraryManagement/pull/60), exact-head CI `29875668029`, post-merge CI `29875885463` và staging deploy `29876046500` đều thành công. GitHub `reviews` của PR #60 là rỗng, nên chưa có H3 lịch sử; candidate PR C đề nghị H3 hồi cứu hiện tại nhưng khoảng trống vẫn `OPEN` cho đến khi có permalink review thật.
 
 ### Các khoảng trống về mức độ phù hợp đã giải quyết (2026-07-27)
 
@@ -729,7 +729,7 @@ Kiểm tra đối chiếu 2026-07-23:
 
 - [x] Căn chỉnh các mặc định của kho lưu trữ và triển khai với hợp đồng khóa 30 phút chính xác đã được phê duyệt.
 - [x] Thêm bằng chứng hồi quy AC-FE02-023 rõ ràng cho ủy quyền `UserRoles` phía máy chủ.
-- [ ] Ghi lại hoặc liên kết phần đóng tích hợp FE02-T043 H3 chuyên dụng.
+- [ ] Ghi lại hoặc liên kết phần đóng tích hợp FE02-T043 H3 chuyên dụng; candidate lịch sử đã được ghi trong hồ sơ PR C nhưng vẫn cần permalink H3 hồi cứu thật.
 - [x] Thêm bằng chứng hồi quy `CHANGE_PASSWORD_OTP` request/confirm chuyên dụng cho AC-FE02-012 và AC-FE02-013.
 - [x] Từ chối các yêu cầu được bảo vệ khi người dùng hiện tại vẫn tồn tại không còn là `ACTIVE` nữa, có bằng chứng hồi quy phiên được liên kết.
 - [x] Đồng bộ các yêu cầu giao diện được bảo vệ của FE02 với hợp đồng đã phê duyệt: chỉ thử lại một lần và xóa trạng thái khi khôi phục thất bại.

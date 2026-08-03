@@ -1,9 +1,9 @@
 # TASKS.md - Xác thực FE02
 
-Trạng thái: ĐANG ĐỐI SOÁT - ĐÃ THEO DÕI CÁC KHOẢNG TRỐNG SO VỚI CONTEXT
+Trạng thái: ĐANG ĐỐI SOÁT - CANDIDATE H3 HỒI CỨU
 Implementation State: PARTIAL
 Ghi chú baseline: Baseline triển khai đã phê duyệt đã hoàn tất; nhiệm vụ đối soát FE02-T049 vẫn đang mở để liên kết H3 và phê duyệt thủ công.
-Ngày: 2026-07-23
+Ngày: 2026-08-03
 Chủ sở hữu: Dat
 
 ## Quy tắc thực hiện nhiệm vụ
@@ -227,6 +227,7 @@ Bằng chứng này chỉ đóng nhóm nhiệm vụ UX Xác thực/OTP. Phần g
   - Ánh xạ tới: Định nghĩa hoàn tất; CG-FE02-003; SPEC.md v0.6.16.
   - Phụ thuộc: FE02-T045 đến FE02-T048, FE02-T050 đến FE02-T052.
   - DoD: cổng tự động vượt qua, phần chốt H3 FE02-T043 được liên kết, mọi khoảng trống tuân thủ được đóng hoặc hoãn rõ ràng và rà soát thủ công phê duyệt các tạo phẩm đã đối soát.
+  - Bằng chứng candidate: T043 commit `241907d`, PR #60, exact-head CI `29875668029`, post-merge CI `29875885463` và staging `29876046500` đã được xác minh; GitHub không có review lịch sử. Focused current auth đạt backend 68/68 và frontend 17/17. Nhiệm vụ vẫn mở cho đến khi H3 hồi cứu thật và phê duyệt thủ công được liên kết.
 
 ## Giai đoạn 1: Hội tụ
 

@@ -1,8 +1,8 @@
 # Kế hoạch kiểm thử FE04 - Quản lý thành viên
 
-Phiên bản: 0.2.1
-Trạng thái: COMPLETE - PHẠM VI GIAI ĐOẠN 2 CỐT LÕI; ĐANG CHỜ MỞ RỘNG QUẢN TRỊ
-Cập nhật lần cuối: 2026-07-25
+Phiên bản: 0.2.2
+Trạng thái: COMPLETE - PHẠM VI CỐT LÕI; ADMIN EXTENSION H2 PASS, MANUAL PENDING
+Cập nhật lần cuối: 2026-08-03
 
 Đặc tả nguồn: `.sdd/specs/feat-membership-management/SPEC.md`
 ID tính năng: `BR-FE04-*`, `FR-FE04-*`, `AC-FE04-*`
@@ -19,7 +19,7 @@ ID tính năng: `BR-FE04-*`, `FR-FE04-*`, `AC-FE04-*`
 - Điều kiện đủ để nộp đơn thành viên.
 - Quy tắc chuyển đổi trạng thái: `PENDING`, `APPROVED`, `REJECTED` và trạng thái thành viên chuẩn `INACTIVE`.
 - Ngăn đơn đang hoạt động/đang chờ trùng lặp.
-- Tác động của trạng thái thành viên đến điều kiện mượn/đặt chỗ.
+- FE07 dùng trạng thái FE04 chuẩn để chọn hạn mức 5/3; FE08 chỉ yêu cầu tài khoản `MEMBER` hoạt động và không bị FE04 chặn.
 
 ## 3. Mục tiêu kiểm thử API/integration
 
@@ -35,8 +35,8 @@ ID tính năng: `BR-FE04-*`, `FR-FE04-*`, `AC-FE04-*`
 
 - Người dùng đã đăng ký nộp đơn thành viên.
 - Nhân viên phê duyệt yêu cầu.
-- Thành viên được phê duyệt có thể tiếp tục luồng mượn/đặt chỗ.
-- Thành viên bị từ chối/chưa phê duyệt bị chặn khỏi luồng chỉ dành cho thành viên nơi đặc tả yêu cầu.
+- Thành viên FE04 `APPROVED` nhận hạn mức FE07 5 bản/ngày; trạng thái khác nhận hạn mức 3 nếu tài khoản `MEMBER` vẫn hoạt động.
+- FE08 cho phép tài khoản `MEMBER` hoạt động đặt chỗ bất kể trạng thái FE04; tài khoản không hoạt động bị chặn theo FE02.
 
 ## 5. Bằng chứng hiện tại
 
@@ -47,13 +47,17 @@ ID tính năng: `BR-FE04-*`, `FR-FE04-*`, `AC-FE04-*`
 - Backend tập trung hiện tại: 30/30 kiểm thử vượt qua cho route FE04 và kết nối hệ thống.
 - Toàn bộ frontend hiện tại: 219/219 kiểm thử vượt qua; ESLint và Vite production build vượt qua.
 - Traceability FE04 hiện tại: 14/14 FR; `git diff --check` vượt qua.
+- Local closeout baseline: backend FE04 + system integration 31/31, frontend FE04/Admin 36/36 và Playwright FE04 + FE11 2/2 thoát sạch trong 31,5 giây.
+- Harness amendment: 14/14 contract PASS; hai script tạm `node --check` PASS; preflight trước và sau cleanup PASS.
+- Azure Staging `850b01b`, run `lms-fe04-acceptance-20260803-90ac1d5b`: anonymous 401, Member 403, Librarian/Admin 200; application A `REJECTED`, application B `APPROVED`; 1440/1366/1280/390 không overflow; cleanup active token/user/member/pending = 0, login/token cũ bị từ chối và runtime/helper = 404/404.
+- Suite liên tính năng FE04/FE07/FE08/FE10/FE12: 6 suite, 162/162 PASS.
+- L1 PR C hiện tại: backend 75 suite/1202 test PASS; system integration 11/11; coverage 91.98% statement, 81.28% branch, 97.08% function, 91.94% line; frontend 281/281, lint/build PASS; Playwright 16/16; deployment 20/20; secret/audit/trace/diff gates PASS.
 
 ## 6. Khoảng trống
 
 - Bằng chứng SQL Server disposable đã hoàn tất: migration FE04 chạy hai lần, toàn bộ sáu mutable case vượt qua và việc dọn dẹp database/login được ghi tại `.sdd/reviews/full-reconciliation-live-sql-validation-2026-07-19.md`.
-- Hội tụ FE04 vào cùng baseline schema sau FE11 với FE10/FE02 và chạy lại kiểm thử liên tính năng.
-- `tests/e2e/fe04-admin-membership-review.spec.js` bao phủ thiết lập người nộp đơn đã đăng ký, từ chối Admin, thành viên nộp lại đơn, phê duyệt và kiểm tra tràn responsive; teardown Playwright webServer Windows đã cấu hình vẫn timeout trước khi tiến trình thoát sạch.
-- Chủ sở hữu Dat/FE07/FE08 và người rà soát thủ công cuối cùng phải xác nhận điều kiện và tính phù hợp của hệ thống.
+- L1 đầy đủ đã đạt trên candidate hiện tại; phải chạy lại nếu diff thay đổi sau H2 review.
+- Chủ sở hữu Dat/FE07/FE08 và người rà soát thủ công cuối cùng vẫn phải xác nhận điều kiện và tính phù hợp của hệ thống.
 
 ## 7. Lệnh/bằng chứng bắt buộc trước khi merge
 
@@ -69,11 +73,11 @@ git diff --check
 
 ## 8. Mục tiêu tích hợp rà soát thành viên trong Admin Console
 
-Trạng thái nguồn/tự động cục bộ (2026-07-24): đã triển khai và được bao phủ bởi toàn bộ frontend vượt qua 219/219 cùng backend FE04 tập trung 30/30. Trình duyệt responsive đã xác thực có độ bao phủ assertion, nhưng việc thoát tiến trình Windows, Azure Staging và các cổng thủ công bên dưới vẫn đang mở.
+Trạng thái candidate (2026-08-03): nguồn/local browser/Azure Staging/L1/H2 vòng 1 đều đạt trên exact SHA `850b01b`; nghiệm thu thủ công/xác nhận owner vẫn mở.
 
 - Điều hướng Admin chính xác tám mục, có Membership Review sau All Users và không có Permissions.
 - Tham số danh sách FE04 chuẩn `q`, `status`, `page`, `limit=10`; không có alias `/api/admin/membership`.
 - Hành động review chỉ với trạng thái đang chờ, lý do từ chối 1..500, tải lại có thẩm quyền sau thành công/conflict và cảnh báo `FAILED` FE10 an toàn.
 - Bảng Admin trên 1440px và thẻ tại/dưới 1440px; không tràn tài liệu ở 1440/1366/1280/390.
 - Từ chối Admin đã xác thực thực tế, thành viên bị từ chối nộp lại đơn và phê duyệt trong `tests/e2e/fe04-admin-membership-review.spec.js` cùng độ bao phủ hồi quy `/membership` và FE11 hiện có.
-- Rà soát Azure Staging thủ công vẫn tách biệt với ảnh chụp tự động.
+- Rà soát thủ công cuối cùng vẫn tách biệt với acceptance staging tự động đã đạt.
