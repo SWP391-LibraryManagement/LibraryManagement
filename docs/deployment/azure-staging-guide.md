@@ -223,16 +223,19 @@ paths are fail-closed behind the exact FE10 migration file hashes stored in the 
 Environment. The workflow itself does not connect to SQL or execute SQL; schema reconciliation runs
 inside the configured backend application identity before listen. The deployment package includes
 both the catalog metadata compatibility migration and the `CHANGE_PASSWORD_OTP` token-type
-compatibility migration plus the reviewed FE10 borrowing-result template script. The latter remains
-operator-owned and is packaged only for auditable release evidence; startup does not execute it.
+compatibility migration plus the reviewed FE10 borrowing-result template and Unicode-repair scripts.
+The FE10 scripts remain operator-owned and are packaged only for auditable release evidence; startup
+does not execute them.
 
 ### FE10 Migration Gates
 
-Both FE10 migrations are operator-owned and must finish before either application is deployed:
+All three FE10 migrations are operator-owned and must finish before either application is deployed:
 `database/migrations/2026-07-27-fe10-personal-inbox-read-state.sql` and
-`database/migrations/2026-07-29-fe10-borrowing-result-templates.sql`. Apply each migration twice
-with `sqlcmd -b`. The second execution is an idempotence check; the inbox migration must not
-backfill notifications created after its first execution.
+`database/migrations/2026-07-29-fe10-borrowing-result-templates.sql`, followed by
+`database/migrations/2026-08-03-fe10-unicode-repair.sql`. Apply each migration twice with
+`sqlcmd -b -f 65001`. The second execution is an idempotence check; the inbox migration must not
+backfill notifications created after its first execution. The Unicode repair must also complete its
+binary exact-value assertions before deployment continues.
 
 1. Resolve the operator's current public IP without logging credentials.
 2. Add one temporary Azure SQL firewall rule whose start and end values are that exact IP.
@@ -243,12 +246,20 @@ backfill notifications created after its first execution.
 ```powershell
 $fe10InboxMigration = Resolve-Path 'database/migrations/2026-07-27-fe10-personal-inbox-read-state.sql'
 $fe10ResultTemplatesMigration = Resolve-Path 'database/migrations/2026-07-29-fe10-borrowing-result-templates.sql'
+$fe10UnicodeRepairMigration = Resolve-Path 'database/migrations/2026-08-03-fe10-unicode-repair.sql'
 
-foreach ($fe10Migration in @($fe10InboxMigration, $fe10ResultTemplatesMigration)) {
-  sqlcmd -S $env:FE10_SQL_SERVER -d $env:FE10_SQL_DATABASE `
-    -U $env:FE10_SQL_USER -P $env:FE10_SQL_PASSWORD -b -i $fe10Migration
-  sqlcmd -S $env:FE10_SQL_SERVER -d $env:FE10_SQL_DATABASE `
-    -U $env:FE10_SQL_USER -P $env:FE10_SQL_PASSWORD -b -i $fe10Migration
+foreach ($fe10Migration in @(
+  $fe10InboxMigration,
+  $fe10ResultTemplatesMigration,
+  $fe10UnicodeRepairMigration
+)) {
+  sqlcmd -S $env:FE10_SQL_SERVER -d $env:FE10_SQL_DATABASE -b -f 65001 `
+    -U $env:FE10_SQL_USER -P $env:FE10_SQL_PASSWORD -i $fe10Migration
+  if ($LASTEXITCODE -ne 0) { throw "Migration failed: $fe10Migration" }
+
+  sqlcmd -S $env:FE10_SQL_SERVER -d $env:FE10_SQL_DATABASE -b -f 65001 `
+    -U $env:FE10_SQL_USER -P $env:FE10_SQL_PASSWORD -i $fe10Migration
+  if ($LASTEXITCODE -ne 0) { throw "Idempotence check failed: $fe10Migration" }
 }
 ```
 
@@ -257,12 +268,39 @@ foreach ($fe10Migration in @($fe10InboxMigration, $fe10ResultTemplatesMigration)
    `CreatedAt`; sensitive, userless, and post-first-run rows still unread; and unchanged row count,
    delivery status, attempt count, and idempotency-key count. Confirm exactly one active template
    for each of `BORROW_REQUEST_APPROVED`, `BORROW_REQUEST_REJECTED`, `BORROW_RENEWED`, and
-   `BORROW_RETURNED`.
+   `BORROW_RETURNED`. The following exact-value query must return zero rows:
+
+```sql
+WITH Expected (TemplateCode, Subject, Body) AS (
+    SELECT N'BORROW_REQUEST_APPROVED', N'Yêu cầu mượn đã được duyệt',
+           N'Yêu cầu mượn #{{requestId}} đã được duyệt. Hạn trả: {{dueDate}}.'
+    UNION ALL
+    SELECT N'BORROW_REQUEST_REJECTED', N'Yêu cầu mượn đã bị từ chối',
+           N'Yêu cầu mượn #{{requestId}} đã bị từ chối.'
+    UNION ALL
+    SELECT N'BORROW_RENEWED', N'Khoản mượn đã được gia hạn',
+           N'Khoản mượn #{{borrowDetailId}} đã được gia hạn đến {{dueDate}}.'
+    UNION ALL
+    SELECT N'BORROW_RETURNED', N'Đã ghi nhận trả sách',
+           N'Khoản mượn #{{borrowDetailId}} đã được ghi nhận trả với trạng thái {{returnStatus}}.'
+)
+SELECT expected.TemplateCode
+FROM Expected AS expected
+LEFT JOIN dbo.NotificationTemplates AS actual
+    ON actual.TemplateCode = expected.TemplateCode
+WHERE actual.TemplateId IS NULL
+   OR actual.Subject COLLATE Latin1_General_100_BIN2
+        <> expected.Subject COLLATE Latin1_General_100_BIN2
+   OR actual.Body COLLATE Latin1_General_100_BIN2
+        <> expected.Body COLLATE Latin1_General_100_BIN2
+   OR actual.Status <> N'ACTIVE';
+```
+
 6. Remove the exact temporary firewall rule immediately, even when a command fails.
 7. Compute each reviewed migration SHA-256 and store it as non-secret GitHub `staging`
    Environment variables `FE10_INBOX_MIGRATION_SHA256` and
-   `FE10_BORROWING_RESULT_TEMPLATES_SHA256`. These values prove the exact migration file hashes
-   that were applied; never set or update either before steps 1-6 pass:
+   `FE10_BORROWING_RESULT_TEMPLATES_SHA256` and `FE10_UNICODE_REPAIR_SHA256`. These values prove
+   the exact migration file hashes that were applied; never set or update them before steps 1-6 pass:
 
    Record the hash of the bytes actually applied by the operator. Git may render the same UTF-8
    text with LF on the Linux deployment runner and CRLF on Windows. The preflight derives the exact
@@ -272,6 +310,7 @@ foreach ($fe10Migration in @($fe10InboxMigration, $fe10ResultTemplatesMigration)
 ```powershell
 $fe10InboxMigrationHash = (Get-FileHash -Algorithm SHA256 $fe10InboxMigration).Hash.ToLowerInvariant()
 $fe10ResultTemplatesMigrationHash = (Get-FileHash -Algorithm SHA256 $fe10ResultTemplatesMigration).Hash.ToLowerInvariant()
+$fe10UnicodeRepairMigrationHash = (Get-FileHash -Algorithm SHA256 $fe10UnicodeRepairMigration).Hash.ToLowerInvariant()
 gh variable set FE10_INBOX_MIGRATION_SHA256 `
   --env staging `
   --repo SWP391-LibraryManagement/LibraryManagement `
@@ -280,12 +319,17 @@ gh variable set FE10_BORROWING_RESULT_TEMPLATES_SHA256 `
   --env staging `
   --repo SWP391-LibraryManagement/LibraryManagement `
   --body $fe10ResultTemplatesMigrationHash
+gh variable set FE10_UNICODE_REPAIR_SHA256 `
+  --env staging `
+  --repo SWP391-LibraryManagement/LibraryManagement `
+  --body $fe10UnicodeRepairMigrationHash
 ```
 
 8. Before H3, run `Deploy staging` manually for the exact PR branch with
    `fe10_inbox_migration_confirmed=true` and
-   `fe10_borrowing_result_templates_confirmed=true`. The booleans are additional operator
-   acknowledgements; preflight still compares both checked-out migration files with their
+   `fe10_borrowing_result_templates_confirmed=true` and
+   `fe10_unicode_repair_confirmed=true`. The booleans are additional operator
+   acknowledgements; preflight still compares all checked-out migration files with their
    corresponding staging Environment variables.
 
 Deployment then proceeds in a fixed order: preflight, backend, frontend, fail-closed smoke, and
@@ -380,6 +424,7 @@ AZURE_WEBAPP_NAME=app-library-api-staging-nhat714
 STAGING_API_URL=https://app-library-api-staging-nhat714.azurewebsites.net
 FE10_INBOX_MIGRATION_SHA256=<lowercase SHA-256 set only after the verified migration>
 FE10_BORROWING_RESULT_TEMPLATES_SHA256=<lowercase SHA-256 set only after the verified migration>
+FE10_UNICODE_REPAIR_SHA256=<lowercase SHA-256 set only after the verified migration>
 ```
 
 Create `STAGING_FRONTEND_URL` using the exact Azure-generated Static Web Apps URL.
@@ -402,13 +447,14 @@ passes. For FE10, the operator-owned migration must be proven before merge becau
 `main` CI can deploy automatically:
 
 1. Wait for exact-head PR CI to pass.
-2. Apply both FE10 migrations twice, verify only aggregate postconditions, and remove the exact
+2. Apply all FE10 migrations twice, verify aggregate and exact Unicode postconditions, and remove the exact
    temporary firewall rule.
-3. Set `FE10_INBOX_MIGRATION_SHA256` and `FE10_BORROWING_RESULT_TEMPLATES_SHA256` to their exact
-   migration file hashes.
+3. Set `FE10_INBOX_MIGRATION_SHA256`, `FE10_BORROWING_RESULT_TEMPLATES_SHA256`, and
+   `FE10_UNICODE_REPAIR_SHA256` to their exact migration file hashes.
 4. Manually run `Deploy staging` for the exact PR branch with
    `fe10_inbox_migration_confirmed=true` and
-   `fe10_borrowing_result_templates_confirmed=true`.
+   `fe10_borrowing_result_templates_confirmed=true` and
+   `fe10_unicode_repair_confirmed=true`.
 5. Confirm preflight, backend startup reconciles the packaged catalog and auth-token migrations,
    `/health/ready` returns `200`, frontend and smoke pass, and MEMBER/LIBRARIAN/ADMIN browser checks
    succeed before H3.
@@ -421,8 +467,8 @@ passes. For FE10, the operator-owned migration must be proven before merge becau
 Failed CI runs do not deploy. `workflow_dispatch` remains available for an operator rerun after any
 required operator-owned migration is applied. A missing or mismatched migration hash blocks both
 automatic and manual deployment without changing Azure SQL. If Azure SQL is paused or quota-blocked,
-do not set either hash or trigger a deployment; resume only after the database can be reached and the
-two idempotence checks have completed.
+do not set any hash or trigger a deployment; resume only after the database can be reached and all
+required idempotence checks have completed.
 
 After changing App Service settings, allow the F1 instance to warm up before
 judging the smoke result. A first request may return `503` while the application

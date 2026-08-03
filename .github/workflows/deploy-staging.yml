@@ -17,6 +17,11 @@ on:
         required: true
         default: false
         type: boolean
+      fe10_unicode_repair_confirmed:
+        description: FE10 Unicode repair migration was applied twice and exact values were verified on staging
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -114,6 +119,55 @@ jobs:
 
           Write-Output 'FE10 borrowing result templates migration proof accepted for the exact deployment head and LF/CRLF rendering.'
 
+      - name: Verify FE10 Unicode repair migration gate
+        shell: pwsh
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          UNICODE_REPAIR_MANUAL_CONFIRMATION: ${{ inputs.fe10_unicode_repair_confirmed }}
+          EXPECTED_UNICODE_REPAIR_SHA256: ${{ vars.FE10_UNICODE_REPAIR_SHA256 }}
+        run: |
+          if (
+            $env:EVENT_NAME -eq 'workflow_dispatch' -and
+            "$env:UNICODE_REPAIR_MANUAL_CONFIRMATION".ToLowerInvariant() -ne 'true'
+          ) {
+            Write-Error 'Apply the FE10 Unicode repair migration twice and verify exact values before manual deployment.'
+            exit 1
+          }
+
+          $expectedUnicodeRepairHash = "$env:EXPECTED_UNICODE_REPAIR_SHA256".Trim().ToLowerInvariant()
+          if ($expectedUnicodeRepairHash -notmatch '^[0-9a-f]{64}$') {
+            Write-Error 'The staging FE10 Unicode repair migration proof is missing or malformed.'
+            exit 1
+          }
+
+          $unicodeRepairMigrationPath = 'database/migrations/2026-08-03-fe10-unicode-repair.sql'
+          $utf8NoBom = [Text.UTF8Encoding]::new($false, $true)
+          $unicodeRepairMigrationText = [IO.File]::ReadAllText(
+            $unicodeRepairMigrationPath,
+            $utf8NoBom
+          )
+          $unicodeRepairLfText = $unicodeRepairMigrationText.Replace("`r`n", "`n").Replace("`r", "`n")
+          $unicodeRepairCrlfText = $unicodeRepairLfText.Replace("`n", "`r`n")
+          $unicodeRepairLfHash = [Convert]::ToHexString(
+            [Security.Cryptography.SHA256]::HashData(
+              $utf8NoBom.GetBytes($unicodeRepairLfText)
+            )
+          ).ToLowerInvariant()
+          $unicodeRepairCrlfHash = [Convert]::ToHexString(
+            [Security.Cryptography.SHA256]::HashData(
+              $utf8NoBom.GetBytes($unicodeRepairCrlfText)
+            )
+          ).ToLowerInvariant()
+          if ($expectedUnicodeRepairHash -notin @(
+            $unicodeRepairLfHash,
+            $unicodeRepairCrlfHash
+          )) {
+            Write-Error 'The reviewed FE10 Unicode repair migration does not match the staging proof.'
+            exit 1
+          }
+
+          Write-Output 'FE10 Unicode repair migration proof accepted for the exact deployment head and LF/CRLF rendering.'
+
   deploy-backend:
     needs: preflight
     runs-on: ubuntu-latest
@@ -136,7 +190,7 @@ jobs:
           Copy-Item backend/package.json,backend/package-lock.json deploy/backend/
           Copy-Item backend/src deploy/backend/src -Recurse
           New-Item -ItemType Directory -Force deploy/backend/database/migrations | Out-Null
-          Copy-Item database/migrations/2026-07-22-library-metadata-compatibility.sql,database/migrations/add_change_password_otp_token_type.sql,database/migrations/2026-07-29-fe10-borrowing-result-templates.sql deploy/backend/database/migrations/
+          Copy-Item database/migrations/2026-07-22-library-metadata-compatibility.sql,database/migrations/add_change_password_otp_token_type.sql,database/migrations/2026-07-29-fe10-borrowing-result-templates.sql,database/migrations/2026-08-03-fe10-unicode-repair.sql deploy/backend/database/migrations/
           New-Item -ItemType Directory -Force deploy/backend/scripts | Out-Null
           Copy-Item backend/scripts/stagingBorrowCandidates.js deploy/backend/scripts/
 
