@@ -302,6 +302,9 @@ export default function BookManagement() {
     () => books.find((book) => Number(book.id) === Number(selectedBookId)) || null,
     [books, selectedBookId]
   );
+  const appliedStatusLabel = appliedStatusFilter
+    ? getStatusLabel(appliedStatusFilter)
+    : 'Tất cả trạng thái';
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -550,7 +553,6 @@ export default function BookManagement() {
   async function confirmStatusFromUpdate() {
     if (!pendingStatusFromUpdate) return;
     const { bookId, activating, version } = pendingStatusFromUpdate;
-    const targetStatus = activating ? 'ACTIVE' : 'INACTIVE';
     try {
       setSaving(true);
       const result = await apiRequest(`/books/${bookId}/${activating ? 'reactivate' : 'deactivate'}`, {
@@ -562,12 +564,12 @@ export default function BookManagement() {
             : 'Ngừng hoạt động từ biểu mẫu cập nhật thông tin sách.',
         }),
       });
-      // @spec FR-FE05-029 - keep the changed book visible under its committed status.
-      setStatusFilter(targetStatus);
-      setAppliedStatusFilter(targetStatus);
+      // @spec FR-FE05-029 - reload mixed statuses so unaffected rows stay visibly independent.
+      setStatusFilter('');
+      setAppliedStatusFilter('');
       setPage(1);
       const nextBooks = await loadBooks({
-        status: targetStatus,
+        status: '',
         categoryId: appliedCategoryFilter,
         q: appliedSearchQuery,
         pageNumber: 1,
@@ -576,8 +578,8 @@ export default function BookManagement() {
       setSelectedBookId(refreshedBook ? String(bookId) : '');
       setDetailBook(refreshedBook || result.book);
       showToast(activating
-        ? 'Đã kích hoạt lại sách và tải lại trạng thái chuẩn.'
-        : 'Đã ngừng hoạt động sách. Sách không còn hiển thị trong tra cứu công khai.');
+        ? 'Đã kích hoạt lại sách. Danh sách đã trở về tất cả trạng thái.'
+        : 'Đã ngừng hoạt động sách. Danh sách đã trở về tất cả trạng thái.');
       setPendingStatusFromUpdate(null);
     } catch (error) {
       showToast(error.message, 'error');
@@ -593,7 +595,6 @@ export default function BookManagement() {
     }
 
     const activating = selectedBook.status === 'INACTIVE';
-    const targetStatus = activating ? 'ACTIVE' : 'INACTIVE';
     const reason = selectedBook.status === 'INACTIVE'
       ? 'Kích hoạt lại từ giao diện quản lý sách.'
       : 'Ngừng hoạt động từ giao diện quản lý sách.';
@@ -614,12 +615,12 @@ export default function BookManagement() {
           body,
         });
       }
-      // @spec FR-FE05-029 - keep the changed book visible under its committed status.
-      setStatusFilter(targetStatus);
-      setAppliedStatusFilter(targetStatus);
+      // @spec FR-FE05-029 - reload mixed statuses so unaffected rows stay visibly independent.
+      setStatusFilter('');
+      setAppliedStatusFilter('');
       setPage(1);
       const nextBooks = await loadBooks({
-        status: targetStatus,
+        status: '',
         categoryId: appliedCategoryFilter,
         q: appliedSearchQuery,
         pageNumber: 1,
@@ -633,8 +634,8 @@ export default function BookManagement() {
         setDetailBook(refreshedBook);
       }
       showToast(activating
-        ? 'Đã kích hoạt lại sách và tải lại trạng thái chuẩn.'
-        : 'Đã ngừng hoạt động sách. Sách không còn hiển thị trong tra cứu công khai.');
+        ? 'Đã kích hoạt lại sách. Danh sách đã trở về tất cả trạng thái.'
+        : 'Đã ngừng hoạt động sách. Danh sách đã trở về tất cả trạng thái.');
       setPendingStatusChange(null);
     } catch (error) {
       showToast(error.message, 'error');
@@ -819,7 +820,8 @@ export default function BookManagement() {
               <button type="button" className="bm-soft" onClick={handleApplyFilters} disabled={loading} aria-label="Áp dụng bộ lọc danh sách sách">Áp dụng</button>
             </div>
           </div>
-           {renderBookTable(books, (page - 1) * 20)}
+          <p className="bm-applied-filter">Đang lọc trạng thái: <strong>{appliedStatusLabel}</strong></p>
+          {renderBookTable(books, (page - 1) * 20)}
           {renderPagination()}
         </section>
 

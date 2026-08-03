@@ -57,7 +57,7 @@ The tracked script lives at `backend/scripts/cleanupStagingAcceptanceData.js` an
 - `--run-id <runId>`: restrict discovery/execution to one validated run;
 - `--execute`: enable deletion after discovery and identity checks.
 
-Every accepted run ID must match `^lms-acceptance-20260802-[0-9a-f]{8}$`. Discovery requires exactly four `.invalid` fixture users, one exact-title book, and one exact-barcode copy. Execution uses one serializable transaction and deletes child rows before parent rows. It also deletes audit rows by fixture actor or exact fixture target IDs. Any unexpected reference causes rollback.
+Every accepted run ID must match `^lms-acceptance-20260802-[0-9a-f]{8}$`. Discovery derives the eight-hex suffix and requires the four exact historical username/email pairs (`acc_member_a_<suffix>`, `acc_member_b_<suffix>`, `acc_librarian_<suffix>`, and `acc_admin_<suffix>` with their matching `.invalid` emails), one exact-title book, and one exact-barcode copy. Execution uses one serializable transaction and deletes child rows before parent rows. It also deletes audit rows by fixture actor or exact fixture target IDs. Any unexpected reference causes rollback.
 
 The script never logs credentials, token hashes, passwords, or connection strings. It prints run IDs and aggregate row counts only.
 
