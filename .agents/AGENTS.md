@@ -1,6 +1,6 @@
 # AGENTS.md — Hệ thống Quản lý Thư viện
 
-# Phiên bản: 0.1.3
+# Phiên bản: 0.1.2
 
 # Trạng thái: ĐÃ PHÊ DUYỆT
 
@@ -105,103 +105,26 @@ Khi chỉnh sửa mã nguồn hiện có:
 
 ---
 
-## 5.1 Fast-Track Hybrid theo đợt công việc
+## 5.1 Chế độ lô Fast-Track Hybrid
 
-### Mục đích
+Chế độ Fast-Track là tùy chọn và chỉ áp dụng khi một thiết kế được con người phê duyệt nêu rõ lô cùng phạm vi đang hoạt động.
 
-Fast-Track Hybrid là quy trình tùy chọn để xử lý nhanh một nhóm công việc có liên quan nhưng vẫn giữ các bước kiểm soát của con người. Quy trình này chỉ được sử dụng khi tài liệu thiết kế đã được con người phê duyệt và xác định rõ phạm vi được phép thực hiện.
+- H1 phê duyệt hợp đồng của lô, thứ tự phụ thuộc, quyền sở hữu file, ranh giới kế hoạch/nhiệm vụ, các lệnh xác thực và các làn agent được phép.
+- H1 cho phép tạo worktree, phân tích song song chỉ đọc và triển khai RED–GREEN chưa commit trong phạm vi đã duyệt. H1 không cho phép commit các thay đổi triển khai do AI sinh, đẩy nhánh mã sản phẩm hoặc hợp nhất.
+- Nếu H1 bao gồm chính xác diff kích hoạt quản trị, H1 chỉ cho phép commit tài liệu đã được rà soát đó và xuất bản PR; PR kích hoạt vẫn phải vượt qua các kiểm tra và H3 trước khi hợp nhất.
+- Với lô cần kích hoạt quản trị, quyền triển khai sản phẩm do H1 cấp chỉ có hiệu lực sau khi PR kích hoạt được hợp nhất vào `main`.
+- H2 rà soát toàn bộ diff cục bộ cùng bằng chứng L1–L4 trước khi các thay đổi triển khai do AI sinh được commit. H2 cho phép commit tập thay đổi đã rà soát, đẩy nhánh, xuất bản draft PR và chuyển sang trạng thái sẵn sàng rà soát sau khi các kiểm tra bắt buộc đạt.
+- H2 là bước rà soát cục bộ trước commit đối với đầu ra AI. H2 khác với bước rà soát tích hợp PR cuối cùng mà Hiến pháp yêu cầu.
+- H3 thực hiện rà soát tích hợp cuối cùng và phê duyệt hợp nhất sau khi các kiểm tra bắt buộc đạt và nhánh vẫn có thể hợp nhất. H3 cũng cho phép giám sát chính xác CI sau hợp nhất và thay thế cơ học các bằng chứng khóa sổ đã được rà soát trước.
+- H3 áp dụng cho việc hợp nhất PR quản trị, triển khai, chỉ có bằng chứng và khóa sổ.
+- H1 diễn ra một lần cho mỗi lô đã duyệt. H2 diễn ra một lần cho mỗi PR triển khai do AI sinh hoặc PR bằng chứng SPEC, ngoại trừ diff kích hoạt quản trị chính xác đã được H1 rà soát. H3 diễn ra một lần trước mỗi lần hợp nhất PR.
+- Chỉ một Builder được sửa các file sản phẩm Core dùng chung trong lát cắt đang hoạt động. Các làn khác chuẩn bị hợp đồng tiếp theo hoặc xác minh độc lập lát cắt hiện tại.
+- Việc chuẩn bị bằng chứng song song phải ở chế độ chỉ đọc khi lát cắt khác đang sở hữu cùng file `SPEC.md`; Integration Lead sắp lịch tuần tự cho thao tác sửa `SPEC.md` thực tế.
+- Việc kích hoạt nhiệm vụ và nợ kỹ thuật chỉ có giá trị chính thức sau khi PR kích hoạt quản trị đã được rà soát được hợp nhất vào `main`.
+- Dừng ngay khi có điểm mơ hồ trong hợp đồng, sai lệch Core chồng lấn, lộ bí mật, mở rộng quyền/schema/API, giả định giữa các agent không tương thích hoặc một kiểm tra bắt buộc thất bại.
+- Một lỗi xác định chỉ được thử tổng cộng tối đa ba lần. Một lỗi E2E bị nghi là không ổn định chỉ được chạy lại một lần và phải có bằng chứng.
 
-Trong mục này, **đợt công việc** là một nhóm nhiệm vụ có liên quan và được phê duyệt cùng nhau. Mỗi nhiệm vụ độc lập bên trong đợt được gọi là một **phần việc** (`slice`). Ví dụ, một đợt có thể gồm ba phần việc: sửa API, cập nhật giao diện và bổ sung kiểm thử cho cùng một tính năng.
-
-### Quy trình H1–H2–H3
-
-H1, H2 và H3 là ba cổng phê duyệt của con người. Mỗi cổng trả lời một câu hỏi khác nhau:
-
-- **H1:** Nhóm có cho phép bắt đầu đợt công việc này không?
-- **H2:** Phần mã do AI tạo ra đã đủ an toàn để commit và đưa lên pull request chưa?
-- **H3:** Pull request đã đủ điều kiện để hợp nhất vào nhánh chính chưa?
-
-```text
-H1: Duyệt phạm vi và cách thực hiện
-        ↓
-AI triển khai nhưng chưa commit mã
-        ↓
-H2: Con người kiểm tra mã và kết quả cục bộ
-        ↓
-Commit, đẩy nhánh và tạo pull request
-        ↓
-H3: Con người rà soát tích hợp và quyết định hợp nhất
-```
-
-#### H1 — Phê duyệt trước khi triển khai
-
-H1 xác định chính xác:
-
-- Những nhiệm vụ nào thuộc đợt công việc.
-- Thứ tự thực hiện và mối quan hệ phụ thuộc giữa các nhiệm vụ.
-- Người hoặc tác nhân AI nào được sửa từng file.
-- Phần nào thuộc `PLAN.md`, `TASKS.md` và đặc tả đã phê duyệt.
-- Những lệnh build, kiểm thử và xác minh bắt buộc phải chạy.
-- Những công việc nào được thực hiện song song.
-
-Sau H1, tác nhân AI được phép tạo worktree, phân tích song song ở chế độ chỉ đọc và thực hiện chu trình viết kiểm thử trước rồi sửa mã cho kiểm thử đạt (`RED–GREEN`). Mã triển khai do AI tạo ra phải được giữ ở trạng thái chưa commit cho đến khi vượt qua H2. H1 không cho phép đẩy nhánh chứa mã sản phẩm hoặc hợp nhất pull request.
-
-Nếu H1 đã rà soát chính xác phần tài liệu dùng để kích hoạt quy trình quản trị, phần tài liệu đó có thể được commit và tạo pull request ngay sau H1. Tuy nhiên, pull request này vẫn phải vượt qua các bước kiểm tra bắt buộc và H3 trước khi hợp nhất. Quyền bắt đầu triển khai mã sản phẩm, kích hoạt nhiệm vụ mới hoặc ghi nhận nợ kỹ thuật mới chỉ có hiệu lực sau khi pull request kích hoạt được hợp nhất vào `main`.
-
-#### H2 — Kiểm tra mã trước khi commit
-
-H2 là bước con người rà soát toàn bộ thay đổi cục bộ và các bằng chứng kiểm tra L1–L4 trước khi mã do AI tạo ra được commit.
-
-Các mức bằng chứng L1–L4 gồm:
-
-- **L1 — Kiểm tra tự động:** kết quả kiểm thử, build, quét bí mật, kiểm tra bảo mật, khả năng truy vết và CI.
-- **L2 — Đối chiếu đặc tả:** chứng minh ID yêu cầu trong `SPEC.md` được liên kết với nhiệm vụ, mã nguồn và kiểm thử tương ứng.
-- **L3 — Rà soát quy tắc và an toàn:** kiểm tra việc tuân thủ Hiến chương, phân quyền, xác thực, bảo mật, ghi nhật ký và phạm vi đã duyệt.
-- **L4 — Xác nhận chấp nhận:** con người kiểm tra luồng thực tế qua giao diện hoặc API và ghi nhận rõ những rủi ro hay giới hạn môi trường còn lại.
-
-Khi H2 đạt, nhóm được phép:
-
-- Commit đúng tập thay đổi đã được rà soát.
-- Đẩy nhánh lên kho mã nguồn từ xa.
-- Tạo pull request ở trạng thái nháp.
-- Chuyển pull request sang trạng thái sẵn sàng rà soát sau khi mọi kiểm tra bắt buộc đều đạt.
-
-H2 chỉ xác nhận rằng mã cục bộ đủ điều kiện để đưa lên pull request. H2 không thay thế bước rà soát tích hợp cuối cùng và không cấp quyền hợp nhất.
-
-#### H3 — Rà soát cuối cùng và quyết định hợp nhất
-
-H3 được thực hiện sau khi pull request đã vượt qua các bước kiểm tra bắt buộc và nhánh vẫn đủ điều kiện hợp nhất. Tại H3, con người rà soát tác động tích hợp và quyết định có hợp nhất pull request hay không.
-
-Sau khi hợp nhất, H3 cho phép theo dõi đúng lượt CI của commit đã hợp nhất và cập nhật các bằng chứng trong hồ sơ hoàn tất theo mẫu đã được duyệt. H3 áp dụng cho mọi loại pull request, gồm pull request quản trị, triển khai, chỉ bổ sung bằng chứng hoặc hoàn tất hồ sơ.
-
-### Tần suất thực hiện
-
-- H1 thực hiện một lần cho mỗi đợt công việc đã được phê duyệt.
-- H2 thực hiện một lần cho mỗi pull request chứa mã do AI tạo ra hoặc bằng chứng bổ sung cho `SPEC.md`. Riêng phần tài liệu kích hoạt quản trị đã được H1 rà soát chính xác thì không cần lặp lại H2.
-- H3 thực hiện một lần trước mỗi lần hợp nhất pull request.
-
-### Vai trò trong quy trình
-
-- **Trưởng nhóm tích hợp** (`Integration Lead`): phân chia công việc, xác định quyền sửa file, điều phối thứ tự thực hiện, tổng hợp kết quả và chuẩn bị pull request.
-- **Tác nhân triển khai** (`Builder`): viết kiểm thử và mã nguồn cho phần việc được giao. Tại một thời điểm, chỉ một Builder được sửa các file mã nguồn sản phẩm dùng chung của phần việc hiện tại.
-- **Tác nhân xác minh** (`Verifier`): kiểm tra độc lập kết quả của Builder và không được đồng thời sửa lại các file mà Builder đang phụ trách.
-
-Nếu nhiều phần việc cần sử dụng cùng file `SPEC.md`, các tác nhân chỉ được đọc file đó song song. Trưởng nhóm tích hợp phải sắp xếp từng lượt chỉnh sửa để tránh ghi đè hoặc tạo nội dung mâu thuẫn.
-
-### Khi nào phải dừng
-
-Phải dừng quy trình và yêu cầu con người xử lý khi:
-
-- Phạm vi hoặc yêu cầu chưa rõ ràng.
-- Nhiều phần việc tạo ra thay đổi xung đột trong cùng file mã nguồn.
-- Phát hiện thông tin bí mật bị lộ.
-- Thay đổi làm mở rộng quyền truy cập, lược đồ cơ sở dữ liệu hoặc hợp đồng API ngoài phạm vi đã duyệt.
-- Các tác nhân AI đang sử dụng những giả định không thống nhất.
-- Một bước build, kiểm thử hoặc xác minh bắt buộc thất bại.
-
-Với lỗi có thể tái hiện ổn định, chỉ được thử khắc phục tối đa ba lần trước khi báo cáo cho con người. Với lỗi kiểm thử E2E bị nghi là không ổn định (`flaky`), chỉ được chạy lại một lần và phải lưu bằng chứng của cả hai lần chạy.
-
-Tài liệu quy định đầy đủ của chế độ này là `docs/superpowers/specs/2026-07-18-fast-track-hybrid-delivery-mode-design.md`.
+Thiết kế có thẩm quyền là `docs/superpowers/specs/2026-07-18-fast-track-hybrid-delivery-mode-design.md`.
 
 ---
 
