@@ -1,5 +1,30 @@
 # CHANGELOG.md - FE10 Quản lý thông báo
 
+## 2026-08-03 - Hoàn tất sửa dữ liệu Unicode staging
+
+- PR #104 hợp nhất migration repair, workflow hash gate, kiểm thử hồi quy và runbook thành
+  `d5464c06eb4ee5f804bd4ca97b49869179aa42ab`; PR #105 bổ sung
+  `SET QUOTED_IDENTIFIER ON` và hợp nhất thành
+  `827e877c792718bbaa6c9841fe66e13009213008`. CI hậu hợp nhất `30775755119` đạt đúng SHA cuối.
+- Repair có tham số sửa đúng 7 Books, 5 BookCopies, 4 template và 17 notification; lần chạy lũy
+  đẳng tiếp theo trả về 0 thay đổi. Migration SHA-256
+  `a9b3f5c02500a634a7ea0d4fd5775d22c0045d8b9fc0df40fb80fb8d01aa040f` sau đó chạy thành công
+  hai lần bằng `sqlcmd -b -f 65001` trên exact merged `main`.
+- Workflow tự động `30775952859` fail-closed ở preflight và bỏ qua toàn bộ job deploy khi chưa có
+  xác nhận vận hành. Deployment thủ công `30776148777` với đủ ba xác nhận đạt preflight, backend,
+  frontend và smoke test trên `main@827e877`.
+- API công khai xác nhận mô tả Books 34-40 khớp chính xác. SQL hash xác nhận vị trí BookCopies
+  60-64 và bốn template `ACTIVE`; 17 notification FE07 không null, không còn bảy pattern mojibake
+  của migration hoặc ký tự box-drawing.
+- Catalog công khai và `/borrowing/new` hiển thị đủ bảy sách, không mojibake hoặc tràn ngang tại
+  1440x900 và 390x844. Inbox Member hiện tại có hai thông báo và notification gia hạn FE07 hiển thị
+  đúng Unicode ở cả hai viewport. Tài khoản kiểm tra không có notification approved/returned nên
+  bằng chứng cho các loại đó chỉ dựa trên migration assertion và SQL, không tuyên bố đã quan sát
+  chúng trên browser.
+- Các firewall rule tạm, script repair tạm và secret process variables đều được dọn sạch; checkout
+  gốc đang dirty được giữ nguyên. Hoàn tất này không thay đổi frontend source, CSS, font, API,
+  schema, quyền hoặc quy tắc nghiệp vụ.
+
 ## 2026-08-01 - Chuẩn hóa văn phong tiếng Việt
 
 - Viết lại câu chữ trong `CONTEXT.md`, `SPEC.md`, `PLAN.md`, `TASKS.md`,
