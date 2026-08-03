@@ -4,7 +4,7 @@ Trạng thái: ĐÃ HOÀN TẤT - ĐÃ GHI NHẬN BẰNG CHỨNG CHỐT GIAI ĐO
 
 Chủ sở hữu: Dung
 
-Cập nhật: 2026-07-28
+Cập nhật: 2026-08-04
 
 Trạng thái quy trình: đã hoàn tất cho phạm vi Giai đoạn 2 đã phê duyệt; H3, merge và CI `main` chính xác sau merge được ghi tại `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. Các phát biểu cổng đang chờ/mở bên dưới là snapshot thực thi lịch sử đã được bằng chứng đó thay thế.
 
@@ -14,12 +14,12 @@ Trạng thái quy trình: đã hoàn tất cho phạm vi Giai đoạn 2 đã ph�
 
 ## 1. Mục tiêu
 
-Duy trì catalog FE05 đã đối soát theo hợp đồng v0.6.10 đã phê duyệt: truy vấn công khai/nhân viên xác định, đọc dữ liệu tham chiếu đang hoạt động, cổng khởi động trước khi lắng nghe cho compatibility migration đã đóng gói và rà soát, mức sẵn sàng triển khai nhận biết schema, triển khai staging liên tục có cổng CI, ảnh bìa được quản lý và xác thực, mutation có audit nguyên tử, đồng thời lạc quan, lệnh hủy kích hoạt/kích hoạt lại rõ ràng, đối soát danh sách sau mutation giữ ngữ cảnh, kết xuất trạng thái catalog chuẩn và khả dụng suy ra chỉ đọc từ trạng thái bản sao FE06.
+Duy trì catalog FE05 đã đối soát theo hợp đồng v0.6.13 đã phê duyệt: truy vấn công khai/nhân viên xác định, đọc dữ liệu tham chiếu đang hoạt động, cổng khởi động trước khi lắng nghe cho compatibility migration đã đóng gói và rà soát, mức sẵn sàng triển khai nhận biết schema, triển khai staging liên tục có cổng CI, ảnh bìa được quản lý và xác thực, mutation có audit nguyên tử, đồng thời lạc quan, lệnh hủy kích hoạt/kích hoạt lại rõ ràng, đối soát danh sách sau mutation giữ ngữ cảnh, kết xuất trạng thái catalog chuẩn và khả dụng suy ra chỉ đọc từ trạng thái bản sao FE06.
 
 ## 2. Tài liệu nguồn
 
-- `.sdd/specs/feat-book-management/SPEC.md` v0.6.9.
-- `.sdd/specs/feat-book-management/CONTEXT.md` v0.2.0.
+- `.sdd/specs/feat-book-management/SPEC.md` v0.6.13.
+- `.sdd/specs/feat-book-management/CONTEXT.md` v0.2.2.
 - `.sdd/specs/feat-book-management/TEST_PLAN.md`.
 - `.sdd/rfcs/ADR-002-database-design.md`.
 - `.sdd/specs/feat-inventory-book-copy/SPEC.md` về quyền sở hữu bản sao và khả dụng.
@@ -171,3 +171,10 @@ Hợp đồng đọc FE05 phải ổn định trước khi FE06/FE07 sử dụng
 2. Làm ba mutation `/api/admin/library/*` dùng cùng transaction với `AuditLogs`.
 3. Giữ role, endpoint, schema, envelope thành công và soft-deactivate hiện có.
 4. Xác minh backend tập trung/đầy đủ, coverage, traceability, secret scan, system/E2E/deployment và vệ sinh diff trước H2-P.
+
+## 2026-08-04 Vệ sinh dữ liệu catalog staging và trạng thái một sách
+
+1. Thêm kiểm thử RED tái hiện việc cả hai điểm vào đổi bộ lọc sang trạng thái đích và làm danh sách trông như một cập nhật hàng loạt.
+2. Giữ tìm kiếm/thể loại, chuyển trạng thái sang `Tất cả trạng thái`, đặt lại trang 1 và tải danh sách chuẩn nhiều trạng thái sau lệnh thành công.
+3. Hiển thị nhãn bộ lọc trạng thái đã áp dụng ngay trên panel danh sách.
+4. Cung cấp công cụ operator staging-only, dry-run mặc định để xóa chính xác graph dữ liệu acceptance đã xác minh mà không thay đổi schema/API FE05.

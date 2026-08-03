@@ -303,6 +303,9 @@ export default function BookManagement() {
     () => books.find((book) => Number(book.id) === Number(selectedBookId)) || null,
     [books, selectedBookId]
   );
+  const appliedStatusLabel = appliedStatusFilter
+    ? getStatusLabel(appliedStatusFilter)
+    : 'Tất cả trạng thái';
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -563,6 +566,7 @@ export default function BookManagement() {
         }),
       });
       // @spec FR-FE05-029 - reload all canonical statuses without relabeling other books.
+      // @spec FR-FE05-029 - reload mixed statuses so unaffected rows stay visibly independent.
       setStatusFilter('');
       setAppliedStatusFilter('');
       setPage(1);
@@ -576,8 +580,8 @@ export default function BookManagement() {
       setSelectedBookId(refreshedBook ? String(bookId) : '');
       setDetailBook(refreshedBook || result.book);
       showToast(activating
-        ? 'Đã kích hoạt lại sách và tải lại trạng thái chuẩn.'
-        : 'Đã ngừng hoạt động sách. Sách không còn hiển thị trong tra cứu công khai.');
+        ? 'Đã kích hoạt lại sách. Danh sách đã trở về tất cả trạng thái.'
+        : 'Đã ngừng hoạt động sách. Danh sách đã trở về tất cả trạng thái.');
       setPendingStatusFromUpdate(null);
     } catch (error) {
       showToast(error.message, 'error');
@@ -614,6 +618,7 @@ export default function BookManagement() {
         });
       }
       // @spec FR-FE05-029 - reload all canonical statuses without relabeling other books.
+      // @spec FR-FE05-029 - reload mixed statuses so unaffected rows stay visibly independent.
       setStatusFilter('');
       setAppliedStatusFilter('');
       setPage(1);
@@ -632,8 +637,8 @@ export default function BookManagement() {
         setDetailBook(refreshedBook);
       }
       showToast(activating
-        ? 'Đã kích hoạt lại sách và tải lại trạng thái chuẩn.'
-        : 'Đã ngừng hoạt động sách. Sách không còn hiển thị trong tra cứu công khai.');
+        ? 'Đã kích hoạt lại sách. Danh sách đã trở về tất cả trạng thái.'
+        : 'Đã ngừng hoạt động sách. Danh sách đã trở về tất cả trạng thái.');
       setPendingStatusChange(null);
     } catch (error) {
       showToast(error.message, 'error');
@@ -861,7 +866,8 @@ export default function BookManagement() {
               <button type="button" className="bm-soft" onClick={handleApplyFilters} disabled={loading} aria-label="Áp dụng bộ lọc danh sách sách">Áp dụng</button>
             </div>
           </div>
-           {renderBookTable(books, (page - 1) * 20)}
+          <p className="bm-applied-filter">Đang lọc trạng thái: <strong>{appliedStatusLabel}</strong></p>
+          {renderBookTable(books, (page - 1) * 20)}
           {renderPagination()}
         </section>
 

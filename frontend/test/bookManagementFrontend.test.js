@@ -103,6 +103,7 @@ test('book update exposes catalog status without sending status through metadata
 
 // @spec FR-FE05-029, AC-FE05-020, NFR-FE05-UX-004
 test('single-book status update reloads all statuses without relabeling other books', async () => {
+test('single-book status update reloads a mixed-status canonical list', async () => {
   const { page } = await sources();
 
   assert.match(page, /const statusChanged = updateForm\.status !== selectedBook\.status/);
@@ -123,6 +124,15 @@ test('book deletion uses a dedicated hard-delete endpoint and confirmation', asy
   assert.match(page, /headers: \{ 'If-Match': pendingDelete\.version \}/);
   assert.match(page, /title="Xóa vĩnh viễn sách"/);
   assert.match(page, /confirmLabel="Xác nhận xóa"/);
+  assert.doesNotMatch(page, /setAppliedStatusFilter\(targetStatus\)/);
+});
+
+// @spec NFR-FE05-UX-005
+test('management list states the applied status filter', async () => {
+  const { page } = await sources();
+
+  assert.match(page, /Đang lọc trạng thái:/);
+  assert.match(page, /getStatusLabel\(appliedStatusFilter\)/);
 });
 
 // @spec BR-FE05-011, FR-FE05-032, AC-FE05-023
