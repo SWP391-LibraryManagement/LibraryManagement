@@ -8,6 +8,7 @@ import { getPasswordRequirements, normalizeOtp, validateRegistrationFields } fro
 import FormInput from './FormInput';
 import PasswordInput from './PasswordInput';
 import RegisterFormHeader from './RegisterFormHeader';
+import CaptchaField from '../auth/CaptchaField';
 
 const PASSWORD_REQUIREMENT_LABELS = {
   minLength: 'Ít nhất 8 ký tự',
@@ -31,6 +32,7 @@ export default function AuthCard({
   maskedEmail = '',
   onBackToRegister,
   onResendEmail,
+  captchaRefreshKey = 0,
 }) {
   const navigate = useNavigate();
   const otpInputRef = useRef(null);
@@ -44,6 +46,7 @@ export default function AuthCard({
   const [fieldErrors, setFieldErrors] = useState({});
   const [otp, setOtp] = useState('');
   const [otpError, setOtpError] = useState('');
+  const [captcha, setCaptcha] = useState({ captchaToken: '', captchaAnswer: '' });
 
   useEffect(() => {
     if (!verificationStep || verificationSuccess) return undefined;
@@ -65,9 +68,13 @@ export default function AuthCard({
     event.preventDefault();
     const nextErrors = validateRegistrationFields(formData);
     setFieldErrors(nextErrors);
+    if (!captcha.captchaToken || !captcha.captchaAnswer) {
+      setFieldErrors((current) => ({ ...current, captcha: 'Vui lòng nhập mã CAPTCHA.' }));
+      return;
+    }
     if (Object.keys(nextErrors).length > 0 || !onSubmit) return;
 
-    const success = await onSubmit(formData);
+    const success = await onSubmit({ ...formData, ...captcha });
     if (success) {
       setFormData((current) => ({
         ...current,
@@ -232,6 +239,15 @@ export default function AuthCard({
                   helperText={fieldErrors.confirmPassword}
                   disabled={isSubmitting}
                 />
+                <CaptchaField
+                  disabled={isSubmitting}
+                  refreshKey={captchaRefreshKey}
+                  onChange={(nextCaptcha) => {
+                    setCaptcha(nextCaptcha);
+                    setFieldErrors((current) => ({ ...current, captcha: '' }));
+                  }}
+                />
+                {fieldErrors.captcha && <Alert severity="error">{fieldErrors.captcha}</Alert>}
               </>
             )}
 

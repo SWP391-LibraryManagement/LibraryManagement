@@ -21,6 +21,7 @@ export default function LoginPage() {
   const [feedback, setFeedback] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lockDurationMs, setLockDurationMs] = useState(0);
+  const [captchaRefreshKey, setCaptchaRefreshKey] = useState(0);
   const backgroundImageUrl =
     '/images/login/loginimage.jpg';
 
@@ -30,12 +31,12 @@ export default function LoginPage() {
     return () => window.clearTimeout(timeout);
   }, [lockDurationMs]);
 
-  const handleLogin = async (email, password, rememberMe) => {
+  const handleLogin = async (email, password, rememberMe, captcha) => {
     setIsSubmitting(true);
     setFeedback(null);
 
     try {
-      const result = await loginAccount({ email, password });
+      const result = await loginAccount({ email, password, ...captcha });
       const storage = rememberMe ? localStorage : sessionStorage;
       const otherStorage = rememberMe ? sessionStorage : localStorage;
       otherStorage.removeItem('accessToken');
@@ -52,6 +53,7 @@ export default function LoginPage() {
       navigate(getPostLoginPath(result.roles));
     } catch (error) {
       const loginError = error.cause?.response?.data?.error;
+      if (loginError?.code === 'CAPTCHA_INVALID') setCaptchaRefreshKey((key) => key + 1);
       if (loginError?.code === 'EMAIL_VERIFICATION_REQUIRED') {
         navigate('/verify-email', { state: { email: loginError.details?.email || email.trim() } });
         return;
@@ -100,6 +102,7 @@ export default function LoginPage() {
           feedback={feedback}
           isSubmitting={isSubmitting}
           isLocked={lockDurationMs > 0}
+          captchaRefreshKey={captchaRefreshKey}
         />
       </div>
     </div>

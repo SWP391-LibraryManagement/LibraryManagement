@@ -1,5 +1,20 @@
 # SPEC.md - Xác thực FE02
 
+## CAPTCHA đăng nhập và đăng ký
+
+- BR-FE02-029: Trước khi tạo tài khoản hoặc xác thực thông tin đăng nhập, Khách phải giải CAPTCHA gồm 4–6 chữ cái Latin do máy chủ phát hành. Đáp án và thời hạn chỉ được xác thực ở máy chủ; CAPTCHA không làm thay đổi trạng thái tài khoản, OTP hay audit đăng nhập khi sai.
+- FR-FE02-028: Hệ thống phải phát hành `GET /api/auth/captcha` trả về ảnh CAPTCHA dạng SVG và `captchaToken` có chữ ký, hết hạn sau 5 phút. Ảnh hiển thị đáp án, còn token không chứa đáp án thô.
+- FR-FE02-029: Khi Khách gửi `POST /api/auth/register` hoặc `POST /api/auth/login`, hệ thống phải yêu cầu `captchaToken` và `captchaAnswer`, so sánh không phân biệt hoa/thường sau khi trim, và chỉ dispatch service đăng ký/đăng nhập khi CAPTCHA hợp lệ.
+- FR-FE02-030: Nếu CAPTCHA thiếu, hết hạn, bị sửa hoặc không đúng, hệ thống phải trả `400 CAPTCHA_INVALID`; giao diện giữ dữ liệu biểu mẫu, hiển thị lỗi tiếng Việt và tải CAPTCHA mới.
+- AC-FE02-027: Với CAPTCHA còn hạn và đáp án đúng, đăng ký/đăng nhập tiếp tục theo luồng hiện có. Với đáp án sai, token hết hạn hoặc token bị thay đổi, API trả `400 CAPTCHA_INVALID` và không tạo người dùng, OTP, refresh token, bản ghi login failure hay audit đăng nhập.
+- EC-FE02-018: Khi API CAPTCHA không tải được, giao diện vô hiệu hóa nút gửi và cho phép người dùng tải lại CAPTCHA; không gửi dữ liệu xác thực khi chưa có thử thách hợp lệ.
+
+| Phương thức | Endpoint | Tác nhân | Request | Response | Ghi chú |
+| --- | --- | --- | --- | --- | --- |
+| GET | `/api/auth/captcha` | Khách | Không có | `{ image: string, captchaToken: string, expiresIn: 300 }` | `image` là SVG data URI; token ký HMAC không chứa đáp án thô. |
+| POST | `/api/auth/register` | Khách | Payload đăng ký hiện có cộng `{ captchaToken: string, captchaAnswer: string }` | Hợp đồng hiện có | Từ chối `400 CAPTCHA_INVALID` trước khi tạo bất kỳ trạng thái nào. |
+| POST | `/api/auth/login` | Khách | `{ email: string, password: string, captchaToken: string, captchaAnswer: string }` | Hợp đồng hiện có | Từ chối `400 CAPTCHA_INVALID` trước khi kiểm tra mật khẩu hoặc ghi nhận thất bại đăng nhập. |
+
 # Phiên bản: 0.6.23
 
 # Trạng thái: COMPLETE - H3 HỒI CỨU ĐÃ ĐƯỢC PHÊ DUYỆT

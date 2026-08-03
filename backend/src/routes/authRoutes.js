@@ -1,6 +1,7 @@
 const express = require('express');
 const { createAuthController } = require('../controllers/authController');
 const { createAuthenticate } = require('../middleware/authMiddleware');
+const { createCaptchaValidator } = require('../middleware/captchaMiddleware');
 const {
   registerValidators,
   verifyEmailValidators,
@@ -19,11 +20,13 @@ function createAuthRoutes(authService) {
   const router = express.Router();
   const controller = createAuthController(authService);
   const authenticate = createAuthenticate(authService);
+  const captchaValidator = createCaptchaValidator();
 
-  router.post('/register', registerValidators, controller.register);
+  router.get('/captcha', controller.captcha);
+  router.post('/register', captchaValidator, registerValidators, controller.register);
   router.post('/verify-email', verifyEmailValidators, controller.verifyEmail);
   router.post('/resend-verification', resendVerificationValidators, controller.resendVerification);
-  router.post('/login', loginValidators, controller.login);
+  router.post('/login', captchaValidator, loginValidators, controller.login);
   router.post('/refresh-token', refreshTokenValidators, controller.refreshToken);
   router.post('/logout', logoutValidators, controller.logout);
   router.post('/change-password', authenticate, changePasswordValidators, controller.changePassword);

@@ -1,7 +1,17 @@
 const { defaultAuthService } = require('../services/authService');
+const { createCaptcha } = require('../utils/captchaUtils');
 
 function createAuthController(authService = defaultAuthService) {
   return {
+    captcha: async (_req, res, next) => {
+      try {
+        // @spec FR-FE02-028
+        return res.status(200).json(createCaptcha());
+      } catch (error) {
+        return next(error);
+      }
+    },
+
     register: async (req, res, next) => {
       try {
         // @spec FR-FE02-001, FR-FE02-002, FR-FE02-013

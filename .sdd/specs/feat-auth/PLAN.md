@@ -1,5 +1,12 @@
 # PLAN.md - Xác thực FE02
 
+## Kế hoạch CAPTCHA FE02 (2026-08-03)
+
+- Tái sử dụng `crypto` có sẵn của Node.js: sinh 4–6 chữ cái, render SVG data URI và ký token HMAC bằng `JWT_SECRET`; không thêm dependency, database hoặc migration.
+- `GET /api/auth/captcha` chỉ phát hành ảnh/token có hạn 5 phút. `register` và `login` xác thực CAPTCHA ở validator trước controller/service để sai CAPTCHA không đụng trạng thái auth.
+- Frontend dùng một `CaptchaField` tái sử dụng trong hai biểu mẫu; tải lỗi hoặc `CAPTCHA_INVALID` sẽ tạo thử thách mới và giữ các trường khác.
+- Xác minh: unit test token/tamper/expiry, route test giữ service không bị gọi khi CAPTCHA sai, frontend test kiểm tra payload và refresh; sau đó chạy focused backend/frontend test và build.
+
 Trạng thái: COMPLETE - H3 HỒI CỨU ĐÃ ĐƯỢC PHÊ DUYỆT
 Ngày: 2026-08-03
 Chủ sở hữu: Dat

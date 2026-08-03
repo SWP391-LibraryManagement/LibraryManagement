@@ -15,6 +15,7 @@ export default function RegisterPage() {
   const [verificationStep, setVerificationStep] = useState(false);
   const [verificationSuccess, setVerificationSuccess] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState('');
+  const [captchaRefreshKey, setCaptchaRefreshKey] = useState(0);
 
   useEffect(() => {
     if (resendCooldown <= 0) return undefined;
@@ -37,6 +38,7 @@ export default function RegisterPage() {
       return true;
     } catch (error) {
       const code = error?.cause?.response?.data?.error?.code;
+      if (code === 'CAPTCHA_INVALID') setCaptchaRefreshKey((key) => key + 1);
       const duplicateMessages = {
         EMAIL_ALREADY_REGISTERED: 'Email đã tồn tại trong hệ thống.',
         USERNAME_ALREADY_REGISTERED: 'Tên đăng nhập đã tồn tại trong hệ thống.',
@@ -107,6 +109,7 @@ export default function RegisterPage() {
               setFeedback(null);
             }}
             onResendEmail={handleResendEmail}
+            captchaRefreshKey={captchaRefreshKey}
           />
         </div>
       </div>

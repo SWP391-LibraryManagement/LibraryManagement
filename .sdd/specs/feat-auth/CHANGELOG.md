@@ -1,5 +1,10 @@
 # CHANGELOG.md - Xác thực FE02
 
+## 2026-08-03 - Kích hoạt CAPTCHA ảnh chữ cho đăng nhập và đăng ký
+
+- Bổ sung hợp đồng CAPTCHA 4–6 chữ cái, token HMAC ngắn hạn và xác thực phía server trước luồng đăng ký/đăng nhập.
+- Không thêm migration, lưu trữ CAPTCHA, dependency hoặc thay đổi các luồng OTP/phiên khác.
+
 ## 2026-08-03 - Sửa username suy ra khi tự đăng ký
 
 - Khi request đăng ký không gửi `username`, suy ra username tất định từ phần local trước `@` của email đã chuẩn hóa.

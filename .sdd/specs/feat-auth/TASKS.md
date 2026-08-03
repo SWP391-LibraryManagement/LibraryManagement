@@ -1,5 +1,12 @@
 # TASKS.md - Xác thực FE02
 
+## Giai đoạn 10: CAPTCHA đăng nhập và đăng ký
+
+- [x] **FE02-T069 - Bắt buộc CAPTCHA ảnh chữ cho đăng nhập và đăng ký.**
+  - Ánh xạ tới: BR-FE02-029; FR-FE02-028..030; AC-FE02-027; EC-FE02-018.
+  - Tệp: `backend/src/utils/captchaUtils.js`, `backend/src/routes/authRoutes.js`, `backend/src/controllers/authController.js`, `backend/src/validators/authValidators.js`, `frontend/src/component/auth/CaptchaField.jsx`, `frontend/src/component/login/LoginForm.jsx`, `frontend/src/component/register/AuthCard.jsx`, `frontend/src/page/LoginPage.jsx`, `frontend/src/page/RegisterPage.jsx`, `frontend/src/api/authApi.js`, các kiểm thử tập trung.
+  - DoD: API phát hành ảnh chữ 4–6 ký tự cùng token HMAC 5 phút; login/register từ chối CAPTCHA thiếu/sai/hết hạn/tamper trước service; cả hai form gửi payload CAPTCHA, giữ nội dung đã điền và tải thử thách mới khi lỗi; các kiểm thử tập trung và build vượt qua.
+
 Trạng thái: COMPLETE - H3 HỒI CỨU ĐÃ ĐƯỢC PHÊ DUYỆT
 Implementation State: COMPLETE
 Ghi chú baseline: Baseline triển khai và nhiệm vụ đối soát FE02-T049 đã hoàn tất; PR C vẫn cần cổng tích hợp H2 vòng 2, CI exact-head và H3 cuối.

@@ -1,5 +1,11 @@
 # Kế hoạch kiểm thử FE02 - Xác thực
 
+## CAPTCHA đăng nhập/đăng ký
+
+- `GET /api/auth/captcha` phát ảnh SVG và token không chứa đáp án; token hợp lệ 5 phút, token bị thay đổi hoặc quá hạn bị từ chối.
+- `POST /api/auth/register` và `POST /api/auth/login` thiếu hoặc sai CAPTCHA trả `400 CAPTCHA_INVALID` trước khi gọi service; CAPTCHA hợp lệ vẫn đi theo happy path hiện có.
+- Frontend kiểm tra CAPTCHA được tải ở cả hai form, payload có `captchaToken`/`captchaAnswer`, và CAPTCHA được làm mới sau `CAPTCHA_INVALID`.
+
 Phiên bản: 0.3.17
 Trạng thái: COMPLETE - H3 HỒI CỨU ĐÃ ĐƯỢC PHÊ DUYỆT
 Cập nhật lần cuối: 2026-08-03
