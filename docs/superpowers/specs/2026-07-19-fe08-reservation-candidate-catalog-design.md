@@ -1,70 +1,71 @@
-# FE08 Reservation Candidate Catalog Design
+# FE08 Thiết kế danh mục ứng viên đặt chỗ
 
-Date: 2026-07-19
-Feature: FE08 Reservation Management
-Debt: TD-028
-Delivery: Hybrid SDD + ADD
-Specification depth: Standard for the new API contract; implementation remains bounded by the approved FE08 Core contract.
-Design status: APPROVED by user with `APPROVE TD-028 - Option A` and `APPROVE FE08 DESIGN` on 2026-07-19.
+Ngày: 19-07-2026 chức năng: FE08 Quản lý đặt chỗ Nợ: TD-028 bàn giao: Hybrid SDD + ADD Độ sâu đặc
+tả: Tiêu chuẩn cho hợp đồng API mới; việc triển khai vẫn bị giới hạn bởi hợp đồng FE08 lõi đã được
+phê duyệt. Trạng thái thiết kế: ĐƯỢC PHÊ DUYỆT bởi người dùng với `APPROVE TD-028 - Option A` và
+`APPROVE FE08 DESIGN` vào ngày 19-07-2026.
 
-## 1. Context
+## 1. Bối cảnh
 
-FE08 reservation creation correctly targets a physical `CopyId`, and the mutation is already a protected,
-server-validated `POST /api/reservations` operation. The member reservation screen still obtains its visible
-candidate catalog from `DEMO_RESERVABLE`, which can drift from SQL state and can show copies that do not exist.
+FE08 Việc tạo mục tiêu đặt chỗ nhắm mục tiêu chính xác vào `CopyId` vật lý và thao tác ghi đã là một
+hoạt động `POST /api/reservations` được máy chủ xác thực, được bảo vệ. Màn hình đặt chỗ thành viên
+vẫn lấy danh mục ứng viên hiển thị từ `DEMO_RESERVABLE`, danh mục này có thể chuyển từ trạng thái
+SQL và có thể hiển thị các bản sao không tồn tại.
 
-The surrounding contracts intentionally have different boundaries:
+Các hợp đồng xung quanh cố tình có ranh giới khác nhau:
 
-- FE01 public browse exposes book-level availability and does not expose physical copy identifiers.
-- FE06 copy-detail reads are restricted to Librarian/Admin users.
-- FE08 therefore needs a member-safe, read-only source of reservation candidates while keeping the approved
-  `CopyId` mutation contract.
+- FE01 trình duyệt công khai hiển thị tính khả dụng ở cấp độ sách và không hiển thị số nhận dạng bản sao vật lý.
+- FE06 việc đọc chi tiết bản sao được giới hạn đối với người dùng Thủ thư/Quản trị viên.
+- FE08 do đó cần một nguồn ứng viên đặt chỗ chỉ đọc, an toàn cho thành viên trong khi vẫn giữ được phê duyệt
+  Hợp đồng thao tác ghi `CopyId`.
 
-## 2. Decision
+## 2. Quyết định
 
-Add a protected member-only `GET /api/reservations/candidates` endpoint. It returns one row per eligible physical
-copy with only the metadata needed to choose a reservation target. The endpoint is advisory: the existing create
-mutation remains authoritative and rechecks all eligibility rules in the server transaction.
+Thêm điểm cuối `GET /api/reservations/candidates` chỉ dành cho thành viên được bảo vệ. Nó trả về một
+hàng cho mỗi bản sao vật lý đủ điều kiện chỉ có siêu dữ liệu cần thiết để chọn mục tiêu đặt chỗ.
+Điểm cuối mang tính chất tư vấn: thao tác ghi tạo hiện tại vẫn có thẩm quyền và kiểm tra lại tất cả các
+quy tắc đủ điều kiện trong giao dịch máy chủ.
 
-This decision does not widen FE01, grant members access to FE06 inventory, or change the reservation target from
-`CopyId` to `BookId`.
+Quyết định này không mở rộng FE01, cấp cho thành viên quyền truy cập vào kho FE06 hoặc thay đổi mục
+tiêu đặt chỗ từ `CopyId` thành `BookId`.
 
-## 3. Core Contract
+## 3. Hợp đồng cốt lõi
 
-### 3.1 Access
+### 3.1 Truy cập
 
-- Route: `GET /api/reservations/candidates`
-- Authentication: required.
-- Authorization: `MEMBER` required; Librarian/Admin access is not implied by this route.
-- No reservation, audit, notification, or copy state is mutated.
+- Lộ trình: `GET /api/reservations/candidates`
+- Xác thực: bắt buộc.
+- Ủy quyền: Yêu cầu `MEMBER`; Quyền truy cập của Thủ thư/Quản trị viên không được ngụ ý bởi tuyến đường này.
+- Không có trạng thái đặt chỗ, kiểm tra, thông báo hoặc sao chép nào bị thay đổi.
 
-### 3.2 Query
+### 3.2 Truy vấn
 
-All query parameters are optional:
+Tất cả các tham số truy vấn đều là tùy chọn:
 
-| Parameter | Type | Default | Rule |
+| Tham số | Loại | Mặc định | Quy tắc |
 | --- | --- | --- | --- |
-| `q` | string | empty | Trimmed; maximum 200 characters; matches active book title or author name. |
-| `page` | positive integer | 1 | Must be at least 1. |
-| `limit` | integer | 20 | Must be between 1 and 100. |
+| `q` | chuỗi | trống | Đã cắt tỉa; tối đa 200 ký tự; khớp với tên sách đang hoạt động hoặc tên tác giả. |
+| `page` | số nguyên dương | 1 | Phải có ít nhất 1. |
+| `limit` | số nguyên | 20 | Phải nằm trong khoảng từ 1 đến 100. |
 
-Filtering and pagination are server-owned. The result is ordered deterministically by `Book.Title ASC`,
-`Book.BookId ASC`, and `BookCopy.CopyId ASC`.
+Lọc và phân trang thuộc sở hữu của máy chủ. Kết quả được sắp xếp một cách xác định bởi `Book.Title
+ASC`, `Book.BookId ASC` và `BookCopy.CopyId ASC`.
 
-### 3.3 Candidate eligibility
+### 3.3 Tính đủ điều kiện của ứng viên
 
-A row is returned only when:
+Một hàng chỉ được trả về khi:
 
-- The parent book has `Books.Status = 'ACTIVE'`.
-- The physical copy has `BookCopies.Status IN ('BORROWED', 'RESERVED')`.
-- The copy is not `AVAILABLE`, `DAMAGED`, `LOST`, or `INACTIVE`.
+- Sách gốc có `Books.Status = 'ACTIVE'`.
+- Bản sao vật lý có `BookCopies.Status IN ('BORROWED', 'RESERVED')`.
+- Bản sao không phải là `AVAILABLE`, `DAMAGED`, `LOST` hoặc `INACTIVE`.
 
-The `RESERVED` state is included because it represents an existing queue/hold target. The create mutation still
-rejects a copy when its state changes or when the requesting member is no longer eligible.
+Trạng thái `RESERVED` được đưa vào vì nó đại diện cho mục tiêu hàng đợi/giữ hiện có. thao tác ghi tạo
+vẫn từ chối một bản sao khi trạng thái của nó thay đổi hoặc khi thành viên yêu cầu không còn đủ điều
+kiện.
 
-### 3.4 Response envelope
+### 3.4 Phong bì phản hồi
 
-Successful responses use the canonical server-backed list shape:
+Phản hồi thành công sử dụng hình dạng danh sách chuẩn được máy chủ hỗ trợ:
 
 ```json
 {
@@ -87,108 +88,110 @@ Successful responses use the canonical server-backed list shape:
 }
 ```
 
-`authorName` may be `null`. `activeReservationCount` counts only `Reservations.Status = 'ACTIVE'` for the
-candidate copy and is a queue summary, not a guarantee about the position the caller will receive after a future
-mutation.
+`authorName` có thể là `null`. `activeReservationCount` chỉ tính `Reservations.Status = 'ACTIVE'`
+cho bản sao ứng viên và là bản tóm tắt hàng đợi, không đảm bảo về vị trí mà người gọi sẽ nhận được
+sau khi thao tác ghi trong tương lai.
 
-The response must not contain `barcode`, `location`, reservation owner information, member email, reservation
-timestamps, internal rowversion values, or staff-only metadata.
+Phản hồi không được chứa `barcode`, `location`, thông tin chủ sở hữu đặt chỗ, email thành viên, dấu
+thời gian đặt chỗ, giá trị chuyển đổi hàng nội bộ hoặc siêu dữ liệu chỉ dành cho nhân viên.
 
-### 3.5 Errors
+### 3.5 Lỗi
 
-- Unauthenticated request: existing generic `401` authentication envelope.
-- Authenticated non-member: existing `403` authorization envelope.
-- Invalid `q`, `page`, or `limit`: existing validation `400` envelope.
-- No matching candidates: `200` with `data: []`, `total: 0`, and `totalPages: 0`.
+- Yêu cầu chưa được xác thực: phong bì xác thực `401` chung hiện có.
+- Đã được xác thực không phải là thành viên: phong bì ủy quyền `403` hiện có.
+- `q`, `page` hoặc `limit` không hợp lệ: phong bì `400` xác thực hiện có.
+- Không có ứng cử viên phù hợp: `200` với `data: []`, `total: 0` và `totalPages: 0`.
 
-## 4. Architecture and Data Flow
+## 4. Kiến trúc và luồng dữ liệu
 
-1. `MyReservationsPage` sends `reservationApi.listCandidates({ q, page, limit })`.
-2. The route authenticates the caller, requires `MEMBER`, and validates query parameters.
-3. The controller passes the normalized query to the reservation service.
-4. The service delegates to a read-only repository method.
-5. The repository uses parameterized SQL joining `Books`, `BookCopies`, and an aggregate of active
-   `Reservations`; it returns only the safe projection above.
-6. The service maps the rows into `{ data, pagination }`.
-7. Selecting a row calls the existing `reservationApi.create(copyId)` mutation. The server revalidates book status,
-   copy status, member eligibility, duplicate reservation, and the three-active-reservation limit.
-8. After create or cancel, the page reloads canonical reservations and candidate data rather than mutating a local
-   catalog.
+1. `MyReservationsPage` gửi `reservationApi.listCandidates({ q, page, limit })`.
+2. Tuyến xác thực người gọi, yêu cầu `MEMBER` và xác thực các tham số truy vấn.
+3. Bộ điều khiển chuyển truy vấn đã chuẩn hóa tới dịch vụ đặt chỗ.
+4. Dịch vụ ủy quyền cho một phương thức lưu trữ chỉ đọc.
+5. Kho lưu trữ sử dụng SQL được tham số hóa nối `Books`, `BookCopies` và tổng hợp các hoạt động
+   `Reservations`; nó chỉ trả về phép chiếu an toàn ở trên.
+6. Dịch vụ ánh xạ các hàng vào `{ data, pagination }`.
+7. Việc chọn một hàng sẽ gọi thao tác ghi `reservationApi.create(copyId)` hiện có. Máy chủ xác nhận lại trạng thái sách,
+   trạng thái sao chép, tính đủ điều kiện của thành viên, đặt chỗ trùng lặp và giới hạn đặt chỗ ba
+   lần hoạt động.
+8. Sau khi tạo hoặc hủy, trang sẽ tải lại dữ liệu đặt chỗ chuẩn và dữ liệu ứng viên thay vì thay đổi địa phương
+   danh mục.
 
-No schema migration is required. All SQL must remain parameterized and the read path must not acquire mutation
-locks or write audit records.
+Không cần di chuyển lược đồ. Tất cả SQL phải được tham số hóa và đường dẫn đọc không được lấy khóa
+thao tác ghi hoặc ghi bản ghi kiểm tra.
 
-## 5. Frontend Boundary
+## 5. Ranh giới giao diện người dùng
 
-`MyReservationsPage` will:
+`MyReservationsPage` sẽ:
 
-- Remove its import and use of `DEMO_RESERVABLE`.
-- Keep search text in component state but send it as `q` to the server.
-- Render loading, empty, validation-error, and request-error states from the candidate endpoint.
-- Render server-provided `copyStatus` and `activeReservationCount`; it must not invent ETA values or availability
-  counts from local data.
-- Preserve the existing rule that an available copy is borrowed instead of reserved; candidates never include an
-  available copy, and the mutation remains the final guard.
-- Preserve the existing reservation lifecycle table, cancellation flow, and Vietnamese error isolation.
+- Xóa việc nhập và sử dụng `DEMO_RESERVABLE`.
+- Giữ văn bản tìm kiếm ở trạng thái thành phần nhưng gửi nó dưới dạng `q` đến máy chủ.
+- Hiển thị trạng thái tải, trống, lỗi xác thực và lỗi yêu cầu từ điểm cuối ứng viên.
+- Kết xuất `copyStatus` và `activeReservationCount` do máy chủ cung cấp; nó không được phát minh ra các giá trị hoặc tính khả dụng của ETA
+  đếm từ dữ liệu cục bộ.
+- Giữ nguyên quy tắc hiện tại là bản sao có sẵn sẽ được mượn thay vì dành riêng; ứng viên không bao giờ bao gồm một
+  bản sao có sẵn và thao tác ghi vẫn là người bảo vệ cuối cùng.
+- Giữ nguyên bảng vòng đời đặt chỗ hiện có, quy trình hủy và cách ly lỗi tiếng Việt.
 
-The documented temporary `DEMO_BORROW_CATALOG` remains outside this change. No other demo catalog is reintroduced.
+`DEMO_BORROW_CATALOG` tạm thời được ghi lại vẫn nằm ngoài thay đổi này. Không có danh mục demo nào
+khác được giới thiệu lại.
 
-## 6. Traceability and Artifacts
+## 6. truy vết và tệp bàn giao
 
-The implementation plan must update the following source-of-truth artifacts before code is considered complete:
+Kế hoạch triển khai phải cập nhật các tạo phẩm nguồn xác thực sau đây trước khi mã được coi là hoàn chỉnh:
 
-- `.sdd/specs/feat-reservation-management/SPEC.md`: add the candidate endpoint, safe projection, and member-only
-  boundary with stable requirement IDs.
-- `.sdd/specs/feat-reservation-management/PLAN.md`: add the candidate catalog work and validation gates.
-- `.sdd/specs/feat-reservation-management/TASKS.md`: add atomic backend, frontend, test, OpenAPI, and evidence tasks.
-- `.sdd/specs/feat-reservation-management/CHANGELOG.md`: record the approved contract and removal of the static
-  candidate source.
-- `backend/src/routes/reservationRoutes.js`, controller, service, repository, validators, and OpenAPI.
-- `backend/tests/reservationRoutes.test.js` and a SQL-backed candidate test suite.
+- `.sdd/specs/feat-reservation-management/SPEC.md`: thêm điểm cuối ứng cử viên, phép chiếu an toàn và chỉ dành cho thành viên
+  ranh giới với ID yêu cầu ổn định.
+- `.sdd/specs/feat-reservation-management/PLAN.md`: thêm cổng xác thực và công việc danh mục ứng viên.
+- `.sdd/specs/feat-reservation-management/TASKS.md`: thêm các tác vụ máy chủ, giao diện người dùng, kiểm thử, OpenAPI và bằng chứng nguyên tử.
+- `.sdd/specs/feat-reservation-management/CHANGELOG.md`: ghi lại hợp đồng đã được phê duyệt và loại bỏ tĩnh
+  nguồn ứng viên.
+- `backend/src/routes/reservationRoutes.js`, bộ điều khiển, dịch vụ, kho lưu trữ, trình xác thực và OpenAPI.
+- `backend/tests/reservationRoutes.test.js` và bộ kiểm thử ứng viên được hỗ trợ bởi SQL.
 - `frontend/src/api/libraryFeatureApi.js`, `frontend/src/page/reservation/MyReservationsPage.jsx`,
-  `frontend/src/utils/libraryFeatureViewModels.js`, and focused frontend tests.
-- `TECH_DEBT.md`: close TD-028 only after implementation and validation evidence pass.
-- `.sdd/reviews/fe08-reservation-candidate-catalog-validation-2026-07-19.md` and the full acceptance packet.
+  `frontend/src/utils/libraryFeatureViewModels.js` và các kiểm thử giao diện người dùng tập trung.
+- `TECH_DEBT.md`: chỉ đóng TD-028 sau khi bằng chứng triển khai và xác thực được thông qua.
+- `.sdd/reviews/fe08-reservation-candidate-catalog-validation-2026-07-19.md` và gói chấp nhận đầy đủ.
 
-## 7. Validation Design
+## 7. Thiết kế xác nhận
 
-### Backend unit/route checks
+### Kiểm tra đơn vị/tuyến đường máy chủ
 
-- Member can list candidates with the default envelope.
-- Guest and non-member roles receive `401`/`403`.
-- Invalid `q`, `page`, and `limit` are rejected.
-- Search, fixed eligible statuses, deterministic order, pagination, and empty results are covered.
-- The projection excludes barcode, location, owner, email, timestamps, and version fields.
-- Candidate listing does not call create, audit, notification, or mutation repository methods.
-- Existing create/cancel and role-guard regressions remain green.
+- Thành viên có thể liệt kê các ứng cử viên với phong bì mặc định.
+- Vai trò khách và không phải thành viên nhận được `401`/`403`.
+- `q`, `page` và `limit` không hợp lệ sẽ bị từ chối.
+- Tìm kiếm, trạng thái đủ điều kiện cố định, thứ tự xác định, phân trang và kết quả trống đều được đề cập.
+- Phép chiếu không bao gồm các trường mã vạch, vị trí, chủ sở hữu, email, dấu thời gian và phiên bản.
+- Danh sách ứng viên không gọi các phương thức kho lưu trữ tạo, kiểm tra, thông báo hoặc thao tác ghi.
+- Các hồi quy tạo/hủy và bảo vệ vai trò hiện tại vẫn giữ nguyên màu xanh.
 
-### SQL-backed checks
+### Kiểm tra được hỗ trợ bởi SQL
 
-- Seed active books with `AVAILABLE`, `BORROWED`, `RESERVED`, `DAMAGED`, `LOST`, and `INACTIVE` copies.
-- Assert only active-book borrowed/reserved copies are returned.
-- Assert active reservation counts are correct and terminal reservations are excluded.
-- Assert search, stable ordering, pagination, and redacted projection against SQL Server.
-- Use guarded synthetic cleanup and include the suite in the aggregate Live SQL evidence.
+- Tạo các sách đang hoạt động với các bản sao `AVAILABLE`, `BORROWED`, `RESERVED`, `DAMAGED`, `LOST` và `INACTIVE`.
+- Khẳng định chỉ trả sách các bản sao đã mượn/đặt chỗ của cuốn sách đang hoạt động.
+- Khẳng định số lượng đặt chỗ đang hoạt động là chính xác và việc đặt chỗ ở thiết bị đầu cuối sẽ bị loại trừ.
+- Khẳng định tìm kiếm, sắp xếp ổn định, phân trang và trình chiếu được sắp xếp lại đối với SQL Server.
+- Sử dụng chức năng dọn dẹp tổng hợp có bảo vệ và đưa bộ phần mềm vào bằng chứng Live SQL tổng hợp.
 
-### Frontend and browser checks
+### Kiểm tra giao diện người dùng và trình duyệt
 
-- The page requests candidates from the API and never imports `DEMO_RESERVABLE`.
-- Search sends `q` and renders server results; no browser-side filtering/slicing is authoritative.
-- Empty/error/loading states are visible and safe.
-- Selecting a candidate sends its real `copyId`; a successful reservation refreshes canonical server state.
-- Focused frontend tests and the member reservation browser walkthrough pass on isolated ports.
+- Trang yêu cầu các ứng cử viên từ API và không bao giờ nhập `DEMO_RESERVABLE`.
+- Tìm kiếm gửi `q` và hiển thị kết quả máy chủ; không có chức năng lọc/cắt phía trình duyệt nào có thẩm quyền.
+- Trạng thái trống/lỗi/tải được hiển thị và an toàn.
+- Việc chọn một ứng cử viên sẽ gửi `copyId` thực của nó; đặt chỗ thành công sẽ làm mới trạng thái máy chủ chuẩn.
+- Các kiểm thử giao diện người dùng tập trung và hướng dẫn từng bước của trình duyệt dành riêng cho thành viên trên các cổng bị cô lập.
 
-### Final gates
+### Cổng cuối cùng
 
-- Backend regression, coverage, frontend regression, lint, build, system integration, SQL-backed suites, and E2E.
-- Traceability enforcement, OpenAPI parse, secret/dependency/scope scans, and diff hygiene.
-- Human Decision Gate A records this contract and Gate B re-runs after the implementation head is green.
+- Hồi quy máy chủ, bảo hiểm, hồi quy giao diện người dùng, tìm lỗi mã nguồn, bản dựng, tích hợp hệ thống, bộ phần mềm được hỗ trợ bởi SQL và E2E.
+- Thực thi truy vết, phân tích cú pháp OpenAPI, quét bí mật/phụ thuộc/phạm vi và vệ sinh khác biệt.
+- Cổng Quyết định của Con người A ghi lại hợp đồng này và Cổng B chạy lại sau khi đầu thực hiện có màu xanh.
 
-## 8. Risks and Explicit Non-goals
+## 8. Rủi ro và mục tiêu không rõ ràng
 
-- A candidate can become unavailable between listing and creation; this is expected and handled by the existing
-  server conflict contract.
-- Copy identifiers are exposed to authenticated members only because the approved mutation requires them; no
-  physical-location or ownership information is exposed.
-- This change does not add automatic queue processing, ETA prediction, notification workers, book-level reservation
-  mutation, public copy identifiers, or a database migration.
+- Một ứng cử viên có thể không còn khả dụng giữa việc niêm yết và tạo; điều này được mong đợi và xử lý bởi hiện tại
+  hợp đồng xung đột máy chủ.
+- Số nhận dạng bản sao chỉ được hiển thị cho các thành viên đã được xác thực vì thao tác ghi được phê duyệt yêu cầu chúng; không
+  thông tin về vị trí thực tế hoặc quyền sở hữu bị lộ.
+- Thay đổi này không thêm xử lý hàng đợi tự động, dự đoán ETA, nhân viên thông báo, đặt chỗ cấp độ sách
+  thao tác ghi, số nhận dạng bản sao công khai hoặc di chuyển cơ sở dữ liệu.

@@ -20,7 +20,7 @@
 ## 2026-08-03 - H1 candidate shell và fixture staging v0.10.0
 
 - Mở FE07-T062..064 cho empty state trung thực và công cụ fixture staging thủ công.
-- Giữ nguyên endpoint/điều kiện ứng viên FE07 và toàn bộ hành vi hàng đợi FE08.
+- Giữ nguyên endpoint/điều kiện đối tượng đủ điều kiện FE07 và toàn bộ hành vi hàng đợi FE08.
 - Quy định reset chỉ sở hữu hai fixture synthetic, bắt buộc staging/flag/transaction/audit;
   thay đổi sản phẩm giữ chưa commit tới H2 và không mutate staging trước H3.
 
@@ -28,7 +28,7 @@
 
 - Workflow `30722972056` triển khai đúng SHA `bf4dd2268c63a00620fc262f643768c2f434894c`.
 - Run `lms-acceptance-20260802-b22898eb` đạt toàn bộ luồng có đăng nhập liên vai trò; SQL exact-ID xác nhận `BorrowDetailId=66`, `ReturnDate=2026-08-02`, `OverdueDays=3` và `Amount=15000`.
-- Cleanup trả về `CLEANED`: không còn tài khoản, token, khoản mượn, đặt trước, sách hoặc bản sao fixture hoạt động; bốn login và token cũ đều bị từ chối, runtime/helper tạm trả `404/404`.
+- Cleanup trả về `CLEANED`: không còn tài khoản, token, khoản mượn, đặt chỗ, sách hoặc bản sao fixture hoạt động; bốn login và token cũ đều bị từ chối, runtime/helper tạm trả `404/404`.
 - Sửa observer của harness bị ignore bằng RED `11/12` và GREEN `12/12` để các probe `403/404` chủ động không tạo false positive trên browser console; vẫn giữ kiểm tra nghiêm cho lỗi UI thật và không thay đổi product code.
 - H3 cuối không còn finding Standards/Spec; PR #96 hợp nhất thành `e4bdfd8`. CI `main` `30725685264` và Azure staging `30725829869` đạt trên đúng merge commit, vì vậy FE07-T061 đã đóng.
 

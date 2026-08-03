@@ -1,41 +1,45 @@
-# FE07, FE08, FE10 Và FE12 Vietnamese Style Cleanup Implementation Plan
+# FE07, FE08, FE10 Và FE12 Kế hoạch triển khai chỉnh sửa văn phong tiếng Việt
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Đối với nhân viên đại lý:** SUB-SKILL BẮT BUỘC: Sử dụng siêu năng lực:phát triển theo định hướng phụ (được khuyến nghị) hoặc siêu năng lực:thực hiện các kế hoạch để triển khai kế hoạch này theo từng nhiệm vụ. Các bước sử dụng cú pháp hộp kiểm (`- [ ]`) để theo dõi.
 
 **Goal:** Làm cho 24 tệp tài liệu của FE07, FE08, FE10 và FE12 có văn phong tiếng Việt tự nhiên, nhất quán và dễ trình bày mà không thay đổi bất kỳ nội dung kỹ thuật hoặc bằng chứng hoàn thành nào.
 
-**Architecture:** Thực hiện theo từng chức năng, bắt đầu từ thuật ngữ nghiệp vụ trong `SPEC.md`/`CONTEXT.md`, sau đó đồng bộ `PLAN.md`, `TASKS.md`, `TEST_PLAN.md` và `CHANGELOG.md`. Mỗi chức năng được kiểm tra độc lập trước khi chuyển sang chức năng kế tiếp; cuối cùng chạy kiểm tra invariant và traceability trên toàn bộ 24 tệp.
+**kiến trúc:** Thực hiện theo từng chức năng, bắt đầu từ thuật ngữ nghiệp vụ trong
+`SPEC.md`/`CONTEXT.md`, sau đó đồng bộ `PLAN.md`, `TASKS.md`, `TEST_PLAN.md` và `CHANGELOG.md`. Mỗi
+chức năng được kiểm tra độc lập trước khi chuyển sang chức năng kế tiếp; cuối cùng chạy kiểm tra
+điều kiện bất biến và khả năng truy vết trên toàn bộ 24 tệp.
 
-**Tech Stack:** Markdown, PowerShell, ripgrep, Git, bộ kiểm tra traceability Node.js hiện có của repository.
+**Tech bộ công nghệ:** Markdown, PowerShell, ripgrep, Git, bộ kiểm tra khả năng truy vết Node.js hiện có
+của kho mã nguồn.
 
-## Global Constraints
+## Ràng buộc toàn cầu
 
-- Baseline cố định: `origin/main@194dcf63768b87657c1d9c49fb064bbcc5d8e5d8`.
-- Chỉ chỉnh 24 tệp `CONTEXT.md`, `SPEC.md`, `PLAN.md`, `TASKS.md`, `TEST_PLAN.md`, `CHANGELOG.md` của FE07, FE08, FE10 và FE12; ngoài ra chỉ được thay đổi design/plan của đợt này.
-- Không thay đổi mã truy vết, endpoint, HTTP method, tên trường/bảng/cột, enum, mã lỗi, literal trong backtick, URL, số phiên bản, ngày, số liệu, PR, commit, CI/Azure run, checkbox, code fence hoặc quan hệ traceability.
-- Không thay đổi quy tắc nghiệp vụ, quyền, API, schema, trạng thái hoàn thành hoặc phạm vi chức năng.
+- mốc cơ sở cố định: `origin/main@194dcf63768b87657c1d9c49fb064bbcc5d8e5d8`.
+- Chỉ chỉnh 24 tệp `CONTEXT.md`, `SPEC.md`, `PLAN.md`, `TASKS.md`, `TEST_PLAN.md`, `CHANGELOG.md` của FE07, FE08, FE10 và FE12; ngoài ra chỉ được thay đổi thiết kế/kế hoạch của đợt này.
+- Không thay đổi mã truy vết, điểm cuối, HTTP method, tên trường/bảng/cột, giá trị liệt kê, mã lỗi, giá trị nguyên văn trong backtick, URL, số phiên bản, ngày, số liệu, PR, bản ghi Git, CI/Azure lượt chạy, checkbox, hàng rào mã hoặc quan hệ khả năng truy vết.
+- Không thay đổi quy tắc nghiệp vụ, quyền, API, lược đồ, trạng thái hoàn thành hoặc phạm vi chức năng.
 - Không dùng thay thế toàn cục không kiểm soát; mọi thay đổi phải được đọc trong ngữ cảnh câu.
 - Thuật ngữ chuẩn: `mượn sách`, `hạn trả`, `đặt chỗ`, `lượt đặt chỗ`, Thành viên, Thủ thư, Quản trị viên.
-- Giảm các cụm dịch sát như `lát cắt`, `chính tắc`, `có thẩm quyền`, `bề mặt`, `closeout`, `exact-head`, `wave`, `shell`, `core`, `envelope`, `projection`, `mutation`, `harness` theo bảng quy chuẩn trong design doc.
+- Giảm các cụm dịch sát như `lát cắt`, `chính tắc`, `có thẩm quyền`, `bề mặt`, `closeout`, `exact-head`, `wave`, `shell`, `core`, `envelope`, `projection`, `mutation`, `harness` theo bảng quy chuẩn trong thiết kế doc.
 
 ---
 
-### Task 1: Khóa baseline và phạm vi chỉnh sửa
+### Nhiệm vụ 1: Khóa mốc cơ sở và phạm vi chỉnh sửa
 
-**Files:**
-- Reference: `docs/superpowers/specs/2026-08-01-fe07-fe12-vietnamese-style-cleanup-design.md`
-- Reference: `.sdd/specs/feat-borrowing-management/*.md`
-- Reference: `.sdd/specs/feat-reservation-management/*.md`
-- Reference: `.sdd/specs/feat-notification-management/*.md`
-- Reference: `.sdd/specs/feat-reporting-statistics/*.md`
+**Tệp:**
+- Tham khảo: `docs/superpowers/specs/2026-08-01-fe07-fe12-vietnamese-style-cleanup-design.md`
+- Tham khảo: `.sdd/specs/feat-borrowing-management/*.md`
+- Tham khảo: `.sdd/specs/feat-reservation-management/*.md`
+- Tham khảo: `.sdd/specs/feat-notification-management/*.md`
+- Tham khảo: `.sdd/specs/feat-reporting-statistics/*.md`
 
-**Interfaces:**
-- Consumes: `origin/main@194dcf63768b87657c1d9c49fb064bbcc5d8e5d8` và design doc đã duyệt.
-- Produces: danh sách chính xác 24 tệp, số liệu thuật ngữ ban đầu và một worktree sạch để các task sau sử dụng.
+**Giao diện:**
+- đầu vào: `origin/main@194dcf63768b87657c1d9c49fb064bbcc5d8e5d8` và thiết kế doc đã duyệt.
+- đầu ra: danh sách chính xác 24 tệp, số liệu thuật ngữ ban đầu và một cây làm việc Git sạch để các Nhiệm vụ sau sử dụng.
 
-- [ ] **Step 1: Xác nhận branch, baseline và worktree sạch**
+- [ ] **Bước 1: Xác nhận nhánh, mốc cơ sở và cây làm việc Git sạch**
 
-Run:
+Chạy:
 
 ```powershell
 git branch --show-current
@@ -43,11 +47,12 @@ git merge-base --is-ancestor 194dcf63768b87657c1d9c49fb064bbcc5d8e5d8 HEAD
 git status --short
 ```
 
-Expected: branch `docs/fe07-fe12-vietnamese-style-cleanup`; lệnh merge-base thoát `0`; chỉ design/plan đã commit và không có thay đổi chưa commit trước khi chỉnh 24 tệp.
+mong đợi: nhánh `docs/fe07-fe12-vietnamese-style-cleanup`; lệnh hợp nhất-base thoát `0`; chỉ thiết
+kế/kế hoạch đã được ghi nhận vào Git và không có thay đổi chưa ghi nhận trước khi chỉnh 24 tệp.
 
-- [ ] **Step 2: Xác nhận đúng 24 tệp trong phạm vi**
+- [ ] **Bước 2: Xác nhận đúng 24 tệp trong phạm vi**
 
-Run:
+Chạy:
 
 ```powershell
 $dirs = @(
@@ -63,59 +68,62 @@ if ($files.Count -ne 24) { throw "Expected 24 files, found $($files.Count)" }
 $files.FullName
 ```
 
-Expected: `24` tệp, sáu tệp cho mỗi chức năng.
+mong đợi: `24` tệp, sáu tệp cho mỗi chức năng.
 
-- [ ] **Step 3: Ghi nhận mật độ từ cần chỉnh trước khi sửa**
+- [ ] **Bước 3: Ghi nhận mật độ từ cần chỉnh trước khi sửa**
 
-Run:
+Chạy:
 
 ```powershell
 $pattern = 'lát cắt|chính tắc|có thẩm quyền|bề mặt|closeout|exact-head|\bshell\b|\bcore\b|\bwave\b|\bharness\b|\benvelope\b|\bprojection\b|\bmutation\b|\bartifact\b'
 rg -i -c --glob '*.md' $pattern $dirs
 ```
 
-Expected: in ra baseline theo từng tệp để so sánh sau khi chỉnh; không sửa file ở bước này.
+mong đợi: in ra mốc cơ sở theo từng tệp để so sánh sau khi chỉnh; không sửa tệp ở bước này.
 
 ---
 
-### Task 2: Làm tự nhiên văn phong FE07
+### Nhiệm vụ 2: Làm tự nhiên văn phong FE07
 
-**Files:**
-- Modify: `.sdd/specs/feat-borrowing-management/CONTEXT.md`
-- Modify: `.sdd/specs/feat-borrowing-management/SPEC.md`
-- Modify: `.sdd/specs/feat-borrowing-management/PLAN.md`
-- Modify: `.sdd/specs/feat-borrowing-management/TASKS.md`
-- Modify: `.sdd/specs/feat-borrowing-management/TEST_PLAN.md`
-- Modify: `.sdd/specs/feat-borrowing-management/CHANGELOG.md`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-borrowing-management/CONTEXT.md`
+- Sửa đổi: `.sdd/specs/feat-borrowing-management/SPEC.md`
+- Sửa đổi: `.sdd/specs/feat-borrowing-management/PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-borrowing-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-borrowing-management/TEST_PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-borrowing-management/CHANGELOG.md`
 
-**Interfaces:**
-- Consumes: thuật ngữ FE07 và invariant từ Task 1.
-- Produces: sáu tài liệu FE07 dùng thống nhất `mượn`, `hạn trả`, `bản sao`, `yêu cầu mượn` và cách diễn đạt tự nhiên cho dữ liệu do máy chủ quyết định.
+**Giao diện:**
+- đầu vào: thuật ngữ FE07 và điều kiện bất biến từ Nhiệm vụ 1.
+- đầu ra: sáu tài liệu FE07 dùng thống nhất `mượn`, `hạn trả`, `bản sao`, `yêu cầu mượn` và cách diễn đạt tự nhiên cho dữ liệu do máy chủ quyết định.
 
-- [ ] **Step 1: Chỉnh thuật ngữ nghiệp vụ trong SPEC và CONTEXT**
+- [ ] **Bước 1: Chỉnh thuật ngữ nghiệp vụ trong SPEC và CONTEXT**
 
-Thay `vay` bằng `mượn` trong ngữ cảnh thư viện; thay `ngày đáo hạn` bằng `hạn trả`; thay `chính tắc` theo ngữ cảnh bằng `chuẩn`/`chính thức`; diễn đạt `có thẩm quyền` thành `do máy chủ quyết định` hoặc `nguồn dữ liệu chính thức`. Không sửa enum, ID hay literal trong backtick.
+Thay `vay` bằng `mượn` trong ngữ cảnh thư viện; thay `ngày đáo hạn` bằng `hạn trả`; thay `chính tắc`
+theo ngữ cảnh bằng `chuẩn`/`chính thức`; diễn đạt `có thẩm quyền` thành `do máy chủ quyết định` hoặc
+`nguồn dữ liệu chính thức`. Không sửa giá trị liệt kê, ID hay giá trị nguyên văn trong backtick.
 
-- [ ] **Step 2: Chỉnh PLAN, TASKS và TEST_PLAN**
+- [ ] **Bước 2: Chỉnh PLAN, TASKS và TEST_PLAN**
 
 Đổi các câu trộn Anh-Việt như `Core owner duy nhất của slice`, `Product diff của wave`, `closeout exact-head`, `projection`, `mutation` thành câu tiếng Việt ngắn và rõ. Giữ nguyên mọi số liệu kiểm thử và bằng chứng lịch sử.
 
-- [ ] **Step 3: Chỉnh CHANGELOG và thêm ghi chú văn phong**
+- [ ] **Bước 3: Chỉnh CHANGELOG và thêm ghi chú văn phong**
 
 Làm tự nhiên phần văn xuôi lịch sử; thêm một mục ngày `2026-08-01` nói rõ chỉ chuẩn hóa văn phong tiếng Việt, không đổi hành vi, hợp đồng hay bằng chứng.
 
-- [ ] **Step 4: Kiểm tra riêng FE07**
+- [ ] **Bước 4: Kiểm tra riêng FE07**
 
-Run:
+Chạy:
 
 ```powershell
 rg -n -i --glob '*.md' 'Core owner|\bslice\b|supersede|Re-review|Product diff|\bwave\b|\bcloseout\b|exact-head|lát cắt|chính tắc|có thẩm quyền|bề mặt|\benvelope\b|\bprojection\b|\bmutation\b|\bharness\b' .sdd/specs/feat-borrowing-management
 git diff --check -- .sdd/specs/feat-borrowing-management
 ```
 
-Expected: không còn kết quả văn xuôi chưa giải thích; các kết quả còn lại chỉ nằm trong tên tệp, literal hoặc trích dẫn lịch sử không thể đổi; diff check thoát `0`.
+mong đợi: không còn kết quả văn xuôi chưa giải thích; các kết quả còn lại chỉ nằm trong tên tệp, giá
+trị nguyên văn hoặc trích dẫn lịch sử không thể đổi; khác biệt kiểm tra thoát `0`.
 
-- [ ] **Step 5: Commit FE07**
+- [ ] **Bước 5: Cam kết FE07**
 
 ```powershell
 git add .sdd/specs/feat-borrowing-management
@@ -124,31 +132,33 @@ git commit -m "docs: naturalize Vietnamese wording in FE07 docs"
 
 ---
 
-### Task 3: Làm tự nhiên văn phong FE08
+### Nhiệm vụ 3: Làm tự nhiên văn phong FE08
 
-**Files:**
-- Modify: `.sdd/specs/feat-reservation-management/CONTEXT.md`
-- Modify: `.sdd/specs/feat-reservation-management/SPEC.md`
-- Modify: `.sdd/specs/feat-reservation-management/PLAN.md`
-- Modify: `.sdd/specs/feat-reservation-management/TASKS.md`
-- Modify: `.sdd/specs/feat-reservation-management/TEST_PLAN.md`
-- Modify: `.sdd/specs/feat-reservation-management/CHANGELOG.md`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-reservation-management/CONTEXT.md`
+- Sửa đổi: `.sdd/specs/feat-reservation-management/SPEC.md`
+- Sửa đổi: `.sdd/specs/feat-reservation-management/PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-reservation-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-reservation-management/TEST_PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-reservation-management/CHANGELOG.md`
 
-**Interfaces:**
-- Consumes: invariant Task 1 và thuật ngữ liên tính năng FE07 đã chuẩn hóa.
-- Produces: sáu tài liệu FE08 dùng nhất quán `đặt chỗ`, `lượt đặt chỗ`, `giữ bản sao sau thông báo` và `xử lý hàng đợi`.
+**Giao diện:**
+- đầu vào: điều kiện bất biến Nhiệm vụ 1 và thuật ngữ liên chức năng FE07 đã chuẩn hóa.
+- đầu ra: sáu tài liệu FE08 dùng nhất quán `đặt chỗ`, `lượt đặt chỗ`, `giữ bản sao sau thông báo` và `xử lý hàng đợi`.
 
-- [ ] **Step 1: Chỉnh SPEC và CONTEXT**
+- [ ] **Bước 1: Chỉnh SPEC và CONTEXT**
 
-Chuẩn hóa `đặt trước`/`lượt giữ` theo ngữ cảnh thành `đặt chỗ`/`lượt đặt chỗ`; chỉ giữ `giữ chỗ` khi nói về trạng thái bản sao được giữ sau thông báo. Giữ nguyên các enum `ACTIVE`, `NOTIFIED`, `FULFILLED`, `CANCELLED`, `EXPIRED`, `RESERVED`.
+Chuẩn hóa `đặt trước`/`lượt giữ` theo ngữ cảnh thành `đặt chỗ`/`lượt đặt chỗ`; chỉ giữ `giữ chỗ` khi
+nói về trạng thái bản sao được giữ sau thông báo. Giữ nguyên các giá trị liệt kê `ACTIVE`,
+`NOTIFIED`, `FULFILLED`, `CANCELLED`, `EXPIRED`, `RESERVED`.
 
-- [ ] **Step 2: Chỉnh PLAN, TASKS, TEST_PLAN và CHANGELOG**
+- [ ] **Bước 2: Chỉnh PLAN, TASKS, TEST_PLAN và CHANGELOG**
 
 Thay cách diễn đạt dịch sát và Anh-Việt bằng câu tiếng Việt trực tiếp; giữ nguyên thứ tự hàng đợi, thời gian giữ, giới hạn đặt chỗ, trạng thái và bằng chứng. Thêm mục văn phong ngày `2026-08-01` vào CHANGELOG.
 
-- [ ] **Step 3: Kiểm tra và commit FE08**
+- [ ] **Bước 3: Kiểm tra và bản ghi Git FE08**
 
-Run:
+Chạy:
 
 ```powershell
 rg -n -i --glob '*.md' '\bslice\b|supersede|Re-review|Product diff|\bwave\b|\bcloseout\b|exact-head|lát cắt|chính tắc|có thẩm quyền|bề mặt|\benvelope\b|\bprojection\b|\bmutation\b|\bharness\b' .sdd/specs/feat-reservation-management
@@ -157,39 +167,45 @@ git add .sdd/specs/feat-reservation-management
 git commit -m "docs: naturalize Vietnamese wording in FE08 docs"
 ```
 
-Expected: không còn kết quả văn xuôi chưa giải thích; diff check thoát `0`; commit chỉ chứa sáu tệp FE08.
+mong đợi: không còn kết quả văn xuôi chưa giải thích; khác biệt kiểm tra thoát `0`; bản ghi Git chỉ
+chứa sáu tệp FE08.
 
 ---
 
-### Task 4: Làm tự nhiên văn phong FE10
+### Nhiệm vụ 4: Làm tự nhiên văn phong FE10
 
-**Files:**
-- Modify: `.sdd/specs/feat-notification-management/CONTEXT.md`
-- Modify: `.sdd/specs/feat-notification-management/SPEC.md`
-- Modify: `.sdd/specs/feat-notification-management/PLAN.md`
-- Modify: `.sdd/specs/feat-notification-management/TASKS.md`
-- Modify: `.sdd/specs/feat-notification-management/TEST_PLAN.md`
-- Modify: `.sdd/specs/feat-notification-management/CHANGELOG.md`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-notification-management/CONTEXT.md`
+- Sửa đổi: `.sdd/specs/feat-notification-management/SPEC.md`
+- Sửa đổi: `.sdd/specs/feat-notification-management/PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-notification-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-notification-management/TEST_PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-notification-management/CHANGELOG.md`
 
-**Interfaces:**
-- Consumes: invariant Task 1 và ranh giới FE07/FE08 đã chuẩn hóa.
-- Produces: sáu tài liệu FE10 giải thích rõ nguồn gửi thông báo, tiến trình xử lý nền, nhà cung cấp email, khóa chống gửi trùng và hộp thư cá nhân.
+**Giao diện:**
+- đầu vào: điều kiện bất biến Nhiệm vụ 1 và ranh giới FE07/FE08 đã chuẩn hóa.
+- đầu ra: sáu tài liệu FE10 giải thích rõ nguồn gửi thông báo, tiến trình xử lý nền, nhà cung cấp email, khóa chống gửi trùng và hộp thư cá nhân.
 
-- [ ] **Step 1: Chỉnh SPEC và CONTEXT với ưu tiên khả năng đọc**
+- [ ] **Bước 1: Chỉnh SPEC và CONTEXT với ưu tiên khả năng đọc**
 
-Viết lại các cụm khó như `trình yêu cầu được ràng buộc`, `lưu bền`, `I/O của nhà cung cấp`, `khóa lũy đẳng suy ra`, `bề mặt trình bày` thành câu dễ hiểu nhưng giữ nguyên ownership và security boundary. Không thay đổi nguồn FE02/FE04/FE07/FE08/FE09/FE11/SYSTEM, cặp type/template hoặc quy tắc loại trừ dữ liệu nhạy cảm.
+Viết lại các cụm khó như `trình yêu cầu được ràng buộc`, `lưu bền`, `I/O của nhà cung cấp`, `khóa
+lũy đẳng suy ra`, `bề mặt trình bày` thành câu dễ hiểu nhưng giữ nguyên quyền sở hữu và bảo mật ranh
+giới. Không thay đổi nguồn FE02/FE04/FE07/FE08/FE09/FE11/SYSTEM, cặp type/mẫu hoặc quy tắc loại trừ
+dữ liệu nhạy cảm.
 
-- [ ] **Step 2: Chỉnh PLAN, TASKS và TEST_PLAN**
+- [ ] **Bước 2: Chỉnh PLAN, TASKS và TEST_PLAN**
 
-Đổi `fan-in`, `shell`, `wave`, `harness`, `closeout`, `exact-head` trong văn xuôi; giữ nguyên tên task, mã slice lịch sử khi chúng là định danh được tham chiếu, hash, CI/Azure run và kết quả H2/H3.
+Đổi `fan-in`, `shell`, `wave`, `harness`, `closeout`, `exact-head` trong văn xuôi; giữ nguyên tên
+Nhiệm vụ, mã phần việc lịch sử khi chúng là định danh được tham chiếu, hash, CI/Azure lượt chạy và
+kết quả H2/H3.
 
-- [ ] **Step 3: Chỉnh CHANGELOG và thêm ghi chú văn phong**
+- [ ] **Bước 3: Chỉnh CHANGELOG và thêm ghi chú văn phong**
 
 Làm tự nhiên phần mô tả lịch sử nhưng không đổi thứ tự hoặc nội dung sự kiện; thêm mục ngày `2026-08-01` xác nhận không đổi hành vi.
 
-- [ ] **Step 4: Kiểm tra riêng FE10 và commit**
+- [ ] **Bước 4: Kiểm tra riêng FE10 và bản ghi Git**
 
-Run:
+Chạy:
 
 ```powershell
 rg -n -i --glob '*.md' '\bslice\b|supersede|Re-review|Product diff|\bwave\b|\bcloseout\b|exact-head|lát cắt|chính tắc|có thẩm quyền|bề mặt|\benvelope\b|\bprojection\b|\bmutation\b|\bharness\b|\bfan-in\b' .sdd/specs/feat-notification-management
@@ -198,35 +214,38 @@ git add .sdd/specs/feat-notification-management
 git commit -m "docs: naturalize Vietnamese wording in FE10 docs"
 ```
 
-Expected: không còn kết quả văn xuôi chưa giải thích; diff check thoát `0`; commit chỉ chứa sáu tệp FE10.
+mong đợi: không còn kết quả văn xuôi chưa giải thích; khác biệt kiểm tra thoát `0`; bản ghi Git chỉ
+chứa sáu tệp FE10.
 
 ---
 
-### Task 5: Làm tự nhiên văn phong FE12
+### Nhiệm vụ 5: Làm tự nhiên văn phong FE12
 
-**Files:**
-- Modify: `.sdd/specs/feat-reporting-statistics/CONTEXT.md`
-- Modify: `.sdd/specs/feat-reporting-statistics/SPEC.md`
-- Modify: `.sdd/specs/feat-reporting-statistics/PLAN.md`
-- Modify: `.sdd/specs/feat-reporting-statistics/TASKS.md`
-- Modify: `.sdd/specs/feat-reporting-statistics/TEST_PLAN.md`
-- Modify: `.sdd/specs/feat-reporting-statistics/CHANGELOG.md`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-reporting-statistics/CONTEXT.md`
+- Sửa đổi: `.sdd/specs/feat-reporting-statistics/SPEC.md`
+- Sửa đổi: `.sdd/specs/feat-reporting-statistics/PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-reporting-statistics/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-reporting-statistics/TEST_PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-reporting-statistics/CHANGELOG.md`
 
-**Interfaces:**
-- Consumes: invariant Task 1 và thuật ngữ trạng thái mượn từ FE07.
-- Produces: sáu tài liệu FE12 diễn đạt rõ báo cáo, chỉ số, cấu trúc phản hồi, bộ lọc và dữ liệu hiển thị.
+**Giao diện:**
+- đầu vào: điều kiện bất biến Nhiệm vụ 1 và thuật ngữ trạng thái mượn từ FE07.
+- đầu ra: sáu tài liệu FE12 diễn đạt rõ báo cáo, chỉ số, cấu trúc phản hồi, bộ lọc và dữ liệu hiển thị.
 
-- [ ] **Step 1: Chỉnh SPEC và CONTEXT**
+- [ ] **Bước 1: Chỉnh SPEC và CONTEXT**
 
-Giữ luồng nghiệp vụ hiện đã dễ đọc; chỉ sửa các cụm `nguồn chính tắc`, `có thẩm quyền`, `runtime projection` và trạng thái hoàn thành Anh-Việt. Không thay đổi allowlist query, KPI, công thức, phạm vi thời gian hoặc phân quyền.
+Giữ luồng nghiệp vụ hiện đã dễ đọc; chỉ sửa các cụm `nguồn chính tắc`, `có thẩm quyền`, `thời gian chạy
+dữ liệu chiếu` và trạng thái hoàn thành Anh-Việt. Không thay đổi danh sách cho phép truy vấn, KPI, công
+thức, phạm vi thời gian hoặc phân quyền.
 
-- [ ] **Step 2: Chỉnh PLAN, TASKS, TEST_PLAN và CHANGELOG**
+- [ ] **Bước 2: Chỉnh PLAN, TASKS, TEST_PLAN và CHANGELOG**
 
 Viết lại các câu như `Re-review lát cắt base lịch sử đã được supersede bởi closeout exact-head`; thay `envelope`, `wave`, `harness`, `artifact`, `authentication-shell` trong văn xuôi; giữ nguyên dữ kiện. Thêm mục văn phong ngày `2026-08-01` vào CHANGELOG.
 
-- [ ] **Step 3: Kiểm tra và commit FE12**
+- [ ] **Bước 3: Kiểm tra và bản ghi Git FE12**
 
-Run:
+Chạy:
 
 ```powershell
 rg -n -i --glob '*.md' '\bslice\b|supersede|Re-review|Product diff|\bwave\b|\bcloseout\b|exact-head|lát cắt|chính tắc|có thẩm quyền|bề mặt|\benvelope\b|\bprojection\b|\bmutation\b|\bharness\b|\bartifact\b' .sdd/specs/feat-reporting-statistics
@@ -235,23 +254,24 @@ git add .sdd/specs/feat-reporting-statistics
 git commit -m "docs: naturalize Vietnamese wording in FE12 docs"
 ```
 
-Expected: không còn kết quả văn xuôi chưa giải thích; diff check thoát `0`; commit chỉ chứa sáu tệp FE12.
+mong đợi: không còn kết quả văn xuôi chưa giải thích; khác biệt kiểm tra thoát `0`; bản ghi Git chỉ
+chứa sáu tệp FE12.
 
 ---
 
-### Task 6: Rà soát chéo và xác minh invariant
+### Nhiệm vụ 6: Rà soát chéo và xác minh điều kiện bất biến
 
-**Files:**
-- Verify: toàn bộ 24 tệp tài liệu đã chỉnh.
-- Modify only if verification finds a wording inconsistency: đúng tệp trong phạm vi 24 tệp.
+**Tệp:**
+- xác minh: toàn bộ 24 tệp tài liệu đã chỉnh.
+- chỉ sửa nếu xác minh finds a wording inconsistency: đúng tệp trong phạm vi 24 tệp.
 
-**Interfaces:**
-- Consumes: bốn commit FE07/FE08/FE10/FE12.
-- Produces: diff cuối đã xác minh, không mất literal hoặc traceability và không còn dấu vết văn phong chưa giải thích.
+**Giao diện:**
+- đầu vào: bốn bản ghi Git FE07/FE08/FE10/FE12.
+- đầu ra: khác biệt cuối đã xác minh, không mất giá trị nguyên văn hoặc khả năng truy vết và không còn dấu vết văn phong chưa giải thích.
 
-- [ ] **Step 1: So sánh các invariant với baseline**
+- [ ] **Bước 1: So sánh các điều kiện bất biến với mốc cơ sở**
 
-Run this PowerShell script from the worktree root:
+Chạy tập lệnh PowerShell này từ gốc cây làm việc:
 
 ```powershell
 $baseline = '194dcf63768b87657c1d9c49fb064bbcc5d8e5d8'
@@ -298,11 +318,11 @@ foreach ($dir in $dirs) {
 'INVARIANTS_PASS'
 ```
 
-Expected: `INVARIANTS_PASS` và không có exception.
+mong đợi: `INVARIANTS_PASS` và không có exception.
 
-- [ ] **Step 2: Chạy quét văn phong cuối**
+- [ ] **Bước 2: Chạy quét văn phong cuối**
 
-Run:
+Chạy:
 
 ```powershell
 $dirs = @(
@@ -314,11 +334,12 @@ $dirs = @(
 rg -n -i --glob '*.md' 'Core owner|\bslice\b|supersede|Re-review|Product diff|\bwave\b|\bcloseout\b|exact-head|lát cắt|chính tắc|có thẩm quyền|bề mặt|\benvelope\b|\bprojection\b|\bmutation\b|\bharness\b|\bartifact\b|\bfan-in\b' $dirs
 ```
 
-Expected: mọi kết quả còn lại đều được kiểm tra thủ công và chỉ là tên tệp, literal, định danh lịch sử hoặc thuật ngữ được giữ có chủ ý; không có câu văn xuôi trộn Anh-Việt chưa xử lý.
+mong đợi: mọi kết quả còn lại đều được kiểm tra thủ công và chỉ là tên tệp, giá trị nguyên văn, định
+danh lịch sử hoặc thuật ngữ được giữ có chủ ý; không có câu văn xuôi trộn Anh-Việt chưa xử lý.
 
-- [ ] **Step 3: Chạy các cổng repository**
+- [ ] **Bước 3: Chạy các cổng kho mã nguồn**
 
-Run:
+Chạy:
 
 ```powershell
 git diff --check origin/main...HEAD
@@ -327,28 +348,29 @@ git status --short
 git diff --name-only origin/main...HEAD
 ```
 
-Expected:
+Dự kiến:
 
 - `git diff --check` thoát `0`.
-- Traceability: FE07 `44/44`, FE08 `39/39`, FE10 `20/20`, FE12 `15/15` và không chức năng nào vi phạm ngưỡng.
-- Worktree sạch sau các commit.
-- Danh sách thay đổi chỉ gồm 24 tệp trong phạm vi cùng design/plan của đợt chỉnh văn phong.
+- khả năng truy vết: FE07 `44/44`, FE08 `39/39`, FE10 `20/20`, FE12 `15/15` và không chức năng nào vi phạm ngưỡng.
+- cây làm việc Git sạch sau các bản ghi Git.
+- Danh sách thay đổi chỉ gồm 24 tệp trong phạm vi cùng thiết kế/kế hoạch của đợt chỉnh văn phong.
 
-- [ ] **Step 4: Rà soát diff cuối theo semantics**
+- [ ] **Bước 4: Rà soát khác biệt cuối theo ngữ nghĩa**
 
-Run:
+Chạy:
 
 ```powershell
 git diff --word-diff=porcelain origin/main...HEAD -- .sdd/specs/feat-borrowing-management .sdd/specs/feat-reservation-management .sdd/specs/feat-notification-management .sdd/specs/feat-reporting-statistics
 ```
 
-Expected: mọi thay đổi là cách diễn đạt; không có ID, literal kỹ thuật, trạng thái hoặc bằng chứng bị xóa/đổi.
+mong đợi: mọi thay đổi là cách diễn đạt; không có ID, giá trị nguyên văn kỹ thuật, trạng thái hoặc
+bằng chứng bị xóa/đổi.
 
-- [ ] **Step 5: Commit các chỉnh sửa nhất quán cuối nếu có**
+- [ ] **Bước 5: bản ghi Git các chỉnh sửa nhất quán cuối nếu có**
 
 ```powershell
 git add .sdd/specs/feat-borrowing-management .sdd/specs/feat-reservation-management .sdd/specs/feat-notification-management .sdd/specs/feat-reporting-statistics
 git commit -m "docs: align Vietnamese terminology across FE07 FE08 FE10 FE12"
 ```
 
-Nếu không có thay đổi sau rà soát chéo, bỏ qua commit này và ghi rõ không cần commit bổ sung.
+Nếu không có thay đổi sau rà soát chéo, bỏ qua bản ghi Git này và ghi rõ không cần bản ghi Git bổ sung.

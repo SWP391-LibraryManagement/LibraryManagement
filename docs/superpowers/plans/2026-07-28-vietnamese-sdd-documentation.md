@@ -1,34 +1,41 @@
-# Vietnamese SDD Documentation Implementation Plan
+# Kế hoạch triển khai tài liệu SDD tiếng Việt
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Đối với nhân viên đại lý:** SUB-SKILL BẮT BUỘC: Sử dụng siêu năng lực:phát triển theo định hướng phụ (được khuyến nghị) hoặc siêu năng lực:thực hiện các kế hoạch để triển khai kế hoạch này theo từng nhiệm vụ. Các bước sử dụng cú pháp hộp kiểm (`- [ ]`) để theo dõi.
 
-**Goal:** Việt hóa toàn bộ 149 file Markdown trong `.sdd/` mà không thay đổi yêu cầu, thiết kế, dữ kiện lịch sử, cấu trúc Markdown hoặc định danh truy vết.
+**Mục tiêu:** Việt hóa toàn bộ 149 tệp Markdown trong `.sdd/` mà không thay đổi yêu cầu, thiết kế, dữ
+kiện lịch sử, cấu trúc Markdown hoặc định danh truy vết.
 
-**Architecture:** Thực hiện theo năm lớp đã được duyệt: nền tảng/ràng buộc, 12 bộ tài liệu feature, RFC/ADR, review lịch sử, rồi skill và kiểm tra toàn cục. Mỗi feature hoặc nhóm review là một đơn vị dịch, kiểm chứng và commit độc lập; mọi invariant kỹ thuật được so sánh trực tiếp với commit nguồn cố định `7bf76b5`.
+**Kiến trúc:** Thực hiện theo năm lớp đã được duyệt: nền tảng/ràng buộc, 12 bộ tài liệu chức
+năng, RFC/ADR, rà soát lịch sử, rồi kỹ năng và kiểm tra toàn cục. Mỗi chức năng hoặc nhóm rà soát là một
+đơn vị dịch, kiểm chứng và bản ghi Git độc lập; mọi điều kiện bất biến kỹ thuật được so sánh trực
+tiếp với bản ghi Git
+nguồn cố định `7bf76b5`.
 
-**Tech Stack:** Markdown, Git, PowerShell 7/Windows PowerShell, Node.js, `rg`, và script traceability hiện có của repository.
+**Bộ công nghệ:** Markdown, Git, PowerShell 7/Windows PowerShell, Node.js, `rg` và tập lệnh khả năng
+truy vết hiện có của kho mã nguồn.
 
-## Global Constraints
+## Ràng buộc toàn cầu
 
-- Chỉ dịch nội dung ngôn ngữ tự nhiên; không thay đổi business rule, actor permission, acceptance criterion, schema, API contract hoặc hành vi phần mềm.
-- Giữ nguyên mọi mã `FE*`, `BR-*`, `FR-*`, `AC-*`, `NFR-*`, `DEC-*`, `ADR-*`, `TD-*`, `G*`, `B*`, mã test và mã lỗi.
-- Giữ nguyên tên file/thư mục, đích liên kết, URL, endpoint, field, enum, code fence, inline code kỹ thuật, JSON, SQL, lệnh, phiên bản, ngày, commit, PR và CI run.
-- Dịch thống nhất: Guest → Khách, Member → Thành viên, Librarian → Thủ thư, Admin/Administrator → Quản trị viên; enum như `MEMBER` vẫn giữ nguyên.
+- Chỉ dịch nội dung ngôn ngữ tự nhiên; không thay đổi quy tắc nghiệp vụ, quyền tác nhân, tiêu chí chấp nhận, lược đồ, hợp đồng API hoặc hành vi phần mềm.
+- Giữ nguyên mọi mã `FE*`, `BR-*`, `FR-*`, `AC-*`, `NFR-*`, `DEC-*`, `ADR-*`, `TD-*`, `G*`, `B*`, mã kiểm thử và mã lỗi.
+- Giữ nguyên tên tệp/thư mục, đích liên kết, URL, điểm cuối, trường, giá trị liệt kê, hàng rào mã, mã nội tuyến kỹ thuật, JSON, SQL, lệnh, phiên bản, ngày, bản ghi Git, PR và CI lượt chạy.
+- Dịch thống nhất: khách → Khách, thành viên → Thành viên, thủ thư → Thủ thư, quản trị viên → Quản trị viên; giá trị liệt kê như `MEMBER` vẫn giữ nguyên.
 - Không đổi `Version`, `Last Updated` hoặc trạng thái phê duyệt chỉ vì thao tác dịch; chỉ dịch nhãn và diễn giải tương đương.
 - Mọi chỉnh sửa tài liệu phải dùng `apply_patch`; không dùng script để tự động dịch hoặc ghi đè hàng loạt.
-- Nếu một câu mơ hồ có thể làm thay đổi nghiệp vụ, phân quyền, an toàn, API, dữ liệu hoặc tiêu chí chấp nhận, dừng tại file/mục đó và xin người dùng xác nhận.
+- Nếu một câu mơ hồ có thể làm thay đổi nghiệp vụ, phân quyền, an toàn, API, dữ liệu hoặc tiêu chí chấp nhận, dừng tại tệp/mục đó và xin người dùng xác nhận.
 - Toàn bộ công việc thực hiện trên nhánh `docs/vietnamese-sdd`; không tạo hoặc đổi sang nhánh có tiền tố khác.
-- Goal chỉ được đánh dấu hoàn thành sau khi cả 149 file đã dịch, toàn bộ kiểm tra tự động đạt và phần rủi ro cao đã được rà soát thủ công theo Task 20.
-- Chỉ stage các file được liệt kê trong task hiện tại. Không stage hoặc sửa code ứng dụng.
-- Mỗi task phải vượt qua kiểm tra invariant, quét tiếng Anh còn sót, `git diff --check`, đọc diff và traceability trước khi commit.
+- Mục tiêu chỉ được đánh dấu hoàn thành sau khi cả 149 tệp đã dịch, toàn bộ kiểm tra tự động đạt và phần rủi ro cao đã được rà soát thủ công theo Nhiệm vụ 20.
+- Chỉ đưa vào vùng chờ Git các tệp được liệt kê trong Nhiệm vụ hiện tại. Không đưa vào vùng chờ hoặc sửa mã nguồn ứng dụng.
+- Mỗi Nhiệm vụ phải vượt qua kiểm tra điều kiện bất biến, quét tiếng Anh còn sót, `git diff --check`, đọc khác biệt và khả năng truy vết trước khi bản ghi Git.
 
 ---
 
-## Shared Verification Interfaces
+## Giao diện xác minh được chia sẻ
 
-### Session-local invariant checker
+### Trình kiểm tra bất biến phiên cục bộ
 
-Trong mỗi phiên PowerShell mới, định nghĩa hàm sau trước khi chạy task đầu tiên. Hàm không tạo file và so sánh bản hiện tại với commit nguồn cố định `7bf76b5`.
+Trong mỗi phiên PowerShell mới, định nghĩa hàm sau trước khi chạy Nhiệm vụ đầu tiên. Hàm không tạo
+tệp và so sánh bản hiện tại với bản ghi Git nguồn cố định `7bf76b5`.
 
 ```powershell
 function Test-SddTranslationInvariant {
@@ -41,13 +48,15 @@ function Test-SddTranslationInvariant {
 }
 ```
 
-**Consumes:** Một mảng đường dẫn repository-relative tới các file đã dịch.
+**đầu vào:** Một mảng đường dẫn kho mã nguồn-relative tới các tệp đã dịch.
 
-**Produces:** `PASS: N files preserved` khi số định danh, inline code, đích liên kết, code fence và số liệu khớp với commit `7bf76b5`; exit khác 0 kèm tên file/nhóm invariant khi có sai lệch.
+**đầu ra:** `PASS: N files preserved` khi số định danh, mã nội tuyến, đích liên kết, hàng rào mã và
+số liệu khớp với bản ghi Git `7bf76b5`; exit khác 0 kèm tên tệp/nhóm điều kiện bất biến khi có sai
+lệch.
 
-### English residue scan
+### Quét dư lượng tiếng Anh
 
-Sau mỗi task, chạy lệnh sau với đúng mảng `$paths` của task:
+Sau mỗi Nhiệm vụ, chạy lệnh sau với đúng mảng `$paths` của Nhiệm vụ:
 
 ```powershell
 $pattern = 'Feature Overview|Business Context|Goal / Outcome|Actors and Permissions|Preconditions|Main Flows|Business Rules|Functional Requirements|Acceptance Criteria|Edge Cases|Out of Scope|Non-Functional Requirements|Dependencies|Open Questions|Traceability|Record of Changes|Change Description|Last Updated|Implementation State'
@@ -55,11 +64,13 @@ rg -n -i $pattern -- $paths
 if ($LASTEXITCODE -gt 1) { throw "English residue scan failed to run." }
 ```
 
-Kết quả mong đợi: không còn tiêu đề hoặc nhãn tiếng Anh chưa được cho phép. Mọi hit nằm trong code fence, inline code, enum, tên riêng hoặc dữ kiện lịch sử phải được đọc trực tiếp và xác nhận là nội dung được phép giữ nguyên.
+Kết quả mong đợi: không còn tiêu đề hoặc nhãn tiếng Anh chưa được cho phép. Mọi hit nằm trong hàng
+rào mã, mã nội tuyến, giá trị liệt kê, tên riêng hoặc dữ kiện lịch sử phải được đọc trực tiếp và xác
+nhận là nội dung được phép giữ nguyên.
 
-### Common completion gate
+### Cổng hoàn thiện chung
 
-Mỗi task phải chạy các lệnh sau sau khi invariant và residue scan đạt yêu cầu:
+Mỗi Nhiệm vụ phải chạy các lệnh sau sau khi điều kiện bất biến và quét phần tiếng Anh còn sót đạt yêu cầu:
 
 ```powershell
 git diff --check -- $paths
@@ -69,33 +80,36 @@ npm run trace:enforce
 if ($LASTEXITCODE -ne 0) { throw "Traceability enforcement failed." }
 ```
 
-Kết quả mong đợi: không có lỗi whitespace hoặc conflict marker; diff chỉ là bản dịch đúng phạm vi; traceability đạt ngưỡng hiện hành cho toàn bộ FE01-FE12.
+Kết quả mong đợi: không có lỗi whitespace hoặc conflict dấu nhận diện; khác biệt chỉ là bản dịch đúng phạm vi;
+khả năng truy vết đạt ngưỡng hiện hành cho toàn bộ FE01-FE12.
 
 ---
 
-### Task 1: Việt hóa nền tảng và constraints
+### Nhiệm vụ 1: Việt hóa nền tảng và ràng buộc
 
-**Files:**
-- Modify: `.sdd/constitution.md`
-- Modify: `.sdd/shared_context.md`
-- Modify: `.sdd/test-plan.md`
-- Modify: `.sdd/constraints/business.md`
-- Modify: `.sdd/constraints/global.md`
-- Modify: `.sdd/constraints/safety.md`
+**Tệp:**
+- Sửa đổi: `.sdd/constitution.md`
+- Sửa đổi: `.sdd/shared_context.md`
+- Sửa đổi: `.sdd/test-plan.md`
+- Sửa đổi: `.sdd/constraints/business.md`
+- Sửa đổi: `.sdd/constraints/global.md`
+- Sửa đổi: `.sdd/constraints/safety.md`
 
-**Interfaces:**
-- Consumes: Hợp đồng dịch và bảng thuật ngữ trong `docs/superpowers/specs/2026-07-28-vietnamese-sdd-documentation-design.md`.
-- Produces: Bộ thuật ngữ tiếng Việt chuẩn cho mọi task sau, đồng thời bảo toàn toàn bộ constraint ID và quyết định baseline.
+**Giao diện:**
+- đầu vào: Hợp đồng dịch và bảng thuật ngữ trong `docs/superpowers/specs/2026-07-28-vietnamese-sdd-documentation-design.md`.
+- đầu ra: Bộ thuật ngữ tiếng Việt chuẩn cho mọi Nhiệm vụ sau, đồng thời bảo toàn toàn bộ ràng buộc ID và quyết định mốc cơ sở.
 
-- [ ] **Step 1: Đọc sáu file nguồn và đối chiếu thuật ngữ chung**
+- [ ] **Bước 1: Đọc sáu tệp nguồn và đối chiếu thuật ngữ chung**
 
-Đọc theo thứ tự constitution → shared context → test plan → global → business → safety. Ghi nhận các thuật ngữ actor, module, business rule, security rule và workflow phải dùng thống nhất.
+Đọc theo thứ tự constitution → shared context → kiểm thử kế hoạch → global → nghiệp vụ → safety. Ghi nhận các
+thuật ngữ tác nhân, module, quy tắc nghiệp vụ, bảo mật quy tắc và quy trình phải dùng thống nhất.
 
-- [ ] **Step 2: Dịch nội dung bằng `apply_patch`**
+- [ ] **Bước 2: Dịch nội dung bằng `apply_patch`**
 
-Dịch toàn bộ prose, heading và nhãn bảng; giữ nguyên stack, ID, enum, đường dẫn, code block, số liệu và metadata theo Global Constraints.
+Dịch toàn bộ văn xuôi, heading và nhãn bảng; giữ nguyên bộ công nghệ, ID, giá trị liệt kê, đường
+dẫn, mã nguồn block, số liệu và siêu dữ liệu theo Global ràng buộc.
 
-- [ ] **Step 3: Chạy kiểm tra invariant và tiếng Anh còn sót**
+- [ ] **Bước 3: Chạy kiểm tra điều kiện bất biến và tiếng Anh còn sót**
 
 ```powershell
 $paths = @(
@@ -105,593 +119,635 @@ $paths = @(
 Test-SddTranslationInvariant -Paths $paths
 ```
 
-Chạy English residue scan với `$paths`; đọc từng hit và sửa mọi heading/label tiếng Anh không thuộc danh sách được giữ nguyên.
+Chạy English quét phần tiếng Anh còn sót với `$paths`; đọc từng hit và sửa mọi heading/label tiếng
+Anh không thuộc danh sách được giữ nguyên.
 
-- [ ] **Step 4: Chạy completion gate và đọc toàn bộ diff**
+- [ ] **Bước 4: Chạy cổng hoàn tất và đọc toàn bộ khác biệt**
 
-Chạy Common completion gate với `$paths`. Đặc biệt kiểm tra các câu chứa phủ định, số 5, 14 ngày, 5.000 VND, actor permission và `SAFE-*`.
+Chạy cổng hoàn tất dùng chung với `$paths`. Đặc biệt kiểm tra các câu chứa phủ định, số 5, 14 ngày,
+5.000 VND, tác nhân permission và `SAFE-*`.
 
-- [ ] **Step 5: Commit lớp nền tảng**
+- [ ] **Bước 5: bản ghi Git lớp nền tảng**
 
 ```powershell
 git add -- .sdd/constitution.md .sdd/shared_context.md .sdd/test-plan.md .sdd/constraints/business.md .sdd/constraints/global.md .sdd/constraints/safety.md
 git commit -m "docs: translate SDD foundation and constraints"
 ```
 
-### Task 2: Việt hóa template và FE01 Public Browse
+### Nhiệm vụ 2: Việt hóa mẫu và FE01 Public Browse
 
-**Files:**
-- Modify: `.sdd/specs/_template.md`
-- Modify: `.sdd/specs/feat-public-browse/CONTEXT.md`
-- Modify: `.sdd/specs/feat-public-browse/SPEC.md`
-- Modify: `.sdd/specs/feat-public-browse/PLAN.md`
-- Modify: `.sdd/specs/feat-public-browse/TASKS.md`
-- Modify: `.sdd/specs/feat-public-browse/TEST_PLAN.md`
-- Modify: `.sdd/specs/feat-public-browse/CHANGELOG.md`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/_template.md`
+- Sửa đổi: `.sdd/specs/feat-public-browse/CONTEXT.md`
+- Sửa đổi: `.sdd/specs/feat-public-browse/SPEC.md`
+- Sửa đổi: `.sdd/specs/feat-public-browse/PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-public-browse/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-public-browse/TEST_PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-public-browse/CHANGELOG.md`
 
-**Interfaces:**
-- Consumes: Thuật ngữ lớp nền tảng từ Task 1 và feature contract FE01 trong sáu file nguồn.
-- Produces: Template tiếng Việt và bộ tài liệu FE01 đồng nhất, giữ nguyên `FE01`, các ID, API catalog và public access boundaries.
+**Giao diện:**
+- đầu vào: Thuật ngữ lớp nền tảng từ Nhiệm vụ 1 và chức năng hợp đồng FE01 trong sáu tệp nguồn.
+- đầu ra: mẫu tiếng Việt và bộ tài liệu FE01 đồng nhất, giữ nguyên `FE01`, các ID, API danh mục và public access boundaries.
 
-- [ ] **Step 1: Đọc template và FE01 theo thứ tự tài liệu nguồn**
+- [ ] **Bước 1: Đọc mẫu và FE01 theo thứ tự tài liệu nguồn**
 
 Đọc `_template.md`, rồi `CONTEXT.md` → `SPEC.md` → `PLAN.md` → `TASKS.md` → `TEST_PLAN.md` → `CHANGELOG.md`.
 
-- [ ] **Step 2: Dịch template và FE01 bằng `apply_patch`**
+- [ ] **Bước 2: Dịch mẫu và FE01 bằng `apply_patch`**
 
-Dùng “Duyệt/Xem công khai” cho Public Browse khi là prose; giữ nguyên tên folder, route, endpoint, response field, ID và inline code.
+Dùng “Duyệt/Xem công khai” cho Public Browse khi là văn xuôi; giữ nguyên tên folder, tuyến, điểm
+cuối, phản hồi trường, ID và mã nội tuyến.
 
-- [ ] **Step 3: Chạy invariant và residue scan**
+- [ ] **Bước 3: Chạy điều kiện bất biến và quét phần tiếng Anh còn sót**
 
 ```powershell
 $paths = @('.sdd/specs/_template.md') + (Get-ChildItem '.sdd/specs/feat-public-browse' -File -Filter '*.md' | ForEach-Object { $_.FullName.Substring((Resolve-Path '.').Path.Length + 1).Replace('\','/') })
 Test-SddTranslationInvariant -Paths $paths
 ```
 
-Chạy English residue scan với `$paths`; xác nhận các literal FE01 được giữ nguyên.
+Chạy English quét phần tiếng Anh còn sót với `$paths`; xác nhận các giá trị nguyên văn FE01 được giữ nguyên.
 
-- [ ] **Step 4: Chạy completion gate và đối chiếu chuỗi truy vết**
+- [ ] **Bước 4: Chạy cổng hoàn tất và đối chiếu chuỗi truy vết**
 
-Chạy Common completion gate với `$paths`. Đọc theo chuỗi `SPEC.md` → `PLAN.md` → `TASKS.md` → `TEST_PLAN.md` để xác nhận cùng một yêu cầu có cùng nghĩa.
+Chạy cổng hoàn tất dùng chung với `$paths`. Đọc theo chuỗi `SPEC.md` → `PLAN.md` → `TASKS.md` →
+`TEST_PLAN.md` để xác nhận cùng một yêu cầu có cùng nghĩa.
 
-- [ ] **Step 5: Commit template và FE01**
+- [ ] **Bước 5: bản ghi Git mẫu và FE01**
 
 ```powershell
 git add -- .sdd/specs/_template.md .sdd/specs/feat-public-browse
 git commit -m "docs: translate FE01 SDD package"
 ```
 
-### Task 3: Việt hóa FE02 Authentication
+### Nhiệm vụ 3: Việt hóa FE02 xác thực
 
-**Files:**
-- Modify: `.sdd/specs/feat-auth/CONTEXT.md`
-- Modify: `.sdd/specs/feat-auth/SPEC.md`
-- Modify: `.sdd/specs/feat-auth/PLAN.md`
-- Modify: `.sdd/specs/feat-auth/TASKS.md`
-- Modify: `.sdd/specs/feat-auth/TEST_PLAN.md`
-- Modify: `.sdd/specs/feat-auth/CHANGELOG.md`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-auth/CONTEXT.md`
+- Sửa đổi: `.sdd/specs/feat-auth/SPEC.md`
+- Sửa đổi: `.sdd/specs/feat-auth/PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-auth/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-auth/TEST_PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-auth/CHANGELOG.md`
 
-**Interfaces:**
-- Consumes: Thuật ngữ nền tảng và auth contract tại commit nguồn `7bf76b5`.
-- Produces: Bộ FE02 tiếng Việt bảo toàn OTP, token, email verification, password reset, role và security boundaries.
+**Giao diện:**
+- đầu vào: Thuật ngữ nền tảng và xác thực hợp đồng tại bản ghi Git nguồn `7bf76b5`.
+- đầu ra: Bộ FE02 tiếng Việt bảo toàn OTP, token, email xác minh, mật khẩu đặt lại, vai trò và bảo mật boundaries.
 
-- [ ] **Step 1: Đọc FE02 theo chuỗi nguồn-triển khai-kiểm thử**
+- [ ] **Bước 1: Đọc FE02 theo chuỗi nguồn-triển khai-kiểm thử**
 
-Đọc `CONTEXT.md` → `SPEC.md` → `PLAN.md` → `TASKS.md` → `TEST_PLAN.md` → `CHANGELOG.md`, tập trung vào phủ định, TTL, attempt limit và transport/security literal.
+Đọc `CONTEXT.md` → `SPEC.md` → `PLAN.md` → `TASKS.md` → `TEST_PLAN.md` → `CHANGELOG.md`, tập trung
+vào phủ định, TTL, attempt limit và transport/bảo mật giá trị nguyên văn.
 
-- [ ] **Step 2: Dịch sáu file FE02 bằng `apply_patch`**
+- [ ] **Bước 2: Dịch sáu tệp FE02 bằng `apply_patch`**
 
-Dịch Authentication thành “Xác thực” trong prose; giữ nguyên tên endpoint, token type, env var, enum, error code và payload field.
+Dịch xác thực thành “Xác thực” trong văn xuôi; giữ nguyên tên điểm cuối, token type, env var, giá
+trị liệt kê, error mã nguồn và dữ liệu gửi trường.
 
-- [ ] **Step 3: Chạy invariant và residue scan**
+- [ ] **Bước 3: Chạy điều kiện bất biến và quét phần tiếng Anh còn sót**
 
 ```powershell
 $paths = Get-ChildItem '.sdd/specs/feat-auth' -File -Filter '*.md' | ForEach-Object { $_.FullName.Substring((Resolve-Path '.').Path.Length + 1).Replace('\','/') }
 Test-SddTranslationInvariant -Paths $paths
 ```
 
-Chạy English residue scan với `$paths`; đọc kỹ các hit chứa Authentication, Verification, Login, Password và Account Setup.
+Chạy English quét phần tiếng Anh còn sót với `$paths`; đọc kỹ các hit chứa xác thực, xác minh, đăng
+nhập, mật khẩu và tài khoản Setup.
 
-- [ ] **Step 4: Chạy completion gate và kiểm tra security semantics**
+- [ ] **Bước 4: Chạy cổng hoàn tất và kiểm tra ngữ nghĩa bảo mật**
 
-Chạy Common completion gate. So sánh các yêu cầu FE02 về OTP, token hashing, expiry, generic error, role cardinality và verified email với bản nguồn.
+Chạy cổng hoàn tất dùng chung. So sánh các yêu cầu FE02 về OTP, token hashing, expiry, generic
+error, vai trò cardinality và verified email với bản nguồn.
 
-- [ ] **Step 5: Commit FE02**
+- [ ] **Bước 5: Cam kết FE02**
 
 ```powershell
 git add -- .sdd/specs/feat-auth
 git commit -m "docs: translate FE02 SDD package"
 ```
 
-### Task 4: Việt hóa FE03 User Profile
+### Nhiệm vụ 4: Việt hóa FE03 người dùng hồ sơ
 
-**Files:**
-- Modify: `.sdd/specs/feat-user-profile/CONTEXT.md`
-- Modify: `.sdd/specs/feat-user-profile/SPEC.md`
-- Modify: `.sdd/specs/feat-user-profile/PLAN.md`
-- Modify: `.sdd/specs/feat-user-profile/TASKS.md`
-- Modify: `.sdd/specs/feat-user-profile/TEST_PLAN.md`
-- Modify: `.sdd/specs/feat-user-profile/CHANGELOG.md`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-user-profile/CONTEXT.md`
+- Sửa đổi: `.sdd/specs/feat-user-profile/SPEC.md`
+- Sửa đổi: `.sdd/specs/feat-user-profile/PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-user-profile/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-user-profile/TEST_PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-user-profile/CHANGELOG.md`
 
-**Interfaces:**
-- Consumes: Thuật ngữ actor/account từ Tasks 1-3 và ownership contract FE03.
-- Produces: Bộ FE03 tiếng Việt giữ nguyên ranh giới dữ liệu cá nhân, validation và ownership với FE02/FE11.
+**Giao diện:**
+- đầu vào: Thuật ngữ tác nhân/tài khoản từ Tasks 1-3 và quyền sở hữu hợp đồng FE03.
+- đầu ra: Bộ FE03 tiếng Việt giữ nguyên ranh giới dữ liệu cá nhân, xác thực và quyền sở hữu với FE02/FE11.
 
-- [ ] **Step 1: Đọc đầy đủ sáu file FE03**
+- [ ] **Bước 1: Đọc đầy đủ sáu tệp FE03**
 
-Đánh dấu các câu nói về self-service field, email ownership, PII, authorization và validation.
+Đánh dấu các câu nói về tự phục vụ trường, email quyền sở hữu, PII, ủy quyền và xác thực.
 
-- [ ] **Step 2: Dịch FE03 bằng `apply_patch`**
+- [ ] **Bước 2: Dịch FE03 bằng `apply_patch`**
 
-Dùng “Hồ sơ người dùng” trong prose; giữ nguyên field `fullName`, `phone`, `address`, email, error code và route.
+Dùng “Hồ sơ người dùng” trong văn xuôi; giữ nguyên trường `fullName`, `phone`, `address`, email,
+error mã nguồn và tuyến.
 
-- [ ] **Step 3: Chạy invariant và residue scan**
+- [ ] **Bước 3: Chạy điều kiện bất biến và quét phần tiếng Anh còn sót**
 
 ```powershell
 $paths = Get-ChildItem '.sdd/specs/feat-user-profile' -File -Filter '*.md' | ForEach-Object { $_.FullName.Substring((Resolve-Path '.').Path.Length + 1).Replace('\','/') }
 Test-SddTranslationInvariant -Paths $paths
 ```
 
-Chạy residue scan và xác nhận mọi thuật ngữ tiếng Anh còn lại là field/literal được phép giữ nguyên.
+Chạy quét phần tiếng Anh còn sót và xác nhận mọi thuật ngữ tiếng Anh còn lại là trường/giá trị
+nguyên văn được phép giữ nguyên.
 
-- [ ] **Step 4: Chạy completion gate và kiểm tra ownership**
+- [ ] **Bước 4: Chạy cổng hoàn tất và kiểm tra quyền sở hữu**
 
-Chạy Common completion gate. Đối chiếu actor permission và ranh giới FE02/FE03/FE11 giữa SPEC, PLAN, TASKS và TEST_PLAN.
+Chạy cổng hoàn tất dùng chung. Đối chiếu tác nhân permission và ranh giới FE02/FE03/FE11 giữa SPEC,
+PLAN, TASKS và TEST_PLAN.
 
-- [ ] **Step 5: Commit FE03**
+- [ ] **Bước 5: Cam kết FE03**
 
 ```powershell
 git add -- .sdd/specs/feat-user-profile
 git commit -m "docs: translate FE03 SDD package"
 ```
 
-### Task 5: Việt hóa FE04 Membership Management
+### Nhiệm vụ 5: Việt hóa FE04 Membership quản lý
 
-**Files:**
-- Modify: `.sdd/specs/feat-membership-management/CONTEXT.md`
-- Modify: `.sdd/specs/feat-membership-management/SPEC.md`
-- Modify: `.sdd/specs/feat-membership-management/PLAN.md`
-- Modify: `.sdd/specs/feat-membership-management/TASKS.md`
-- Modify: `.sdd/specs/feat-membership-management/TEST_PLAN.md`
-- Modify: `.sdd/specs/feat-membership-management/CHANGELOG.md`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-membership-management/CONTEXT.md`
+- Sửa đổi: `.sdd/specs/feat-membership-management/SPEC.md`
+- Sửa đổi: `.sdd/specs/feat-membership-management/PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-membership-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-membership-management/TEST_PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-membership-management/CHANGELOG.md`
 
-**Interfaces:**
-- Consumes: Membership baseline trong shared context và business constraints.
-- Produces: Bộ FE04 tiếng Việt bảo toàn lifecycle đơn đăng ký, trạng thái, reviewer permission và integration với FE07/FE10.
+**Giao diện:**
+- Đầu vào: mốc cơ sở tư cách thành viên trong bối cảnh dùng chung và ràng buộc nghiệp vụ.
+- Đầu ra: bộ FE04 tiếng Việt bảo toàn vòng đời đơn đăng ký, trạng thái, quyền người rà soát và tích hợp với FE07/FE10.
 
-- [ ] **Step 1: Đọc sáu file FE04 và lập đối chiếu trạng thái**
+- [ ] **Bước 1: Đọc sáu tệp FE04 và lập đối chiếu trạng thái**
 
-Đọc toàn bộ các luồng apply, review, approve, reject và notification; giữ enum trạng thái làm mốc.
+Đọc toàn bộ các luồng nộp đơn, rà soát, phê duyệt, từ chối và thông báo; giữ giá trị liệt kê trạng thái làm mốc.
 
-- [ ] **Step 2: Dịch FE04 bằng `apply_patch`**
+- [ ] **Bước 2: Dịch FE04 bằng `apply_patch`**
 
-Dùng “Quản lý tư cách thành viên” hoặc “Quản lý đăng ký thành viên” đúng theo ngữ cảnh; giữ nguyên enum, entity, field, route và error code.
+Dùng “Quản lý tư cách thành viên” hoặc “Quản lý đăng ký thành viên” đúng theo ngữ cảnh; giữ nguyên
+giá trị liệt kê, thực thể, trường, tuyến và mã lỗi nguồn.
 
-- [ ] **Step 3: Chạy invariant và residue scan**
+- [ ] **Bước 3: Chạy điều kiện bất biến và quét phần tiếng Anh còn sót**
 
 ```powershell
 $paths = Get-ChildItem '.sdd/specs/feat-membership-management' -File -Filter '*.md' | ForEach-Object { $_.FullName.Substring((Resolve-Path '.').Path.Length + 1).Replace('\','/') }
 Test-SddTranslationInvariant -Paths $paths
 ```
 
-Chạy residue scan; kiểm tra mọi từ Approved/Pending/Rejected còn lại chỉ là enum hoặc literal.
+Chạy quét phần tiếng Anh còn sót; kiểm tra mọi từ Approved/đang chờ/Rejected còn lại chỉ là giá trị
+liệt kê hoặc giá trị nguyên văn.
 
-- [ ] **Step 4: Chạy completion gate và kiểm tra state transition**
+- [ ] **Bước 4: Chạy cổng hoàn tất và kiểm tra chuyển đổi trạng thái**
 
-Chạy Common completion gate. Đối chiếu điều kiện chuyển trạng thái, quyền Librarian/Admin và ảnh hưởng hạn mức mượn.
+Chạy cổng hoàn tất dùng chung. Đối chiếu điều kiện chuyển trạng thái, quyền thủ thư/quản trị viên và
+ảnh hưởng hạn mức mượn.
 
-- [ ] **Step 5: Commit FE04**
+- [ ] **Bước 5: Cam kết FE04**
 
 ```powershell
 git add -- .sdd/specs/feat-membership-management
 git commit -m "docs: translate FE04 SDD package"
 ```
 
-### Task 6: Việt hóa FE05 Book Management
+### Nhiệm vụ 6: Việt hóa FE05 Book quản lý
 
-**Files:**
-- Modify: `.sdd/specs/feat-book-management/CONTEXT.md`
-- Modify: `.sdd/specs/feat-book-management/SPEC.md`
-- Modify: `.sdd/specs/feat-book-management/PLAN.md`
-- Modify: `.sdd/specs/feat-book-management/TASKS.md`
-- Modify: `.sdd/specs/feat-book-management/TEST_PLAN.md`
-- Modify: `.sdd/specs/feat-book-management/CHANGELOG.md`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-book-management/CONTEXT.md`
+- Sửa đổi: `.sdd/specs/feat-book-management/SPEC.md`
+- Sửa đổi: `.sdd/specs/feat-book-management/PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-book-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-book-management/TEST_PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-book-management/CHANGELOG.md`
 
-**Interfaces:**
-- Consumes: FE05 contract tại commit nguồn `7bf76b5`, gồm các cập nhật book/category/author/publisher.
-- Produces: Bộ FE05 tiếng Việt bảo toàn mutation ownership, uniqueness, search/filter và API envelope.
+**Giao diện:**
+- đầu vào: FE05 hợp đồng tại bản ghi Git nguồn `7bf76b5`, gồm các cập nhật book/category/author/publisher.
+- đầu ra: Bộ FE05 tiếng Việt bảo toàn thao tác ghi quyền sở hữu, uniqueness, search/filter và API envelope.
 
-- [ ] **Step 1: Đọc FE05 và đánh dấu metadata kỹ thuật**
+- [ ] **Bước 1: Đọc FE05 và đánh dấu siêu dữ liệu kỹ thuật**
 
-Đọc sáu file theo thứ tự chuẩn; ghi nhận entity/field/endpoint và các quyết định vừa cập nhật trên remote.
+Đọc sáu tệp theo thứ tự chuẩn; ghi nhận entity/trường/điểm cuối và các quyết định vừa cập nhật trên từ xa.
 
-- [ ] **Step 2: Dịch FE05 bằng `apply_patch`**
+- [ ] **Bước 2: Dịch FE05 bằng `apply_patch`**
 
-Dùng “Quản lý sách” trong prose; phân biệt Sách với Bản sao sách và không dịch tên entity/field trong inline code.
+Dùng “Quản lý sách” trong văn xuôi; phân biệt Sách với Bản sao sách và không dịch tên entity/trường
+trong mã nội tuyến.
 
-- [ ] **Step 3: Chạy invariant và residue scan**
+- [ ] **Bước 3: Chạy điều kiện bất biến và quét phần tiếng Anh còn sót**
 
 ```powershell
 $paths = Get-ChildItem '.sdd/specs/feat-book-management' -File -Filter '*.md' | ForEach-Object { $_.FullName.Substring((Resolve-Path '.').Path.Length + 1).Replace('\','/') }
 Test-SddTranslationInvariant -Paths $paths
 ```
 
-Chạy residue scan; đọc các hit Book, Author, Publisher, Category để phân biệt prose với literal.
+Chạy quét phần tiếng Anh còn sót; đọc các hit Book, Author, Publisher, Category để phân biệt văn
+xuôi với giá trị nguyên văn.
 
-- [ ] **Step 4: Chạy completion gate và kiểm tra FE05/FE06 boundary**
+- [ ] **Bước 4: Chạy cổng hoàn tất và kiểm tra FE05/FE06 ranh giới**
 
-Chạy Common completion gate. Xác nhận metadata-level management không bị dịch thành copy-level inventory behavior.
+Chạy cổng hoàn tất dùng chung. Xác nhận siêu dữ liệu-level quản lý không bị dịch thành copy-level
+hành vi tồn kho.
 
-- [ ] **Step 5: Commit FE05**
+- [ ] **Bước 5: Cam kết FE05**
 
 ```powershell
 git add -- .sdd/specs/feat-book-management
 git commit -m "docs: translate FE05 SDD package"
 ```
 
-### Task 7: Việt hóa FE06 Inventory / Book Copy Management
+### Nhiệm vụ 7: Việt hóa FE06 Inventory / Book Copy quản lý
 
-**Files:**
-- Modify: `.sdd/specs/feat-inventory-book-copy/CONTEXT.md`
-- Modify: `.sdd/specs/feat-inventory-book-copy/SPEC.md`
-- Modify: `.sdd/specs/feat-inventory-book-copy/PLAN.md`
-- Modify: `.sdd/specs/feat-inventory-book-copy/TASKS.md`
-- Modify: `.sdd/specs/feat-inventory-book-copy/TEST_PLAN.md`
-- Modify: `.sdd/specs/feat-inventory-book-copy/CHANGELOG.md`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-inventory-book-copy/CONTEXT.md`
+- Sửa đổi: `.sdd/specs/feat-inventory-book-copy/SPEC.md`
+- Sửa đổi: `.sdd/specs/feat-inventory-book-copy/PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-inventory-book-copy/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-inventory-book-copy/TEST_PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-inventory-book-copy/CHANGELOG.md`
 
-**Interfaces:**
-- Consumes: Thuật ngữ Sách/Bản sao sách từ FE05 và inventory constraints FE06.
-- Produces: Bộ FE06 tiếng Việt giữ nguyên barcode, location, availability, copy status và transactional race rules.
+**Giao diện:**
+- đầu vào: Thuật ngữ Sách/Bản sao sách từ FE05 và inventory ràng buộc FE06.
+- đầu ra: Bộ FE06 tiếng Việt giữ nguyên barcode, location, tình trạng sẵn có, trạng thái bản sao và có tính giao dịch race quy tắc.
 
-- [ ] **Step 1: Đọc sáu file FE06 và lập bảng thuật ngữ copy-level**
+- [ ] **Bước 1: Đọc sáu tệp FE06 và lập bảng thuật ngữ copy-level**
 
-Phân biệt book metadata, physical copy, available quantity, copy status và inventory adjustment.
+Phân biệt book siêu dữ liệu, bản sao vật lý, số lượng có sẵn, trạng thái bản sao và điều chỉnh kho.
 
-- [ ] **Step 2: Dịch FE06 bằng `apply_patch`**
+- [ ] **Bước 2: Dịch FE06 bằng `apply_patch`**
 
-Dùng “Quản lý kho/Bản sao sách” phù hợp ngữ cảnh; giữ nguyên `BookCopies`, barcode, enum trạng thái và transaction terminology khi là literal kỹ thuật.
+Dùng “Quản lý kho/Bản sao sách” phù hợp ngữ cảnh; giữ nguyên `BookCopies`, barcode, giá trị liệt kê
+trạng thái và giao dịch terminology khi là giá trị nguyên văn kỹ thuật.
 
-- [ ] **Step 3: Chạy invariant và residue scan**
+- [ ] **Bước 3: Chạy điều kiện bất biến và quét phần tiếng Anh còn sót**
 
 ```powershell
 $paths = Get-ChildItem '.sdd/specs/feat-inventory-book-copy' -File -Filter '*.md' | ForEach-Object { $_.FullName.Substring((Resolve-Path '.').Path.Length + 1).Replace('\','/') }
 Test-SddTranslationInvariant -Paths $paths
 ```
 
-Chạy residue scan và xác nhận các từ Inventory/Copy còn lại chỉ thuộc tên kỹ thuật.
+Chạy quét phần tiếng Anh còn sót và xác nhận các từ Inventory/Copy còn lại chỉ thuộc tên kỹ thuật.
 
-- [ ] **Step 4: Chạy completion gate và kiểm tra concurrency semantics**
+- [ ] **Bước 4: Chạy cổng hoàn tất và kiểm tra concurrency ngữ nghĩa**
 
-Chạy Common completion gate. Đọc lại các rule atomicity, duplicate barcode, availability và race condition.
+Chạy cổng hoàn tất dùng chung. Đọc lại các quy tắc atomicity, barcode trùng lặp, tình trạng sẵn có
+và điều kiện tranh chấp.
 
-- [ ] **Step 5: Commit FE06**
+- [ ] **Bước 5: Cam kết FE06**
 
 ```powershell
 git add -- .sdd/specs/feat-inventory-book-copy
 git commit -m "docs: translate FE06 SDD package"
 ```
 
-### Task 8: Việt hóa FE07 Borrowing Management
+### Nhiệm vụ 8: Việt hóa FE07 mượn sách quản lý
 
-**Files:**
-- Modify: `.sdd/specs/feat-borrowing-management/CONTEXT.md`
-- Modify: `.sdd/specs/feat-borrowing-management/SPEC.md`
-- Modify: `.sdd/specs/feat-borrowing-management/PLAN.md`
-- Modify: `.sdd/specs/feat-borrowing-management/TASKS.md`
-- Modify: `.sdd/specs/feat-borrowing-management/TEST_PLAN.md`
-- Modify: `.sdd/specs/feat-borrowing-management/CHANGELOG.md`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-borrowing-management/CONTEXT.md`
+- Sửa đổi: `.sdd/specs/feat-borrowing-management/SPEC.md`
+- Sửa đổi: `.sdd/specs/feat-borrowing-management/PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-borrowing-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-borrowing-management/TEST_PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-borrowing-management/CHANGELOG.md`
 
-**Interfaces:**
-- Consumes: Business limits từ shared context/constraints và FE07 contract tại commit nguồn `7bf76b5`.
-- Produces: Bộ FE07 tiếng Việt bảo toàn request/approve/reject/checkout/return/renewal flows, daily limit và active-copy limit.
+**Giao diện:**
+- Đầu vào: hạn mức nghiệp vụ từ bối cảnh dùng chung/ràng buộc và hợp đồng FE07 tại commit nguồn `7bf76b5`.
+- Đầu ra: bộ FE07 tiếng Việt bảo toàn luồng yêu cầu/phê duyệt/từ chối/bàn giao/trả/gia hạn, hạn mức hằng ngày và giới hạn bản sao đang mượn.
 
-- [ ] **Step 1: Đọc FE07 và đánh dấu mọi câu chứa số hoặc phủ định**
+- [ ] **Bước 1: Đọc FE07 và đánh dấu mọi câu chứa số hoặc phủ định**
 
-Đọc sáu file; tập trung vào 3/5-copy daily tier, 5 active copies, 14-day loan, overdue/fine restriction và status transition.
+Đọc sáu tệp; tập trung vào hạn mức hằng ngày 3/5 bản sao, 5 bản sao đang mượn, thời hạn mượn 14 ngày,
+hạn chế do quá hạn/khoản phạt và chuyển đổi trạng thái.
 
-- [ ] **Step 2: Dịch FE07 bằng `apply_patch`**
+- [ ] **Bước 2: Dịch FE07 bằng `apply_patch`**
 
-Phân biệt Yêu cầu mượn, Duyệt yêu cầu, Bàn giao sách, Trả sách và Gia hạn; giữ nguyên entity, endpoint, enum, ID và error code.
+Phân biệt Yêu cầu mượn, Duyệt yêu cầu, Bàn giao sách, Trả sách và Gia hạn; giữ nguyên entity, điểm
+cuối, giá trị liệt kê, ID và mã lỗi nguồn.
 
-- [ ] **Step 3: Chạy invariant và residue scan**
+- [ ] **Bước 3: Chạy điều kiện bất biến và quét phần tiếng Anh còn sót**
 
 ```powershell
 $paths = Get-ChildItem '.sdd/specs/feat-borrowing-management' -File -Filter '*.md' | ForEach-Object { $_.FullName.Substring((Resolve-Path '.').Path.Length + 1).Replace('\','/') }
 Test-SddTranslationInvariant -Paths $paths
 ```
 
-Chạy residue scan; đọc các hit Borrow, Return, Renewal, Due và Rejected theo literal/prose.
+Chạy quét phần tiếng Anh còn sót; đọc các hit mượn sách, trả sách, gia hạn, Due và Rejected theo giá
+trị nguyên văn/văn xuôi.
 
-- [ ] **Step 4: Chạy completion gate và kiểm tra business-rule parity**
+- [ ] **Bước 4: Chạy cổng hoàn tất và kiểm tra tính tương đương quy tắc nghiệp vụ**
 
-Chạy Common completion gate. Đối chiếu từng `BR-FE07-*` và `AC-FE07-*` với bản nguồn, đặc biệt các phép so sánh, inclusive/exclusive boundary và actor ownership.
+Chạy cổng hoàn tất dùng chung. Đối chiếu từng `BR-FE07-*` và `AC-FE07-*` với bản nguồn, đặc biệt các
+phép so sánh, ranh giới bao gồm/không bao gồm và tác nhân quyền sở hữu.
 
-- [ ] **Step 5: Commit FE07**
+- [ ] **Bước 5: Cam kết FE07**
 
 ```powershell
 git add -- .sdd/specs/feat-borrowing-management
 git commit -m "docs: translate FE07 SDD package"
 ```
 
-### Task 9: Việt hóa FE08 Reservation Management
+### Nhiệm vụ 9: Việt hóa FE08 đặt chỗ quản lý
 
-**Files:**
-- Modify: `.sdd/specs/feat-reservation-management/CONTEXT.md`
-- Modify: `.sdd/specs/feat-reservation-management/SPEC.md`
-- Modify: `.sdd/specs/feat-reservation-management/PLAN.md`
-- Modify: `.sdd/specs/feat-reservation-management/TASKS.md`
-- Modify: `.sdd/specs/feat-reservation-management/TEST_PLAN.md`
-- Modify: `.sdd/specs/feat-reservation-management/CHANGELOG.md`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-reservation-management/CONTEXT.md`
+- Sửa đổi: `.sdd/specs/feat-reservation-management/SPEC.md`
+- Sửa đổi: `.sdd/specs/feat-reservation-management/PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-reservation-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-reservation-management/TEST_PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-reservation-management/CHANGELOG.md`
 
-**Interfaces:**
-- Consumes: FE07 terminology và FE08 queue/candidate ownership contract.
-- Produces: Bộ FE08 tiếng Việt giữ nguyên reservation queue, candidate catalog, hold/expiry và one-open-reservation rules.
+**Giao diện:**
+- đầu vào: FE07 terminology và FE08 queue/ứng viên quyền sở hữu hợp đồng.
+- đầu ra: Bộ FE08 tiếng Việt giữ nguyên hàng đợi đặt chỗ, ứng viên danh mục, hold/expiry và one-open-đặt chỗ quy tắc.
 
-- [ ] **Step 1: Đọc FE08 và đối chiếu integration với FE07**
+- [ ] **Bước 1: Đọc FE08 và đối chiếu integration với FE07**
 
-Đọc sáu file; đánh dấu mọi quy tắc queue order, eligibility, open reservation, conversion và ownership.
+Đọc sáu tệp; đánh dấu mọi quy tắc queue order, eligibility, open đặt chỗ, conversion và quyền sở hữu.
 
-- [ ] **Step 2: Dịch FE08 bằng `apply_patch`**
+- [ ] **Bước 2: Dịch FE08 bằng `apply_patch`**
 
-Dùng “Đặt chỗ” cho Reservation; giữ nguyên queue/candidate literal khi là field, endpoint hoặc enum.
+Dùng “Đặt chỗ” cho đặt chỗ; giữ nguyên queue/ứng viên giá trị nguyên văn khi là trường, điểm cuối
+hoặc giá trị liệt kê.
 
-- [ ] **Step 3: Chạy invariant và residue scan**
+- [ ] **Bước 3: Chạy điều kiện bất biến và quét phần tiếng Anh còn sót**
 
 ```powershell
 $paths = Get-ChildItem '.sdd/specs/feat-reservation-management' -File -Filter '*.md' | ForEach-Object { $_.FullName.Substring((Resolve-Path '.').Path.Length + 1).Replace('\','/') }
 Test-SddTranslationInvariant -Paths $paths
 ```
 
-Chạy residue scan; phân loại Reservation, Queue, Hold và Candidate còn lại.
+Chạy quét phần tiếng Anh còn sót; phân loại đặt chỗ, Queue, Hold và ứng viên còn lại.
 
-- [ ] **Step 4: Chạy completion gate và kiểm tra queue semantics**
+- [ ] **Bước 4: Chạy cổng hoàn tất và kiểm tra ngữ nghĩa hàng đợi**
 
-Chạy Common completion gate. Đối chiếu thứ tự queue, expiry, cancel, candidate ownership và integration với borrow request.
+Chạy cổng hoàn tất dùng chung. Đối chiếu thứ tự queue, expiry, cancel, ứng viên quyền sở hữu và
+integration với mượn sách yêu cầu.
 
-- [ ] **Step 5: Commit FE08**
+- [ ] **Bước 5: Cam kết FE08**
 
 ```powershell
 git add -- .sdd/specs/feat-reservation-management
 git commit -m "docs: translate FE08 SDD package"
 ```
 
-### Task 10: Việt hóa FE09 Fine Management
+### Nhiệm vụ 10: Việt hóa FE09 khoản phạt quản lý
 
-**Files:**
-- Modify: `.sdd/specs/feat-fine-management/CONTEXT.md`
-- Modify: `.sdd/specs/feat-fine-management/SPEC.md`
-- Modify: `.sdd/specs/feat-fine-management/PLAN.md`
-- Modify: `.sdd/specs/feat-fine-management/TASKS.md`
-- Modify: `.sdd/specs/feat-fine-management/TEST_PLAN.md`
-- Modify: `.sdd/specs/feat-fine-management/CHANGELOG.md`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-fine-management/CONTEXT.md`
+- Sửa đổi: `.sdd/specs/feat-fine-management/SPEC.md`
+- Sửa đổi: `.sdd/specs/feat-fine-management/PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-fine-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-fine-management/TEST_PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-fine-management/CHANGELOG.md`
 
-**Interfaces:**
-- Consumes: Fine baseline 5.000 VND/ngày/bản sao và FE07 return data contract.
-- Produces: Bộ FE09 tiếng Việt bảo toàn calculation, damaged/lost/overdue categories, payment state và auditability.
+**Giao diện:**
+- Đầu vào: mốc cơ sở khoản phạt 5.000 VND/ngày/bản sao và hợp đồng dữ liệu trả sách FE07.
+- Đầu ra: bộ FE09 tiếng Việt bảo toàn phép tính, nhóm hư hỏng/mất/quá hạn, trạng thái thanh toán và khả năng kiểm toán.
 
-- [ ] **Step 1: Đọc FE09 và đánh dấu công thức tính**
+- [ ] **Bước 1: Đọc FE09 và đánh dấu công thức tính**
 
-Đọc sáu file; chú ý ngày bắt đầu tính phạt, phép nhân theo ngày/bản sao, rounding, paid/unpaid và caller boundary.
+Đọc sáu tệp; chú ý ngày bắt đầu tính phạt, phép nhân theo ngày/bản sao, làm tròn, trạng thái đã thanh
+toán/chưa thanh toán và ranh giới bên gọi.
 
-- [ ] **Step 2: Dịch FE09 bằng `apply_patch`**
+- [ ] **Bước 2: Dịch FE09 bằng `apply_patch`**
 
-Dùng “Quản lý khoản phạt”; giữ nguyên công thức, số liệu, enum, field, endpoint và mã lỗi.
+Dùng “Quản lý khoản phạt”; giữ nguyên công thức, số liệu, giá trị liệt kê, trường, điểm cuối và mã lỗi.
 
-- [ ] **Step 3: Chạy invariant và residue scan**
+- [ ] **Bước 3: Chạy điều kiện bất biến và quét phần tiếng Anh còn sót**
 
 ```powershell
 $paths = Get-ChildItem '.sdd/specs/feat-fine-management' -File -Filter '*.md' | ForEach-Object { $_.FullName.Substring((Resolve-Path '.').Path.Length + 1).Replace('\','/') }
 Test-SddTranslationInvariant -Paths $paths
 ```
 
-Chạy residue scan và kiểm tra các literal Fine, Paid, Unpaid, Damaged, Lost, Overdue.
+Chạy quét phần tiếng Anh còn sót và kiểm tra các giá trị nguyên văn khoản phạt, đã thanh toán,
+Unpaid, Damaged, Lost, quá hạn.
 
-- [ ] **Step 4: Chạy completion gate và kiểm tra công thức**
+- [ ] **Bước 4: Chạy cổng hoàn tất và kiểm tra công thức**
 
-Chạy Common completion gate. So sánh từng dấu điều kiện, ngày bắt đầu và số tiền với bản nguồn.
+Chạy cổng hoàn tất dùng chung. So sánh từng dấu điều kiện, ngày bắt đầu và số tiền với bản nguồn.
 
-- [ ] **Step 5: Commit FE09**
+- [ ] **Bước 5: Cam kết FE09**
 
 ```powershell
 git add -- .sdd/specs/feat-fine-management
 git commit -m "docs: translate FE09 SDD package"
 ```
 
-### Task 11: Việt hóa FE10 Notification Management
+### Nhiệm vụ 11: Việt hóa FE10 thông báo quản lý
 
-**Files:**
-- Modify: `.sdd/specs/feat-notification-management/CONTEXT.md`
-- Modify: `.sdd/specs/feat-notification-management/SPEC.md`
-- Modify: `.sdd/specs/feat-notification-management/PLAN.md`
-- Modify: `.sdd/specs/feat-notification-management/TASKS.md`
-- Modify: `.sdd/specs/feat-notification-management/TEST_PLAN.md`
-- Modify: `.sdd/specs/feat-notification-management/CHANGELOG.md`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-notification-management/CONTEXT.md`
+- Sửa đổi: `.sdd/specs/feat-notification-management/SPEC.md`
+- Sửa đổi: `.sdd/specs/feat-notification-management/PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-notification-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-notification-management/TEST_PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-notification-management/CHANGELOG.md`
 
-**Interfaces:**
-- Consumes: FE02/FE04/FE07/FE08/FE09 event boundaries và FE10 delivery contract.
-- Produces: Bộ FE10 tiếng Việt giữ nguyên template, notification attempt, delivery status, retry, provider và OTP boundary.
+**Giao diện:**
+- đầu vào: FE02/FE04/FE07/FE08/FE09 event boundaries và FE10 delivery hợp đồng.
+- đầu ra: Bộ FE10 tiếng Việt giữ nguyên mẫu, lần thử gửi thông báo, trạng thái gửi, retry, nhà cung cấp và OTP ranh giới.
 
-- [ ] **Step 1: Đọc FE10 theo producer-consumer flow**
+- [ ] **Bước 1: Đọc FE10 theo producer-consumer luồng**
 
-Đọc sáu file; xác định event source, recipient, template, persistence, attempt, delivery status và deferred scope.
+Đọc sáu tệp; xác định nguồn sự kiện, recipient, mẫu, persistence, attempt, trạng thái gửi và hoãn lại scope.
 
-- [ ] **Step 2: Dịch FE10 bằng `apply_patch`**
+- [ ] **Bước 2: Dịch FE10 bằng `apply_patch`**
 
-Dùng “Quản lý thông báo”; giữ nguyên provider, env var, template key, event name, enum, endpoint và payload field.
+Dùng “Quản lý thông báo”; giữ nguyên nhà cung cấp, env var, mẫu key, event name, giá trị liệt kê,
+điểm cuối và dữ liệu gửi trường.
 
-- [ ] **Step 3: Chạy invariant và residue scan**
+- [ ] **Bước 3: Chạy điều kiện bất biến và quét phần tiếng Anh còn sót**
 
 ```powershell
 $paths = Get-ChildItem '.sdd/specs/feat-notification-management' -File -Filter '*.md' | ForEach-Object { $_.FullName.Substring((Resolve-Path '.').Path.Length + 1).Replace('\','/') }
 Test-SddTranslationInvariant -Paths $paths
 ```
 
-Chạy residue scan; kiểm tra Notification, Delivery, Attempt, Template, Retry và Provider còn lại.
+Chạy quét phần tiếng Anh còn sót; kiểm tra thông báo, Delivery, Attempt, mẫu, Retry và nhà cung cấp còn lại.
 
-- [ ] **Step 4: Chạy completion gate và kiểm tra integration boundary**
+- [ ] **Bước 4: Chạy cổng hoàn tất và kiểm tra integration ranh giới**
 
-Chạy Common completion gate. Đối chiếu caller ownership, OTP isolation, delivery attempt và out-of-scope claim.
+Chạy cổng hoàn tất dùng chung. Đối chiếu caller quyền sở hữu, OTP isolation, delivery attempt và
+ngoài phạm vi claim.
 
-- [ ] **Step 5: Commit FE10**
+- [ ] **Bước 5: Cam kết FE10**
 
 ```powershell
 git add -- .sdd/specs/feat-notification-management
 git commit -m "docs: translate FE10 SDD package"
 ```
 
-### Task 12: Việt hóa FE11 User & Role Management
+### Nhiệm vụ 12: Việt hóa FE11 người dùng & vai trò quản lý
 
-**Files:**
-- Modify: `.sdd/specs/feat-user-role-management/CONTEXT.md`
-- Modify: `.sdd/specs/feat-user-role-management/SPEC.md`
-- Modify: `.sdd/specs/feat-user-role-management/PLAN.md`
-- Modify: `.sdd/specs/feat-user-role-management/TASKS.md`
-- Modify: `.sdd/specs/feat-user-role-management/TEST_PLAN.md`
-- Modify: `.sdd/specs/feat-user-role-management/CHANGELOG.md`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-user-role-management/CONTEXT.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/SPEC.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/TEST_PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/CHANGELOG.md`
 
-**Interfaces:**
-- Consumes: Role cardinality baseline, FE02 account setup boundary và FE03 personal-data ownership.
-- Produces: Bộ FE11 tiếng Việt giữ nguyên admin authorization, one-role atomic replacement, audit log và profile-edit prohibitions.
+**Giao diện:**
+- Đầu vào: mốc cơ sở số lượng vai trò, ranh giới thiết lập tài khoản FE02 và quyền sở hữu dữ liệu cá nhân FE03.
+- Đầu ra: bộ FE11 tiếng Việt giữ nguyên ủy quyền Quản trị viên, thay thế nguyên tử một vai trò, nhật ký kiểm toán và các điều cấm sửa hồ sơ.
 
-- [ ] **Step 1: Đọc FE11 và lập ma trận quyền**
+- [ ] **Bước 1: Đọc FE11 và lập ma trận quyền**
 
-Đọc sáu file; đối chiếu Admin, current Librarian, Member, self-service fields, role change, audit outcome và `ACCOUNT_SETUP`.
+Đọc sáu tệp; đối chiếu Quản trị viên, Thủ thư hiện tại, Thành viên, các trường tự phục vụ, thay đổi
+vai trò, kết quả kiểm toán và `ACCOUNT_SETUP`.
 
-- [ ] **Step 2: Dịch FE11 bằng `apply_patch`**
+- [ ] **Bước 2: Dịch FE11 bằng `apply_patch`**
 
-Dùng “Quản lý người dùng và vai trò”; giữ nguyên role enum, error code, audit action, field, endpoint và transaction literal.
+Dùng “Quản lý người dùng và vai trò”; giữ nguyên giá trị liệt kê vai trò, mã lỗi nguồn, hành động
+kiểm toán, trường, điểm cuối và giao dịch giá trị nguyên văn.
 
-- [ ] **Step 3: Chạy invariant và residue scan**
+- [ ] **Bước 3: Chạy điều kiện bất biến và quét phần tiếng Anh còn sót**
 
 ```powershell
 $paths = Get-ChildItem '.sdd/specs/feat-user-role-management' -File -Filter '*.md' | ForEach-Object { $_.FullName.Substring((Resolve-Path '.').Path.Length + 1).Replace('\','/') }
 Test-SddTranslationInvariant -Paths $paths
 ```
 
-Chạy residue scan; kiểm tra User, Role, Audit, Account Setup và Permission còn lại.
+Chạy quét phần tiếng Anh còn sót; kiểm tra người dùng, vai trò, Audit, tài khoản Setup và Permission còn lại.
 
-- [ ] **Step 4: Chạy completion gate và kiểm tra quyền/atomicity**
+- [ ] **Bước 4: Chạy cổng hoàn tất và kiểm tra quyền/atomicity**
 
-Chạy Common completion gate. So sánh ma trận quyền, forbidden personal fields, role replacement cardinality và audit success/failure semantics.
+Chạy cổng hoàn tất dùng chung. So sánh ma trận quyền, forbidden personal fields, vai trò replacement
+cardinality và audit success/không đạt ngữ nghĩa.
 
-- [ ] **Step 5: Commit FE11**
+- [ ] **Bước 5: Cam kết FE11**
 
 ```powershell
 git add -- .sdd/specs/feat-user-role-management
 git commit -m "docs: translate FE11 SDD package"
 ```
 
-### Task 13: Việt hóa FE12 Reporting & Statistics
+### Nhiệm vụ 13: Việt hóa FE12 Báo cáo và thống kê
 
-**Files:**
-- Modify: `.sdd/specs/feat-reporting-statistics/CONTEXT.md`
-- Modify: `.sdd/specs/feat-reporting-statistics/SPEC.md`
-- Modify: `.sdd/specs/feat-reporting-statistics/PLAN.md`
-- Modify: `.sdd/specs/feat-reporting-statistics/TASKS.md`
-- Modify: `.sdd/specs/feat-reporting-statistics/TEST_PLAN.md`
-- Modify: `.sdd/specs/feat-reporting-statistics/CHANGELOG.md`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-reporting-statistics/CONTEXT.md`
+- Sửa đổi: `.sdd/specs/feat-reporting-statistics/SPEC.md`
+- Sửa đổi: `.sdd/specs/feat-reporting-statistics/PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-reporting-statistics/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-reporting-statistics/TEST_PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-reporting-statistics/CHANGELOG.md`
 
-**Interfaces:**
-- Consumes: Deterministic reporting rules và dữ liệu từ FE05-FE11.
-- Produces: Bộ FE12 tiếng Việt giữ nguyên metric definitions, date boundaries, authorization và deterministic policy.
+**Giao diện:**
+- đầu vào: Deterministic báo cáo quy tắc và dữ liệu từ FE05-FE11.
+- đầu ra: Bộ FE12 tiếng Việt giữ nguyên metric definitions, date boundaries, ủy quyền và deterministic policy.
 
-- [ ] **Step 1: Đọc FE12 và lập danh sách metric**
+- [ ] **Bước 1: Đọc FE12 và lập danh sách metric**
 
-Đọc sáu file; đối chiếu công thức, date range, timezone, inclusive/exclusive boundary, actor và data source.
+Đọc sáu tệp; đối chiếu công thức, khoảng ngày, timezone, ranh giới bao gồm/không bao gồm, tác nhân
+và nguồn dữ liệu.
 
-- [ ] **Step 2: Dịch FE12 bằng `apply_patch`**
+- [ ] **Bước 2: Dịch FE12 bằng `apply_patch`**
 
-Dùng “Báo cáo và thống kê”; giữ nguyên metric key, field, endpoint, SQL/code, enum và số liệu.
+Dùng “Báo cáo và thống kê”; giữ nguyên metric key, trường, điểm cuối, SQL/mã nguồn, giá trị liệt kê
+và số liệu.
 
-- [ ] **Step 3: Chạy invariant và residue scan**
+- [ ] **Bước 3: Chạy điều kiện bất biến và quét phần tiếng Anh còn sót**
 
 ```powershell
 $paths = Get-ChildItem '.sdd/specs/feat-reporting-statistics' -File -Filter '*.md' | ForEach-Object { $_.FullName.Substring((Resolve-Path '.').Path.Length + 1).Replace('\','/') }
 Test-SddTranslationInvariant -Paths $paths
 ```
 
-Chạy residue scan; kiểm tra Reporting, Statistics, Metric, Date Range và Timezone còn lại.
+Chạy quét phần tiếng Anh còn sót; kiểm tra báo cáo, thống kê, Metric, khoảng ngày và Timezone còn lại.
 
-- [ ] **Step 4: Chạy completion gate và kiểm tra metric parity**
+- [ ] **Bước 4: Chạy cổng hoàn tất và kiểm tra tính tương đương chỉ số**
 
-Chạy Common completion gate. So sánh từng metric, filter, date boundary, actor access và response field với bản nguồn.
+Chạy cổng hoàn tất dùng chung. So sánh từng metric, filter, date ranh giới, tác nhân access và phản
+hồi trường với bản nguồn.
 
-- [ ] **Step 5: Commit FE12**
+- [ ] **Bước 5: Cam kết FE12**
 
 ```powershell
 git add -- .sdd/specs/feat-reporting-statistics
 git commit -m "docs: translate FE12 SDD package"
 ```
 
-### Task 14: Việt hóa RFC và ADR
+### Nhiệm vụ 14: Việt hóa RFC và ADR
 
-**Files:**
-- Modify: `.sdd/rfcs/README.md`
-- Modify: `.sdd/rfcs/ADR-001-architecture.md`
-- Modify: `.sdd/rfcs/ADR-002-database-design.md`
-- Modify: `.sdd/rfcs/ADR-003-authentication-approach.md`
-- Modify: `.sdd/rfcs/ADR-004-auth-otp-notification-boundary.md`
-- Modify: `.sdd/rfcs/ADR-005-admin-created-account-setup-boundary.md`
+**Tệp:**
+- Sửa đổi: `.sdd/rfcs/README.md`
+- Sửa đổi: `.sdd/rfcs/ADR-001-architecture.md`
+- Sửa đổi: `.sdd/rfcs/ADR-002-database-design.md`
+- Sửa đổi: `.sdd/rfcs/ADR-003-authentication-approach.md`
+- Sửa đổi: `.sdd/rfcs/ADR-004-auth-otp-notification-boundary.md`
+- Sửa đổi: `.sdd/rfcs/ADR-005-admin-created-account-setup-boundary.md`
 
-**Interfaces:**
-- Consumes: Thuật ngữ FE01-FE12 đã ổn định và quyết định kiến trúc tại commit nguồn `7bf76b5`.
-- Produces: Sáu tài liệu quyết định tiếng Việt giữ nguyên status, context, decision, consequences, schema và integration boundaries.
+**Giao diện:**
+- đầu vào: Thuật ngữ FE01-FE12 đã ổn định và quyết định kiến trúc tại bản ghi Git nguồn `7bf76b5`.
+- Đầu ra: sáu tài liệu quyết định tiếng Việt giữ nguyên trạng thái, bối cảnh, quyết định, hệ quả, lược đồ và ranh giới tích hợp.
 
-- [ ] **Step 1: Đọc README và ADR-001 đến ADR-005 theo thứ tự**
+- [ ] **Bước 1: Đọc README và ADR-001 đến ADR-005 theo thứ tự**
 
-Ghi nhận decision status, alternatives, consequences, migration policy và mọi tham chiếu spec/schema.
+Ghi nhận trạng thái quyết định, phương án thay thế, hệ quả, chính sách di chuyển dữ liệu và mọi tham
+chiếu spec/lược đồ.
 
-- [ ] **Step 2: Dịch RFC/ADR bằng `apply_patch`**
+- [ ] **Bước 2: Dịch RFC/ADR bằng `apply_patch`**
 
-Dịch prose và nhãn; giữ nguyên tên ADR, technology, library, schema object, code, endpoint, path, version và decision ID.
+Dịch văn xuôi và nhãn; giữ nguyên tên ADR, công nghệ, thư viện, đối tượng lược đồ, mã nguồn, điểm cuối,
+đường dẫn, phiên bản và ID quyết định.
 
-- [ ] **Step 3: Chạy invariant và residue scan**
+- [ ] **Bước 3: Chạy điều kiện bất biến và quét phần tiếng Anh còn sót**
 
 ```powershell
 $paths = Get-ChildItem '.sdd/rfcs' -File -Filter '*.md' | ForEach-Object { $_.FullName.Substring((Resolve-Path '.').Path.Length + 1).Replace('\','/') }
 Test-SddTranslationInvariant -Paths $paths
 ```
 
-Chạy residue scan; kiểm tra các thuật ngữ Architecture, Context, Decision, Consequences và Migration còn lại.
+Chạy quét phần tiếng Anh còn sót; kiểm tra các thuật ngữ kiến trúc, bối cảnh, quyết định, hệ quả và di
+chuyển dữ liệu còn lại.
 
-- [ ] **Step 4: Chạy completion gate và kiểm tra quyết định kiến trúc**
+- [ ] **Bước 4: Chạy cổng hoàn tất và kiểm tra quyết định kiến trúc**
 
-Chạy Common completion gate. Đối chiếu đặc biệt ADR-002 migration policy và ADR-003/004/005 auth-account-notification boundaries.
+Chạy cổng hoàn tất dùng chung. Đối chiếu đặc biệt ADR-002 chính sách di chuyển dữ liệu và
+ADR-003/004/005 xác thực-tài khoản-thông báo boundaries.
 
-- [ ] **Step 5: Commit RFC/ADR**
+- [ ] **Bước 5: Cam kết RFC/ADR**
 
 ```powershell
 git add -- .sdd/rfcs
 git commit -m "docs: translate SDD architecture decisions"
 ```
 
-### Task 15: Việt hóa review nền tảng tháng 6
+### Nhiệm vụ 15: Việt hóa rà soát nền tảng tháng 6
 
-**Files:**
-- Modify: `.sdd/reviews/README.md`
-- Modify: `.sdd/reviews/db-instance-schema-drift-2026-06-22.md`
-- Modify: `.sdd/reviews/hybrid-method-compliance-review-2026-06-22.md`
-- Modify: `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`
-- Modify: `.sdd/reviews/open-questions-review-verdict-2026-06-10.md`
-- Modify: `.sdd/reviews/phase-1-spec-closeout-2026-06-10.md`
-- Modify: `.sdd/reviews/review-phase-1-specs-2026-06-10.md`
-- Modify: `.sdd/reviews/week-2-spec-coverage-review-2026-06-10.md`
-- Modify: `.sdd/reviews/week-3-spec-finalization-closeout-2026-06-10.md`
-- Modify: `.sdd/reviews/week-4-database-gap-review-2026-06-10.md`
+**Tệp:**
+- Sửa đổi: `.sdd/reviews/README.md`
+- Sửa đổi: `.sdd/reviews/db-instance-schema-drift-2026-06-22.md`
+- Sửa đổi: `.sdd/reviews/hybrid-method-compliance-review-2026-06-22.md`
+- Sửa đổi: `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`
+- Sửa đổi: `.sdd/reviews/open-questions-review-verdict-2026-06-10.md`
+- Sửa đổi: `.sdd/reviews/phase-1-spec-closeout-2026-06-10.md`
+- Sửa đổi: `.sdd/reviews/review-phase-1-specs-2026-06-10.md`
+- Sửa đổi: `.sdd/reviews/week-2-spec-coverage-review-2026-06-10.md`
+- Sửa đổi: `.sdd/reviews/week-3-spec-finalization-closeout-2026-06-10.md`
+- Sửa đổi: `.sdd/reviews/week-4-database-gap-review-2026-06-10.md`
 
-**Interfaces:**
-- Consumes: Bản dịch nền tảng/spec/ADR và bằng chứng lịch sử tháng 6.
-- Produces: Mười tài liệu review tiếng Việt giữ nguyên verdict, gap, question resolution, schema drift và evidence.
+**Giao diện:**
+- đầu vào: Bản dịch nền tảng/spec/ADR và bằng chứng lịch sử tháng 6.
+- đầu ra: Mười tài liệu rà soát tiếng Việt giữ nguyên verdict, gap, question resolution, độ lệch lược đồ và bằng chứng.
 
-- [ ] **Step 1: Đọc nhóm review theo ngày và chủ đề**
+- [ ] **Bước 1: Đọc nhóm rà soát theo ngày và chủ đề**
 
-Đọc các file ngày 2026-06-10 trước, sau đó 2026-06-22 và README; đánh dấu verdict, status, owner, evidence và unresolved/resolved claims.
+Đọc các tệp ngày 2026-06-10 trước, sau đó 2026-06-22 và README; đánh dấu verdict, trạng thái, owner,
+bằng chứng và unresolved/resolved claims.
 
-- [ ] **Step 2: Dịch mười file bằng `apply_patch`**
+- [ ] **Bước 2: Dịch mười tệp bằng `apply_patch`**
 
-Dịch prose và nhãn; giữ nguyên ngày, commit, đường dẫn, ID, PASS/FAIL literal, schema object và trích dẫn kỹ thuật.
+Dịch văn xuôi và nhãn; giữ nguyên ngày, bản ghi Git, đường dẫn, ID, đạt/không đạt giá trị nguyên
+văn, lược đồ object và
+trích dẫn kỹ thuật.
 
-- [ ] **Step 3: Chạy invariant và residue scan**
+- [ ] **Bước 3: Chạy điều kiện bất biến và quét phần tiếng Anh còn sót**
 
 ```powershell
 $paths = @(
@@ -704,197 +760,210 @@ $paths = @(
 Test-SddTranslationInvariant -Paths $paths
 ```
 
-Chạy residue scan; xác nhận mọi status/evidence literal tiếng Anh còn lại là dữ kiện lịch sử phải giữ nguyên.
+Chạy quét phần tiếng Anh còn sót; xác nhận mọi trạng thái/bằng chứng giá trị nguyên văn tiếng Anh
+còn lại là dữ kiện lịch sử phải giữ nguyên.
 
-- [ ] **Step 4: Chạy completion gate và kiểm tra historical claims**
+- [ ] **Bước 4: Chạy cổng hoàn tất và kiểm tra tuyên bố lịch sử**
 
-Chạy Common completion gate. So sánh verdict, resolved/unresolved state, schema drift và phase closeout với nguồn.
+Chạy cổng hoàn tất dùng chung. So sánh verdict, resolved/unresolved trạng thái, độ lệch lược đồ và giai đoạn
+khóa sổ với nguồn.
 
-- [ ] **Step 5: Commit review tháng 6**
+- [ ] **Bước 5: bản ghi Git rà soát tháng 6**
 
 ```powershell
 git add -- $paths
 git commit -m "docs: translate June SDD reviews"
 ```
 
-### Task 16: Việt hóa review ngày 13-15 tháng 7
+### Nhiệm vụ 16: Việt hóa rà soát ngày 13-15 tháng 7
 
-**Files:**
-- Modify: `.sdd/reviews/app-shell-ux-validation-review-2026-07-14.md`
-- Modify: `.sdd/reviews/auth-account-setup-boundary-validation-review-2026-07-15.md`
-- Modify: `.sdd/reviews/authentication-otp-ux-validation-review-2026-07-15.md`
-- Modify: `.sdd/reviews/fe07-b6-validation-review-2026-07-14.md`
-- Modify: `.sdd/reviews/fe07-b7-integration-review-closeout-2026-07-14.md`
-- Modify: `.sdd/reviews/fe07-fe08-borrowing-reservation-integration-validation-2026-07-15.md`
-- Modify: `.sdd/reviews/fe08-b7-integration-review-closeout-2026-07-13.md`
-- Modify: `.sdd/reviews/fe10-b7-integration-review-closeout-2026-07-13.md`
-- Modify: `.sdd/reviews/fe12-b6-validation-review-2026-07-13.md`
-- Modify: `.sdd/reviews/fe12-b7-integration-review-closeout-2026-07-13.md`
-- Modify: `.sdd/reviews/library-ux-b7-integration-closeout-2026-07-15.md`
-- Modify: `.sdd/reviews/library-ux-slice3-operational-consistency-analysis-2026-07-15.md`
-- Modify: `.sdd/reviews/library-ux-slice3-validation-review-2026-07-15.md`
-- Modify: `.sdd/reviews/system-integration-evidence-2026-07-14.md`
-- Modify: `.sdd/reviews/week11-coverage-evidence-2026-07-14.md`
-- Modify: `.sdd/reviews/week11-e2e-evidence-2026-07-14.md`
-- Modify: `.sdd/reviews/week12-security-audit-2026-07-14.md`
+**Tệp:**
+- Sửa đổi: `.sdd/reviews/app-shell-ux-validation-review-2026-07-14.md`
+- Sửa đổi: `.sdd/reviews/auth-account-setup-boundary-validation-review-2026-07-15.md`
+- Sửa đổi: `.sdd/reviews/authentication-otp-ux-validation-review-2026-07-15.md`
+- Sửa đổi: `.sdd/reviews/fe07-b6-validation-review-2026-07-14.md`
+- Sửa đổi: `.sdd/reviews/fe07-b7-integration-review-closeout-2026-07-14.md`
+- Sửa đổi: `.sdd/reviews/fe07-fe08-borrowing-reservation-integration-validation-2026-07-15.md`
+- Sửa đổi: `.sdd/reviews/fe08-b7-integration-review-closeout-2026-07-13.md`
+- Sửa đổi: `.sdd/reviews/fe10-b7-integration-review-closeout-2026-07-13.md`
+- Sửa đổi: `.sdd/reviews/fe12-b6-validation-review-2026-07-13.md`
+- Sửa đổi: `.sdd/reviews/fe12-b7-integration-review-closeout-2026-07-13.md`
+- Sửa đổi: `.sdd/reviews/library-ux-b7-integration-closeout-2026-07-15.md`
+- Sửa đổi: `.sdd/reviews/library-ux-slice3-operational-consistency-analysis-2026-07-15.md`
+- Sửa đổi: `.sdd/reviews/library-ux-slice3-validation-review-2026-07-15.md`
+- Sửa đổi: `.sdd/reviews/system-integration-evidence-2026-07-14.md`
+- Sửa đổi: `.sdd/reviews/week11-coverage-evidence-2026-07-14.md`
+- Sửa đổi: `.sdd/reviews/week11-e2e-evidence-2026-07-14.md`
+- Sửa đổi: `.sdd/reviews/week12-security-audit-2026-07-14.md`
 
-**Interfaces:**
-- Consumes: Bản dịch FE02, FE07, FE08, FE10, FE12 và UX/security terminology.
-- Produces: Mười bảy review tiếng Việt giữ nguyên gate B6/B7, integration evidence, E2E result và security audit.
+**Giao diện:**
+- đầu vào: Bản dịch FE02, FE07, FE08, FE10, FE12 và UX/bảo mật terminology.
+- đầu ra: Mười bảy rà soát tiếng Việt giữ nguyên cổng B6/B7, bằng chứng tích hợp, E2E kết quả và kiểm toán bảo mật.
 
-- [ ] **Step 1: Đọc nhóm review theo feature và gate**
+- [ ] **Bước 1: Đọc nhóm rà soát theo chức năng và cổng**
 
-Đọc FE08/FE10/FE12 ngày 13, FE07/system/week evidence ngày 14, rồi auth/UX/integration ngày 15; lập đối chiếu PASS/FAIL và closeout claim.
+Đọc FE08/FE10/FE12 ngày 13, FE07/system/week bằng chứng ngày 14, rồi xác thực/UX/integration ngày 15; lập
+đối chiếu đạt/không đạt và khóa sổ claim.
 
-- [ ] **Step 2: Dịch mười bảy file bằng `apply_patch`**
+- [ ] **Bước 2: Dịch mười bảy tệp bằng `apply_patch`**
 
-Dịch prose/nhãn nhưng giữ nguyên B6/B7, test name, route, command, commit, CI result, screenshot path và security literal.
+Dịch văn xuôi/nhãn nhưng giữ nguyên B6/B7, kiểm thử name, tuyến, command, bản ghi Git, CI kết quả,
+screenshot path và bảo mật giá trị nguyên văn.
 
-- [ ] **Step 3: Chạy invariant và residue scan**
+- [ ] **Bước 3: Chạy điều kiện bất biến và quét phần tiếng Anh còn sót**
 
 ```powershell
 $paths = Get-ChildItem '.sdd/reviews' -File -Filter '*.md' | Where-Object { $_.Name -match '2026-07-(13|14|15)\.md$' } | ForEach-Object { $_.FullName.Substring((Resolve-Path '.').Path.Length + 1).Replace('\','/') }
 Test-SddTranslationInvariant -Paths $paths
 ```
 
-Xác nhận `$paths.Count -eq 17`, rồi chạy residue scan và đọc từng hit evidence/gate.
+Xác nhận `$paths.Count -eq 17`, rồi chạy quét phần tiếng Anh còn sót và đọc từng hit bằng chứng/cổng.
 
-- [ ] **Step 4: Chạy completion gate và kiểm tra evidence parity**
+- [ ] **Bước 4: Chạy cổng hoàn tất và kiểm tra tính tương đương bằng chứng**
 
-Chạy Common completion gate. Xác nhận mọi PASS/FAIL, B6/B7, commit, CI, test count và deferred boundary giữ nguyên.
+Chạy cổng hoàn tất dùng chung. Xác nhận mọi đạt/không đạt, B6/B7, bản ghi Git, CI, kiểm thử count và hoãn lại
+ranh giới giữ nguyên.
 
-- [ ] **Step 5: Commit review ngày 13-15**
+- [ ] **Bước 5: bản ghi Git rà soát ngày 13-15**
 
 ```powershell
 git add -- $paths
 git commit -m "docs: translate mid-July SDD reviews"
 ```
 
-### Task 17: Việt hóa review FE11 ngày 18 tháng 7
+### Nhiệm vụ 17: Việt hóa rà soát FE11 ngày 18 tháng 7
 
-**Files:**
-- Modify: `.sdd/reviews/fe11-admin-console-context-drift-audit-2026-07-18.md`
-- Modify: `.sdd/reviews/fe11-admin-role-ui-contract-validation-2026-07-18.md`
-- Modify: `.sdd/reviews/fe11-audit-log-validation-2026-07-18.md`
-- Modify: `.sdd/reviews/fe11-evidence-metadata-reconciliation-2026-07-18.md`
-- Modify: `.sdd/reviews/fe11-evidence-metadata-validation-2026-07-18.md`
-- Modify: `.sdd/reviews/fe11-fast-track-batch-1-closeout-2026-07-18.md`
-- Modify: `.sdd/reviews/fe11-fast-track-batch-1-h1-2026-07-18.md`
-- Modify: `.sdd/reviews/fe11-safe-user-list-detail-validation-2026-07-18.md`
-- Modify: `.sdd/reviews/fe11-transactional-role-management-validation-2026-07-18.md`
-- Modify: `.sdd/reviews/fe11-user-list-envelope-validation-2026-07-18.md`
+**Tệp:**
+- Sửa đổi: `.sdd/reviews/fe11-admin-console-context-drift-audit-2026-07-18.md`
+- Sửa đổi: `.sdd/reviews/fe11-admin-role-ui-contract-validation-2026-07-18.md`
+- Sửa đổi: `.sdd/reviews/fe11-audit-log-validation-2026-07-18.md`
+- Sửa đổi: `.sdd/reviews/fe11-evidence-metadata-reconciliation-2026-07-18.md`
+- Sửa đổi: `.sdd/reviews/fe11-evidence-metadata-validation-2026-07-18.md`
+- Sửa đổi: `.sdd/reviews/fe11-fast-track-batch-1-closeout-2026-07-18.md`
+- Sửa đổi: `.sdd/reviews/fe11-fast-track-batch-1-h1-2026-07-18.md`
+- Sửa đổi: `.sdd/reviews/fe11-safe-user-list-detail-validation-2026-07-18.md`
+- Sửa đổi: `.sdd/reviews/fe11-transactional-role-management-validation-2026-07-18.md`
+- Sửa đổi: `.sdd/reviews/fe11-user-list-envelope-validation-2026-07-18.md`
 
-**Interfaces:**
-- Consumes: FE11 translation, Fast-Track H1/H2/H3 terminology và admin ownership rules.
-- Produces: Mười review FE11 tiếng Việt bảo toàn approval gates, evidence metadata, transaction và audit results.
+**Giao diện:**
+- Đầu vào: bản dịch FE11, thuật ngữ luồng nhanh H1/H2/H3 và quy tắc quyền sở hữu của Quản trị viên.
+- Đầu ra: mười bản rà soát FE11 tiếng Việt bảo toàn cổng phê duyệt, bằng chứng siêu dữ liệu, giao dịch và kết quả kiểm toán.
 
-- [ ] **Step 1: Đọc mười file theo dependency order**
+- [ ] **Bước 1: Đọc mười tệp theo thứ tự phụ thuộc**
 
-Đọc H1 → contract/evidence validation → transactional role/audit → safe list/detail → closeout; ghi nhận authority và gate boundaries.
+Đọc H1 → hợp đồng/bằng chứng xác thực → giao dịch vai trò/kiểm toán → danh sách/chi tiết an toàn → khóa
+sổ; ghi nhận thẩm quyền và ranh giới cổng.
 
-- [ ] **Step 2: Dịch nhóm FE11 bằng `apply_patch`**
+- [ ] **Bước 2: Dịch nhóm FE11 bằng `apply_patch`**
 
-Dịch prose/nhãn; giữ nguyên H1/H2/H3, B7, role enum, audit action, envelope field, test/commit/PR/CI evidence.
+Dịch văn xuôi/nhãn; giữ nguyên H1/H2/H3, B7, giá trị liệt kê vai trò, hành động kiểm toán, trường
+cấu trúc bao, kiểm thử/bản ghi Git/PR/CI bằng chứng.
 
-- [ ] **Step 3: Chạy invariant và residue scan**
+- [ ] **Bước 3: Chạy điều kiện bất biến và quét phần tiếng Anh còn sót**
 
 ```powershell
 $paths = Get-ChildItem '.sdd/reviews' -File -Filter 'fe11-*-2026-07-18.md' | ForEach-Object { $_.FullName.Substring((Resolve-Path '.').Path.Length + 1).Replace('\','/') }
 Test-SddTranslationInvariant -Paths $paths
 ```
 
-Xác nhận `$paths.Count -eq 10`, rồi chạy residue scan và phân loại gate/literal.
+Xác nhận `$paths.Count -eq 10`, rồi chạy quét phần tiếng Anh còn sót và phân loại cổng/giá trị nguyên văn.
 
-- [ ] **Step 4: Chạy completion gate và kiểm tra authority semantics**
+- [ ] **Bước 4: Chạy cổng hoàn tất và kiểm tra authority ngữ nghĩa**
 
-Chạy Common completion gate. Đối chiếu ai phê duyệt H1/H2/H3, hành động nào được phép, evidence nào là historical và boundary nào còn deferred.
+Chạy cổng hoàn tất dùng chung. Đối chiếu ai phê duyệt H1/H2/H3, hành động nào được phép, bằng chứng
+nào là historical và ranh giới nào còn hoãn lại.
 
-- [ ] **Step 5: Commit review FE11 ngày 18**
+- [ ] **Bước 5: bản ghi Git rà soát FE11 ngày 18**
 
 ```powershell
 git add -- $paths
 git commit -m "docs: translate FE11 fast-track reviews"
 ```
 
-### Task 18: Việt hóa review ngày 19 tháng 7
+### Nhiệm vụ 18: Việt hóa rà soát ngày 19 tháng 7
 
-**Files:**
-- Modify: `.sdd/reviews/fe01-public-book-envelope-decision-2026-07-19.md`
-- Modify: `.sdd/reviews/fe02-auth-debt-closure-validation-2026-07-19.md`
-- Modify: `.sdd/reviews/fe03-deterministic-profile-validation-2026-07-19.md`
-- Modify: `.sdd/reviews/fe04-membership-reconciliation-validation-2026-07-19.md`
-- Modify: `.sdd/reviews/fe05-book-reconciliation-validation-2026-07-19.md`
-- Modify: `.sdd/reviews/fe06-inventory-reconciliation-validation-2026-07-19.md`
-- Modify: `.sdd/reviews/fe08-reservation-candidate-catalog-validation-2026-07-19.md`
-- Modify: `.sdd/reviews/fe09-fine-reconciliation-validation-2026-07-19.md`
-- Modify: `.sdd/reviews/fe10-otp-security-reconciliation-validation-2026-07-19.md`
-- Modify: `.sdd/reviews/fe11-admin-navigation-permissions-validation-2026-07-19.md`
-- Modify: `.sdd/reviews/fe11-finalization-wave-a-validation-2026-07-19.md`
-- Modify: `.sdd/reviews/fe11-finalization-wave-b-validation-2026-07-19.md`
-- Modify: `.sdd/reviews/fe12-deterministic-policy-validation-2026-07-19.md`
-- Modify: `.sdd/reviews/full-reconciliation-human-acceptance-packet-2026-07-19.md`
-- Modify: `.sdd/reviews/full-reconciliation-live-sql-validation-2026-07-19.md`
-- Modify: `.sdd/reviews/full-reconciliation-validation-2026-07-19.md`
-- Modify: `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`
-- Modify: `.sdd/reviews/phase3-final-validation-2026-07-19.md`
+**Tệp:**
+- Sửa đổi: `.sdd/reviews/fe01-public-book-envelope-decision-2026-07-19.md`
+- Sửa đổi: `.sdd/reviews/fe02-auth-debt-closure-validation-2026-07-19.md`
+- Sửa đổi: `.sdd/reviews/fe03-deterministic-profile-validation-2026-07-19.md`
+- Sửa đổi: `.sdd/reviews/fe04-membership-reconciliation-validation-2026-07-19.md`
+- Sửa đổi: `.sdd/reviews/fe05-book-reconciliation-validation-2026-07-19.md`
+- Sửa đổi: `.sdd/reviews/fe06-inventory-reconciliation-validation-2026-07-19.md`
+- Sửa đổi: `.sdd/reviews/fe08-reservation-candidate-catalog-validation-2026-07-19.md`
+- Sửa đổi: `.sdd/reviews/fe09-fine-reconciliation-validation-2026-07-19.md`
+- Sửa đổi: `.sdd/reviews/fe10-otp-security-reconciliation-validation-2026-07-19.md`
+- Sửa đổi: `.sdd/reviews/fe11-admin-navigation-permissions-validation-2026-07-19.md`
+- Sửa đổi: `.sdd/reviews/fe11-finalization-wave-a-validation-2026-07-19.md`
+- Sửa đổi: `.sdd/reviews/fe11-finalization-wave-b-validation-2026-07-19.md`
+- Sửa đổi: `.sdd/reviews/fe12-deterministic-policy-validation-2026-07-19.md`
+- Sửa đổi: `.sdd/reviews/full-reconciliation-human-acceptance-packet-2026-07-19.md`
+- Sửa đổi: `.sdd/reviews/full-reconciliation-live-sql-validation-2026-07-19.md`
+- Sửa đổi: `.sdd/reviews/full-reconciliation-validation-2026-07-19.md`
+- Sửa đổi: `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`
+- Sửa đổi: `.sdd/reviews/phase3-final-validation-2026-07-19.md`
 
-**Interfaces:**
-- Consumes: Toàn bộ FE01-FE12 đã dịch và full-reconciliation terminology.
-- Produces: Mười tám review tiếng Việt giữ nguyên acceptance, live SQL, deterministic policy, reconciliation và phase-exit evidence.
+**Giao diện:**
+- đầu vào: Toàn bộ FE01-FE12 đã dịch và đầy đủ-reconciliation terminology.
+- đầu ra: Mười tám rà soát tiếng Việt giữ nguyên acceptance, live SQL, deterministic policy, reconciliation và giai đoạn-exit bằng chứng.
 
-- [ ] **Step 1: Đọc review feature trước, review tổng hợp sau**
+- [ ] **Bước 1: Đọc rà soát chức năng trước, rà soát tổng hợp sau**
 
-Đọc FE01-FE12 validation theo số FE, rồi full reconciliation, phase 2 exit và phase 3 final; đánh dấu mọi claim phụ thuộc evidence.
+Đọc FE01-FE12 xác thực theo số FE, rồi đầy đủ reconciliation, giai đoạn 2 exit và giai đoạn 3 final;
+đánh dấu mọi claim phụ thuộc bằng chứng.
 
-- [ ] **Step 2: Dịch mười tám file bằng `apply_patch`**
+- [ ] **Bước 2: Dịch mười tám tệp bằng `apply_patch`**
 
-Dịch prose/nhãn; giữ nguyên commit, PR, CI, SQL result, percentage, test count, status literal, limitation và future boundary.
+Dịch văn xuôi/nhãn; giữ nguyên bản ghi Git, PR, CI, SQL kết quả, percentage, kiểm thử count, giá trị
+trạng thái nguyên văn, giới hạn và tương lai ranh giới.
 
-- [ ] **Step 3: Chạy invariant và residue scan**
+- [ ] **Bước 3: Chạy điều kiện bất biến và quét phần tiếng Anh còn sót**
 
 ```powershell
 $paths = Get-ChildItem '.sdd/reviews' -File -Filter '*-2026-07-19.md' | ForEach-Object { $_.FullName.Substring((Resolve-Path '.').Path.Length + 1).Replace('\','/') }
 Test-SddTranslationInvariant -Paths $paths
 ```
 
-Xác nhận `$paths.Count -eq 18`, rồi chạy residue scan và đọc từng hit evidence/result.
+Xác nhận `$paths.Count -eq 18`, rồi chạy quét phần tiếng Anh còn sót và đọc từng hit bằng chứng/kết quả.
 
-- [ ] **Step 4: Chạy completion gate và kiểm tra completion claims**
+- [ ] **Bước 4: Chạy cổng hoàn tất và kiểm tra completion claims**
 
-Chạy Common completion gate. Đối chiếu phần complete/deferred/out-of-scope, human acceptance, live SQL và phase-exit claim với bản nguồn.
+Chạy cổng hoàn tất dùng chung. Đối chiếu phần hoàn tất/hoãn lại/ngoài phạm vi, nghiệm thu của con người, live
+SQL và giai đoạn-exit claim với bản nguồn.
 
-- [ ] **Step 5: Commit review ngày 19**
+- [ ] **Bước 5: bản ghi Git rà soát ngày 19**
 
 ```powershell
 git add -- $paths
 git commit -m "docs: translate reconciliation and phase reviews"
 ```
 
-### Task 19: Việt hóa review ngày 20-27 tháng 7
+### Nhiệm vụ 19: Việt hóa rà soát ngày 20-27 tháng 7
 
-**Files:**
-- Modify: `.sdd/reviews/admin-authenticated-ux-correction-validation-2026-07-22.md`
-- Modify: `.sdd/reviews/admin-console-full-refactor-validation-2026-07-22.md`
-- Modify: `.sdd/reviews/fe07-fe08-fe10-fe12-h3-remediation-validation-2026-07-23.md`
-- Modify: `.sdd/reviews/fe07-fe10-fe12-business-rule-alignment-validation-2026-07-27.md`
-- Modify: `.sdd/reviews/final-governance-closeout-validation-2026-07-20.md`
-- Modify: `.sdd/reviews/governance-release-reconciliation-validation-2026-07-20.md`
-- Modify: `.sdd/reviews/staging-email-delivery-remediation-validation-2026-07-27.md`
-- Modify: `.sdd/reviews/vietnamese-ui-localization-validation-2026-07-20.md`
+**Tệp:**
+- Sửa đổi: `.sdd/reviews/admin-authenticated-ux-correction-validation-2026-07-22.md`
+- Sửa đổi: `.sdd/reviews/admin-console-full-refactor-validation-2026-07-22.md`
+- Sửa đổi: `.sdd/reviews/fe07-fe08-fe10-fe12-h3-remediation-validation-2026-07-23.md`
+- Sửa đổi: `.sdd/reviews/fe07-fe10-fe12-business-rule-alignment-validation-2026-07-27.md`
+- Sửa đổi: `.sdd/reviews/final-governance-closeout-validation-2026-07-20.md`
+- Sửa đổi: `.sdd/reviews/governance-release-reconciliation-validation-2026-07-20.md`
+- Sửa đổi: `.sdd/reviews/staging-email-delivery-remediation-validation-2026-07-27.md`
+- Sửa đổi: `.sdd/reviews/vietnamese-ui-localization-validation-2026-07-20.md`
 
-**Interfaces:**
-- Consumes: FE07/FE08/FE10/FE11/FE12 translations, UI localization vocabulary và final governance rules.
-- Produces: Tám review tiếng Việt giữ nguyên H3, remediation, staging email, UI localization và governance closeout evidence.
+**Giao diện:**
+- đầu vào: FE07/FE08/FE10/FE11/FE12 translations, bản địa hóa giao diện vocabulary và final quản trị quy tắc.
+- đầu ra: Tám rà soát tiếng Việt giữ nguyên H3, khắc phục, môi trường tiền sản xuất email, bản địa hóa giao diện và khóa sổ quản trị bằng chứng.
 
-- [ ] **Step 1: Đọc tám file theo thứ tự ngày**
+- [ ] **Bước 1: Đọc tám tệp theo thứ tự ngày**
 
-Đọc ngày 20 → 22 → 23 → 27; ghi nhận final-governance authority, UI correction, H3 remediation, email staging và business-rule alignment.
+Đọc ngày 20 → 22 → 23 → 27; ghi nhận final-quản trị authority, UI correction, H3 khắc phục,
+email môi trường tiền sản xuất và nghiệp vụ-quy tắc alignment.
 
-- [ ] **Step 2: Dịch tám file bằng `apply_patch`**
+- [ ] **Bước 2: Dịch tám tệp bằng `apply_patch`**
 
-Dịch prose/nhãn; giữ nguyên H3, commit, PR, CI, staging URL, provider response, screenshot, test và status literal.
+Dịch văn xuôi/nhãn; giữ nguyên H3, bản ghi Git, PR, CI, môi trường tiền sản xuất URL, nhà cung cấp phản hồi,
+screenshot, kiểm thử và giá trị trạng thái nguyên văn.
 
-- [ ] **Step 3: Chạy invariant và residue scan**
+- [ ] **Bước 3: Chạy điều kiện bất biến và quét phần tiếng Anh còn sót**
 
 ```powershell
 $paths = @(
@@ -906,36 +975,38 @@ $paths = @(
 Test-SddTranslationInvariant -Paths $paths
 ```
 
-Chạy residue scan; xác nhận evidence/literal còn lại được phép giữ nguyên.
+Chạy quét phần tiếng Anh còn sót; xác nhận bằng chứng/giá trị nguyên văn còn lại được phép giữ nguyên.
 
-- [ ] **Step 4: Chạy completion gate và kiểm tra recent-state claims**
+- [ ] **Bước 4: Chạy cổng hoàn tất và kiểm tra tuyên bố trạng thái gần nhất**
 
-Chạy Common completion gate. Đối chiếu ngày, branch/commit, H3 authority, staging result, UI localization scope và remaining limitation.
+Chạy cổng hoàn tất dùng chung. Đối chiếu ngày, nhánh/bản ghi Git, H3 authority, môi trường tiền sản xuất
+kết quả, phạm vi bản địa hóa giao diện và các giới hạn còn lại.
 
-- [ ] **Step 5: Commit review ngày 20-27**
+- [ ] **Bước 5: bản ghi Git rà soát ngày 20-27**
 
 ```powershell
 git add -- $paths
 git commit -m "docs: translate final SDD validation reviews"
 ```
 
-### Task 20: Việt hóa skill nội bộ và kiểm tra toàn cục
+### Nhiệm vụ 20: Việt hóa kỹ năng nội bộ và kiểm tra toàn cục
 
-**Files:**
-- Modify: `.sdd/skills/README.md`
-- Verify: Toàn bộ 149 file `.sdd/**/*.md`
-- Verify: `docs/superpowers/specs/2026-07-28-vietnamese-sdd-documentation-design.md`
-- Verify: `docs/superpowers/plans/2026-07-28-vietnamese-sdd-documentation.md`
+**Tệp:**
+- Sửa đổi: `.sdd/skills/README.md`
+- xác minh: Toàn bộ 149 tệp `.sdd/**/*.md`
+- Xác minh: `docs/superpowers/specs/2026-07-28-vietnamese-sdd-documentation-design.md`
+- Xác minh: `docs/superpowers/plans/2026-07-28-vietnamese-sdd-documentation.md`
 
-**Interfaces:**
-- Consumes: Tất cả output của Tasks 1-19.
-- Produces: Bộ `.sdd` hoàn chỉnh bằng tiếng Việt, báo cáo kiểm chứng sạch và lịch sử commit có thể review theo lớp.
+**Giao diện:**
+- đầu vào: Tất cả output của Tasks 1-19.
+- đầu ra: Bộ `.sdd` hoàn chỉnh bằng tiếng Việt, báo cáo kiểm chứng sạch và lịch sử bản ghi Git có thể rà soát theo lớp.
 
-- [ ] **Step 1: Dịch skill README bằng `apply_patch`**
+- [ ] **Bước 1: Dịch kỹ năng README bằng `apply_patch`**
 
-Dịch nội dung hướng dẫn trong `.sdd/skills/README.md`; giữ nguyên tên folder, tên file, lệnh và định danh kỹ thuật.
+Dịch nội dung hướng dẫn trong `.sdd/skills/README.md`; giữ nguyên tên folder, tên tệp, lệnh và định
+danh kỹ thuật.
 
-- [ ] **Step 2: Chạy invariant trên toàn bộ 149 file**
+- [ ] **Bước 2: Chạy điều kiện bất biến trên toàn bộ 149 tệp**
 
 ```powershell
 $paths = Get-ChildItem '.sdd' -Recurse -File -Filter '*.md' | ForEach-Object { $_.FullName.Substring((Resolve-Path '.').Path.Length + 1).Replace('\','/') }
@@ -945,18 +1016,19 @@ Test-SddTranslationInvariant -Paths $paths
 
 Kết quả mong đợi: `PASS: 149 files preserved`.
 
-- [ ] **Step 3: Chạy quét tiếng Anh toàn cục**
+- [ ] **Bước 3: Chạy quét tiếng Anh toàn cục**
 
-Chạy English residue scan với toàn bộ `$paths`. Sau đó chạy thêm:
+Chạy English quét phần tiếng Anh còn sót với toàn bộ `$paths`. Sau đó chạy thêm:
 
 ```powershell
 rg -n -i '^#{1,6}\s+.*\b(Overview|Context|Goal|Scope|Actors|Permissions|Preconditions|Flows|Rules|Requirements|Criteria|Cases|Dependencies|Questions|Traceability|Validation|Evidence|Result|Decision|Consequences)\b' -- $paths
 if ($LASTEXITCODE -gt 1) { throw "Global heading scan failed to run." }
 ```
 
-Kết quả mong đợi: không còn heading tiếng Anh ngoài tên riêng hoặc literal kỹ thuật đã được hợp đồng cho phép.
+Kết quả mong đợi: không còn heading tiếng Anh ngoài tên riêng hoặc giá trị nguyên văn kỹ thuật đã
+được hợp đồng cho phép.
 
-- [ ] **Step 4: Chạy kiểm tra cấu trúc, traceability và phạm vi diff**
+- [ ] **Bước 4: Chạy kiểm tra cấu trúc, khả năng truy vết và phạm vi khác biệt**
 
 ```powershell
 git diff --check 7bf76b5...HEAD
@@ -968,18 +1040,22 @@ $unexpected = $changed | Where-Object { $_ -notmatch '^\.sdd/.+\.md$' -and $_ -n
 if ($unexpected) { $unexpected; throw "Out-of-scope files changed." }
 ```
 
-Kết quả mong đợi: không có lỗi diff, traceability đạt yêu cầu và không có file code/runtime trong `$unexpected`.
+Kết quả mong đợi: không có lỗi khác biệt, khả năng truy vết đạt yêu cầu và không có tệp mã
+nguồn/thời gian chạy
+trong `$unexpected`.
 
-- [ ] **Step 5: Đọc diff tổng theo khu vực rủi ro**
+- [ ] **Bước 5: Đọc khác biệt tổng theo khu vực rủi ro**
 
 ```powershell
 git diff --stat 7bf76b5...HEAD
 git diff 7bf76b5...HEAD -- .sdd/constraints .sdd/specs/*/SPEC.md .sdd/rfcs
 ```
 
-Đọc thủ công mọi câu chứa `only`, `must`, `must not`, `cannot`, `at most`, `at least`, điều kiện phủ định, actor permission, số tiền, số ngày và trạng thái; xác nhận bản dịch không đảo nghĩa hoặc mở rộng phạm vi.
+Đọc thủ công mọi câu chứa `only`, `must`, `must not`, `cannot`, `at most`, `at least`, điều kiện phủ
+định, tác nhân permission, số tiền, số ngày và trạng thái; xác nhận bản dịch không đảo nghĩa hoặc mở
+rộng phạm vi.
 
-- [ ] **Step 6: Commit skill README và closeout tài liệu**
+- [ ] **Bước 6: bản ghi Git kỹ năng README và khóa sổ tài liệu**
 
 ```powershell
 git add -- .sdd/skills/README.md
@@ -987,16 +1063,18 @@ git commit -m "docs: complete Vietnamese SDD translation"
 git status --short --branch
 ```
 
-Kết quả mong đợi: working tree sạch; nhánh chỉ chứa các commit tài liệu kế tiếp commit nguồn `7bf76b5`.
+Kết quả mong đợi: working tree sạch; nhánh chỉ chứa các bản ghi Git tài liệu kế tiếp bản ghi Git
+nguồn `7bf76b5`.
 
-## Final Human Review Gate
+## Cổng đánh giá con người cuối cùng
 
-Trước khi push hoặc mở pull request, người duyệt cần kiểm tra tối thiểu:
+Trước khi đẩy lên kho từ xa hoặc mở yêu cầu hợp nhất, người duyệt cần kiểm tra tối thiểu:
 
-1. `.sdd/constitution.md`, `.sdd/shared_context.md` và ba constraint files.
-2. `SPEC.md` của FE02, FE07, FE09 và FE11 vì đây là các feature có rủi ro security/business-rule cao.
+1. `.sdd/constitution.md`, `.sdd/shared_context.md` và ba ràng buộc tệp.
+2. `SPEC.md` của FE02, FE07, FE09 và FE11 vì đây là các chức năng có rủi ro bảo mật/nghiệp vụ-quy tắc cao.
 3. ADR-002, ADR-003, ADR-004 và ADR-005.
-4. Một review lịch sử từ mỗi nhóm Tasks 15-19.
-5. Báo cáo invariant, traceability, English residue và out-of-scope diff của Task 20.
+4. Một rà soát lịch sử từ mỗi nhóm Tasks 15-19.
+5. Báo cáo điều kiện bất biến, khả năng truy vết, phần tiếng Anh còn sót và ngoài phạm vi khác biệt của Nhiệm vụ 20.
 
-Không push, tạo PR hoặc merge nếu chưa có yêu cầu tiếp theo của người dùng và chưa vượt qua gate review tương ứng của repository.
+Không đẩy lên kho từ xa, tạo PR hoặc hợp nhất nếu chưa có yêu cầu tiếp theo của người dùng và chưa
+vượt qua cổng rà soát tương ứng của kho mã nguồn.

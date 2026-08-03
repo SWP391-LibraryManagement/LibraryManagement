@@ -1,53 +1,57 @@
-# Member Demo Hotfix Implementation Plan
+# Kế hoạch triển khai bản sửa nóng trình diễn Thành viên
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Đối với nhân viên đại lý:** SUB-SKILL BẮT BUỘC: Sử dụng siêu năng lực:phát triển theo định hướng phụ (được khuyến nghị) hoặc siêu năng lực:thực hiện các kế hoạch để triển khai kế hoạch này theo từng nhiệm vụ. Các bước sử dụng cú pháp hộp kiểm (`- [ ]`) để theo dõi.
 
-**Goal:** Make the six approved Member demo paths truthful and reliable without backend, database, or FE11 changes.
+**Mục tiêu:** Làm cho sáu đường dẫn demo Thành viên được phê duyệt trở nên trung thực và đáng tin
+cậy mà không cần thay đổi máy chủ, cơ sở dữ liệu hoặc FE11.
 
-**Architecture:** Keep the existing React and API boundaries. Correct two view-model contracts, add one read-only Member fines page over the existing `/api/fines/me` endpoint, and make narrowly scoped HomePage navigation/search/copy fixes. Each product change starts with a focused Node regression test and remains uncommitted for local demo review.
+**Kiến trúc:** Giữ nguyên ranh giới React và API hiện có. Sửa hai hợp đồng mô hình xem, thêm một
+trang phạt Thành viên chỉ đọc trên điểm cuối `/api/fines/me` hiện có và thực hiện các bản sửa lỗi
+điều hướng/tìm kiếm/sao chép HomePage trong phạm vi hẹp. Mỗi thay đổi sản phẩm đều bắt đầu bằng kiểm
+thử hồi quy Node tập trung và vẫn có sẵn để xem xét bản demo cục bộ.
 
-**Tech Stack:** React 19, React Router 7, Axios, Node `node:test`, Vite 8, ESLint 10.
+**bộ công nghệ công nghệ:** React 19, React Bộ định tuyến 7, Axios, Node `node:test`, Vite 8, ESLint 10.
 
-## Global Constraints
+## Ràng buộc toàn cầu
 
-- Batch ID is `DEMO-HOTFIX-USER-2026-07-22`.
-- Product implementation remains local and uncommitted until the user finishes demo review.
-- Do not commit, push, merge, change schema, deploy, or edit backend production code.
-- Do not stage or modify any `.sdd/specs/feat-user-role-management/` file.
-- Do not redesign multi-copy borrowing or implement full catalog/reservation pagination.
-- Reuse the existing authenticated API helpers, `BorrowingRouteGuard`, `AppLayout`, `DataTable`, `DataNotice`, `EmptyState`, and `Badge`.
-- Preserve the approved rules: 3 borrow requests per day before approved membership, 5 per day after approval, and at most 5 active borrowed books.
+- ID lô là `DEMO-HOTFIX-USER-2026-07-22`.
+- Việc triển khai sản phẩm vẫn mang tính cục bộ và không được cam kết cho đến khi người dùng hoàn thành quá trình xem xét bản demo.
+- Không cam kết, đẩy, hợp nhất, thay đổi lược đồ, triển khai hoặc chỉnh sửa mã sản xuất máy chủ.
+- Không tạo giai đoạn hoặc sửa đổi bất kỳ tệp `.sdd/specs/feat-user-role-management/` nào.
+- Không thiết kế lại việc mượn nhiều bản sao hoặc triển khai phân trang đầy đủ trong danh mục/reservation.
+- Sử dụng lại các trình trợ giúp API đã được xác thực hiện có, `BorrowingRouteGuard`, `AppLayout`, `DataTable`, `DataNotice`, `EmptyState` và `Badge`.
+- Giữ nguyên các quy định đã được phê duyệt: 3 yêu cầu mượn mỗi ngày trước khi thành viên được phê duyệt, 5 yêu cầu mỗi ngày sau khi được phê duyệt và tối đa 5 sách đang hoạt động.
 
 ---
 
-## File Map
+## Bản đồ tệp
 
-- Modify `frontend/src/page/dashboard/dashboardViewModel.js`: consume the canonical Member borrowing envelope.
-- Modify `frontend/src/utils/libraryFeatureViewModels.js`: preserve reservation raw status and expose terminal/open-state policy.
-- Modify `frontend/src/page/reservation/MyReservationsPage.jsx`: use raw reservation lifecycle state for duplicate and cancel actions.
-- Modify `frontend/src/api/libraryFeatureApi.js`: expose the existing Member fines read endpoint.
-- Create `frontend/src/page/fine/MemberFinesPage.jsx`: render the authenticated Member's own fines read-only.
-- Modify `frontend/src/App.jsx`: lazy-load and guard `/fines/mine`.
-- Modify `frontend/src/utils/appNavigation.js`: expose “Tiền phạt của tôi” to Members.
-- Modify `frontend/src/page/HomePage.jsx`: correct guest routes, blank search reset, and unsupported promotion copy.
-- Modify `frontend/test/appShellFrontend.test.js`: dashboard, Member navigation, and Home truthfulness regressions.
-- Modify `frontend/test/reservationFrontend.test.js`: FE08 terminal-state regressions.
-- Create `frontend/test/memberFineFrontend.test.js`: API, route, navigation, and read-only page regressions.
-- Modify `frontend/test/publicBrowseFrontend.test.js`: blank-search default-catalog regression.
+- Sửa đổi `frontend/src/page/dashboard/dashboardViewModel.js`: sử dụng phong bì mượn Thành viên chuẩn.
+- Sửa đổi `frontend/src/utils/libraryFeatureViewModels.js`: duy trì trạng thái thô đặt chỗ và hiển thị chính sách thiết bị đầu cuối/trạng thái mở.
+- Sửa đổi `frontend/src/page/reservation/MyReservationsPage.jsx`: sử dụng trạng thái vòng đời đặt chỗ thô cho các hành động trùng lặp và hủy.
+- Sửa đổi `frontend/src/api/libraryFeatureApi.js`: hiển thị điểm cuối đọc khoản phạt của Thành viên hiện có.
+- Tạo `frontend/src/page/fine/MemberFinesPage.jsx`: hiển thị khoản phạt của chính Thành viên đã được xác thực ở chế độ chỉ đọc.
+- Sửa đổi `frontend/src/App.jsx`: tải chậm và bảo vệ `/fines/mine`.
+- Modify `frontend/src/utils/appNavigation.js`: expose “khoản phạt của tôi” to thành viên.
+- Sửa đổi `frontend/src/page/HomePage.jsx`: sửa các tuyến đường của khách, đặt lại tìm kiếm trống và bản sao quảng cáo không được hỗ trợ.
+- Sửa đổi `frontend/test/appShellFrontend.test.js`: bảng điều khiển, Điều hướng thành viên và hồi quy về độ trung thực của Trang chủ.
+- Sửa đổi hồi quy trạng thái đầu cuối `frontend/test/reservationFrontend.test.js`: FE08.
+- Tạo `frontend/test/memberFineFrontend.test.js`: API, tuyến đường, điều hướng và hồi quy trang chỉ đọc.
+- Sửa đổi `frontend/test/publicBrowseFrontend.test.js`: hồi quy danh mục mặc định tìm kiếm trống.
 
-### Task 1: Correct the Member dashboard borrowing envelope
+### Nhiệm vụ 1: Chỉnh sửa phong bì mượn bảng điều khiển Thành viên
 
-**Files:**
-- Modify: `frontend/test/appShellFrontend.test.js`
-- Modify: `frontend/src/page/dashboard/dashboardViewModel.js`
+**Tệp:**
+- Sửa đổi: `frontend/test/appShellFrontend.test.js`
+- Sửa đổi: `frontend/src/page/dashboard/dashboardViewModel.js`
 
-**Interfaces:**
-- Consumes: `borrowingApi.listMine(): Promise<{ borrowings: BorrowRequest[], pagination: object }>`.
-- Produces: `buildMemberSummary(borrowing, reservations): { activeBorrows: number, completedBorrows: number, activeReservations: number }`.
+**Giao diện:**
+- Tiêu thụ: `borrowingApi.listMine(): Promise<{ borrowings: BorrowRequest[], pagination: object }>`.
+- Sản xuất: `buildMemberSummary(borrowing, reservations): { activeBorrows: number, completedBorrows: number, activeReservations: number }`.
 
-- [ ] **Step 1: Write the failing canonical-envelope test**
+- [ ] **Bước 1: Viết kiểm thử phong bì chuẩn không thành công**
 
-Replace the Member dashboard fixture with:
+Thay thế vật cố định của bảng điều khiển Thành viên bằng:
 
 ```js
 test('member dashboard summarizes the canonical personal borrowing envelope', () => {
@@ -61,53 +65,53 @@ test('member dashboard summarizes the canonical personal borrowing envelope', ()
 });
 ```
 
-- [ ] **Step 2: Run the focused test and verify RED**
+- [ ] **Bước 2: Chạy kiểm thử tập trung và xác minh RED**
 
-Run: `node --test --test-name-pattern="member dashboard" test/appShellFrontend.test.js`
+Chạy: `node --test --test-name-pattern="member dashboard" test/appShellFrontend.test.js`
 
-Working directory: `frontend`
+Thư mục làm việc: `frontend`
 
-Expected: FAIL because `activeBorrows` and `completedBorrows` are `0` when the fixture uses `borrowings`.
+Dự kiến: THẤT BẠI vì `activeBorrows` và `completedBorrows` là `0` khi thiết bị cố định sử dụng `borrowings`.
 
-- [ ] **Step 3: Implement the canonical key with a defensive array check**
+- [ ] **Bước 3: Triển khai khóa chuẩn bằng kiểm tra mảng phòng vệ**
 
-Change the first line inside `buildMemberSummary` to:
+Thay đổi dòng đầu tiên bên trong `buildMemberSummary` thành:
 
 ```js
 const borrowRows = Array.isArray(borrowing.borrowings) ? borrowing.borrowings : [];
 ```
 
-Keep the staff summary on `borrowRequests`, because the staff endpoint owns that envelope.
+Giữ bản tóm tắt nhân viên trên `borrowRequests`, vì điểm cuối nhân viên sở hữu phong bì đó.
 
-- [ ] **Step 4: Run the focused test and verify GREEN**
+- [ ] **Bước 4: Chạy kiểm thử tập trung và xác minh GREEN**
 
-Run: `node --test --test-name-pattern="member dashboard" test/appShellFrontend.test.js`
+Chạy: `node --test --test-name-pattern="member dashboard" test/appShellFrontend.test.js`
 
-Working directory: `frontend`
+Thư mục làm việc: `frontend`
 
-Expected: PASS.
+Dự kiến: ĐẠT.
 
-- [ ] **Step 5: Inspect the task diff without committing product code**
+- [ ] **Bước 5: Kiểm tra sự khác biệt của tác vụ mà không cần nhập mã sản phẩm**
 
-Run: `git diff -- frontend/test/appShellFrontend.test.js frontend/src/page/dashboard/dashboardViewModel.js`
+Chạy: `git diff -- frontend/test/appShellFrontend.test.js frontend/src/page/dashboard/dashboardViewModel.js`
 
-Expected: only the Member fixture and the canonical Member response key changed.
+Dự kiến: chỉ có bản cố định Thành viên và khóa phản hồi Thành viên chuẩn thay đổi.
 
-### Task 2: Make fulfilled reservations terminal in Member actions
+### Nhiệm vụ 2: Hoàn thành thiết bị đầu cuối đặt chỗ trong hành động của Thành viên
 
-**Files:**
-- Modify: `frontend/test/reservationFrontend.test.js`
-- Modify: `frontend/src/utils/libraryFeatureViewModels.js`
-- Modify: `frontend/src/page/reservation/MyReservationsPage.jsx`
+**Tệp:**
+- Sửa đổi: `frontend/test/reservationFrontend.test.js`
+- Sửa đổi: `frontend/src/utils/libraryFeatureViewModels.js`
+- Sửa đổi: `frontend/src/page/reservation/MyReservationsPage.jsx`
 
-**Interfaces:**
-- Produces: `isOpenMemberReservationStatus(status): boolean`, true only for backend states `ACTIVE` and `NOTIFIED`.
-- Produces: `mapReservation(reservation).rawStatus: string`, normalized to uppercase.
-- Consumes: those two outputs in duplicate-reservation and cancel-button decisions.
+**Giao diện:**
+- Tạo ra: `isOpenMemberReservationStatus(status): boolean`, chỉ đúng cho các trạng thái máy chủ `ACTIVE` và `NOTIFIED`.
+- Tạo ra: `mapReservation(reservation).rawStatus: string`, được chuẩn hóa thành chữ hoa.
+- Tiêu thụ: hai đầu ra đó trong các quyết định đặt chỗ trùng lặp và nút hủy.
 
-- [ ] **Step 1: Write failing raw-state and policy tests**
+- [ ] **Bước 1: Viết các kiểm thử chính sách và trạng thái thô không thành công**
 
-Add to `reservationFrontend.test.js`:
+Thêm vào `reservationFrontend.test.js`:
 
 ```js
 test('member reservation actions are open only for ACTIVE and NOTIFIED records', async () => {
@@ -127,7 +131,7 @@ test('reservation mapping preserves the normalized backend lifecycle state', asy
 });
 ```
 
-Extend the existing Member page source test with:
+Mở rộng kiểm thử nguồn trang Thành viên hiện có với:
 
 ```js
 assert.match(mine, /isOpenMemberReservationStatus/);
@@ -135,17 +139,17 @@ assert.match(mine, /item\.rawStatus/);
 assert.doesNotMatch(mine, /!\['Cancelled', 'Expired'\]\.includes\(item\.status\)/);
 ```
 
-- [ ] **Step 2: Run the FE08 file and verify RED**
+- [ ] **Bước 2: Chạy tệp FE08 và xác minh RED**
 
-Run: `node --test test/reservationFrontend.test.js`
+Chạy: `node --test test/reservationFrontend.test.js`
 
-Working directory: `frontend`
+Thư mục làm việc: `frontend`
 
-Expected: FAIL because the helper and `rawStatus` do not exist and the page still permits `Completed` cancellation.
+Dự kiến: THẤT BẠI vì trình trợ giúp và `rawStatus` không tồn tại và trang vẫn cho phép hủy `Completed`.
 
-- [ ] **Step 3: Add the lifecycle policy to the view model**
+- [ ] **Bước 3: Thêm chính sách vòng đời vào mô hình xem**
 
-Add before `mapReservation`:
+Thêm vào trước `mapReservation`:
 
 ```js
 export function isOpenMemberReservationStatus(status) {
@@ -153,15 +157,15 @@ export function isOpenMemberReservationStatus(status) {
 }
 ```
 
-Add this property to `mapReservation`:
+Thêm thuộc tính này vào `mapReservation`:
 
 ```js
 rawStatus: String(reservation.status || '').toUpperCase(),
 ```
 
-- [ ] **Step 4: Use the policy for duplicate and cancel actions**
+- [ ] **Bước 4: Sử dụng chính sách cho hành động trùng lặp và hủy**
 
-Import `isOpenMemberReservationStatus`, then make the active-copy set and duplicate check use:
+Nhập `isOpenMemberReservationStatus`, sau đó tạo bộ sao chép hoạt động và sử dụng kiểm tra trùng lặp:
 
 ```js
 .filter((item) => isOpenMemberReservationStatus(item.rawStatus))
@@ -174,7 +178,7 @@ if (reservations.some((item) => (
 ))) {
 ```
 
-Render the cancel button only when:
+Chỉ hiển thị nút hủy khi:
 
 ```jsx
 {isOpenMemberReservationStatus(item.rawStatus) && (
@@ -184,34 +188,34 @@ Render the cancel button only when:
 )}
 ```
 
-Also display `-` for the queue position when `rawStatus` is terminal.
+Đồng thời hiển thị `-` cho vị trí hàng đợi khi `rawStatus` là thiết bị đầu cuối.
 
-- [ ] **Step 5: Run the FE08 file and verify GREEN**
+- [ ] **Bước 5: Chạy tệp FE08 và xác minh GREEN**
 
-Run: `node --test test/reservationFrontend.test.js`
+Chạy: `node --test test/reservationFrontend.test.js`
 
-Working directory: `frontend`
+Thư mục làm việc: `frontend`
 
-Expected: all FE08 frontend tests pass.
+Dự kiến: tất cả các kiểm thử giao diện người dùng FE08 đều vượt qua.
 
-### Task 3: Add a read-only “Tiền phạt của tôi” page
+### Nhiệm vụ 3: thêm a chỉ đọc “khoản phạt của tôi” page
 
-**Files:**
-- Create: `frontend/test/memberFineFrontend.test.js`
-- Modify: `frontend/test/appShellFrontend.test.js`
-- Modify: `frontend/src/api/libraryFeatureApi.js`
-- Create: `frontend/src/page/fine/MemberFinesPage.jsx`
-- Modify: `frontend/src/App.jsx`
-- Modify: `frontend/src/utils/appNavigation.js`
+**Tệp:**
+- Tạo: `frontend/test/memberFineFrontend.test.js`
+- Sửa đổi: `frontend/test/appShellFrontend.test.js`
+- Sửa đổi: `frontend/src/api/libraryFeatureApi.js`
+- Tạo: `frontend/src/page/fine/MemberFinesPage.jsx`
+- Sửa đổi: `frontend/src/App.jsx`
+- Sửa đổi: `frontend/src/utils/appNavigation.js`
 
-**Interfaces:**
-- Produces: `fineApi.listMine(params = {}): Promise<{ fines: Fine[], page: number, limit: number, total: number, totalPages: number }>`.
-- Produces: guarded route `/fines/mine` and navigation key `my-fines`.
-- Consumes: fine fields `fineId`, `borrowDetailId`, `bookTitle`, `reason`, `overdueDays`, `amount`, `status`.
+**Giao diện:**
+- Sản xuất: `fineApi.listMine(params = {}): Promise<{ fines: Fine[], page: number, limit: number, total: number, totalPages: number }>`.
+- Tạo ra: tuyến đường được bảo vệ `/fines/mine` và phím điều hướng `my-fines`.
+- Tiêu thụ: các trường tốt `fineId`, `borrowDetailId`, `bookTitle`, `reason`, `overdueDays`, `amount`, `status`.
 
-- [ ] **Step 1: Write failing API, route, navigation, and read-only page tests**
+- [ ] **Bước 1: Viết các kiểm thử trang API, tuyến đường, điều hướng và chỉ đọc không thành công**
 
-Create `memberFineFrontend.test.js`:
+Tạo `memberFineFrontend.test.js`:
 
 ```js
 import assert from 'node:assert/strict';
@@ -243,23 +247,23 @@ test('Member fines page is server-backed, paginated, and read-only', async () =>
 });
 ```
 
-Update the Member navigation expectation in `appShellFrontend.test.js` to include `my-fines`, and add:
+Cập nhật kỳ vọng điều hướng Thành viên trong `appShellFrontend.test.js` để bao gồm `my-fines` và thêm:
 
 ```js
 assert.equal(getActiveNavigationKey('/fines/mine'), 'my-fines');
 ```
 
-- [ ] **Step 2: Run the two focused test files and verify RED**
+- [ ] **Bước 2: Chạy hai tệp kiểm thử tập trung và xác minh RED**
 
-Run: `node --test test/memberFineFrontend.test.js test/appShellFrontend.test.js`
+Chạy: `node --test test/memberFineFrontend.test.js test/appShellFrontend.test.js`
 
-Working directory: `frontend`
+Thư mục làm việc: `frontend`
 
-Expected: FAIL because the page, API method, route, and navigation item do not exist.
+Dự kiến: THẤT BẠI vì trang, phương thức API, tuyến đường và mục điều hướng không tồn tại.
 
-- [ ] **Step 3: Add the API method, guarded route, and navigation item**
+- [ ] **Bước 3: Thêm phương thức API, tuyến đường được bảo vệ và mục điều hướng**
 
-Add first inside `fineApi`:
+Thêm đầu tiên vào `fineApi`:
 
 ```js
 listMine(params = {}) {
@@ -270,7 +274,7 @@ listMine(params = {}) {
 },
 ```
 
-Add the lazy import and route in `App.jsx`:
+Thêm chức năng nhập và định tuyến lười biếng trong `App.jsx`:
 
 ```js
 const MemberFinesPage = lazy(() => import('./page/fine/MemberFinesPage'));
@@ -280,15 +284,16 @@ const MemberFinesPage = lazy(() => import('./page/fine/MemberFinesPage'));
 <Route path="/fines/mine" element={<BorrowingRouteGuard audience="member"><MemberFinesPage /></BorrowingRouteGuard>} />
 ```
 
-Add to the Member navigation group:
+Thêm vào nhóm điều hướng Thành viên:
 
 ```js
 { key: 'my-fines', label: 'Tiền phạt của tôi', path: '/fines/mine' },
 ```
 
-- [ ] **Step 4: Create the read-only page**
+- [ ] **Bước 4: Tạo trang chỉ đọc**
 
-Implement `MemberFinesPage.jsx` with `MEMBER_FINE_PAGE_SIZE = 8`, `page`, `fines`, `pagination`, `loading`, and `notice` state. Load with:
+Triển khai `MemberFinesPage.jsx` với trạng thái `MEMBER_FINE_PAGE_SIZE = 8`, `page`, `fines`,
+`pagination`, `loading` và `notice`. Tải với:
 
 ```js
 const result = await fineApi.listMine({ page, limit: MEMBER_FINE_PAGE_SIZE });
@@ -301,35 +306,37 @@ setPagination({
 });
 ```
 
-Render `AppLayout active="my-fines"` with a reload button whose `onClick` is `loadFines`, an error `DataNotice`, and a `DataTable` with these exact headers:
+Kết xuất `AppLayout active="my-fines"` bằng nút tải lại có `onClick` là `loadFines`, lỗi
+`DataNotice` và `DataTable` với các tiêu đề chính xác sau:
 
 ```js
 ['Sách', 'Lý do', 'Quá hạn', 'Số tiền', 'Trạng thái', 'Mã mượn']
 ```
 
-Use `Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 })`, `Badge`, and previous/next buttons that only call `setPage`. Do not render mutation buttons.
+Sử dụng `Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0
+})`, `Badge` và các nút trước/tiếp theo chỉ gọi `setPage`. Không hiển thị các nút thao tác ghi.
 
-- [ ] **Step 5: Run the two focused files and verify GREEN**
+- [ ] **Bước 5: Chạy hai tệp tập trung và xác minh GREEN**
 
-Run: `node --test test/memberFineFrontend.test.js test/appShellFrontend.test.js`
+Chạy: `node --test test/memberFineFrontend.test.js test/appShellFrontend.test.js`
 
-Working directory: `frontend`
+Thư mục làm việc: `frontend`
 
-Expected: both files pass.
+Dự kiến: cả hai tập tin đều vượt qua.
 
-### Task 4: Correct all guest authentication entry points
+### Nhiệm vụ 4: Sửa tất cả các điểm nhập xác thực khách
 
-**Files:**
-- Modify: `frontend/test/appShellFrontend.test.js`
-- Modify: `frontend/src/page/HomePage.jsx`
+**Tệp:**
+- Sửa đổi: `frontend/test/appShellFrontend.test.js`
+- Sửa đổi: `frontend/src/page/HomePage.jsx`
 
-**Interfaces:**
-- Consumes: existing `goToLogin()` and `goToRegister()` helpers.
-- Produces: desktop, mobile, CTA, and footer guest controls that consistently route to `/login` or `/register`.
+**Giao diện:**
+- Tiêu thụ: người trợ giúp `goToLogin()` và `goToRegister()` hiện có.
+- Tạo ra: các điều khiển dành cho máy tính để bàn, thiết bị di động, CTA và chân trang định tuyến nhất quán đến `/login` hoặc `/register`.
 
-- [ ] **Step 1: Write the failing source contract**
+- [ ] **Bước 1: Viết hợp đồng nguồn bị lỗi**
 
-Add to `appShellFrontend.test.js`:
+Thêm vào `appShellFrontend.test.js`:
 
 ```js
 test('homepage guest authentication controls route to their matching screens', async () => {
@@ -341,44 +348,46 @@ test('homepage guest authentication controls route to their matching screens', a
 });
 ```
 
-- [ ] **Step 2: Run the focused test and verify RED**
+- [ ] **Bước 2: Chạy kiểm thử tập trung và xác minh RED**
 
-Run: `node --test --test-name-pattern="guest authentication controls" test/appShellFrontend.test.js`
+Chạy: `node --test --test-name-pattern="guest authentication controls" test/appShellFrontend.test.js`
 
-Working directory: `frontend`
+Thư mục làm việc: `frontend`
 
-Expected: FAIL because desktop/mobile registration uses `goToMembership` and footer actions are empty functions.
+Dự kiến: THẤT BẠI vì đăng ký trên máy tính để bàn/thiết bị di động sử dụng `goToMembership` và các
+tác vụ ở chân trang là các hàm trống.
 
-- [ ] **Step 3: Wire each control to the existing helper**
+- [ ] **Bước 3: Đấu dây từng điều khiển cho người trợ giúp hiện có**
 
-Delete `goToMembership`. Use `goToRegister` for the desktop and mobile “Đăng ký” buttons. Replace footer links with:
+Xóa `goToMembership`. Sử dụng `goToRegister` cho nút **Đăng ký** trên máy tính và thiết bị di động.
+Thay các liên kết chân trang bằng:
 
 ```js
 { label: 'Đăng nhập', action: goToLogin },
 { label: 'Đăng ký', action: goToRegister },
 ```
 
-- [ ] **Step 4: Run the focused test and verify GREEN**
+- [ ] **Bước 4: Chạy kiểm thử tập trung và xác minh GREEN**
 
-Run: `node --test --test-name-pattern="guest authentication controls" test/appShellFrontend.test.js`
+Chạy: `node --test --test-name-pattern="guest authentication controls" test/appShellFrontend.test.js`
 
-Working directory: `frontend`
+Thư mục làm việc: `frontend`
 
-Expected: PASS.
+Dự kiến: ĐẠT.
 
-### Task 5: Make blank public search return to the default catalog
+### Nhiệm vụ 5: Làm cho tìm kiếm công khai trống trở về danh mục mặc định
 
-**Files:**
-- Modify: `frontend/test/publicBrowseFrontend.test.js`
-- Modify: `frontend/src/page/HomePage.jsx`
+**Tệp:**
+- Sửa đổi: `frontend/test/publicBrowseFrontend.test.js`
+- Sửa đổi: `frontend/src/page/HomePage.jsx`
 
-**Interfaces:**
-- Consumes: `publicBrowseApi.list()` and existing `scrollTo('section-books')`.
-- Produces: blank search reloads the canonical default list, resets search state, selects all categories, expands the catalog, and shows no validation toast.
+**Giao diện:**
+- Tiêu thụ: `publicBrowseApi.list()` và `scrollTo('section-books')` hiện có.
+- Tạo ra: tìm kiếm trống tải lại danh sách mặc định chuẩn, đặt lại trạng thái tìm kiếm, chọn tất cả các danh mục, mở rộng danh mục và không hiển thị thông báo xác thực.
 
-- [ ] **Step 1: Write the failing blank-search contract**
+- [ ] **Bước 1: Viết hợp đồng tìm kiếm trống không thành công**
 
-Add to `publicBrowseFrontend.test.js`:
+Thêm vào `publicBrowseFrontend.test.js`:
 
 ```js
 test('FE01 blank search returns to the loaded default catalog without an error toast', async () => {
@@ -394,17 +403,18 @@ test('FE01 blank search returns to the loaded default catalog without an error t
 });
 ```
 
-- [ ] **Step 2: Run the FE01 test file and verify RED**
+- [ ] **Bước 2: Chạy tệp kiểm tra FE01 và xác minh RED**
 
-Run: `node --test test/publicBrowseFrontend.test.js`
+Chạy: `node --test test/publicBrowseFrontend.test.js`
 
-Working directory: `frontend`
+Thư mục làm việc: `frontend`
 
-Expected: FAIL because blank input displays a validation toast and does not reload or render the canonical default list.
+Dự kiến: THẤT BẠI vì mục nhập trống hiển thị thông báo xác thực và không tải lại hoặc hiển thị danh
+sách mặc định chuẩn.
 
-- [ ] **Step 3: Replace the blank-search branch**
+- [ ] **Bước 3: Thay thế nhánh tìm kiếm trống**
 
-Use:
+sử dụng:
 
 ```js
 if (!keyword) {
@@ -431,27 +441,27 @@ if (!keyword) {
 }
 ```
 
-- [ ] **Step 4: Run the FE01 file and verify GREEN**
+- [ ] **Bước 4: Chạy tệp FE01 và xác minh GREEN**
 
-Run: `node --test test/publicBrowseFrontend.test.js`
+Chạy: `node --test test/publicBrowseFrontend.test.js`
 
-Working directory: `frontend`
+Thư mục làm việc: `frontend`
 
-Expected: all FE01 public browse tests pass.
+Dự kiến: tất cả các kiểm thử duyệt công khai FE01 đều vượt qua.
 
-### Task 6: Remove unsupported membership claims from the public home page
+### Nhiệm vụ 6: Xóa các yêu cầu thành viên không được hỗ trợ khỏi trang chủ công khai
 
-**Files:**
-- Modify: `frontend/test/appShellFrontend.test.js`
-- Modify: `frontend/src/page/HomePage.jsx`
+**Tệp:**
+- Sửa đổi: `frontend/test/appShellFrontend.test.js`
+- Sửa đổi: `frontend/src/page/HomePage.jsx`
 
-**Interfaces:**
-- Consumes: approved membership and borrowing rules from the SDD feature specs.
-- Produces: public copy that claims only registration, application review, 3/5 daily requests, and 5 active books.
+**Giao diện:**
+- Tiêu thụ: các quy tắc thành viên và mượn đã được phê duyệt từ thông số chức năng của SDD.
+- Sản xuất: bản sao công khai chỉ yêu cầu đăng ký, xem xét đơn đăng ký, 3/5 yêu cầu hàng ngày và 5 cuốn sách đang hoạt động.
 
-- [ ] **Step 1: Write the failing truthful-copy contract**
+- [ ] **Bước 1: Viết hợp đồng sao y đúng sự thật**
 
-Add to `appShellFrontend.test.js`:
+Thêm vào `appShellFrontend.test.js`:
 
 ```js
 test('homepage membership copy stays within approved library rules', async () => {
@@ -471,17 +481,19 @@ test('homepage membership copy stays within approved library rules', async () =>
 });
 ```
 
-- [ ] **Step 2: Run the focused test and verify RED**
+- [ ] **Bước 2: Chạy kiểm thử tập trung và xác minh RED**
 
-Run: `node --test --test-name-pattern="membership copy stays" test/appShellFrontend.test.js`
+Chạy: `node --test --test-name-pattern="membership copy stays" test/appShellFrontend.test.js`
 
-Working directory: `frontend`
+Thư mục làm việc: `frontend`
 
-Expected: FAIL because the dormant paid-tier modal and unsupported benefit cards remain in source.
+Dự kiến: THẤT BẠI vì các thẻ phúc lợi theo phương thức trả phí không hoạt động và không được hỗ trợ
+vẫn còn trong nguồn.
 
-- [ ] **Step 3: Remove the dormant modal and replace four benefit cards**
+- [ ] **Bước 3: Xóa phương thức không hoạt động và thay thế bốn thẻ phúc lợi**
 
-Delete the `MembershipModal` component, `showMembership` state, and its render branch. Replace the benefit card data with:
+Xóa thành phần `MembershipModal`, trạng thái `showMembership` và nhánh kết xuất của nó. Thay thế dữ
+liệu thẻ phúc lợi bằng:
 
 ```js
 [
@@ -492,76 +504,79 @@ Delete the `MembershipModal` component, `showMembership` state, and its render b
 ]
 ```
 
-- [ ] **Step 4: Run the focused test and verify GREEN**
+- [ ] **Bước 4: Chạy kiểm thử tập trung và xác minh GREEN**
 
-Run: `node --test --test-name-pattern="membership copy stays" test/appShellFrontend.test.js`
+Chạy: `node --test --test-name-pattern="membership copy stays" test/appShellFrontend.test.js`
 
-Working directory: `frontend`
+Thư mục làm việc: `frontend`
 
-Expected: PASS.
+Dự kiến: ĐẠT.
 
-### Task 7: Run full verification and prepare the demo handoff
+### Nhiệm vụ 7: Chạy xác minh đầy đủ và chuẩn bị bàn giao bản trình diễn
 
-**Files:**
-- Verify only: all files changed by Tasks 1–6.
+**Tệp:**
+- Chỉ xác minh: tất cả các tệp được thay đổi bởi Nhiệm vụ 1–6.
 
-**Interfaces:**
-- Consumes: all six independently green hotfixes.
-- Produces: fresh test/lint/build evidence and a diff limited to the approved batch.
+**Giao diện:**
+- Tiêu thụ: tất cả sáu hotfix xanh độc lập.
+- Tạo ra: bằng chứng kiểm thử/kiểm tra mã/bản dựng mới và sự khác biệt giới hạn trong lô đã được phê duyệt.
 
-- [ ] **Step 1: Run all frontend tests**
+- [ ] **Bước 1: Chạy tất cả các kiểm thử giao diện người dùng**
 
-Run: `npm test`
+Chạy: `npm test`
 
-Working directory: `frontend`
+Thư mục làm việc: `frontend`
 
-Expected: every Node test passes with zero failures.
+Dự kiến: mọi kiểm thử Nút đều vượt qua và không có lỗi nào.
 
-- [ ] **Step 2: Run lint**
+- [ ] **Bước 2: Chạy kiểm tra mã**
 
-Run: `npm run lint`
+Chạy: `npm run lint`
 
-Working directory: `frontend`
+Thư mục làm việc: `frontend`
 
-Expected: exit code `0` with no ESLint errors.
+Dự kiến: mã thoát `0` không có lỗi ESLint.
 
-- [ ] **Step 3: Build the production frontend**
+- [ ] **Bước 3: Xây dựng giao diện sản xuất**
 
-Run: `npm run build`
+Chạy: `npm run build`
 
-Working directory: `frontend`
+Thư mục làm việc: `frontend`
 
-Expected: Vite completes the production build with exit code `0`.
+Dự kiến: Vite hoàn thành quá trình xây dựng sản xuất với mã thoát `0`.
 
-- [ ] **Step 4: Re-run relevant backend contracts without backend edits**
+- [ ] **Bước 4: Chạy lại các hợp đồng máy chủ có liên quan mà không cần chỉnh sửa máy chủ**
 
-Run: `npm test -- --runTestsByPath tests/borrowingRoutes.test.js tests/borrowingContract.test.js tests/reservationRoutes.test.js tests/reservationService.test.js tests/fineRoutes.test.js tests/fineContract.test.js`
+Chạy: `npm kiểm thử -- --runTestsByPath tests/borrowingRoutes.test.js tests/borrowingContract.test.js
+tests/reservationRoutes.test.js tests/reservationService.test.js tests/fineRoutes.test.js
+tests/fineContract.test.js`
 
-Working directory: `backend`
+Thư mục làm việc: `backend`
 
-Expected: borrowing, reservation, and fine service tests pass.
+Dự kiến: các kiểm thử mượn, đặt chỗ và dịch vụ tốt đã vượt qua.
 
-- [ ] **Step 5: Check whitespace, scope, and FE11 isolation**
+- [ ] **Bước 5: Kiểm tra khoảng trắng, phạm vi và cách ly FE11**
 
-Run: `git diff --check`
+Chạy: `git diff --check`
 
-Expected: no whitespace errors in hotfix files.
+Dự kiến: không có lỗi khoảng trắng trong tệp hotfix.
 
-Run: `git status --short`
+Chạy: `git status --short`
 
-Expected: the six pre-existing FE11 files remain unstaged, hotfix product files are unstaged, and no backend/schema file appears.
+Dự kiến: sáu tệp FE11 có sẵn vẫn chưa được phân loại, các tệp sản phẩm hotfix không được phân loại
+và không có tệp backend/schema nào xuất hiện.
 
-Run: `git diff --name-only -- frontend`
+Chạy: `git diff --name-only -- frontend`
 
-Expected: only the frontend files listed in the File Map appear.
+Dự kiến: chỉ các tệp giao diện người dùng được liệt kê trong Bản đồ tệp mới xuất hiện.
 
-- [ ] **Step 6: Perform the five-minute smoke path**
+- [ ] **Bước 6: Thực hiện luồng kiểm thử nhanh năm phút**
 
-Run the app with the repository's normal local startup. Verify in order:
+Chạy ứng dụng với quá trình khởi động cục bộ bình thường của kho lưu trữ. Xác minh theo thứ tự:
 
-1. Guest desktop/mobile/footer “Đăng ký” opens `/register`; “Đăng nhập” opens `/login`.
-2. Blank search returns to the complete default catalog without an error toast.
-3. Member dashboard shows counts from actual `/borrow-requests/me` data.
-4. A fulfilled reservation has no cancel action and does not block reserving that copy again.
-5. “Tiền phạt của tôi” opens `/fines/mine`, paginates, and exposes no mutation action.
-6. Public membership copy contains no paid tier, unlimited borrowing, digital-media, private-event, notification, or reading-list claim.
+1. khách máy tính/di động/footer “Đăng ký” opens `/register`; “Đăng nhập” opens `/login`.
+2. Tìm kiếm trống sẽ quay lại danh mục mặc định hoàn chỉnh mà không có lỗi.
+3. Trang tổng quan thành viên hiển thị số lượng từ dữ liệu `/borrow-requests/me` thực tế.
+4. Việc đặt chỗ đã hoàn thành không có hành động hủy và không chặn việc đặt lại bản sao đó.
+5. “khoản phạt của tôi” opens `/fines/mine`, paginates, và exposes no thao tác ghi hành động.
+6. Bản sao thành viên công khai không chứa cấp trả phí, mượn không giới hạn, phương tiện kỹ thuật số, sự kiện riêng tư, thông báo hoặc yêu cầu danh sách đọc.

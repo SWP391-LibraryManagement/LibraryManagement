@@ -1,105 +1,106 @@
-# FE11 Finalization Batch Design
+# FE11 Thiết kế lô hoàn thiện
 
-Status: APPROVED FOR GOVERNANCE PREPARATION
+Trạng thái: ĐÃ PHÊ DUYỆT FOR GOVERNANCE PREPARATION
 
-Date: 2026-07-19
+Ngày: 2026-07-19
 
-Base: `origin/main@f706c5457254db16401009e260dd9528aeb8c3c5`
+Đế: `origin/main@f706c5457254db16401009e260dd9528aeb8c3c5`
 
-Decision: Hybrid SDD + ADD, Full depth. Schema, authorization, optimistic concurrency,
-credential invalidation, audit atomicity, and FE07 ownership are Core. Admin presentation and
-CSV composition are Shell.
+Quyết định: Hybrid SDD + ADD, Chiều sâu đầy đủ. Lược đồ, ủy quyền, đồng thời lạc quan, vô hiệu hóa
+thông tin xác thực, tính nguyên tử kiểm toán và quyền sở hữu FE07 là Cốt lõi. Bản trình bày của quản
+trị viên và thành phần CSV là lớp bao.
 
-## 1. Goal
+## 1. Mục tiêu
 
-Complete the remaining approved FE11 User and Role Management requirements through B7 without
-reopening already completed slices or duplicating FE07 borrowing business logic.
+Hoàn thành các yêu cầu Quản lý vai trò và người dùng FE11 đã được phê duyệt còn lại thông qua B7 mà
+không cần mở lại các phần đã hoàn thành hoặc sao chép logic kinh doanh mượn FE07.
 
-The batch closes the remaining FE11 implementation debt:
+Lô đóng khoản nợ triển khai FE11 còn lại:
 
-- `TD-012`: librarian `department` and `specialization` persistence.
-- `TD-014`: incomplete update/deactivation not-found and transition semantics.
-- `TD-015`: missing focused update/deactivation service coverage.
-- `TD-016`: email length and optimistic-concurrency drift.
-- `TD-017`: unsafe implicit frontend Admin development bypass.
-- `TD-025`: incomplete canonical Request Management list/detail and terminal-state evidence.
+- `TD-012`: thủ thư `department` và `specialization` kiên trì.
+- `TD-014`: không tìm thấy cập nhật/hủy kích hoạt chưa hoàn tất và ngữ nghĩa chuyển đổi.
+- `TD-015`: thiếu độ bao phủ dịch vụ cập nhật/hủy kích hoạt tập trung.
+- `TD-016`: độ dài email và độ lệch đồng thời lạc quan.
+- `TD-017`: Bỏ qua sự phát triển của quản trị viên lối vào tiềm ẩn không an toàn.
+- `TD-025`: danh sách/chi tiết Quản lý yêu cầu chuẩn không đầy đủ và bằng chứng trạng thái cuối.
 
-`TD-021` remains a cross-feature residual only when a real SQL Server-backed CI environment is not
-available. It does not authorize hiding an FE11 code, API, security, or browser-acceptance gap.
+`TD-021` vẫn chỉ là phần còn lại của nhiều chức năng khi không có môi trường CI được hỗ trợ bởi SQL
+Server thực sự. Nó không cho phép ẩn mã FE11, API, bảo mật hoặc khoảng cách chấp nhận của trình
+duyệt.
 
-## 2. Existing Completed Boundaries
+## 2. Ranh giới đã hoàn thành hiện tại
 
-This batch preserves the B7-complete FE11 slices already on `main`:
+Lô này bảo tồn các lát FE11 hoàn chỉnh B7 đã có trên `main`:
 
-- Admin-created account setup and resend.
-- Transactional role assignment and revocation.
-- Safe user list and detail DTOs.
-- Admin role-action UI contract.
-- Canonical Admin Audit Logs.
-- Canonical user-list envelope with independent FE12 counters.
-- Admin navigation and read-only permissions matrix.
+- Thiết lập tài khoản do quản trị viên tạo và gửi lại.
+- Phân công và thu hồi vai trò giao dịch.
+- Danh sách người dùng an toàn và DTO chi tiết.
+- Hợp đồng giao diện người dùng vai trò hành động của quản trị viên.
+- Nhật ký kiểm tra quản trị chuẩn.
+- Phong bì danh sách người dùng chuẩn với bộ đếm FE12 độc lập.
+- Điều hướng quản trị viên và ma trận quyền chỉ đọc.
 
-The batch does not redesign these boundaries. Regression tests must prove they remain unchanged.
+Lô không thiết kế lại các ranh giới này. Kiểm tra hồi quy phải chứng minh chúng không thay đổi.
 
-## 3. Delivery Structure
+## 3. Cơ cấu phân phối
 
-The batch uses four pull requests total:
+Lô sử dụng tổng cộng bốn yêu cầu hợp nhất:
 
-1. Governance activation: this design, the implementation plan, task/debt activation, schema/API
-   contract updates, and validation commands.
-2. Wave A implementation: User Lifecycle Core.
-3. Wave B implementation: Request Management and browser acceptance.
-4. Documentation closeout: final B7 evidence and FE11 completion state.
+1. Kích hoạt quản trị: thiết kế này, kế hoạch thực hiện, kích hoạt nhiệm vụ/nợ, lược đồ/API
+   cập nhật hợp đồng và các lệnh xác nhận.
+2. Triển khai Làn sóng A: Cốt lõi vòng đời của người dùng.
+3. Triển khai Sóng B: Quản lý yêu cầu và chấp nhận trình duyệt.
+4. Khóa tài liệu: bằng chứng B7 cuối cùng và trạng thái hoàn thành FE11.
 
-One H1 governs the full batch. Each implementation wave receives one H2 before commit/push and one
-H3 after required checks. The closeout receives its own H2/H3 because it changes authoritative
-project memory.
+Một H1 chi phối toàn bộ lô. Mỗi đợt triển khai nhận được một H2 trước khi xác nhận/đẩy và một H3 sau
+các bước kiểm tra bắt buộc. Quá trình kết thúc nhận được H2/H3 của chính nó vì nó thay đổi bộ nhớ dự
+án có thẩm quyền.
 
-## 4. Scope
+## 4. Phạm vi
 
-### 4.1 Wave A - User Lifecycle Core
+### 4.1 Sóng A - Cốt lõi vòng đời của người dùng
 
-- Reviewable idempotent SQL Server migration and synchronized baseline schema.
-- Direct FE10 recipient-email persistence synchronization required by the 255-character user email
-  contract.
-- Librarian field persistence on create, list/detail, and update.
-- Transactional active-Admin revalidation and deterministic duplicate handling for FE11 create and
-  setup-resend mutations, preserving the completed setup/delivery boundary.
-- Canonical email length of 255 characters.
-- Optimistic-concurrency and no-op user updates.
-- Atomic user/librarian deactivation with credential invalidation and audit.
-- Minimum FE07 member-lock-order alignment required to serialize approval against deactivation.
-- Removal of implicit frontend Admin access when Vite is not in production mode.
-- API/OpenAPI/model/test/documentation synchronization for the above behavior.
+- Di chuyển SQL Server bình thường có thể xem lại và lược đồ cơ sở được đồng bộ hóa.
+- Đồng bộ hóa liên tục email người nhận FE10 trực tiếp được yêu cầu bởi email người dùng 255 ký tự
+  hợp đồng.
+- Sự kiên trì của trường thủ thư khi tạo, liệt kê/chi tiết và cập nhật.
+- Xác thực lại hoạt động giao dịch của quản trị viên và xử lý trùng lặp xác định đối với việc tạo và tạo FE11
+  thao tác ghi thiết lập-gửi lại, duy trì ranh giới thiết lập/phân phối đã hoàn thành.
+- Độ dài email chuẩn là 255 ký tự.
+- Cập nhật người dùng đồng thời lạc quan và không hoạt động.
+- Vô hiệu hóa người dùng nguyên tử/librarian kèm theo việc vô hiệu hóa thông tin xác thực và kiểm tra.
+- Cần có sự liên kết thứ tự khóa thành viên FE07 tối thiểu để tuần tự hóa phê duyệt chống lại việc hủy kích hoạt.
+- Loại bỏ quyền truy cập ngầm của Quản trị viên lối vào khi Vite không ở chế độ sản xuất.
+- Đồng bộ hóa API/OpenAPI/model/kiểm thử/tài liệu cho hành vi trên.
 
-### 4.2 Wave B - Request Management And Acceptance
+### 4.2 Sóng B - Quản lý và chấp nhận yêu cầu
 
-- Canonical Admin request-list validation, stable server pagination, and response envelope.
-- Canonical Admin request-detail read boundary.
-- FE11 safe projections over FE07 request data.
-- FE07-owned approve/reject mutations with terminal-state enforcement.
-- Admin UI migration to server pagination and authoritative detail loading.
-- Filter-complete CSV export composed from the paginated read API.
-- Feature-specific FE11 Playwright acceptance.
+- Xác thực danh sách yêu cầu của Quản trị viên chuẩn, phân trang máy chủ ổn định và phong bì phản hồi.
+- Ranh giới đọc yêu cầu chi tiết của quản trị viên chuẩn.
+- FE11 dự đoán an toàn về dữ liệu yêu cầu FE07.
+- FE07-sở hữu các thao tác ghi phê duyệt/từ chối với việc thực thi trạng thái đầu cuối.
+- Di chuyển giao diện người dùng quản trị sang phân trang máy chủ và tải chi tiết có thẩm quyền.
+- Xuất CSV hoàn chỉnh bằng bộ lọc được tạo từ API đã đọc được phân trang.
+- Chấp nhận FE11 Playwright dành riêng cho chức năng.
 
-### 4.3 Out Of Scope
+### 4.3 Ngoài phạm vi
 
-- Reactivating deactivated accounts in Phase 1.
-- Permanent user deletion.
-- Role CRUD, role hierarchy, or permission editing.
-- New FE07 approval/rejection business rules or duplicate mutation endpoints under `/api/admin`.
-- FE04 Membership removal or behavior changes.
-- FE12 production changes.
-- New migration framework or dependency.
-- A new session table; deactivation invalidates credentials through the approved `AuthTokens`
-  mechanism already used by FE02/FE11.
-- Unrelated Admin Console refactoring.
+- Kích hoạt lại các tài khoản đã bị vô hiệu hóa trong Giai đoạn 1.
+- Xóa người dùng vĩnh viễn.
+- Vai trò CRUD, phân cấp vai trò hoặc chỉnh sửa quyền.
+- Các quy tắc nghiệp vụ phê duyệt/từ chối FE07 mới hoặc các điểm cuối thao tác ghi trùng lặp trong `/api/admin`.
+- FE04 Xóa tư cách thành viên hoặc thay đổi hành vi.
+- FE12 những thay đổi về sản xuất.
+- Khung di chuyển mới hoặc phần phụ thuộc.
+- Một bảng phiên mới; việc hủy kích hoạt sẽ làm mất hiệu lực thông tin xác thực thông qua `AuthTokens` đã được phê duyệt
+  cơ chế đã được FE02/FE11 sử dụng.
+- Tái cấu trúc Bảng điều khiển dành cho quản trị viên không liên quan.
 
-## 5. Schema Contract
+## 5. Hợp đồng lược đồ
 
-### 5.1 Canonical Columns
+### 5.1 Cột chuẩn
 
-The Phase 1 SQL Server schema shall contain:
+Lược đồ SQL Server Giai đoạn 1 sẽ chứa:
 
 ```text
 Users.Email                    NVARCHAR(255) NOT NULL UNIQUE
@@ -109,88 +110,92 @@ UserProfiles.Specialization    NVARCHAR(100) NULL
 Notifications.RecipientEmail   NVARCHAR(255) NOT NULL
 ```
 
-`Department` and `Specialization` are optional Librarian profile fields. Whitespace-only values are
-stored as `NULL`. `DeactivatedAt` is `NULL` for active, locked, or setup-incomplete accounts and is
-set only by the deactivation transaction. `Notifications.RecipientEmail` must widen with
-`Users.Email`; otherwise an FE11 account can satisfy the 255-character user contract but fail when
-FE10 persists its setup delivery.
+`Department` và `Specialization` là các trường hồ sơ Thủ thư tùy chọn. Các giá trị chỉ có khoảng
+trắng được lưu trữ dưới dạng `NULL`. `DeactivatedAt` là `NULL` dành cho các tài khoản đang hoạt
+động, bị khóa hoặc chưa hoàn tất thiết lập và chỉ được đặt bằng giao dịch hủy kích hoạt.
+`Notifications.RecipientEmail` phải mở rộng bằng `Users.Email`; mặt khác, tài khoản FE11 có thể đáp
+ứng hợp đồng người dùng 255 ký tự nhưng không thành công khi FE10 vẫn tiếp tục phân phối thiết lập.
 
-### 5.2 Migration Artifact
+### 5.2 Cổ vật di chuyển
 
-Create a reviewable idempotent Phase 1 script:
+Tạo tập lệnh Giai đoạn 1 bình thường có thể xem lại:
 
 ```text
 database/migrations/2026-07-19-fe11-finalization.sql
 ```
 
-The script shall:
+Kịch bản sẽ:
 
-- Detect every column before adding or altering it.
-- Preserve email uniqueness while widening the column to 255 characters.
-- Use deterministic constraint/index names when a uniqueness object must be recreated.
-- Fail before modification if existing data cannot satisfy the target schema.
-- Be safe to execute twice without duplicate columns, constraints, or data mutation.
-- Contain no seed user, credential, token, or real personal data.
+- Phát hiện mọi cột trước khi thêm hoặc thay đổi nó.
+- Giữ nguyên tính duy nhất của email trong khi mở rộng cột lên 255 ký tự.
+- Sử dụng tên chỉ mục/ràng buộc xác định khi phải tạo lại một đối tượng duy nhất.
+- Thất bại trước khi sửa đổi nếu dữ liệu hiện có không thể đáp ứng lược đồ đích.
+- Đảm bảo an toàn khi thực thi hai lần mà không có cột trùng lặp, ràng buộc hoặc thao tác ghi dữ liệu.
+- Không chứa người dùng gốc, thông tin xác thực, mã thông báo hoặc dữ liệu cá nhân thực.
 
-The same canonical column definitions must be applied to `database/Librarymanagement.sql`, model
-metadata, repository parameter bindings, ADR-002, and the affected FE02/FE03/FE10/FE11
-specification data contracts. FE03 behavior does not expand: it must record that the two Librarian
-columns are FE11-admin-managed and are not part of the self-profile read/update allowlist.
+Các định nghĩa cột chuẩn tương tự phải được áp dụng cho `database/Librarymanagement.sql`, siêu dữ
+liệu mô hình, liên kết tham số kho lưu trữ, ADR-002 và các hợp đồng dữ liệu đặc tả
+FE02/FE03/FE10/FE11 bị ảnh hưởng. Hành vi của FE03 không mở rộng: nó phải ghi lại rằng hai cột Thư
+viện được quản trị viên FE11 quản lý và không nằm trong danh sách cho phép đọc/cập nhật hồ sơ cá
+nhân.
 
-## 6. User Management Data Contract
+## 6. Hợp đồng dữ liệu quản lý người dùng
 
-### 6.1 Safe DTO
+### 6.1 DTO an toàn
 
-`UserManagementView` remains the only FE11 user response. The existing allowlist is preserved.
+`UserManagementView` vẫn là phản hồi duy nhất của người dùng FE11. Danh sách cho phép hiện tại được
+giữ nguyên.
 
-- `department` and `specialization` are returned only when the target currently has the
-  `LIBRARIAN` role.
-- They are omitted for non-Librarian targets, not returned as invented `null` placeholders.
-- `deactivatedAt` remains an internal lifecycle field unless the approved FE11 SPEC safe DTO is
-  explicitly revised before governance activation.
-- `updatedAt` is the non-null concurrency version exposed as
-  `COALESCE(Users.UpdatedAt, Users.CreatedAt)`. This supports legacy and newly created rows whose
-  nullable storage column has not yet received an update without adding a backfill migration.
-- Credential, token, session, provider, link, and secret audit fields remain forbidden.
+- `department` và `specialization` chỉ được trả về khi mục tiêu hiện có
+  Vai trò `LIBRARIAN`.
+- Chúng bị bỏ qua đối với các mục tiêu không phải là Thư viện, không được trả về dưới dạng trình giữ chỗ `null` được phát minh.
+- `deactivatedAt` vẫn là trường vòng đời nội bộ trừ khi FE11 SPEC an toàn DTO được phê duyệt
+  được sửa đổi rõ ràng trước khi kích hoạt quản trị.
+- `updatedAt` là phiên bản đồng thời không null được hiển thị dưới dạng
+`COALESCE(Users.UpdatedAt, Users.CreatedAt)`. Điều này hỗ trợ các hàng cũ và mới được tạo có cột lưu
+trữ có thể rỗng chưa nhận được bản cập nhật mà không cần thêm di chuyển chèn lấp.
+- Các trường thông tin xác thực, mã thông báo, phiên, nhà cung cấp, liên kết và kiểm tra bí mật vẫn bị cấm.
 
-### 6.2 Input Normalization
+### 6.2 Chuẩn hóa đầu vào
 
-- Email is trimmed, normalized to lowercase, validated, and limited to 255 characters.
-- `fullName` is trimmed, required, and limited to 100 characters, matching FE03 and the shared
-  `UserProfiles.FullName` schema. Governance corrects the stale FE11 255-character data note.
-- `department` and `specialization` are trimmed and limited to 100 characters each.
-- Optional `phone`, `address`, `department`, and `specialization` whitespace-only input becomes
+- Email được cắt bớt, chuẩn hóa thành chữ thường, xác thực và giới hạn ở 255 ký tự.
+- `fullName` được cắt bớt, bắt buộc và giới hạn ở 100 ký tự, khớp với FE03 và FE03 được chia sẻ
+  Lược đồ `UserProfiles.FullName`. Quản trị sửa ghi chú dữ liệu 255 ký tự FE11 cũ.
+- `department` và `specialization` được cắt bớt và giới hạn ở 100 ký tự mỗi ký tự.
+- Tùy chọn đầu vào chỉ có khoảng trắng `phone`, `address`, `department` và `specialization` trở thành
   `null`.
-- `fullName` cannot normalize to an empty value.
-- A non-Librarian target that receives `department` or `specialization` returns
-  `400 VALIDATION_ERROR`; the server never silently discards the fields.
-- All validation executes on the server before persistence.
+- `fullName` không thể chuẩn hóa thành giá trị trống.
+- Mục tiêu không phải là Thủ thư nhận được trả về `department` hoặc `specialization`
+  `400 VALIDATION_ERROR`; máy chủ không bao giờ âm thầm loại bỏ các trường.
+- Tất cả xác thực đều thực thi trên máy chủ trước khi lưu giữ.
 
-### 6.3 Account Setup Source Mutation Hardening
+### 6.3 Thiết lập tài khoản Tăng cường thao tác ghi nguồn
 
-The existing FE11 create and setup-resend delivery boundary remains unchanged: FE11 commits source
-state first, then requests FE10 delivery. The source transactions become authoritative for actor and
-duplicate decisions:
+Ranh giới tạo và thiết lập-gửi lại FE11 hiện tại vẫn không thay đổi: FE11 cam kết trạng thái nguồn
+trước, sau đó yêu cầu phân phối FE10. Các giao dịch nguồn trở nên có thẩm quyền đối với các quyết
+định của tác nhân và trùng lặp:
 
-1. Authentication, Admin authorization, and boundary validation run before the repository call.
-2. The transaction locks and revalidates the acting user and current Admin role before any target or
-   setup-source mutation.
-3. A missing actor returns `404 ADMIN_NOT_FOUND`; an inactive or non-Admin actor returns
-   `403 ADMIN_REQUIRED`. Neither outcome writes user, token, or audit state.
-4. Create performs locked normalized email and username checks before inserts. A duplicate email,
-   including a concurrent conflict from deterministic index `UX_Users_Email`, returns
-   `409 EMAIL_ALREADY_EXISTS` without setup delivery. Unrelated constraint failures must not be
-   misclassified as email conflicts.
-5. Resend locks the target and setup-token history only after the acting Admin passes revalidation.
-6. FE10 delivery is requested only after a committed create or token rotation. Actor, validation,
-   duplicate, cooldown, missing-target, and ineligible outcomes create no delivery request.
+1. Quá trình xác thực, ủy quyền của quản trị viên và xác thực ranh giới diễn ra trước lệnh gọi kho lưu trữ.
+2. Giao dịch khóa và xác nhận lại quyền của người dùng và vai trò Quản trị viên hiện tại trước bất kỳ mục tiêu hoặc
+   thao tác ghi nguồn thiết lập.
+3. Tác nhân không tồn tại trả về `404 ADMIN_NOT_FOUND`; tác nhân không hoạt động hoặc không phải Quản trị viên trả về
+   `403 ADMIN_REQUIRED`. Cả hai kết quả đều không ghi trạng thái người dùng, mã thông báo hoặc trạng
+   thái kiểm tra.
+4. Tạo thực hiện kiểm tra email và tên người dùng đã chuẩn hóa bị khóa trước khi chèn. Một email trùng lặp,
+bao gồm xung đột đồng thời từ chỉ mục xác định `UX_Users_Email`, trả về `409 EMAIL_ALREADY_EXISTS`
+mà không phân phối thiết lập. Các lỗi ràng buộc không liên quan không được phân loại sai thành xung
+đột email.
+5. Gửi lại chỉ khóa mục tiêu và lịch sử mã thông báo thiết lập sau khi Quản trị viên hành động vượt qua quá trình xác thực lại.
+6. FE10 việc phân phối chỉ được yêu cầu sau khi tạo hoặc xoay vòng mã thông báo đã cam kết. Tác nhân, xác nhận,
+   các kết quả trùng lặp, thời gian hồi chiêu, thiếu mục tiêu và không đủ điều kiện không tạo ra yêu
+   cầu phân phối.
 
-This hardening does not change FE02 token consumption, FE10 rendering/delivery ownership, the
-24-hour setup TTL, or the 60-second resend cooldown.
+Việc tăng cường này không thay đổi mức tiêu thụ mã thông báo FE02, quyền sở hữu kết xuất/phân phối
+FE10, thiết lập TTL trong 24 giờ hoặc thời gian hồi chiêu gửi lại 60 giây.
 
-## 7. Optimistic Update Contract
+## 7. Hợp đồng cập nhật lạc quan
 
-`PUT /api/users/{userId}` requires:
+`PUT /api/users/{userId}` yêu cầu:
 
 ```json
 {
@@ -204,37 +209,38 @@ This hardening does not change FE02 token consumption, FE10 rendering/delivery o
 }
 ```
 
-Only `expectedUpdatedAt` is always required. It must equal the `updatedAt` effective version loaded
-from the safe DTO. At least one editable field must be present.
+Chỉ luôn cần có `expectedUpdatedAt`. Nó phải bằng phiên bản hiệu quả `updatedAt` được tải từ DTO an
+toàn. Phải có ít nhất một trường có thể chỉnh sửa.
 
-The transaction order is:
+Lệnh giao dịch là:
 
-1. Authentication and Admin authorization.
-2. Boundary validation and normalization.
-3. Lock and revalidate the active acting Admin.
-4. Lock and load the target safe state and current roles.
-5. Return `404 USER_NOT_FOUND` when the target is absent.
-6. Compare `COALESCE(Users.UpdatedAt, Users.CreatedAt)` with `expectedUpdatedAt`.
-7. Return `409 STALE_USER_STATE` before any field or audit mutation when stale.
-8. Validate Librarian-only fields against the locked roles.
-9. Check normalized email uniqueness against other users inside the transaction.
-10. Compute the effective field diff.
-11. For a no-op, commit no mutation, write no success audit, and return the current safe DTO.
-12. For an effective change, persist user/profile fields, advance `UpdatedAt`, write one allowlisted
-    audit entry, and commit atomically.
+1. Xác thực và ủy quyền của quản trị viên.
+2. Xác nhận ranh giới và chuẩn hóa.
+3. Khóa và xác nhận lại quyền quản trị viên đang hoạt động.
+4. Khóa và tải trạng thái an toàn mục tiêu và các vai trò hiện tại.
+5. Trả về `404 USER_NOT_FOUND` khi mục tiêu vắng mặt.
+6. So sánh `COALESCE(Users.UpdatedAt, Users.CreatedAt)` với `expectedUpdatedAt`.
+7. Trả về `409 STALE_USER_STATE` trước bất kỳ trường nào hoặc thao tác ghi kiểm tra khi cũ.
+8. Xác thực các trường chỉ dành cho Thủ thư đối với các vai trò bị khóa.
+9. Kiểm tra tính duy nhất của email được chuẩn hóa đối với những người dùng khác trong giao dịch.
+10. Tính toán độ lệch trường hiệu quả.
+11. Đối với trường hợp không hoạt động, không cam kết thao tác ghi, không viết kiểm tra thành công và trả sách DTO an toàn hiện tại.
+12. Để thay đổi hiệu quả, hãy duy trì các trường người dùng/hồ sơ, nâng cao `UpdatedAt`, viết một danh sách cho phép
+    kiểm tra mục nhập và cam kết nguyên tử.
 
-The response is the updated `UserManagementView`, not a message-only object. Duplicate normalized
-email returns `409 EMAIL_ALREADY_EXISTS`. Invalid input returns `400 VALIDATION_ERROR` with safe
-field details. The database unique object remains the final concurrency guard; SQL Server duplicate
-key errors `2601`/`2627` are mapped to the same safe `409 EMAIL_ALREADY_EXISTS` response.
+Phản hồi là `UserManagementView` được cập nhật, không phải là đối tượng chỉ có tin nhắn. Email chuẩn
+hóa trùng lặp sẽ trả về `409 EMAIL_ALREADY_EXISTS`. Đầu vào không hợp lệ trả về `400
+VALIDATION_ERROR` với chi tiết trường an toàn. Đối tượng duy nhất của cơ sở dữ liệu vẫn là người bảo
+vệ đồng thời cuối cùng; SQL Server lỗi khóa trùng lặp `2601`/`2627` được ánh xạ tới cùng một phản
+hồi `409 EMAIL_ALREADY_EXISTS` an toàn.
 
-The update success audit metadata contains only a stable sorted `changedFields` allowlist. It does
-not copy email, phone, address, department, specialization, credentials, or before/after PII values
-into the audit record.
+Siêu dữ liệu kiểm tra thành công của bản cập nhật chỉ chứa danh sách cho phép `changedFields` được
+sắp xếp ổn định. Nó không sao chép email, điện thoại, địa chỉ, bộ phận, chuyên môn, thông tin xác
+thực hoặc các giá trị trước/sau PII vào bản ghi kiểm tra.
 
-## 8. Deactivation Contract
+## 8. Hợp đồng vô hiệu hóa
 
-`PATCH /api/users/{userId}/status` accepts only:
+`PATCH /api/users/{userId}/status` chỉ chấp nhận:
 
 ```json
 {
@@ -243,76 +249,77 @@ into the audit record.
 }
 ```
 
-Reactivation is not supported in Phase 1.
+Kích hoạt lại không được hỗ trợ trong Giai đoạn 1.
 
-The deactivation transaction shall:
+Giao dịch vô hiệu hóa sẽ:
 
-1. Authenticate and authorize Admin before detailed validation.
-2. Validate a positive target ID, exact `INACTIVE` status, and `expectedUpdatedAt`.
-3. Lock and revalidate the active acting Admin.
-4. Lock and load the target.
-5. Return `404 USER_NOT_FOUND` for an absent target or acting Admin.
-6. Reject self-deactivation with `400 CANNOT_DEACTIVATE_SELF`.
-7. Reject stale state with `409 STALE_USER_STATE` before mutation.
-8. Distinguish the two logical `INACTIVE` modes using `DeactivatedAt`.
-   - `INACTIVE` plus `DeactivatedAt IS NULL` is `PENDING_ACTIVATION`; reject with
-     `409 ACCOUNT_PENDING_ACTIVATION` because Phase 1 has no approved pending-to-deactivated
-     transition.
-   - `INACTIVE` plus `DeactivatedAt IS NOT NULL` is already deactivated; return the current safe DTO
-     idempotently with no timestamp, token, or audit mutation.
-9. Only an `ACTIVE` or `LOCKED` target proceeds. Count active `BORROWED` details under the
-   transaction and reject with `409 ACTIVE_BORROWINGS_EXIST`, including only the numeric count in
-   safe error details.
-10. Set `Status = 'INACTIVE'`, set server `DeactivatedAt`, and advance `UpdatedAt`.
-11. Revoke every active `REFRESH` credential owned by the target through `AuthTokens`; the access
-    token becomes unusable because authenticated requests require its active refresh/session ID.
-12. Write one `USER_DEACTIVATE` audit entry containing only `previousStatus` and
+1. Xác thực và ủy quyền cho Quản trị viên trước khi xác thực chi tiết.
+2. Xác thực ID mục tiêu khẳng định, trạng thái `INACTIVE` chính xác và `expectedUpdatedAt`.
+3. Khóa và xác nhận lại quyền quản trị viên đang hoạt động.
+4. Khóa và tải mục tiêu.
+5. trả sách `404 USER_NOT_FOUND` cho mục tiêu vắng mặt hoặc Quản trị viên đang hoạt động.
+6. Từ chối việc tự hủy kích hoạt với `400 CANNOT_DEACTIVATE_SELF`.
+7. Loại bỏ trạng thái cũ bằng `409 STALE_USER_STATE` trước khi thao tác ghi.
+8. Phân biệt hai chế độ `INACTIVE` logic bằng `DeactivatedAt`.
+   - `INACTIVE` cộng với `DeactivatedAt IS NULL` là `PENDING_ACTIVATION`; từ chối với
+     `409 ACCOUNT_PENDING_ACTIVATION` vì Giai đoạn 1 không có trạng thái chờ hủy kích hoạt được phê duyệt
+     chuyển tiếp.
+   - `INACTIVE` plus `DeactivatedAt IS NOT NULL` đã bị vô hiệu hóa; trả sách DTO an toàn hiện tại
+     bình thường không có dấu thời gian, mã thông báo hoặc thao tác ghi kiểm tra.
+9. Chỉ mục tiêu `ACTIVE` hoặc `LOCKED` mới được tiến hành. Đếm chi tiết `BORROWED` đang hoạt động trong phần
+giao dịch và từ chối với `409 ACTIVE_BORROWINGS_EXIST`, chỉ bao gồm số đếm trong chi tiết lỗi an toàn.
+10. Đặt `Status = 'INACTIVE'`, đặt máy chủ `DeactivatedAt` và nâng cao `UpdatedAt`.
+11. Thu hồi mọi thông tin xác thực `REFRESH` đang hoạt động do mục tiêu sở hữu thông qua `AuthTokens`; quyền truy cập
+    mã thông báo trở nên không sử dụng được vì các yêu cầu được xác thực yêu cầu ID phiên/làm mới hoạt động của nó.
+12. Viết một mục kiểm tra `USER_DEACTIVATE` chỉ chứa `previousStatus` và
     `newStatus: "INACTIVE"`.
-13. Commit all changes together or roll back all changes on any failure.
+13. Cam kết tất cả các thay đổi cùng nhau hoặc khôi phục tất cả các thay đổi nếu có bất kỳ lỗi nào.
 
-Deactivation and FE07 approval must serialize on the same member-scoped user lock before either
-path changes borrowing or account state. The implementation plan must compare the current FE07 SQL
-lock order with approved `NFR-FE07-TXN-003`; Wave A includes only the minimum lock-order correction
-required to prevent an approved borrow and a deactivation from both committing for the same user.
-No FE07 eligibility or mutation rule changes.
+Việc hủy kích hoạt và phê duyệt FE07 phải tuần tự hóa trên cùng một khóa người dùng trong phạm vi
+thành viên trước khi đường dẫn thay đổi trạng thái vay hoặc trạng thái tài khoản. Kế hoạch thực hiện
+phải so sánh thứ tự khóa FE07 SQL hiện tại với `NFR-FE07-TXN-003` đã được phê duyệt; Sóng A chỉ bao
+gồm việc điều chỉnh thứ tự khóa tối thiểu cần thiết để ngăn chặn lượt mượn đã được phê duyệt và việc
+hủy kích hoạt cả hai cam kết cho cùng một người dùng. Không có thay đổi về tính đủ điều kiện hoặc
+quy tắc thao tác ghi của FE07.
 
-The frontend reloads the authoritative target/list after success. It does not simulate status
-changes locally before the server response.
+Giao diện người dùng tải lại mục tiêu/danh sách có thẩm quyền sau khi thành công. Nó không mô phỏng
+các thay đổi trạng thái cục bộ trước phản hồi của máy chủ.
 
-## 9. Frontend Access Hardening
+## 9. Tăng cường truy cập giao diện
 
-Remove the implicit rule:
+Loại bỏ quy tắc ngầm:
 
 ```text
-import.meta.env.MODE !== 'production' => grant Admin access
+import.meta.env.MODE !== 'production' => cấp quyền truy cập Quản trị viên
 ```
 
-The Admin Console shall require the same canonical authenticated user and role state in every Vite
-mode. Development tests may inject explicit test state through existing test helpers, but product
-code shall contain no fallback that invents an Admin identity.
+Bảng điều khiển dành cho quản trị viên sẽ yêu cầu trạng thái vai trò và người dùng được xác thực
+chuẩn giống nhau ở mọi chế độ Vite. Các kiểm thử phát triển có thể đưa trạng thái kiểm thử rõ ràng
+thông qua các trình trợ giúp kiểm thử hiện có, nhưng mã sản phẩm không được chứa dự phòng tạo ra
+danh tính Quản trị viên.
 
-Missing/invalid identity redirects to the approved login/access-denied flow. This change does not
-alter backend authentication or token storage.
+Danh tính bị thiếu/không hợp lệ chuyển hướng đến luồng đăng nhập/từ chối truy cập đã được phê duyệt.
+Thay đổi này không làm thay đổi việc xác thực máy chủ hoặc lưu trữ mã thông báo.
 
-## 10. Canonical Request List Contract
+## 10. Hợp đồng danh sách yêu cầu hợp quy
 
-`GET /api/admin/requests` accepts only:
+`GET /api/admin/requests` chỉ chấp nhận:
 
 ```text
-page    positive integer, default 1
-limit   integer 1..100, default 20
-q       trimmed string 1..100 when supplied
+page    số nguyên dương, mặc định 1
+limit   số nguyên 1..100, mặc định 20
+q       chuỗi đã cắt khoảng trắng dài 1..100 khi được cung cấp
 status  PENDING | APPROVED | REJECTED | COMPLETED | CANCELLED
-from    YYYY-MM-DD when supplied
-to      YYYY-MM-DD when supplied, and from <= to
+from    YYYY-MM-DD khi được cung cấp
+to      YYYY-MM-DD khi được cung cấp và from <= to
 ```
 
-Authentication and Admin authorization execute before query validation. Unknown query fields are
-ignored, matching the existing `matchedData` query-boundary policy; supported fields are always
-taken from validated data rather than raw `req.query`. `from` and `to` are inclusive calendar-date
-filters against `RequestDate`.
+Xác thực và ủy quyền quản trị viên thực hiện trước khi xác thực truy vấn. Các trường truy vấn không
+xác định sẽ bị bỏ qua, phù hợp với chính sách ranh giới truy vấn `matchedData` hiện có; các trường
+được hỗ trợ luôn được lấy từ dữ liệu đã xác thực thay vì `req.query` thô. `from` và `to` là các bộ
+lọc ngày theo lịch bao gồm `RequestDate`.
 
-The response contains exactly:
+Câu trả lời chứa chính xác:
 
 ```json
 {
@@ -341,32 +348,32 @@ The response contains exactly:
 }
 ```
 
-List ordering is stable: `RequestDate DESC, RequestId DESC`. Search covers only book title, member
-full name, and member email. SQL parameters and escaped `LIKE` patterns are required. The data and
-count query must use the same filter scope.
+Thứ tự danh sách ổn định: `RequestDate DESC, RequestId DESC`. Tìm kiếm chỉ bao gồm tên sách, tên đầy
+đủ của thành viên và email của thành viên. Cần có các tham số SQL và các mẫu `LIKE` thoát. Truy vấn
+dữ liệu và số lượng phải sử dụng cùng phạm vi bộ lọc.
 
-Pagination is applied to distinct `BorrowRequests` headers before child detail rows are joined, so
-a page never cuts one request across pages. The count query counts distinct matching request IDs.
-`bookTitles` is built from non-null detail titles in `BorrowDetailId ASC` order and preserves one
-entry per detail; `categories` contains unique non-null category names in first-occurrence order.
-The repository must group rows or use a structured SQL representation; it must not create these
-arrays by splitting comma-delimited `STRING_AGG` output because valid titles/categories may contain
-commas.
+Phân trang được áp dụng cho các tiêu đề `BorrowRequests` riêng biệt trước khi nối các hàng chi tiết
+con, do đó, một trang không bao giờ cắt bỏ một yêu cầu trên các trang. Truy vấn đếm đếm các ID yêu
+cầu phù hợp riêng biệt. `bookTitles` được xây dựng từ các tiêu đề chi tiết không rỗng theo thứ tự
+`BorrowDetailId ASC` và duy trì một mục nhập cho mỗi chi tiết; `categories` chứa các tên danh mục
+không null duy nhất theo thứ tự xuất hiện lần đầu. Kho lưu trữ phải nhóm các hàng hoặc sử dụng biểu
+diễn SQL có cấu trúc; nó không được tạo các mảng này bằng cách phân tách đầu ra `STRING_AGG` được
+phân cách bằng dấu phẩy vì các tiêu đề/danh mục hợp lệ có thể chứa dấu phẩy.
 
-The frontend migrates from `fromDate`/`toDate` and client pagination to canonical `from`/`to` and
-server pagination.
+Giao diện người dùng di chuyển từ `fromDate`/`toDate` và phân trang máy khách sang `from`/`to` và
+phân trang máy chủ chuẩn.
 
-## 11. Canonical Request Detail Contract
+## 11. Hợp đồng chi tiết yêu cầu hợp quy
 
-Add `GET /api/admin/requests/{requestId}`.
+Thêm `GET /api/admin/requests/{requestId}`.
 
-- Authentication and Admin authorization run before parameter validation.
-- A non-positive/non-integer ID returns `400 VALIDATION_ERROR`.
-- A missing request returns `404 BORROW_REQUEST_NOT_FOUND`.
-- FE11 reads through `borrowingRepository.findBorrowRequestById()` and projects an explicit safe
-  Admin DTO. It does not duplicate FE07 request-detail SQL or mutation logic.
+- Xác thực và ủy quyền quản trị viên chạy trước khi xác thực tham số.
+- ID không dương/không nguyên trả về `400 VALIDATION_ERROR`.
+- Yêu cầu bị thiếu trả về `404 BORROW_REQUEST_NOT_FOUND`.
+- FE11 đọc qua `borrowingRepository.findBorrowRequestById()` và chiếu một sự an toàn rõ ràng
+  Quản trị DTO. Nó không trùng lặp FE07 chi tiết yêu cầu SQL hoặc logic thao tác ghi.
 
-The response contains exactly:
+Câu trả lời chứa chính xác:
 
 ```json
 {
@@ -402,91 +409,90 @@ The response contains exactly:
 }
 ```
 
-No password, token, session, raw audit metadata, internal credential ID, or unrelated profile field
-is allowed.
+Không cho phép mật khẩu, mã thông báo, phiên, siêu dữ liệu kiểm tra thô, ID thông tin xác thực nội
+bộ hoặc trường hồ sơ không liên quan.
 
-## 12. Request Mutations And Terminal State
+## 12. Yêu cầu thao tác ghi và trạng thái đầu cuối
 
-FE07 remains the only owner of:
+FE07 vẫn là chủ sở hữu duy nhất của:
 
 ```text
 PATCH /api/borrow-requests/{requestId}/approve
 PATCH /api/borrow-requests/{requestId}/reject
 ```
 
-The Admin FE11 page continues to call those endpoints. No `/api/admin/requests/{id}/approve` or
-`/reject` alias is added.
+Trang Quản trị viên FE11 tiếp tục gọi các điểm cuối đó. Không có bí danh
+`/api/admin/requests/{id}/approve` hoặc `/reject` nào được thêm vào.
 
-- Only `PENDING` requests expose approve/reject controls.
-- Any non-`PENDING` direct mutation returns `409 BORROW_REQUEST_NOT_PENDING`.
-- A mutation rejected because the current state is non-`PENDING` changes no
-  request/detail/copy state and writes no success audit.
-- The frontend loads authoritative detail when opening the modal.
-- A successful mutation reloads the current paginated list and, if the modal remains open, reloads
-  its authoritative detail before rendering success state.
-- A failed mutation keeps the modal open, preserves the last successful detail, and displays the
-  safe FE07 error.
-- `APPROVED`, `REJECTED`, `COMPLETED`, and `CANCELLED` detail views are read-only.
+- Chỉ các yêu cầu `PENDING` mới hiển thị các điều khiển phê duyệt/từ chối.
+- Bất kỳ thao tác ghi trực tiếp nào không phải `PENDING` đều trả về `409 BORROW_REQUEST_NOT_PENDING`.
+- thao tác ghi bị từ chối vì trạng thái hiện tại không phải là `PENDING` không thay đổi
+  trạng thái yêu cầu/chi tiết/sao chép và viết không kiểm tra thành công.
+- Giao diện người dùng tải chi tiết có thẩm quyền khi mở phương thức.
+- Một thao tác ghi thành công sẽ tải lại danh sách phân trang hiện tại và nếu phương thức vẫn mở, hãy tải lại
+  chi tiết có thẩm quyền của nó trước khi hiển thị trạng thái thành công.
+- Một thao tác ghi thất bại sẽ giữ cho phương thức mở, bảo toàn chi tiết thành công cuối cùng và hiển thị
+  lỗi FE07 an toàn.
+- Chế độ xem chi tiết `APPROVED`, `REJECTED`, `COMPLETED` và `CANCELLED` ở chế độ chỉ đọc.
 
-## 13. CSV Export
+## 13. Xuất khẩu CSV
 
-No export endpoint or dependency is added. Export uses the canonical paginated list API:
+Không có điểm cuối xuất hoặc phần phụ thuộc nào được thêm vào. Xuất sử dụng danh sách phân trang chuẩn API:
 
-1. Freeze the current validated filters.
-2. Fetch all pages sequentially with `limit = 100`.
-3. Stop when `data` is empty or `page >= totalPages`; this handles the canonical empty result where
-   `totalPages` may be `0`.
-4. Build CSV from the list DTO allowlist only.
-5. Use stable columns `requestId`, `requestDate`, `status`, `memberUserId`, `memberName`,
-   `memberEmail`, `memberPhoneNumber`, `itemCount`, `bookTitles`, and `categories`; join array values
-   with ` | `.
-6. Prefix a single quote to any cell whose first non-whitespace character is `=`, `+`, `-`, or `@`,
-   then apply standard CSV quote/newline escaping.
-7. Disable duplicate export clicks while the operation runs.
-8. Abort and report a safe error if any page fails; do not download a partial file.
+1. Đóng băng các bộ lọc được xác nhận hiện tại.
+2. Tìm nạp tất cả các trang một cách tuần tự với `limit = 100`.
+3. Dừng khi `data` trống hoặc `page >= totalPages`; cái này xử lý kết quả trống kinh điển trong đó
+   `totalPages` có thể là `0`.
+4. Chỉ xây dựng CSV từ danh sách danh sách cho phép DTO.
+5. Sử dụng các cột ổn định `requestId`, `requestDate`, `status`, `memberUserId`, `memberName`,
+`memberEmail`, `memberPhoneNumber`, `itemCount`, `bookTitles` và `categories`; nối các giá trị mảng với ` | `.
+6. Thêm tiền tố một trích dẫn vào bất kỳ ô nào có ký tự không phải khoảng trắng đầu tiên là `=`, `+`, `-` hoặc `@`,
+   sau đó áp dụng trích dẫn CSV tiêu chuẩn/thoát dòng mới.
+7. Vô hiệu hóa các nhấp chuột xuất trùng lặp trong khi thao tác chạy.
+8. Hủy bỏ và báo cáo lỗi an toàn nếu bất kỳ trang nào bị lỗi; không tải xuống một phần tập tin.
 
-## 14. Testing Strategy
+## 14. Chiến lược kiểm thử
 
-All implementation follows RED-GREEN TDD.
+Tất cả việc triển khai đều tuân theo RED-GREEN TDD.
 
-### 14.1 Wave A
+### 14.1 Sóng A
 
-- Static/idempotence tests for the migration script and baseline/model synchronization.
-- Safe DTO tests proving `updatedAt` falls back to `createdAt` only when storage `UpdatedAt` is
-  null, and optimistic update/deactivation compare the same effective value.
-- Repository tests for locked actor/target state, stale update, duplicate email, no-op, Librarian
-  field persistence, active-borrowing block, token revocation, audit, commit, and rollback.
-- Account setup/resend regression tests proving the acting Admin is revalidated inside each source
-  transaction and duplicate email remains a safe deterministic conflict.
-- A concurrency test for deactivation versus FE07 approval proving both cannot commit for the same
-  user and the final account/borrowing state remains valid.
-- Service tests for deterministic safe error mapping and DTO allowlists.
-- Route tests for Admin-first authorization and boundary validation.
-- Frontend tests for `expectedUpdatedAt`, Librarian fields, authoritative reload, and removal of the
-  implicit Admin bypass.
-- Regression tests for account setup, role mutation, safe reads, Audit Logs, and Permissions.
+- Kiểm tra tĩnh/không có hiệu lực đối với tập lệnh di chuyển và đồng bộ hóa mốc cơ sở/mô hình.
+- Các kiểm thử DTO an toàn chứng minh `updatedAt` chỉ quay trở lại `createdAt` khi hết dung lượng lưu trữ `UpdatedAt`
+  null và cập nhật/hủy kích hoạt lạc quan so sánh cùng một giá trị hiệu quả.
+- Kiểm tra kho lưu trữ để biết trạng thái tác nhân/đích bị khóa, cập nhật cũ, email trùng lặp, không hoạt động, Thủ thư
+  tính bền vững của trường, khối mượn hoạt động, thu hồi mã thông báo, kiểm tra, cam kết và khôi phục.
+- Thiết lập tài khoản/gửi lại các kiểm thử hồi quy chứng minh Quản trị viên hoạt động được xác thực lại trong mỗi nguồn
+  giao dịch và email trùng lặp vẫn là một xung đột mang tính quyết định an toàn.
+- Một kiểm thử đồng thời để hủy kích hoạt so với phê duyệt FE07 chứng minh cả hai không thể cam kết giống nhau
+  người dùng và trạng thái tài khoản cuối cùng/borrowing vẫn hợp lệ.
+- Kiểm tra dịch vụ để ánh xạ lỗi an toàn xác định và danh sách cho phép DTO.
+- Kiểm thử định tuyến để xác thực ranh giới và ủy quyền ưu tiên của quản trị viên.
+- Kiểm tra giao diện người dùng cho `expectedUpdatedAt`, trường Thư viện, tải lại có thẩm quyền và loại bỏ
+  bỏ qua quản trị ngầm.
+- Kiểm tra hồi quy để thiết lập tài khoản, thay đổi vai trò, đọc an toàn, Nhật ký kiểm tra và Quyền.
 
-### 14.2 Wave B
+### 14.2 Sóng B
 
-- Admin request-list validator, filter, stable pagination, and matching count/data scope tests.
-- Request-detail authentication, authorization, ID, 404, projection, and forbidden-field tests.
-- FE07 regression tests proving non-pending approve/reject returns `409` with no success mutation or
-  audit.
-- Frontend tests for canonical query names, server pagination, detail loading, terminal controls,
-  failure preservation, and multi-page safe CSV export.
-- Feature-specific Playwright Admin acceptance with isolated fixtures:
-  1. Direct Admin Console access without identity redirects to the approved login/access-denied
-     flow in the same Vite mode used by CI.
-  2. Admin login opens All Users, updates an active Librarian's approved fields, reloads the
-     authoritative detail, then deactivates that fixture and observes authoritative `INACTIVE`.
-  3. Permissions loads through the canonical FE11 endpoint.
-  4. Request Management uses server pagination, opens authoritative pending and terminal details,
-     and exposes no approve/reject controls for the terminal request.
-  5. CSV export traverses more than one fixture page and contains only the approved escaped columns.
+- Trình xác thực danh sách yêu cầu của quản trị viên, bộ lọc, phân trang ổn định và kiểm tra số lượng/phạm vi dữ liệu phù hợp.
+- Yêu cầu-xác thực chi tiết, ủy quyền, ID, 404, phép chiếu và kiểm tra trường cấm.
+- FE07 kiểm tra hồi quy chứng minh việc phê duyệt/từ chối không chờ xử lý trả về `409` không có thao tác ghi thành công hoặc
+  kiểm toán.
+- Kiểm tra giao diện người dùng cho tên truy vấn chuẩn, phân trang máy chủ, tải chi tiết, điều khiển thiết bị đầu cuối,
+  bảo quản lỗi và xuất CSV an toàn nhiều trang.
+- Sự chấp nhận của quản trị viên Playwright dành riêng cho chức năng với các thiết bị cố định:
+  1. Truy cập trực tiếp vào Bảng điều khiển dành cho quản trị viên mà không có danh tính sẽ chuyển hướng đến thông tin đăng nhập đã được phê duyệt/quyền truy cập bị từ chối
+     luồng trong cùng chế độ Vite được CI sử dụng.
+  2. Đăng nhập của quản trị viên sẽ mở Tất cả người dùng, cập nhật các trường đã được phê duyệt của Thủ thư đang hoạt động, tải lại
+     chi tiết có thẩm quyền, sau đó tắt thiết bị cố định đó và quan sát `INACTIVE` có thẩm quyền.
+  3. Quyền tải thông qua điểm cuối FE11 chuẩn.
+  4. Quản lý yêu cầu sử dụng phân trang máy chủ, mở các chi tiết đầu cuối và chờ xử lý có thẩm quyền,
+     và không đưa ra các biện pháp kiểm soát phê duyệt/từ chối đối với yêu cầu đầu cuối.
+  5. Xuất CSV đi qua nhiều trang cố định và chỉ chứa các cột thoát đã được phê duyệt.
 
-### 14.3 Required Gates
+### 14.3 Cổng bắt buộc
 
-Each implementation wave runs:
+Mỗi đợt triển khai sẽ chạy:
 
 ```powershell
 npm.cmd --prefix backend test
@@ -498,60 +504,60 @@ npm.cmd run trace:enforce
 npm.cmd run test:e2e
 ```
 
-Also require OpenAPI parse, backend import, `git diff --check`, exact scope comparison, product-drift
-scan, and high-confidence secret/credential scan.
+Đồng thời yêu cầu phân tích OpenAPI, nhập máy chủ, `git diff --check`, so sánh phạm vi chính xác,
+quét trôi sản phẩm và quét bí mật/thông tin xác thực có độ tin cậy cao.
 
-When a SQL Server environment is available, execute the migration twice and assert the five target
-columns and email unique constraint. If no environment exists, retain the SQL-backed portion of
-`TD-021` as an explicit cross-feature residual; static migration verification does not pretend to be
-a live SQL execution.
+Khi có sẵn môi trường SQL Server, hãy thực hiện di chuyển hai lần và xác nhận năm cột mục tiêu cũng
+như ràng buộc duy nhất về email. Nếu không có môi trường tồn tại, hãy giữ lại phần `TD-021` được hỗ
+trợ bởi SQL dưới dạng phần còn lại của nhiều chức năng rõ ràng; xác minh di chuyển tĩnh không giả vờ
+là thực thi SQL trực tiếp.
 
-## 15. Governance And Task Mapping
+## 15. Quản trị và lập bản đồ nhiệm vụ
 
-The governance activation adds these bounded tasks:
+Việc kích hoạt quản trị bổ sung thêm các nhiệm vụ bị giới hạn sau:
 
-| Task | Scope | Debt |
+| Nhiệm vụ | Phạm vi | Nợ |
 | --- | --- | --- |
-| `FE11-FIN01` | Activate the approved Finalization Batch contract | all batch debt |
-| `FE11-LIFE01` | Add the reviewable schema migration and synchronized contracts | TD-012, TD-016 |
-| `FE11-LIFE02` | Persist/return Librarian fields and harden setup actor checks | TD-012, TD-014 |
-| `FE11-LIFE03` | Implement optimistic/no-op user updates | TD-014, TD-015, TD-016 |
-| `FE11-LIFE04` | Implement atomic deactivation and credential invalidation | TD-014, TD-015, TD-016 |
-| `FE11-LIFE05` | Align the Admin UI and remove implicit dev Admin access | TD-017 |
-| `FE11-LIFE06` | Pass Wave A H2/H3/B7 integration | Wave A |
-| `FE11-REQ01` | Canonicalize Admin request list and detail reads | TD-025 |
-| `FE11-REQ02` | Align request detail, pagination, actions, and CSV UI | TD-025 |
-| `FE11-REQ03` | Prove FE07 terminal-state immutability | TD-025 |
-| `FE11-ACC01` | Pass FE11 browser acceptance and Wave B integration | TD-021, TD-025 |
-| `FE11-FIN02` | Close final FE11 debt and publish B7 evidence | batch closeout |
+| `FE11-FIN01` | Kích hoạt hợp đồng Lô Khóa sổ đã được phê duyệt | tất cả các khoản nợ |
+| `FE11-LIFE01` | Thêm di chuyển lược đồ có thể xem lại và hợp đồng được đồng bộ hóa | TD-012, TD-016 |
+| `FE11-LIFE02` | Kiên trì/trả sách các trường của Thư viện và tăng cường kiểm tra tác nhân thiết lập | TD-012, TD-014 |
+| `FE11-LIFE03` | Triển khai cập nhật lạc quan/không hoạt động cho người dùng | TD-014, TD-015, TD-016 |
+| `FE11-LIFE04` | Thực hiện vô hiệu hóa nguyên tử và vô hiệu hóa thông tin xác thực | TD-014, TD-015, TD-016 |
+| `FE11-LIFE05` | Căn chỉnh giao diện người dùng quản trị và xóa quyền truy cập quản trị viên ngầm của nhà phát triển | TD-017 |
+| `FE11-LIFE06` | Tích hợp đạt đợt A H2/H3/B7 | Sóng A |
+| `FE11-REQ01` | Canonicalize danh sách yêu cầu quản trị viên và đọc chi tiết | TD-025 |
+| `FE11-REQ02` | Căn chỉnh chi tiết yêu cầu, phân trang, hành động và giao diện người dùng CSV | TD-025 |
+| `FE11-REQ03` | Chứng minh tính bất biến trạng thái đầu cuối FE07 | TD-025 |
+| `FE11-ACC01` | Vượt qua sự chấp nhận trình duyệt FE11 và tích hợp đợt B | TD-021, TD-025 |
+| `FE11-FIN02` | Đóng khoản nợ FE11 cuối cùng và công bố bằng chứng B7 | khóa sổ hàng loạt |
 
-Governance moves `TD-012`, `TD-014`, `TD-015`, `TD-016`, `TD-017`, and `TD-025` to `IN PROGRESS`
-only after the activation PR merges. `TD-021` stays `PARTIAL` until its remaining cross-feature
-evidence is actually available.
+Quản trị chỉ chuyển `TD-012`, `TD-014`, `TD-015`, `TD-016`, `TD-017` và `TD-025` sang `IN PROGRESS`
+sau khi hợp nhất PR kích hoạt. `TD-021` vẫn giữ nguyên `PARTIAL` cho đến khi có bằng chứng về chức
+năng chéo còn lại của nó.
 
-## 16. H1/H2/H3 Boundaries
+## 16. Ranh giới H1/H2/H3
 
-H1 approves:
+H1 phê duyệt:
 
-- This contract, two-wave dependency order, file ownership, schema/API names, and test commands.
-- One governance activation diff and isolated implementation worktrees.
-- Uncommitted RED-GREEN work inside the active wave after governance merges.
+- Hợp đồng này, thứ tự phụ thuộc hai sóng, quyền sở hữu tệp, tên lược đồ/API và các lệnh kiểm tra.
+- Một sơ đồ triển khai khác biệt về kích hoạt quản trị và tách biệt.
+- RED-GREEN không được cam kết hoạt động bên trong làn sóng hoạt động sau khi hợp nhất quản trị.
 
-H1 does not approve:
+H1 không chấp thuận:
 
-- Product implementation commit/push/merge.
-- Any schema/API/permission behavior not named in this design.
-- Parallel edits to the same Core user repository, FE11 SPEC, or baseline SQL file.
+- Cam kết/đẩy/hợp nhất triển khai sản phẩm.
+- Bất kỳ lược đồ/API/hành vi cấp phép nào không có tên trong thiết kế này.
+- Chỉnh sửa song song đối với cùng một kho lưu trữ người dùng lõi, FE11 SPEC hoặc tệp SQL cơ sở.
 
-H2 is required before each generated implementation diff is committed and published. H3 is
-required after PR checks and before every merge. The closeout is documentation-only but still
-requires H2/H3 because it changes FE11 completion and debt status.
+Cần phải có H2 trước khi mỗi khác biệt triển khai được tạo được cam kết và xuất bản. H3 được yêu cầu
+sau khi kiểm tra PR và trước mỗi lần hợp nhất. Việc khóa sổ chỉ cần có tài liệu nhưng vẫn yêu cầu
+H2/H3 vì nó thay đổi trạng thái nợ và hoàn thành FE11.
 
-## 17. File Ownership
+## 17. Quyền sở hữu tệp
 
-The implementation plan must assign one serial Core owner per wave.
+Kế hoạch triển khai phải chỉ định một chủ sở hữu lõi nối tiếp cho mỗi đợt.
 
-Wave A anticipated Core files:
+Các tệp lõi dự kiến ​​của đợt A:
 
 ```text
 database/Librarymanagement.sql
@@ -577,7 +583,7 @@ frontend/src/page/UserManagement.jsx
 .sdd/specs/feat-notification-management/SPEC.md
 ```
 
-Wave B anticipated Core files:
+Các tệp lõi dự đoán của đợt B:
 
 ```text
 docs/api/api-contract.md
@@ -593,58 +599,58 @@ tests/e2e/fe11-admin-console.spec.js
 tests/e2e/support/systemTestServer.js
 ```
 
-Tests and governance files follow the owning production boundary. No other feature production file
-may change unless the implementation plan identifies a direct approved dependency and its
-regression command.
+Các kiểm thử và tệp quản trị tuân theo ranh giới sản xuất sở hữu. Không có tệp sản xuất chức năng
+nào khác có thể thay đổi trừ khi kế hoạch triển khai xác định phần phụ thuộc được phê duyệt trực
+tiếp và lệnh hồi quy của nó.
 
-## 18. Risks And Mitigations
+## 18. Rủi ro và giảm thiểu
 
-- Schema drift: one idempotent migration plus synchronized baseline/model/ADR tests.
-- Lost update: locked `expectedUpdatedAt` comparison before any mutation.
-- Partial deactivation: one SQL transaction for status, timestamp, credentials, and audit.
-- Pending/deactivated ambiguity: use `DeactivatedAt` to reject pending activation and make only an
-  already-deactivated account idempotent.
-- Privilege bypass: remove implicit non-production Admin identity; keep server authorization.
-- FE07 duplication: reuse FE07 read repository and mutation endpoints; FE11 owns only Admin DTOs.
-- Cross-feature email truncation: widen FE10 recipient persistence/bindings with `Users.Email` and
-  run account-setup delivery regression at the 255-character boundary.
-- Approval/deactivation race: share the approved member-scoped lock order and prove the invariant
-  with concurrency evidence.
-- Pagination inconsistency: shared filter scope and stable tie-break ordering for data/count.
-- CSV injection: allowlisted DTO fields plus formula-prefix escaping.
-- Oversized PRs: fixed Wave A/Wave B boundaries and one Core owner at a time.
-- Schedule pressure: no per-debt PRs, no unrelated refactor, and no new dependency/framework.
+- Sự trôi dạt lược đồ: một lần di chuyển bình thường cộng với các kiểm thử cơ sở/mô hình/ADR được đồng bộ hóa.
+- Mất cập nhật: so sánh `expectedUpdatedAt` bị khóa trước khi có bất kỳ thao tác ghi nào.
+- Vô hiệu hóa một phần: một giao dịch SQL cho trạng thái, dấu thời gian, thông tin xác thực và kiểm tra.
+- Sự mơ hồ đang chờ xử lý/hủy kích hoạt: sử dụng `DeactivatedAt` để từ chối kích hoạt đang chờ xử lý và chỉ thực hiện một
+  tài khoản đã bị vô hiệu hóa bình thường.
+- Bỏ qua đặc quyền: xóa danh tính Quản trị viên phi sản xuất ngầm định; giữ ủy quyền máy chủ.
+- FE07 sao chép: tái sử dụng kho lưu trữ đọc FE07 và điểm cuối thao tác ghi; FE11 chỉ sở hữu DTO quản trị viên.
+- Cắt ngắn email nhiều chức năng: mở rộng tính liên tục/ràng buộc của người nhận FE10 với `Users.Email` và
+  chạy hồi quy phân phối thiết lập tài khoản ở ranh giới 255 ký tự.
+- Cuộc đua phê duyệt/hủy kích hoạt: chia sẻ thứ tự khóa trong phạm vi thành viên đã được phê duyệt và chứng minh tính bất biến
+  với bằng chứng đồng thời.
+- Sự không nhất quán về phân trang: phạm vi bộ lọc được chia sẻ và thứ tự ngắt kết nối ổn định cho dữ liệu/số lượng.
+- Nội dung CSV: các trường DTO được đưa vào danh sách cho phép cộng với lối thoát tiền tố công thức.
+- PR quá khổ: ranh giới Sóng A/Sóng B cố định và một chủ sở hữu Cốt lõi tại một thời điểm.
+- Áp lực về lịch trình: không có PR cho mỗi khoản nợ, không có bộ tái cấu trúc không liên quan và không có khung/phụ thuộc mới.
 
-## 19. Definition Of Done
+## 19. Định nghĩa xong
 
-FE11 may move from `Implementation State: DEFERRED` to `COMPLETE THROUGH B7` only when:
+FE11 chỉ có thể chuyển từ `Implementation State: DEFERRED` sang `COMPLETE THROUGH B7` khi:
 
-- The governance activation, Wave A, Wave B, and closeout PRs are merged.
-- Each exact merge commit has successful `main` CI evidence.
-- All FE11 acceptance criteria have code/test traceability or explicit environment evidence.
-- The schema/API/OpenAPI/baseline/model contracts agree.
-- `FE11-FIN01..FE11-FIN02` and all intermediate tasks are complete.
-- `TD-012`, `TD-014`, `TD-015`, `TD-016`, `TD-017`, and `TD-025` are resolved.
-- No unresolved FE11 P1 product-code debt remains.
-- `TD-021`, if still partial, names only the unavailable live SQL Server execution and not a
-  missing FE11 browser or code requirement.
-- FE04, FE07 mutation ownership, FE12 production behavior, and completed FE11 slices remain intact.
+- Kích hoạt quản trị, Sóng A, Sóng B và PR kết thúc được hợp nhất.
+- Mỗi cam kết hợp nhất chính xác đều có bằng chứng CI `main` thành công.
+- Tất cả các tiêu chí chấp nhận FE11 đều có khả năng truy vết mã/kiểm tra hoặc bằng chứng môi trường rõ ràng.
+- Các hợp đồng lược đồ/API/OpenAPI/mốc cơ sở/mô hình đều đồng ý.
+- `FE11-FIN01..FE11-FIN02` và tất cả các nhiệm vụ trung gian đã hoàn thành.
+- `TD-012`, `TD-014`, `TD-015`, `TD-016`, `TD-017` và `TD-025` đã được giải quyết.
+- Không còn khoản nợ mã sản phẩm FE11 P1 nào chưa được giải quyết.
+- `TD-021`, nếu vẫn còn một phần, chỉ nêu tên thực thi SQL Server trực tiếp không khả dụng chứ không phải là
+  thiếu yêu cầu về trình duyệt hoặc mã FE11.
+- Quyền sở hữu thao tác ghi FE04, FE07, hành vi sản xuất FE12 và các lát FE11 đã hoàn thành vẫn còn nguyên.
 
-## 20. Approval Record
+## 20. Hồ sơ phê duyệt
 
-The human approved:
+Con người đã chấp thuận:
 
-- A Full-spec FE11 Finalization Batch rather than presentation-only completion.
-- The required schema migration.
-- The recommended two-wave architecture.
-- The data/transaction contract, including 100-character Librarian fields and idempotent repeated
-  deactivation.
-- FE11 Admin read ownership with FE07 mutation ownership.
-- Canonical request list `from`/`to` plus server pagination alignment.
-- The four-PR delivery sequence and final B7 closeout.
+- Lô hoàn thiện FE11 đầy đủ đặc tả thay vì chỉ hoàn thành bản trình bày.
+- Việc di chuyển lược đồ được yêu cầu.
+- Kiến trúc hai sóng được đề xuất.
+- Hợp đồng dữ liệu/giao dịch, bao gồm các trường Thủ thư 100 ký tự và các trường lặp lại bình thường
+  vô hiệu hóa.
+- FE11 Quản trị viên đọc quyền sở hữu với quyền sở hữu thao tác ghi FE07.
+- Danh sách yêu cầu chuẩn `from`/`to` cộng với căn chỉnh phân trang máy chủ.
+- Trình tự phân phối bốn PR và kết thúc B7 cuối cùng.
 
-Nhat confirmed written-file review on 2026-07-19, including the self-review corrections discovered
-after the earlier section approvals: FE10 recipient-email width synchronization, FE11 `fullName`
-max 100 alignment with FE03, the pending-activation deactivation rejection, the minimum FE07
-lock-order dependency, the non-null `COALESCE(UpdatedAt, CreatedAt)` concurrency version, and
-transactional acting-Admin revalidation for FE11 create/setup-resend mutations.
+Nhật xác nhận xem xét bằng văn bản vào ngày 19-07-2026, bao gồm các sửa lỗi tự đánh giá được phát
+hiện sau khi phê duyệt phần trước: FE10 đồng bộ hóa độ rộng email người nhận, FE11 `fullName` tối đa
+100 căn chỉnh với FE03, từ chối hủy kích hoạt đang chờ kích hoạt, phụ thuộc lệnh khóa FE07 tối
+thiểu, phiên bản đồng thời `COALESCE(UpdatedAt, CreatedAt)` không có giá trị rỗng và xác thực lại
+quyền quản trị viên thực hiện giao dịch đối với các thao tác ghi tạo/thiết lập-gửi lại FE11.

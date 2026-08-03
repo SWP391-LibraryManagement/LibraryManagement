@@ -1,42 +1,47 @@
-# FE07/FE08/FE10/FE12 Business Rule Remediation Implementation Plan
+# FE07/FE08/FE10/FE12 Kế hoạch thực hiện khắc phục quy tắc nghiệp vụ
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use `executing-plans` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. Repository H2 rules prohibit committing generated implementation changes before human review.
+> **Đối với nhân viên đại lý:** BẮT BUỘC SUB-SKILL: Sử dụng `executing-plans` để triển khai kế hoạch này theo từng nhiệm vụ. Các bước sử dụng cú pháp hộp kiểm (`- [ ]`) để theo dõi. Quy tắc H2 của kho lưu trữ cấm thực hiện các thay đổi triển khai được tạo ra trước khi con người xem xét.
 
-**Goal:** Reconcile borrowing, reservation, notification, and reporting behavior with the approved FE07, FE08, FE10, and FE12 contracts.
+**Mục tiêu:** Điều hòa hành vi mượn, đặt chỗ, thông báo và báo cáo với các hợp đồng FE07, FE08, FE10
+và FE12 đã được phê duyệt.
 
-**Architecture:** Keep the existing Express service/repository boundaries. Move concurrency-sensitive decisions into SQL transactions with stable lock order, make FE10 workers claim rows before delivery, expose only the canonical FE08 queue command, and make FE12 pagination database-backed end to end.
+**Kiến trúc:** Giữ ranh giới dịch vụ/kho lưu trữ Express hiện có. Di chuyển các quyết định nhạy cảm
+đồng thời vào các giao dịch SQL với thứ tự khóa ổn định, yêu cầu nhân viên FE10 xác nhận các hàng
+trước khi phân phối, chỉ hiển thị lệnh hàng đợi FE08 chuẩn và tạo cơ sở dữ liệu phân trang FE12 từ
+đầu đến cuối.
 
-**Tech Stack:** Node.js, Express.js, Jest, React, SQL Server, parameterized T-SQL, Node test runner.
+**bộ công nghệ công nghệ:** Node.js, Express.js, Jest, React, SQL Server, T-SQL được tham số hóa,
+trình chạy kiểm thử nút.
 
-## Global Constraints
+## Ràng buộc toàn cầu
 
-- Preserve the approved Node.js + Express.js, React, SQL Server, and REST architecture.
-- An active `MEMBER` with `Users.Status = ACTIVE` may use FE07/FE08 without FE04 approval; FE04 status only selects the FE07 daily tier.
-- FE07 shared copy lock order is `member lock -> BookCopies -> BorrowRequests/BorrowDetails -> Reservations`.
-- FE08 queue identity and processing target are physical `CopyId`; the only Phase 1 processing endpoint is `POST /api/reservations/process-queue`.
-- Every in-process FE10 request carries bound source metadata and an idempotency key; only FE04 owns `MEMBERSHIP_RESULT`.
-- FE12 filters, aggregation inputs, stable ordering, and detailed-row pagination execute in SQL before rows are returned.
-- Do not add dependencies, expose secrets/PII, commit, push, or deploy before the repository's H2/H3 gates.
+- Bảo tồn kiến trúc Node.js + Express.js, React, SQL Server và REST đã được phê duyệt.
+- `MEMBER` đang hoạt động với `Users.Status = ACTIVE` có thể sử dụng FE07/FE08 mà không cần sự chấp thuận của FE04; Trạng thái FE04 chỉ chọn cấp hàng ngày FE07.
+- FE07 Thứ tự khóa sao chép được chia sẻ là `member lock -> BookCopies -> BorrowRequests/BorrowDetails -> Reservations`.
+- FE08 nhận dạng hàng đợi và mục tiêu xử lý là `CopyId` vật lý; điểm cuối xử lý Giai đoạn 1 duy nhất là `POST /api/reservations/process-queue`.
+- Mọi yêu cầu FE10 trong quá trình đều mang theo siêu dữ liệu nguồn bị ràng buộc và khóa tạm thời; chỉ FE04 mới sở hữu `MEMBERSHIP_RESULT`.
+- FE12 các bộ lọc, đầu vào tổng hợp, thứ tự ổn định và phân trang hàng chi tiết thực thi trong SQL trước khi các hàng được trả về.
+- Không thêm phần phụ thuộc, tiết lộ bí mật/PII, cam kết, đẩy hoặc triển khai trước cổng H2/H3 của kho lưu trữ.
 
 ---
 
-### Task 1: Make FE10 delivery and source ownership deterministic
+### Nhiệm vụ 1: Xác định quyền sở hữu nguồn và phân phối FE10
 
-**Files:**
-- Modify: `backend/tests/notificationRoutes.test.js`
-- Create: `backend/tests/notificationRepository.test.js`
-- Modify: `backend/src/services/notificationService.js`
-- Modify: `backend/src/repositories/notificationRepository.js`
-- Modify: `backend/src/services/borrowingService.js`
-- Modify: `backend/src/services/reservationService.js`
+**Tệp:**
+- Sửa đổi: `backend/tests/notificationRoutes.test.js`
+- Tạo: `backend/tests/notificationRepository.test.js`
+- Sửa đổi: `backend/src/services/notificationService.js`
+- Sửa đổi: `backend/src/repositories/notificationRepository.js`
+- Sửa đổi: `backend/src/services/borrowingService.js`
+- Sửa đổi: `backend/src/services/reservationService.js`
 
-**Interfaces:**
-- Consumes: `createSourceNotificationRequester(sourceFeature)` and `processPendingNotifications({ limit }, actor)`.
-- Produces: `claimNextPending()` returning an exclusively claimed row; guarded `markClaimSent`/`markClaimFailed`; deterministic source ownership and idempotent FE07/FE08 requests.
+**Giao diện:**
+- Tiêu thụ: `createSourceNotificationRequester(sourceFeature)` và `processPendingNotifications({ limit }, actor)`.
+- Sản xuất: `claimNextPending()` trả về một hàng được xác nhận quyền sở hữu độc quyền; được bảo vệ `markClaimSent`/`markClaimFailed`; quyền sở hữu nguồn xác định và các yêu cầu FE07/FE08 bình thường.
 
-- [x] **Step 1: Write failing ownership and worker-concurrency tests.**
+- [x] **Bước 1: Viết các kiểm thử quyền sở hữu và đồng thời công nhân không thành công.**
 
-Add tests proving:
+Thêm kiểm thử chứng minh:
 
 ```js
 await expect(
@@ -52,21 +57,23 @@ await Promise.all([
 expect(emailProvider.send).toHaveBeenCalledTimes(1);
 ```
 
-Also assert FE07 due-date and FE08 reservation-ready requests include stable source-event idempotency keys.
+Đồng thời khẳng định các yêu cầu đến hạn của FE07 và các yêu cầu sẵn sàng đặt chỗ FE08 bao gồm các
+khóa bình thường của sự kiện nguồn ổn định.
 
-- [x] **Step 2: Run the focused tests and verify RED.**
+- [x] **Bước 2: Chạy các kiểm thử tập trung và xác minh RED.**
 
-Run:
+Chạy:
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/notificationRoutes.test.js tests/notificationRepository.test.js
 ```
 
-Expected: ownership accepts FE07 incorrectly, concurrent workers send twice, and FE07/FE08 source requests omit idempotency keys.
+Dự kiến: quyền sở hữu chấp nhận FE07 không chính xác, các nhân viên đồng thời gửi hai lần và các yêu
+cầu nguồn FE07/FE08 bỏ qua các khóa tạm thời.
 
-- [x] **Step 3: Implement minimal FE10 ownership, claim, and replay behavior.**
+- [x] **Bước 3: Thực hiện hành vi sở hữu, xác nhận và phát lại FE10 ở mức tối thiểu.**
 
-Use an explicit owner map for all source-owned canonical pairs:
+Sử dụng bản đồ chủ sở hữu rõ ràng cho tất cả các cặp chuẩn thuộc sở hữu nguồn:
 
 ```js
 const notificationTypeOwners = {
@@ -77,38 +84,42 @@ const notificationTypeOwners = {
 };
 ```
 
-Claim queued records transactionally before provider delivery, using parameterized SQL and a state transition that prevents a second worker from receiving the same row. Make `markSent` and `markFailed` update only the claimed processing state. If a unique idempotency insert loses a race, load and replay the existing row rather than returning an internal error.
+Yêu cầu các bản ghi được xếp hàng đợi giao dịch trước khi nhà cung cấp phân phối, sử dụng SQL được
+tham số hóa và chuyển đổi trạng thái ngăn nhân viên thứ hai nhận cùng một hàng. Đặt `markSent` và
+`markFailed` chỉ cập nhật trạng thái xử lý được yêu cầu. Nếu một phần chèn bình thường duy nhất thua
+cuộc đua, hãy tải và phát lại hàng hiện có thay vì trả về lỗi nội bộ.
 
-- [x] **Step 4: Run the focused tests and verify GREEN.**
+- [x] **Bước 4: Chạy các kiểm thử tập trung và xác minh GREEN.**
 
-Repeat Step 2. Expected: all FE10 tests pass with one provider send under concurrent worker calls.
+Lặp lại Bước 2. Dự kiến: tất cả các kiểm thử FE10 đều vượt qua khi một nhà cung cấp gửi theo các
+lệnh gọi đồng thời của nhân viên.
 
 ---
 
-### Task 2: Enforce FE08 copy-level FIFO and atomic reservation creation
+### Nhiệm vụ 2: Thực thi FE08 cấp độ sao chép FIFO và tạo dự trữ nguyên tử
 
-**Files:**
-- Modify: `backend/tests/reservationRoutes.test.js`
-- Modify: `backend/tests/reservationService.test.js`
-- Create: `backend/tests/reservationRepository.test.js`
-- Modify: `backend/src/routes/reservationRoutes.js`
-- Modify: `backend/src/controllers/reservationController.js`
-- Modify: `backend/src/services/reservationService.js`
-- Modify: `backend/src/repositories/reservationRepository.js`
-- Modify: `backend/src/validators/reservationValidators.js`
-- Modify: `backend/src/docs/openapi.yaml`
-- Modify: `frontend/src/api/libraryFeatureApi.js`
-- Modify: `frontend/src/page/reservation/ReservationsLibrarianPage.jsx`
-- Modify: `frontend/src/page/reservation/MyReservationsPage.jsx`
-- Modify: `frontend/test/reservationFrontend.test.js`
+**Tệp:**
+- Sửa đổi: `backend/tests/reservationRoutes.test.js`
+- Sửa đổi: `backend/tests/reservationService.test.js`
+- Tạo: `backend/tests/reservationRepository.test.js`
+- Sửa đổi: `backend/src/routes/reservationRoutes.js`
+- Sửa đổi: `backend/src/controllers/reservationController.js`
+- Sửa đổi: `backend/src/services/reservationService.js`
+- Sửa đổi: `backend/src/repositories/reservationRepository.js`
+- Sửa đổi: `backend/src/validators/reservationValidators.js`
+- Sửa đổi: `backend/src/docs/openapi.yaml`
+- Sửa đổi: `frontend/src/api/libraryFeatureApi.js`
+- Sửa đổi: `frontend/src/page/reservation/ReservationsLibrarianPage.jsx`
+- Sửa đổi: `frontend/src/page/reservation/MyReservationsPage.jsx`
+- Sửa đổi: `frontend/test/reservationFrontend.test.js`
 
-**Interfaces:**
-- Consumes: `POST /api/reservations/process-queue { copyId }`.
-- Produces: one atomic `createReservation({ userId, copyId })` outcome and copy-specific UI queues.
+**Giao diện:**
+- Tiêu thụ: `POST /api/reservations/process-queue { copyId }`.
+- Tạo ra: một kết quả `createReservation({ userId, copyId })` nguyên tử và hàng đợi giao diện người dùng dành riêng cho bản sao.
 
-- [x] **Step 1: Write failing FIFO, concurrency, and frontend contract tests.**
+- [x] **Bước 1: Viết các kiểm thử FIFO không thành công, đồng thời và hợp đồng giao diện người dùng.**
 
-Add tests proving:
+Thêm kiểm thử chứng minh:
 
 ```js
 expect(routeSource).not.toContain('/:reservationId/process');
@@ -116,137 +127,161 @@ expect(librarianPageSource).toContain('reservationApi.processQueue(notifyTarget.
 expect(librarianPageSource).not.toContain('reservationApi.process(notifyTarget.reservationId');
 ```
 
-Add repository/service tests where two concurrent create attempts start from two open reservations; only one succeeds and the committed total remains three. Add UI assertions that grouping keys use `copyId`, not `title`, and list calls include server pagination.
+Thêm các kiểm thử kho lưu trữ/dịch vụ trong đó hai lần thử tạo đồng thời bắt đầu từ hai dự trữ mở;
+chỉ một người thành công và tổng số cam kết vẫn là ba. Thêm xác nhận giao diện người dùng rằng các
+khóa nhóm sử dụng `copyId` chứ không phải `title` và lệnh gọi danh sách bao gồm phân trang máy chủ.
 
-- [x] **Step 2: Run focused tests and verify RED.**
+- [x] **Bước 2: Chạy kiểm thử tập trung và xác minh RED.**
 
-Run:
+Chạy:
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/reservationRoutes.test.js tests/reservationService.test.js tests/reservationRepository.test.js
 node --test frontend/test/reservationFrontend.test.js
 ```
 
-Expected: direct processing route remains, UI invokes it, and create checks are outside the repository transaction.
+Dự kiến: tuyến xử lý trực tiếp vẫn còn, giao diện người dùng gọi nó và tạo các bước kiểm tra nằm
+ngoài giao dịch kho lưu trữ.
 
-- [x] **Step 3: Implement the canonical queue and transactional create path.**
+- [x] **Bước 3: Triển khai hàng đợi chuẩn và đường dẫn tạo giao dịch.**
 
-Remove the direct process route/controller/API method. In one SQL transaction:
+Loại bỏ phương pháp định tuyến/bộ điều khiển/API trực tiếp. Trong một giao dịch SQL:
 
 ```text
-lock member scope -> lock Users/UserRoles -> lock open reservations for user
--> lock target BookCopies/Books -> reject duplicate/limit/state conflicts
--> lock target reservation queue -> insert ACTIVE reservation
+khóa phạm vi thành viên -> khóa Users/UserRoles -> khóa các đặt chỗ đang mở của người dùng
+-> khóa BookCopies/Books mục tiêu -> từ chối xung đột trùng lặp/giới hạn/trạng thái
+-> khóa hàng đợi đặt chỗ mục tiêu -> chèn đặt chỗ ACTIVE
 ```
 
-Return explicit repository outcomes for inactive/non-member, duplicate, limit, and copy-state conflicts; map them to the existing safe 4xx codes in the service. Group the librarian queue by `copyId` and call `processQueue(copyId)`.
+Trả về kết quả kho lưu trữ rõ ràng cho các xung đột không hoạt động/không phải thành viên, trùng
+lặp, giới hạn và trạng thái sao chép; ánh xạ chúng tới mã 4xx an toàn hiện có trong dịch vụ. Nhóm
+hàng đợi thủ thư theo `copyId` và gọi `processQueue(copyId)`.
 
-- [x] **Step 4: Run focused tests and verify GREEN.**
+- [x] **Bước 4: Chạy kiểm thử tập trung và xác minh GREEN.**
 
-Repeat Step 2. Expected: all FE08 backend/frontend tests pass.
+Lặp lại Bước 2. Dự kiến: tất cả các kiểm thử FE08 backend/frontend đều vượt qua.
 
 ---
 
-### Task 3: Reconcile FE07 eligibility and transaction lock order
+### Nhiệm vụ 3: Đối chiếu tính đủ điều kiện của FE07 và thứ tự khóa giao dịch
 
-**Files:**
-- Modify: `backend/tests/borrowingRoutes.test.js`
-- Modify: `backend/tests/borrowingRepository.test.js`
-- Modify: `backend/tests/sql/borrowingConcurrency.sqltest.js`
-- Modify: `backend/src/services/borrowingService.js`
-- Modify: `backend/src/repositories/borrowingRepository.js`
+**Tệp:**
+- Sửa đổi: `backend/tests/borrowingRoutes.test.js`
+- Sửa đổi: `backend/tests/borrowingRepository.test.js`
+- Sửa đổi: `backend/tests/sql/borrowingConcurrency.sqltest.js`
+- Sửa đổi: `backend/src/services/borrowingService.js`
+- Sửa đổi: `backend/src/repositories/borrowingRepository.js`
 
-**Interfaces:**
-- Consumes: borrow create/approve/return/renew service commands.
-- Produces: repository outcomes calculated only after role, tier, count, copy, detail, and reservation state are locked in canonical order.
+**Giao diện:**
+- Tiêu thụ: mượn các lệnh tạo/phê duyệt/trả sách/gia hạn dịch vụ.
+- Tạo ra: kết quả kho lưu trữ chỉ được tính toán sau khi vai trò, cấp độ, số lượng, bản sao, chi tiết và trạng thái đặt chỗ bị khóa theo thứ tự chuẩn.
 
-- [x] **Step 1: Write failing role, tier, and lock-order tests.**
+- [x] **Bước 1: Viết các kiểm thử vai trò, cấp độ và thứ tự khóa không thành công.**
 
-Add tests proving approval rejects a user whose `MEMBER` role was removed, recalculates the 3/5 daily tier from locked `Members.Status`, and repository source acquires copy locks before request/detail/reservation locks. Add a return test proving the transaction locks `BookCopies -> BorrowDetails -> Reservations`.
+Thêm các kiểm thử chứng minh việc phê duyệt từ chối người dùng có vai trò `MEMBER` đã bị xóa, tính
+toán lại cấp 3/5 hàng ngày từ `Members.Status` bị khóa và nguồn kho lưu trữ thu được các khóa sao
+chép trước khi khóa yêu cầu/chi tiết/reservation. Thêm kiểm thử trả sách chứng minh khóa giao dịch
+`BookCopies -> BorrowDetails -> Reservations`.
 
-- [x] **Step 2: Run focused tests and verify RED.**
+- [x] **Bước 2: Chạy kiểm thử tập trung và xác minh RED.**
 
-Run:
+Chạy:
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/borrowingRoutes.test.js tests/borrowingRepository.test.js
 ```
 
-Expected: role removal and stale-tier cases are accepted, and source-order assertions fail.
+Dự kiến: các trường hợp loại bỏ vai trò và cấp độ cũ được chấp nhận và xác nhận thứ tự nguồn không thành công.
 
-- [x] **Step 3: Implement locked eligibility and canonical ordering.**
+- [x] **Bước 3: Triển khai tính đủ điều kiện bị khóa và thứ tự chuẩn.**
 
-Resolve the request's member key, acquire the member application lock, then lock requested copies before request/details and reservations. Join `UserRoles/Roles` while validating the locked user and derive `dailyLimit` inside the transaction. Return uses the shared suffix `BookCopies -> BorrowDetails -> Reservations` before state updates. Preserve parameterized SQL and existing safe service error mapping.
+Giải quyết khóa thành viên của yêu cầu, lấy khóa ứng dụng thành viên, sau đó khóa các bản sao được
+yêu cầu trước khi yêu cầu/chi tiết và đặt chỗ. Tham gia `UserRoles/Roles` trong khi xác thực người
+dùng bị khóa và lấy `dailyLimit` trong giao dịch. trả sách sử dụng hậu tố chung `BookCopies ->
+BorrowDetails -> Reservations` trước khi cập nhật trạng thái. Bảo tồn SQL được tham số hóa và ánh xạ
+lỗi dịch vụ an toàn hiện có.
 
-- [x] **Step 4: Run focused tests and verify GREEN.**
+- [x] **Bước 4: Chạy kiểm thử tập trung và xác minh GREEN.**
 
-Repeat Step 2. Run the live SQL suite only when an explicitly disposable test database and `FE07_SQL_TEST_ALLOW_MUTATION=true` are available; otherwise report it as a residual gate.
+Lặp lại Bước 2. Chỉ chạy bộ SQL trực tiếp khi có sẵn cơ sở dữ liệu kiểm thử dùng một lần rõ ràng và
+`FE07_SQL_TEST_ALLOW_MUTATION=true`; nếu không thì báo cáo nó như một cổng dư.
 
 ---
 
-### Task 4: Move FE12 report paging into SQL and expose navigation
+### Nhiệm vụ 4: Di chuyển phân trang báo cáo FE12 vào SQL và hiển thị điều hướng
 
-**Files:**
-- Modify: `backend/tests/reportRepository.test.js`
-- Modify: `backend/tests/reportRoutes.test.js`
-- Modify: `backend/tests/reportDeterministicPolicy.test.js`
-- Modify: `backend/tests/reportInMemoryParity.test.js`
-- Modify: `backend/src/repositories/reportRepository.js`
-- Modify: `frontend/src/page/report/BorrowingReportPage.jsx`
-- Modify: `frontend/src/page/report/InventoryReportPage.jsx`
-- Modify: `frontend/src/page/report/UserStatisticsPage.jsx`
-- Modify: `frontend/test/reportOperationalFrontend.test.js`
-- Modify: `frontend/test/reportFilters.test.js`
+**Tệp:**
+- Sửa đổi: `backend/tests/reportRepository.test.js`
+- Sửa đổi: `backend/tests/reportRoutes.test.js`
+- Sửa đổi: `backend/tests/reportDeterministicPolicy.test.js`
+- Sửa đổi: `backend/tests/reportInMemoryParity.test.js`
+- Sửa đổi: `backend/src/repositories/reportRepository.js`
+- Sửa đổi: `frontend/src/page/report/BorrowingReportPage.jsx`
+- Sửa đổi: `frontend/src/page/report/InventoryReportPage.jsx`
+- Sửa đổi: `frontend/src/page/report/UserStatisticsPage.jsx`
+- Sửa đổi: `frontend/test/reportOperationalFrontend.test.js`
+- Sửa đổi: `frontend/test/reportFilters.test.js`
 
-**Interfaces:**
-- Consumes: existing report query filters plus `page` and `limit`.
-- Produces: `{ metrics, rows, page, limit, totalRows }` where SQL returns stable paged rows and metrics use the complete filtered source set.
+**Giao diện:**
+- Tiêu thụ: bộ lọc truy vấn báo cáo hiện có cùng với `page` và `limit`.
+- Tạo ra: `{ metrics, rows, page, limit, totalRows }` trong đó SQL trả về các hàng và số liệu được phân trang ổn định sử dụng bộ nguồn được lọc hoàn chỉnh.
 
-- [x] **Step 1: Write failing SQL paging, historical-growth, and UI navigation tests.**
+- [x] **Bước 1: Viết các kiểm thử phân trang, tăng trưởng lịch sử và điều hướng giao diện người dùng SQL không thành công.**
 
-Assert generated SQL contains `OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY`, metrics come from unpaged filtered aggregates, and an `INACTIVE` member with non-null `ApprovedAt` remains in `newMembersByPeriod`. Assert all three pages submit `page/limit` and render previous/next controls.
+Xác nhận SQL được tạo chứa `OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY`, số liệu đến từ các tập
+hợp được lọc không phân trang và thành viên `INACTIVE` có `ApprovedAt` không rỗng vẫn còn trong
+`newMembersByPeriod`. Xác nhận cả ba trang gửi `page/limit` và hiển thị các điều khiển trước/tiếp
+theo.
 
-- [x] **Step 2: Run focused tests and verify RED.**
+- [x] **Bước 2: Chạy kiểm thử tập trung và xác minh RED.**
 
-Run:
+Chạy:
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/reportRepository.test.js tests/reportRoutes.test.js tests/reportDeterministicPolicy.test.js tests/reportInMemoryParity.test.js
 node --test frontend/test/reportOperationalFrontend.test.js frontend/test/reportFilters.test.js
 ```
 
-Expected: repository still slices rows in memory, historical inactive approvals are omitted, and pages have no navigation state.
+Dự kiến: kho lưu trữ vẫn cắt các hàng trong bộ nhớ, các phê duyệt không hoạt động trước đây bị bỏ
+qua và các trang không có trạng thái điều hướng.
 
-- [x] **Step 3: Implement SQL aggregation/paging and frontend page state.**
+- [x] **Bước 3: Triển khai trạng thái trang tổng hợp/phân trang và giao diện người dùng SQL.**
 
-Use parameterized filtered CTEs or equivalent queries. Calculate metrics/`totalRows` from the full filtered set and fetch detailed rows using the approved stable order plus:
+Sử dụng CTE được lọc theo tham số hoặc các truy vấn tương đương. Tính toán số liệu/`totalRows` từ bộ
+đã lọc đầy đủ và tìm nạp các hàng chi tiết bằng cách sử dụng thứ tự ổn định đã được phê duyệt cộng
+thêm:
 
 ```sql
 OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY
 ```
 
-Count `newMembersByPeriod` from non-null `Members.ApprovedAt` in range regardless of current membership status. Add controlled `page` state to each report page and reset to page 1 when filters change.
+Đếm `newMembersByPeriod` từ `Members.ApprovedAt` không null trong phạm vi bất kể trạng thái thành
+viên hiện tại. Thêm trạng thái `page` được kiểm soát vào từng trang báo cáo và đặt lại về trang 1
+khi bộ lọc thay đổi.
 
-- [x] **Step 4: Run focused tests and verify GREEN.**
+- [x] **Bước 4: Chạy kiểm thử tập trung và xác minh GREEN.**
 
-Repeat Step 2. Expected: all FE12 backend/frontend tests pass and pages can reach rows after the first 20.
+Lặp lại Bước 2. Dự kiến: tất cả các kiểm thử FE12 backend/frontend đều vượt qua và các trang có thể
+tiếp cận các hàng sau 20 kiểm thử đầu tiên.
 
 ---
 
-### Task 5: Reconcile contracts and run the L1-L4 gate
+### Nhiệm vụ 5: Hòa hợp hợp đồng và chạy cổng L1-L4
 
-**Files:**
-- Modify as needed: `.sdd/specs/feat-borrowing-management/{SPEC,PLAN,TASKS}.md`
-- Modify as needed: `.sdd/specs/feat-reservation-management/{SPEC,PLAN,TASKS}.md`
-- Modify as needed: `.sdd/specs/feat-notification-management/{SPEC,PLAN,TASKS}.md`
-- Modify as needed: `.sdd/specs/feat-reporting-statistics/{SPEC,PLAN,TASKS}.md`
-- Review: all files changed by Tasks 1-4
+**Tệp:**
+- Sửa đổi khi cần thiết: `.sdd/specs/feat-borrowing-management/{SPEC,PLAN,TASKS}.md`
+- Sửa đổi khi cần thiết: `.sdd/specs/feat-reservation-management/{SPEC,PLAN,TASKS}.md`
+- Sửa đổi khi cần thiết: `.sdd/specs/feat-notification-management/{SPEC,PLAN,TASKS}.md`
+- Sửa đổi khi cần thiết: `.sdd/specs/feat-reporting-statistics/{SPEC,PLAN,TASKS}.md`
+- Ôn tập: tất cả các tập tin đã được thay đổi bởi Nhiệm vụ 1-4
 
-- [x] **Step 1: Remove only confirmed contract contradictions.**
+- [x] **Bước 1: Chỉ xóa những mâu thuẫn trong hợp đồng đã được xác nhận.**
 
-Align stale FE07/FE08 edge-case wording with the approved active-`MEMBER`/active-account rule, update API/trace rows for removed FE08 direct processing, and record new regression evidence without changing unrelated scope.
+Căn chỉnh từ ngữ trường hợp cạnh FE07/FE08 cũ với quy tắc hoạt động-`MEMBER`/tài khoản đang hoạt
+động đã được phê duyệt, cập nhật các hàng API/theo dõi để xử lý trực tiếp FE08 đã loại bỏ và ghi lại
+bằng chứng hồi quy mới mà không thay đổi phạm vi không liên quan.
 
-- [x] **Step 2: Run automated verification.**
+- [x] **Bước 2: Chạy xác minh tự động.**
 
 ```powershell
 npm.cmd --prefix backend test
@@ -257,85 +292,87 @@ npm.cmd run trace:enforce
 git diff --check
 ```
 
-Expected: every command exits `0`; no test is skipped to conceal a deterministic failure.
+Dự kiến: mọi lệnh đều thoát `0`; không có kiểm thử nào bị bỏ qua để che giấu một lỗi xác định.
 
-- [x] **Step 3: Review security and spec compliance.**
+- [x] **Bước 3: Xem xét tính bảo mật và tuân thủ đặc tả.**
 
-Confirm role/source ownership, safe errors, parameterized SQL, no secret/PII changes, one-send worker behavior, canonical endpoints, stable pagination, and direct traceability to FE07/08/10/12 requirements.
+Xác nhận quyền sở hữu vai trò/nguồn, lỗi an toàn, SQL được tham số hóa, không có thay đổi bí
+mật/PII, hành vi của nhân viên một lần gửi, điểm cuối chuẩn, phân trang ổn định và khả năng truy vết
+trực tiếp theo yêu cầu FE07/08/10/12.
 
-- [x] **Step 4: Stop at H2.**
+- [x] **Bước 4: Dừng ở H2.**
 
-Present the complete local diff, exact L1-L4 evidence, SQL-test limitation if applicable, and residual decisions. Do not commit, push, deploy, or merge without the required human gate.
+Trình bày sự khác biệt cục bộ hoàn chỉnh, bằng chứng L1-L4 chính xác, giới hạn kiểm tra SQL nếu có
+và các quyết định còn lại. Không cam kết, đẩy, triển khai hoặc hợp nhất mà không có cổng con người
+cần thiết.
 
 ---
 
-## Final Audit Remediation
+## Biện pháp khắc phục kiểm toán cuối cùng
 
-The post-H2 audit found concurrency and read-model gaps that the first test set did
-not exercise. The user approved this remediation pass with “triển khai đi”. Tasks
-6-9 supersede the earlier green conclusion; the batch is not complete until these
-tasks pass a fresh H2 review.
+Quá trình kiểm tra sau H2 đã tìm thấy các lỗ hổng đồng thời và mô hình đọc mà tập kiểm thử đầu tiên
+chưa bao quát. Người dùng đã phê duyệt đợt khắc phục này bằng câu “triển khai đi”. Các Nhiệm vụ
+6-9 thay thế kết luận đạt trước đó; lô chưa hoàn thành cho đến khi những
+nhiệm vụ vượt qua đánh giá H2 mới.
 
-### Task 6: Make FE07 create, return, and renewal decisions transactional
+### Nhiệm vụ 6: Làm cho các quyết định tạo, trả sách và gia hạn FE07 trở thành giao dịch
 
-**Files:**
-- Modify: `backend/tests/borrowingRepository.test.js`
-- Modify: `backend/tests/borrowingRoutes.test.js`
-- Modify: `backend/tests/fineContract.test.js`
-- Modify: `backend/tests/helpers/inMemoryBorrowingRepositories.js`
-- Modify: `backend/tests/sql/borrowingConcurrency.sqltest.js`
-- Modify: `backend/src/services/borrowingService.js`
-- Modify: `backend/src/repositories/borrowingRepository.js`
-- Modify: `backend/src/utils/libraryBusinessTime.js`
+**Tệp:**
+- Sửa đổi: `backend/tests/borrowingRepository.test.js`
+- Sửa đổi: `backend/tests/borrowingRoutes.test.js`
+- Sửa đổi: `backend/tests/fineContract.test.js`
+- Sửa đổi: `backend/tests/helpers/inMemoryBorrowingRepositories.js`
+- Sửa đổi: `backend/tests/sql/borrowingConcurrency.sqltest.js`
+- Sửa đổi: `backend/src/services/borrowingService.js`
+- Sửa đổi: `backend/src/repositories/borrowingRepository.js`
+- Sửa đổi: `backend/src/utils/libraryBusinessTime.js`
 
-**Interfaces:**
-- Consumes: `businessDateUtcBounds(referenceDate)`,
-  `createBorrowRequest({ userId, copyIds, requestDate, businessDate, businessDayStartUtc, businessDayEndUtc, auditLogRepository, auditEntry })`,
-  `approveBorrowRequest({ requestId, approvedBy, approvalDate, borrowDate, dueDate, businessDayStartUtc, businessDayEndUtc, auditLogRepository, auditEntry })`,
-  `returnBorrowDetail(...)`, and
-  `renewBorrowDetail({ borrowDetailId, userId, today, newDueDate, auditLogRepository, auditEntry })`.
-- Produces: exact UTC `[start, end)` bounds for one `Asia/Ho_Chi_Minh` business
-  date, persisted approval `BorrowDate`/`DueDate` values derived from that
-  business date, and repository results with explicit `outcome` values derived under locks;
-  successful create returns `{ outcome: 'CREATED', borrowRequest }`; successful
-  renewal returns `{ outcome: 'RENEWED', borrowDetail }`.
+**Giao diện:**
+- Tiêu thụ: `businessDateUtcBounds(referenceDate)`,
+`createBorrowRequest({ userId, copyIds, requestDate, businessDate, businessDayStartUtc,
+businessDayEndUtc, auditLogRepository, auditEntry })`, `approveBorrowRequest({ requestId,
+approvedBy, approvalDate, borrowDate, dueDate, businessDayStartUtc, businessDayEndUtc,
+auditLogRepository, auditEntry })`, `returnBorrowDetail(...)` và `renewBorrowDetail({
+borrowDetailId, userId, hôm nay, newDueDate, auditLogRepository, auditEntry })`.
+- Sản xuất: giới hạn UTC `[start, end)` chính xác cho một doanh nghiệp `Asia/Ho_Chi_Minh`
+ngày, các giá trị `BorrowDate`/`DueDate` được phê duyệt liên tục bắt nguồn từ ngày kinh doanh đó và
+các kết quả lưu trữ với các giá trị `outcome` rõ ràng được lấy theo khóa; tạo thành công trả về `{
+kết quả: 'CREATED', borrowRequest }`; gia hạn thành công sẽ trả về `{ kết quả: 'RENEWED',
+borrowDetail }`.
 
-- [x] **Step 1: Write failing transaction and stale-role tests.**
+- [x] **Bước 1: Viết các kiểm thử giao dịch thất bại và vai trò cũ.**
 
-Add source-order assertions proving create acquires the FE07 member application
-lock before `Users/UserRoles`, sorted `BookCopies`, borrowing counters, and
-`Reservations`; return acquires a request-scoped application lock before any copy
-lock; renewal acquires the FE07 member lock and rechecks the current `MEMBER`
-role, active account, unpaid fines, overdue loans, current detail, and reservation
-priority before its `UPDATE`. Add route tests that remove the member role after
-the service preflight and expect `403 MEMBER_ROLE_REQUIRED` from create and
-renewal without mutation. Add a boundary test proving the Vietnam business day
-maps to `17:00Z` through the next `17:00Z`, plus request/approval regressions
-that cross UTC midnight while remaining in one Vietnam business day.
+Thêm các xác nhận thứ tự nguồn chứng minh việc tạo có được khóa ứng dụng thành viên FE07 trước
+`Users/UserRoles`, `BookCopies` được sắp xếp, bộ đếm mượn và `Reservations`; trả sách lấy khóa ứng
+dụng trong phạm vi yêu cầu trước bất kỳ khóa sao chép nào; gia hạn lấy khóa thành viên FE07 và kiểm
+tra lại vai trò `MEMBER` hiện tại, tài khoản đang hoạt động, khoản phạt chưa thanh toán, lượt mượn
+quá hạn, chi tiết hiện tại và mức độ ưu tiên đặt chỗ trước `UPDATE` của nó. Thêm các kiểm thử tuyến
+đường loại bỏ vai trò thành viên sau khi kiểm thử dịch vụ và mong đợi `403 MEMBER_ROLE_REQUIRED`
+được tạo và gia hạn mà không bị thao tác ghi. Thêm kiểm thử ranh giới chứng minh ánh xạ ngày làm việc
+tại Việt Nam tới `17:00Z` đến `17:00Z` tiếp theo, cùng với hồi quy yêu cầu/phê duyệt vượt qua nửa
+đêm UTC trong khi vẫn duy trì trong một ngày làm việc tại Việt Nam.
 
-- [x] **Step 2: Run focused tests and verify RED.**
+- [x] **Bước 2: Chạy kiểm thử tập trung và xác minh RED.**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/borrowingRepository.test.js tests/borrowingRoutes.test.js
 ```
 
-Expected: the new lock-order/source assertions and stale-role route assertions fail.
+Dự kiến: các xác nhận thứ tự khóa/nguồn mới và xác nhận tuyến đường có vai trò cũ không thành công.
 
-- [x] **Step 3: Implement the atomic repository decisions.**
+- [x] **Bước 3: Thực hiện các quyết định về kho lưu trữ nguyên tử.**
 
-For create, resolve only stable copy keys, acquire
-`FE07-BORROW-MEMBER-${userId}`, re-read the current user/role/tier under
-`UPDLOCK, HOLDLOCK`, lock sorted copies, and then check fines, overdue/active/daily
-borrowing rows and reservation rows before inserting the request/details/audit.
-Use application-supplied `requestDate` and the UTC `[businessDayStartUtc,
-businessDayEndUtc)` interval for authoritative request counts. For approval,
-count detail rows through `BorrowRequests.ApprovedAt` using the same UTC
-interval, while persisting `BorrowDate` as the Vietnam business date and
-`DueDate` as exactly 14 calendar days later.
-For return, acquire `FE07-RETURN-REQUEST-${requestId}` before the copy/detail
-locks so two different details of one request cannot hold one detail each and
-deadlock on the request-wide scan. For renewal, repeat all member, detail, fine,
-overdue, and reservation decisions inside the transaction and return one of:
+Để tạo, chỉ giải quyết các khóa sao chép ổn định, thu thập `FE07-BORROW-MEMBER-${userId}`, đọc lại
+người dùng/vai trò/cấp hiện tại trong `UPDLOCK, HOLDLOCK`, khóa các bản sao được sắp xếp và sau đó
+kiểm tra khoản phạt, các hàng mượn quá hạn/đang hoạt động/hàng ngày và các hàng đặt chỗ trước khi
+chèn yêu cầu/chi tiết/kiểm tra. Sử dụng khoảng `requestDate` do ứng dụng cung cấp và khoảng UTC
+`[businessDayStartUtc, businessDayEndUtc)` để tính số lượng yêu cầu có thẩm quyền. Để phê duyệt, hãy
+đếm các hàng chi tiết thông qua `BorrowRequests.ApprovedAt` bằng cách sử dụng cùng khoảng thời gian
+UTC, trong khi vẫn giữ nguyên `BorrowDate` là ngày kinh doanh tại Việt Nam và `DueDate` đúng 14 ngày
+theo lịch sau đó. Để trả sách, hãy lấy `FE07-RETURN-REQUEST-${requestId}` trước khi khóa bản sao/chi
+tiết để hai chi tiết khác nhau của một yêu cầu không thể giữ mỗi chi tiết một và bế tắc khi quét
+trên toàn yêu cầu. Để gia hạn, hãy lặp lại tất cả các quyết định về thành viên, chi tiết, khoản
+phạt, quá hạn và đặt chỗ trong giao dịch và trả sách một trong:
 
 ```js
 { outcome: 'MEMBER_ROLE_REQUIRED' }
@@ -349,58 +386,56 @@ overdue, and reservation decisions inside the transaction and return one of:
 { outcome: 'RENEWED', borrowDetail }
 ```
 
-Map those outcomes to the existing safe HTTP errors in the service. Keep the
-preflight reads only as fast feedback; the transaction is authoritative.
+Ánh xạ những kết quả đó tới các lỗi HTTP an toàn hiện có trong dịch vụ. Giữ kiểm tra trước chỉ đọc dưới
+dạng phản hồi nhanh; giao dịch có thẩm quyền.
 
-- [x] **Step 4: Run focused tests and verify GREEN.**
+- [x] **Bước 4: Chạy kiểm thử tập trung và xác minh GREEN.**
 
-Repeat Step 2. Expected: all FE07 repository and route tests pass.
+Lặp lại Bước 2. Dự kiến: tất cả các kiểm thử tuyến đường và kho lưu trữ FE07 đều vượt qua.
 
 ---
 
-### Task 7: Align FE08 queue locking, derived positions, and staff feedback
+### Nhiệm vụ 7: Căn chỉnh khóa hàng đợi FE08, vị trí xuất phát và phản hồi của nhân viên
 
-**Files:**
-- Modify: `backend/tests/reservationRepository.test.js`
-- Modify: `backend/tests/helpers/inMemoryReservationRepositories.js`
-- Modify: `backend/tests/sql/borrowingConcurrency.sqltest.js`
-- Modify: `backend/src/repositories/reservationRepository.js`
-- Modify: `frontend/test/reservationFrontend.test.js`
-- Modify: `frontend/src/page/reservation/ReservationsLibrarianPage.jsx`
+**Tệp:**
+- Sửa đổi: `backend/tests/reservationRepository.test.js`
+- Sửa đổi: `backend/tests/helpers/inMemoryReservationRepositories.js`
+- Sửa đổi: `backend/tests/sql/borrowingConcurrency.sqltest.js`
+- Sửa đổi: `backend/src/repositories/reservationRepository.js`
+- Sửa đổi: `frontend/test/reservationFrontend.test.js`
+- Sửa đổi: `frontend/src/page/reservation/ReservationsLibrarianPage.jsx`
 
-**Interfaces:**
-- Consumes: `holdReservation({ reservationId, userId, copyId, notifiedAt, expiresAt })`
-  and `reservationApi.processQueue(copyId)`.
-- Produces: the shared FE08 order
-  `member application lock -> Users/UserRoles -> BookCopies -> Reservations`;
-  list/read results derive `queuePosition` from current `ACTIVE` rows ordered by
-  `(ReservedAt, ReservationId)`; the page names only the server-selected member.
+**Giao diện:**
+- Tiêu thụ: `holdReservation({ reservationId, userId, copyId, notifiedAt, expiresAt })`
+  và `reservationApi.processQueue(copyId)`.
+- Sản xuất: đơn hàng FE08 chung
+`member application lock -> Users/UserRoles -> BookCopies -> Reservations`; kết quả liệt kê/đọc lấy
+`queuePosition` từ các hàng `ACTIVE` hiện tại được sắp xếp theo `(ReservedAt, ReservationId)`; trang
+chỉ có tên thành viên do máy chủ chọn.
 
-- [x] **Step 1: Write failing lock, position, and UI response tests.**
+- [x] **Bước 1: Viết các kiểm thử lỗi khóa, vị trí và phản hồi giao diện người dùng.**
 
-Assert `holdReservation` acquires `FE08-RESERVATION-MEMBER-${userId}` and current
-member rows before its copy lock. Assert `reservationSelect` uses a correlated
-`COUNT(*)` over `Status = 'ACTIVE'` with the `(ReservedAt, ReservationId)`
-tie-breaker instead of selecting `r.QueuePosition`. Assert `confirmNotify` stores
-the `processQueue` response, branches on `selectedReservation`, and does not use
-`notifyTarget.member` in the success message.
+Khẳng định `holdReservation` mua lại `FE08-RESERVATION-MEMBER-${userId}` và các hàng thành viên hiện
+tại trước khi khóa bản sao của nó. Khẳng định `reservationSelect` sử dụng `COUNT(*)` tương quan trên
+`Status = 'ACTIVE'` với bộ ngắt kết nối `(ReservedAt, ReservationId)` thay vì chọn
+`r.QueuePosition`. Khẳng định `confirmNotify` lưu trữ phản hồi `processQueue`, phân nhánh trên
+`selectedReservation` và không sử dụng `notifyTarget.member` trong thông báo thành công.
 
-- [x] **Step 2: Run focused tests and verify RED.**
+- [x] **Bước 2: Chạy kiểm thử tập trung và xác minh RED.**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/reservationRepository.test.js
 node --test frontend/test/reservationFrontend.test.js
 ```
 
-Expected: hold still locks the copy first, queue position is persisted-state
-driven, and the page always reports the modal target as successful.
+Dự kiến: giữ vẫn khóa bản sao trước, vị trí hàng đợi được điều khiển theo trạng thái liên tục và
+trang luôn báo cáo mục tiêu phương thức là thành công.
 
-- [x] **Step 3: Implement canonical locks and response-driven feedback.**
+- [x] **Bước 3: Triển khai khóa chuẩn và phản hồi dựa trên phản hồi.**
 
-Use the supplied `userId` to acquire the same member application lock used by
-reservation creation, lock/recheck `Users/UserRoles`, then lock the copy and
-reservation. Keep the legacy `QueuePosition` column write only for schema
-compatibility, but never expose it as business truth. In the page:
+Sử dụng `userId` được cung cấp để lấy khóa ứng dụng thành viên tương tự được sử dụng để tạo đặt chỗ,
+khóa/kiểm tra lại `Users/UserRoles`, sau đó khóa bản sao và đặt chỗ. Chỉ ghi cột `QueuePosition` cũ
+để tương thích với lược đồ nhưng không bao giờ coi đó là sự thật trong kinh doanh. Trong trang:
 
 ```js
 const result = await reservationApi.processQueue(notifyTarget.copyId);
@@ -413,66 +448,66 @@ if (!result.selectedReservation) {
 }
 ```
 
-- [x] **Step 4: Run focused tests and verify GREEN.**
+- [x] **Bước 4: Chạy kiểm thử tập trung và xác minh GREEN.**
 
-Repeat Step 2. Expected: FE08 repository and frontend tests pass.
+Lặp lại Bước 2. Dự kiến: Kho lưu trữ FE08 đã vượt qua các kiểm thử giao diện người dùng và kho lưu trữ.
 
 ---
 
-### Task 8: Accumulate FE12 normalized unknown groups
+### Nhiệm vụ 8: Tích lũy các nhóm chưa biết chuẩn hóa FE12
 
-**Files:**
-- Modify: `backend/tests/reportRepository.test.js`
-- Modify: `backend/src/repositories/reportRepository.js`
+**Tệp:**
+- Sửa đổi: `backend/tests/reportRepository.test.js`
+- Sửa đổi: `backend/src/repositories/reportRepository.js`
 
-**Interfaces:**
-- Consumes: grouped SQL rows passed to `toCountMap(...)`.
-- Produces: normalized keys whose counts are accumulated, including several raw
-  values that all normalize to `UNKNOWN`.
+**Giao diện:**
+- Tiêu thụ: các hàng SQL được nhóm lại được chuyển đến `toCountMap(...)`.
+- Tạo ra: các khóa chuẩn hóa có số lượng được tích lũy, bao gồm một số khóa thô
+  tất cả các giá trị được chuẩn hóa thành `UNKNOWN`.
 
-- [x] **Step 1: Write the failing aggregation test.**
+- [x] **Bước 1: Viết kiểm thử tổng hợp không thành công.**
 
-Return two unsupported user statuses such as `SUSPENDED = 2` and `DELETED = 3`
-from the grouped result set and assert:
+Trả về hai trạng thái người dùng không được hỗ trợ, chẳng hạn như `SUSPENDED = 2` và `DELETED = 3`
+từ tập kết quả được nhóm và xác nhận:
 
 ```js
 expect(report.metrics.usersByStatus.UNKNOWN).toBe(5);
 ```
 
-- [x] **Step 2: Run the focused test and verify RED.**
+- [x] **Bước 2: Chạy kiểm thử tập trung và xác minh RED.**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/reportRepository.test.js
 ```
 
-Expected: `UNKNOWN` equals only the last raw group (`3`).
+Dự kiến: `UNKNOWN` chỉ bằng nhóm thô cuối cùng (`3`).
 
-- [x] **Step 3: Implement additive normalization.**
+- [x] **Bước 3: Triển khai chuẩn hóa phụ gia.**
 
-Replace overwrite semantics with:
+Thay thế ngữ nghĩa ghi đè bằng:
 
 ```js
 counts[key] = (counts[key] || 0) + Number(row[countName] || 0);
 ```
 
-- [x] **Step 4: Run the focused test and verify GREEN.**
+- [x] **Bước 4: Chạy kiểm thử tập trung và xác minh GREEN.**
 
-Repeat Step 2. Expected: all report repository tests pass.
+Lặp lại Bước 2. Dự kiến: tất cả các kiểm thử kho lưu trữ báo cáo đều vượt qua.
 
 ---
 
-### Task 9: Re-run gates, obtain fresh H2, and update the draft PR
+### Nhiệm vụ 9: Chạy lại cổng, lấy H2 mới và cập nhật dự thảo PR
 
-**Files:**
-- Review: every file changed by Tasks 6-8
-- Update checkboxes: this plan
+**Tệp:**
+- Ôn tập: mọi tập tin được thay đổi bởi Nhiệm vụ 6-8
+- Cập nhật các hộp kiểm: kế hoạch này
 
-**Interfaces:**
-- Consumes: completed FE07/FE08/FE12 remediation.
-- Produces: current L1-L4 evidence, an H2-reviewed commit, and a pushed update to
-  the existing draft PR; merge/deploy remains blocked until H3.
+**Giao diện:**
+- Tiêu thụ: đã hoàn thành việc khắc phục FE07/FE08/FE12.
+- Tạo ra: bằng chứng L1-L4 hiện tại, cam kết được H2 xem xét và bản cập nhật được đẩy lên
+  dự thảo PR hiện có; hợp nhất/triển khai vẫn bị chặn cho đến H3.
 
-- [x] **Step 1: Run focused and full verification.**
+- [x] **Bước 1: Chạy xác minh tập trung và đầy đủ.**
 
 ```powershell
 npm.cmd --prefix backend test
@@ -483,199 +518,196 @@ npm.cmd run trace:enforce
 git diff --check
 ```
 
-Run the mutable SQL concurrency suite only with an explicitly disposable SQL
-Server database and `FE07_SQL_TEST_ALLOW_MUTATION=true`; never point it at shared
-Azure staging.
+Chỉ chạy bộ đồng thời SQL có thể thay đổi với cơ sở dữ liệu SQL Server và
+`FE07_SQL_TEST_ALLOW_MUTATION=true` dùng một lần rõ ràng; không bao giờ trỏ nó vào Môi trường tiền
+sản xuất Azure được
+chia sẻ.
 
-- [x] **Step 2: Perform security and diff review.**
+- [x] **Bước 2: Thực hiện đánh giá bảo mật và khác biệt.**
 
-Confirm all new SQL remains parameterized, lock resources derive only from
-validated integer IDs, role/account checks occur server-side, error messages do
-not expose internals, no schema/dependency/secret/PII changes exist, and the
-untracked `output/audit-librarian-2026-07-22/` directory remains untouched.
+Xác nhận tất cả SQL mới vẫn được tham số hóa, tài nguyên khóa chỉ lấy từ ID số nguyên đã xác thực,
+kiểm tra vai trò/tài khoản xảy ra phía máy chủ, thông báo lỗi không hiển thị nội bộ, không có thay
+đổi lược đồ/phụ thuộc/bí mật/PII nào tồn tại và thư mục `output/audit-librarian-2026-07-22/` không
+bị theo dõi vẫn còn nguyên.
 
-- [x] **Step 3: Obtain a fresh H2 review.**
+- [x] **Bước 3: Nhận đánh giá H2 mới.**
 
-Run independent Standards and Spec reviews over the complete uncommitted diff and
-the new evidence. Fix any valid finding and rerun the affected checks. H2 must
-pass before staging or committing.
+Chạy các đánh giá Tiêu chuẩn và đặc tả độc lập đối với sự khác biệt hoàn toàn có sẵn và bằng chứng
+mới. Khắc phục mọi phát hiện hợp lệ và chạy lại các bước kiểm tra bị ảnh hưởng. H2 phải vượt qua
+trước khi môi trường tiền sản xuất hoặc cam kết.
 
-- [x] **Step 4: Commit and push the reviewed scope.**
+- [x] **Bước 4: Cam kết và thúc đẩy phạm vi được xem xét.**
 
-Stage only the plan, production files, and regression tests from Tasks 6-8,
-commit with a scoped `fix:` message, push the current branch, and verify the
-existing draft PR checks. Do not merge or deploy; H3 is still required.
+Chỉ thực hiện kế hoạch, tệp sản xuất và kiểm tra hồi quy từ Nhiệm vụ 6-8, cam kết với thông báo
+`fix:` trong phạm vi, đẩy nhánh hiện tại và xác minh các bản kiểm tra PR dự thảo hiện có. Không hợp
+nhất hoặc triển khai; H3 vẫn được yêu cầu.
 
 ---
 
-### Task 10: Keep the FE11 pagination E2E fixture compatible with FE07 limits
+### Nhiệm vụ 10: Giữ cho vật cố định FE11 phân trang E2E tương thích với các giới hạn FE07
 
-**Files:**
-- Modify: `tests/e2e/fe11-admin-request-management.spec.js`
-- Modify: `tests/e2e/support/systemTestServer.js`
+**Tệp:**
+- Sửa đổi: `tests/e2e/fe11-admin-request-management.spec.js`
+- Sửa đổi: `tests/e2e/support/systemTestServer.js`
 
-**Interfaces:**
-- Consumes: test-only
+**Giao diện:**
+- Tiêu thụ: chỉ dùng thử
   `POST /__e2e__/seed-pending-borrow-requests { userId, copyId, count }`.
-- Produces: bounded in-memory PENDING request/detail rows for FE11 pagination
-  coverage without sending 21 invalid same-day requests through the public FE07
-  command.
+- Tạo ra: các hàng yêu cầu/chi tiết đang chờ xử lý trong bộ nhớ cho phân trang FE11
+bảo hiểm mà không gửi 21 yêu cầu không hợp lệ trong cùng ngày thông qua lệnh FE07 công khai.
 
-- [x] **Step 1: Reproduce the CI failure locally.**
+- [x] **Bước 1: Tái tạo lỗi CI cục bộ.**
 
-Run the FE11 browser scenario and confirm its repeated public
-`POST /api/borrow-requests` setup now correctly receives
-`409 BORROW_DAILY_LIMIT_EXCEEDED`.
+Chạy kịch bản trình duyệt FE11 và xác nhận thiết lập `POST /api/borrow-requests` công khai lặp lại
+của nó hiện nhận chính xác `409 BORROW_DAILY_LIMIT_EXCEEDED`.
 
-- [x] **Step 2: Move pagination volume into test-only setup.**
+- [x] **Bước 2: Chuyển khối lượng phân trang sang thiết lập chỉ dành cho kiểm thử.**
 
-Add a bounded E2E control endpoint that validates an existing user and copy,
-then seeds only the request/detail fields consumed by the FE11 admin read model.
-Keep all production routes and the FE07 daily invariant unchanged.
+Thêm điểm cuối kiểm soát E2E được giới hạn để xác thực người dùng hiện có và sao chép, sau đó chỉ
+tạo các trường yêu cầu/chi tiết mà mô hình đọc quản trị viên FE11 sử dụng. Giữ tất cả các tuyến sản
+xuất và bất biến hàng ngày của FE07 không thay đổi.
 
-- [x] **Step 3: Verify the focused and full browser suites.**
+- [x] **Bước 3: Xác minh bộ trình duyệt tập trung và đầy đủ.**
 
-The focused FE11 scenario must pass 1/1 and the complete Chromium suite must
-pass 4/4.
+Kịch bản FE11 tập trung phải đạt 1/1 và bộ Chrome hoàn chỉnh phải đạt 4/4.
 
-- [x] **Step 4: Obtain fresh H2, commit, push, and recheck CI.**
+- [x] **Bước 4: Lấy H2 mới, cam kết, đẩy và kiểm tra lại CI.**
 
-Review the three-file follow-up diff independently for Standards and Spec,
-commit only after H2 passes, push the same Draft PR branch, and wait for the
-replacement `foundation-checks` run. Do not merge or deploy without H3.
+Xem lại ba tệp khác biệt tiếp theo một cách độc lập cho Tiêu chuẩn và đặc tả, chỉ cam kết sau khi H2
+vượt qua, đẩy nhánh PR Dự thảo tương tự và chờ chạy `foundation-checks` thay thế. Không hợp nhất
+hoặc triển khai mà không có H3.
 
 ---
 
-## Final Verification Remediation
+## Biện pháp khắc phục xác minh cuối cùng
 
-The user approved the durable FE10 `PROCESSING` design on 2026-07-23. Tasks
-11-15 implement the findings recorded in
+Người dùng đã phê duyệt thiết kế FE10 `PROCESSING` bền bỉ vào ngày 23-07-2026. Nhiệm vụ 11-15 thực
+hiện các phát hiện được ghi trong
 `docs/superpowers/specs/2026-07-23-fe07-fe08-fe10-fe12-final-verification-remediation-design.md`.
 
-### Task 11: Make FE10 source binding and delivery transitions deterministic
+### Nhiệm vụ 11: Làm cho quá trình chuyển đổi phân phối và liên kết nguồn FE10 trở nên xác định
 
-**Files:**
-- Modify: `.sdd/specs/feat-notification-management/{SPEC,PLAN,TASKS,CHANGELOG}.md`
-- Modify: `.sdd/rfcs/ADR-002-database-design.md`
-- Modify: `database/Librarymanagement.sql`
-- Create: `database/migrations/2026-07-23-fe10-processing-status.sql`
-- Modify: `backend/src/models/Notification.js`
-- Modify: `backend/src/services/notificationService.js`
-- Modify: `backend/src/repositories/notificationRepository.js`
-- Modify: `backend/tests/notificationRoutes.test.js`
-- Modify: `backend/tests/notificationRepository.test.js`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-notification-management/{SPEC,PLAN,TASKS,CHANGELOG}.md`
+- Sửa đổi: `.sdd/rfcs/ADR-002-database-design.md`
+- Sửa đổi: `database/Librarymanagement.sql`
+- Tạo: `database/migrations/2026-07-23-fe10-processing-status.sql`
+- Sửa đổi: `backend/src/models/Notification.js`
+- Sửa đổi: `backend/src/services/notificationService.js`
+- Sửa đổi: `backend/src/repositories/notificationRepository.js`
+- Sửa đổi: `backend/tests/notificationRoutes.test.js`
+- Sửa đổi: `backend/tests/notificationRepository.test.js`
 
-- [x] Write RED tests for missing internal source references, sensitive
-  transition failure, duplicate replay while `PROCESSING`, and two-worker
-  claim/finalization failure.
-- [x] Add `PROCESSING` to the reviewed spec/schema lifecycle.
-- [x] Commit claims before provider I/O and guard terminal transitions from
+- [x] Viết các kiểm thử RED để tìm các tài liệu tham khảo nguồn nội bộ bị thiếu, nhạy cảm
+lỗi chuyển đổi, phát lại trùng lặp trong khi `PROCESSING` và lỗi xác nhận/Khóa sổ của hai công nhân.
+- [x] Thêm `PROCESSING` vào vòng đời đặc tả/lược đồ đã được xem xét.
+- [x] Cam kết các yêu cầu trước I/O của nhà cung cấp và bảo vệ quá trình chuyển đổi thiết bị đầu cuối từ
   `PROCESSING`.
-- [x] Keep uncertain rows `PROCESSING`, exclude them from automatic retry, and
-  return safe `DELIVERY_STATE_UNCERTAIN` for manual retry.
-- [x] Run focused FE10 tests and the idempotent migration twice on a disposable
-  database.
+- [x] Giữ các hàng không chắc chắn `PROCESSING`, loại trừ chúng khỏi thử lại tự động và
+  trả sách `DELIVERY_STATE_UNCERTAIN` an toàn để thử lại theo cách thủ công.
+- [x] Chạy các kiểm thử FE10 tập trung và di chuyển tạm thời hai lần trên thiết bị dùng một lần
+  cơ sở dữ liệu.
 
-### Task 12: Make FE08 lifecycle audits atomic and staff feedback truthful
+### Nhiệm vụ 12: Thực hiện kiểm tra vòng đời FE08 theo phản hồi nguyên tử và nhân viên một cách trung thực
 
-**Files:**
-- Modify: `.sdd/specs/feat-reservation-management/{SPEC,PLAN,TASKS,CHANGELOG}.md`
-- Modify: `backend/src/services/reservationService.js`
-- Modify: `backend/src/repositories/reservationRepository.js`
-- Modify: `backend/tests/reservationRoutes.test.js`
-- Modify: `backend/tests/reservationService.test.js`
-- Modify: `backend/tests/reservationRepository.test.js`
-- Modify: `frontend/src/page/reservation/ReservationsLibrarianPage.jsx`
-- Modify: `frontend/test/reservationFrontend.test.js`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-reservation-management/{SPEC,PLAN,TASKS,CHANGELOG}.md`
+- Sửa đổi: `backend/src/services/reservationService.js`
+- Sửa đổi: `backend/src/repositories/reservationRepository.js`
+- Sửa đổi: `backend/tests/reservationRoutes.test.js`
+- Sửa đổi: `backend/tests/reservationService.test.js`
+- Sửa đổi: `backend/tests/reservationRepository.test.js`
+- Sửa đổi: `frontend/src/page/reservation/ReservationsLibrarianPage.jsx`
+- Sửa đổi: `frontend/test/reservationFrontend.test.js`
 
-- [x] Write RED rollback tests for create/cancel/hold/expire audit failures and
-  a post-commit notification-audit warning test.
-- [x] Insert lifecycle audit entries inside their mutation transactions.
-- [x] Preserve a committed hold on notification failure while surfacing a safe
-  warning if its required failure audit cannot be persisted.
-- [x] Remove the cached member name from the pre-confirmation dialog.
-- [x] Run focused FE08 backend/frontend tests.
+- [x] Viết các kiểm thử khôi phục RED để phát hiện các lỗi kiểm tra tạo/hủy/giữ/hết hạn và
+  kiểm tra cảnh báo kiểm tra thông báo sau cam kết.
+- [x] Chèn các mục kiểm tra vòng đời bên trong các giao dịch thao tác ghi của chúng.
+- [x] Duy trì cam kết giữ lại lỗi thông báo trong khi hiển thị một bảng an toàn
+  cảnh báo nếu không thể tiếp tục kiểm tra lỗi theo yêu cầu.
+- [x] Xóa tên thành viên được lưu trong bộ nhớ cache khỏi hộp thoại xác nhận trước.
+- [x] Chạy các kiểm thử FE08 backend/frontend tập trung.
 
-### Task 13: Correct FE07 business time, doubles, and SQL expectations
+### Nhiệm vụ 13: Chỉnh sửa thời gian kinh doanh của FE07, tăng gấp đôi và kỳ vọng của SQL
 
-**Files:**
-- Modify: `.sdd/specs/feat-borrowing-management/{SPEC,TASKS,CHANGELOG}.md`
-- Modify: `backend/src/services/borrowingService.js`
-- Modify: `backend/tests/borrowingRoutes.test.js`
-- Modify: `backend/tests/helpers/inMemoryBorrowingRepositories.js`
-- Modify: `backend/tests/sql/borrowingConcurrency.sqltest.js`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-borrowing-management/{SPEC,TASKS,CHANGELOG}.md`
+- Sửa đổi: `backend/src/services/borrowingService.js`
+- Sửa đổi: `backend/tests/borrowingRoutes.test.js`
+- Sửa đổi: `backend/tests/helpers/inMemoryBorrowingRepositories.js`
+- Sửa đổi: `backend/tests/sql/borrowingConcurrency.sqltest.js`
 
-- [x] Write RED Vietnam-midnight and in-memory copy-conflict tests.
-- [x] Use the shared FE07 business-time helpers for return and renewal.
-- [x] Align the in-memory repository with production copy-state checks.
-- [x] Replace stale SQL expectations with role-based eligibility and explicit
-  conflict outcomes.
-- [x] Run focused FE07 unit and disposable SQL tests.
+- [x] Viết RED Việt Nam vào lúc nửa đêm và kiểm tra xung đột sao chép trong bộ nhớ.
+- [x] Sử dụng công cụ trợ giúp thời gian kinh doanh FE07 được chia sẻ để trả sách và gia hạn.
+- [x] Căn chỉnh kho lưu trữ trong bộ nhớ với các bước kiểm tra trạng thái sao chép sản xuất.
+- [x] Thay thế các kỳ vọng SQL cũ bằng khả năng đủ điều kiện dựa trên vai trò và rõ ràng
+  kết quả xung đột.
+- [x] Chạy kiểm thử đơn vị FE07 tập trung và SQL dùng một lần.
 
-### Task 14: Restore FE12 parity and traceability
+### Nhiệm vụ 14: Khôi phục tính chẵn lẻ và truy vết của FE12
 
-**Files:**
-- Modify: `.sdd/specs/feat-reporting-statistics/{SPEC,TASKS,CHANGELOG}.md`
-- Modify: `backend/tests/helpers/inMemoryReportRepositories.js`
-- Modify: `backend/tests/reportInMemoryParity.test.js`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-reporting-statistics/{SPEC,TASKS,CHANGELOG}.md`
+- Sửa đổi: `backend/tests/helpers/inMemoryReportRepositories.js`
+- Sửa đổi: `backend/tests/reportInMemoryParity.test.js`
 
-- [x] Write RED parity tests for `q`, inactive historical approvals, and stable
-  user ordering.
-- [x] Match the production SQL report semantics in the in-memory repository.
-- [x] Add BR-FE12-016, FR-FE12-011, and AC-FE12-011 to traceability and update
-  totals to `16/11/11`.
-- [x] Run focused FE12 tests and traceability enforcement.
+- [x] Viết các kiểm thử tính chẵn lẻ RED cho `q`, các phê duyệt lịch sử không hoạt động và ổn định
+  người dùng đặt hàng.
+- [x] Khớp ngữ nghĩa của báo cáo SQL sản xuất trong kho lưu trữ trong bộ nhớ.
+- [x] Thêm BR-FE12-016, FR-FE12-011 và AC-FE12-011 vào truy vết và cập nhật
+  tổng cộng là `16/11/11`.
+- [x] Chạy các kiểm thử FE12 tập trung và thực thi truy vết.
 
-### Task 15: Complete L1-L4 verification and H2
+### Nhiệm vụ 15: Hoàn thành xác minh L1-L4 và H2
 
-- [x] Run all focused tests from Tasks 11-14.
-- [x] Run full backend/frontend tests, lint, build, E2E, deployment utility,
-  traceability, and diff hygiene.
-- [x] Run mutable SQL suites only on named disposable local databases and
-  remove them afterward.
-- [x] Perform final security, standards, and spec review over the complete diff.
-- [x] H2 and the H2 addendum approved the reviewed commits; PR #62 CI passed,
-  Azure staging received the reviewed FE10 migration and product deployment, and
-  the first H3 review returned the bounded findings covered below.
+- [x] Chạy tất cả các kiểm thử tập trung từ Nhiệm vụ 11-14.
+- [x] Chạy kiểm thử backend/frontend đầy đủ, kiểm tra mã, bản dựng, E2E, tiện ích triển khai,
+  truy vết và vệ sinh khác nhau.
+- [x] Chỉ chạy các bộ SQL có thể thay đổi trên cơ sở dữ liệu cục bộ dùng một lần được đặt tên và
+  loại bỏ chúng sau đó.
+- [x] Thực hiện đánh giá bảo mật, tiêu chuẩn và đặc tả cuối cùng đối với toàn bộ sự khác biệt.
+- [x] H2 và phụ lục H2 đã phê duyệt các cam kết được rà soát; PR #62 CI đã được thông qua,
+Giai đoạn Azure đã nhận được quá trình di chuyển và triển khai sản phẩm FE10 đã được đánh giá, đồng
+thời đánh giá H3 đầu tiên đã trả sách các phát hiện giới hạn được đề cập bên dưới.
 
 ---
 
-## H3 Remediation
+## Cách khắc phục H3
 
-The user approved the H3 remediation addendum in
-`docs/superpowers/specs/2026-07-23-fe07-fe08-fe10-fe12-final-verification-remediation-design.md`
-on 2026-07-23. Tasks 16-19 correct only the first H3 findings. Generated
-implementation and evidence changes remain uncommitted until a fresh H2 review.
+Người dùng đã phê duyệt phụ lục khắc phục H3 trong
+`docs/superpowers/specs/2026-07-23-fe07-fe08-fe10-fe12-final-verification-remediation-design.md` vào
+ngày 23-07-2026. Nhiệm vụ 16-19 chỉ sửa những phát hiện H3 đầu tiên. Những thay đổi về bằng chứng và
+triển khai đã tạo vẫn chưa được cam kết cho đến khi có bản đánh giá H2 mới.
 
-### Task 16: Preserve FE08 expiration-promotion warnings
+### Nhiệm vụ 16: Bảo quản cảnh báo hết hạn khuyến mãi FE08
 
-**Files:**
-- Modify: `.sdd/specs/feat-reservation-management/SPEC.md`
-- Modify: `.sdd/specs/feat-reservation-management/PLAN.md`
-- Modify: `.sdd/specs/feat-reservation-management/TASKS.md`
-- Modify: `.sdd/specs/feat-reservation-management/CHANGELOG.md`
-- Modify: `backend/src/docs/openapi.yaml`
-- Modify: `backend/src/services/reservationService.js`
-- Modify: `backend/tests/reservationService.test.js`
-- Modify: `backend/tests/reservationRoutes.test.js`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-reservation-management/SPEC.md`
+- Sửa đổi: `.sdd/specs/feat-reservation-management/PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-reservation-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-reservation-management/CHANGELOG.md`
+- Sửa đổi: `backend/src/docs/openapi.yaml`
+- Sửa đổi: `backend/src/services/reservationService.js`
+- Sửa đổi: `backend/tests/reservationService.test.js`
+- Sửa đổi: `backend/tests/reservationRoutes.test.js`
 
-**Interfaces:**
-- Consumes: the non-enumerable internal
-  `processedReservation.notificationWarning` produced by `holdReservation`.
-- Preserves: `processQueue` response
+**Giao diện:**
+- Tiêu thụ: nội bộ không thể đếm được
+  `processedReservation.notificationWarning` được sản xuất bởi `holdReservation`.
+- Bảo tồn: phản hồi `processQueue`
   `{ selectedReservation, notificationWarning? }`.
-- Produces: `expireHolds` response
+- Tạo ra: phản hồi `expireHolds`
   `{ expiredCount, expired, promoted, notificationWarnings? }`.
-- Each `notificationWarnings` item is exactly
-  `{ reservationId, copyId, code, message }`; `promoted` DTOs do not change.
+- Mỗi mục `notificationWarnings` đều chính xác
+  `{ reservationId, copyId, code, message }`; DTO `promoted` không thay đổi.
 
-- [x] **Step 1: Add a failing service regression for the lost warning.**
+- [x] **Bước 1: Thêm hồi quy dịch vụ bị lỗi cho cảnh báo bị mất.**
 
-Extend the existing `FR-FE08-019`/`FR-FE08-021` expiration coverage in
-`backend/tests/reservationService.test.js`. Arrange one expired hold, one next
-eligible reservation, a failed FE10 requester, and a failed
-`RESERVATION_NOTIFY_FAILED` audit write. Assert the committed promotion remains
-present and the warning is returned separately:
+Mở rộng phạm vi hết hạn `FR-FE08-019`/`FR-FE08-021` hiện có trong
+`backend/tests/reservationService.test.js`. Sắp xếp một lần giữ đã hết hạn, một lần đặt chỗ đủ điều
+kiện tiếp theo, một người yêu cầu FE10 không thành công và một lần ghi kiểm tra
+`RESERVATION_NOTIFY_FAILED` không thành công. Khẳng định rằng chương trình khuyến mãi đã cam kết vẫn
+tồn tại và cảnh báo được trả sách riêng biệt:
 
 ```js
 await expect(service.expireHolds(LIBRARIAN, {})).resolves.toEqual({
@@ -692,22 +724,21 @@ await expect(service.expireHolds(LIBRARIAN, {})).resolves.toEqual({
 expect(Object.keys(heldReservation)).not.toContain('notificationWarning');
 ```
 
-Run:
+Chạy:
 
 ```powershell
 $env:TZ = 'UTC'
 npm.cmd --prefix backend test -- --runInBand --runTestsByPath tests/reservationService.test.js
 ```
 
-Expected: the new assertion fails because `expireHolds` currently returns only
-`expiredCount`, `expired`, and `promoted`.
+Dự kiến: xác nhận mới không thành công vì `expireHolds` hiện chỉ trả về `expiredCount`, `expired` và
+`promoted`.
 
-- [x] **Step 2: Add a failing route serialization regression.**
+- [x] **Bước 2: Thêm hồi quy tuần tự hóa tuyến đường bị lỗi.**
 
-In `backend/tests/reservationRoutes.test.js`, create two reservations for one
-copy. Let the first queue notification succeed, then make the second requester
-call fail when expiration promotes the next member. Make only the matching
-failure-audit write fail. Assert:
+Trong `backend/tests/reservationRoutes.test.js`, tạo hai bản đặt chỗ cho một bản sao. Để thông báo
+hàng đợi đầu tiên thành công, sau đó thực hiện cuộc gọi thứ hai của người yêu cầu không thành công
+khi hết hạn thăng cấp thành viên tiếp theo. Chỉ ghi lỗi kiểm tra thất bại phù hợp. Khẳng định:
 
 ```js
 expect(expireResponse.status).toBe(200);
@@ -723,20 +754,19 @@ expect(JSON.stringify(expireResponse.body)).not.toContain('audit unavailable');
 expect(JSON.stringify(expireResponse.body)).not.toContain('hold.second@example.test');
 ```
 
-Run:
+Chạy:
 
 ```powershell
 $env:TZ = 'UTC'
 npm.cmd --prefix backend test -- --runInBand --runTestsByPath tests/reservationRoutes.test.js
 ```
 
-Expected: the route body has no `notificationWarnings` field before the service
-fix.
+Dự kiến: nội dung tuyến đường không có trường `notificationWarnings` trước khi sửa lỗi dịch vụ.
 
-- [x] **Step 3: Collect safe warnings without changing promoted DTOs.**
+- [x] **Bước 3: Thu thập cảnh báo an toàn mà không thay đổi DTO được quảng cáo.**
 
-In `expireHolds`, accumulate warning metadata while the internal non-enumerable
-property is still accessible:
+Trong `expireHolds`, tích lũy siêu dữ liệu cảnh báo trong khi vẫn có thể truy cập được thuộc tính
+không thể đếm được bên trong:
 
 ```js
 const promoted = [];
@@ -764,17 +794,16 @@ if (notificationWarnings.length > 0) {
 return result;
 ```
 
-Do not make `notificationWarning` enumerable and do not add recipient, member,
-provider, rendered-content, or stack data.
+Không đặt `notificationWarning` ở chế độ có thể đếm được và không thêm dữ liệu người nhận, thành
+viên, nhà cung cấp, nội dung được hiển thị hoặc bộ công nghệ.
 
-- [x] **Step 4: Update the approved FE08 contract and traceability.**
+- [x] **Bước 4: Cập nhật hợp đồng FE08 đã được phê duyệt và truy vết.**
 
-Update `FR-FE08-021`, the expire-holds API table row, the implementation plan,
-task `FE08-T040`, and the changelog to distinguish the singular
-`processQueue.notificationWarning` from the optional
-`expireHolds.notificationWarnings[]`. In `backend/src/docs/openapi.yaml`,
-document the `200` response with required `expiredCount`, `expired`, and
-`promoted`, plus optional warning items that have:
+Cập nhật `FR-FE08-021`, hàng bảng API hết hạn, kế hoạch triển khai, nhiệm vụ `FE08-T040` và nhật ký
+thay đổi để phân biệt `processQueue.notificationWarning` số ít với
+`expireHolds.notificationWarnings[]` tùy chọn. Trong `backend/src/docs/openapi.yaml`, ghi lại phản
+hồi `200` với `expiredCount`, `expired` và `promoted` được yêu cầu, cùng với các mục cảnh báo tùy
+chọn có:
 
 ```yaml
 type: object
@@ -789,7 +818,7 @@ properties:
   message: { type: string }
 ```
 
-- [x] **Step 5: Run the complete focused FE08 slice.**
+- [x] **Bước 5: Chạy lát FE08 tập trung hoàn chỉnh.**
 
 ```powershell
 $env:TZ = 'UTC'
@@ -797,28 +826,28 @@ npm.cmd --prefix backend test -- --runInBand --runTestsByPath tests/reservationS
 npm.cmd --prefix frontend test -- --runInBand test/reservationFrontend.test.js
 ```
 
-Expected: all focused FE08 service, route, repository, and frontend tests pass.
+Dự kiến: tất cả các kiểm thử dịch vụ, tuyến đường, kho lưu trữ và giao diện người dùng FE08 tập
+trung đều vượt qua.
 
-### Task 17: Match FE12 in-memory search to SQL `LIKE`
+### Nhiệm vụ 17: So khớp tìm kiếm trong bộ nhớ FE12 với SQL `LIKE`
 
-**Files:**
-- Modify: `.sdd/specs/feat-reporting-statistics/SPEC.md`
-- Modify: `.sdd/specs/feat-reporting-statistics/TASKS.md`
-- Modify: `.sdd/specs/feat-reporting-statistics/CHANGELOG.md`
-- Modify: `backend/tests/helpers/inMemoryReportRepositories.js`
-- Modify: `backend/tests/reportInMemoryParity.test.js`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-reporting-statistics/SPEC.md`
+- Sửa đổi: `.sdd/specs/feat-reporting-statistics/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-reporting-statistics/CHANGELOG.md`
+- Sửa đổi: `backend/tests/helpers/inMemoryReportRepositories.js`
+- Sửa đổi: `backend/tests/reportInMemoryParity.test.js`
 
-**Interfaces:**
-- Preserves: production `reportRepository` parameter binding
-  `Search = %${filters.q}%` and all public FE12 request/response DTOs.
-- Produces: test-only matching parity for `%`, `_`, `[x-y]`, `[^x-y]`, and
-  ordinary literal characters over user ID, account status, membership status,
-  and role name only.
+**Giao diện:**
+- Bảo tồn: liên kết tham số `reportRepository` sản xuất
+  `Search = %${filters.q}%` và tất cả các DTO yêu cầu/phản hồi FE12 công khai.
+- Tạo ra: tính chẵn lẻ phù hợp chỉ kiểm thử cho `%`, `_`, `[x-y]`, `[^x-y]` và
+các ký tự chữ thông thường chỉ trên ID người dùng, trạng thái tài khoản, trạng thái thành viên và tên vai trò.
 
-- [x] **Step 1: Add RED wildcard parity cases.**
+- [x] **Bước 1: Thêm các trường hợp chẵn lẻ ký tự đại diện RED.**
 
-Extend `backend/tests/reportInMemoryParity.test.js` with cases that differ from
-literal `String.includes`:
+Mở rộng `backend/tests/reportInMemoryParity.test.js` với các trường hợp khác với `String.includes`
+theo nghĩa đen:
 
 ```js
 test.each([
@@ -832,22 +861,22 @@ test.each([
 });
 ```
 
-Retain the existing `inactive` case and add a mixed-case literal assertion so
-case-insensitive ordinary search remains covered.
+Giữ lại trường hợp `inactive` hiện có và thêm một xác nhận bằng chữ hỗn hợp để tìm kiếm thông thường
+không phân biệt chữ hoa chữ thường vẫn được bảo vệ.
 
-Run:
+Chạy:
 
 ```powershell
 $env:TZ = 'UTC'
 npm.cmd --prefix backend test -- --runInBand --runTestsByPath tests/reportInMemoryParity.test.js
 ```
 
-Expected: `%MEMBER%`, `L_BRARIAN`, and `[1-2]` fail against the current literal
-`includes` implementation.
+Dự kiến: `%MEMBER%`, `L_BRARIAN` và `[1-2]` không thành công khi triển khai `includes` theo nghĩa
+đen hiện tại.
 
-- [x] **Step 2: Add a small SQL-LIKE-to-RegExp compiler in the test helper.**
+- [x] **Bước 2: Thêm trình biên dịch SQL-LIKE-to-RegExp nhỏ trong trình trợ giúp kiểm tra.**
 
-Add private helpers near the existing normalization functions in
+Thêm người trợ giúp riêng gần các chức năng chuẩn hóa hiện có trong
 `backend/tests/helpers/inMemoryReportRepositories.js`:
 
 ```js
@@ -892,13 +921,12 @@ function matchesSqlLike(value, query) {
 }
 ```
 
-Keep `-` unescaped inside a valid bracket class so ranges work. Treat an
-unclosed/empty `[` as a literal. Do not change production SQL or introduce a
-dependency.
+Giữ `-` không thoát bên trong lớp khung hợp lệ để phạm vi hoạt động. Hãy coi `[` không được
+đóng/trống như một nghĩa đen. Không thay đổi sản xuất SQL hoặc giới thiệu một phần phụ thuộc.
 
-- [x] **Step 3: Replace only the user-report literal comparison.**
+- [x] **Bước 3: Chỉ thay thế so sánh nguyên văn trong báo cáo của người dùng.**
 
-Use the helper on the existing approved value list:
+Sử dụng trình trợ giúp trên danh sách giá trị được phê duyệt hiện có:
 
 ```js
 if (filters.q) {
@@ -914,57 +942,56 @@ if (filters.q) {
 }
 ```
 
-Do not add username, email, or other fields to the FE12 user-report search.
+Không thêm tên người dùng, email hoặc các trường khác vào tìm kiếm báo cáo người dùng FE12.
 
-- [x] **Step 4: Record the exact parity rule in FE12 documentation.**
+- [x] **Bước 4: Ghi lại quy tắc chẵn lẻ chính xác trong tài liệu FE12.**
 
-Amend `BR-FE12-016` and task `FE12-N10` to state that production keeps
-parameterized SQL `LIKE` semantics and the in-memory repository emulates the
-same wildcard behavior for approved fields. Add a changelog bullet describing
-the test-parity correction without claiming a production API change.
+Sửa đổi `BR-FE12-016` và nhiệm vụ `FE12-N10` để nêu rõ rằng quá trình sản xuất giữ nguyên ngữ nghĩa
+SQL `LIKE` được tham số hóa và kho lưu trữ trong bộ nhớ mô phỏng hành vi ký tự đại diện tương tự cho
+các trường được phê duyệt. Thêm dấu đầu dòng nhật ký thay đổi mô tả việc sửa lỗi chẵn lẻ kiểm thử mà
+không yêu cầu thay đổi API sản xuất.
 
-- [x] **Step 5: Run focused FE12 and repository contract tests.**
+- [x] **Bước 5: Chạy kiểm thử hợp đồng kho lưu trữ và FE12 tập trung.**
 
 ```powershell
 $env:TZ = 'UTC'
 npm.cmd --prefix backend test -- --runInBand --runTestsByPath tests/reportInMemoryParity.test.js tests/reportRoutes.test.js tests/reportRepository.test.js
 ```
 
-Expected: all FE12 parity, route, and SQL-source contract tests pass.
+Dự kiến: tất cả các kiểm thử tính chẵn lẻ, tuyến đường và hợp đồng nguồn FE12 đều vượt qua.
 
-### Task 18: Correct Azure and governance evidence
+### Nhiệm vụ 18: Sửa Azure và bằng chứng quản trị
 
-**Files:**
-- Modify: `docs/deployment/azure-staging-guide.md`
-- Modify: `.sdd/specs/feat-borrowing-management/TASKS.md`
-- Modify: `.sdd/specs/feat-reservation-management/TASKS.md`
-- Modify: `.sdd/specs/feat-notification-management/TASKS.md`
-- Modify: `.sdd/specs/feat-reporting-statistics/TASKS.md`
-- Modify: `docs/superpowers/plans/2026-07-23-fe07-fe08-fe10-fe12-business-rule-remediation.md`
-- Create: `.sdd/reviews/fe07-fe08-fe10-fe12-h3-remediation-validation-2026-07-23.md`
+**Tệp:**
+- Sửa đổi: `docs/deployment/azure-staging-guide.md`
+- Sửa đổi: `.sdd/specs/feat-borrowing-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-reservation-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-notification-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-reporting-statistics/TASKS.md`
+- Sửa đổi: `docs/superpowers/plans/2026-07-23-fe07-fe08-fe10-fe12-business-rule-remediation.md`
+- Tạo: `.sdd/reviews/fe07-fe08-fe10-fe12-h3-remediation-validation-2026-07-23.md`
 
-**Interfaces:**
-- Preserves: the already reviewed Azure migration and deployment.
-- Produces: an operator-safe local-idempotence/staging-once procedure, read-only
-  constraint proof, and truthful H2/H3 state.
+**Giao diện:**
+- Bảo tồn: quá trình di chuyển và triển khai Azure đã được xem xét.
+- Tạo ra: quy trình ổn định cục bộ/phân giai đoạn một lần an toàn cho người vận hành, chỉ đọc
+  bằng chứng ràng buộc và trạng thái H2/H3 trung thực.
 
-- [x] **Step 1: Move idempotence proof off shared staging.**
+- [x] **Bước 1: Di chuyển bằng chứng idempotence ra khỏi giai đoạn chia sẻ.**
 
-Replace the current instruction to execute the migration sequence twice on
-staging with this boundary:
+Thay thế lệnh hiện tại để thực hiện chuỗi di chuyển hai lần trong giai đoạn bằng ranh giới này:
 
-1. Run each candidate migration twice on a named disposable local SQL Server
-   database and remove that database after proof.
-2. Review the exact SQL and target database.
-3. Execute the approved sequence once on `LibraryManagementStaging`.
-4. Run read-only target/schema/constraint queries.
-5. Remove the exact temporary firewall rule immediately.
+1. Chạy mỗi lần di chuyển ứng viên hai lần trên SQL Server cục bộ dùng một lần có tên
+   cơ sở dữ liệu và xóa cơ sở dữ liệu đó sau khi chứng minh.
+2. Xem lại chính xác SQL và cơ sở dữ liệu đích.
+3. Thực hiện trình tự đã được phê duyệt một lần trên `LibraryManagementStaging`.
+4. Chạy các truy vấn đích/lược đồ/ràng buộc chỉ đọc.
+5. Loại bỏ quy tắc tường lửa tạm thời chính xác ngay lập tức.
 
-Do not instruct operators to use staging for mutable idempotence tests.
+Không hướng dẫn người vận hành sử dụng giai đoạn cho các kiểm thử bình thường có thể thay đổi.
 
-- [x] **Step 2: Add a read-only FE10 constraint check.**
+- [x] **Bước 2: Thêm kiểm tra ràng buộc FE10 chỉ đọc.**
 
-Extend the guide's existing verification query:
+Mở rộng truy vấn xác minh hiện có của hướng dẫn:
 
 ```sql
 CASE WHEN EXISTS (
@@ -976,37 +1003,36 @@ CASE WHEN EXISTS (
 ) THEN 1 ELSE 0 END AS NotificationProcessingAllowed
 ```
 
-Expected: `DatabaseName = LibraryManagementStaging`, `TableCount = 20`, each
-listed row-version/reconciliation column length is `8`, and
-`NotificationProcessingAllowed = 1`.
+Dự kiến: `DatabaseName = LibraryManagementStaging`, `TableCount = 20`, mỗi độ dài cột đối
+chiếu/phiên bản hàng được liệt kê là `8` và `NotificationProcessingAllowed = 1`.
 
-- [x] **Step 3: Correct stale task-gate statements.**
+- [x] **Bước 3: Sửa các câu lệnh cổng tác vụ cũ.**
 
-For `FE07-T046`, `FE08-T040`, `FE10-S10`, and `FE12-N10`, record:
+Đối với `FE07-T046`, `FE08-T040`, `FE10-S10` và `FE12-N10`, hãy ghi:
 
-- initial H2 and the H2 addendum passed;
-- implementation commit `97aca62` and PR CI run `30014066260` passed;
-- the first H3 review found the bounded addendum items;
-- this remediation requires fresh H2, updated PR CI, and repeated H3;
-- no feature may claim merge/post-merge completion yet.
+- phụ lục H2 ban đầu và phụ lục H2 đã được thông qua;
+- cam kết thực hiện `97aca62` và PR CI chạy `30014066260` đã được thông qua;
+- đánh giá H3 đầu tiên đã tìm thấy các mục phụ lục có giới hạn;
+- biện pháp khắc phục này yêu cầu H2 mới, PR CI cập nhật và H3 lặp lại;
+- chưa có chức năng nào có thể yêu cầu hoàn thành hợp nhất/sau hợp nhất.
 
-Do not rewrite historical Phase 2 completion records.
+Không viết lại hồ sơ hoàn thành Giai đoạn 2 lịch sử.
 
-- [x] **Step 4: Create the remediation validation record.**
+- [x] **Bước 4: Tạo bản ghi xác nhận biện pháp khắc phục.**
 
-Record the exact branch/PR/SHA evidence, RED and GREEN commands/results, changed
-contract boundaries, current Azure evidence, latest `origin/main`, security and
-diff review, and remaining H2/H3 gates. State that:
+Ghi lại bằng chứng nhánh/PR/SHA chính xác, lệnh/kết quả RED và GREEN, ranh giới hợp đồng đã thay
+đổi, bằng chứng Azure hiện tại, `origin/main` mới nhất, đánh giá bảo mật và khác biệt cũng như các
+cổng H2/H3 còn lại. Phát biểu rằng:
 
-- the FE10 migration had already been proven twice locally and applied once to
-  staging;
-- staging product SHA `9b02c7e` was deployed by run `30012925318`;
-- this remediation does not require replaying the migration;
-- post-merge staging acceptance is read-only schema plus application smoke.
+- quá trình di chuyển FE10 đã được chứng minh hai lần tại địa phương và được áp dụng một lần cho
+  môi trường tiền sản xuất;
+- sản phẩm dàn SHA `9b02c7e` được triển khai bằng `30012925318`;
+- việc khắc phục này không yêu cầu thực hiện lại quá trình di chuyển;
+- Việc chấp nhận môi trường tiền sản xuất sau hợp nhất là lược đồ chỉ đọc cộng với kiểm thử nhanh ứng dụng.
 
-Use no credentials, connection strings, member data, or firewall IP values.
+Không sử dụng thông tin xác thực, chuỗi kết nối, dữ liệu thành viên hoặc giá trị IP tường lửa.
 
-- [x] **Step 5: Verify deployment documentation and diff hygiene.**
+- [x] **Bước 5: Xác minh tài liệu triển khai và vệ sinh khác biệt.**
 
 ```powershell
 npm.cmd run test:deployment
@@ -1014,23 +1040,22 @@ rg -n "second time|twice|H2 review remains pending|H2 remains before" docs/deplo
 git diff --check
 ```
 
-Expected: deployment utility tests pass; any remaining `twice` reference points
-only to a named disposable local database; stale current-batch H2-pending
-phrases are absent; diff check is clean.
+Dự kiến: vượt qua các kiểm thử tiện ích triển khai; mọi tham chiếu `twice` còn lại chỉ trỏ đến cơ sở
+dữ liệu cục bộ dùng một lần có tên; không có cụm từ H2 đang chờ xử lý theo lô hiện tại cũ; kiểm tra
+khác biệt là sạch sẽ.
 
-### Task 19: Re-verify, obtain H2, and prepare repeated H3
+### Nhiệm vụ 19: Xác minh lại, lấy H2 và chuẩn bị H3 lặp lại
 
-**Files:**
-- Modify: `.sdd/reviews/fe07-fe08-fe10-fe12-h3-remediation-validation-2026-07-23.md`
-- Inspect only: all files changed relative to `97aca62`
+**Tệp:**
+- Sửa đổi: `.sdd/reviews/fe07-fe08-fe10-fe12-h3-remediation-validation-2026-07-23.md`
+- Chỉ kiểm tra: tất cả các tệp đã thay đổi liên quan đến `97aca62`
 
-**Interfaces:**
-- Consumes: Tasks 16-18 and the latest `origin/main`.
-- Produces: a fresh H2-reviewed commit and updated PR #62 with passing current
-  merge-ref checks. Merge and post-merge deployment remain blocked on repeated
-  H3.
+**Giao diện:**
+- Tiêu thụ: Nhiệm vụ 16-18 và `origin/main` mới nhất.
+- Tạo ra: một cam kết mới được H2 xem xét và cập nhật PR #62 với dòng điện đã qua
+kiểm tra hợp nhất-ref. Triển khai hợp nhất và sau hợp nhất vẫn bị chặn trên H3 lặp lại.
 
-- [x] **Step 1: Run focused checks and traceability.**
+- [x] **Bước 1: Chạy kiểm tra tập trung và truy vết.**
 
 ```powershell
 $env:TZ = 'UTC'
@@ -1042,9 +1067,9 @@ npm.cmd run trace:enforce
 git diff --check
 ```
 
-Expected: every command exits `0`.
+Dự kiến: mọi lệnh đều thoát khỏi `0`.
 
-- [x] **Step 2: Run the repository-equivalent L1-L4 suite.**
+- [x] **Bước 2: Chạy bộ L1-L4 tương đương với kho lưu trữ.**
 
 ```powershell
 $env:TZ = 'UTC'
@@ -1062,10 +1087,10 @@ npm.cmd run test:deployment
 node -e "const app = require('./backend/src/index'); if (!app || typeof app.listen !== 'function') throw new Error('Express app export is invalid');"
 ```
 
-Expected: all audits and automated checks exit `0`; backend coverage remains at
-or above the repository threshold; Chromium E2E passes in full.
+Dự kiến: tất cả các cuộc kiểm tra và kiểm tra tự động đều thoát khỏi `0`; phạm vi bảo hiểm máy chủ
+vẫn ở mức hoặc cao hơn ngưỡng kho lưu trữ; Crom E2E đạt đầy đủ.
 
-- [x] **Step 3: Review security, scope, and latest-main compatibility.**
+- [x] **Bước 3: Xem xét tính bảo mật, phạm vi và khả năng tương thích chính mới nhất.**
 
 ```powershell
 git fetch origin main
@@ -1077,20 +1102,20 @@ git merge-tree --write-tree origin/main 97aca62
 git diff -- backend/src/services/reservationService.js backend/tests/helpers/inMemoryReportRepositories.js backend/src/docs/openapi.yaml docs/deployment/azure-staging-guide.md
 ```
 
-Confirm the virtual merge is clean, all SQL remains parameterized, warnings are
-PII/provider-safe, no permission/schema/dependency expansion exists, and the
-user-owned `output/audit-librarian-2026-07-22/` directory remains untracked and
-untouched. Re-check any `backend/src/docs/openapi.yaml` hunk against the latest
-FE11 change on `origin/main`.
+Xác nhận quá trình hợp nhất ảo đã sạch, tất cả SQL vẫn được tham số hóa, các cảnh báo là PII/nhà
+cung cấp-safe, không có sự mở rộng quyền/lược đồ/phụ thuộc nào tồn tại và thư mục
+`output/audit-librarian-2026-07-22/` do người dùng sở hữu vẫn không bị theo dõi và không bị ảnh
+hưởng. Kiểm tra lại mọi phần `backend/src/docs/openapi.yaml` dựa trên thay đổi FE11 mới nhất trên
+`origin/main`.
 
-- [x] **Step 4: Stop for fresh H2 before staging or commit.**
+- [x] **Bước 4: Dừng H2 mới trước khi môi trường tiền sản xuất hoặc cam kết.**
 
-Present the complete uncommitted diff and the validation record for independent
-Standards and Spec review. Fix every valid finding and rerun affected checks.
-Do not stage, commit, push, run mutable Azure SQL, redeploy, or merge before
-explicit H2 approval.
+Trình bày toàn bộ khác biệt có sẵn và bản ghi xác thực để đánh giá Tiêu chuẩn và đặc tả độc lập.
+Khắc phục mọi phát hiện hợp lệ và chạy lại các kiểm tra bị ảnh hưởng. Không thực hiện giai đoạn, cam
+kết, đẩy, chạy Azure SQL có thể thay đổi, triển khai lại hoặc hợp nhất trước khi phê duyệt H2 rõ
+ràng.
 
-- [x] **Step 5: After H2, stage only the reviewed scope and push PR #62.**
+- [x] **Bước 5: Sau H2, chỉ phân đoạn phạm vi được xem xét và đẩy PR #62.**
 
 ```powershell
 git add -- `
@@ -1119,11 +1144,10 @@ git commit -m "fix: close FE08 and FE12 H3 findings"
 git push origin HEAD
 ```
 
-Expected: only the reviewed files are staged; `output/` is absent from the
-index; the commit and push succeed on
-`codex/fe07-fe08-fe10-fe12-business-rules`.
+Dự kiến: chỉ các tệp được xem xét mới được sắp xếp; `output/` không có trong chỉ mục; cam kết và đẩy
+thành công trên `codex/fe07-fe08-fe10-fe12-business-rules`.
 
-- [x] **Step 6: Require current PR checks and stop for repeated H3.**
+- [x] **Bước 6: Yêu cầu kiểm tra PR hiện tại và dừng đối với H3 lặp lại.**
 
 ```powershell
 gh pr checks 62 --watch
@@ -1131,51 +1155,49 @@ gh pr ready 62
 gh pr view 62 --json headRefOid,baseRefOid,isDraft,mergeable,mergeStateStatus,statusCheckRollup,url
 ```
 
-Expected: required checks pass for the new head and current `main` merge ref,
-the PR is ready, and GitHub reports it mergeable. Repeat Standards and Spec H3
-over the exact PR diff. Stop for explicit H3 approval; do not merge on an old
-CI result or if `main` moves incompatibly.
+Dự kiến: các bước kiểm tra bắt buộc phải vượt qua đối với phần đầu mới và tham chiếu hợp nhất `main`
+hiện tại, PR đã sẵn sàng và GitHub báo cáo rằng nó có thể hợp nhất. Lặp lại Tiêu chuẩn và Thông số
+H3 trên mức chênh lệch PR chính xác. Dừng để phê duyệt H3 rõ ràng; không hợp nhất trên kết quả CI cũ
+hoặc nếu `main` di chuyển không tương thích.
 
-- [ ] **Step 7: Merge and verify Azure staging only after repeated H3 approval.**
+- [ ] **Bước 7: Chỉ hợp nhất và xác minh Môi trường tiền sản xuất Azure sau khi phê duyệt H3 nhiều lần.**
 
-After explicit H3 approval, merge PR #62 using the repository's normal merge
-method, wait for the exact post-merge `main` CI and automatic Azure staging
-deployment, then run the existing read-only staging smoke suite and the
-read-only schema/constraint query from Task 18. Do not replay the FE10 migration
-unless the read-only check proves the reviewed constraint is absent and a new
-operator review explicitly authorizes that separate correction.
+Sau khi phê duyệt H3 rõ ràng, hãy hợp nhất PR #62 bằng phương pháp hợp nhất thông thường của kho lưu
+trữ, đợi CI `main` sau hợp nhất chính xác và triển khai Môi trường tiền sản xuất Azure tự động, sau
+đó chạy bộ kiểm thử nhanh môi
+trường tiền sản xuất chỉ đọc hiện có và truy vấn lược đồ/ràng buộc chỉ đọc từ Nhiệm vụ 18. Không
+phát lại quá trình di chuyển FE10 trừ khi kiểm tra chỉ đọc chứng minh ràng buộc được xem xét không
+có và một nhà điều hành mới xem xét rõ ràng cho phép sửa chữa riêng biệt đó.
 
-### Task 20: Close the repeated H3 completeness findings
+### Nhiệm vụ 20: Kết thúc các phát hiện về tính đầy đủ của H3 lặp đi lặp lại
 
-**Files:**
-- Modify: `backend/tests/reportInMemoryParity.test.js`
-- Modify: `backend/tests/helpers/inMemoryReportRepositories.js`
-- Modify: `backend/tests/reservationService.test.js`
-- Modify: `backend/tests/reservationRoutes.test.js`
-- Modify: `backend/src/docs/openapi.yaml`
-- Modify: `.sdd/reviews/fe07-fe08-fe10-fe12-h3-remediation-validation-2026-07-23.md`
-- Modify: `.sdd/specs/feat-borrowing-management/TASKS.md`
-- Modify: `.sdd/specs/feat-reservation-management/TASKS.md`
-- Modify: `.sdd/specs/feat-notification-management/TASKS.md`
-- Modify: `.sdd/specs/feat-reporting-statistics/TASKS.md`
-- Modify: `docs/superpowers/specs/2026-07-23-fe07-fe08-fe10-fe12-final-verification-remediation-design.md`
-- Modify: `docs/superpowers/plans/2026-07-23-fe07-fe08-fe10-fe12-business-rule-remediation.md`
+**Tệp:**
+- Sửa đổi: `backend/tests/reportInMemoryParity.test.js`
+- Sửa đổi: `backend/tests/helpers/inMemoryReportRepositories.js`
+- Sửa đổi: `backend/tests/reservationService.test.js`
+- Sửa đổi: `backend/tests/reservationRoutes.test.js`
+- Sửa đổi: `backend/src/docs/openapi.yaml`
+- Sửa đổi: `.sdd/reviews/fe07-fe08-fe10-fe12-h3-remediation-validation-2026-07-23.md`
+- Sửa đổi: `.sdd/specs/feat-borrowing-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-reservation-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-notification-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-reporting-statistics/TASKS.md`
+- Sửa đổi: `docs/superpowers/specs/2026-07-23-fe07-fe08-fe10-fe12-final-verification-remediation-design.md`
+- Sửa đổi: `docs/superpowers/plans/2026-07-23-fe07-fe08-fe10-fe12-business-rule-remediation.md`
 
-**Interfaces:**
-- Consumes: H2-reviewed head
-  `b931e005e50dc9c0ec9c177f2874f88a1df943b0`, CI run `30019439505`,
-  and the repeated H3 Standards/Spec reports.
-- Preserves: production FE12 parameterized SQL, approved report fields,
-  FE08 service response DTOs, roles/permissions, database schema, dependencies,
-  Azure staging state, and the user-owned `output/` directory.
-- Produces: closing-bracket SQL `LIKE` parity, multi-warning FE08 regression
-  proof, a complete singular warning OpenAPI contract, and current governance
-  evidence. All changes remain uncommitted until fresh H2.
+**Giao diện:**
+- Tiêu thụ: Đầu được đánh giá H2
+`b931e005e50dc9c0ec9c177f2874f88a1df943b0`, CI chạy `30019439505` và các báo cáo Tiêu chuẩn/đặc tả H3 lặp lại.
+- Bảo tồn: FE12 SQL được tham số hóa sản xuất, các trường báo cáo được phê duyệt,
+FE08 DTO phản hồi dịch vụ, vai trò/quyền, lược đồ cơ sở dữ liệu, các phần phụ thuộc, trạng thái chạy
+thử của Azure và thư mục `output/` do người dùng sở hữu.
+- Tạo ra: chẵn lẻ SQL `LIKE` khung đóng, hồi quy FE08 đa cảnh báo
+bằng chứng, hợp đồng OpenAPI cảnh báo hoàn chỉnh và bằng chứng quản trị hiện tại. Tất cả các thay
+đổi vẫn có sẵn cho đến khi có H2 mới.
 
-- [x] **Step 1: Add RED SQL `LIKE` closing-bracket parity cases.**
+- [x] **Bước 1: Thêm các trường hợp chẵn lẻ khung đóng RED SQL `LIKE`.**
 
-Allow the test-local factory to override role values without changing the
-default fixture:
+Cho phép nhà máy kiểm thử-cục bộ ghi đè các giá trị vai trò mà không thay đổi lịch thi đấu mặc định:
 
 ```js
 function makeReportRepository({ borrowDetails, roleOverrides = [] } = {}) {
@@ -1201,7 +1223,7 @@ function makeReportRepository({ borrowDetails, roleOverrides = [] } = {}) {
 }
 ```
 
-Extend the wildcard matrix and add a positive right-bracket member case:
+Mở rộng ma trận ký tự đại diện và thêm trường hợp thành viên khung phải dương:
 
 ```js
 test.each([
@@ -1224,21 +1246,20 @@ test('user q treats a leading closing bracket as a SQL LIKE class member', async
 });
 ```
 
-Run:
+Chạy:
 
 ```powershell
 $env:TZ = 'UTC'
 npm.cmd --prefix backend test -- --runInBand --runTestsByPath tests/reportInMemoryParity.test.js
 ```
 
-Expected: exactly the new `[^]]` and `[]]` cases fail against the current
-first-`]` parser; the existing 18 cases remain green.
+Dự kiến: chính xác các trường hợp `[^]]` và `[]]` mới không thành công so với trình phân tích cú
+pháp `]` đầu tiên hiện tại; 18 trường hợp hiện có vẫn còn xanh.
 
-- [x] **Step 2: Make the smallest bracket-class compiler correction.**
+- [x] **Bước 2: Thực hiện chỉnh sửa trình biên dịch lớp khung nhỏ nhất.**
 
-In `sqlLikePatternToRegExp`, treat a right bracket in the first class-member
-position as content, find the later terminator, and escape that member for the
-JavaScript regular expression:
+Trong `sqlLikePatternToRegExp`, coi dấu ngoặc phải ở vị trí thành viên lớp đầu tiên là nội dung, tìm
+dấu kết thúc sau và thoát khỏi thành viên đó cho biểu thức chính quy JavaScript:
 
 ```js
 const negated = pattern[index + 1] === '^';
@@ -1260,23 +1281,22 @@ if (closingIndex > contentStart) {
 }
 ```
 
-Keep `-` unescaped so SQL ranges remain ranges. Keep the existing literal
-fallback for empty or unclosed classes. Do not change
+Giữ `-` không thoát để phạm vi SQL vẫn giữ nguyên phạm vi. Giữ dự phòng theo nghĩa đen hiện có cho
+các lớp trống hoặc không được tiết lộ. Không thay đổi
 `backend/src/repositories/reportRepository.js`.
 
-Run:
+Chạy:
 
 ```powershell
 $env:TZ = 'UTC'
 npm.cmd --prefix backend test -- --runInBand --runTestsByPath tests/reportInMemoryParity.test.js tests/reportRoutes.test.js tests/reportRepository.test.js
 ```
 
-Expected: 3 suites pass; the parity file has 20 passing tests and no failures.
+Dự kiến: 3 bộ kiểm thử; tệp chẵn lẻ có 20 kiểm thử đạt và không có lỗi nào.
 
-- [x] **Step 3: Prove every FE08 expiration-promotion warning is returned.**
+- [x] **Bước 3: Chứng minh mọi cảnh báo khuyến mãi hết hạn FE08 đều được trả sách.**
 
-Replace the single-warning service regression with two expired copies and two
-distinct held reservations:
+Thay thế hồi quy dịch vụ cảnh báo đơn bằng hai bản sao đã hết hạn và hai bản đặt chỗ được giữ lại riêng biệt:
 
 ```js
 test('returns every safe promotion warning in expiration order', async () => {
@@ -1348,7 +1368,7 @@ test('returns every safe promotion warning in expiration order', async () => {
 });
 ```
 
-Extend the existing route regression using copies `1` and `3`:
+Mở rộng hồi quy tuyến đường hiện có bằng cách sử dụng các bản sao `1` và `3`:
 
 ```js
 const createNotificationRequest = jest
@@ -1422,24 +1442,23 @@ for (const forbidden of [
 }
 ```
 
-The approved finding is missing regression depth, not a known product failure.
-If these tests pass against the current service loop, do not change production
-service code merely to manufacture a RED state.
+Phát hiện đã được phê duyệt là thiếu độ sâu hồi quy, không phải lỗi sản phẩm đã biết. Nếu các kiểm
+thử này vượt qua vòng lặp dịch vụ hiện tại, đừng thay đổi mã dịch vụ sản xuất chỉ để tạo ra trạng
+thái RED.
 
-Run:
+Chạy:
 
 ```powershell
 $env:TZ = 'UTC'
 npm.cmd --prefix backend test -- --runInBand --runTestsByPath tests/reservationService.test.js tests/reservationRoutes.test.js tests/reservationRepository.test.js
 ```
 
-Expected: all focused FE08 tests pass; both service and serialized route output
-contain two ordered warnings and no forbidden details.
+Dự kiến: tất cả các kiểm thử FE08 tập trung đều vượt qua; cả đầu ra dịch vụ và tuyến nối tiếp đều
+chứa hai cảnh báo được sắp xếp và không có chi tiết bị cấm.
 
-- [x] **Step 4: Document the singular process-queue warning response.**
+- [x] **Bước 4: Ghi lại phản hồi cảnh báo hàng đợi quy trình đơn lẻ.**
 
-Replace the `process-queue` `200` shorthand in
-`backend/src/docs/openapi.yaml` with:
+Thay thế tốc ký `process-queue` `200` trong `backend/src/docs/openapi.yaml` bằng:
 
 ```yaml
 '200':
@@ -1465,45 +1484,43 @@ Replace the `process-queue` `200` shorthand in
               message: { type: string }
 ```
 
-Keep `expire-holds.notificationWarnings[]` unchanged. Parse the complete
-OpenAPI document:
+Giữ `expire-holds.notificationWarnings[]` không thay đổi. Phân tích tài liệu OpenAPI hoàn chỉnh:
 
 ```powershell
 python -c "import yaml; yaml.safe_load(open('backend/src/docs/openapi.yaml', encoding='utf-8')); print('OPENAPI_OK')"
 ```
 
-Expected: `OPENAPI_OK`.
+Dự kiến: `OPENAPI_OK`.
 
-- [x] **Step 5: Make the H2/H3 evidence truthful.**
+- [x] **Bước 5: Làm cho bằng chứng H2/H3 trở thành trung thực.**
 
-Update the validation record to:
+Cập nhật bản ghi xác thực thành:
 
-- use status `IN PROGRESS - REPEATED H3 FINDINGS UNDER REMEDIATION`;
-- add H2-approved head
+- trạng thái sử dụng `IN PROGRESS - REPEATED H3 FINDINGS UNDER REMEDIATION`;
+- thêm đầu được H2 phê duyệt
   `b931e005e50dc9c0ec9c177f2874f88a1df943b0`;
-- record PR #62 as Ready, `MERGEABLE` / `CLEAN`;
-- record CI run `30019439505` as successful for that exact head;
-- record that repeated H3 returned closing-bracket parity, multi-warning
-  regression, singular OpenAPI, and stale-evidence findings;
-- check the prior fresh-H2, commit/push, and updated-CI checklist entries;
-- leave the new remediation's fresh H2, updated CI, repeated H3, merge,
-  post-merge CI, deployment, and read-only staging verification unchecked.
+- ghi PR #62 là Sẵn sàng, `MERGEABLE` / `CLEAN`;
+- ghi lại CI chạy `30019439505` thành công cho chính xác cái đầu đó;
+- bản ghi lặp lại H3 trả về tính chẵn lẻ của khung đóng, nhiều cảnh báo
+  hồi quy, OpenAPI số ít và các phát hiện bằng chứng cũ;
+- kiểm tra các mục nhập danh sách kiểm tra H2 mới, cam kết/đẩy và cập nhật CI trước đó;
+- để lại H2 mới, CI cập nhật, H3 lặp lại, hợp nhất,
+  Đã bỏ chọn CI sau hợp nhất, triển khai và xác minh giai đoạn chỉ đọc.
 
-For `FE07-T046`, `FE08-T040`, `FE10-S10`, and `FE12-N10`, replace the stale
-current-gate sentence with this state:
+Đối với `FE07-T046`, `FE08-T040`, `FE10-S10` và `FE12-N10`, hãy thay thế câu cổng hiện tại cũ bằng
+trạng thái này:
 
 ```text
-Fresh H2 approved commit b931e00 and PR CI run 30019439505 passed. The repeated
-H3 review returned the bounded round-two completeness findings; the new
-uncommitted remediation requires another fresh H2, updated PR CI, and repeated
-H3 before merge.
+Bản ghi Git b931e00 đã được H2 mới phê duyệt và lượt CI 30019439505 của PR đã đạt. Lần rà soát
+H3 lặp lại trả về các phát hiện hoàn thiện vòng hai trong phạm vi; phần khắc phục mới chưa được ghi
+nhận cần một H2 mới khác, CI của PR được cập nhật và lặp lại H3 trước khi hợp nhất.
 ```
 
-Mark Task 19 Steps 5 and 6 complete, retain Task 19 Step 7 open, and record this
-Task 20 as the only active remediation. Do not claim merge, post-merge CI, or
-Azure staging completion.
+Đánh dấu Nhiệm vụ 19 Bước 5 và 6 đã hoàn thành, giữ nguyên Nhiệm vụ 19 Bước 7 mở và ghi lại Nhiệm vụ
+20 này làm biện pháp khắc phục tích cực duy nhất. Không yêu cầu hoàn thành việc hợp nhất, CI sau hợp
+nhất hoặc hoàn thành giai đoạn Azure.
 
-- [x] **Step 6: Run focused and repository-equivalent verification.**
+- [x] **Bước 6: Chạy xác minh tập trung và tương đương với kho lưu trữ.**
 
 ```powershell
 $env:TZ = 'UTC'
@@ -1528,10 +1545,10 @@ npm.cmd run test:deployment
 node -e "const app = require('./backend/src/index'); if (!app || typeof app.listen !== 'function') throw new Error('Express app export is invalid'); console.log('BACKEND_IMPORT_OK');"
 ```
 
-Expected: every command exits `0`; audit count remains zero at the high
-threshold; coverage remains above repository thresholds; E2E passes in full.
+Dự kiến: mọi lệnh đều thoát `0`; số lượng kiểm toán vẫn bằng 0 ở ngưỡng cao; phạm vi bảo hiểm vẫn ở
+trên ngưỡng kho lưu trữ; E2E vượt qua đầy đủ.
 
-- [x] **Step 7: Review scope, security, and latest-main compatibility; stop for H2.**
+- [x] **Bước 7: Xem lại phạm vi, tính bảo mật và khả năng tương thích chính mới nhất; dừng lại ở H2.**
 
 ```powershell
 git fetch origin main
@@ -1549,28 +1566,26 @@ git diff b931e00 -- `
   .sdd/reviews/fe07-fe08-fe10-fe12-h3-remediation-validation-2026-07-23.md
 ```
 
-Confirm:
+Xác nhận:
 
-- production FE12 SQL remains parameterized and unchanged;
-- FE08 warnings contain no recipient, provider, rendered-content, stack, or
-  secret data;
-- no schema, permission, role, dependency, frontend, or Azure mutation exists;
-- only the approved Task 20 files changed;
-- `output/audit-librarian-2026-07-22/` remains untracked and untouched;
-- the virtual merge with latest `origin/main` is clean.
+- sản xuất FE12 SQL vẫn được tham số hóa và không thay đổi;
+- FE08 cảnh báo không chứa người nhận, nhà cung cấp, nội dung được hiển thị, bộ công nghệ hoặc
+  dữ liệu bí mật;
+- không tồn tại lược đồ, quyền, vai trò, sự phụ thuộc, giao diện người dùng hoặc thao tác ghi Azure;
+- chỉ các tệp Nhiệm vụ 20 đã được phê duyệt mới được thay đổi;
+- `output/audit-librarian-2026-07-22/` vẫn không bị theo dõi và không bị ảnh hưởng;
+- việc hợp nhất ảo với `origin/main` mới nhất là rõ ràng.
 
-Stop with the complete uncommitted diff and fresh evidence. Do not stage,
-commit, push, merge, run mutable Azure SQL, or deploy before explicit fresh H2.
+Dừng lại với sự khác biệt hoàn toàn không được cam kết và bằng chứng mới. Không tạo giai đoạn, cam
+kết, đẩy, hợp nhất, chạy Azure SQL có thể thay đổi hoặc triển khai trước H2 mới rõ ràng.
 
-Round-two verification completed on 2026-07-23: focused backend 6 suites /
-107 tests, full backend 61 suites / 1,013 tests, system integration 10 tests,
-frontend 212 tests plus lint/build, Chromium E2E 4/4, deployment utilities 8/8,
-all three high-threshold audits at 0 vulnerabilities, traceability enforcement,
-OpenAPI parsing, backend import, and diff hygiene passed. The current committed
-head merged cleanly with `origin/main` as tree
-`e22a848b1f806a4988092581e78e3e76501805c6`; applying the complete round-two
-patch before the final governance-evidence update to that tree also succeeded as
-`9fecfa6dfd5e99dd7476c731163f3be2a7c38fa2`. This was the frozen pre-H2 state.
-Fresh H2 approved the round-two package on 2026-07-23 and authorized the
-reviewed commit/push; updated PR CI and repeated H3 remain mandatory before
-merge.
+Quá trình xác minh vòng hai hoàn tất vào ngày 23/07/2026: phần máy chủ tập trung 6 bộ/107 kiểm thử,
+phần máy chủ đầy đủ 61 bộ/1.013 kiểm thử, tích hợp hệ thống 10 kiểm thử, 212 kiểm thử giao diện
+người dùng cùng với kiểm tra mã/bản dựng, Chrome E2E 4/4, tiện ích triển khai 8/8, cả ba lần kiểm
+tra ngưỡng cao tại 0 lỗ hổng, thực thi truy vết, Phân tích cú pháp OpenAPI, nhập máy chủ và vệ sinh
+khác biệt đã được thông qua. Phần đầu cam kết hiện tại đã hợp nhất hoàn toàn với `origin/main` dưới
+dạng cây `e22a848b1f806a4988092581e78e3e76501805c6`; áp dụng bản vá vòng hai hoàn chỉnh trước khi
+cập nhật bằng chứng quản trị cuối cùng cho cây đó cũng thành công với tên gọi
+`9fecfa6dfd5e99dd7476c731163f3be2a7c38fa2`. Đây là trạng thái đóng băng trước H2. Fresh H2 đã phê
+duyệt gói vòng hai vào ngày 23/07/2026 và ủy quyền cho cam kết/thúc đẩy được xem xét; PR CI đã cập
+nhật và H3 lặp lại vẫn là bắt buộc trước khi hợp nhất.

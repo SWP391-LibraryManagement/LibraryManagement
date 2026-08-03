@@ -1,92 +1,110 @@
-# FE11 Safe User List And Detail Design
+# FE11 Danh sách người dùng an toàn và thiết kế chi tiết
 
-Status: APPROVED BY HUMAN - 2026-07-18
+Trạng thái: ĐƯỢC PHÊ DUYỆT BỞI HUMAN - 2026-07-18
 
-Feature: FE11 User & Role Management
+chức năng: Quản lý vai trò và người dùng FE11
 
-## 1. Decision
+## 1. Quyết định
 
-Use SDD Full depth for a bounded FE11 user-list and user-detail slice. Keep the existing `userRepository.js` boundary, replace the managed-user response mapping with an explicit `UserManagementView` allowlist, add strict list/detail request validation, and load the detail-only related summaries in one parameterized SQL query.
+Sử dụng SDD Độ sâu đầy đủ cho một lát cắt chi tiết người dùng và danh sách người dùng FE11 được giới
+hạn. Giữ ranh giới `userRepository.js` hiện có, thay thế ánh xạ phản hồi của người dùng được quản lý
+bằng danh sách cho phép `UserManagementView` rõ ràng, thêm xác thực yêu cầu chi tiết/danh sách
+nghiêm ngặt và tải các bản tóm tắt chỉ liên quan đến chi tiết trong một truy vấn SQL được tham số
+hóa.
 
-This slice is Core behavior because the endpoints expose personal data and define an Admin-only API contract. A broad mapper, permissive query handling, or inconsistent not-found response could expose credentials, break clients, or hide stale user-directory state.
+Phần này là hành vi cốt lõi vì các điểm cuối hiển thị dữ liệu cá nhân và xác định hợp đồng API chỉ
+dành cho Quản trị viên. Trình ánh xạ rộng, xử lý truy vấn dễ dãi hoặc phản hồi không tìm thấy không
+nhất quán có thể làm lộ thông tin xác thực, phá vỡ ứng dụng khách hoặc ẩn trạng thái thư mục người
+dùng cũ.
 
-## 2. Source Requirements
+## 2. Yêu cầu nguồn
 
-The design implements or advances these approved FE11 requirements:
+Thiết kế thực hiện hoặc nâng cao các yêu cầu FE11 đã được phê duyệt này:
 
-- `BR-FE11-001`, `BR-FE11-026`: Admin-only access and the explicit safe response boundary.
-- `FR-FE11-001`, `AC-FE11-001`: paginated list defaults, bounds, filters, search fields, and stable ordering.
-- `FR-FE11-002`, `AC-FE11-002`: safe detail DTO, deterministic related summaries, and forbidden-field exclusion.
-- `FR-FE11-015`, `FR-FE11-016`: authorization rejection and not-found behavior.
-- `NFR-FE11-SEC-001`, `NFR-FE11-SEC-002`, `NFR-FE11-SEC-004..006`: server-side RBAC, boundary validation, parameterized SQL, and sensitive-field exclusion.
-- `NFR-FE11-PERF-001`: apply pagination in SQL instead of materializing the full user table.
+- `BR-FE11-001`, `BR-FE11-026`: Quyền truy cập chỉ dành cho quản trị viên và ranh giới phản hồi an toàn rõ ràng.
+- `FR-FE11-001`, `AC-FE11-001`: mặc định, giới hạn, bộ lọc, trường tìm kiếm và thứ tự ổn định của danh sách được phân trang.
+- `FR-FE11-002`, `AC-FE11-002`: chi tiết an toàn DTO, các tóm tắt liên quan đến xác định và loại trừ trường cấm.
+- `FR-FE11-015`, `FR-FE11-016`: từ chối ủy quyền và hành vi không tìm thấy.
+- `NFR-FE11-SEC-001`, `NFR-FE11-SEC-002`, `NFR-FE11-SEC-004..006`: RBAC phía máy chủ, xác thực ranh giới, SQL được tham số hóa và loại trừ trường nhạy cảm.
+- `NFR-FE11-PERF-001`: áp dụng phân trang trong SQL thay vì cụ thể hóa bảng người dùng đầy đủ.
 
-Primary source: `.sdd/specs/feat-user-role-management/SPEC.md`.
+Nguồn chính: `.sdd/specs/feat-user-role-management/SPEC.md`.
 
-Cross-feature aggregate semantics come from:
+Ngữ nghĩa tổng hợp nhiều chức năng đến từ:
 
-- FE07: an active borrowing is a current `BorrowDetails.Status = BORROWED` record.
-- FE08: an open reservation has status `ACTIVE` or `NOTIFIED`.
-- FE09: an unpaid balance belongs to a fine with status `UNPAID`; Phase 1 has no valid partial-payment state.
+- FE07: lượt mượn đang hoạt động là bản ghi `BorrowDetails.Status = BORROWED` hiện tại.
+- FE08: đặt chỗ mở có trạng thái `ACTIVE` hoặc `NOTIFIED`.
+- FE09: số dư chưa thanh toán thuộc về khoản khoản phạt có trạng thái `UNPAID`; Giai đoạn 1 không có trạng thái thanh toán một phần hợp lệ.
 
-## 3. Current Problem
+## 3. Vấn đề hiện tại
 
-The current managed-user mapper omits credentials but returns `phone` instead of the approved `phoneNumber` field. List search includes username, phone, address, and roles even though FE11 limits search to email, full name, and user ID. The service silently clamps invalid pagination instead of rejecting invalid input, list/detail routes have no focused validators, and a missing detail record returns `400 USER_NOT_FOUND` instead of `404`.
+Trình ánh xạ người dùng được quản lý hiện tại bỏ qua thông tin xác thực nhưng trả về `phone` thay vì
+trường `phoneNumber` đã được phê duyệt. Tìm kiếm danh sách bao gồm tên người dùng, số điện thoại,
+địa chỉ và vai trò mặc dù FE11 giới hạn tìm kiếm ở email, tên đầy đủ và ID người dùng. Dịch vụ âm
+thầm ngăn chặn phân trang không hợp lệ thay vì từ chối đầu vào không hợp lệ, các tuyến danh sách/chi
+tiết không có trình xác thực tập trung và bản ghi chi tiết bị thiếu trả về `400 USER_NOT_FOUND` thay
+vì `404`.
 
-The current detail repository returns the same list-row shape and has no `relatedSummary`. The frontend uses the selected list row directly as detail, expects `phone`, and never calls the detail endpoint.
+Kho lưu trữ chi tiết hiện tại trả về hình dạng hàng danh sách giống nhau và không có
+`relatedSummary`. Giao diện người dùng sử dụng trực tiếp hàng danh sách đã chọn làm chi tiết, mong
+đợi `phone` và không bao giờ gọi điểm cuối chi tiết.
 
-These gaps are the list/detail portions of `TD-014` and `TD-015`. `TD-012` remains open because the approved database has no persistence for librarian `department` or `specialization`.
+Những khoảng trống này là các phần danh sách/chi tiết của `TD-014` và `TD-015`. `TD-012` vẫn mở vì
+cơ sở dữ liệu đã được phê duyệt không có sự tồn tại lâu dài đối với thủ thư `department` hoặc
+`specialization`.
 
-## 4. Scope
+## 4. Phạm vi
 
-### In Scope
+### Trong phạm vi
 
-- Replace managed-user response mapping with the explicit `UserManagementView` allowlist.
-- Return `phoneNumber` instead of `phone` in managed-user responses.
-- Keep roles as uppercase role-name strings in deterministic alphabetical order.
-- Validate list pagination, status, role, and search at the HTTP boundary and service boundary.
-- Restrict list search to email, full name, and user ID.
-- Keep stable list ordering `CreatedAt DESC, UserId DESC`.
-- Add a detail-only repository read that returns the safe DTO plus the three required aggregate fields.
-- Return deterministic numeric zero values when aggregate source rows are absent.
-- Return `404 USER_NOT_FOUND` for a valid positive user ID that does not exist.
-- Update the frontend to omit UI sentinels from list queries, consume `phoneNumber`, fetch real detail data, and render the summaries.
-- Add route, service, repository, and frontend tests through RED-GREEN TDD.
-- Update FE11 planning, traceability, test strategy, changelog, and technical-debt records during implementation.
+- Thay thế ánh xạ phản hồi của người dùng được quản lý bằng danh sách cho phép `UserManagementView` rõ ràng.
+- Trả về `phoneNumber` thay vì `phone` trong phản hồi của người dùng được quản lý.
+- Giữ các vai trò dưới dạng chuỗi tên vai trò viết hoa theo thứ tự bảng chữ cái xác định.
+- Xác thực phân trang danh sách, trạng thái, vai trò và tìm kiếm tại ranh giới HTTP và ranh giới dịch vụ.
+- Hạn chế tìm kiếm danh sách ở email, tên đầy đủ và ID người dùng.
+- Giữ ổn định danh sách đặt hàng `CreatedAt DESC, UserId DESC`.
+- Thêm một lần đọc kho lưu trữ chỉ chi tiết để trả về DTO an toàn cùng với ba trường tổng hợp bắt buộc.
+- Trả về các giá trị số 0 xác định khi không có hàng nguồn tổng hợp.
+- Trả về `404 USER_NOT_FOUND` cho ID người dùng tích cực hợp lệ không tồn tại.
+- Cập nhật giao diện người dùng để loại bỏ các điểm kiểm soát giao diện người dùng khỏi các truy vấn danh sách, sử dụng `phoneNumber`, tìm nạp dữ liệu chi tiết thực và hiển thị các bản tóm tắt.
+- Thêm các kiểm thử tuyến đường, dịch vụ, kho lưu trữ và giao diện người dùng thông qua RED-GREEN TDD.
+- Cập nhật kế hoạch FE11, khả năng truy vết, chiến lược kiểm thử, nhật ký thay đổi và hồ sơ nợ kỹ thuật trong quá trình triển khai.
 
-### Out Of Scope
+### Ngoài phạm vi
 
-- Database schema changes.
-- Fake `department: null` or `specialization: null` placeholders. Those fields remain absent until `TD-012` is implemented through an approved schema change.
-- User-information update behavior, optimistic concurrency, and no-op update handling.
-- Account deactivation and credential invalidation.
-- Account creation, setup resend, and role-mutation behavior.
-- Admin dashboard, permissions, audit-log, and request-management screens.
-- Changes to the feature-wide traceability status heuristic.
+- Thay đổi lược đồ cơ sở dữ liệu.
+- Phần giữ chỗ `department: null` hoặc `specialization: null` giả. Các trường đó vẫn vắng mặt cho đến khi `TD-012` được triển khai thông qua thay đổi lược đồ đã được phê duyệt.
+- Hành vi cập nhật thông tin người dùng, đồng thời lạc quan và xử lý cập nhật không hoạt động.
+- Vô hiệu hóa tài khoản và vô hiệu hóa thông tin xác thực.
+- Tạo tài khoản, thiết lập gửi lại và hành vi thay đổi vai trò.
+- Màn hình bảng điều khiển dành cho quản trị viên, quyền, nhật ký kiểm tra và quản lý yêu cầu.
+- Những thay đổi đối với heuristic trạng thái truy vết trên toàn bộ chức năng.
 
-## 5. Architecture
+## 5. Kiến trúc
 
-The existing layered request flow remains:
+Luồng yêu cầu phân lớp hiện tại vẫn còn:
 
 ```text
 route validator
   -> userManagementController
   -> userManagementService
   -> userRepository
-  -> parameterized SQL Server query
+-> truy vấn SQL Server được tham số hóa
 ```
 
-No new repository or dependency is introduced. `userRepository.js` remains the read owner because list and detail are closely related projections over the same user, profile, and role tables.
+Không có kho lưu trữ hoặc phụ thuộc mới nào được giới thiệu. `userRepository.js` vẫn là chủ sở hữu
+quyền đọc vì danh sách và chi tiết là các phép chiếu có liên quan chặt chẽ với nhau trên cùng một
+bảng người dùng, hồ sơ và vai trò.
 
-The repository keeps list/readback behavior separate from detail behavior:
+Kho lưu trữ tách biệt hành vi danh sách/đọc lại với hành vi chi tiết:
 
-- `listManagedUsers` returns paginated list DTOs without `relatedSummary`.
-- `getManagedUserById` remains the safe non-detail readback used by existing mutation flows.
-- A dedicated detail read returns the safe DTO plus `relatedSummary`, preventing detail-only fields from leaking into create, update, or role-mutation responses.
+- `listManagedUsers` trả về danh sách DTO được phân trang mà không có `relatedSummary`.
+- `getManagedUserById` vẫn là phương pháp đọc lại không chi tiết an toàn được sử dụng bởi các luồng thao tác ghi hiện có.
+- Đọc chi tiết chuyên dụng trả về DTO an toàn cộng với `relatedSummary`, ngăn các trường chỉ chi tiết rò rỉ vào các phản hồi tạo, cập nhật hoặc thay đổi vai trò.
 
-## 6. UserManagementView Contract
+## 6. Hợp đồng UserManagementView
 
-The list item and base detail object contain only:
+Mục danh sách và đối tượng chi tiết cơ sở chỉ chứa:
 
 ```text
 userId
@@ -102,44 +120,48 @@ updatedAt
 lastLoginAt
 ```
 
-The mapper constructs this object field by field. It does not spread a database row and does not map a broad user object before deleting sensitive properties.
+Trình ánh xạ xây dựng trường đối tượng này theo trường. Nó không trải rộng một hàng cơ sở dữ liệu và
+không ánh xạ một đối tượng người dùng rộng rãi trước khi xóa các thuộc tính nhạy cảm.
 
-The response must never contain:
+Câu trả lời không bao giờ được chứa:
 
 ```text
 passwordHash
 raw password
-raw or hashed auth token
-credential token ID
-refresh or session identifier
-setup or reset link
+mã thông báo xác thực thô hoặc đã băm
+ID mã thông báo thông tin xác thực
+định danh làm mới hoặc phiên
+liên kết thiết lập hoặc đặt lại
 provider payload
-secret audit metadata
+siêu dữ liệu kiểm toán bí mật
 ```
 
-`department` and `specialization` are not returned in this slice because no approved schema column stores them. The API does not invent null placeholders for unavailable data.
+`department` và `specialization` không được trả về trong lát cắt này vì không có cột lược đồ được
+phê duyệt nào lưu trữ chúng. API không phát minh ra các phần giữ chỗ trống cho dữ liệu không có sẵn.
 
-## 7. List API Contract
+## 7. Liệt kê hợp đồng API
 
-Endpoint: `GET /api/users`
+Điểm cuối: `GET /api/users`
 
-| Query | Contract |
+| Truy vấn | Hợp đồng |
 | --- | --- |
-| `page` | Optional. Defaults to `1` only when omitted. When supplied, it must be an integer greater than or equal to `1`. |
-| `limit` | Optional. Defaults to `20` only when omitted. When supplied, it must be an integer from `1` through `100`. |
-| `status` | Optional. Case-normalized to one of `ACTIVE`, `INACTIVE`, or `LOCKED`. |
-| `role` | Optional. Case-normalized to one of `MEMBER`, `LIBRARIAN`, or `ADMIN`. |
-| `search` | Optional. Trimmed to `1..200` characters when supplied. Searches only email, full name, or textual user ID. |
+| `page` | Không bắt buộc. Mặc định là `1` chỉ khi bị bỏ qua. Khi được cung cấp, nó phải là số nguyên lớn hơn hoặc bằng `1`. |
+| `limit` | Không bắt buộc. Mặc định là `20` chỉ khi bị bỏ qua. Khi được cung cấp, nó phải là số nguyên từ `1` đến `100`. |
+| `status` | Không bắt buộc. Được chuẩn hóa theo trường hợp thành một trong các `ACTIVE`, `INACTIVE` hoặc `LOCKED`. |
+| `role` | Không bắt buộc. Được chuẩn hóa theo trường hợp thành một trong các `MEMBER`, `LIBRARIAN` hoặc `ADMIN`. |
+| `search` | Không bắt buộc. Được cắt bớt các ký tự `1..200` khi được cung cấp. Chỉ tìm kiếm email, tên đầy đủ hoặc ID người dùng văn bản. |
 
-Invalid supplied values return `400 VALIDATION_ERROR`; they are not clamped, replaced with defaults, or treated as no filter. The UI-only `ALL` sentinel and an empty search string are omitted by the frontend instead of being sent to the server.
+Giá trị được cung cấp không hợp lệ trả về `400 VALIDATION_ERROR`; chúng không bị kẹp, thay thế bằng
+giá trị mặc định hoặc được coi là không có bộ lọc. Hệ thống canh gác `ALL` chỉ dành cho giao diện
+người dùng và chuỗi tìm kiếm trống bị giao diện người dùng bỏ qua thay vì được gửi đến máy chủ.
 
-The repository uses typed parameters for all filter values. Result order is always:
+Kho lưu trữ sử dụng các tham số đã nhập cho tất cả các giá trị bộ lọc. Thứ tự kết quả luôn là:
 
 ```sql
 ORDER BY CreatedAt DESC, UserId DESC
 ```
 
-The response keeps the existing pagination envelope:
+Phản hồi giữ nguyên phong bì phân trang hiện có:
 
 ```json
 {
@@ -153,29 +175,31 @@ The response keeps the existing pagination envelope:
 }
 ```
 
-`relatedSummary` is never present on list items.
+`relatedSummary` không bao giờ xuất hiện trên các mục trong danh sách.
 
-## 8. Detail API And Aggregate Contract
+## 8. Chi tiết API và hợp đồng tổng hợp
 
-Endpoint: `GET /api/users/{userId}`
+Điểm cuối: `GET /api/users/{userId}`
 
-The route accepts only a positive integer `userId`. An invalid ID shape returns `400 VALIDATION_ERROR`. A valid ID with no matching user returns:
+Tuyến đường chỉ chấp nhận số nguyên dương `userId`. Hình dạng ID không hợp lệ trả về `400
+VALIDATION_ERROR`. ID hợp lệ không có kết quả trả về của người dùng phù hợp:
 
 ```text
 HTTP 404
 code: USER_NOT_FOUND
-message: User was not found.
+message: Không tìm thấy người dùng.
 ```
 
-The repository executes one detail query. The query reads the base safe fields and roles, then calculates the following aggregate subqueries for the same user:
+Kho lưu trữ thực hiện một truy vấn chi tiết. Truy vấn đọc các trường và vai trò an toàn cơ sở, sau
+đó tính toán các truy vấn con tổng hợp sau đây cho cùng một người dùng:
 
-| Field | Definition |
+| Lĩnh vực | Định nghĩa |
 | --- | --- |
-| `activeBorrowingCount` | Count `BorrowDetails` joined through the user's `BorrowRequests` where `BorrowDetails.Status = 'BORROWED'`. `OVERDUE` is derived in FE07 and is not a persisted status. |
-| `unpaidFineTotal` | Sum `Amount - PaidAmount` for `Fines.Status = 'UNPAID'`. Under the FE09 Phase 1 invariant, valid unpaid fines have `PaidAmount = 0`; subtracting preserves the outstanding-balance meaning for legacy rows. |
-| `openReservationCount` | Count `Reservations` where status is `ACTIVE` or `NOTIFIED`. |
+| `activeBorrowingCount` | Đếm `BorrowDetails` đã tham gia thông qua `BorrowRequests` của người dùng trong đó `BorrowDetails.Status = 'BORROWED'`. `OVERDUE` có nguồn gốc từ FE07 và không phải là trạng thái liên tục. |
+| `unpaidFineTotal` | Tổng `Amount - PaidAmount` cho `Fines.Status = 'UNPAID'`. Theo bất biến FE09 Giai đoạn 1, các khoản khoản phạt chưa thanh toán hợp lệ có `PaidAmount = 0`; phép trừ giữ nguyên ý nghĩa số dư chưa thanh toán cho các hàng kế thừa. |
+| `openReservationCount` | Đếm `Reservations` với trạng thái là `ACTIVE` hoặc `NOTIFIED`. |
 
-SQL `COALESCE` supplies numeric zero when no matching rows exist. The JSON detail response adds exactly:
+SQL `COALESCE` cung cấp số 0 khi không tồn tại hàng phù hợp. Phản hồi chi tiết JSON bổ sung chính xác:
 
 ```json
 {
@@ -187,134 +211,141 @@ SQL `COALESCE` supplies numeric zero when no matching rows exist. The JSON detai
 }
 ```
 
-No aggregate is loaded for the list endpoint.
+Không có tổng hợp nào được tải cho điểm cuối danh sách.
 
-## 9. Service And Validation Responsibilities
+## 9. Trách nhiệm dịch vụ và xác nhận
 
-Route validation runs after authentication and Admin authorization. This preserves the existing behavior in which unauthenticated or non-Admin callers receive `401` or `403` before request-shape details are exposed.
+Xác thực tuyến chạy sau khi xác thực và ủy quyền của Quản trị viên. Điều này duy trì hành vi hiện có
+trong đó người gọi không được xác thực hoặc không phải Quản trị viên nhận được `401` hoặc `403`
+trước khi chi tiết về hình dạng yêu cầu bị lộ.
 
-The service will:
+Dịch vụ sẽ:
 
-- Apply the same defaults and allowlists when called directly outside the HTTP route.
-- Reject invalid direct-service inputs instead of silently normalizing them into valid values.
-- Pass only normalized filters to the repository.
-- Call the dedicated detail read for `getUser`.
-- Map a missing detail result to `404 USER_NOT_FOUND`.
+- Áp dụng các giá trị mặc định và danh sách cho phép tương tự khi được gọi trực tiếp bên ngoài tuyến HTTP.
+- Từ chối các đầu vào dịch vụ trực tiếp không hợp lệ thay vì âm thầm chuẩn hóa chúng thành các giá trị hợp lệ.
+- Chỉ chuyển các bộ lọc đã chuẩn hóa vào kho lưu trữ.
+- Gọi đọc chi tiết chuyên dụng cho `getUser`.
+- Ánh xạ kết quả chi tiết bị thiếu tới `404 USER_NOT_FOUND`.
 
-The slice does not change the not-found behavior of update or deactivation operations; those remain separately deferred.
+Lát cắt này không thay đổi hành vi không tìm thấy của các hoạt động cập nhật hoặc hủy kích hoạt;
+những khoản đó vẫn được hoãn lại riêng biệt.
 
-## 10. Frontend Behavior
+## 10. Hành vi lối vào
 
-`userManagementApi.js` adds a focused detail request for `GET /users/{userId}`. The list request builder omits `role`, `status`, and `search` when their UI values mean no filter.
+`userManagementApi.js` thêm yêu cầu chi tiết tập trung cho `GET /users/{userId}`. Trình tạo yêu cầu
+danh sách bỏ qua `role`, `status` và `search` khi giá trị giao diện người dùng của chúng có nghĩa là
+không có bộ lọc.
 
-`UserManagement.jsx` will:
+`UserManagement.jsx` sẽ:
 
-- Read `phoneNumber` for table, edit-form initialization, and detail rendering while continuing to send the existing `phone` request field for create/update endpoints.
-- Call the detail endpoint when an Admin selects a user row.
-- Open the detail drawer only after the detail response succeeds.
-- Render the three `relatedSummary` values in the drawer.
-- On `404`, keep the drawer closed, show a safe message, and reload the current list because the selected list row is stale.
-- On other failures, keep the drawer closed and show the existing safe fallback message.
+- Đọc `phoneNumber` để biết bảng, khởi tạo biểu mẫu chỉnh sửa và hiển thị chi tiết trong khi tiếp tục gửi trường yêu cầu `phone` hiện có để tạo/cập nhật điểm cuối.
+- Gọi điểm cuối chi tiết khi Quản trị viên chọn hàng người dùng.
+- Chỉ mở ngăn chi tiết sau khi phản hồi chi tiết thành công.
+- Hiển thị ba giá trị `relatedSummary` trong ngăn kéo.
+- Trên `404`, hãy đóng ngăn kéo, hiển thị thông báo an toàn và tải lại danh sách hiện tại vì hàng danh sách đã chọn đã cũ.
+- Đối với các lỗi khác, hãy đóng ngăn kéo và hiển thị thông báo dự phòng an toàn hiện có.
 
-The detail request does not add new edit, deactivation, or role-management behavior.
+Yêu cầu chi tiết không thêm hành vi chỉnh sửa, hủy kích hoạt hoặc quản lý vai trò mới.
 
-## 11. Error And Security Contract
+## 11. Hợp đồng lỗi và bảo mật
 
-| Condition | HTTP | Code |
+| Tình trạng | HTTP | Mã |
 | --- | ---: | --- |
-| Missing authentication | 401 | Existing authentication code |
-| Authenticated non-Admin | 403 | `ADMIN_REQUIRED` |
-| Invalid list query or user ID | 400 | `VALIDATION_ERROR` |
-| Valid user ID not found on detail | 404 | `USER_NOT_FOUND` |
-| Unexpected database failure | 500 | Existing generic internal error |
+| Thiếu xác thực | 401 | Mã xác thực hiện có |
+| Được xác thực không phải quản trị viên | 403 | `ADMIN_REQUIRED` |
+| Truy vấn danh sách hoặc ID người dùng không hợp lệ | 400 | `VALIDATION_ERROR` |
+| Chi tiết không tìm thấy ID người dùng hợp lệ | 404 | `USER_NOT_FOUND` |
+| Lỗi cơ sở dữ liệu không mong muốn | 500 | Lỗi nội bộ chung hiện có |
 
-Errors returned to the client do not include SQL text, stack traces, credential fields, or repository metadata. All SQL values remain typed parameters; no query input is concatenated into SQL.
+Các lỗi được trả về máy khách không bao gồm văn bản SQL, dấu vết bộ công nghệ, trường thông tin xác
+thực hoặc siêu dữ liệu kho lưu trữ. Tất cả các giá trị SQL vẫn được nhập tham số; không có đầu vào
+truy vấn nào được nối vào SQL.
 
-## 12. Testing Strategy
+## 12. Chiến lược kiểm thử
 
-Implementation follows strict RED-GREEN TDD.
+Việc triển khai tuân theo RED-GREEN TDD nghiêm ngặt.
 
-### Route Tests
+### Kiểm tra lộ trình
 
-- Accept omitted list parameters and forward canonical defaults.
-- Accept each approved status and role value.
-- Reject invalid, zero, negative, fractional, oversized, and non-numeric pagination values.
-- Reject unapproved status/role values and search values outside `1..200` after trimming.
-- Reject invalid detail IDs without calling the service.
-- Preserve authentication and Admin authorization precedence over validation.
+- Chấp nhận các tham số danh sách bị bỏ qua và chuyển tiếp các giá trị mặc định chuẩn.
+- Chấp nhận từng giá trị trạng thái và vai trò được phê duyệt.
+- Từ chối các giá trị phân trang không hợp lệ, bằng 0, âm, phân số, quá khổ và không phải số.
+- Từ chối các giá trị trạng thái/vai trò không được phê duyệt và tìm kiếm các giá trị bên ngoài `1..200` sau khi cắt bớt.
+- Từ chối ID chi tiết không hợp lệ mà không gọi dịch vụ.
+- Giữ nguyên quyền ưu tiên xác thực và ủy quyền của Quản trị viên so với xác thực.
 
-### Service Tests
+### Kiểm tra dịch vụ
 
-- Apply defaults only to omitted values.
-- Normalize approved status/role casing and trim search.
-- Reject invalid direct-service input before repository access.
-- Forward only the canonical list contract.
-- Return the detail DTO on success and map a missing detail to `404 USER_NOT_FOUND`.
+- Chỉ áp dụng giá trị mặc định cho các giá trị bị bỏ qua.
+- Bình thường hóa tìm kiếm trạng thái/vai trò đã được phê duyệt và cắt bớt tìm kiếm.
+- Từ chối đầu vào dịch vụ trực tiếp không hợp lệ trước khi truy cập kho lưu trữ.
+- Chỉ chuyển tiếp hợp đồng danh sách chuẩn.
+- trả sách chi tiết DTO khi thành công và ánh xạ chi tiết còn thiếu vào `404 USER_NOT_FOUND`.
 
-### Repository Tests
+### Kiểm tra kho lưu trữ
 
-- Return only the explicit allowlist and use `phoneNumber`.
-- Keep roles uppercase and alphabetically ordered.
-- Keep list order stable and search limited to email, full name, and user ID.
-- Keep `relatedSummary` absent from list/readback responses.
-- Return all three detail aggregates with deterministic zero defaults.
-- Verify aggregate status predicates match FE07, FE08, and FE09 semantics.
-- Seed or mock a row containing password, token, session, setup-link, and audit-secret fields and prove none appear in the mapped response.
-- Verify query inputs are parameterized.
+- Chỉ trả sách danh sách cho phép rõ ràng và sử dụng `phoneNumber`.
+- Giữ vai trò viết hoa và sắp xếp theo thứ tự bảng chữ cái.
+- Giữ thứ tự danh sách ổn định và giới hạn tìm kiếm trong email, tên đầy đủ và ID người dùng.
+- Giữ `relatedSummary` vắng mặt trong danh sách/phản hồi đọc lại.
+- Trả về tất cả ba tập hợp chi tiết với giá trị mặc định bằng 0 xác định.
+- Xác minh các vị từ trạng thái tổng hợp khớp với ngữ nghĩa FE07, FE08 và FE09.
+- Tạo hoặc mô phỏng một hàng chứa các trường mật khẩu, mã thông báo, phiên, liên kết thiết lập và bí mật kiểm tra và chứng minh rằng không có trường nào xuất hiện trong phản hồi được ánh xạ.
+- Xác minh đầu vào truy vấn được tham số hóa.
 
-### Frontend Tests
+### Kiểm tra giao diện người dùng
 
-- Omit `ALL` filters and empty search from list requests.
-- Render `phoneNumber` in the table and detail drawer.
-- Request detail when a row is selected and render all summary values.
-- Keep the drawer closed on failure.
-- Reload the list after a detail `404`.
+- Bỏ qua bộ lọc `ALL` và tìm kiếm trống khỏi các yêu cầu danh sách.
+- Kết xuất `phoneNumber` trong bảng và ngăn chi tiết.
+- Yêu cầu chi tiết khi một hàng được chọn và hiển thị tất cả các giá trị tóm tắt.
+- Giữ ngăn kéo đóng lại khi thất bại.
+- Tải lại danh sách sau một chi tiết `404`.
 
-### Regression Validation
+### Xác thực hồi quy
 
-- Focused FE11 backend and frontend tests.
-- Full backend test suite and coverage.
-- Frontend lint, tests, and production build.
-- Traceability enforcement.
-- `git diff --check` and credential-pattern review.
-- SQL-backed aggregate verification when SQL Server is available; otherwise record it as residual integration evidence rather than claiming it passed.
+- Các kiểm thử máy chủ và giao diện người dùng FE11 tập trung.
+- Bộ kiểm tra máy chủ đầy đủ và phạm vi bảo hiểm.
+- giao diện kiểm tra mã, kiểm thử và xây dựng sản xuất.
+- Thực thi truy vết.
+- `git diff --check` và xem xét mẫu thông tin xác thực.
+- Xác minh tổng hợp được hỗ trợ bởi SQL khi SQL Server khả dụng; nếu không thì hãy ghi lại nó dưới dạng bằng chứng tích hợp còn sót lại thay vì tuyên bố nó đã được thông qua.
 
-## 13. Documentation And Traceability
+## 13. Tài liệu và truy vết
 
-When implementation begins:
+Khi bắt đầu triển khai:
 
-- Add a separately reviewable list/detail task group to FE11 `PLAN.md` and `TASKS.md`.
-- Keep the whole-feature implementation state accurate; this bounded slice does not complete FE11.
-- Update FE11 `TEST_PLAN.md` and `CHANGELOG.md`.
-- Add `@spec` tags for `FR-FE11-001`, `FR-FE11-002`, `FR-FE11-015`, and `FR-FE11-016` at the relevant validation, service, and repository branches.
-- Narrow `TD-014` and `TD-015` only for the list/detail evidence actually completed.
-- Keep `TD-012` open and explicitly state that no librarian-field schema migration occurred.
-- Do not expand this slice into a traceability-checker policy change.
+- Thêm nhóm nhiệm vụ chi tiết/danh sách có thể xem lại riêng vào FE11 `PLAN.md` và `TASKS.md`.
+- Giữ trạng thái triển khai toàn bộ chức năng chính xác; lát cắt giới hạn này không hoàn thành FE11.
+- Cập nhật FE11 `TEST_PLAN.md` và `CHANGELOG.md`.
+- Thêm thẻ `@spec` cho `FR-FE11-001`, `FR-FE11-002`, `FR-FE11-015` và `FR-FE11-016` tại các nhánh xác thực, dịch vụ và kho lưu trữ có liên quan.
+- Thu hẹp `TD-014` và `TD-015` chỉ dành cho danh sách/bằng chứng chi tiết thực sự đã hoàn thành.
+- Giữ `TD-012` mở và tuyên bố rõ ràng rằng không có sự di chuyển lược đồ trường thủ thư nào xảy ra.
+- Không mở rộng lát cắt này thành thay đổi chính sách của trình kiểm tra truy vết.
 
-## 14. Risks And Mitigations
+## 14. Rủi ro và giảm thiểu
 
-| Risk | Mitigation |
+| Rủi ro | Giảm nhẹ |
 | --- | --- |
-| Broad row mapping exposes a future credential column | Construct the DTO from an explicit field allowlist and test hostile extra columns. |
-| Detail aggregates make every list row expensive | Keep aggregates detail-only and use one query for one selected user. |
-| UI sends `ALL` or empty search and strict validation breaks current behavior | Omit UI sentinels before making the request. |
-| Existing consumers still read `phone` | Migrate every FE11 list/detail/edit initialization read to `phoneNumber`; keep request payload naming unchanged. |
-| Detail-only summaries leak into mutation readback | Use a dedicated detail repository operation rather than changing general readback shape. |
-| FE07 persisted/derived status drift causes incorrect counts | Count only persisted `BORROWED`, matching the approved FE07 definition. |
-| Missing librarian fields are represented inaccurately | Omit them and retain `TD-012`; do not fabricate null placeholders. |
-| SQL Server is unavailable in CI | Unit-test mapper/query contracts and record SQL-backed aggregate validation as an explicit residual gap. |
+| Ánh xạ hàng rộng hiển thị cột thông tin xác thực trong tương lai | Xây dựng DTO từ danh sách cho phép trường rõ ràng và kiểm tra các cột bổ sung thù địch. |
+| Tổng hợp chi tiết làm cho mỗi hàng danh sách trở nên đắt đỏ | Chỉ giữ các thông tin tổng hợp chi tiết và sử dụng một truy vấn cho một người dùng đã chọn. |
+| Giao diện người dùng gửi `ALL` hoặc tìm kiếm trống và xác thực nghiêm ngặt sẽ phá vỡ hành vi hiện tại | Bỏ qua các điểm kiểm soát giao diện người dùng trước khi thực hiện yêu cầu. |
+| Người tiêu dùng hiện tại vẫn đọc `phone` | Di chuyển mọi khởi tạo danh sách/chi tiết/chỉnh sửa FE11 sang `phoneNumber`; giữ nguyên việc đặt tên tải trọng yêu cầu. |
+| Các bản tóm tắt chỉ chi tiết bị rò rỉ khi đọc lại thao tác ghi | Sử dụng thao tác kho lưu trữ chi tiết chuyên dụng thay vì thay đổi hình dạng đọc lại chung. |
+| FE07 tồn tại/trôi trạng thái dẫn xuất khiến số lượng không chính xác | Số lượng chỉ tồn tại `BORROWED`, phù hợp với định nghĩa FE07 đã được phê duyệt. |
+| Các trường thủ thư bị thiếu được trình bày không chính xác | Bỏ qua chúng và giữ lại `TD-012`; không tạo ra các phần giữ chỗ rỗng. |
+| SQL Server không có sẵn trong CI | Các hợp đồng truy vấn/ ánh xạ kiểm thử đơn vị và ghi lại xác thực tổng hợp được hỗ trợ bởi SQL dưới dạng khoảng trống còn lại rõ ràng. |
 
-## 15. Definition Of Done
+## 15. Định nghĩa xong
 
-This slice is complete only when:
+Phần này chỉ hoàn thành khi:
 
-- List and detail endpoints return only the approved safe fields.
-- `phoneNumber` replaces `phone` in FE11 managed-user responses and consumers.
-- Invalid list/detail inputs are rejected instead of clamped or broadened.
-- List search and ordering match the approved FE11 contract.
-- Detail returns the three deterministic aggregates and missing users return `404 USER_NOT_FOUND`.
-- The frontend fetches and renders real detail data.
-- Route, service, repository, and frontend RED-GREEN tests pass.
-- Full regression, traceability, diff, and credential checks pass or any unavailable SQL evidence is explicitly reported.
-- FE11 planning, task state, test plan, changelog, and technical debt are synchronized.
-- A human reviews the implementation and validation evidence.
+- Điểm cuối danh sách và chi tiết chỉ trả về các trường an toàn đã được phê duyệt.
+- `phoneNumber` thay thế `phone` trong phản hồi của người dùng và người tiêu dùng được quản lý FE11.
+- Danh sách/chi tiết đầu vào không hợp lệ sẽ bị từ chối thay vì được kẹp hoặc mở rộng.
+- Danh sách tìm kiếm và đặt hàng phù hợp với hợp đồng FE11 đã được phê duyệt.
+- Chi tiết trả về ba tập hợp xác định và người dùng bị thiếu trả về `404 USER_NOT_FOUND`.
+- Giao diện người dùng tìm nạp và hiển thị dữ liệu chi tiết thực.
+- Các kiểm thử RED-GREEN về tuyến đường, dịch vụ, kho lưu trữ và giao diện người dùng đã vượt qua.
+- Kiểm tra hồi quy, truy vết, khác biệt và thông tin xác thực đầy đủ hoặc bất kỳ bằng chứng SQL không có sẵn nào đều được báo cáo rõ ràng.
+- FE11 lập kế hoạch, trạng thái nhiệm vụ, kế hoạch kiểm thử, nhật ký thay đổi và nợ kỹ thuật được đồng bộ hóa.
+- Một con người đánh giá việc thực hiện và bằng chứng xác nhận.

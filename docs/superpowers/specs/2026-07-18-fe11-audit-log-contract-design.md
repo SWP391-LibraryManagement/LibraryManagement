@@ -1,40 +1,47 @@
-# FE11 Audit Log Contract Design
+# FE11 Nhật ký kiểm toán Thiết kế hợp đồng
 
-Status: APPROVED BY HUMAN - 2026-07-18
+Trạng thái: ĐƯỢC PHÊ DUYỆT BỞI HUMAN - 2026-07-18
 
-Date: 2026-07-18
+Ngày: 2026-07-18
 
-Scope: `TD-024`, `FR-FE11-033`, `AC-FE11-018`, `BR-FE11-018`, and `BR-FE11-026`
+Phạm vi: `TD-024`, `FR-FE11-033`, `AC-FE11-018`, `BR-FE11-018` và `BR-FE11-026`
 
-## Decision Requested
+## Quyết định được yêu cầu
 
-Approve one Admin-owned, read-only endpoint over the cross-feature `AuditLogs` store. Migrate the Admin UI to the canonical endpoint, retire the prototype user-management route, and project metadata through an action-aware default-deny boundary.
+Phê duyệt một điểm cuối chỉ đọc, do quản trị viên sở hữu trên cửa hàng `AuditLogs` có nhiều chức
+năng. Di chuyển Giao diện người dùng quản trị sang điểm cuối chuẩn, ngừng tuyến quản lý người dùng
+nguyên mẫu và siêu dữ liệu dự án thông qua ranh giới từ chối mặc định nhận biết hành động.
 
-## Canonical Endpoint
+## Điểm cuối chuẩn
 
 `GET /api/admin/audit-logs`
 
-Authentication and Admin-role authorization remain server-side and run before detailed query validation. Account-status revalidation is not added by this slice because the current authentication boundary does not provide it and H1 does not authorize an authentication expansion.
+Xác thực và ủy quyền vai trò quản trị viên vẫn ở phía máy chủ và chạy trước khi xác thực truy vấn
+chi tiết. Phần này không thêm chức năng xác thực lại trạng thái tài khoản vì ranh giới xác thực hiện
+tại không cung cấp chức năng này và H1 không cho phép mở rộng xác thực.
 
-## Row Scope
+## Phạm vi hàng
 
-The endpoint returns all persisted cross-feature `AuditLogs` rows in stable order. It does not silently hide authentication, profile, membership, borrowing, reservation, inventory, fine, notification, reporting, or FE11 events. Admin may narrow the result with the `action` filter.
+Điểm cuối trả về tất cả các hàng `AuditLogs` có chức năng chéo được duy trì theo thứ tự ổn định. Nó
+không âm thầm che giấu các sự kiện xác thực, hồ sơ, tư cách thành viên, mượn, đặt chỗ, kiểm kê,
+khoản phạt, thông báo, báo cáo hoặc FE11. Quản trị viên có thể thu hẹp kết quả bằng bộ lọc `action`.
 
-## Query Contract
+## Hợp đồng truy vấn
 
-| Field | Contract |
+| Lĩnh vực | Hợp đồng |
 | --- | --- |
-| `page` | Optional positive integer; default `1` |
-| `limit` | Optional integer `1..100`; default `20` |
-| `q` | Optional trimmed string, `1..100` characters; searches action, actor email/full name, target type, and target ID text |
-| `action` | Optional trimmed exact action string, `1..100` characters |
-| `actorId` | Optional positive integer |
-| `from` | Optional ISO `YYYY-MM-DD` inclusive lower bound |
-| `to` | Optional ISO `YYYY-MM-DD` inclusive upper bound; must not precede `from` |
+| `page` | Số nguyên dương tùy chọn; mặc định `1` |
+| `limit` | Số nguyên tùy chọn `1..100`; mặc định `20` |
+| `q` | Chuỗi tùy chọn đã trim, `1..100` ký tự; tìm kiếm hành động, email/tên đầy đủ của tác nhân, loại mục tiêu và văn bản ID mục tiêu |
+| `action` | Chuỗi hành động chính xác được cắt bớt tùy chọn, ký tự `1..100` |
+| `actorId` | Số nguyên dương tùy chọn |
+| `from` | Tùy chọn ISO `YYYY-MM-DD` bao gồm giới hạn dưới |
+| `to` | Giới hạn trên bao gồm ISO `YYYY-MM-DD` tùy chọn; không được đặt chỗ `from` |
 
-Invalid supplied values return HTTP `400` with code `VALIDATION_ERROR`. Authorization precedes detailed validation. Query names remain exactly aligned with the approved FE11 SPEC.
+Giá trị được cung cấp không hợp lệ trả về HTTP `400` với mã `VALIDATION_ERROR`. Ủy quyền đi trước
+xác nhận chi tiết. Tên truy vấn vẫn được căn chỉnh chính xác với FE11 SPEC đã được phê duyệt.
 
-## Response Contract
+## Hợp đồng phản hồi
 
 ```json
 {
@@ -53,17 +60,19 @@ Invalid supplied values return HTTP `400` with code `VALIDATION_ERROR`. Authoriz
 }
 ```
 
-`totalPages` is `0` when `total` is `0`; otherwise it is `ceil(total / limit)`.
+`totalPages` là `0` khi `total` là `0`; nếu không thì đó là `ceil(total / limit)`.
 
-## Action-Aware Safe Projection
+## Chiếu an toàn nhận biết hành động
 
-Raw `Metadata` is never returned. The service parses only a top-level JSON object and constructs `details` explicitly. Invalid JSON, arrays, scalar metadata, unknown actions, or invalid field shapes produce `details: {}`.
+`Metadata` thô không bao giờ được trả sách. Dịch vụ chỉ phân tích cú pháp đối tượng JSON cấp cao
+nhất và xây dựng `details` một cách rõ ràng. JSON không hợp lệ, mảng, siêu dữ liệu vô hướng, hành
+động không xác định hoặc hình dạng trường không hợp lệ tạo ra `details: {}`.
 
-| Actions | Returned `details` |
+| Hành động | Đã trả sách `details` |
 | --- | --- |
 | `AUTH_PASSWORD_CHANGE_FAILURE`, `AUTH_VERIFY_EMAIL`, `AUTH_LOGIN_LOCKED`, `AUTH_ACCOUNT_AUTO_UNLOCKED`, `AUTH_LOGIN_INACTIVE`, `AUTH_LOGIN_FAILURE`, `AUTH_LOGIN_SUCCESS`, `AUTH_REFRESH_TOKEN`, `AUTH_LOGOUT`, `AUTH_PASSWORD_CHANGE_SUCCESS`, `AUTH_CHANGE_PASSWORD_OTP_REQUESTED`, `AUTH_PASSWORD_RESET_SUCCESS`, `AUTH_REGISTER`, `AUTH_RESEND_VERIFICATION`, `AUTH_PASSWORD_RESET_REQUEST`, `AUTH_LOGIN_ATTEMPT`, `AUTH_ACCOUNT_SETUP_COMPLETE`, `USER_ACCOUNT_SETUP_RESEND` | `{}` |
-| `USER_CREATE` | `{ roleName }`; persisted email is omitted |
-| `USER_UPDATE` | `{ changedFields }`; only `email`, `fullName`, `phone`, `address`, `department`, `specialization`, and `status` are retained |
+| `USER_CREATE` | `{ roleName }`; email liên tục bị bỏ qua |
+| `USER_UPDATE` | `{ changedFields }`; chỉ `email`, `fullName`, `phone`, `address`, `department`, `specialization` và `status` được giữ lại |
 | `USER_DEACTIVATE` | `{ newStatus }` |
 | `USER_ROLE_ASSIGN`, `USER_ROLE_REVOKE` | `{ roleId, roleName }` |
 | `BORROW_REQUEST_CREATE` | `{ copyIds }` |
@@ -81,55 +90,67 @@ Raw `Metadata` is never returned. The service parses only a top-level JSON objec
 | `FINE_MARK_PAID` | `{ amount, noteProvided }` |
 | `FINE_WAIVE`, `FINE_CANCEL` | `{ reasonProvided }` |
 | `BOOK_COPY_CREATE` | `{ bookId, barcode, status, location }` |
-| `BOOK_COPY_UPDATE` | `{ bookId, changedFields }`, plus `previousStatus` and `newStatus` only when status changed; raw `before`, `patch`, book, title, and ISBN data are omitted |
+| `BOOK_COPY_UPDATE` | `{ bookId, changedFields }`, chỉ cộng thêm `previousStatus` và `newStatus` khi trạng thái thay đổi; dữ liệu `before`, `patch`, sách, tiêu đề và ISBN thô bị bỏ qua |
 | `BOOK_COPY_STATUS_UPDATE` | `{ previousStatus, newStatus, reasonProvided }` |
 | `BOOK_COPY_DEACTIVATE` | `{ previousStatus, newStatus }` |
 | `MEMBERSHIP_APPLICATION_SUBMITTED`, `MEMBERSHIP_APPLICATION_APPROVED` | `{ userId, status }` |
 | `MEMBERSHIP_APPLICATION_REJECTED` | `{ userId, status, reasonProvided }` |
-| `PROFILE_UPDATE` | `{ changedFields }`; only `fullName`, `address`, `dateOfBirth`, `avatarUrl`, and `phone` are retained |
-| `REPORT_BORROWING_VIEW`, `REPORT_INVENTORY_VIEW`, `REPORT_USERS_VIEW` | `{ reportType }`, derived from the action |
-| `REPORT_ACCESS_DENIED` | `{ code, statusCode, method, reportType? }`; raw path is omitted and only known report paths map to `reportType` |
-| `NOTIFICATION_REQUEST_CREATE` | `{ type, channel, sourceFeature, sourceEntityType, sourceEntityId? }`; `sourceEntityId` is omitted when `sourceEntityType` is `AuthToken` |
+| `PROFILE_UPDATE` | `{ changedFields }`; chỉ `fullName`, `address`, `dateOfBirth`, `avatarUrl` và `phone` được giữ lại |
+| `REPORT_BORROWING_VIEW`, `REPORT_INVENTORY_VIEW`, `REPORT_USERS_VIEW` | `{ reportType }`, bắt nguồn từ hành động |
+| `REPORT_ACCESS_DENIED` | `{ code, statusCode, method, reportType? }`; đường dẫn thô bị bỏ qua và chỉ các đường dẫn báo cáo đã biết ánh xạ tới `reportType` |
+| `NOTIFICATION_REQUEST_CREATE` | `{ type, channel, sourceFeature, sourceEntityType, sourceEntityId? }`; `sourceEntityId` bị bỏ qua khi `sourceEntityType` là `AuthToken` |
 | `NOTIFICATION_RETRY` | `{ previousStatus, newStatus }` |
 | `NOTIFICATION_PROCESS_PENDING` | `{ processed, failed }` |
 
-Arrays are capped at 100 values. IDs must be positive integers. Counts and monetary values must be finite nonnegative numbers. Dates must normalize to ISO strings. Free-text `reason`, `notes`, `note`, message, email, identifier, raw path, and nested objects are never returned; only the corresponding `reasonProvided`, `notesProvided`, or `noteProvided` boolean may be emitted.
+Mảng được giới hạn ở 100 giá trị. ID phải là số nguyên dương. Số lượng và giá trị tiền tệ phải là số
+hữu hạn không âm. Ngày phải chuẩn hóa thành chuỗi ISO. Văn bản tự do `reason`, `notes`, `note`, tin
+nhắn, email, mã định danh, đường dẫn thô và các đối tượng lồng nhau không bao giờ được trả về; chỉ
+có thể phát ra boolean `reasonProvided`, `notesProvided` hoặc `noteProvided` tương ứng.
 
-After action projection, a recursive veto removes any key matching password, hash, token, OTP, authorization, cookie, secret, session, credential, API-key, setup-link, or reset-link concepts.
+Sau khi chiếu hành động, quyền phủ quyết đệ quy sẽ loại bỏ mọi khái niệm về mật khẩu, hàm băm, mã
+thông báo, OTP, ủy quyền, cookie, bí mật, phiên, thông tin xác thực, khóa API, liên kết thiết lập
+hoặc liên kết lại.
 
-## Ordering And SQL Boundary
+## Đặt hàng và ranh giới SQL
 
-- Stable order is `CreatedAt DESC, LogId DESC`.
-- Pagination and every filter are applied in SQL.
-- All query values use typed `mssql` parameters.
-- Search never concatenates request text into SQL.
-- Actor and target display labels come from the approved joins, not metadata.
+- Thứ tự ổn định là `CreatedAt DESC, LogId DESC`.
+- Phân trang và mọi bộ lọc được áp dụng trong SQL.
+- Tất cả các giá trị truy vấn đều sử dụng tham số `mssql` đã nhập.
+- Tìm kiếm không bao giờ ghép văn bản yêu cầu vào SQL.
+- Nhãn hiển thị tác nhân và mục tiêu đến từ các kết nối được phê duyệt chứ không phải siêu dữ liệu.
 
-## Legacy Route Retirement
+## Tuyến đường kế thừa
 
-The Admin frontend migrates to `/api/admin/audit-logs`. `GET /api/users/audit-logs` becomes a retired non-functional path that returns HTTP `404` with code `NOT_FOUND` and never invokes the user-management or audit service. This explicit retirement guard prevents the path from falling through to dynamic `/:userId` validation and returning an incorrect `400`.
+Giao diện Quản trị viên di chuyển sang `/api/admin/audit-logs`. `GET /api/users/audit-logs` trở
+thành một đường dẫn không có chức năng đã ngừng hoạt động, trả về HTTP `404` với mã `NOT_FOUND` và
+không bao giờ gọi dịch vụ kiểm tra hoặc quản lý người dùng. Trình bảo vệ hưu trí rõ ràng này ngăn
+đường dẫn đi qua xác thực `/:userId` động và trả về `400` không chính xác.
 
-## Tests Required After H1
+## Các xét nghiệm cần thiết sau H1
 
-- Authentication and Admin authorization run before detailed validation.
-- Invalid page/limit/q/action/actor/date boundaries return `VALIDATION_ERROR`.
-- `from <= to` validation.
-- Stable pagination/order and typed SQL parameters.
-- `q` and every filter work independently and in combination.
-- Every current action projector has positive, malformed-shape, and hostile-key coverage.
-- Unknown actions and invalid JSON return empty details.
-- Raw notes/reasons/emails/identifiers/token IDs and nested objects are absent.
-- Frontend uses the canonical endpoint, omits empty queries, wires filters, and renders only projected fields.
-- Legacy route returns `404 NOT_FOUND` and invokes no service.
+- Xác thực và ủy quyền quản trị viên chạy trước khi xác thực chi tiết.
+- Ranh giới trang/giới hạn/q/hành động/tác nhân/ngày không hợp lệ trả về `VALIDATION_ERROR`.
+- Xác thực `from <= to`.
+- Ổn định phân trang/thứ tự và gõ các thông số SQL.
+- `q` và mọi bộ lọc hoạt động độc lập và kết hợp.
+- Mọi máy chiếu hành động hiện tại đều có độ bao phủ tích cực, hình dạng không đúng định dạng và khóa thù địch.
+- Hành động không xác định và JSON không hợp lệ trả về chi tiết trống.
+- Không có ghi chú thô/lý do/email/số nhận dạng/ID mã thông báo và các đối tượng lồng nhau.
+- Giao diện người dùng sử dụng điểm cuối chuẩn, bỏ qua các truy vấn trống, bộ lọc dây và chỉ hiển thị các trường được chiếu.
+- Tuyến kế thừa trả về `404 NOT_FOUND` và không gọi dịch vụ nào.
 
-## File Ownership Clarification
+## Làm rõ quyền sở hữu tệp
 
-`frontend/test/adminApi.test.js` owns the direct `frontend/src/api/adminApi.js` endpoint/query contract. `frontend/test/userManagementApi.test.js` owns removal of the legacy user-management API call. `frontend/test/userManagementFrontend.test.js` owns filter and rendering behavior.
+`frontend/test/adminApi.test.js` sở hữu hợp đồng truy vấn/điểm cuối `frontend/src/api/adminApi.js`
+trực tiếp. `frontend/test/userManagementApi.test.js` sở hữu việc loại bỏ lệnh gọi API quản lý người
+dùng cũ. `frontend/test/userManagementFrontend.test.js` sở hữu hành vi lọc và kết xuất.
 
-## Out Of Scope
+## Ngoài phạm vi
 
-- Audit writes, audit deletion/update, export, schema changes, dashboard analytics, changing writer metadata quality, returning raw free-text reasons/notes, and changing authentication account-status enforcement.
+- Kiểm tra ghi, xóa/cập nhật kiểm tra, xuất, thay đổi lược đồ, phân tích trang tổng quan, thay đổi chất lượng siêu dữ liệu của người viết, trả về lý do/ghi chú văn bản tự do thô và thay đổi việc thực thi trạng thái tài khoản xác thực.
 
-## H1 Recommendation
+## Khuyến nghị H1
 
-Approve the contract exactly as written. Any compatibility alias, hidden default action filter, raw metadata/free-text exposure, query-name change, or authentication expansion requires an explicit H1 revision before implementation.
+Phê duyệt hợp đồng đúng như đã viết. Bất kỳ bí danh tương thích, bộ lọc hành động mặc định ẩn, hiển
+thị siêu dữ liệu/văn bản tự do thô, thay đổi tên truy vấn hoặc mở rộng xác thực đều yêu cầu bản sửa
+đổi H1 rõ ràng trước khi triển khai.

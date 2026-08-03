@@ -26,11 +26,11 @@ Không chỉnh các tệp ngoài bốn thư mục trên trong lượt triển kh
 Các thành phần sau phải được giữ nguyên:
 
 - Tất cả mã yêu cầu và mã truy vết như `BR-*`, `FR-*`, `AC-*`, `PRE-*`, `NFR-*`, `MF-*`, `AF-*`, `Q-*`, `UC*` và mã nhiệm vụ.
-- Tên endpoint, phương thức HTTP, tên trường, bảng, cột, enum, mã lỗi và đoạn nằm trong dấu backtick.
-- Số phiên bản, ngày tháng, số lượng kiểm thử, phần trăm coverage, PR, commit, CI, Azure run và URL.
+- Tên điểm cuối, phương thức HTTP, tên trường, bảng, cột, giá trị liệt kê, mã lỗi và đoạn nằm trong dấu backtick.
+- Số phiên bản, ngày tháng, số lượng kiểm thử, phần trăm coverage, PR, bản ghi Git, CI, Azure lượt chạy và URL.
 - Trạng thái checkbox, trạng thái hoàn thành, ma trận truy vết và quan hệ giữa các yêu cầu.
 - Quy tắc nghiệp vụ, quyền tác nhân, điều kiện tiên quyết, luồng chính, luồng thay thế, ngoại lệ và phạm vi ngoài chức năng.
-- Cấu trúc bảng, code fence, đường dẫn tệp và lệnh kiểm tra.
+- Cấu trúc bảng, hàng rào mã, đường dẫn tệp và lệnh kiểm tra.
 
 Không được thêm tuyên bố hoàn thành mới hoặc làm mạnh hơn bằng chứng hiện có.
 
@@ -54,7 +54,7 @@ Việc thay từ phải dựa vào ngữ cảnh, không thay hàng loạt một 
 | `có thẩm quyền` | chính thức, do máy chủ quyết định, là nguồn chuẩn |
 | `bề mặt` | giao diện, phần hiển thị, API công khai |
 | `closeout` | hoàn tất, đóng hồ sơ, hồ sơ hoàn tất |
-| `exact-head` | trên đúng commit |
+| `exact-head` | trên đúng bản ghi Git |
 | `wave` | đợt |
 | `shell` | phần giao diện hoặc khung ứng dụng |
 | `core` | phần nghiệp vụ cốt lõi |
@@ -68,7 +68,9 @@ Việc thay từ phải dựa vào ngữ cảnh, không thay hàng loạt một 
 | `provider` | nhà cung cấp |
 | `worker` | tiến trình xử lý nền |
 
-Các thuật ngữ phổ biến và có nghĩa chính xác như API, SQL, CI, frontend, backend, commit, token và payload có thể được giữ khi dịch sẽ làm câu khó hiểu hơn. Khi dùng trong văn xuôi, câu phải giải thích đủ để người đọc không chuyên vẫn theo dõi được.
+Các thuật ngữ phổ biến và có nghĩa chính xác như API, SQL, CI, giao diện, máy chủ, bản ghi Git, token và
+dữ liệu gửi có thể được giữ khi dịch sẽ làm câu khó hiểu hơn. Khi dùng trong văn xuôi, câu phải giải
+thích đủ để người đọc không chuyên vẫn theo dõi được.
 
 ### 4.3 Cấu trúc câu
 
@@ -93,19 +95,20 @@ Các thuật ngữ phổ biến và có nghĩa chính xác như API, SQL, CI, fr
 - Cả 24 tệp nằm trong phạm vi đã được rà soát.
 - Không còn các cụm dịch sát chữ đã xác định trong văn xuôi, trừ trường hợp được giữ có chủ ý và giải thích được.
 - `mượn`, `đặt chỗ`, `hạn trả` và tên vai trò được dùng nhất quán.
-- Tập mã truy vết, literal trong backtick, URL, số liệu, code fence và checkbox không thay đổi so với `origin/main@194dcf63768b87657c1d9c49fb064bbcc5d8e5d8`.
+- Tập mã truy vết, giá trị nguyên văn trong backtick, URL, số liệu, hàng rào mã và checkbox không thay đổi so với `origin/main@194dcf63768b87657c1d9c49fb064bbcc5d8e5d8`.
 - `git diff --check` đạt.
 - `npm run trace:enforce` đạt cho FE07, FE08, FE10 và FE12.
-- Diff cuối chỉ chứa thay đổi tài liệu trong phạm vi đã duyệt cùng design/plan của đợt này.
+- khác biệt cuối chỉ chứa thay đổi tài liệu trong phạm vi đã duyệt cùng thiết kế/kế hoạch của đợt này.
 
 ## 7. Rủi ro và biện pháp kiểm soát
 
 - **Đổi nghĩa quy tắc khi rút gọn câu:** so sánh từng đoạn với bản gốc và kiểm tra lại ID liên quan.
-- **Làm sai literal kỹ thuật:** kiểm tra tự động tập literal trong backtick và các mã truy vết trước/sau.
+- **Làm sai giá trị nguyên văn kỹ thuật:** kiểm tra tự động tập giá trị nguyên văn trong backtick và các mã truy vết trước/sau.
 - **Thay thuật ngữ không đúng ngữ cảnh:** chỉnh theo câu và theo chức năng, không dùng replace toàn cục không kiểm soát.
-- **Làm mất bằng chứng lịch sử:** giữ nguyên mọi commit, PR, CI, Azure run, số liệu và trạng thái.
+- **Làm mất bằng chứng lịch sử:** giữ nguyên mọi bản ghi Git, PR, CI, Azure lượt chạy, số liệu và trạng thái.
 - **Phạm vi tăng ngoài kiểm soát:** không chỉnh tài liệu của FE khác trong cùng PR.
 
 ## 8. Ranh giới phê duyệt
 
-Tài liệu này chỉ phê duyệt thay đổi văn phong. Mọi phát hiện cho thấy cần đổi quy tắc nghiệp vụ, API, schema, quyền hoặc tuyên bố hoàn thành phải dừng lại và được xử lý trong một đặc tả riêng.
+Tài liệu này chỉ phê duyệt thay đổi văn phong. Mọi phát hiện cho thấy cần đổi quy tắc nghiệp vụ,
+API, lược đồ, quyền hoặc tuyên bố hoàn thành phải dừng lại và được xử lý trong một đặc tả riêng.

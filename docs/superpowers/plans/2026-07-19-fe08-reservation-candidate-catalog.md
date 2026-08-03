@@ -1,70 +1,81 @@
-# FE08 Reservation Candidate Catalog Implementation Plan
+# FE08 Kế hoạch triển khai danh mục ứng viên đặt chỗ
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:executing-plans` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Đối với nhân viên đại lý:** BẮT BUỘC SUB-SKILL: Sử dụng `superpowers:executing-plans` để triển khai kế hoạch này theo từng nhiệm vụ. Các bước sử dụng cú pháp hộp kiểm (`- [ ]`) để theo dõi.
 
-**Goal:** Replace FE08's hardcoded `DEMO_RESERVABLE` catalog with a member-only, SQL-backed candidate API while preserving the approved `POST /api/reservations { copyId }` mutation contract.
+**Mục tiêu:** Thay thế danh mục `DEMO_RESERVABLE` được mã hóa cứng của FE08 bằng một ứng cử viên SQL
+được API hỗ trợ chỉ dành cho thành viên trong khi vẫn duy trì hợp đồng thao tác ghi `POST
+/api/reservations { copyId }` đã được phê duyệt.
 
-**Architecture:** Add a read-only `/api/reservations/candidates` route through the existing FE08 validator/controller/service/repository stack. The repository returns one safe projection per `BORROWED` or `RESERVED` copy belonging to an active book, with server-owned search and pagination. The member page consumes that envelope; the existing create mutation remains authoritative for eligibility and race checks.
+**Kiến trúc:** Thêm tuyến `/api/reservations/candidates` chỉ đọc thông qua bộ công nghệ trình xác
+thực/bộ điều khiển/dịch vụ/kho lưu trữ FE08 hiện có. Kho lưu trữ trả về một phép chiếu an toàn cho
+mỗi bản sao `BORROWED` hoặc `RESERVED` thuộc về một cuốn sách đang hoạt động, với chức năng tìm kiếm
+và phân trang do máy chủ sở hữu. Trang thành viên sử dụng phong bì đó; thao tác ghi tạo hiện tại vẫn có
+thẩm quyền để kiểm tra tính đủ điều kiện và chủng tộc.
 
-**Tech Stack:** Node.js, Express, `express-validator`, `mssql`, Jest/Supertest, React, Axios, Node test runner, Playwright, SQL Server.
+**bộ công nghệ công nghệ:** Node.js, Express, `express-validator`, `mssql`, Jest/Supertest, React,
+Axios, Trình chạy kiểm thử nút, Playwright, SQL Server.
 
-## Global Constraints
+## Ràng buộc toàn cầu
 
-- Keep `POST /api/reservations` target as physical `CopyId`; do not add `bookId` mutation support.
-- Candidate reads require authentication and the `MEMBER` role; FE01 public browse and FE06 staff copy reads remain unchanged.
-- Return only `copyId`, `bookId`, `title`, `authorName`, `copyStatus`, and `activeReservationCount`.
-- Never return barcode, location, owner, email, timestamps, or version values.
-- Return only active-book copies whose status is `BORROWED` or `RESERVED`.
-- Use parameterized SQL, no schema migration, no audit write, no notification write, and no mutation lock in the candidate read path.
-- Use query defaults `q = ''`, `page = 1`, `limit = 20`; enforce `page >= 1` and `1 <= limit <= 100`.
-- Order by `Book.Title ASC`, `Book.BookId ASC`, `BookCopy.CopyId ASC`.
-- Preserve existing safe generic `401`, `403`, and `400` envelopes.
-- Keep `DEMO_BORROW_CATALOG` unchanged; remove only `DEMO_RESERVABLE`.
-- Do not mark `TD-028` resolved until focused tests, SQL validation, browser acceptance, traceability, safety checks, and evidence documentation pass.
+- Giữ mục tiêu `POST /api/reservations` làm `CopyId` vật lý; không thêm hỗ trợ thao tác ghi `bookId`.
+- Việc đọc ứng viên yêu cầu xác thực và vai trò `MEMBER`; Trình duyệt công khai FE01 và số lần đọc bản sao của nhân viên FE06 không thay đổi.
+- Chỉ trả sách `copyId`, `bookId`, `title`, `authorName`, `copyStatus` và `activeReservationCount`.
+- Không bao giờ trả sách giá trị mã vạch, vị trí, chủ sở hữu, email, dấu thời gian hoặc phiên bản.
+- Chỉ trả sách các bản sao sách đang hoạt động có trạng thái là `BORROWED` hoặc `RESERVED`.
+- Sử dụng SQL được tham số hóa, không di chuyển lược đồ, không ghi kiểm tra, không ghi thông báo và không khóa thao tác ghi trong đường dẫn đọc ứng viên.
+- Sử dụng mặc định truy vấn `q = ''`, `page = 1`, `limit = 20`; thực thi `page >= 1` và `1 <= limit <= 100`.
+- Đặt hàng theo `Book.Title ASC`, `Book.BookId ASC`, `BookCopy.CopyId ASC`.
+- Bảo tồn các phong bì chung `401`, `403` và `400` chung an toàn hiện có.
+- Giữ nguyên `DEMO_BORROW_CATALOG`; chỉ xóa `DEMO_RESERVABLE`.
+- Không đánh dấu `TD-028` đã được giải quyết cho đến khi các kiểm thử tập trung, xác thực SQL, chấp nhận trình duyệt, truy vết, kiểm tra an toàn và tài liệu bằng chứng đã vượt qua.
 
 ---
 
-## Task 1: Lock FE08 requirements and traceability
+## Nhiệm vụ 1: Khóa các yêu cầu và truy vết của FE08
 
-**Files:**
-- Modify: `.sdd/specs/feat-reservation-management/SPEC.md`
-- Modify: `.sdd/specs/feat-reservation-management/PLAN.md`
-- Modify: `.sdd/specs/feat-reservation-management/TASKS.md`
-- Modify: `.sdd/specs/feat-reservation-management/CHANGELOG.md`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-reservation-management/SPEC.md`
+- Sửa đổi: `.sdd/specs/feat-reservation-management/PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-reservation-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-reservation-management/CHANGELOG.md`
 
-**Interfaces:**
-- Produces stable IDs used by implementation tests: `FR-FE08-029`, `AC-FE08-015`, `AC-FE08-016`, `NFR-FE08-SEC-004`, and `NFR-FE08-PERF-003`.
+**Giao diện:**
+- Tạo ID ổn định được sử dụng bởi các kiểm thử triển khai: `FR-FE08-029`, `AC-FE08-015`, `AC-FE08-016`, `NFR-FE08-SEC-004` và `NFR-FE08-PERF-003`.
 
-- [x] **Step 1: Add the candidate contract to SPEC.md.**
+- [x] **Bước 1: Thêm hợp đồng ứng viên vào SPEC.md.**
 
-Add the endpoint to the API table and add these stable requirements without changing existing FE08 lifecycle rules:
+Thêm điểm cuối vào bảng API và thêm các yêu cầu ổn định này mà không thay đổi các quy tắc vòng đời
+FE08 hiện có:
 
 ```markdown
-| FR-FE08-029 | Member reads a paginated candidate catalog from GET /api/reservations/candidates; rows contain one active-book BORROWED/RESERVED copy and safe book metadata, while POST /api/reservations remains authoritative. |
-| AC-FE08-015 | A member sees only copyId, bookId, title, authorName, copyStatus, and activeReservationCount; barcode, location, owner, email, timestamps, and version are absent. |
-| AC-FE08-016 | The member page uses the candidate endpoint for search and selection and does not import or render DEMO_RESERVABLE. |
-| NFR-FE08-SEC-004 | Candidate reads are member-only and expose no staff-only copy or reservation-owner metadata. |
-| NFR-FE08-PERF-003 | Candidate reads default to page 1 and limit 20, enforce page >= 1 and limit 1..100, and use deterministic title/book/copy ordering. |
+| FR-FE08-029 |Thành viên đọc danh mục ứng viên được phân trang từ các hàng GET /api/reservations/candidates; chứa một bản sao BORROWED/RESERVED của sách đang hoạt động và siêu dữ liệu sách an toàn, trong khi POST /api/reservations vẫn có thẩm quyền.|
+| AC-FE08-015 |Một thành viên chỉ nhìn thấy copyId, bookId, tiêu đề, authorName, copyStatus và activeReservationCount; không có mã vạch, vị trí, chủ sở hữu, email, dấu thời gian và phiên bản.|
+| AC-FE08-016 |Trang thành viên sử dụng điểm cuối ứng cử viên để tìm kiếm và lựa chọn và không nhập hoặc hiển thị DEMO_RESERVABLE.|
+| NFR-FE08-SEC-004 |Các lần đọc của ứng viên chỉ dành cho thành viên và không hiển thị siêu dữ liệu bản sao chỉ dành cho nhân viên hoặc chủ sở hữu đặt chỗ.|
+| NFR-FE08-PERF-003 |Ứng viên đọc mặc định ở trang 1 và giới hạn 20, thực thi trang >= 1 và giới hạn 1..100, đồng thời sử dụng thứ tự tiêu đề xác định/book/copy.|
 ```
 
-Document the response envelope `{ data, pagination }`, the eligible statuses, safe projection, advisory consistency, and no-schema-migration boundary.
+Ghi lại phong bì phản hồi `{ data, pagination }`, các trạng thái đủ điều kiện, dự báo an toàn, tính
+nhất quán của lời khuyên và ranh giới không di chuyển lược đồ.
 
-- [x] **Step 2: Update PLAN.md, TASKS.md, and CHANGELOG.md.**
+- [x] **Bước 2: Cập nhật PLAN.md, TASKS.md và CHANGELOG.md.**
 
-Add candidate catalog scope, exact implementation files, focused validation commands, atomic tasks, the 2026-07-19 user approval, and removal of `DEMO_RESERVABLE`.
+Thêm phạm vi danh mục ứng viên, tệp triển khai chính xác, lệnh xác thực tập trung, nhiệm vụ nguyên
+tử, phê duyệt của người dùng ngày 19 tháng 7 năm 2026 và xóa `DEMO_RESERVABLE`.
 
-- [x] **Step 3: Verify documentation traceability.**
+- [x] **Bước 3: Xác minh khả năng truy vết của tài liệu.**
 
-Run:
+Chạy:
 
 ```powershell
 git diff --check
 rg -n "FR-FE08-029|AC-FE08-015|AC-FE08-016|NFR-FE08-SEC-004|NFR-FE08-PERF-003" .sdd/specs/feat-reservation-management
 ```
 
-Expected: no whitespace errors; every new ID appears in the SPEC and its PLAN/TASKS traceability.
+Dự kiến: không có lỗi khoảng trắng; mọi ID mới đều xuất hiện trong SPEC và khả năng truy vết
+PLAN/TASKS của nó.
 
-- [x] **Step 4: Commit the source-of-truth update.**
+- [x] **Bước 4: Cam kết cập nhật nguồn gốc.**
 
 ```powershell
 git add .sdd/specs/feat-reservation-management/SPEC.md .sdd/specs/feat-reservation-management/PLAN.md .sdd/specs/feat-reservation-management/TASKS.md .sdd/specs/feat-reservation-management/CHANGELOG.md
@@ -73,19 +84,22 @@ git commit -m "docs: specify FE08 reservation candidate catalog"
 
 ---
 
-## Task 2: Write RED backend contract tests and extend the in-memory repository
+## Nhiệm vụ 2: Viết các kiểm thử hợp đồng máy chủ RED và mở rộng kho lưu trữ trong bộ nhớ
 
-**Files:**
-- Modify: `backend/tests/helpers/inMemoryReservationRepositories.js`
-- Modify: `backend/tests/reservationRoutes.test.js`
+**Tệp:**
+- Sửa đổi: `backend/tests/helpers/inMemoryReservationRepositories.js`
+- Sửa đổi: `backend/tests/reservationRoutes.test.js`
 
-**Interfaces:**
-- Consumes existing `createReservationService`, `createApp`, and FE08 auth setup.
-- Produces `reservationRepository.listReservationCandidates({ q, page, limit })` returning `{ rows, total }` with safe fields only.
+**Giao diện:**
+- Sử dụng thiết lập xác thực `createReservationService`, `createApp` và FE08 hiện có.
+- Tạo `reservationRepository.listReservationCandidates({ q, page, limit })` trả về `{ rows, total }` chỉ với các trường an toàn.
 
-- [x] **Step 1: Extend the in-memory candidate state.**
+- [x] **Bước 1: Mở rộng trạng thái ứng viên trong bộ nhớ.**
 
-Add `status: 'ACTIVE'` and `authorName` to default books. Implement a repository method that filters active books and `BORROWED`/`RESERVED` copies, searches title/author, orders by title/book/copy, computes active reservation counts, slices the requested page, and returns `{ rows, total }`. Map exactly:
+Thêm `status: 'ACTIVE'` và `authorName` vào sách mặc định. Triển khai phương pháp kho lưu trữ để lọc
+các sách đang hoạt động và các bản sao `BORROWED`/`RESERVED`, tìm kiếm tựa đề/author, sắp xếp theo
+tựa đề/book/copy, tính toán số lượng đặt chỗ hiện hoạt, cắt trang được yêu cầu và trả về `{ rows,
+total }`. Bản đồ chính xác:
 
 ```javascript
 {
@@ -98,11 +112,14 @@ Add `status: 'ACTIVE'` and `authorName` to default books. Implement a repository
 }
 ```
 
-Do not expose the helper's barcode/location fields through this method.
+Không để lộ các trường mã vạch/vị trí của người trợ giúp thông qua phương pháp này.
 
-- [x] **Step 2: Add RED route tests tagged with the new IDs.**
+- [x] **Bước 2: Thêm các kiểm thử tuyến đường RED được gắn thẻ ID mới.**
 
-Cover member success, guest `401`, non-member `403`, invalid `q/page/limit`, empty results, active-book/status filtering, deterministic order, active-only queue counts, pagination, redacted keys, and no reservation/audit mutation. The core assertion must be equivalent to:
+Thành viên bảo hiểm thành công, `401` khách, `403` không phải thành viên, `q/page/limit` không hợp
+lệ, kết quả trống, lọc sách/trạng thái đang hoạt động, thứ tự xác định, số lượng hàng đợi chỉ hoạt
+động, phân trang, khóa được sắp xếp lại và không có thao tác ghi đặt chỗ/kiểm tra. Khẳng định cốt lõi
+phải tương đương với:
 
 ```javascript
 const response = await request(app)
@@ -123,15 +140,16 @@ expect(Object.keys(response.body.data[0]).sort()).toEqual([
 ]);
 ```
 
-- [x] **Step 3: Run RED.**
+- [x] **Bước 3: Chạy RED.**
 
 ```powershell
 npm.cmd --prefix backend test -- --runInBand --runTestsByPath tests/reservationRoutes.test.js
 ```
 
-Expected: only the new candidate cases fail because the route/service/repository methods do not exist.
+Dự kiến: chỉ các trường hợp ứng viên mới không thành công vì các phương thức tuyến/dịch vụ/kho lưu
+trữ không tồn tại.
 
-- [x] **Step 4: Commit the RED contract.**
+- [x] **Bước 4: Cam kết hợp đồng RED.**
 
 ```powershell
 git add backend/tests/helpers/inMemoryReservationRepositories.js backend/tests/reservationRoutes.test.js
@@ -140,28 +158,30 @@ git commit -m "test: define FE08 reservation candidate contract"
 
 ---
 
-## Task 3: Implement the protected backend read path and OpenAPI
+## Nhiệm vụ 3: Triển khai đường dẫn đọc máy chủ được bảo vệ và OpenAPI
 
-**Files:**
-- Modify: `backend/src/validators/reservationValidators.js`
-- Modify: `backend/src/routes/reservationRoutes.js`
-- Modify: `backend/src/controllers/reservationController.js`
-- Modify: `backend/src/services/reservationService.js`
-- Modify: `backend/src/repositories/reservationRepository.js`
-- Modify: `backend/src/docs/openapi.yaml`
+**Tệp:**
+- Sửa đổi: `backend/src/validators/reservationValidators.js`
+- Sửa đổi: `backend/src/routes/reservationRoutes.js`
+- Sửa đổi: `backend/src/controllers/reservationController.js`
+- Sửa đổi: `backend/src/services/reservationService.js`
+- Sửa đổi: `backend/src/repositories/reservationRepository.js`
+- Sửa đổi: `backend/src/docs/openapi.yaml`
 
-**Interfaces:**
-- Validator produces normalized `req.query`.
-- Service consumes `listReservationCandidates(filters, actor)` and returns `{ data, pagination }`.
-- Repository consumes `{ q, page, limit }` and returns `{ rows, total }`.
+**Giao diện:**
+- Trình xác thực tạo ra `req.query` được chuẩn hóa.
+- Dịch vụ tiêu thụ `listReservationCandidates(filters, actor)` và trả về `{ data, pagination }`.
+- Kho lưu trữ tiêu thụ `{ q, page, limit }` và trả về `{ rows, total }`.
 
-- [x] **Step 1: Add query validators.**
+- [x] **Bước 1: Thêm trình xác thực truy vấn.**
 
-Add and export `listReservationCandidatesValidators` with `q.trim().isLength({ max: 200 })`, `page.isInt({ min: 1 }).toInt().default(1)`, `limit.isInt({ min: 1, max: 100 }).toInt().default(20)`, and the existing `handleValidationErrors`.
+Thêm và xuất `listReservationCandidatesValidators` với `q.trim().isLength({ max: 200 })`,
+`page.isInt({ min: 1 }).toInt().default(1)`, `limit.isInt({ min: 1, max: 100 }).toInt().default(20)`
+và `handleValidationErrors` hiện có.
 
-- [x] **Step 2: Mount the route and controller.**
+- [x] **Bước 2: Gắn tuyến đường và bộ điều khiển.**
 
-Mount this route before the staff `GET '/'` route:
+Gắn tuyến đường này trước tuyến `GET '/'` của nhân viên:
 
 ```javascript
 router.get(
@@ -173,11 +193,12 @@ router.get(
 );
 ```
 
-Add `controller.listCandidates` that calls `reservationService.listReservationCandidates(req.query, req.user)` and returns status 200.
+Thêm `controller.listCandidates` gọi `reservationService.listReservationCandidates(req.truy vấn,
+req.người dùng)` và trả về trạng thái 200.
 
-- [x] **Step 3: Add the service method.**
+- [x] **Bước 3: Thêm phương thức dịch vụ.**
 
-Implement the member guard and canonical envelope:
+Triển khai bảo vệ thành viên và phong bì chuẩn:
 
 ```javascript
 async function listReservationCandidates(filters = {}, actor) {
@@ -197,11 +218,11 @@ async function listReservationCandidates(filters = {}, actor) {
 }
 ```
 
-Do not call audit, notification, or mutation methods.
+Không gọi các phương thức kiểm tra, thông báo hoặc thao tác ghi.
 
-- [x] **Step 4: Add the parameterized SQL repository method.**
+- [x] **Bước 4: Thêm phương thức kho lưu trữ SQL được tham số hóa.**
 
-Use a safe projection equivalent to:
+Sử dụng phép chiếu an toàn tương đương với:
 
 ```sql
 SELECT
@@ -228,21 +249,24 @@ ORDER BY b.Title ASC, b.BookId ASC, bc.CopyId ASC
 OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
 ```
 
-Bind `Search`, `Offset`, and `Limit` through `mssql`. Escape LIKE metacharacters before binding. Return `total = 0` when the recordset is empty and map only the six contract fields.
+Liên kết `Search`, `Offset` và `Limit` thông qua `mssql`. Thoát siêu ký tự LIKE trước khi liên kết.
+Trả về `total = 0` khi tập bản ghi trống và chỉ ánh xạ sáu trường hợp đồng.
 
-- [x] **Step 5: Document OpenAPI.**
+- [x] **Bước 5: Tài liệu OpenAPI.**
 
-Add `ReservationCandidate`, `ReservationCandidatePagination`, and `ReservationCandidateListResponse` schemas with `additionalProperties: false`. Add the endpoint with bearer security, `q/page/limit`, and `200/400/401/403` responses.
+Thêm các lược đồ `ReservationCandidate`, `ReservationCandidatePagination` và
+`ReservationCandidateListResponse` với `additionalProperties: false`. Thêm điểm cuối với bảo mật
+đường truyền, phản hồi `q/page/limit` và `200/400/401/403`.
 
-- [x] **Step 6: Run GREEN backend tests.**
+- [x] **Bước 6: Chạy kiểm thử máy chủ GREEN.**
 
 ```powershell
 npm.cmd --prefix backend test -- --runInBand --runTestsByPath tests/reservationRoutes.test.js
 ```
 
-Expected: all existing and new FE08 route tests pass.
+Dự kiến: tất cả các kiểm thử tuyến đường FE08 hiện có và mới đều vượt qua.
 
-- [x] **Step 7: Commit backend implementation.**
+- [x] **Bước 7: Cam kết triển khai máy chủ.**
 
 ```powershell
 git add backend/src/validators/reservationValidators.js backend/src/routes/reservationRoutes.js backend/src/controllers/reservationController.js backend/src/services/reservationService.js backend/src/repositories/reservationRepository.js backend/src/docs/openapi.yaml
@@ -251,36 +275,44 @@ git commit -m "feat: add member reservation candidate catalog"
 
 ---
 
-## Task 4: Add real SQL Server candidate validation
+## Nhiệm vụ 4: Thêm xác thực ứng viên SQL Server thực
 
-**Files:**
-- Create: `backend/tests/sql/reservationCandidates.sqltest.js`
+**Tệp:**
+- Tạo: `backend/tests/sql/reservationCandidates.sqltest.js`
 
-**Interfaces:**
-- Consumes the existing disposable SQL environment, mutation guard, `getPool`, and repository method.
-- Produces synthetic candidate rows and cleanup evidence.
+**Giao diện:**
+- Sử dụng môi trường SQL dùng một lần hiện có, bộ bảo vệ thao tác ghi, `getPool` và phương thức lưu trữ.
+- Tạo ra các hàng ứng cử viên tổng hợp và bằng chứng dọn dẹp.
 
-- [x] **Step 1: Add guarded setup and cleanup.**
+- [x] **Bước 1: Thêm thiết lập và dọn dẹp được bảo vệ.**
 
-Follow the existing feature-scoped `backend/tests/sql/*.sqltest.js` pattern: load `FE08_SQL_TEST_ENV_FILE` before DB imports, require `FE08_SQL_TEST_ALLOW_MUTATION=true`, generate unique in-memory seed suffixes, track every inserted ID, and delete all synthetic rows in a `finally`-equivalent cleanup path.
+Làm theo mẫu `backend/tests/sql/*.sqltest.js` trong phạm vi chức năng hiện có: tải
+`FE08_SQL_TEST_ENV_FILE` trước khi nhập DB, yêu cầu `FE08_SQL_TEST_ALLOW_MUTATION=true`, tạo hậu tố
+gốc duy nhất trong bộ nhớ, theo dõi mọi ID được chèn và xóa tất cả các hàng tổng hợp trong đường dẫn
+dọn dẹp tương đương với `finally`.
 
-- [x] **Step 2: Seed all relevant statuses.**
+- [x] **Bước 2: Chọn tất cả các trạng thái liên quan.**
 
-Insert active and inactive books, active copies in `AVAILABLE`, `BORROWED`, `RESERVED`, `DAMAGED`, `LOST`, and `INACTIVE` states, plus one active and one terminal reservation for a candidate copy. Use parameterized inserts only.
+Chèn các sách hiện hoạt và không hoạt động, các bản sao hiện hoạt ở các trạng thái `AVAILABLE`,
+`BORROWED`, `RESERVED`, `DAMAGED`, `LOST` và `INACTIVE`, cùng với một đặt chỗ hiện hoạt và một thiết
+bị đầu cuối cho một bản sao đề cử. Chỉ sử dụng các phần chèn được tham số hóa.
 
-- [x] **Step 3: Assert filtering, counts, ordering, pagination, and redaction.**
+- [x] **Bước 3: Xác nhận lọc, đếm, sắp xếp, phân trang và biên tập.**
 
-Assert active-book borrowed/reserved copies are present, all other statuses are absent, active reservation counts exclude terminal rows, search and page/limit work, ordering is deterministic, and every returned row has exactly the six safe keys.
+Khẳng định có bản sao đã mượn/đặt chỗ của sách đang hoạt động, tất cả các trạng thái khác đều vắng
+mặt, số lượng đặt chỗ đang hoạt động không bao gồm các hàng đầu cuối, công việc tìm kiếm và
+trang/giới hạn, thứ tự là xác định và mỗi hàng được trả về có chính xác sáu khóa an toàn.
 
-- [x] **Step 4: Run the focused SQL suite.**
+- [x] **Bước 4: Chạy bộ SQL tập trung.**
 
 ```powershell
 npm.cmd --prefix backend test -- --runInBand --testMatch "**/reservationCandidates.sqltest.js"
 ```
 
-Expected: all candidate SQL cases pass and cleanup leaves `DB_CLEAN`/synthetic rows clean.
+Dự kiến: tất cả các trường hợp SQL ứng cử viên đều vượt qua và việc dọn dẹp khiến `DB_CLEAN`/các
+hàng tổng hợp sạch sẽ.
 
-- [x] **Step 5: Commit SQL validation.**
+- [x] **Bước 5: Xác nhận xác thực SQL.**
 
 ```powershell
 git add backend/tests/sql/reservationCandidates.sqltest.js
@@ -289,22 +321,22 @@ git commit -m "test: validate FE08 candidate catalog on SQL Server"
 
 ---
 
-## Task 5: Migrate the member page to server candidates
+## Nhiệm vụ 5: Di chuyển trang thành viên sang máy chủ ứng viên
 
-**Files:**
-- Modify: `frontend/src/api/libraryFeatureApi.js`
-- Modify: `frontend/src/page/reservation/MyReservationsPage.jsx`
-- Modify: `frontend/src/utils/libraryFeatureViewModels.js`
-- Modify: `frontend/test/reservationFrontend.test.js`
-- Modify: `frontend/test/borrowingFrontend.test.js`
+**Tệp:**
+- Sửa đổi: `frontend/src/api/libraryFeatureApi.js`
+- Sửa đổi: `frontend/src/page/reservation/MyReservationsPage.jsx`
+- Sửa đổi: `frontend/src/utils/libraryFeatureViewModels.js`
+- Sửa đổi: `frontend/test/reservationFrontend.test.js`
+- Sửa đổi: `frontend/test/borrowingFrontend.test.js`
 
-**Interfaces:**
-- API method: `reservationApi.listCandidates(params = {})`.
-- UI consumes `{ data, pagination }` and calls existing `reservationApi.create(candidate.copyId)`.
+**Giao diện:**
+- Phương pháp API: `reservationApi.listCandidates(params = {})`.
+- Giao diện người dùng sử dụng `{ data, pagination }` và gọi `reservationApi.create(candidate.copyId)` hiện có.
 
-- [x] **Step 1: Add API method and RED source tests.**
+- [x] **Bước 1: Thêm phương pháp API và kiểm tra nguồn RED.**
 
-Add:
+Thêm:
 
 ```javascript
 listCandidates(params = {}) {
@@ -315,29 +347,39 @@ listCandidates(params = {}) {
 },
 ```
 
-Extend the frontend source tests to require this method, the candidate URL, and the reservation resolver; update `borrowingFrontend.test.js` to retain only `DEMO_BORROW_CATALOG`; add a failing assertion that `DEMO_RESERVABLE` is absent from `MyReservationsPage.jsx`.
+Mở rộng các kiểm thử nguồn giao diện người dùng để yêu cầu phương pháp này, ứng viên URL và trình
+phân giải đặt chỗ; cập nhật `borrowingFrontend.test.js` để chỉ giữ lại `DEMO_BORROW_CATALOG`; thêm
+xác nhận không thành công rằng `DEMO_RESERVABLE` không có trong `MyReservationsPage.jsx`.
 
-- [x] **Step 2: Run RED frontend tests.**
+- [x] **Bước 2: Chạy kiểm thử giao diện người dùng RED.**
 
 ```powershell
 npm.cmd --prefix frontend test -- --test-name-pattern="reservation API|candidate|DEMO_RESERVABLE"
 ```
 
-Expected: the new candidate assertions fail before the page migration.
+Dự kiến: xác nhận ứng viên mới không thành công trước khi di chuyển trang.
 
-- [x] **Step 3: Replace the local catalog state.**
+- [x] **Bước 3: Thay thế trạng thái danh mục cục bộ.**
 
-In `MyReservationsPage.jsx`, replace the `DEMO_RESERVABLE` import and `useMemo` filtering with server state `candidates`, `candidatePagination`, `candidateLoading`, and `candidateError`. Implement `loadCandidates({ q, page })` that calls `reservationApi.listCandidates({ q: q.trim(), page, limit: 20 })`, handles empty/error/loading states, and cancels its search timer during effect cleanup.
+Trong `MyReservationsPage.jsx`, thay thế nhập `DEMO_RESERVABLE` và lọc `useMemo` bằng trạng thái máy
+chủ `candidates`, `candidatePagination`, `candidateLoading` và `candidateError`. Triển khai
+`loadCandidates({ q, page })` gọi `reservationApi.listCandidates({ q: q.trim(), page, limit: 20 })`,
+xử lý các trạng thái trống/lỗi/tải và hủy bộ đếm thời gian tìm kiếm của nó trong quá trình dọn dẹp
+hiệu ứng.
 
-- [x] **Step 4: Render safe fields and preserve mutation semantics.**
+- [x] **Bước 4: Hiển thị các trường an toàn và duy trì ngữ nghĩa thao tác ghi.**
 
-Render title, author, copy status, and active reservation count. Remove invented `availableCopies` and ETA values. Call `reservationApi.create(candidate.copyId)`; after success reload both reservations and candidates. On conflict reload candidates so stale rows disappear. Do not mutate a local candidate catalog as the source of truth.
+Hiển thị tiêu đề, tác giả, trạng thái sao chép và số lượng đặt chỗ hiện hoạt. Xóa các giá trị
+`availableCopies` và ETA được phát minh. Gọi `reservationApi.create(candidate.copyId)`; sau khi
+thành công tải lại cả đặt chỗ và ứng viên. Khi xảy ra xung đột, hãy tải lại ứng viên để các hàng cũ
+biến mất. Đừng biến đổi danh mục ứng viên địa phương thành nguồn thông tin chính xác.
 
-- [x] **Step 5: Remove the static export.**
+- [x] **Bước 5: Xóa xuất tĩnh.**
 
-Delete only `DEMO_RESERVABLE` from `libraryFeatureViewModels.js`. Keep `DEMO_BORROW_CATALOG` unchanged. Add source tests proving the page no longer imports the removed export.
+Chỉ xóa `DEMO_RESERVABLE` khỏi `libraryFeatureViewModels.js`. Giữ `DEMO_BORROW_CATALOG` không thay
+đổi. Thêm các kiểm tra nguồn chứng minh trang không còn nhập bản xuất đã xóa nữa.
 
-- [x] **Step 6: Run focused frontend checks.**
+- [x] **Bước 6: Chạy kiểm tra giao diện người dùng tập trung.**
 
 ```powershell
 npm.cmd --prefix frontend test -- --test-name-pattern="reservation API|candidate|DEMO_RESERVABLE"
@@ -345,9 +387,9 @@ npm.cmd --prefix frontend run lint
 npm.cmd --prefix frontend run build
 ```
 
-Expected: focused tests, lint, and build pass; the known non-blocking chunk warning may remain.
+Dự kiến: các kiểm thử tập trung, kiểm tra mã và bản dựng đạt; cảnh báo đoạn không chặn đã biết có thể vẫn còn.
 
-- [x] **Step 7: Commit frontend migration.**
+- [x] **Bước 7: Cam kết di chuyển giao diện người dùng.**
 
 ```powershell
 git add frontend/src/api/libraryFeatureApi.js frontend/src/page/reservation/MyReservationsPage.jsx frontend/src/utils/libraryFeatureViewModels.js frontend/test/reservationFrontend.test.js frontend/test/borrowingFrontend.test.js
@@ -356,29 +398,33 @@ git commit -m "feat: connect FE08 member candidates to server state"
 
 ---
 
-## Task 6: Add browser acceptance
+## Nhiệm vụ 6: Thêm sự chấp nhận của trình duyệt
 
-**Files:**
-- Create: `tests/e2e/fe08-reservation-candidate-catalog.spec.js`
-- Modify: `tests/e2e/support/systemTestServer.js` only if the existing deterministic setup cannot seed an unavailable copy.
+**Tệp:**
+- Tạo: `tests/e2e/fe08-reservation-candidate-catalog.spec.js`
+- Sửa đổi: `tests/e2e/support/systemTestServer.js` chỉ khi thiết lập xác định hiện có không thể tạo bản sao không có sẵn.
 
-**Interfaces:**
-- Consumes existing Playwright `FRONTEND_URL`, `BACKEND_URL`, `/__e2e__/setup`, and member login.
-- Produces `E2E-FE08-ACC01`.
+**Giao diện:**
+- Tiêu thụ Playwright `FRONTEND_URL`, `BACKEND_URL`, `/__e2e__/setup` hiện có và đăng nhập thành viên.
+- Sản xuất `E2E-FE08-ACC01`.
 
-- [x] **Step 1: Set up an isolated member.**
+- [x] **Bước 1: Thiết lập thành viên bị cô lập.**
 
-Use `randomUUID()`, a synthetic password, `request.post('/__e2e__/setup')`, and existing login labels. Navigate to `/reservations/mine`.
+Sử dụng `randomUUID()`, mật khẩu tổng hợp, `request.post('/__e2e__/setup')` và nhãn đăng nhập hiện
+có. Điều hướng đến `/reservations/mine`.
 
-- [x] **Step 2: Assert candidate request and redaction.**
+- [x] **Bước 2: Xác nhận yêu cầu của ứng viên và biên tập.**
 
-Wait for `GET /api/reservations/candidates?page=1&limit=20`, assert `200`, assert response rows contain exactly the six safe fields, and assert the page shows title/status/queue count without barcode/location.
+Đợi `GET /api/reservations/candidates?page=1&limit=20`, xác nhận `200`, xác nhận các hàng phản hồi
+chứa chính xác sáu trường an toàn và xác nhận trang hiển thị tiêu đề/trạng thái/số hàng đợi mà không
+có mã vạch/vị trí.
 
-- [x] **Step 3: Assert server search and real mutation.**
+- [x] **Bước 3: Xác nhận tìm kiếm máy chủ và thao tác ghi thực sự.**
 
-Fill `Tìm sách để đặt...`, assert the next request includes encoded `q`, click `Đặt chỗ`, assert `POST /api/reservations` sends numeric `copyId`, and assert the canonical reservation list reloads.
+Điền vào `Tìm sách để đặt...`, xác nhận yêu cầu tiếp theo bao gồm `q` được mã hóa, nhấp vào `Đặt
+chỗ`, xác nhận `POST /api/reservations` gửi `copyId` số và xác nhận tải lại danh sách đặt chỗ chuẩn.
 
-- [x] **Step 4: Run focused browser acceptance.**
+- [x] **Bước 4: Chạy chấp nhận trình duyệt tập trung.**
 
 ```powershell
 $env:E2E_FRONTEND_PORT='4185'
@@ -386,9 +432,9 @@ $env:E2E_BACKEND_PORT='3101'
 npm.cmd run test:e2e -- tests/e2e/fe08-reservation-candidate-catalog.spec.js
 ```
 
-Expected: `E2E-FE08-ACC01` passes with no mobile horizontal overflow.
+Dự kiến: `E2E-FE08-ACC01` vượt qua mà không có hiện tượng tràn ngang di động.
 
-- [x] **Step 5: Commit browser acceptance.**
+- [x] **Bước 5: Cam kết chấp nhận trình duyệt.**
 
 ```powershell
 git add tests/e2e/fe08-reservation-candidate-catalog.spec.js tests/e2e/support/systemTestServer.js
@@ -397,14 +443,14 @@ git commit -m "test: add FE08 reservation candidate browser acceptance"
 
 ---
 
-## Task 7: Reconcile evidence, debt, and full validation
+## Nhiệm vụ 7: Đối chiếu bằng chứng, nợ và xác nhận đầy đủ
 
-**Files:**
-- Modify: `TECH_DEBT.md`
-- Create: `.sdd/reviews/fe08-reservation-candidate-catalog-validation-2026-07-19.md`
-- Modify: `.sdd/reviews/full-reconciliation-human-acceptance-packet-2026-07-19.md`
+**Tệp:**
+- Sửa đổi: `TECH_DEBT.md`
+- Tạo: `.sdd/reviews/fe08-reservation-candidate-catalog-validation-2026-07-19.md`
+- Sửa đổi: `.sdd/reviews/full-reconciliation-human-acceptance-packet-2026-07-19.md`
 
-- [x] **Step 1: Run focused gates.**
+- [x] **Bước 1: Chạy cổng tập trung.**
 
 ```powershell
 npm.cmd --prefix backend test -- --runInBand --runTestsByPath tests/reservationRoutes.test.js
@@ -416,9 +462,9 @@ npm.cmd run trace:enforce
 git diff --check
 ```
 
-Record exact counts and the disposable SQL cleanup result.
+Ghi lại số lượng chính xác và kết quả dọn dẹp SQL dùng một lần.
 
-- [x] **Step 2: Run complete local gates.**
+- [x] **Bước 2: Chạy các cổng cục bộ hoàn chỉnh.**
 
 ```powershell
 npm.cmd --prefix backend test
@@ -434,21 +480,28 @@ $env:E2E_BACKEND_URL='http://127.0.0.1:3101'
 npm.cmd run test:e2e
 ```
 
-Re-run the aggregate disposable SQL Server gate, including the new candidate suite, with no application database mutation.
+Chạy lại cổng SQL Server tổng hợp dùng một lần, bao gồm bộ ứng viên mới mà không có thao tác ghi cơ sở
+dữ liệu ứng dụng.
 
-- [x] **Step 3: Update focused evidence.**
+- [x] **Bước 3: Cập nhật bằng chứng tập trung.**
 
-Record commands, counts, safe projection assertions, authorization results, SQL cleanup, browser ports, CI run, advisory consistency, and residual risks. Never record credentials, tokens, raw OTPs, or connection strings.
+Ghi lại các lệnh, số lượng, xác nhận chiếu an toàn, kết quả ủy quyền, dọn dẹp SQL, cổng trình duyệt,
+chạy CI, tính nhất quán của tư vấn và rủi ro còn sót lại. Không bao giờ ghi lại thông tin xác thực,
+mã thông báo, OTP thô hoặc chuỗi kết nối.
 
-- [x] **Step 4: Close TD-028 only after all evidence passes.**
+- [x] **Bước 4: Chỉ đóng TD-028 sau khi tất cả bằng chứng đã được thông qua.**
 
-Move TD-028 from `OPEN` to the Resolved table with the implementation commit and focused validation record. Keep unrelated human-review debt open until the reviewer signs the packet.
+Di chuyển TD-028 từ `OPEN` sang bảng Đã giải quyết với cam kết triển khai và bản ghi xác thực tập
+trung. Giữ khoản nợ đánh giá con người không liên quan ở trạng thái mở cho đến khi người đánh giá ký
+vào gói.
 
-- [x] **Step 5: Update the acceptance packet.**
+- [x] **Bước 5: Cập nhật gói chấp nhận.**
 
-Fill Decision Gate A with the approved Option A reference, update final head/CI, and leave Gate B unchecked until a named human reviewer completes the FE01-FE12 walkthrough and explicitly approves merge.
+Điền vào Cổng quyết định A với tham chiếu Tùy chọn A đã được phê duyệt, cập nhật head/CI cuối cùng
+và bỏ chọn Cổng B cho đến khi người đánh giá có tên là con người hoàn thành hướng dẫn FE01-FE12 và
+phê duyệt hợp nhất một cách rõ ràng.
 
-- [x] **Step 6: Commit and push evidence.**
+- [x] **Bước 6: Cam kết và đưa ra bằng chứng.**
 
 ```powershell
 git add TECH_DEBT.md .sdd/reviews/fe08-reservation-candidate-catalog-validation-2026-07-19.md .sdd/reviews/full-reconciliation-human-acceptance-packet-2026-07-19.md
@@ -458,10 +511,10 @@ git push origin feat/full-reconciliation
 
 ---
 
-## Plan Self-Review
+## Tự xem xét kế hoạch
 
-- **Spec coverage:** access, query validation, eligible statuses, safe projection, advisory consistency, frontend migration, SQL validation, browser acceptance, traceability, and non-goals are covered by Tasks 1-7.
-- **Completeness:** every task names files, interfaces, commands, and expected results; no unspecified steps remain.
-- **Type consistency:** repository returns `{ rows, total }`; service returns `{ data, pagination }`; frontend consumes `data.data` and `data.pagination`; create consumes numeric `copyId`.
-- **Scope:** no schema, dependency, public-browse, staff-inventory, automatic queue, notification, or mutation-target change is included.
-- **Safety:** SQL remains parameterized and all SQL-backed fixtures are synthetic and cleaned up.
+- **Phạm vi bao gồm đặc tả:** quyền truy cập, xác thực truy vấn, trạng thái đủ điều kiện, dự đoán an toàn, tính nhất quán trong tư vấn, di chuyển giao diện người dùng, xác thực SQL, chấp nhận trình duyệt, khả năng truy vết và các mục tiêu không phải là mục tiêu được đề cập trong Nhiệm vụ 1-7.
+- **Tính đầy đủ:** mọi tác vụ đều đặt tên cho các tệp, giao diện, lệnh và kết quả mong đợi; không còn bước nào chưa xác định.
+- **Tính nhất quán của loại:** kho lưu trữ trả về `{ rows, total }`; dịch vụ trả về `{ data, pagination }`; giao diện người dùng tiêu thụ `data.data` và `data.pagination`; tạo tiêu thụ số `copyId`.
+- **Phạm vi:** không bao gồm lược đồ, phần phụ thuộc, duyệt công khai, khoảng không quảng cáo của nhân viên, hàng đợi tự động, thông báo hoặc thay đổi mục tiêu thao tác ghi.
+- **An toàn:** SQL vẫn được tham số hóa và tất cả các thiết bị cố định được hỗ trợ bởi SQL đều được tổng hợp và làm sạch.

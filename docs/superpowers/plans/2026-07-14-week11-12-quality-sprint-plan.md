@@ -1,135 +1,141 @@
-# Week 11-12 Quality Sprint Implementation Plan
+# Tuần 11-12 Kế hoạch thực hiện Sprint chất lượng
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Do not use subagents for this repository task.
+> **Đối với nhân viên đại lý:** BẮT BUỘC SUB-SKILL: Sử dụng siêu năng lực:thực thi các kế hoạch để thực hiện kế hoạch này theo từng nhiệm vụ. Không sử dụng tác nhân phụ cho tác vụ kho lưu trữ này.
 
-**Goal:** Add measurable Week 11 coverage and browser evidence, then complete the Week 12 security audit without changing production business behavior.
+**Mục tiêu:** Thêm bằng chứng về trình duyệt và phạm vi bảo mật của Tuần 11 có thể đo lường được,
+sau đó hoàn thành kiểm tra bảo mật Tuần 12 mà không làm thay đổi hành vi kinh doanh sản xuất.
 
-**Architecture:** Jest measures the completed backend module set and enforces an 80 percent floor. Playwright runs the real React frontend against a localhost-only Express host built from the existing system integration harness, with FE09 exercised through Playwright API context. Security evidence combines dependency audit output with repository-level RBAC, validation, safe-error, and secret checks.
+**Kiến trúc:** Jest đo lường bộ mô-đun máy chủ đã hoàn chỉnh và thực thi mức sàn 80%. Playwright
+chạy giao diện React thực trên máy chủ Express chỉ dành cho localhost được xây dựng từ khai thác
+tích hợp hệ thống hiện có, với FE09 được thực hiện thông qua bối cảnh Playwright API. Bằng chứng bảo
+mật kết hợp đầu ra kiểm tra phụ thuộc với RBAC cấp kho lưu trữ, xác thực, lỗi an toàn và kiểm tra bí
+mật.
 
-**Tech Stack:** Node.js, Jest, Playwright Chromium, React/Vite, Express, existing in-memory integration repositories, npm audit.
+**bộ công nghệ công nghệ:** Node.js, Jest, Playwright Chrome, React/Vite, Express, kho tích hợp
+trong bộ nhớ hiện có, kiểm tra npm.
 
-## Global Constraints
+## Ràng buộc toàn cầu
 
-- Work on branch `test/week11-quality-sprint`; never use a `codex` branch name.
-- Do not change production business rules, SQL schema, or approved feature specs.
-- Do not commit credentials, `.env` content, generated coverage, Playwright reports, traces, or screenshots.
-- Do not use `npm audit fix --force`.
-- Keep SQL mutation tests local-only.
-- Every new test must map to an existing BR/FR/AC or a documented quality gate.
+- Làm việc trên nhánh `test/week11-quality-sprint`; không bao giờ sử dụng tên nhánh `codex`.
+- Không thay đổi các quy tắc nghiệp vụ sản xuất, lược đồ SQL hoặc thông số chức năng đã được phê duyệt.
+- Không cung cấp thông tin xác thực, nội dung `.env`, mức độ bao phủ được tạo, báo cáo, dấu vết hoặc ảnh chụp màn hình Playwright.
+- Không sử dụng `npm audit fix --force`.
+- Chỉ giữ các kiểm thử thao tác ghi SQL cục bộ.
+- Mọi kiểm thử mới phải ánh xạ tới BR/FR/AC hiện có hoặc cổng chất lượng được ghi lại.
 
 ---
 
-### Task 1: Establish Coverage Baseline And Gap Matrix
+### Nhiệm vụ 1: Thiết lập mốc cơ sở và ma trận chênh lệch
 
-**Files:**
-- Create: `.sdd/reviews/week11-coverage-evidence-2026-07-14.md`
-- Inspect: `backend/package.json`
-- Inspect: `backend/coverage/coverage-summary.json`
+**Tệp:**
+- Tạo: `.sdd/reviews/week11-coverage-evidence-2026-07-14.md`
+- Kiểm tra: `backend/package.json`
+- Kiểm tra: `backend/coverage/coverage-summary.json`
 
-**Interfaces:**
-- Consumes: existing Jest `collectCoverageFrom` configuration.
-- Produces: exact baseline percentages and a ranked list of uncovered files/branches.
+**Giao diện:**
+- Tiêu thụ: cấu hình Jest `collectCoverageFrom` hiện có.
+- Tạo ra: tỷ lệ phần trăm cơ sở chính xác và danh sách xếp hạng các tệp/nhánh chưa được phát hiện.
 
-- [x] Run `npm.cmd --prefix backend run test:coverage -- --coverageReporters=json-summary --coverageReporters=text`.
-- [x] Record suite/test counts and all four global coverage metrics.
-- [x] Rank files below 80 percent, prioritizing services and validators over route wiring.
-- [x] Map each selected gap to the current feature SPEC/TEST_PLAN requirement.
-- [x] Commit with `docs: record week 11 coverage baseline`.
+- [x] Chạy `npm.cmd --prefix backend run test:coverage -- --coverageReporters=json-summary --coverageReporters=text`.
+- [x] Ghi lại số lượng bộ/kiểm tra và tất cả bốn chỉ số phạm vi toàn cầu.
+- [x] Xếp hạng các tệp dưới 80 phần trăm, ưu tiên các dịch vụ và trình xác thực hơn là định tuyến đường dây.
+- [x] Ánh xạ từng khoảng trống đã chọn với yêu cầu SPEC/TEST_PLAN của chức năng hiện tại.
+- [x] Cam kết với `docs: record week 11 coverage baseline`.
 
-### Task 2: Close Meaningful Coverage Gaps
+### Nhiệm vụ 2: Thu hẹp khoảng cách có ý nghĩa về mức độ bao phủ
 
-**Files:**
-- Modify: focused files under `backend/tests/`
-- Modify only if required: test helpers under `backend/tests/helpers/`
-- Update: `.sdd/reviews/week11-coverage-evidence-2026-07-14.md`
+**Tệp:**
+- Sửa đổi: tập trung vào `backend/tests/`
+- Chỉ sửa đổi nếu được yêu cầu: kiểm tra người trợ giúp trong `backend/tests/helpers/`
+- Cập nhật: `.sdd/reviews/week11-coverage-evidence-2026-07-14.md`
 
-**Interfaces:**
-- Consumes: Task 1 gap matrix.
-- Produces: tests for uncovered business, validation, authorization, and safe-error branches.
+**Giao diện:**
+- Tiêu thụ: Ma trận khoảng cách nhiệm vụ 1.
+- Sản xuất: kiểm tra các nhánh kinh doanh chưa được phát hiện, xác thực, ủy quyền và lỗi an toàn.
 
-- [x] Add one failing test per selected uncovered behavior.
-- [x] Run each focused test and confirm the expected red result.
-- [x] Add only test/helper changes needed to exercise existing production behavior.
-- [x] Re-run focused tests until green.
-- [x] Re-run coverage and repeat until all configured metrics reach at least 80 percent or a documented exception is approved.
-- [x] Commit in small feature-focused test commits.
+- [x] Thêm một kiểm thử thất bại cho mỗi hành vi chưa được phát hiện đã chọn.
+- [x] Chạy từng kiểm thử tập trung và xác nhận kết quả màu đỏ dự kiến.
+- [x] Chỉ thêm các thay đổi kiểm tra/trợ giúp cần thiết để thực hiện hành vi sản xuất hiện có.
+- [x] Chạy lại các kiểm thử tập trung cho đến khi có màu xanh.
+- [x] Chạy lại mức độ bao phủ và lặp lại cho đến khi tất cả số liệu đã định cấu hình đạt ít nhất 80 phần trăm hoặc một ngoại lệ được ghi lại được phê duyệt.
+- [x] Cam kết trong các cam kết kiểm thử tập trung vào chức năng nhỏ.
 
-### Task 3: Enforce Coverage In CI
+### Nhiệm vụ 3: Thực thi phạm vi bảo hiểm trong CI
 
-**Files:**
-- Modify: `backend/package.json`
-- Modify: `.github/workflows/ci.yml`
-- Update: `.sdd/test-plan.md`
-- Update: `.sdd/reviews/week11-coverage-evidence-2026-07-14.md`
+**Tệp:**
+- Sửa đổi: `backend/package.json`
+- Sửa đổi: `.github/workflows/ci.yml`
+- Cập nhật: `.sdd/test-plan.md`
+- Cập nhật: `.sdd/reviews/week11-coverage-evidence-2026-07-14.md`
 
-**Interfaces:**
-- Consumes: green >=80 percent baseline from Task 2.
-- Produces: `test:coverage:ci` and a CI blocking step.
+**Giao diện:**
+- Tiêu thụ: màu xanh lá cây >=80 phần trăm cơ sở từ Nhiệm vụ 2.
+- Tạo ra: `test:coverage:ci` và bước chặn CI.
 
-- [x] Add Jest `coverageThreshold.global` values of 80 for branches, functions, lines, and statements.
-- [x] Add `test:coverage:ci` using `--coverage --coverageReporters=text-summary`.
-- [x] Add a CI step after backend tests.
-- [x] Mark the Week 11 milestone complete only after the command exits 0.
-- [x] Commit with `test: enforce backend coverage threshold`.
+- [x] Thêm giá trị Jest `coverageThreshold.global` là 80 cho các nhánh, hàm, dòng và câu lệnh.
+- [x] Thêm `test:coverage:ci` bằng `--coverage --coverageReporters=text-summary`.
+- [x] Thêm bước CI sau khi kiểm tra máy chủ.
+- [x] Đánh dấu cột mốc Tuần 11 chỉ hoàn thành sau khi lệnh thoát 0.
+- [x] Cam kết với `test: enforce backend coverage threshold`.
 
-### Task 4: Add Hybrid Playwright Golden Path
+### Nhiệm vụ 4: Thêm luồng nghiệp vụ chuẩn lai Playwright
 
-**Files:**
-- Modify: `package.json`
-- Modify: `package-lock.json`
-- Create: `playwright.config.js`
-- Create: `tests/e2e/support/systemTestServer.js`
-- Create: `tests/e2e/system-golden-path.spec.js`
-- Modify: `.gitignore`
-- Modify: `.github/workflows/ci.yml`
-- Update: `.sdd/test-plan.md`
+**Tệp:**
+- Sửa đổi: `package.json`
+- Sửa đổi: `package-lock.json`
+- Tạo: `playwright.config.js`
+- Tạo: `tests/e2e/support/systemTestServer.js`
+- Tạo: `tests/e2e/system-golden-path.spec.js`
+- Sửa đổi: `.gitignore`
+- Sửa đổi: `.github/workflows/ci.yml`
+- Cập nhật: `.sdd/test-plan.md`
 
-**Interfaces:**
-- Test server listens on `127.0.0.1:3100` and mounts the production-aligned app.
-- Vite listens on `127.0.0.1:4173` with `VITE_API_BASE_URL=http://127.0.0.1:3100/api`.
-- Playwright consumes runtime-generated actor credentials and safe IDs from `/__e2e__` controls.
+**Giao diện:**
+- Máy chủ kiểm thử lắng nghe trên `127.0.0.1:3100` và cài đặt ứng dụng phù hợp với sản xuất.
+- Vite nghe trên `127.0.0.1:4173` với `VITE_API_BASE_URL=http://127.0.0.1:3100/api`.
+- Playwright sử dụng thông tin xác thực tác nhân được tạo trong thời gian chạy và ID an toàn từ các điều khiển `/__e2e__`.
 
-- [x] Add `@playwright/test` as a root dev dependency and install Chromium.
-- [x] Write the Playwright test first and confirm it fails because the test server/config is absent.
-- [x] Add the test-only server with runtime actor seeding, overdue fixture control, and FE09 state synchronization.
-- [x] Implement the browser/API journey: member login -> borrow -> librarian login -> approve -> overdue return -> FE09 calculate/paid -> FE12 report.
-- [x] Capture trace and screenshot on failure; verify desktop and mobile report rendering without overlap.
-- [x] Add `test:e2e` and a CI Chromium install/run step.
-- [x] Commit with `test: add system browser golden path`.
+- [x] Thêm `@playwright/test` làm phần phụ thuộc của nhà phát triển gốc và cài đặt Chrome.
+- [x] Trước tiên, hãy viết kiểm thử Playwright và xác nhận rằng nó không thành công do máy chủ/cấu hình kiểm tra không có.
+- [x] Thêm server chỉ dành cho kiểm thử với chức năng seed tác nhân runtime, kiểm soát mốc thời gian quá hạn và đồng bộ trạng thái FE09.
+- [x] Triển khai hành trình trình duyệt/API: đăng nhập thành viên -> mượn -> đăng nhập thủ thư -> phê duyệt -> trả sách quá hạn -> tính toán/thanh toán FE09 -> báo cáo FE12.
+- [x] Ghi lại dấu vết và ảnh chụp màn hình khi thất bại; xác minh kết xuất báo cáo trên máy tính để bàn và thiết bị di động mà không bị chồng chéo.
+- [x] Thêm `test:e2e` và bước cài đặt/chạy CI Chrome.
+- [x] Cam kết với `test: add system browser golden path`.
 
-### Task 5: Complete Week 12 Security Audit
+### Nhiệm vụ 5: Hoàn thành Kiểm tra bảo mật Tuần 12
 
-**Files:**
-- Create: `.sdd/reviews/week12-security-audit-2026-07-14.md`
-- Modify lock/package files only for verified Critical/High dependency fixes.
-- Add focused security regression tests only when a concrete defect is found.
+**Tệp:**
+- Tạo: `.sdd/reviews/week12-security-audit-2026-07-14.md`
+- Chỉ sửa đổi các tệp khóa/gói đối với các bản sửa lỗi phụ thuộc Quan trọng/Cao đã được xác minh.
+- Chỉ thêm các kiểm thử hồi quy bảo mật tập trung khi tìm thấy lỗi cụ thể.
 
-**Interfaces:**
-- Consumes: npm lockfiles, protected route definitions, validators, safe error middleware, tracked source.
-- Produces: dependency counts, RBAC/validation inventory, secret scan result, findings and accepted risk table.
+**Giao diện:**
+- Tiêu thụ: tệp khóa npm, định nghĩa tuyến đường được bảo vệ, trình xác thực, phần mềm trung gian lỗi an toàn, nguồn được theo dõi.
+- Tạo ra: số lượng phụ thuộc, RBAC/kiểm kê xác thực, kết quả quét bí mật, phát hiện và bảng rủi ro được chấp nhận.
 
-- [x] Run production audits for root, backend, and frontend using JSON output.
-- [x] Trace every Critical/High finding to its direct dependency and runtime reachability.
-- [x] Apply the smallest non-breaking dependency fix where required and re-run tests.
-- [x] Scan tracked files for common credential/private-key patterns without printing `.env` values.
-- [x] Verify protected routes use authentication/role middleware and input validators.
-- [x] Verify 5xx responses and notification payloads do not expose stacks/secrets.
-- [x] Record Medium/Low accepted risks with owner and follow-up; commit with `docs: record week 12 security audit`.
+- [x] Chạy kiểm tra sản xuất cho root, máy chủ và giao diện bằng cách sử dụng đầu ra JSON.
+- [x] Theo dõi mọi phát hiện Quan trọng/Cao đối với sự phụ thuộc trực tiếp và khả năng tiếp cận thời gian chạy của nó.
+- [x] Áp dụng bản sửa lỗi phụ thuộc nhỏ nhất không phá vỡ khi cần thiết và chạy lại kiểm thử.
+- [x] Quét các tệp được theo dõi để tìm các mẫu thông tin xác thực/khóa riêng tư phổ biến mà không in các giá trị `.env`.
+- [x] Xác minh các tuyến được bảo vệ sử dụng phần mềm trung gian xác thực/vai trò và trình xác thực đầu vào.
+- [x] Xác minh phản hồi 5xx và tải trọng thông báo không làm lộ bộ công nghệ/bí mật.
+- [x] Ghi lại những rủi ro được chấp nhận ở mức Trung bình/Thấp với chủ sở hữu và người theo dõi; cam kết với `docs: record week 12 security audit`.
 
-### Task 6: Final Quality Gate And Review Handoff
+### Nhiệm vụ 6: Cổng chất lượng cuối cùng và bàn giao đánh giá
 
-**Files:**
-- Update evidence documents with only observed results.
+**Tệp:**
+- Cập nhật tài liệu bằng chứng chỉ với kết quả được quan sát.
 
-**Interfaces:**
-- Consumes: all commands and evidence from Tasks 1-5.
-- Produces: a clean reviewable branch.
+**Giao diện:**
+- Sử dụng: tất cả các mệnh lệnh và bằng chứng từ Nhiệm vụ 1-5.
+- Sản xuất: một nhánh sạch có thể xem xét được.
 
-- [x] Run `npm.cmd --prefix backend test`.
-- [x] Run `npm.cmd --prefix backend run test:coverage:ci`.
-- [x] Run the mutation-gated SQL system test against the explicit local environment.
-- [x] Run `npm.cmd --prefix frontend test`, lint, and build.
-- [x] Run `npm.cmd run test:e2e`.
-- [x] Run `npm.cmd run trace:enforce` and `git diff --check`.
-- [x] Confirm generated artifacts and local secrets are untracked/ignored.
-- [x] Commit final evidence updates and present merge/push/keep/discard options.
+- [x] Chạy `npm.cmd --prefix backend test`.
+- [x] Chạy `npm.cmd --prefix backend run test:coverage:ci`.
+- [x] Chạy kiểm thử hệ thống SQL có kiểm soát thao tác ghi đối với môi trường cục bộ rõ ràng.
+- [x] Chạy `npm.cmd --prefix frontend test`, kiểm tra mã và bản dựng.
+- [x] Chạy `npm.cmd run test:e2e`.
+- [x] Chạy `npm.cmd run trace:enforce` và `git diff --check`.
+- [x] Xác nhận các tạo phẩm được tạo và bí mật cục bộ không bị theo dõi/bỏ qua.
+- [x] Cam kết cập nhật bằng chứng cuối cùng và đưa ra các tùy chọn hợp nhất/đẩy/giữ/loại bỏ.

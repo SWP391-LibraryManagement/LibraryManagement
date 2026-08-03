@@ -861,7 +861,7 @@ giữ chưa được commit đến H2.
 
 ### 19.1 Quy tắc nghiệp vụ
 
-- BR-FE07-038: Điều kiện ứng viên FE07 vẫn do máy chủ quyết định; danh mục máy chủ
+- BR-FE07-038: Điều kiện đối tượng đủ điều kiện FE07 vẫn do máy chủ quyết định; danh mục máy chủ
   rỗng không được trình bày như một lần tìm kiếm cục bộ không khớp.
 - BR-FE07-039: Fixture mượn trên staging chỉ được thay đổi bản ghi tổng hợp có ISBN
   tiền tố `STAGING-BORROW-DEMO`, barcode tiền tố `STG-BORROW-DEMO-` và vị trí
@@ -869,8 +869,8 @@ giữ chưa được commit đến H2.
 
 ### 19.2 Yêu cầu chức năng
 
-- FR-FE07-045: `BorrowRequestPage` phải phân biệt không có ứng viên do máy chủ trả
-  về với không có kết quả khớp từ tìm kiếm tiêu đề/tác giả cục bộ; lỗi API vẫn là lỗi.
+- FR-FE07-045: `BorrowRequestPage` phải phân biệt trường hợp máy chủ không trả đối tượng đủ điều kiện
+  với trường hợp tìm kiếm tiêu đề/tác giả cục bộ không có kết quả khớp; lỗi API vẫn là lỗi.
 - FR-FE07-046: Công cụ thủ công `status`/`reset` phải phục hồi hai tiêu đề synthetic
   riêng biệt, từ chối DB/flag/trạng thái không hợp lệ, bảo toàn dữ liệu ngoài fixture
   và không bao giờ tự chạy khi khởi động hoặc deploy.
@@ -883,8 +883,8 @@ giữ chưa được commit đến H2.
   ngờ và rollback toàn bộ. Ánh xạ FE07-T063.
 - AC-FE07-039: Mọi chuyển trạng thái fixture có audit marker; hàng ngoài fixture bất
   biến. Ánh xạ FE07-T063.
-- AC-FE07-040: Sau reset có hai ứng viên khác tiêu đề; gửi một yêu cầu vẫn để lại ứng
-  viên thứ hai. Ánh xạ FE07-T064.
+- AC-FE07-040: Sau reset có hai đối tượng đủ điều kiện thuộc hai đầu sách khác nhau; gửi một yêu cầu
+  vẫn để lại đối tượng thứ hai. Ánh xạ FE07-T064.
 
 | ID yêu cầu | Test/bằng chứng | Trạng thái |
 | --- | --- | --- |

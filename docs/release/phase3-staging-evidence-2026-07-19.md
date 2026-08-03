@@ -1,64 +1,61 @@
-# Phase 3 Staging Evidence - 2026-07-19
+# Bằng chứng về giai đoạn 3 - 2026-07-19
 
-## Decision
+## Quyết định
 
-Current deployment status: **PASS WITH EXPLICIT ACCEPTANCE BOUNDARIES**.
+Trạng thái triển khai hiện tại: **Vượt qua WITH EXPLICIT ACCEPTANCE BOUNDARIES**.
 
-The public frontend, backend runtime, SQL-backed catalog, strict CORS,
-anonymous protected-route rejection, authenticated role flows, and real SMTP
-inbox delivery are observed. Evidence is limited to the recorded live run and
-does not retain credentials, tokens, message bodies, or provider secrets.
+Giao diện người dùng công khai, thời gian chạy máy chủ, danh mục được hỗ trợ bởi SQL, CORS nghiêm
+ngặt, từ chối tuyến đường được bảo vệ ẩn danh, luồng vai trò được xác thực và phân phối hộp thư đến
+SMTP thực đều được quan sát. Bằng chứng được giới hạn ở lần chạy trực tiếp được ghi lại và không lưu
+giữ thông tin xác thực, mã thông báo, nội dung thư hoặc bí mật của nhà cung cấp.
 
-## Deployed baseline
+## mốc cơ sở đã triển khai
 
-| Item | Observed value |
+| Mục | Giá trị quan sát |
 | --- | --- |
-| Source commit | `64831fea844d8bd0554520fe9466f865d7f11d22` |
-| Frontend | `https://lemon-wave-04db51100.7.azurestaticapps.net` |
-| Backend | `https://app-library-api-staging-nhat714.azurewebsites.net` |
-| Backend health | `https://app-library-api-staging-nhat714.azurewebsites.net/health` |
-| SQL database | `LibraryManagementStaging` on `sql-library-staging-ea-nhat714` |
-| GitHub environment | `staging` |
+| Cam kết nguồn | `64831fea844d8bd0554520fe9466f865d7f11d22` |
+| Giao diện người dùng | `https://lemon-wave-04db51100.7.azurestaticapps.net` |
+| máy chủ | `https://app-library-api-staging-nhat714.azurewebsites.net` |
+| Sức khỏe máy chủ | `https://app-library-api-staging-nhat714.azurewebsites.net/health` |
+| Cơ sở dữ liệu SQL | `LibraryManagementStaging` trên `sql-library-staging-ea-nhat714` |
+| Môi trường GitHub | `staging` |
 
-GitHub environment configuration was inspected by name only. The required
-deployment secrets exist, and the environment defines `AZURE_WEBAPP_NAME`,
-`STAGING_API_URL`, and `STAGING_FRONTEND_URL`. No secret value was printed or
-written to this record.
+Cấu hình môi trường GitHub chỉ được kiểm tra theo tên. Các bí mật triển khai bắt buộc tồn tại và môi
+trường xác định `AZURE_WEBAPP_NAME`, `STAGING_API_URL` và `STAGING_FRONTEND_URL`. Không có giá trị
+bí mật nào được in hoặc ghi vào bản ghi này.
 
-## CI/CD evidence
+## Bằng chứng CI/CD
 
-| Run | Result | Meaning |
+| Chạy | Kết quả | Ý nghĩa |
 | --- | --- | --- |
-| `29693848682` | Quality/deploy PASS; smoke FAIL | The first current-main run reached the backend during App Service restart and observed `503`. After warm-up, `/health` returned `200`. |
-| `29694280002` | PASS | Current-main quality gate, backend deploy, frontend deploy, browser E2E, deployment utilities, and the original five-check smoke gate passed. |
+| `29693848682` | ĐẠT Quality/deploy; kiểm thử nhanh THẤT BẠI | Lần chạy chính hiện tại đầu tiên đã đạt đến phần máy chủ trong quá trình khởi động lại App Service và quan sát thấy `503`. Sau khi khởi động, `/health` trả về `200`. |
+| `29694280002` | ĐẠT | Cổng chất lượng chính hiện tại, triển khai máy chủ, triển khai giao diện người dùng, trình duyệt E2E, các tiện ích triển khai và cổng kiểm thử nhanh năm kiểm tra ban đầu đã vượt qua. |
 
-The first run also exposed missing `TRUST_PROXY=true`: production HTTPS auth
-requests were interpreted as the internal HTTP proxy hop and returned
-`400 HTTPS_REQUIRED`. The App Service setting was added, the app restarted, and
-an anonymous `GET /api/auth/me` then returned the required safe `401` envelope.
+Lần chạy đầu tiên cũng cho thấy `TRUST_PROXY=true` bị thiếu: các yêu cầu xác thực HTTPS sản xuất
+được hiểu là bước nhảy proxy HTTP nội bộ và trả về `400 HTTPS_REQUIRED`. Cài đặt App Service đã được
+thêm, ứng dụng khởi động lại và một `GET /api/auth/me` ẩn danh sau đó trả sách phong bì `401` an
+toàn cần thiết.
 
-## Live SQL diagnosis and correction
+## Chẩn đoán và hiệu chỉnh SQL trực tiếp
 
-The original smoke script checked `/health`, which does not query SQL. A new
-test-first smoke check now reads `/api/books?page=1&limit=1` and validates the
-public list envelope.
+Tập lệnh kiểm thử nhanh ban đầu đã kiểm tra `/health`, không truy vấn SQL. kiểm thử nhanh đầu tiên kiểm thử
+mới hiện đọc `/api/books?page=1&limit=1` và xác thực phong bì danh sách công khai.
 
-That check initially returned `500`. The evidence chain was:
+Kiểm tra đó ban đầu trả về `500`. Chuỗi bằng chứng là:
 
-1. Azure SQL resource status was `Online`; the database contained 20 tables.
-2. A temporary operator firewall rule allowed a direct non-secret query using
-   the App Service settings; it returned `LibraryManagementStaging`, 20 tables,
-   and was removed immediately afterward.
-3. Running the production FE05 public catalog query against the same database
-   reproduced SQL error 207: `Books.RowVersion` was missing.
-4. The existing FE05 migration then reproduced SQL error 4922 because the
-   legacy filtered ISBN index depended on the column being narrowed.
-5. The migration was corrected through RED-GREEN coverage to drop/recreate
-   `UX_Books_ISBN_NotNull` in the same transaction.
-6. All five approved reconciliation migrations ran twice successfully in this
-   order: FE04, FE05, FE06, FE10, FE11.
+1. Trạng thái tài nguyên Azure SQL là `Online`; cơ sở dữ liệu chứa 20 bảng.
+2. Quy tắc tường lửa tạm thời của nhà điều hành cho phép truy vấn trực tiếp không bí mật bằng cách sử dụng
+cài đặt App Service; nó trả về `LibraryManagementStaging`, 20 bảng và bị xóa ngay sau đó.
+3. Chạy truy vấn danh mục công khai FE05 sản xuất trên cùng một cơ sở dữ liệu
+   SQL trả về lỗi 207: thiếu `Books.RowVersion`.
+4. Quá trình di chuyển FE05 hiện tại sau đó đã tái tạo lỗi SQL 4922 vì
+   Chỉ mục ISBN được lọc kế thừa phụ thuộc vào cột được thu hẹp.
+5. Quá trình di chuyển đã được sửa chữa thông qua độ bao phủ RED-GREEN sang drop/recreate
+   `UX_Books_ISBN_NotNull` trong cùng một giao dịch.
+6. Tất cả năm lần di chuyển đối chiếu đã được phê duyệt đều chạy thành công hai lần trong lần di chuyển này
+   đặt hàng: FE04, FE05, FE06, FE10, FE11.
 
-Post-migration validation returned:
+Xác thực sau di chuyển được trả về:
 
 ```text
 DatabaseName=LibraryManagementStaging
@@ -71,13 +68,12 @@ UserProfiles.Specialization=200 bytes
 Notifications.RecipientEmail=510 bytes
 ```
 
-The temporary operator firewall rule was removed. The SQL connection policy
-was restored to `Default` after a diagnostic `Proxy` experiment did not affect
-the schema error.
+Quy tắc tường lửa tạm thời của nhà điều hành đã bị xóa. Chính sách kết nối SQL đã được khôi phục về
+`Default` sau khi kiểm thử `Proxy` chẩn đoán không ảnh hưởng đến lỗi lược đồ.
 
-## Independent staging smoke
+## Khói dàn độc lập
 
-Command:
+Lệnh:
 
 ```powershell
 $env:STAGING_FRONTEND_URL='https://lemon-wave-04db51100.7.azurestaticapps.net'
@@ -85,7 +81,7 @@ $env:STAGING_API_URL='https://app-library-api-staging-nhat714.azurewebsites.net'
 npm.cmd run smoke:staging
 ```
 
-Observed result after migration: **PASS**.
+Kết quả được quan sát sau khi di chuyển: **ĐẠT**.
 
 ```text
 frontend
@@ -96,47 +92,49 @@ blocked-cors
 protected-route
 ```
 
-Post-merge workflow `29696612260` ran from merge commit `4d02fc423c2fc06374d71ec945b7593dfd10c7e6` and passed its quality gate, backend deploy, frontend deploy, and six-check `smoke-test` job. This is the current SQL-aware staging acceptance evidence.
+Workflow sau hợp nhất `29696612260` chạy từ merge commit
+`4d02fc423c2fc06374d71ec945b7593dfd10c7e6` và đã vượt qua cổng chất lượng, triển khai máy chủ, triển
+khai giao diện người dùng và công việc `smoke-test` sáu bước kiểm tra. Đây là bằng chứng chấp nhận
+giai đoạn nhận biết SQL hiện tại.
 
-## Authenticated Azure and SMTP observation
+## Quan sát Azure và SMTP đã được xác thực
 
-Final live observation run: `c6e0c46421f0`.
+Lần quan sát trực tiếp cuối cùng: `c6e0c46421f0`.
 
-| Scenario | Observed result | Status |
+| Kịch bản | Kết quả quan sát | Trạng thái |
 | --- | --- | --- |
-| Role login | Synthetic Admin, Member, and Librarian logins completed. | PASS |
-| Role verification | `/api/auth/me` returned the expected role for each login. | PASS |
-| Member protected read | Member borrowing-history endpoint returned the protected response. | PASS |
-| Librarian protected read | Librarian queue endpoint returned the protected response. | PASS |
-| Borrow lifecycle | Member request, Librarian approval, and Librarian return completed. | PASS |
-| SMTP notification | Notification `8` reached `SENT` in one attempt; 2 processed and 0 failed. | PASS |
-| Provider acceptance | SMTP provider accepted the delivery. | PASS |
-| Inbox observation | Gmail IMAP search observed the message (`MESSAGE_SEARCHED`). | PASS |
+| Đăng nhập vai trò | Đăng nhập tổng hợp của Quản trị viên, Thành viên và Thủ thư đã hoàn tất. | ĐẠT |
+| Xác minh vai trò | `/api/auth/me` trả sách vai trò mong đợi cho mỗi lần đăng nhập. | ĐẠT |
+| Thành viên đọc dữ liệu được bảo vệ | Endpoint lịch sử mượn của thành viên trả về phản hồi được bảo vệ. | ĐẠT |
+| Đọc được bảo vệ bởi thủ thư | Điểm cuối hàng đợi thư viện trả về phản hồi được bảo vệ. | ĐẠT |
+| Vòng đời mượn | Đã hoàn thành yêu cầu của Thành viên, phê duyệt của Thủ thư và trả sách bởi Thủ thư. | ĐẠT |
+| Thông báo SMTP | Thông báo `8` đạt `SENT` trong một lần thử; 2 được xử lý và 0 không thành công. | ĐẠT |
+| Sự chấp nhận của nhà cung cấp | Nhà cung cấp SMTP đã chấp nhận bàn giao. | ĐẠT |
+| Quan sát hộp thư đến | Tìm kiếm Gmail IMAP đã quan sát thấy thông báo (`MESSAGE_SEARCHED`). | ĐẠT |
 
-The SMTP investigation found a malformed `SMTP_USER` configuration shape with
-two `@` characters. The App Service setting was corrected to the valid sender
-address already configured as `MAIL_FROM`, then the app was restarted and
-health was rechecked. No email address, password, OTP, token, message body,
-or connection string is recorded here.
+Cuộc điều tra SMTP đã tìm thấy cấu trúc cấu hình `SMTP_USER` không đúng định dạng với hai ký tự
+`@`. Cài đặt App Service đã được sửa thành địa chỉ người gửi hợp lệ đã được định cấu hình là
+`MAIL_FROM`, sau đó ứng dụng được khởi động lại và tình trạng được kiểm tra lại. Không có địa chỉ
+email, mật khẩu, OTP, mã thông báo, nội dung thư hoặc chuỗi kết nối được ghi lại ở đây.
 
-The run used ephemeral synthetic fixtures. Final cleanup verification returned
-`AuthFixtures=0`, `BookFixtures=0`, and `NotificationFixtures=0`; all temporary
-`phase3-live-observation*` SQL firewall rules were deleted.
+Cuộc chạy đã sử dụng dữ liệu kiểm thử tổng hợp tạm thời. Xác minh dọn dẹp cuối cùng trả về
+`AuthFixtures=0`, `BookFixtures=0` và `NotificationFixtures=0`; tất cả các quy tắc tường lửa
+`phase3-live-observation*` SQL tạm thời đã bị xóa.
 
-## Acceptance boundaries
+## Ranh giới chấp nhận
 
-| Boundary | Status | Reason |
+| Ranh giới | Trạng thái | Lý do |
 | --- | --- | --- |
-| Public frontend/backend/SQL | PASS | Observed by the six-check read-only smoke run. |
-| Strict CORS | PASS | Exact staging frontend allowed; untrusted origin blocked. |
-| Anonymous protected route | PASS | `/api/auth/me` returned `401`. |
-| Authenticated Azure golden path | PASS | Live run `c6e0c46421f0` verified role login, protected reads, borrow request, approval, and return. |
-| Real SMTP inbox delivery | PASS | Notification `8` was `SENT`; provider acceptance and Gmail IMAP message search were observed. |
-| Durable avatar storage | LIMITATION | App Service filesystem is not production-durable storage. |
-| Production SLA | OUT OF SCOPE | Student-credit staging has no production availability commitment. |
+| Giao diện/máy chủ/SQL công khai | ĐẠT | Được quan sát bằng kiểm thử nhanh sáu bước chỉ đọc. |
+| CORS nghiêm ngặt | ĐẠT | Giao diện môi trường tiền sản xuất chính xác được cho phép; nguồn gốc không đáng tin cậy bị chặn. |
+| Tuyến đường được bảo vệ ẩn danh | ĐẠT | `/api/auth/me` trả về `401`. |
+| Luồng nghiệp vụ chuẩn Azure có xác thực | ĐẠT | Lượt chạy trực tiếp `c6e0c46421f0` đã xác minh đăng nhập theo vai trò, dữ liệu được bảo vệ, yêu cầu mượn, phê duyệt và trả sách. |
+| Gửi email thực qua SMTP | ĐẠT | Thông báo `8` có trạng thái `SENT`; đã quan sát việc nhà cung cấp chấp nhận và tìm thấy thư bằng Gmail IMAP. |
+| Lưu trữ ảnh đại diện bền vững | GIỚI HẠN | Hệ thống tệp App Service không phải bộ lưu trữ lâu bền cho môi trường sản xuất. |
+| SLA sản xuất | NGOÀI PHẠM VI | Môi trường tiền sản xuất sử dụng tín dụng sinh viên nên không có cam kết về tính sẵn có ở cấp sản xuất. |
 
-## Post-merge workflow
+## Quy trình làm việc sau hợp nhất
 
-| Workflow | Commit | Result |
+| Quy trình làm việc | Cam kết | Kết quả |
 | --- | --- | --- |
-| `deploy-staging.yml` run `29696612260` | `4d02fc4` | PASS: quality gate, backend deploy, frontend deploy, and SQL-aware six-check smoke. |
+| `deploy-staging.yml` chạy `29696612260` | `4d02fc4` | đạt: cổng chất lượng, triển khai máy chủ, triển khai giao diện người dùng và kiểm thử nhanh sáu bước có truy vấn SQL. |

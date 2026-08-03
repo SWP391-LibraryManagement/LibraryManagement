@@ -1,37 +1,38 @@
-# API Contract - Phase 1 Baseline
+# Hợp đồng API - mốc cơ sở giai đoạn 1
 
-Status: PHASE 1 BASELINE; FE07-FE12 CONNECTED DEMO H1 APPROVED - AWAITING H3/MERGE
-Date: 2026-06-10
-Last Updated: 2026-08-03
+Trạng thái: PHASE 1 BASELINE; FE07-FE12 CONNECTED DEMO H1 APPROVED - AWAITING H3/MERGE
+Ngày: 2026-06-10
+Cập nhật lần cuối: 2026-08-03
 
-## Scope
+## Phạm vi
 
-This contract captures the Week 4 baseline REST API for Sprint 1 planning, focused on:
+Hợp đồng này nắm bắt cơ sở REST API của Tuần 4 để lập kế hoạch cho Sprint 1, tập trung vào:
 
-- FE02 Authentication
-- FE11 User & Role Management
+- FE02 Xác thực
+- FE11 Quản lý người dùng và vai trò
 
-Feature specs remain the source of truth. If this contract conflicts with an approved `SPEC.md`, update this contract or the spec through review before implementation.
+đặc tả chức năng vẫn là nguồn chuẩn. Nếu hợp đồng này xung đột với `SPEC.md` đã được phê
+duyệt, hãy cập nhật hợp đồng này hoặc đặc tả thông qua việc xem xét trước khi triển khai.
 
-## Base URL
+## URL gốc
 
 ```text
 /api
 ```
 
-## Common Rules
+## Quy tắc chung
 
-- Request and response bodies use JSON.
-- Protected endpoints require `Authorization: Bearer <accessToken>`.
-- Server-side validation is mandatory.
-- Server-side authorization is mandatory for protected actions.
-- Error responses must not expose stack traces, password hashes, raw tokens, or SQL details. Login must not reveal account existence for unknown identifiers or incorrect passwords; the FE02 pending-verification response is allowed only after correct password proof.
+- Nội dung yêu cầu và phản hồi sử dụng JSON.
+- Điểm cuối được bảo vệ yêu cầu `Authorization: Bearer <accessToken>`.
+- Xác thực phía máy chủ là bắt buộc.
+- Ủy quyền phía máy chủ là bắt buộc đối với các hành động được bảo vệ.
+- Phản hồi lỗi không được để lộ dấu vết bộ công nghệ, băm mật khẩu, mã thông báo thô hoặc chi tiết SQL. Đăng nhập không được tiết lộ sự tồn tại của tài khoản đối với số nhận dạng không xác định hoặc mật khẩu không chính xác; phản hồi xác minh đang chờ xử lý FE02 chỉ được phép sau khi xác minh mật khẩu chính xác.
 
-## Response Envelope
+## Phong bì phản hồi
 
-Successful responses may return resource-specific JSON directly.
+Phản hồi thành công có thể trả về trực tiếp JSON dành riêng cho tài nguyên.
 
-Error response shape:
+Hình dạng phản hồi lỗi:
 
 ```json
 {
@@ -43,31 +44,31 @@ Error response shape:
 }
 ```
 
-Common HTTP status codes:
+Mã trạng thái HTTP phổ biến:
 
-| Status | Meaning |
+| Trạng thái | Ý nghĩa |
 | --- | --- |
-| 200 | Success |
-| 201 | Created |
-| 400 | Validation error |
-| 401 | Missing, invalid, or expired authentication |
-| 403 | Authenticated but not authorized, or correct credentials require email verification before a session can be issued |
-| 404 | Resource not found |
-| 409 | Conflict with unique/status rule |
-| 429 | Rate limit or too many failed login attempts |
-| 500 | Safe generic server error |
+| 200 | Thành công |
+| 201 | Đã tạo |
+| 400 | Lỗi xác thực |
+| 401 | Xác thực bị thiếu, không hợp lệ hoặc hết hạn |
+| 403 | Đã xác thực nhưng không được ủy quyền hoặc thông tin xác thực chính xác yêu cầu xác minh email trước khi có thể phát hành phiên |
+| 404 | Không tìm thấy tài nguyên |
+| 409 | Xung đột với quy tắc unique/trạng thái |
+| 429 | Giới hạn tỷ lệ hoặc đăng nhập thất bại quá nhiều lần |
+| 500 | Lỗi máy chủ chung an toàn |
 
 ---
 
-## FE02 Authentication
+## FE02 Xác thực
 
-Source spec: `.sdd/specs/feat-auth/SPEC.md`
+Đặc tả nguồn: `.sdd/specs/feat-auth/SPEC.md`
 
 ### POST `/api/auth/register`
 
-Actor: Guest
+Tác nhân: Khách mời
 
-Request:
+Yêu cầu:
 
 ```json
 {
@@ -80,7 +81,7 @@ Request:
 }
 ```
 
-Response `201`:
+Phản hồi `201`:
 
 ```json
 {
@@ -90,17 +91,17 @@ Response `201`:
 }
 ```
 
-Notes:
+Ghi chú:
 
-- Creates inactive/unverified user according to FE02.
-- Sends or records mock verification email through FE10 integration when available.
-- Duplicate username/email requests, including concurrent unique-index races, return `409 USERNAME_ALREADY_REGISTERED` or `409 EMAIL_ALREADY_REGISTERED` with no additional user, verification-token, or OTP-delivery state.
+- Tạo người dùng chưa kích hoạt/chưa xác minh theo FE02.
+- Gửi hoặc ghi lại email xác minh mô phỏng thông qua tích hợp FE10 khi khả dụng.
+- Các yêu cầu username/email trùng lặp, bao gồm các cuộc đua chỉ mục duy nhất đồng thời, trả về `409 USERNAME_ALREADY_REGISTERED` hoặc `409 EMAIL_ALREADY_REGISTERED` mà không có thêm người dùng, mã thông báo xác minh hoặc trạng thái phân phối OTP.
 
 ### POST `/api/auth/verify-email`
 
-Actor: Guest
+Tác nhân: Khách mời
 
-Primary request (interactive OTP flow):
+Yêu cầu chính (luồng OTP tương tác):
 
 ```json
 {
@@ -109,7 +110,7 @@ Primary request (interactive OTP flow):
 }
 ```
 
-Compatibility request (legacy verification link):
+Yêu cầu tương thích (liên kết xác minh kế thừa):
 
 ```json
 {
@@ -117,7 +118,7 @@ Compatibility request (legacy verification link):
 }
 ```
 
-Response `200`:
+Phản hồi `200`:
 
 ```json
 {
@@ -125,13 +126,15 @@ Response `200`:
 }
 ```
 
-Only an eligible pending self-registration account can be activated. OTP and legacy-token requests for a deactivated or otherwise ineligible account fail without consuming the credential.
+Chỉ có thể kích hoạt tài khoản tự đăng ký đang chờ xử lý đủ điều kiện. OTP và các yêu cầu mã thông
+báo kế thừa cho một tài khoản đã bị vô hiệu hóa hoặc không đủ điều kiện sẽ không thành công nếu
+không sử dụng thông tin xác thực.
 
 ### POST `/api/auth/resend-verification`
 
-Actor: Guest
+Tác nhân: Khách mời
 
-Request:
+Yêu cầu:
 
 ```json
 {
@@ -139,7 +142,7 @@ Request:
 }
 ```
 
-Response `200`:
+Phản hồi `200`:
 
 ```json
 {
@@ -147,17 +150,17 @@ Response `200`:
 }
 ```
 
-Notes:
+Ghi chú:
 
-- Response must avoid email enumeration.
-- A successful resend is limited to an eligible pending self-registration account and invalidates its previous active verification credential; deactivated and admin-created setup accounts retain the generic response without a new verification token.
-- The frontend applies a visible 60-second cooldown after a successful resend and disables duplicate requests while one is pending.
+- Phản hồi phải tránh liệt kê email.
+- Việc gửi lại thành công được giới hạn ở tài khoản tự đăng ký đủ điều kiện đang chờ xử lý và làm mất hiệu lực thông tin xác thực hoạt động trước đó của tài khoản đó; tài khoản thiết lập đã bị vô hiệu hóa và do quản trị viên tạo vẫn giữ lại phản hồi chung mà không cần mã thông báo xác minh mới.
+- Giao diện người dùng áp dụng thời gian hồi chiêu 60 giây hiển thị sau khi gửi lại thành công và vô hiệu hóa các yêu cầu trùng lặp trong khi một yêu cầu đang chờ xử lý.
 
 ### POST `/api/auth/login`
 
-Actor: Guest
+Tác nhân: Khách mời
 
-Request:
+Yêu cầu:
 
 ```json
 {
@@ -166,7 +169,7 @@ Request:
 }
 ```
 
-Response `200`:
+Phản hồi `200`:
 
 ```json
 {
@@ -179,7 +182,7 @@ Response `200`:
 }
 ```
 
-Response `403` after correct password proof for an eligible pending self-registration account:
+Phản hồi `403` sau khi xác minh mật khẩu chính xác cho tài khoản tự đăng ký đủ điều kiện đang chờ xử lý:
 
 ```json
 {
@@ -193,19 +196,19 @@ Response `403` after correct password proof for an eligible pending self-registr
 }
 ```
 
-Notes:
+Ghi chú:
 
-- Access token expires after 15 minutes.
-- Refresh token expires after 7 days.
-- Pending self-registration receives the 403 recovery response and no session; the client opens `/verify-email` with the registered email.
-- Unknown identifiers, wrong passwords, deactivated accounts, admin-created setup accounts, and locked users do not receive the pending-verification signal.
-- Failed login must be auditable and rate-limited.
+- Mã thông báo truy cập hết hạn sau 15 phút.
+- Mã thông báo làm mới sẽ hết hạn sau 7 ngày.
+- Đang chờ tự đăng ký nhận được phản hồi khôi phục 403 và không có phiên; khách hàng mở `/verify-email` bằng email đã đăng ký.
+- Mã định danh không xác định, mật khẩu sai, tài khoản bị vô hiệu hóa, tài khoản thiết lập do quản trị viên tạo và người dùng bị khóa sẽ không nhận được tín hiệu xác minh đang chờ xử lý.
+- Đăng nhập thất bại phải được kiểm tra và giới hạn tỷ lệ.
 
 ### POST `/api/auth/refresh-token`
 
-Actor: Authenticated or holder of valid refresh token
+Tác nhân: Đã được xác thực hoặc nắm giữ mã thông báo làm mới hợp lệ
 
-Request:
+Yêu cầu:
 
 ```json
 {
@@ -213,7 +216,7 @@ Request:
 }
 ```
 
-Response `200`:
+Phản hồi `200`:
 
 ```json
 {
@@ -225,9 +228,9 @@ Response `200`:
 
 ### POST `/api/auth/logout`
 
-Actor: Client presenting a refresh token
+Tác nhân: Khách hàng trình bày mã thông báo làm mới
 
-Request:
+Yêu cầu:
 
 ```json
 {
@@ -235,7 +238,7 @@ Request:
 }
 ```
 
-Response `200`:
+Phản hồi `200`:
 
 ```json
 {
@@ -243,13 +246,13 @@ Response `200`:
 }
 ```
 
-Notes: invalidates refresh/session token server-side.
+Lưu ý: vô hiệu hóa phía máy chủ mã thông báo refresh/session.
 
 ### POST `/api/auth/change-password`
 
-Actor: Authenticated
+Tác nhân: Đã xác thực
 
-Request:
+Yêu cầu:
 
 ```json
 {
@@ -258,7 +261,7 @@ Request:
 }
 ```
 
-Response `200`:
+Phản hồi `200`:
 
 ```json
 {
@@ -268,9 +271,9 @@ Response `200`:
 
 ### POST `/api/auth/forgot-password`
 
-Actor: Guest
+Tác nhân: Khách mời
 
-Request:
+Yêu cầu:
 
 ```json
 {
@@ -278,7 +281,7 @@ Request:
 }
 ```
 
-Response `200`:
+Phản hồi `200`:
 
 ```json
 {
@@ -286,16 +289,16 @@ Response `200`:
 }
 ```
 
-Notes:
+Ghi chú:
 
-- Response must avoid email enumeration.
-- Eligible active accounts receive a six-digit reset OTP with the configured 15-minute expiry.
+- Phản hồi phải tránh liệt kê email.
+- Các tài khoản đang hoạt động đủ điều kiện sẽ nhận được OTP đặt lại gồm sáu chữ số với thời hạn sử dụng được định cấu hình là 15 phút.
 
 ### POST `/api/auth/reset-password`
 
-Actor: Guest
+Tác nhân: Khách mời
 
-Primary request (interactive OTP flow):
+Yêu cầu chính (luồng OTP tương tác):
 
 ```json
 {
@@ -305,7 +308,7 @@ Primary request (interactive OTP flow):
 }
 ```
 
-Compatibility request (legacy reset or FE11 setup link):
+Yêu cầu tương thích (đặt lại kế thừa hoặc liên kết thiết lập FE11):
 
 ```json
 {
@@ -314,7 +317,7 @@ Compatibility request (legacy reset or FE11 setup link):
 }
 ```
 
-Response `200`:
+Phản hồi `200`:
 
 ```json
 {
@@ -322,17 +325,17 @@ Response `200`:
 }
 ```
 
-Rules for canonical FE11 `ACCOUNT_SETUP` tokens:
+Quy tắc dành cho mã thông báo FE11 `ACCOUNT_SETUP` chuẩn:
 
-- The target account must be `INACTIVE` and have incomplete FE11 setup-token history.
-- Completion atomically updates password hash, `EmailVerifiedAt`, lock fields, status, token usage/revocation, and audit.
-- Password-reset credentials cannot activate ordinary inactive accounts.
+- Tài khoản mục tiêu phải là `INACTIVE` và có lịch sử mã thông báo thiết lập FE11 chưa đầy đủ.
+- Quá trình hoàn tất cập nhật nguyên tử hàm băm mật khẩu, `EmailVerifiedAt`, trường khóa, trạng thái, mã thông báo usage/revocation và kiểm tra.
+- Thông tin xác thực đặt lại mật khẩu không thể kích hoạt các tài khoản không hoạt động thông thường.
 
 ### GET `/api/auth/me`
 
-Actor: Authenticated
+Tác nhân: Đã xác thực
 
-Response `200`:
+Phản hồi `200`:
 
 ```json
 {
@@ -346,25 +349,25 @@ Response `200`:
 
 ---
 
-## FE11 User & Role Management
+## FE11 Quản lý người dùng và vai trò
 
-Source spec: `.sdd/specs/feat-user-role-management/SPEC.md`
+Đặc tả nguồn: `.sdd/specs/feat-user-role-management/SPEC.md`
 
-All FE11 endpoints require authenticated Admin role.
+Tất cả các điểm cuối FE11 đều yêu cầu vai trò Quản trị viên được xác thực.
 
 ### GET `/api/users`
 
-Query:
+Truy vấn:
 
-| Name | Type | Required | Notes |
+| Tên | Loại | Bắt buộc | Ghi chú |
 | --- | --- | --- | --- |
-| page | number | No | Default 1 |
-| limit | number | No | Default 20 |
-| status | string | No | `ACTIVE`, `INACTIVE`, `LOCKED` |
-| role | string | No | `ADMIN`, `LIBRARIAN`, `MEMBER`; case-insensitive input is normalized |
-| search | string | No | Trimmed email/full-name/user-ID search; 1..200 characters when supplied |
+| trang | số | Không | Mặc định 1 |
+| giới hạn | số | Không | Mặc định 20 |
+| trạng thái | chuỗi | Không | `ACTIVE`, `INACTIVE`, `LOCKED` |
+| vai trò | chuỗi | Không | `ADMIN`, `LIBRARIAN`, `MEMBER`; đầu vào không phân biệt chữ hoa chữ thường được chuẩn hóa |
+| tìm kiếm | chuỗi | Không | Đã cắt bớt tìm kiếm email/đầy đủ-name/người dùng-ID; 1..200 ký tự khi được cung cấp |
 
-Response `200`:
+Phản hồi `200`:
 
 ```json
 {
@@ -392,11 +395,15 @@ Response `200`:
 }
 ```
 
-The approved list envelope contains exactly `data` and `pagination`. Global Admin counters are read independently from FE12 `GET /api/reports/users` (`totals.users`, `usersByStatus`, and `usersByRole`) and are not derived from this paginated response. `updatedAt` is the latest effective version across `Users` and `UserProfiles`, so FE03 self-service and FE11 Admin updates participate in the same optimistic-concurrency boundary.
+Phong bì danh sách được phê duyệt chứa chính xác `data` và `pagination`. Bộ đếm quản trị toàn cầu
+được đọc độc lập với FE12 `GET /api/reports/users` (`totals.users`, `usersByStatus` và
+`usersByRole`) và không bắt nguồn từ phản hồi được phân trang này. `updatedAt` là phiên bản hiệu quả
+mới nhất trên `Users` và `UserProfiles`, do đó, các bản cập nhật tự phục vụ của FE03 và các bản cập
+nhật dành cho Quản trị viên FE11 đều tham gia vào cùng một ranh giới lạc quan-đồng thời.
 
 ### GET `/api/users/{userId}`
 
-Response `200`:
+Phản hồi `200`:
 
 ```json
 {
@@ -419,11 +426,14 @@ Response `200`:
 }
 ```
 
-Notes: `relatedSummary` is detail-only and each value defaults to numeric zero. `updatedAt` is the latest effective version across `Users` and `UserProfiles`. The response must never return password hashes, raw or hashed auth tokens, refresh/session identifiers, setup/reset links, provider payloads, or secret audit metadata.
+Lưu ý: `relatedSummary` chỉ có thông tin chi tiết và mỗi giá trị được mặc định là số 0. `updatedAt`
+là phiên bản hiệu quả mới nhất trên `Users` và `UserProfiles`. Phản hồi không bao giờ được trả về
+giá trị băm mật khẩu, mã thông báo xác thực thô hoặc băm, số nhận dạng refresh/session, liên kết
+setup/đặt lại, tải trọng của nhà cung cấp hoặc siêu dữ liệu kiểm tra bí mật.
 
 ### POST `/api/users`
 
-Request:
+Yêu cầu:
 
 ```json
 {
@@ -436,7 +446,7 @@ Request:
 }
 ```
 
-Response `201`:
+Phản hồi `201`:
 
 ```json
 {
@@ -449,26 +459,26 @@ Response `201`:
 }
 ```
 
-Notes:
+Ghi chú:
 
-- User, profile, role, hashed setup token, and audit commit atomically before FE10 delivery.
-- Authentication/Admin authorization and validated normalized input precede the repository call; `email` is maximum 255 and `fullName` is maximum 100.
-- The source transaction revalidates the active acting Admin and performs authoritative normalized email/username uniqueness checks before inserts.
-- Duplicate normalized email returns `409 EMAIL_ALREADY_EXISTS`, persists no partial source state, and requests no FE10 delivery.
-- Delivery failure returns `setupDeliveryStatus: "FAILED"`; the account remains `INACTIVE` and no provider detail or setup credential is returned.
-- The Admin never submits or receives a password, raw token, setup link, or debug credential.
+- Người dùng, hồ sơ, vai trò, mã thông báo thiết lập đã băm và bản ghi kiểm toán được cam kết nguyên tử trước khi phân phối FE10.
+- Ủy quyền xác thực/quản trị viên và đầu vào chuẩn hóa được xác thực trước lệnh gọi kho lưu trữ; `email` tối đa là 255 và `fullName` tối đa là 100.
+- Giao dịch nguồn xác nhận lại Quản trị viên đang hoạt động và thực hiện kiểm tra tính duy nhất email/username được chuẩn hóa có thẩm quyền trước khi chèn.
+- Email được chuẩn hóa trùng lặp sẽ trả về `409 EMAIL_ALREADY_EXISTS`, không tồn tại trạng thái nguồn một phần và không yêu cầu gửi FE10.
+- bàn giao thất bại trả về `setupDeliveryStatus: "FAILED"`; tài khoản vẫn là `INACTIVE` và không có thông tin chi tiết về nhà cung cấp hoặc thông tin xác thực thiết lập nào được trả về.
+- Quản trị viên không bao giờ gửi hoặc nhận mật khẩu, mã thông báo thô, liên kết thiết lập hoặc thông tin xác thực gỡ lỗi.
 
 ### POST `/api/users/{userId}/resend-setup`
 
-Actor: Admin
+Tác nhân: Quản trị viên
 
-Request:
+Yêu cầu:
 
 ```json
 {}
 ```
 
-Response `200`:
+Phản hồi `200`:
 
 ```json
 {
@@ -479,17 +489,17 @@ Response `200`:
 }
 ```
 
-Rules:
+Quy tắc:
 
-- Only incomplete admin-created accounts are eligible.
-- The source transaction revalidates the active acting Admin before locking target setup history.
-- FE11 revokes prior active setup tokens and creates a new 24-hour token/event/key.
-- A 60-second server-side cooldown applies per target account.
-- Active, locked, self-registered inactive, completed-setup, or cooldown-limited accounts are rejected without issuing a credential.
+- Chỉ những tài khoản do quản trị viên tạo chưa hoàn chỉnh mới đủ điều kiện.
+- Giao dịch nguồn xác nhận lại Quản trị viên đang hoạt động trước khi khóa lịch sử thiết lập mục tiêu.
+- FE11 thu hồi mã thông báo thiết lập đang hoạt động trước đó và tạo token/event/key mới có thời hạn 24 giờ.
+- Thời gian hồi chiêu phía máy chủ là 60 giây áp dụng cho mỗi tài khoản mục tiêu.
+- Các tài khoản đang hoạt động, bị khóa, tự đăng ký không hoạt động, đã thiết lập xong hoặc bị giới hạn thời gian hồi chiêu đều bị từ chối mà không cấp thông tin xác thực.
 
 ### PUT `/api/users/{userId}`
 
-Request:
+Yêu cầu:
 
 ```json
 {
@@ -500,15 +510,25 @@ Request:
 }
 ```
 
-Response `200`:
+Phản hồi `200`:
 
-The target may have the `MEMBER`, `LIBRARIAN`, or `ADMIN` role. Admin may update `fullName` (required when supplied, maximum 100), nullable `phone` (maximum 20, phone-character validation), and nullable `address` (maximum 255); at least one editable field must be supplied. The response is the authoritative updated `UserManagementView`. A no-op returns the current DTO with unchanged effective `updatedAt` and no success audit. A stale request returns `409 STALE_USER_STATE`.
+Mục tiêu có thể có vai trò `MEMBER`, `LIBRARIAN` hoặc `ADMIN`. Quản trị viên có thể cập nhật
+`fullName` (bắt buộc khi được cung cấp, tối đa 100), `phone` có thể rỗng (tối đa 20, xác thực ký tự
+điện thoại) và `address` có thể rỗng (tối đa 255); ít nhất một trường có thể chỉnh sửa phải được
+cung cấp. Phản hồi là `UserManagementView` được cập nhật có thẩm quyền. Lệnh ngừng hoạt động sẽ trả
+về DTO hiện tại với `updatedAt` hiệu quả không thay đổi và không có cuộc kiểm tra thành công nào.
+Yêu cầu cũ trả về `409 STALE_USER_STATE`.
 
-FE03 self-service and this FE11 Admin endpoint write the same profile fields and share the latest effective concurrency version. Existing-account email remains read-only until a verified FE02 change flow is approved. If this endpoint receives `email`, `department`, `specialization`, an unknown field, or a payload mixing one with an allowed field, it returns `403 MANAGED_USER_UPDATE_FORBIDDEN` atomically; no field, effective version, or success audit changes.
+FE03 tự phục vụ và điểm cuối Quản trị viên FE11 này viết các trường hồ sơ giống nhau và chia sẻ
+phiên bản đồng thời hiệu quả mới nhất. Email tài khoản hiện tại vẫn ở chế độ chỉ đọc cho đến khi
+luồng thay đổi FE02 đã được xác minh được phê duyệt. Nếu điểm cuối này nhận được `email`,
+`department`, `specialization`, một trường không xác định hoặc một tải trọng trộn với một trường
+được phép, thì nó sẽ trả về nguyên tử `403 MANAGED_USER_UPDATE_FORBIDDEN`; không có trường, phiên
+bản hiệu quả hoặc thay đổi kiểm tra thành công.
 
 ### PATCH `/api/users/{userId}/status`
 
-Request:
+Yêu cầu:
 
 ```json
 {
@@ -517,22 +537,22 @@ Request:
 }
 ```
 
-Response `200`:
+Phản hồi `200`:
 
-The response is the authoritative `UserManagementView`.
+Phản hồi là `UserManagementView` có thẩm quyền.
 
-Rules:
+Quy tắc:
 
-- Admin cannot deactivate themselves.
-- Only `ACTIVE` and `LOCKED` accounts transition to `INACTIVE`.
-- `INACTIVE` with null `deactivatedAt` returns `409 ACCOUNT_PENDING_ACTIVATION`; already-deactivated state is an idempotent no-op.
-- `expectedUpdatedAt` is compared with `COALESCE(Users.UpdatedAt, Users.CreatedAt)`; stale state returns `409 STALE_USER_STATE` without lifecycle, credential, or audit mutation.
-- Users with active borrowings cannot be deactivated.
-- Deactivation atomically sets `deactivatedAt`, revokes active `REFRESH` credentials, writes the audit, and does not permanently delete data.
+- Quản trị viên không thể tự hủy kích hoạt.
+- Chỉ các tài khoản `ACTIVE` và `LOCKED` mới chuyển sang `INACTIVE`.
+- `INACTIVE` có giá trị rỗng `deactivatedAt` trả về `409 ACCOUNT_PENDING_ACTIVATION`; trạng thái đã ngừng hoạt động là trạng thái không hoạt động bình thường.
+- `expectedUpdatedAt` được so sánh với `COALESCE(Users.UpdatedAt, Users.CreatedAt)`; trạng thái cũ trả về `409 STALE_USER_STATE` mà không có thao tác ghi về vòng đời, thông tin xác thực hoặc kiểm tra.
+- Người dùng có lượt mượn đang hoạt động không thể bị vô hiệu hóa.
+- Việc hủy kích hoạt sẽ thiết lập nguyên tử `deactivatedAt`, thu hồi thông tin xác thực `REFRESH` đang hoạt động, ghi kiểm tra và không xóa vĩnh viễn dữ liệu.
 
 ### PUT `/api/users/{userId}/role`
 
-Request:
+Yêu cầu:
 
 ```json
 {
@@ -540,64 +560,70 @@ Request:
 }
 ```
 
-Response `200`: the authoritative safe user-management DTO. Its compatibility `roles` array contains exactly one role.
+Phản hồi `200`: DTO quản lý người dùng an toàn có thẩm quyền. Mảng `roles` tương thích của nó chứa
+chính xác một vai trò.
 
-Rules:
+Quy tắc:
 
-- Roles are flat in Phase 1.
-- Every persisted account has exactly one mutually exclusive role.
-- The request body accepts exactly one positive numeric `roleId`; unknown, missing, or malformed fields return `400 VALIDATION_ERROR`.
-- Replacement deletes the current mapping, inserts the selected mapping, revokes the target account's active `REFRESH` credentials, and writes the audit in one transaction.
-- The target account must authenticate again before using the replacement role; protected APIs reload the current sole role through FE02.
-- Selecting the current sole role is an idempotent no-op with no role-change audit.
-- The last active Admin role must not be replaced.
+- Vai trò không thay đổi trong Giai đoạn 1.
+- Mỗi tài khoản được duy trì đều có chính xác một vai trò loại trừ lẫn nhau.
+- Nội dung yêu cầu chấp nhận chính xác một số dương `roleId`; các trường không xác định, bị thiếu hoặc không đúng định dạng trả về `400 VALIDATION_ERROR`.
+- Thay thế sẽ xóa ánh xạ hiện tại, chèn ánh xạ đã chọn, thu hồi thông tin xác thực `REFRESH` đang hoạt động của tài khoản đích và ghi kiểm tra vào một giao dịch.
+- Tài khoản đích phải xác thực lại trước khi sử dụng vai trò thay thế; API được bảo vệ tải lại vai trò duy nhất hiện tại thông qua FE02.
+- Việc chọn vai trò duy nhất hiện tại là không hoạt động bình thường và không có kiểm tra thay đổi vai trò.
+- Vai trò Quản trị viên hoạt động gần đây nhất không được thay thế.
 
 ### GET `/api/admin/permissions`
 
-Actor: authenticated Admin. Authentication and Admin authorization execute before controller handling. The endpoint accepts no body or query parameters and performs no mutation.
+Tác nhân: Quản trị viên được xác thực. Xác thực và ủy quyền quản trị viên thực hiện trước khi xử lý
+bộ điều khiển. Điểm cuối không chấp nhận tham số nội dung hoặc truy vấn và không thực hiện thao tác ghi.
 
-Response `200` has exactly two top-level fields:
+Phản hồi `200` có chính xác hai trường cấp cao nhất:
 
-- `roles`: ordered `ADMIN`, `LIBRARIAN`, `MEMBER`; each object contains only `roleName` and `label`.
-- `permissions`: the 15 ordered Phase 1 rules below; each object contains only `permissionKey`, `label`, `moduleKey`, `moduleLabel`, and `allowedRoles`.
+- `roles`: đặt hàng `ADMIN`, `LIBRARIAN`, `MEMBER`; mỗi đối tượng chỉ chứa `roleName` và `label`.
+- `permissions`: 15 quy tắc Giai đoạn 1 được sắp xếp dưới đây; mỗi đối tượng chỉ chứa `permissionKey`, `label`, `moduleKey`, `moduleLabel` và `allowedRoles`.
 
-Allowed role values are `ADMIN`, `LIBRARIAN`, and `MEMBER`; arrays are deterministic and contain no duplicates. FE12 `GET /api/reports/users` remains the owner of global `usersByRole` counts and the frontend joins the two responses by `roleName` only.
+Các giá trị vai trò được phép là `ADMIN`, `LIBRARIAN` và `MEMBER`; mảng có tính xác định và không
+chứa bản sao. FE12 `GET /api/reports/users` vẫn là chủ sở hữu số lượng `usersByRole` toàn cầu và
+giao diện người dùng chỉ tham gia hai phản hồi bằng `roleName`.
 
-| Module | Permission key | Label | Allowed roles |
+| Mô-đun | Khóa cấp phép | Nhãn | Vai trò được phép |
 | --- | --- | --- | --- |
-| User & Role | `USER_VIEW` | View users | ADMIN |
-| User & Role | `USER_CREATE` | Create accounts | ADMIN |
-| User & Role | `USER_UPDATE` | Update managed user profile fields | ADMIN |
-| User & Role | `USER_DEACTIVATE` | Deactivate accounts | ADMIN |
-| User & Role | `ROLE_MANAGE` | Manage roles | ADMIN |
-| User & Role | `AUDIT_VIEW` | View audit logs | ADMIN |
-| Library | `CATALOG_MANAGE` | Manage library catalog | ADMIN, LIBRARIAN |
-| Library | `METADATA_MANAGE` | Manage authors/publishers/categories | ADMIN |
-| Borrow/Return | `BORROW_APPROVE_REJECT` | Approve/reject borrow requests | ADMIN, LIBRARIAN |
-| Borrow/Return | `RETURN_RENEW_PROCESS` | Process returns and renewals | ADMIN, LIBRARIAN |
-| Fine | `FINE_CALCULATE_COLLECT` | Calculate and collect fines | ADMIN, LIBRARIAN |
-| Fine | `FINE_WAIVE_CANCEL` | Waive or cancel fines | ADMIN |
-| Reports | `REPORT_VIEW` | View reports | ADMIN, LIBRARIAN |
-| Borrow/Return | `BORROW_REQUEST_CREATE` | Create borrow request | MEMBER |
-| Borrow/Return | `BORROW_HISTORY_VIEW_OWN` | View own borrowing history | MEMBER |
+| Người dùng & Vai trò | `USER_VIEW` | Xem người dùng | ADMIN |
+| Người dùng & Vai trò | `USER_CREATE` | Tạo tài khoản | ADMIN |
+| Người dùng & Vai trò | `USER_UPDATE` | Cập nhật các trường hồ sơ người dùng được quản lý | ADMIN |
+| Người dùng & Vai trò | `USER_DEACTIVATE` | Vô hiệu hóa tài khoản | ADMIN |
+| Người dùng & Vai trò | `ROLE_MANAGE` | Quản lý vai trò | ADMIN |
+| Người dùng & Vai trò | `AUDIT_VIEW` | Xem nhật ký kiểm toán | ADMIN |
+| Thư viện | `CATALOG_MANAGE` | Quản lý danh mục thư viện | ADMIN, LIBRARIAN |
+| Thư viện | `METADATA_MANAGE` | Quản lý authors/publishers/categories | ADMIN |
+| mượn sách/trả sách | `BORROW_APPROVE_REJECT` | Yêu cầu mượn phê duyệt/từ chối | ADMIN, LIBRARIAN |
+| mượn sách/trả sách | `RETURN_RENEW_PROCESS` | Quy trình trả sách và gia hạn | ADMIN, LIBRARIAN |
+| Khoản phạt | `FINE_CALCULATE_COLLECT` | Tính và thu khoản phạt | ADMIN, LIBRARIAN |
+| Khoản phạt | `FINE_WAIVE_CANCEL` | Miễn hoặc hủy bỏ khoản phạt | ADMIN |
+| Báo cáo | `REPORT_VIEW` | Xem báo cáo | ADMIN, LIBRARIAN |
+| Mượn/trả sách | `BORROW_REQUEST_CREATE` | Tạo yêu cầu mượn | MEMBER |
+| Mượn/trả sách | `BORROW_HISTORY_VIEW_OWN` | Xem lịch sử mượn của chính mình | MEMBER |
 
-Errors: `401` for missing/invalid authentication and `403` for authenticated non-Admin callers.
+Lỗi: `401` dành cho xác thực missing/invalid và `403` dành cho người gọi không phải Quản trị viên đã
+được xác thực.
 
 ### GET `/api/admin/audit-logs`
 
-Actor: authenticated Admin. Authentication and Admin authorization run before detailed query validation.
+Tác nhân: Quản trị viên được xác thực. Xác thực và ủy quyền quản trị viên chạy trước khi xác thực
+truy vấn chi tiết.
 
-| Query | Type | Required | Contract |
+| Truy vấn | Loại | Bắt buộc | Hợp đồng |
 | --- | --- | --- | --- |
-| `page` | integer | No | Default `1`; minimum `1` |
-| `limit` | integer | No | Default `20`; range `1..100` |
-| `q` | string | No | Trimmed `1..100`; searches action, actor email/full name, target type, and target ID text |
-| `action` | string | No | Trimmed exact action, `1..100` |
-| `actorId` | integer | No | Positive user ID |
-| `from` | date | No | Inclusive `YYYY-MM-DD` lower bound |
-| `to` | date | No | Inclusive `YYYY-MM-DD` upper bound; must not precede `from` |
+| `page` | số nguyên | Không | `1` mặc định; tối thiểu `1` |
+| `limit` | số nguyên | Không | `20` mặc định; phạm vi `1..100` |
+| `q` | chuỗi | Không | Đã cắt `1..100`; hành động tìm kiếm, tên tác nhân email/đầy đủ, loại mục tiêu và văn bản ID mục tiêu |
+| `action` | chuỗi | Không | Cắt tỉa hành động chính xác, `1..100` |
+| `actorId` | số nguyên | Không | ID người dùng tích cực |
+| `from` | ngày | Không | Bao gồm giới hạn dưới `YYYY-MM-DD` |
+| `to` | ngày | Không | Bao gồm giới hạn trên `YYYY-MM-DD`; không được đặt chỗ `from` |
 
-Response `200`:
+Phản hồi `200`:
 
 ```json
 {
@@ -632,29 +658,30 @@ Response `200`:
 }
 ```
 
-Rules:
+Quy tắc:
 
-- Rows are ordered by `CreatedAt DESC, LogId DESC`; filtering and pagination run in SQL with typed parameters.
-- `details` is an action-aware allowlist. Raw `Metadata`, `UserAgent`, passwords, hashes, tokens, OTPs, sessions, credentials, setup/reset links, raw notes/reasons/emails/identifiers, raw paths, and nested objects are not returned.
-- Invalid JSON, top-level arrays/scalars, unknown actions, and invalid projected field shapes return `details: {}`.
-- Only targets with type `USER`, `USERS`, or `ACCOUNT` may receive a joined user label. Other target types return `label: null`.
-- An empty result returns `totalPages: 0`.
-- The retired `GET /api/users/audit-logs` path always returns `404 NOT_FOUND` and is not a compatibility alias.
+- Các hàng được sắp xếp theo `CreatedAt DESC, LogId DESC`; chạy lọc và phân trang trong SQL với các tham số đã nhập.
+- `details` là danh sách cho phép nhận biết hành động. `Metadata`, `UserAgent` thô, mật khẩu, hàm băm, mã thông báo, OTP, phiên, thông tin xác thực, liên kết setup/đặt lại, notes/reasons/emails/identifiers thô, đường dẫn thô và các đối tượng lồng nhau không được trả về.
+- JSON không hợp lệ, arrays/scalars cấp cao nhất, hành động không xác định và hình dạng trường được chiếu không hợp lệ trả về `details: {}`.
+- Chỉ các mục tiêu có loại `USER`, `USERS` hoặc `ACCOUNT` mới có thể nhận được nhãn người dùng đã tham gia. Các loại mục tiêu khác trả về `label: null`.
+- Kết quả trống trả về `totalPages: 0`.
+- Đường dẫn `GET /api/users/audit-logs` đã ngừng hoạt động luôn trả về `404 NOT_FOUND` và không phải là bí danh tương thích.
 
 ### GET `/api/admin/requests`
 
-Actor: authenticated Admin. Authentication and Admin authorization run before detailed query validation.
+Tác nhân: Quản trị viên được xác thực. Xác thực và ủy quyền quản trị viên chạy trước khi xác thực
+truy vấn chi tiết.
 
-| Query | Type | Required | Contract |
+| Truy vấn | Loại | Bắt buộc | Hợp đồng |
 | --- | --- | --- | --- |
-| `page` | integer | No | Default `1`; minimum `1` |
-| `limit` | integer | No | Default `20`; range `1..100` |
-| `q` | string | No | Trimmed `1..100`; searches only book title, member full name, and member email |
-| `status` | string | No | `PENDING`, `APPROVED`, `REJECTED`, `COMPLETED`, or `CANCELLED` |
-| `from` | date | No | Inclusive `YYYY-MM-DD` lower bound on `RequestDate` |
-| `to` | date | No | Inclusive `YYYY-MM-DD` upper bound; must not precede `from` |
+| `page` | số nguyên | Không | `1` mặc định; tối thiểu `1` |
+| `limit` | số nguyên | Không | `20` mặc định; phạm vi `1..100` |
+| `q` | chuỗi | Không | Đã cắt `1..100`; chỉ tìm kiếm tên sách, tên đầy đủ của thành viên và email thành viên |
+| `status` | chuỗi | Không | `PENDING`, `APPROVED`, `REJECTED`, `COMPLETED` hoặc `CANCELLED` |
+| `from` | ngày | Không | Bao gồm `YYYY-MM-DD` giới hạn dưới trên `RequestDate` |
+| `to` | ngày | Không | Bao gồm giới hạn trên `YYYY-MM-DD`; không được đặt chỗ `from` |
 
-Response `200` contains exactly `data` and `pagination`:
+Phản hồi `200` chứa chính xác `data` và `pagination`:
 
 ```json
 {
@@ -683,19 +710,21 @@ Response `200` contains exactly `data` and `pagination`:
 }
 ```
 
-Rules:
+Quy tắc:
 
-- Rows are ordered by `RequestDate DESC, RequestId DESC`; count and data queries share the same typed, escaped filter scope.
-- Pagination applies to distinct `BorrowRequests` headers before child detail rows are joined.
-- `bookTitles` preserves one non-null title per detail in `BorrowDetailId ASC` order; `categories` contains unique non-null names in first-occurrence order.
-- Valid commas in titles/categories must not be parsed by splitting `STRING_AGG` output.
-- The frontend uses server pagination and canonical `from`/`to`; legacy `fromDate`/`toDate` and client slicing are not part of the contract.
+- Các hàng được sắp xếp theo `RequestDate DESC, RequestId DESC`; truy vấn số lượng và dữ liệu có cùng phạm vi bộ lọc được nhập và thoát.
+- Phân trang áp dụng cho các tiêu đề `BorrowRequests` riêng biệt trước khi các hàng chi tiết con được nối.
+- `bookTitles` duy trì một tiêu đề không rỗng cho mỗi chi tiết theo thứ tự `BorrowDetailId ASC`; `categories` chứa các tên không null duy nhất theo thứ tự xuất hiện lần đầu.
+- Dấu phẩy hợp lệ trong titles/categories không được phân tích cú pháp bằng cách tách đầu ra `STRING_AGG`.
+- Giao diện người dùng sử dụng phân trang máy chủ và `from`/`to` chuẩn; `fromDate`/`toDate` kế thừa và việc phân chia khách hàng không phải là một phần của hợp đồng.
 
 ### GET `/api/admin/requests/{requestId}`
 
-Actor: authenticated Admin. Authorization runs before positive-integer path validation. Invalid IDs return `400 VALIDATION_ERROR`; missing requests return `404 BORROW_REQUEST_NOT_FOUND`.
+Tác nhân: Quản trị viên được xác thực. Việc ủy ​​quyền chạy trước khi xác thực đường dẫn số nguyên
+dương. ID không hợp lệ trả về `400 VALIDATION_ERROR`; yêu cầu bị thiếu trả về `404
+BORROW_REQUEST_NOT_FOUND`.
 
-Response `200`:
+Phản hồi `200`:
 
 ```json
 {
@@ -731,30 +760,34 @@ Response `200`:
 }
 ```
 
-FE11 projects this DTO from the FE07 read boundary and adds no duplicate request-detail SQL or mutation logic. Passwords, tokens, sessions, credentials, raw audit metadata, and unrelated profile fields are forbidden.
+FE11 chiếu DTO này từ ranh giới đọc FE07 và không thêm chi tiết yêu cầu trùng lặp SQL hoặc logic đột
+biến. Mật khẩu, mã thông báo, phiên, thông tin xác thực, siêu dữ liệu kiểm tra thô và các trường hồ
+sơ không liên quan đều bị cấm.
 
-Request mutations remain exclusively FE07-owned:
+Các thao tác ghi yêu cầu vẫn thuộc sở hữu độc quyền của FE07:
 
 - `PATCH /api/borrow-requests/{requestId}/approve`
 - `PATCH /api/borrow-requests/{requestId}/reject`
 
-No `/api/admin/requests/{requestId}/approve` or `/reject` aliases exist. Only `PENDING` requests expose controls; every non-`PENDING` direct mutation returns `409 BORROW_REQUEST_NOT_PENDING` without success state or audit changes.
+Không tồn tại bí danh `/api/admin/requests/{requestId}/approve` hoặc `/reject`. Chỉ các yêu cầu
+`PENDING` mới hiển thị các điều khiển; mọi thao tác ghi trực tiếp không phải `PENDING` đều trả về `409
+BORROW_REQUEST_NOT_PENDING` mà không có thay đổi trạng thái thành công hoặc kiểm tra.
 
 ---
 
-## Implementation Notes For Week 4
+## Ghi chú thực hiện cho tuần 4
 
-- This file is a planning contract, not implementation approval by itself.
-- FE11 Finalization design/plan/tasks are approved for governance; product work remains blocked until the governance PR passes checks, receives H3, and merges.
-- Backend tests must cover validation, authorization, and security-sensitive error behavior.
+- tệp này là hợp đồng quy hoạch chứ không phải là bản phê duyệt thực hiện.
+- FE11 Khóa sổ thiết kế/kế hoạch/tasks được phê duyệt để quản trị; công việc sản phẩm vẫn bị chặn cho đến khi PR quản trị vượt qua kiểm tra, nhận H3 và hợp nhất.
+- Kiểm tra máy chủ phải bao gồm xác thực, ủy quyền và hành vi lỗi nhạy cảm về bảo mật.
 
-## FE07-FE12 Connected Demo Batch
+## FE07-Lô trình diễn liên hoàn FE12
 
-Batch: `BATCH-FE07-FE12-CONNECTED-DEMO-2026-07-29`.
+Lô: `BATCH-FE07-FE12-CONNECTED-DEMO-2026-07-29`.
 
-### Additive FE07 return member
+### Thành viên trả sách phụ gia FE07
 
-The canonical return response may include:
+Phản hồi trả về chuẩn có thể bao gồm:
 
 ```json
 {
@@ -766,19 +799,19 @@ The canonical return response may include:
 }
 ```
 
-This member is read-only. It does not process or mutate an FE08 queue.
+Thành viên này ở chế độ chỉ đọc. Nó không xử lý hoặc thay đổi hàng đợi FE08.
 
-### FE10 borrowing-result templates
+### Mẫu kết quả mượn sách FE10
 
-FE10 accepts canonical FE07 source requests for
-`BORROW_REQUEST_APPROVED`, `BORROW_REQUEST_REJECTED`, `BORROW_RENEWED` and
-`BORROW_RETURNED`. Each source key is idempotent. Personal inbox rows use only
-the fixed action path `/borrowing/history`; callers cannot supply URLs and
-payloads cannot include rejection reason or sensitive/provider data.
+FE10 chấp nhận các yêu cầu nguồn FE07 chuẩn cho `BORROW_REQUEST_APPROVED`,
+`BORROW_REQUEST_REJECTED`, `BORROW_RENEWED` và `BORROW_RETURNED`. Mỗi khóa nguồn là bình thường. Các
+hàng trong hộp thư đến cá nhân chỉ sử dụng đường dẫn hành động cố định `/borrowing/history`; người
+gọi không thể cung cấp URL và tải trọng không thể bao gồm lý do từ chối hoặc dữ liệu
+nhạy cảm/nhà cung cấp.
 
 ### GET `/api/reports/operations-summary`
 
-Roles: `LIBRARIAN`, `ADMIN`. Query allowlist: empty.
+Vai trò: `LIBRARIAN`, `ADMIN`. Danh sách cho phép truy vấn: trống.
 
 ```json
 {
@@ -792,31 +825,28 @@ Roles: `LIBRARIAN`, `ADMIN`. Query allowlist: empty.
 }
 ```
 
-Unknown query keys return safe `400` before service/repository execution.
-Member returns `403`; missing authentication returns `401`. The service derives
-`businessDate` and `generatedAt` from one controlled clock read and passes the
-date explicitly to both SQL and in-memory report repositories.
-`availableCopies` counts only rows where `Books.Status = 'ACTIVE'` and
-`BookCopies.Status = 'AVAILABLE'`; `lowStockBooks` counts only active books with
-0..2 available copies.
+Query key không xác định trả về `400` an toàn trước khi service/repository chạy.
+Thành viên nhận `403`; thiếu xác thực nhận `401`. Service lấy `businessDate` và `generatedAt` từ một
+lần đọc clock có kiểm soát rồi truyền ngày rõ ràng tới cả SQL và in-memory report repositories.
+`availableCopies` chỉ đếm hàng có `Books.Status = 'ACTIVE'` và
+`BookCopies.Status = 'AVAILABLE'`; `lowStockBooks` chỉ đếm sách đang hoạt động có 0..2 bản sẵn có.
 
-## FE01 Public Circulation Continuation
+## FE01 Tiếp tục luồng lưu thông công khai
 
-`GET /api/books` and `GET /api/books/{bookId}` retain the existing public-safe
-summary and add the required `circulationAction` field.
+`GET /api/books` và `GET /api/books/{bookId}` giữ summary công khai an toàn hiện có và bổ sung field
+`circulationAction` bắt buộc.
 
 | Field | Values | Consumer |
 | --- | --- | --- |
-| `availabilityStatus` | `AVAILABLE`, `UNAVAILABLE` | Existing physical high-level presentation, especially staff |
-| `circulationAction` | `BORROW`, `RESERVE`, `WAIT`, `UNAVAILABLE` | Member continuation only |
+| `availabilityStatus` | `AVAILABLE`, `UNAVAILABLE` | Trình bày trạng thái vật lý cấp cao hiện có, đặc biệt cho nhân viên |
+| `circulationAction` | `BORROW`, `RESERVE`, `WAIT`, `UNAVAILABLE` | Chỉ dùng cho luồng tiếp tục của Thành viên |
 
-`BORROW` means at least one active-book copy is `AVAILABLE` without an open
-`PENDING + REQUESTED` FE07 claim or `ACTIVE`/`NOTIFIED` FE08 claim. `RESERVE`
-means no copy is immediately borrowable but a `BORROWED`/`RESERVED` copy can
-enter FE08. `WAIT` means only open-claim/queue-processing state remains.
-`UNAVAILABLE` is the fail-closed fallback.
+`BORROW` nghĩa là có ít nhất một bản sao của sách đang hoạt động ở trạng thái `AVAILABLE` và không có
+claim FE07 `PENDING + REQUESTED` hoặc claim FE08 `ACTIVE`/`NOTIFIED` đang mở. `RESERVE` nghĩa là chưa
+có bản sao mượn ngay nhưng bản sao `BORROWED`/`RESERVED` có thể vào FE08. `WAIT` nghĩa là chỉ còn
+trạng thái claim/hàng đợi đang xử lý. `UNAVAILABLE` là fallback fail-closed.
 
-The field is title-level. Public responses must not include `copyId`, barcode,
-location, reservation owner, queue position, Member identity, copy counts or
-raw workflow rows. The change is additive; no route, query allowlist, schema,
-status enum, borrowing limit or candidate endpoint changes.
+Field này ở cấp đầu sách. Phản hồi công khai không được chứa `copyId`, barcode, location, chủ sở hữu
+đặt chỗ, vị trí hàng đợi, danh tính Thành viên, số lượng bản sao hoặc raw workflow rows. Thay đổi chỉ
+mang tính bổ sung; không đổi route, query allowlist, schema, status enum, borrowing limit hoặc
+candidate endpoint.

@@ -1,144 +1,152 @@
-# FE11 Admin Role UI Contract Implementation Plan
+# FE11 Kế hoạch thực hiện hợp đồng giao diện người dùng vai trò quản trị viên
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Đối với nhân viên đại lý:** SUB-SKILL BẮT BUỘC: Sử dụng siêu năng lực:phát triển theo định hướng phụ (được khuyến nghị) hoặc siêu năng lực:thực hiện các kế hoạch để triển khai kế hoạch này theo từng nhiệm vụ. Các bước sử dụng cú pháp hộp kiểm (`- [ ]`) để theo dõi.
 
-**Goal:** Make the FE11 Admin role modal call the approved numeric-`roleId` assignment/revocation contract and recover safely when a multi-mutation save partially fails.
+**Mục tiêu:** Thực hiện phương thức vai trò Quản trị viên FE11 gọi hợp đồng chuyển nhượng/thu hồi
+số-`roleId` đã được phê duyệt và khôi phục an toàn khi lưu nhiều biến đổi không thành công một phần.
 
-**Architecture:** Keep the B7-complete backend role transaction unchanged. The frontend loads the authoritative `{ roleId, roleName }` catalog, keeps checkbox state as role names, validates a complete name-to-ID mutation plan before the first request, assigns before revoking, and reloads the target user after any partial failure.
+**Kiến trúc:** Giữ nguyên giao dịch vai trò máy chủ hoàn chỉnh B7. Giao diện người dùng tải danh mục
+`{ roleId, roleName }` có thẩm quyền, giữ trạng thái hộp kiểm làm tên vai trò, xác thực kế hoạch đột
+biến tên thành ID hoàn chỉnh trước yêu cầu đầu tiên, chỉ định trước khi thu hồi và tải lại người
+dùng mục tiêu sau bất kỳ lỗi một phần nào.
 
-**Tech Stack:** React 19, Vite 7, Axios authorized request wrapper, Node.js built-in test runner, ESLint 9, Express/Jest backend regression tests, Markdown SDD artifacts.
+**Tech bộ công nghệ:** React 19, Vite 7, trình bao bọc yêu cầu được ủy quyền của Axios, trình chạy kiểm thử
+tích hợp Node.js, kiểm thử hồi quy máy chủ ESLint 9, Express/Jest, tạo phẩm Markdown SDD.
 
-## Global Constraints
+## Ràng buộc toàn cầu
 
-- Implement only `TD-022` and the frontend acceptance path for `FR-FE11-012..014`, `FR-FE11-024..027`, and `AC-FE11-013..015`.
-- Preserve the approved API: `POST /api/users/{userId}/roles` with `{ roleId: number }` and `DELETE /api/users/{userId}/roles/{roleId}`.
-- Do not modify `SPEC.md`, backend role behavior, SQL schema, role hierarchy, Permissions, Audit Logs, navigation, Request Management, update, or deactivation behavior.
-- Obtain every role ID from authenticated `GET /api/users/roles`; never hardcode IDs or send role names across the mutation boundary.
-- Keep non-editable/unknown existing roles unchanged; only `ADMIN`, `LIBRARIAN`, and `MEMBER` are editable in this modal.
-- Validate the entire mutation plan before the first request, perform assignments before revocations, and never describe the multi-request save as atomic.
-- On the first mutation failure, stop, reload the target user, keep the modal open, and disable further Save attempts if authoritative reconciliation also fails.
-- Every production behavior change must have an observed RED test before implementation.
-- Preserve `Implementation State: DEFERRED` for the whole FE11 feature and leave unrelated debt open.
-- Preserve unrelated user changes and untracked files.
+- Chỉ triển khai `TD-022` và đường dẫn chấp nhận giao diện người dùng cho `FR-FE11-012..014`, `FR-FE11-024..027` và `AC-FE11-013..015`.
+- Bảo quản API đã được phê duyệt: `POST /api/users/{userId}/roles` với `{ roleId: number }` và `DELETE /api/users/{userId}/roles/{roleId}`.
+- Không sửa đổi `SPEC.md`, hành vi vai trò máy chủ, lược đồ SQL, phân cấp vai trò, Quyền, Nhật ký kiểm tra, điều hướng, Quản lý yêu cầu, cập nhật hoặc hành vi hủy kích hoạt.
+- Lấy mọi ID vai trò từ `GET /api/users/roles` đã được xác thực; không bao giờ mã hóa ID hoặc gửi tên vai trò qua ranh giới thao tác ghi.
+- Giữ nguyên các vai trò hiện tại không thể chỉnh sửa/không xác định; chỉ `ADMIN`, `LIBRARIAN` và `MEMBER` mới có thể chỉnh sửa được ở chế độ này.
+- Xác thực toàn bộ kế hoạch thao tác ghi trước yêu cầu đầu tiên, thực hiện các nhiệm vụ trước khi thu hồi và không bao giờ mô tả việc lưu nhiều yêu cầu dưới dạng nguyên tử.
+- Trong lần thao tác ghi đầu tiên không thành công, hãy dừng, tải lại người dùng mục tiêu, giữ chế độ mở và vô hiệu hóa các nỗ lực Lưu tiếp theo nếu quá trình đối chiếu có thẩm quyền cũng không thành công.
+- Mọi thay đổi về hành vi sản xuất đều phải được kiểm tra RED trước khi triển khai.
+- Giữ nguyên `Implementation State: DEFERRED` cho toàn bộ chức năng FE11 và để ngỏ khoản nợ không liên quan.
+- Giữ nguyên những thay đổi không liên quan của người dùng và các tập tin không bị theo dõi.
 
 ---
 
-### Task 1: Activate The Approved FE11 Admin Role UI Slice
+### Nhiệm vụ 1: Kích hoạt Phần giao diện người dùng vai trò quản trị FE11 đã được phê duyệt
 
-**Files:**
-- Modify: `.sdd/specs/feat-user-role-management/PLAN.md`
-- Modify: `.sdd/specs/feat-user-role-management/TASKS.md`
-- Modify: `.sdd/specs/feat-user-role-management/TEST_PLAN.md`
-- Modify: `.sdd/specs/feat-user-role-management/CHANGELOG.md`
-- Modify: `TECH_DEBT.md`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-user-role-management/PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/TEST_PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/CHANGELOG.md`
+- Sửa đổi: `TECH_DEBT.md`
 
-**Interfaces:**
-- Consumes: approved design `docs/superpowers/specs/2026-07-18-fe11-admin-role-ui-contract-design.md` and completed backend role tasks `FE11-R01..R05`.
-- Produces: task IDs `FE11-UIR01..UIR05`, validation commands, and `TD-022` state used by all later tasks.
+**Giao diện:**
+- Tiêu thụ: thiết kế `docs/superpowers/specs/2026-07-18-fe11-admin-role-ui-contract-design.md` đã được phê duyệt và hoàn thành các nhiệm vụ vai trò máy chủ `FE11-R01..R05`.
+- Tạo ra: ID tác vụ `FE11-UIR01..UIR05`, lệnh xác thực và trạng thái `TD-022` được sử dụng bởi tất cả các tác vụ sau này.
 
-- [ ] **Step 1: Rename the local design branch for implementation**
+- [ ] **Bước 1: Đổi tên nhánh thiết kế cục bộ để triển khai**
 
-The current branch contains the reviewed design and plan but will also carry the bounded fix. Rename it before product-code work:
+Nhánh hiện tại chứa thiết kế và kế hoạch đã được xem xét nhưng cũng sẽ có bản sửa lỗi được giới hạn.
+Đổi tên nó trước khi mã sản phẩm hoạt động:
 
 ```powershell
 git branch -m fix/fe11-admin-role-ui-contract
 ```
 
-Expected: `git branch --show-current` prints `fix/fe11-admin-role-ui-contract`.
+Dự kiến: `git branch --show-current` in `fix/fe11-admin-role-ui-contract`.
 
-- [ ] **Step 2: Add the bounded slice to FE11 PLAN.md**
+- [ ] **Bước 2: Thêm lát cắt giới hạn vào FE11 PLAN.md**
 
-Append after the Safe User List And Detail slice:
-
-```markdown
-## 12. Admin Role UI Contract Slice
-
-### In Scope
-
-- Load `{ roleId, roleName }` from the authenticated FE11 role catalog.
-- Keep checkbox state by role name while mapping every mutation to a positive numeric role ID.
-- Send canonical assignment/revocation requests, with assignments before revocations.
-- Block invalid catalogs before mutation and reconcile authoritative user roles after partial failure.
-- Add focused frontend RED-GREEN tests and affected regression checks.
-
-### Out Of Scope
-
-- Backend role transaction/validators, schema changes, role creation/editing, and permission editing.
-- Navigation, Permissions, Audit Logs, Request Management, update, deactivation, and all other FE11 debt.
-
-### Validation Gate
-
-- API adapter tests prove no role name enters a mutation request.
-- UI contract tests prove catalog validation, assignment-before-revocation, no-op behavior, and partial-failure reconciliation.
-- Full frontend tests/lint/build, focused backend role regression, traceability, and diff hygiene pass.
-- Remaining FE11 work stays deferred and human review is required before merge.
-```
-
-- [ ] **Step 3: Add FE11-UIR01..UIR05 to TASKS.md**
-
-Insert before `## Deferred FE11 Work`:
+Nối sau phần Chi tiết và Danh sách Người dùng An toàn:
 
 ```markdown
-## Admin Role UI Contract Tasks
+## 12. Lát cắt hợp đồng giao diện vai trò quản trị
 
-- [ ] **FE11-UIR01 - Send numeric role IDs from the frontend API adapter.**
-  - Maps to: FR-FE11-012..013; AC-FE11-013..014; FE11 API §11.
-  - DoD: assignment sends `{ roleId }`, revocation uses `/{roleId}`, and focused RED-GREEN tests exclude role-name mutation requests.
+### Trong phạm vi
 
-- [ ] **FE11-UIR02 - Validate and consume the authoritative role catalog.**
-  - Maps to: PRE-FE11-004; NFR-FE11-SEC-004; TD-022.
-  - Depends on: FE11-UIR01.
-  - DoD: only positive IDs for ADMIN/LIBRARIAN/MEMBER enable the modal; invalid/missing catalog data sends no mutation and no hardcoded fallback exists.
+- Tải `{ roleId, roleName }` từ danh mục vai trò FE11 đã được xác thực.
+- Giữ trạng thái hộp kiểm theo tên vai trò trong khi ánh xạ mọi thao tác ghi sang ID vai trò số dương.
+- Gửi yêu cầu chuyển nhượng/thu hồi chuẩn mực, kèm theo các yêu cầu chuyển nhượng trước khi thu hồi.
+- Chặn các danh mục không hợp lệ trước khi thao tác ghi và điều chỉnh vai trò của người dùng có thẩm quyền sau khi bị lỗi một phần.
+- Thêm các kiểm thử RED-GREEN giao diện người dùng tập trung và kiểm tra hồi quy bị ảnh hưởng.
 
-- [ ] **FE11-UIR03 - Execute deterministic role diffs and no-op saves.**
-  - Maps to: BR-FE11-007..009; FR-FE11-012..014, FR-FE11-027; AC-FE11-013..015.
-  - Depends on: FE11-UIR02.
-  - DoD: the complete diff is validated before requests, assignments precede revocations, non-editable roles are preserved, and no-op saves send no mutation.
+### Ngoài phạm vi
 
-- [ ] **FE11-UIR04 - Reconcile partial failures to server state.**
-  - Maps to: BR-FE11-010; FR-FE11-024..027; NFR-FE11-UX-001.
-  - Depends on: FE11-UIR03.
-  - DoD: the first failed mutation stops the sequence; target detail is reloaded into the open modal; failed reconciliation disables Save and never reports success.
+- Giao dịch/trình xác thực vai trò máy chủ, thay đổi lược đồ, tạo/chỉnh sửa vai trò và chỉnh sửa quyền.
+- Điều hướng, Quyền, Nhật ký kiểm tra, Quản lý yêu cầu, cập nhật, hủy kích hoạt và tất cả khoản nợ FE11 khác.
 
-- [ ] **FE11-UIR05 - Pass the Admin role UI validation and integration gates.**
-  - Depends on: FE11-UIR01..UIR04.
-  - DoD: focused/full frontend, lint/build, focused backend role regression, traceability, diff/security review, documentation, human review, merge, and post-merge CI evidence are complete.
+### Cổng xác nhận
+
+- Các kiểm thử bộ điều hợp API chứng minh rằng không có tên vai trò nào đưa ra yêu cầu thao tác ghi.
+- Kiểm tra hợp đồng giao diện người dùng chứng minh tính hợp lệ của danh mục, chuyển nhượng trước khi thu hồi, hành vi không hoạt động và đối chiếu lỗi một phần.
+- Giao diện người dùng đầy đủ tests/lint/build, tập trung vào hồi quy vai trò máy chủ, truy vết và vượt qua vệ sinh khác biệt.
+- Công việc FE11 còn lại vẫn bị trì hoãn và cần có sự đánh giá của con người trước khi hợp nhất.
 ```
 
-Keep this line unchanged:
+- [ ] **Bước 3: Thêm FE11-UIR01..UIR05 vào TASKS.md**
+
+Chèn trước `## Deferred FE11 Work`:
 
 ```markdown
-Implementation State: DEFERRED
+## Nhiệm vụ hợp đồng giao diện vai trò quản trị
+
+- [ ] **FE11-UIR01 - Gửi ID vai trò số từ bộ chuyển đổi API giao diện người dùng.**
+  - Bản đồ tới: FR-FE11-012..013; AC-FE11-013..014; FE11 API §11.
+  - DoD: nhiệm vụ gửi `{ roleId }`, việc thu hồi sử dụng `/{roleId}` và các kiểm thử RED-GREEN tập trung loại trừ các yêu cầu thao tác ghi tên vai trò.
+
+- [ ] **FE11-UIR02 - Xác thực và sử dụng danh mục vai trò có thẩm quyền.**
+  - Bản đồ tới: PRE-FE11-004; NFR-FE11-SEC-004; TD-022.
+  - Phụ thuộc vào: FE11-UIR01.
+  - DoD: chỉ các ID dương cho Quản trị viên/Thủ thư/MEMBER mới kích hoạt phương thức; dữ liệu danh mục không hợp lệ/bị thiếu sẽ không gửi thao tác ghi và không tồn tại dự phòng mã hóa cứng.
+
+- [ ] **FE11-UIR03 - Thực hiện các khác biệt về vai trò xác định và lưu không hoạt động.**
+  - Bản đồ tới: BR-FE11-007..009; FR-FE11-012..014, FR-FE11-027; AC-FE11-013..015.
+  - Phụ thuộc vào: FE11-UIR02.
+  - DoD: sự khác biệt hoàn toàn được xác thực trước khi yêu cầu, các phép gán trước khi thu hồi, các vai trò không thể chỉnh sửa được giữ nguyên và các bản lưu no-op không gửi thao tác ghi.
+
+- [ ] **FE11-UIR04 - Điều chỉnh lỗi một phần với trạng thái máy chủ.**
+  - Bản đồ tới: BR-FE11-010; FR-FE11-024..027; NFR-FE11-UX-001.
+  - Phụ thuộc vào: FE11-UIR03.
+  - DoD: thao tác ghi thất bại đầu tiên dừng chuỗi; chi tiết mục tiêu được tải lại vào phương thức mở; việc hòa giải không thành công sẽ vô hiệu hóa Lưu và không bao giờ báo cáo thành công.
+
+- [ ] **FE11-UIR05 - Vượt qua cổng tích hợp và xác thực giao diện người dùng với vai trò Quản trị viên.**
+  - Phụ thuộc vào: FE11-UIR01..UIR04.
+  - DoD: giao diện người dùng tập trung/đầy đủ, tìm lỗi mã nguồn/xây dựng, hồi quy vai trò máy chủ tập trung, truy vết, đánh giá khác biệt/bảo mật, tài liệu, đánh giá con người, hợp nhất và bằng chứng CI sau hợp nhất đã hoàn tất.
 ```
 
-- [ ] **Step 4: Update TEST_PLAN.md and CHANGELOG.md**
-
-Add these test targets to `TEST_PLAN.md`:
+Giữ dòng này không thay đổi:
 
 ```markdown
-- Admin role API helpers send only numeric `roleId` values from the authenticated role catalog.
-- The role modal validates a complete editable catalog before mutation, assigns before revoking, and preserves non-editable roles.
-- Partial mutation failure stops later requests and reloads the target user's authoritative roles into the open modal.
+Trạng thái thực hiện: TRÌ HOÃN
 ```
 
-Add a dated `CHANGELOG.md` entry stating that the role UI contract design and task group are approved, implementation evidence is not yet claimed, and all unrelated FE11 work remains deferred.
+- [ ] **Bước 4: Cập nhật TEST_PLAN.md và CHANGELOG.md**
 
-- [ ] **Step 5: Mark TD-022 in progress**
+Thêm các mục tiêu kiểm thử này vào `TEST_PLAN.md`:
 
-Change only the `TD-022` status cell from `OPEN` to `IN PROGRESS`. Do not edit or close `TD-023..TD-027`.
+```markdown
+- Người trợ giúp API có vai trò quản trị viên chỉ gửi các giá trị `roleId` dạng số từ danh mục vai trò đã xác thực.
+- Phương thức vai trò xác thực một danh mục hoàn chỉnh có thể chỉnh sửa trước khi thao tác ghi, gán trước khi thu hồi và duy trì các vai trò không thể chỉnh sửa.
+- Lỗi thao tác ghi một phần sẽ dừng các yêu cầu sau đó và tải lại vai trò có thẩm quyền của người dùng mục tiêu vào phương thức mở.
+```
 
-- [ ] **Step 6: Run documentation checks**
+Thêm mục nhập `CHANGELOG.md` ghi ngày tháng cho biết rằng nhóm nhiệm vụ và thiết kế hợp đồng giao
+diện người dùng đã được phê duyệt, bằng chứng triển khai chưa được yêu cầu và tất cả công việc FE11
+không liên quan vẫn bị hoãn lại.
 
-Run:
+- [ ] **Bước 5: Đang đánh dấu TD-022**
+
+Chỉ thay đổi ô trạng thái `TD-022` từ `OPEN` thành `IN PROGRESS`. Không chỉnh sửa hoặc đóng `TD-023..TD-027`.
+
+- [ ] **Bước 6: Chạy kiểm tra tài liệu**
+
+Chạy:
 
 ```powershell
 npm.cmd run trace:enforce
 git diff --check -- .sdd/specs/feat-user-role-management TECH_DEBT.md
 ```
 
-Expected: `trace:enforce` reports PASS; the documentation diff has no whitespace errors.
+Dự kiến: `trace:enforce` báo cáo ĐẠT; tài liệu khác biệt không có lỗi khoảng trắng.
 
-- [ ] **Step 7: Commit the activated slice**
+- [ ] **Bước 7: Cam kết lát đã kích hoạt**
 
 ```powershell
 git add -- .sdd/specs/feat-user-role-management/PLAN.md .sdd/specs/feat-user-role-management/TASKS.md .sdd/specs/feat-user-role-management/TEST_PLAN.md .sdd/specs/feat-user-role-management/CHANGELOG.md TECH_DEBT.md
@@ -147,20 +155,20 @@ git commit -m "docs: activate FE11 admin role UI contract"
 
 ---
 
-### Task 2: Send Numeric Role IDs From The Frontend API Adapter
+### Nhiệm vụ 2: Gửi ID vai trò số từ Bộ điều hợp giao diện API
 
-**Files:**
-- Modify: `frontend/test/userManagementApi.test.js`
-- Modify: `frontend/src/api/userManagementApi.js`
-- Modify: `.sdd/specs/feat-user-role-management/TASKS.md`
+**Tệp:**
+- Sửa đổi: `frontend/test/userManagementApi.test.js`
+- Sửa đổi: `frontend/src/api/userManagementApi.js`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/TASKS.md`
 
-**Interfaces:**
-- Consumes: `authorizedRequest`, numeric `userId`, and numeric `roleId` supplied by the page orchestration.
-- Produces: `assignManagedUserRole(userId, roleId)` and `revokeManagedUserRole(userId, roleId)` matching FE11 API §11.
+**Giao diện:**
+- Tiêu thụ: `authorizedRequest`, `userId` số và `roleId` số do điều phối trang cung cấp.
+- Sản xuất: `assignManagedUserRole(userId, roleId)` và `revokeManagedUserRole(userId, roleId)` phù hợp với FE11 API §11.
 
-- [ ] **Step 1: Add the failing API contract test**
+- [ ] **Bước 1: Thêm kiểm thử hợp đồng API không thành công**
 
-Append to `frontend/test/userManagementApi.test.js`:
+Nối vào `frontend/test/userManagementApi.test.js`:
 
 ```js
 test('FE11 role mutations send numeric role IDs through the canonical contract', async () => {
@@ -182,21 +190,22 @@ test('FE11 role mutations send numeric role IDs through the canonical contract',
 });
 ```
 
-- [ ] **Step 2: Run RED and confirm the current role-name contract fails**
+- [ ] **Bước 2: Chạy RED và xác nhận hợp đồng tên vai trò hiện tại không thành công**
 
-Run:
+Chạy:
 
 ```powershell
 node --test test/userManagementApi.test.js
 ```
 
-Working directory: `frontend`.
+Thư mục làm việc: `frontend`.
 
-Expected: FAIL because the current helpers accept `roleName`, send `{ roleName }`, and interpolate the name into the DELETE path.
+Dự kiến: THẤT BẠI vì những người trợ giúp hiện tại chấp nhận `roleName`, gửi `{ roleName }` và nội
+suy tên vào đường dẫn DELETE.
 
-- [ ] **Step 3: Replace both mutation helpers**
+- [ ] **Bước 3: Thay thế cả hai trình trợ giúp thao tác ghi**
 
-In `frontend/src/api/userManagementApi.js`, replace the existing helpers with:
+Trong `frontend/src/api/userManagementApi.js`, thay thế các trợ giúp hiện có bằng:
 
 ```js
 export async function assignManagedUserRole(userId, roleId) {
@@ -225,21 +234,21 @@ export async function revokeManagedUserRole(userId, roleId) {
 }
 ```
 
-- [ ] **Step 4: Run GREEN**
+- [ ] **Bước 4: Chạy GREEN**
 
-Run:
+Chạy:
 
 ```powershell
 node --test test/userManagementApi.test.js
 ```
 
-Working directory: `frontend`.
+Thư mục làm việc: `frontend`.
 
-Expected: all `userManagementApi` tests PASS.
+Dự kiến: tất cả các kiểm thử `userManagementApi` ĐẠT.
 
-- [ ] **Step 5: Mark FE11-UIR01 complete and commit**
+- [ ] **Bước 5: Đánh dấu FE11-UIR01 là hoàn thành và cam kết**
 
-Update the task checkbox and add the observed RED/GREEN evidence, then run:
+Cập nhật hộp kiểm nhiệm vụ và thêm bằng chứng RED/GREEN được quan sát, sau đó chạy:
 
 ```powershell
 git add -- frontend/test/userManagementApi.test.js frontend/src/api/userManagementApi.js .sdd/specs/feat-user-role-management/TASKS.md
@@ -248,20 +257,20 @@ git commit -m "fix(fe11): send numeric role IDs from admin API"
 
 ---
 
-### Task 3: Validate The Role Catalog Before Opening Or Saving
+### Nhiệm vụ 3: Xác thực danh mục vai trò trước khi mở hoặc lưu
 
-**Files:**
-- Modify: `frontend/test/userManagementFrontend.test.js`
-- Modify: `frontend/src/page/UserManagement.jsx`
-- Modify: `.sdd/specs/feat-user-role-management/TASKS.md`
+**Tệp:**
+- Sửa đổi: `frontend/test/userManagementFrontend.test.js`
+- Sửa đổi: `frontend/src/page/UserManagement.jsx`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/TASKS.md`
 
-**Interfaces:**
-- Consumes: `fetchRoles()` response `{ data: Array<{ roleId, roleName }> }` and `editableRoles = ['ADMIN', 'LIBRARIAN', 'MEMBER']`.
-- Produces: `normalizeEditableRoleCatalog(roleCatalog)` and `buildRoleMutationPlan(currentRoleNames, selectedRoleNames, roleCatalog)`; both throw the safe catalog error before any mutation when the catalog is incomplete or invalid.
+**Giao diện:**
+- Tiêu thụ: Phản hồi `fetchRoles()` `{ data: Array<{ roleId, roleName }> }` và `editableRoles = ['ADMIN', 'LIBRARIAN', 'MEMBER']`.
+- Sản xuất: `normalizeEditableRoleCatalog(roleCatalog)` và `buildRoleMutationPlan(currentRoleNames, selectedRoleNames, roleCatalog)`; cả hai đều đưa ra lỗi danh mục an toàn trước bất kỳ thao tác ghi nào khi danh mục không đầy đủ hoặc không hợp lệ.
 
-- [ ] **Step 1: Add failing source-contract tests for catalog integrity**
+- [ ] **Bước 1: Thêm các kiểm thử hợp đồng nguồn không thành công để đảm bảo tính toàn vẹn của danh mục**
 
-Append to `frontend/test/userManagementFrontend.test.js`:
+Nối vào `frontend/test/userManagementFrontend.test.js`:
 
 ```js
 test('FE11 role editing requires a complete numeric role catalog', async () => {
@@ -285,21 +294,22 @@ test('FE11 role mutation plan preserves names for UI and emits catalog IDs', asy
 });
 ```
 
-- [ ] **Step 2: Run RED**
+- [ ] **Bước 2: Chạy RED**
 
-Run:
+Chạy:
 
 ```powershell
 node --test test/userManagementFrontend.test.js
 ```
 
-Working directory: `frontend`.
+Thư mục làm việc: `frontend`.
 
-Expected: FAIL because catalog validation, retryable `loadRoles`, and the mutation-plan helper do not exist; the current name-only fallback still exists.
+Dự kiến: THẤT BẠI vì xác thực danh mục, `loadRoles` có thể thử lại và trình trợ giúp kế hoạch đột
+biến không tồn tại; dự phòng chỉ có tên hiện tại vẫn tồn tại.
 
-- [ ] **Step 3: Add catalog normalization and mutation planning**
+- [ ] **Bước 3: Thêm chuẩn hóa danh mục và lập kế hoạch thao tác ghi**
 
-Add after `editableRoles` in `frontend/src/page/UserManagement.jsx`:
+Thêm sau `editableRoles` trong `frontend/src/page/UserManagement.jsx`:
 
 ```js
 const ROLE_CATALOG_ERROR = 'Không thể tải danh mục vai trò. Vui lòng thử lại.';
@@ -354,11 +364,12 @@ function buildRoleMutationPlan(currentRoleNames, selectedRoleNames, roleCatalog)
 }
 ```
 
-Only names in the editable catalog participate in the diff, so existing non-editable roles remain untouched.
+Chỉ những tên trong danh mục có thể chỉnh sửa mới tham gia vào phần khác biệt, vì vậy các vai trò
+không thể chỉnh sửa hiện tại vẫn được giữ nguyên.
 
-- [ ] **Step 4: Replace the name-only fallback with retryable catalog state**
+- [ ] **Bước 4: Thay thế dự phòng chỉ có tên bằng trạng thái danh mục có thể thử lại**
 
-Add next to the existing `roles` state:
+Thêm bên cạnh trạng thái `roles` hiện có:
 
 ```js
 const [rolesError, setRolesError] = useState('');
@@ -366,7 +377,7 @@ const [rolesLoading, setRolesLoading] = useState(false);
 const [roleSyncBlocked, setRoleSyncBlocked] = useState(false);
 ```
 
-Add this page function before `openRoleModal`:
+Thêm chức năng trang này trước `openRoleModal`:
 
 ```js
 async function loadRoles() {
@@ -388,7 +399,7 @@ async function loadRoles() {
 }
 ```
 
-Replace the current role-loading effect with:
+Thay thế hiệu ứng tải vai trò hiện tại bằng:
 
 ```js
 useEffect(() => {
@@ -398,7 +409,7 @@ useEffect(() => {
 }, []);
 ```
 
-Replace `openRoleModal` with:
+Thay thế `openRoleModal` bằng:
 
 ```js
 async function openRoleModal(user) {
@@ -418,19 +429,20 @@ async function openRoleModal(user) {
 }
 ```
 
-Remove this fallback entirely:
+Xóa hoàn toàn dự phòng này:
 
 ```js
 editableRoles.map((roleName) => ({ roleName }))
 ```
 
-In `RoleModal`, use only the validated `roles` prop:
+Trong `RoleModal`, chỉ sử dụng prop `roles` đã được xác thực:
 
 ```js
 const availableRoles = roles;
 ```
 
-Pass the loading/block state through the existing modal call so both states are consumed before Task 5 adds the enforcement behavior:
+Chuyển trạng thái tải/chặn thông qua lệnh gọi phương thức hiện có để cả hai trạng thái đều được sử
+dụng trước khi Nhiệm vụ 5 thêm hành vi thực thi:
 
 ```jsx
 <RoleModal
@@ -442,20 +454,20 @@ Pass the loading/block state through the existing modal call so both states are 
 />
 ```
 
-- [ ] **Step 5: Run GREEN and lint the changed page**
+- [ ] **Bước 5: Chạy GREEN và tìm lỗi trang đã thay đổi**
 
-Run:
+Chạy:
 
 ```powershell
 node --test test/userManagementFrontend.test.js
 npm.cmd run lint
 ```
 
-Working directory: `frontend`.
+Thư mục làm việc: `frontend`.
 
-Expected: focused tests PASS and ESLint reports no errors.
+Dự kiến: các kiểm thử tập trung đạt và ESLint báo cáo không có lỗi.
 
-- [ ] **Step 6: Mark FE11-UIR02 complete and commit**
+- [ ] **Bước 6: Đánh dấu hoàn thành FE11-UIR02 và cam kết**
 
 ```powershell
 git add -- frontend/test/userManagementFrontend.test.js frontend/src/page/UserManagement.jsx .sdd/specs/feat-user-role-management/TASKS.md
@@ -464,20 +476,20 @@ git commit -m "fix(fe11): require numeric admin role catalog"
 
 ---
 
-### Task 4: Execute Assignments Before Revocations And Handle No-Ops
+### Nhiệm vụ 4: Thực hiện các nhiệm vụ trước khi thu hồi và xử lý các trường hợp không hoạt động
 
-**Files:**
-- Modify: `frontend/test/userManagementFrontend.test.js`
-- Modify: `frontend/src/page/UserManagement.jsx`
-- Modify: `.sdd/specs/feat-user-role-management/TASKS.md`
+**Tệp:**
+- Sửa đổi: `frontend/test/userManagementFrontend.test.js`
+- Sửa đổi: `frontend/src/page/UserManagement.jsx`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/TASKS.md`
 
-**Interfaces:**
-- Consumes: `buildRoleMutationPlan(...)`, numeric API helpers from Task 2, and the validated `roles` catalog from Task 3.
-- Produces: deterministic `saveRoles(nextRoles)` behavior with preflight validation, assignment-before-revocation order, and zero-request no-op handling.
+**Giao diện:**
+- Tiêu thụ: `buildRoleMutationPlan(...)`, trình trợ giúp API dạng số từ Nhiệm vụ 2 và danh mục `roles` đã được xác thực từ Nhiệm vụ 3.
+- Tạo ra: hành vi `saveRoles(nextRoles)` xác định với xác thực trước, thứ tự chuyển nhượng trước khi thu hồi và xử lý không yêu cầu hoạt động.
 
-- [ ] **Step 1: Add failing ordering and no-op source tests**
+- [ ] **Bước 1: Thêm các kiểm thử thứ tự không thành công và nguồn không hoạt động**
 
-Append:
+Nối thêm:
 
 ```js
 test('FE11 role saves validate the full plan and assign before revoking', async () => {
@@ -494,19 +506,20 @@ test('FE11 role saves validate the full plan and assign before revoking', async 
 });
 ```
 
-- [ ] **Step 2: Run RED**
+- [ ] **Bước 2: Chạy RED**
 
-Run:
+Chạy:
 
 ```powershell
 node --test test/userManagementFrontend.test.js
 ```
 
-Expected: FAIL because `saveRoles` still sends names directly and does not have a planned no-op branch.
+Dự kiến: THẤT BẠI vì `saveRoles` vẫn gửi tên trực tiếp và không có nhánh không hoạt động theo kế hoạch.
 
-- [ ] **Step 3: Replace the successful mutation body**
+- [ ] **Bước 3: Thay thế phần thân thao tác ghi thành công**
 
-Replace `saveRoles` with this version; Task 5 will fill the reconciliation catch while preserving the successful path:
+Thay thế `saveRoles` bằng phiên bản này; Nhiệm vụ 5 sẽ điền vào phần bắt đối chiếu trong khi vẫn duy
+trì đường dẫn thành công:
 
 ```js
 async function saveRoles(nextRoles) {
@@ -548,19 +561,20 @@ async function saveRoles(nextRoles) {
 }
 ```
 
-The complete plan is built before either loop; an invalid catalog therefore throws before any request.
+Kế hoạch hoàn chỉnh được xây dựng trước một trong hai vòng lặp; do đó một danh mục không hợp lệ sẽ
+bị loại bỏ trước bất kỳ yêu cầu nào.
 
-- [ ] **Step 4: Run GREEN**
+- [ ] **Bước 4: Chạy GREEN**
 
-Run:
+Chạy:
 
 ```powershell
 node --test test/userManagementFrontend.test.js
 ```
 
-Expected: focused frontend tests PASS.
+Dự kiến: các kiểm thử lối vào tập trung ĐẠT.
 
-- [ ] **Step 5: Mark FE11-UIR03 complete and commit**
+- [ ] **Bước 5: Đánh dấu FE11-UIR03 là hoàn thành và cam kết**
 
 ```powershell
 git add -- frontend/test/userManagementFrontend.test.js frontend/src/page/UserManagement.jsx .sdd/specs/feat-user-role-management/TASKS.md
@@ -569,20 +583,20 @@ git commit -m "fix(fe11): sequence admin role mutations safely"
 
 ---
 
-### Task 5: Reconcile Partial Failures And Lock Unsynchronized Saves
+### Nhiệm vụ 5: Điều chỉnh các lỗi một phần và khóa các lần lưu không đồng bộ
 
-**Files:**
-- Modify: `frontend/test/userManagementFrontend.test.js`
-- Modify: `frontend/src/page/UserManagement.jsx`
-- Modify: `.sdd/specs/feat-user-role-management/TASKS.md`
+**Tệp:**
+- Sửa đổi: `frontend/test/userManagementFrontend.test.js`
+- Sửa đổi: `frontend/src/page/UserManagement.jsx`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/TASKS.md`
 
-**Interfaces:**
-- Consumes: `fetchManagedUser(userId)`, `roleUser`, `selectedUser`, and the mutation sequence from Task 4.
-- Produces: refreshed modal role state after failure, `roleSyncBlocked` protection when refresh fails, and modal-local safe errors.
+**Giao diện:**
+- Tiêu thụ: `fetchManagedUser(userId)`, `roleUser`, `selectedUser` và chuỗi thao tác ghi từ Nhiệm vụ 4.
+- Tạo ra: trạng thái vai trò phương thức được làm mới sau khi thất bại, bảo vệ `roleSyncBlocked` khi làm mới không thành công và các lỗi an toàn phương thức-cục bộ.
 
-- [ ] **Step 1: Add failing reconciliation and modal-lock tests**
+- [ ] **Bước 1: Thêm các kiểm thử đối chiếu không thành công và khóa phương thức**
 
-Append:
+Nối thêm:
 
 ```js
 test('FE11 partial role failure reloads the target and keeps the modal authoritative', async () => {
@@ -598,19 +612,20 @@ test('FE11 partial role failure reloads the target and keeps the modal authorita
 });
 ```
 
-- [ ] **Step 2: Run RED**
+- [ ] **Bước 2: Chạy RED**
 
-Run:
+Chạy:
 
 ```powershell
 node --test test/userManagementFrontend.test.js
 ```
 
-Expected: FAIL because partial-failure reconciliation, local selection synchronization, and blocked Save behavior are absent.
+Dự kiến: THẤT BẠI vì không có chức năng đối chiếu lỗi một phần, đồng bộ hóa lựa chọn cục bộ và hành
+vi Lưu bị chặn.
 
-- [ ] **Step 3: Synchronize RoleModal with refreshed user state**
+- [ ] **Bước 3: Đồng bộ hóa RoleModal với trạng thái người dùng được làm mới**
 
-Change the signature and state setup:
+Thay đổi thiết lập chữ ký và trạng thái:
 
 ```js
 function RoleModal({ user, roles, savingBlocked, onClose, onSave }) {
@@ -625,7 +640,7 @@ function RoleModal({ user, roles, savingBlocked, onClose, onSave }) {
   }, [user]);
 ```
 
-Replace `handleSave` with:
+Thay thế `handleSave` bằng:
 
 ```js
 async function handleSave(event) {
@@ -653,7 +668,7 @@ async function handleSave(event) {
 }
 ```
 
-Guard closing and saving while work is active:
+Bảo vệ đóng và lưu trong khi công việc đang hoạt động:
 
 ```jsx
 <div className="um-modal-backdrop" onMouseDown={() => { if (!saving) onClose(); }}>
@@ -671,9 +686,9 @@ Guard closing and saving while work is active:
 <button type="submit" className="um-primary-button" disabled={saving || savingBlocked}>
 ```
 
-- [ ] **Step 4: Reconcile the authoritative target after a mutation failure**
+- [ ] **Bước 4: Điều chỉnh mục tiêu chính thức sau khi thao tác ghi thất bại**
 
-Replace the catch in `saveRoles` with:
+Thay thế phần bắt trong `saveRoles` bằng:
 
 ```js
   } catch (error) {
@@ -691,7 +706,7 @@ Replace the catch in `saveRoles` with:
   }
 ```
 
-Pass the block state and clear it only when closing intentionally:
+Vượt qua trạng thái khối và chỉ xóa nó khi cố ý đóng:
 
 ```jsx
 <RoleModal
@@ -706,9 +721,9 @@ Pass the block state and clear it only when closing intentionally:
 />
 ```
 
-- [ ] **Step 5: Run GREEN, full frontend tests, and lint/build**
+- [ ] **Bước 5: Chạy GREEN, kiểm tra giao diện người dùng đầy đủ và tìm lỗi mã nguồn/bản dựng**
 
-Run from `frontend`:
+Chạy từ `frontend`:
 
 ```powershell
 node --test test/userManagementFrontend.test.js test/userManagementApi.test.js
@@ -717,9 +732,11 @@ npm.cmd run lint
 npm.cmd run build
 ```
 
-Expected: focused and full frontend tests PASS, ESLint reports no errors, and Vite production build succeeds. The existing bundle-size advisory may remain non-blocking.
+Dự kiến: các kiểm thử giao diện người dùng tập trung và đầy đủ ĐẠT, ESLint báo cáo không có lỗi và
+quá trình xây dựng sản xuất Vite thành công. Lời khuyên về kích thước gói hiện tại có thể vẫn không
+bị chặn.
 
-- [ ] **Step 6: Mark FE11-UIR04 complete and commit**
+- [ ] **Bước 6: Đánh dấu hoàn thành FE11-UIR04 và cam kết**
 
 ```powershell
 git add -- frontend/test/userManagementFrontend.test.js frontend/src/page/UserManagement.jsx .sdd/specs/feat-user-role-management/TASKS.md
@@ -728,32 +745,32 @@ git commit -m "fix(fe11): reconcile partial admin role updates"
 
 ---
 
-### Task 6: Pass The Validation Gate And Prepare Human Review
+### Nhiệm vụ 6: Vượt qua cổng xác thực và chuẩn bị đánh giá con người
 
-**Files:**
-- Create: `.sdd/reviews/fe11-admin-role-ui-contract-validation-2026-07-18.md`
-- Modify: `.sdd/specs/feat-user-role-management/TASKS.md`
-- Modify: `.sdd/specs/feat-user-role-management/TEST_PLAN.md`
-- Modify: `.sdd/specs/feat-user-role-management/CHANGELOG.md`
-- Modify: `TECH_DEBT.md`
+**Tệp:**
+- Tạo: `.sdd/reviews/fe11-admin-role-ui-contract-validation-2026-07-18.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/TEST_PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/CHANGELOG.md`
+- Sửa đổi: `TECH_DEBT.md`
 
-**Interfaces:**
-- Consumes: completed `FE11-UIR01..UIR04` code/tests and existing backend B7 role evidence.
-- Produces: four-layer validation evidence and a human-review-ready branch; `TD-022` remains `IN PROGRESS` until merge and post-merge CI.
+**Giao diện:**
+- Tiêu thụ: đã hoàn thành mã/kiểm tra `FE11-UIR01..UIR04` và bằng chứng vai trò B7 máy chủ hiện có.
+- Tạo ra: bằng chứng xác thực bốn lớp và một nhánh sẵn sàng cho con người đánh giá; `TD-022` vẫn là `IN PROGRESS` cho đến khi hợp nhất và CI sau hợp nhất.
 
-- [ ] **Step 1: Run focused backend role regression**
+- [ ] **Bước 1: Chạy hồi quy vai trò máy chủ tập trung**
 
-Run from `backend`:
+Chạy từ `backend`:
 
 ```powershell
 npm.cmd test -- --runTestsByPath tests/userManagementRoutes.test.js tests/userManagementService.test.js tests/userRoleRepository.test.js
 ```
 
-Expected: 3 suites and the current focused FE11 role tests PASS; no backend file changed.
+Dự kiến: 3 bộ và các kiểm thử vai trò FE11 tập trung hiện tại ĐẠT; không có tập tin máy chủ thay đổi.
 
-- [ ] **Step 2: Run full frontend validation**
+- [ ] **Bước 2: Chạy xác thực toàn bộ giao diện người dùng**
 
-Run from `frontend`:
+Chạy từ `frontend`:
 
 ```powershell
 npm.cmd test
@@ -761,11 +778,12 @@ npm.cmd run lint
 npm.cmd run build
 ```
 
-Expected: all frontend tests PASS, lint has zero errors, and the production build succeeds.
+Dự kiến: tất cả các kiểm thử giao diện người dùng đều ĐẠT, tìm lỗi mã nguồn không có lỗi và quá
+trình xây dựng sản xuất thành công.
 
-- [ ] **Step 3: Run project checks**
+- [ ] **Bước 3: Chạy kiểm tra dự án**
 
-Run from repository root:
+Chạy từ kho lưu trữ gốc:
 
 ```powershell
 npm.cmd run trace:enforce
@@ -773,98 +791,105 @@ git diff --check origin/main...HEAD
 git status --short
 ```
 
-Expected: traceability PASS, no whitespace errors, and only intended FE11/frontend/documentation files are changed.
+Dự kiến: khả năng truy vết đạt, không có lỗi khoảng trắng và chỉ các tệp tài liệu/giao diện người
+dùng/FE11 dự định được thay đổi.
 
-- [ ] **Step 4: Perform the four-layer review**
+- [ ] **Bước 4: Thực hiện đánh giá bốn lớp**
 
-Create `.sdd/reviews/fe11-admin-role-ui-contract-validation-2026-07-18.md` with these exact sections:
+Tạo `.sdd/reviews/fe11-admin-role-ui-contract-validation-2026-07-18.md` với các phần chính xác sau:
 
 ```markdown
-# FE11 Admin Role UI Contract Validation
+# Xác nhận hợp đồng giao diện vai trò quản trị FE11
 
-Date: 2026-07-18
-Scope: FE11-UIR01..UIR05 / TD-022 only
+Ngày: 2026-07-18
+Phạm vi: chỉ FE11-UIR01..UIR05 / TD-022
 
-## L1 Automated Evidence
-## L2 Spec Compliance
-## L3 Constitution And Safety
-## L4 Acceptance And Residual Risks
-## Files Changed
-## Human Review Gate
-## Integration State
+## Bằng chứng tự động L1
+## L2 Tuân thủ đặc tả
+## L3 Hiến chương và an toàn
+## L4 Nghiệm thu và rủi ro còn lại
+## Tệp đã thay đổi
+## Cổng rà soát của con người
+## Trạng thái tích hợp
 ```
 
-Record command results and counts, map the successful flow to `FR-FE11-012..014` and `AC-FE11-013..015`, and explicitly state:
+Ghi lại kết quả và số lượng lệnh, ánh xạ luồng thành công tới `FR-FE11-012..014` và
+`AC-FE11-013..015`, đồng thời nêu rõ:
 
-- Role IDs come only from the authenticated catalog.
-- Backend authorization, validation, and transaction behavior are unchanged.
-- Multi-request UI saves are not atomic; reconciliation is the approved recovery boundary.
-- Browser E2E remains CI regression evidence rather than a new role-specific interaction test.
-- All unrelated FE11 work remains deferred.
+- ID vai trò chỉ đến từ danh mục đã được xác thực.
+- Ủy quyền máy chủ, xác thực và hành vi giao dịch không thay đổi.
+- Việc lưu giao diện người dùng theo nhiều yêu cầu không phải là nguyên tử; đối chiếu là ranh giới thu hồi được phê duyệt.
+- Trình duyệt E2E vẫn giữ nguyên bằng chứng hồi quy CI thay vì kiểm thử tương tác theo vai trò cụ thể mới.
+- Tất cả công việc FE11 không liên quan vẫn bị trì hoãn.
 
-- [ ] **Step 5: Update validation-ready records**
+- [ ] **Bước 5: Cập nhật các bản ghi sẵn sàng xác thực**
 
-In `TASKS.md`, keep `FE11-UIR05` unchecked until human review. Add automated evidence beneath it.
+Trong `TASKS.md`, hãy bỏ chọn `FE11-UIR05` cho đến khi có sự đánh giá của con người. Thêm bằng chứng
+tự động bên dưới nó.
 
-In `TEST_PLAN.md`, move the role UI gap into Current Evidence and retain residual browser/SQL environment notes.
+Trong `TEST_PLAN.md`, di chuyển khoảng trống giao diện người dùng vai trò vào Bằng chứng hiện tại và
+giữ lại các ghi chú môi trường/trình duyệt SQL còn sót lại.
 
-In `CHANGELOG.md`, add a validation-ready entry without claiming merge or B7 integration.
+Trong `CHANGELOG.md`, hãy thêm mục nhập sẵn sàng xác thực mà không cần yêu cầu hợp nhất hoặc tích hợp B7.
 
-Keep `TD-022` as `IN PROGRESS`; do not mark it resolved before post-merge CI.
+Giữ `TD-022` là `IN PROGRESS`; không đánh dấu nó đã được giải quyết trước CI sau hợp nhất.
 
-- [ ] **Step 6: Commit the validation packet**
+- [ ] **Bước 6: Cam kết gói xác thực**
 
 ```powershell
 git add -- .sdd/reviews/fe11-admin-role-ui-contract-validation-2026-07-18.md .sdd/specs/feat-user-role-management/TASKS.md .sdd/specs/feat-user-role-management/TEST_PLAN.md .sdd/specs/feat-user-role-management/CHANGELOG.md TECH_DEBT.md
 git commit -m "docs: record FE11 admin role UI validation"
 ```
 
-- [ ] **Step 7: Stop for human implementation review**
+- [ ] **Bước 7: Dừng lại để con người đánh giá việc triển khai**
 
-Present the changed files, RED/GREEN evidence, four validation layers, and residual risks. Do not push, open a PR, or mark `FE11-UIR05` complete until the user explicitly approves implementation review.
+Trình bày các tệp đã thay đổi, bằng chứng RED/GREEN, bốn lớp xác thực và rủi ro còn sót lại. Không
+đẩy, mở PR hoặc đánh dấu hoàn thành `FE11-UIR05` cho đến khi người dùng phê duyệt rõ ràng việc xem
+xét triển khai.
 
 ---
 
-### Task 7: Integrate And Close TD-022 After Post-Merge CI
+### Nhiệm vụ 7: Tích hợp và đóng TD-022 sau CI sau hợp nhất
 
-**Files:**
-- Modify: `.sdd/reviews/fe11-admin-role-ui-contract-validation-2026-07-18.md`
-- Modify: `.sdd/specs/feat-user-role-management/TASKS.md`
-- Modify: `.sdd/specs/feat-user-role-management/CHANGELOG.md`
-- Modify: `TECH_DEBT.md`
-- Modify: `.agents/CLAUDE.md`
+**Tệp:**
+- Sửa đổi: `.sdd/reviews/fe11-admin-role-ui-contract-validation-2026-07-18.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/CHANGELOG.md`
+- Sửa đổi: `TECH_DEBT.md`
+- Sửa đổi: `.agents/CLAUDE.md`
 
-**Interfaces:**
-- Consumes: explicit human implementation approval, successful PR CI, merge commit, and successful post-merge `main` CI.
-- Produces: B7 integration evidence, completed `FE11-UIR05`, resolved `TD-022`, and updated project memory.
+**Giao diện:**
+- Tiêu thụ: phê duyệt triển khai rõ ràng của con người, PR CI thành công, cam kết hợp nhất và CI `main` sau hợp nhất thành công.
+- Tạo ra: Bằng chứng tích hợp B7, `FE11-UIR05` đã hoàn thành, `TD-022` đã giải quyết và bộ nhớ dự án được cập nhật.
 
-- [ ] **Step 1: Record human review before publishing**
+- [ ] **Bước 1: Ghi lại đánh giá của con người trước khi xuất bản**
 
-After explicit approval, mark the Human Review Gate in the validation record and add the review date beneath `FE11-UIR05`. Commit:
+Sau khi phê duyệt rõ ràng, hãy đánh dấu Cổng đánh giá con người trong bản ghi xác thực và thêm ngày
+đánh giá bên dưới `FE11-UIR05`. Cam kết:
 
 ```powershell
 git add -- .sdd/reviews/fe11-admin-role-ui-contract-validation-2026-07-18.md .sdd/specs/feat-user-role-management/TASKS.md
 git commit -m "docs: record FE11 admin role UI review"
 ```
 
-- [ ] **Step 2: Push and open a draft PR**
+- [ ] **Bước 2: Nhấn và mở bản PR nháp**
 
 ```powershell
 git push -u origin fix/fe11-admin-role-ui-contract
 @'
-## What changed
+## Nội dung đã thay đổi
 
 - Align FE11 Admin role assignment/revocation with the approved numeric `roleId` contract.
 - Validate the authenticated role catalog before mutation.
 - Assign before revoking and reconcile the modal after partial failure.
 
-## Spec mapping
+## Ánh xạ đặc tả
 
 - FR-FE11-012..014, FR-FE11-024..027
 - AC-FE11-013..015
 - TD-022 only
 
-## Validation
+## Xác nhận
 
 - Focused and full frontend tests, lint, and build PASS.
 - Focused backend FE11 role regression PASS.
@@ -874,22 +899,23 @@ No backend, schema, or FE11 SPEC change is included.
 '@ | gh pr create --draft --base main --head fix/fe11-admin-role-ui-contract --title "fix(fe11): align admin role UI contract" --body-file -
 ```
 
-The PR body must state the exact SPEC IDs, files, RED/GREEN evidence, no backend/schema change, and residual multi-request atomicity boundary.
+Cơ quan PR phải nêu rõ các ID, tệp SPEC chính xác, bằng chứng RED/GREEN, không có thay đổi
+backend/schema và ranh giới nguyên tử đa yêu cầu còn lại.
 
-- [ ] **Step 3: Require PR CI before merge**
+- [ ] **Bước 3: Yêu cầu PR CI trước khi hợp nhất**
 
-Run:
+Chạy:
 
 ```powershell
 $prNumber = gh pr view --json number --jq .number
 gh pr checks $prNumber --watch
 ```
 
-Expected: `foundation-checks` PASS. Mark ready and merge only after the user authorizes integration.
+Dự kiến: `foundation-checks` đạt. Đánh dấu sẵn sàng và chỉ hợp nhất sau khi người dùng cho phép tích hợp.
 
-- [ ] **Step 4: Require post-merge main CI**
+- [ ] **Bước 4: Yêu cầu CI chính sau hợp nhất**
 
-Identify the `main` push run for the merge commit and run:
+Xác định lần chạy đẩy `main` cho cam kết hợp nhất và chạy:
 
 ```powershell
 $mergeSha = gh pr view $prNumber --json mergeCommit --jq .mergeCommit.oid
@@ -898,19 +924,19 @@ if (-not $runId) { throw "Post-merge CI run was not found for $mergeSha" }
 gh run watch $runId --exit-status
 ```
 
-Expected: post-merge `foundation-checks` PASS.
+Dự kiến: đạt `foundation-checks` sau hợp nhất.
 
-- [ ] **Step 5: Create the B7 closeout documentation change**
+- [ ] **Bước 5: Tạo thay đổi tài liệu khóa B7**
 
-On a fresh docs branch from the successful merge commit:
+Trên nhánh tài liệu mới từ cam kết hợp nhất thành công:
 
-- Mark `FE11-UIR05` complete with PR, merge commit, and CI run IDs.
-- Change `TD-022` from `IN PROGRESS` to `RESOLVED` and add the closing PR/commit evidence.
-- Add a B7 integration entry to FE11 `CHANGELOG.md`.
-- Set the validation record Integration State to complete.
-- Update `.agents/CLAUDE.md` so TD-022 is no longer listed as unresolved; keep `TD-023..TD-027` deferred.
+- Đánh dấu `FE11-UIR05` hoàn chỉnh với PR, cam kết hợp nhất và ID chạy CI.
+- Thay đổi `TD-022` từ `IN PROGRESS` thành `RESOLVED` và thêm bằng chứng PR/cam kết đóng.
+- Thêm mục tích hợp B7 vào FE11 `CHANGELOG.md`.
+- Đặt trạng thái tích hợp bản ghi xác thực thành hoàn tất.
+- Cập nhật `.agents/CLAUDE.md` để TD-022 không còn được liệt kê là chưa được giải quyết; hoãn lại `TD-023..TD-027`.
 
-Validate and commit:
+Xác thực và cam kết:
 
 ```powershell
 npm.cmd run trace:enforce
@@ -919,4 +945,5 @@ git add -- .agents/CLAUDE.md .sdd/reviews/fe11-admin-role-ui-contract-validation
 git commit -m "docs: close FE11 admin role UI B7"
 ```
 
-Publish this small closeout through the normal reviewed PR/CI/merge flow. The whole FE11 feature remains `Implementation State: DEFERRED`.
+Xuất bản bản kết thúc nhỏ này thông qua luồng PR/CI/hợp nhất được xem xét thông thường. Toàn bộ chức
+năng FE11 vẫn là `Implementation State: DEFERRED`.

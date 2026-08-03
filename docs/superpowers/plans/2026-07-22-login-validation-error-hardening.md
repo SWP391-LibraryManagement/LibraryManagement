@@ -1,130 +1,149 @@
-# Login Validation And Error Feedback Hardening Implementation Plan
+# Kế hoạch thực hiện tăng cường xác thực đăng nhập và phản hồi lỗi
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Đối với nhân viên đại lý:** SUB-SKILL BẮT BUỘC: Sử dụng siêu năng lực:phát triển theo định hướng phụ (được khuyến nghị) hoặc siêu năng lực:thực hiện các kế hoạch để triển khai kế hoạch này theo từng nhiệm vụ. Các bước sử dụng cú pháp hộp kiểm (`- [ ]`) để theo dõi.
 
-**Goal:** Make FE02 login validation and error feedback accurate, actionable, localized, and consistent with the approved 255-character email contract.
+**Mục tiêu:** Làm cho xác thực đăng nhập FE02 và phản hồi lỗi trở nên chính xác, có thể thực hiện
+được, được bản địa hóa và nhất quán với hợp đồng email 255 ký tự đã được phê duyệt.
 
-**Architecture:** Add pure presentation helpers to `authUx.js`, wire them into the existing login form/API adapter, and preserve mandatory Express validation. Stable backend codes are mapped to safe Vietnamese copy instead of rendering raw server messages.
+**Kiến trúc:** Thêm các trình trợ giúp trình bày thuần túy vào `authUx.js`, kết nối chúng vào biểu
+mẫu đăng nhập/bộ chuyển đổi API hiện có và duy trì xác thực Express bắt buộc. Mã máy chủ ổn định
+được ánh xạ tới bản sao tiếng Việt an toàn thay vì hiển thị thông báo máy chủ thô.
 
-**Tech Stack:** React 19, MUI 9, Axios, Node test runner, Express 5, express-validator, Jest/Supertest.
+**bộ công nghệ công nghệ:** React 19, MUI 9, Axios, Trình chạy kiểm thử nút, Express 5, trình xác
+thực nhanh, Jest/Supertest.
 
-## Global Constraints
+## Ràng buộc toàn cầu
 
-- Do not reveal whether an email exists or whether an account is inactive.
-- Do not log or render passwords, tokens, raw errors, stack traces, or credentials.
-- Keep backend validation authoritative.
-- Accept email or username in the combined login identifier field.
-- Match the approved maximum email length of 255 characters.
-- Make only surgical FE02 changes and leave generated implementation uncommitted until human review.
+- Không tiết lộ liệu email có tồn tại hay tài khoản không hoạt động.
+- Không đăng nhập hoặc hiển thị mật khẩu, mã thông báo, lỗi thô, dấu vết bộ công nghệ hoặc thông tin xác thực.
+- Giữ xác thực máy chủ có thẩm quyền.
+- Chấp nhận email hoặc tên người dùng trong trường mã định danh đăng nhập kết hợp.
+- Phù hợp với độ dài email tối đa được phê duyệt là 255 ký tự.
+- Chỉ thực hiện các thay đổi mang tính phẫu thuật đối với FE02 và không cam kết triển khai đã tạo cho đến khi có sự đánh giá của con người.
 
 ---
 
-### Task 1: Frontend Login Presentation Contracts
+### Nhiệm vụ 1: Hợp đồng trình bày đăng nhập giao diện
 
-**Files:**
-- Modify: `frontend/test/authUxFrontend.test.js`
-- Modify: `frontend/test/loginFrontend.test.js`
-- Modify: `frontend/src/utils/authUx.js`
+**Tệp:**
+- Sửa đổi: `frontend/test/authUxFrontend.test.js`
+- Sửa đổi: `frontend/test/loginFrontend.test.js`
+- Sửa đổi: `frontend/src/utils/authUx.js`
 
-**Interfaces:**
-- Produces: `validateLoginFields(values = {}) -> Record<string, string>`.
-- Produces: `getLoginErrorMessage(error) -> string`.
+**Giao diện:**
+- Sản xuất: `validateLoginFields(values = {}) -> Record<string, string>`.
+- Sản xuất: `getLoginErrorMessage(error) -> string`.
 
-- [x] **Step 1: Write failing pure-helper tests**
+- [x] **Bước 1: Viết các kiểm thử thuần trợ giúp thất bại**
 
-Add assertions that whitespace identifiers and empty passwords return field errors, 256-character values are rejected, valid username/password values return `{}`, `INVALID_CREDENTIALS` stays generic, `ACCOUNT_LOCKED` explains reset/wait recovery, and network errors use environment-neutral copy.
+Thêm xác nhận rằng mã nhận dạng khoảng trắng và mật khẩu trống trả về lỗi trường, giá trị 256 ký tự
+bị từ chối, giá trị tên người dùng/mật khẩu hợp lệ trả về `{}`, `INVALID_CREDENTIALS` vẫn chung
+chung, `ACCOUNT_LOCKED` giải thích việc đặt lại/chờ khôi phục và lỗi mạng sử dụng bản sao trung tính
+với môi trường.
 
-- [x] **Step 2: Run tests to verify RED**
+- [x] **Bước 2: Chạy kiểm thử để xác minh RED**
 
-Run: `node --test test/authUxFrontend.test.js test/loginFrontend.test.js`
+Chạy: `node --test test/authUxFrontend.test.js test/loginFrontend.test.js`
 
-Expected: fail because `validateLoginFields` and `getLoginErrorMessage` are not exported and login wiring is absent.
+Dự kiến: không thành công vì `validateLoginFields` và `getLoginErrorMessage` không được xuất và
+không có hệ thống dây đăng nhập.
 
-- [x] **Step 3: Implement the pure helpers**
+- [x] **Bước 3: Triển khai pure helpers**
 
-Implement only required/maximum checks for login fields. Map stable login codes without reading raw `error.response.data.error.message` or details.
+Chỉ thực hiện kiểm tra bắt buộc/tối đa cho các trường đăng nhập. Ánh xạ mã đăng nhập ổn định mà
+không cần đọc `error.response.data.error.message` thô hoặc chi tiết.
 
-- [x] **Step 4: Run tests to verify GREEN**
+- [x] **Bước 4: Chạy kiểm thử để xác minh GREEN**
 
-Run: `node --test test/authUxFrontend.test.js test/loginFrontend.test.js`
+Chạy: `node --test test/authUxFrontend.test.js test/loginFrontend.test.js`
 
-Expected: helper tests pass; source wiring assertions may remain RED until Task 2.
+Dự kiến: vượt qua các kiểm thử trợ giúp; xác nhận nối dây nguồn có thể vẫn là RED cho đến Nhiệm vụ 2.
 
-### Task 2: Login Form And API Wiring
+### Nhiệm vụ 2: Mẫu đăng nhập và nối dây API
 
-**Files:**
-- Modify: `frontend/src/component/login/LoginForm.jsx`
-- Modify: `frontend/src/component/login/AuthCard.jsx`
-- Modify: `frontend/src/page/LoginPage.jsx`
-- Modify: `frontend/src/api/authApi.js`
-- Test: `frontend/test/authUxFrontend.test.js`
-- Test: `frontend/test/loginFrontend.test.js`
+**Tệp:**
+- Sửa đổi: `frontend/src/component/login/LoginForm.jsx`
+- Sửa đổi: `frontend/src/component/login/AuthCard.jsx`
+- Sửa đổi: `frontend/src/page/LoginPage.jsx`
+- Sửa đổi: `frontend/src/api/authApi.js`
+- Kiểm tra: `frontend/test/authUxFrontend.test.js`
+- Kiểm tra: `frontend/test/loginFrontend.test.js`
 
-**Interfaces:**
-- Consumes: `validateLoginFields` and `getLoginErrorMessage` from `authUx.js`.
-- Produces: field-level MUI feedback and safe page-level API feedback.
+**Giao diện:**
+- Tiêu thụ: `validateLoginFields` và `getLoginErrorMessage` từ `authUx.js`.
+- Tạo ra: phản hồi MUI cấp trường và phản hồi API cấp trang an toàn.
 
-- [x] **Step 1: Keep source wiring assertions RED**
+- [x] **Bước 1: Giữ nguyên xác nhận nối dây nguồn RED**
 
-Assert that the form imports/calls `validateLoginFields`, renders `error` and `helperText`, disables native form validation, caps both HTML input buffers at 256 characters so the over-255 branch remains observable, guards `isSubmitting`, and calls `onInputChange` while editing. Assert that `authApi.js` calls `getLoginErrorMessage` for login.
+Xác nhận rằng biểu mẫu nhập/gọi `validateLoginFields`, hiển thị `error` và `helperText`, tắt xác
+thực biểu mẫu gốc, giới hạn cả bộ đệm đầu vào HTML ở 256 ký tự để nhánh trên 255 vẫn có thể quan sát
+được, bảo vệ `isSubmitting` và gọi `onInputChange` trong khi chỉnh sửa. Khẳng định rằng `authApi.js`
+gọi `getLoginErrorMessage` để đăng nhập.
 
-- [x] **Step 2: Implement minimal wiring**
+- [x] **Bước 2: Thực hiện nối dây tối thiểu**
 
-Add `fieldErrors` state, validate before submit, trim the identifier only, clear stale feedback on edits, disable fields while pending, and route login Axios failures through the safe mapper.
+Thêm trạng thái `fieldErrors`, xác thực trước khi gửi, chỉ cắt bớt mã nhận dạng, xóa phản hồi cũ về
+các chỉnh sửa, tắt các trường trong khi đang chờ xử lý và định tuyến các lỗi đăng nhập Axios thông
+qua trình ánh xạ an toàn.
 
-- [x] **Step 3: Run focused frontend tests**
+- [x] **Bước 3: Chạy kiểm thử giao diện người dùng tập trung**
 
-Run: `node --test test/authUxFrontend.test.js test/loginFrontend.test.js test/vietnameseUi.test.js`
+Chạy: `node --test test/authUxFrontend.test.js test/loginFrontend.test.js test/vietnameseUi.test.js`
 
-Expected: all focused tests pass without permitting raw backend messages.
+Dự kiến: tất cả các kiểm thử tập trung đều vượt qua mà không cho phép các thông báo máy chủ thô.
 
-### Task 3: Backend Identifier Boundary
+### Nhiệm vụ 3: Ranh giới định danh máy chủ
 
-**Files:**
-- Modify: `backend/tests/authRoutes.test.js`
-- Modify: `backend/src/validators/authValidators.js`
+**Tệp:**
+- Sửa đổi: `backend/tests/authRoutes.test.js`
+- Sửa đổi: `backend/src/validators/authValidators.js`
 
-**Interfaces:**
-- Produces: `/api/auth/login` accepts string identifiers up to 255 characters and rejects longer input with `VALIDATION_ERROR`.
+**Giao diện:**
+- Tạo ra: `/api/auth/login` chấp nhận số nhận dạng chuỗi tối đa 255 ký tự và từ chối đầu vào dài hơn với `VALIDATION_ERROR`.
 
-- [x] **Step 1: Write a failing integration test**
+- [x] **Bước 1: Viết kiểm thử tích hợp thất bại**
 
-Register and verify a standards-valid email longer than 100 characters, then assert login returns `200`.
+Đăng ký và xác minh email hợp lệ theo tiêu chuẩn dài hơn 100 ký tự, sau đó xác nhận thông tin đăng
+nhập sẽ trả về `200`.
 
-- [x] **Step 2: Run the focused test to verify RED**
+- [x] **Bước 2: Chạy kiểm thử tập trung để xác minh RED**
 
-Run: `npm test -- --runTestsByPath tests/authRoutes.test.js`
+Chạy: `npm test -- --runTestsByPath tests/authRoutes.test.js`
 
-Expected: the new case receives `400 VALIDATION_ERROR` from the 100-character login validator.
+Dự kiến: trường hợp mới nhận được `400 VALIDATION_ERROR` từ trình xác thực đăng nhập 100 ký tự.
 
-- [x] **Step 3: Align the backend validator**
+- [x] **Bước 3: Căn chỉnh trình xác thực máy chủ**
 
-Change the combined login identifier maximum to 255 and add explicit safe validation messages for wrong type, missing value, and overlength input.
+Thay đổi giá trị nhận dạng đăng nhập kết hợp tối đa thành 255 và thêm thông báo xác thực an toàn rõ
+ràng đối với trường hợp đầu vào sai loại, thiếu giá trị và quá dài.
 
-- [x] **Step 4: Run the focused backend suite to verify GREEN**
+- [x] **Bước 4: Chạy bộ máy chủ tập trung để xác minh GREEN**
 
-Run: `npm test -- --runTestsByPath tests/authRoutes.test.js`
+Chạy: `npm test -- --runTestsByPath tests/authRoutes.test.js`
 
-Expected: all auth route tests pass.
+Dự kiến: tất cả các kiểm thử lộ trình xác thực đều vượt qua.
 
-### Task 4: Traceability And Completion Gate
+### Nhiệm vụ 4: Cổng truy vết và hoàn thiện
 
-**Files:**
-- Modify: `.sdd/specs/feat-auth/SPEC.md`
-- Modify: `.sdd/specs/feat-auth/TASKS.md`
-- Modify: `.sdd/specs/feat-auth/CHANGELOG.md`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-auth/SPEC.md`
+- Sửa đổi: `.sdd/specs/feat-auth/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-auth/CHANGELOG.md`
 
-**Interfaces:**
-- Records: login presentation validation, safe localized error mapping, and the 255-character identifier boundary under the existing FE02 rules.
+**Giao diện:**
+- Bản ghi: xác thực bản trình bày đăng nhập, ánh xạ lỗi cục bộ an toàn và ranh giới mã định danh 255 ký tự theo quy tắc FE02 hiện có.
 
-- [x] **Step 1: Update FE02 records**
+- [x] **Bước 1: Cập nhật bản ghi FE02**
 
-Clarify that password-strength guidance applies when creating/changing/resetting a password rather than when entering an existing password at login. Add the maintenance task and changelog evidence.
+Làm rõ rằng hướng dẫn về độ mạnh mật khẩu được áp dụng khi tạo/thay đổi/đặt lại mật khẩu thay vì khi
+nhập mật khẩu hiện có khi đăng nhập. Thêm nhiệm vụ bảo trì và bằng chứng thay đổi.
 
-- [x] **Step 2: Run full verification**
+- [x] **Bước 2: Chạy xác minh đầy đủ**
 
-Run frontend tests, lint, and build; run focused backend auth tests; run traceability and `git diff --check`; inspect changed files for credential logging and raw backend error rendering.
+Chạy kiểm thử giao diện người dùng, tìm lỗi mã nguồn và xây dựng; chạy kiểm thử xác thực máy chủ tập
+trung; chạy truy vết và `git diff --check`; kiểm tra các tệp đã thay đổi để ghi nhật ký thông tin
+xác thực và hiển thị lỗi máy chủ thô.
 
-- [x] **Step 3: Leave changes for human review**
+- [x] **Bước 3: Để lại các thay đổi để con người xem xét**
 
-Do not commit, push, or merge until the local diff and verification evidence are reviewed.
+Không cam kết, đẩy hoặc hợp nhất cho đến khi bằng chứng xác minh và khác biệt cục bộ được xem xét.

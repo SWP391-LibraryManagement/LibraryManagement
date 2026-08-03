@@ -1,113 +1,115 @@
-# Phase 3 Polish and Delivery Implementation Plan
+# Kế hoạch thực hiện Ba Lan và bàn giao giai đoạn 3
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans (recommended) to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Đối với nhân viên đại lý:** BẮT BUỘC SUB-SKILL: Sử dụng siêu năng lực:thực thi các kế hoạch (được khuyến nghị) để triển khai kế hoạch này theo từng nhiệm vụ. Các bước sử dụng cú pháp hộp kiểm (`- [ ]`) để theo dõi.
 
-**Goal:** Complete the roadmap's Phase 3 documentation, deployment, user-testing, performance, report, presentation, and rehearsal deliverables for the accepted FE01-FE12 release.
+**Mục tiêu:** Hoàn thành các sản phẩm tài liệu, triển khai, kiểm tra người dùng, hiệu suất, báo cáo,
+trình bày và diễn tập Giai đoạn 3 của lộ trình cho bản phát hành FE01-FE12 được chấp nhận.
 
-**Architecture:** Preserve the approved application and API contracts. Add only operational configuration/documentation, deterministic measurement scripts and records, and presentation assets. Use the existing GitHub Actions staging workflow, Azure App Service/Static Web Apps endpoints, and the existing local system golden-path harness as the evidence sources.
+**Kiến trúc:** Bảo tồn ứng dụng đã được phê duyệt và hợp đồng API. Chỉ thêm cấu hình/tài liệu vận
+hành, tập lệnh và bản ghi đo lường xác định cũng như nội dung trình bày. Sử dụng quy trình môi
+workflow staging GitHub Actions hiện có, các endpoint Azure App Service/Static Web Apps và
+khai thác luồng nghiệp vụ chuẩn của hệ thống cục bộ hiện có làm nguồn bằng chứng.
 
-**Tech Stack:** Node.js 22, Express, React/Vite, Playwright, GitHub Actions, Azure App Service, Azure Static Web Apps, Azure SQL, Markdown, and PowerPoint.
+**bộ công nghệ công nghệ:** Các hành động Node.js 22, Express, React/Vite, Playwright, GitHub, Azure
+App Service, Azure Static Web Apps, Azure SQL, Markdown và PowerPoint.
 
-## Global Constraints
+## Ràng buộc toàn cầu
 
-- Approved stack remains Node.js + Express.js, React + Bootstrap, SQL Server, and RESTful API.
-- No core feature behavior changes without an approved `SPEC.md`, `PLAN.md`, `TASKS.md`, and review.
-- Never commit secrets, credentials, tokens, raw OTPs, connection strings, or real PII.
-- Only observed results may be marked `PASS`; unavailable human/provider evidence stays explicitly open.
-- CI does not mutate the Azure SQL schema; schema execution remains a reviewed operator action.
-- Deferred boundaries remain explicit: SMTP inbox delivery, notification inbox UI, durable avatars, shared SQL CI, and frontend bundle splitting unless this plan's performance task proves a safe polish.
+- bộ công nghệ được phê duyệt vẫn là Node.js + Express.js, React + Bootstrap, SQL Server và RESTful API.
+- Không có thay đổi nào về hành vi của chức năng cốt lõi nếu không có `SPEC.md`, `PLAN.md`, `TASKS.md` được phê duyệt và đánh giá.
+- Không bao giờ cam kết bí mật, thông tin xác thực, mã thông báo, OTP thô, chuỗi kết nối hoặc PII thực.
+- Chỉ những kết quả được quan sát mới có thể được đánh dấu `PASS`; bằng chứng không có sẵn về con người/nhà cung cấp vẫn mở một cách rõ ràng.
+- CI không làm thay đổi lược đồ Azure SQL; việc thực thi lược đồ vẫn là hành động của người vận hành được xem xét.
+- Các ranh giới bị trì hoãn vẫn rõ ràng: phân phối hộp thư đến SMTP, giao diện người dùng hộp thư thông báo, hình đại diện bền bỉ, SQL CI được chia sẻ và phân tách gói giao diện người dùng trừ khi nhiệm vụ hiệu suất của kế hoạch này chứng tỏ được sự hoàn thiện an toàn.
 
 ---
 
-### Task 1: Lock the Phase 3 evidence contract
+### Nhiệm vụ 1: Khóa hợp đồng bằng chứng giai đoạn 3
 
-**Files:**
-- Create: `docs/superpowers/specs/2026-07-19-phase3-polish-delivery-design.md`
-- Create: `docs/superpowers/plans/2026-07-19-phase3-polish-delivery.md`
-- Modify: `docs/deployment/azure-staging-guide.md`
-- Modify: `docs/release/week13-acceptance-record.md`
-- Modify: `plan.md`
+**Tệp:**
+- Tạo: `docs/superpowers/specs/2026-07-19-phase3-polish-delivery-design.md`
+- Tạo: `docs/superpowers/plans/2026-07-19-phase3-polish-delivery.md`
+- Sửa đổi: `docs/deployment/azure-staging-guide.md`
+- Sửa đổi: `docs/release/week13-acceptance-record.md`
+- Sửa đổi: `plan.md`
 
-**Interfaces:**
-- Consumes: `origin/main` at `64831fe`, the Hybrid roadmap, the deployment workflow, and the approved feature evidence.
-- Produces: a traceable Phase 3 design/plan and an operational guide that documents `TRUST_PROXY=true` for proxied production App Service traffic.
+**Giao diện:**
+- Tiêu thụ: `origin/main` tại `64831fe`, lộ trình Kết hợp, quy trình triển khai và bằng chứng chức năng đã được phê duyệt.
+- Tạo ra: thiết kế/kế hoạch Giai đoạn 3 có thể theo dõi và hướng dẫn vận hành ghi lại `TRUST_PROXY=true` cho lưu lượng App Service sản xuất được ủy quyền.
 
-- [x] **Step 1: Record the observed proxy failure and correction**
+- [x] **Bước 1: Ghi lại lỗi proxy được quan sát và cách khắc phục**
 
-  Update the Azure runtime settings table/commands to include the non-secret
-  `TRUST_PROXY=true` setting. Explain that it is required because the existing
-  HTTPS enforcement middleware reads `x-forwarded-proto` only when this flag is
-  enabled. Do not include any secret value.
+Cập nhật bảng/lệnh cài đặt thời gian chạy Azure để bao gồm cài đặt `TRUST_PROXY=true` không bí mật.
+Giải thích rằng điều này là bắt buộc vì phần mềm trung gian thực thi HTTPS hiện tại chỉ đọc
+`x-forwarded-proto` khi cờ này được bật. Không bao gồm bất kỳ giá trị bí mật nào.
 
-- [x] **Step 2: Refresh the release checklist from evidence**
+- [x] **Bước 2: Làm mới danh sách kiểm tra phát hành từ bằng chứng**
 
-  Replace stale Week 13 shared-quality counts with the current `origin/main`
-  evidence (916 backend tests, 149 frontend tests, 100% traceability) and add
-  a dated Phase 3 staging evidence section. Keep authenticated staging user
-  acceptance unchecked until a human observes it with synthetic accounts.
+Thay thế số lượng chất lượng được chia sẻ cũ của Tuần 13 bằng bằng chứng `origin/main` hiện tại (916
+kiểm thử máy chủ, 149 kiểm thử giao diện người dùng, khả năng truy vết 100%) và thêm phần bằng chứng
+môi trường tiền sản xuất Giai đoạn 3 đã cũ. Bỏ chọn sự chấp nhận của người dùng môi trường tiền sản
+xuất đã được xác thực cho đến khi con người quan sát nó bằng tài khoản tổng hợp.
 
-- [x] **Step 3: Mark the Phase 3 plan active**
+- [x] **Bước 3: Đánh dấu kế hoạch Giai đoạn 3 đang hoạt động**
 
-  Update `plan.md` so its active checkpoints link to the Phase 3 design,
-  performance report, acceptance record, and presentation artifacts created by
-  later tasks. Keep the deferred operational boundaries intact.
+Cập nhật `plan.md` để các điểm kiểm tra hoạt động của nó liên kết với thiết kế Giai đoạn 3, báo cáo
+hiệu suất, bản ghi chấp nhận và các tạo phẩm trình bày được tạo bởi các tác vụ sau này. Giữ nguyên
+ranh giới hoạt động trì hoãn.
 
-- [x] **Step 4: Run a placeholder and secret scan**
+- [x] **Bước 4: Chạy trình giữ chỗ và quét bí mật**
 
-  Run:
+  Chạy:
 
   ```powershell
   rg -n "<YouTube link>|<Azure Static Web Apps URL>|<Azure App Service URL>|TBD|TODO|API_KEY|PASSWORD=|JWT_SECRET=" docs document plan.md
   ```
 
-  Expected: only intentionally documented unavailable external artifacts may
-  remain, and no secret-like values are present.
+Dự kiến: chỉ các tạo phẩm bên ngoài không có sẵn được ghi lại có chủ ý mới có thể tồn tại và không
+có giá trị bí mật nào hiện diện.
 
-- [x] **Step 5: Commit the evidence contract**
+- [x] **Bước 5: Cam kết hợp đồng bằng chứng**
 
   ```powershell
   git add docs/superpowers/specs/2026-07-19-phase3-polish-delivery-design.md docs/superpowers/plans/2026-07-19-phase3-polish-delivery.md docs/deployment/azure-staging-guide.md docs/release/week13-acceptance-record.md plan.md
   git commit -m "docs: define phase 3 delivery evidence"
   ```
 
-### Task 2: Measure and polish frontend performance
+### Nhiệm vụ 2: Đo lường và cải thiện hiệu suất giao diện người dùng
 
-**Files:**
-- Create: `scripts/phase3-performance.js`
-- Create: `docs/release/phase3-performance-report.md`
-- Modify: `frontend/src/App.jsx`
-- Modify: `frontend/test/phase3Performance.test.js`
+**Tệp:**
+- Tạo: `scripts/phase3-performance.js`
+- Tạo: `docs/release/phase3-performance-report.md`
+- Sửa đổi: `frontend/src/App.jsx`
+- Sửa đổi: `frontend/test/phase3Performance.test.js`
 
-**Interfaces:**
-- Consumes: the existing Vite build output and deterministic E2E backend at
+**Giao diện:**
+- Tiêu thụ: đầu ra bản dựng Vite hiện có và phần máy chủ E2E xác định tại
   `http://127.0.0.1:3100`.
-- Produces: a reproducible report with bundle sizes and p95 timings; route
-  loading remains compatible with the current React Router setup.
+- Tạo ra: một báo cáo có thể tái tạo với kích thước gói và thời gian p95; tuyến đường
+  tải vẫn tương thích với thiết lập Bộ định tuyến React hiện tại.
 
-- [x] **Step 1: Add failing contract tests for route-level lazy loading**
+- [x] **Bước 1: Thêm các kiểm thử hợp đồng không thành công để tải từng phần ở cấp tuyến**
 
-  Add tests that import the app source as text and assert that the largest
-  role-specific pages are loaded through `lazy(() => import(...))` and that a
-  `Suspense` fallback exists. Keep the test focused on the performance boundary;
-  it must not assert business behavior or change API calls.
+Thêm các kiểm thử nhập nguồn ứng dụng dưới dạng văn bản và xác nhận rằng các trang dành riêng cho
+vai trò lớn nhất được tải thông qua `lazy(() => import(...))` và tồn tại dự phòng `Suspense`. Giữ
+kiểm thử tập trung vào ranh giới hiệu suất; nó không được khẳng định hành vi kinh doanh hoặc thay
+đổi các cuộc gọi API.
 
-- [x] **Step 2: Run the focused test and verify the RED state**
+- [x] **Bước 2: Chạy kiểm thử tập trung và xác minh trạng thái RED**
 
   ```powershell
   npm.cmd --prefix frontend test -- --test-name-pattern "Phase 3 performance"
   ```
 
-  Expected: the new lazy-loading assertion fails against the current eager
-  import graph.
+Dự kiến: xác nhận tải từng phần mới không thành công so với biểu đồ nhập háo hức hiện tại.
 
-- [x] **Step 3: Implement safe route-level code splitting**
+- [x] **Bước 3: Thực hiện phân tách mã cấp tuyến an toàn**
 
-  Convert the large page imports in `frontend/src/App.jsx` to named
-  `lazy(() => import(...))` declarations, wrap the route tree in `Suspense` with
-  the existing neutral loading presentation, and leave route paths, guards,
-  props, API clients, and role checks unchanged.
+Chuyển đổi nội dung nhập trang lớn trong `frontend/src/App.jsx` thành các khai báo `lazy(() =>
+import(...))` có tên, bọc cây lộ trình trong `Suspense` với bản trình bày tải trung lập hiện có và
+giữ nguyên các đường dẫn tuyến, bộ bảo vệ, đạo cụ, ứng dụng khách API và kiểm tra vai trò.
 
-- [x] **Step 4: Run focused and full frontend checks**
+- [x] **Bước 4: Chạy kiểm tra giao diện người dùng tập trung và đầy đủ**
 
   ```powershell
   npm.cmd --prefix frontend test
@@ -115,65 +117,64 @@
   npm.cmd --prefix frontend run build
   ```
 
-  Expected: all frontend tests pass, lint is clean, and the build emits
-  multiple route chunks with no primary JavaScript chunk above 500 kB.
+Dự kiến: tất cả các kiểm thử giao diện người dùng đều vượt qua, tìm lỗi mã nguồn sạch và bản dựng
+phát ra nhiều đoạn tuyến không có đoạn JavaScript chính nào trên 500 kB.
 
-- [x] **Step 5: Add the reproducible timing harness**
+- [x] **Bước 5: Thêm bộ định thời có thể tái tạo**
 
-  `scripts/phase3-performance.js` shall:
+  `scripts/phase3-performance.js` sẽ:
 
-  1. read the generated `frontend/dist/assets` files and report raw/gzip byte
-     sizes;
-  2. start `tests/e2e/support/systemTestServer.js` on an isolated port;
-  3. create one synthetic verified actor through `POST /__e2e__/setup`;
-  4. login and call `GET /api/auth/me` 30 times with the returned access token;
-  5. report median and p95 wall-clock milliseconds; and
-  6. terminate the child process in a `finally` path without printing tokens.
+  1. đọc các tệp `frontend/dist/assets` được tạo và báo cáo byte thô/gzip
+     kích thước;
+  2. khởi động `tests/e2e/support/systemTestServer.js` trên một cổng bị cô lập;
+  3. tạo một tác nhân tổng hợp đã xác minh qua `POST /__e2e__/setup`;
+  4. đăng nhập và gọi `GET /api/auth/me` 30 lần bằng mã thông báo truy cập được trả về;
+  5. báo cáo trung bình và p95 đồng hồ treo tường mili giây; Và
+  6. chấm dứt tiến trình con trong đường dẫn `finally` mà không in mã thông báo.
 
-  The script must exit non-zero if setup, login, or the measured request fails.
+  Tập lệnh phải thoát khác 0 nếu quá trình thiết lập, đăng nhập hoặc yêu cầu đo lường không thành công.
 
-- [x] **Step 6: Run the harness and publish the report**
+- [x] **Bước 6: Chạy khai thác và xuất bản báo cáo**
 
   ```powershell
   npm.cmd run phase3:performance
   ```
 
-  Record the exact date, commit SHA, Node version, bundle sizes, p50/p95
-  timings, and the comparison to the approved FE02 session target. If the
-  environment cannot prove a target, record it as unverified rather than
-  changing the target.
+Ghi lại ngày chính xác, cam kết SHA, phiên bản Nút, kích thước gói, thời gian p50/p95 và so sánh với
+mục tiêu phiên FE02 đã được phê duyệt. Nếu môi trường không thể chứng minh được mục tiêu, hãy ghi
+lại mục tiêu đó là chưa được xác minh thay vì thay đổi mục tiêu.
 
-- [x] **Step 7: Commit the performance slice**
+- [x] **Bước 7: Cam kết phần hiệu suất**
 
   ```powershell
   git add scripts/phase3-performance.js frontend/src/App.jsx frontend/test/phase3Performance.test.js frontend/package.json docs/release/phase3-performance-report.md
   git commit -m "perf: measure and split phase 3 frontend routes"
   ```
 
-### Task 3: Capture user testing and acceptance evidence
+### Nhiệm vụ 3: Ghi lại bằng chứng chấp nhận và kiểm thử của người dùng
 
-**Files:**
-- Create: `docs/release/phase3-user-testing-record.md`
-- Modify: `docs/testing/system-integration-demo-runbook.md`
-- Modify: `docs/release/week13-acceptance-record.md`
+**Tệp:**
+- Tạo: `docs/release/phase3-user-testing-record.md`
+- Sửa đổi: `docs/testing/system-integration-demo-runbook.md`
+- Sửa đổi: `docs/release/week13-acceptance-record.md`
 
-**Interfaces:**
-- Consumes: local browser golden-path output, current staging smoke output,
-  the approved feature checklist, and existing synthetic-data cleanup rules.
-- Produces: an evidence matrix that separates automated observations from
-  human-only authenticated staging acceptance.
+**Giao diện:**
+- Tiêu thụ: đầu ra luồng nghiệp vụ chuẩn của trình duyệt cục bộ, kết quả kiểm thử nhanh dàn hiện tại,
+  danh sách kiểm tra chức năng đã được phê duyệt và các quy tắc dọn dẹp dữ liệu tổng hợp hiện có.
+- Tạo ra: một ma trận bằng chứng tách biệt các quan sát tự động khỏi
+  sự chấp nhận môi trường tiền sản xuất được xác thực chỉ bởi con người.
 
-- [x] **Step 1: Run local browser golden path**
+- [x] **Bước 1: Chạy luồng nghiệp vụ chuẩn của trình duyệt cục bộ**
 
   ```powershell
   npm.cmd run test:e2e
   ```
 
-  Verify the login -> borrow -> approve -> return -> fine -> report flow,
-  desktop/mobile overflow assertion, and screenshot output. Do not copy
-  credentials or bearer tokens into the record.
+Xác minh thông tin đăng nhập -> mượn -> phê duyệt -> trả sách -> phạt -> luồng báo cáo, xác nhận
+tràn máy tính để bàn/thiết bị di động và đầu ra ảnh chụp màn hình. Không sao chép thông tin xác thực
+hoặc mã thông báo ghi tên vào hồ sơ.
 
-- [x] **Step 2: Run independent current-staging smoke**
+- [x] **Bước 2: Chạy kiểm thử nhanh môi trường tiền sản xuất độc lập**
 
   ```powershell
   $env:STAGING_FRONTEND_URL='https://lemon-wave-04db51100.7.azurestaticapps.net'
@@ -181,93 +182,91 @@
   npm.cmd run smoke:staging
   ```
 
-  Record only the endpoint origins and the five named checks from the command
-  output. Add the workflow run URL and exact SHA.
+Chỉ ghi lại nguồn gốc điểm cuối và năm kiểm tra được đặt tên từ đầu ra lệnh. Thêm quy trình làm việc
+chạy URL và SHA chính xác.
 
-- [x] **Step 3: Record the user-testing matrix**
+- [x] **Bước 3: Ghi lại ma trận kiểm tra người dùng**
 
-  Include scenarios for public browse, authentication boundary, member borrow,
-  staff approval/return, reservation queue, fine calculation/payment, safe
-  notification metadata, reporting, responsive layout, and cleanup. Each row
-  must have source, observed result, evidence path, and owner. Mark the
-  authenticated staging rows `OPEN - HUMAN OBSERVATION REQUIRED` unless they
-  have been directly observed.
+Bao gồm các tình huống duyệt công khai, ranh giới xác thực, mượn thành viên, phê duyệt/trả sách của
+nhân viên, xếp hàng đặt chỗ, tính toán/thanh toán khoản phạt, siêu dữ liệu thông báo an toàn, báo
+cáo, bố cục phản hồi và dọn dẹp. Mỗi hàng phải có nguồn, kết quả được quan sát, đường dẫn bằng chứng
+và chủ sở hữu. Đánh dấu các hàng dàn đã xác thực `OPEN - HUMAN OBSERVATION REQUIRED` trừ khi chúng
+được quan sát trực tiếp.
 
-- [x] **Step 4: Record rehearsal and fallback behavior**
+- [x] **Bước 4: Ghi lại hành vi diễn tập và dự phòng**
 
-  Update the runbook with a five-minute path, a screenshot/API fallback, and a
-  reset procedure. Ensure no raw OTP, token, SMTP body, or credential appears.
+Cập nhật sổ tay vận hành với đường dẫn năm phút, ảnh chụp màn hình/dự phòng API và quy trình đặt lại. Đảm
+bảo không có OTP, mã thông báo, nội dung SMTP hoặc thông tin xác thực thô nào xuất hiện.
 
-- [x] **Step 5: Commit the acceptance slice**
+- [x] **Bước 5: Cam kết phần chấp nhận**
 
   ```powershell
   git add docs/release/phase3-user-testing-record.md docs/release/week13-acceptance-record.md docs/testing/system-integration-demo-runbook.md
   git commit -m "docs: record phase 3 user testing evidence"
   ```
 
-### Task 4: Complete release report and presentation deliverables
+### Nhiệm vụ 4: Hoàn thành báo cáo phát hành và các sản phẩm thuyết trình
 
-**Files:**
-- Create: `docs/release/phase3-final-report.md`
-- Create: `docs/release/phase3-rehearsal-record.md`
-- Create: `presentation/phase3-final-defense.pptx`
-- Modify: `document/FinalRelease.md`
-- Modify: `README.md`
+**Tệp:**
+- Tạo: `docs/release/phase3-final-report.md`
+- Tạo: `docs/release/phase3-rehearsal-record.md`
+- Tạo: `presentation/phase3-final-defense.pptx`
+- Sửa đổi: `document/FinalRelease.md`
+- Sửa đổi: `README.md`
 
-**Interfaces:**
-- Consumes: all prior Phase 2 evidence, Phase 3 staging/performance/user-test
-  records, architecture/RDS/SDS docs, and the existing demo runbook.
-- Produces: a source-linked final report and a rendered presentation deck with
-  no fabricated links or claims.
+**Giao diện:**
+- Tiêu thụ: tất cả bằng chứng trước đây của Giai đoạn 2, giai đoạn/hiệu suất/kiểm tra người dùng ở Giai đoạn 3
+  bản ghi, tài liệu kiến trúc/RDS/SDS và sổ tay vận hành demo hiện có.
+- Tạo ra: một báo cáo cuối cùng được liên kết với nguồn và một bản trình bày được hiển thị với
+  không có liên kết hoặc khiếu nại bịa đặt.
 
-- [x] **Step 1: Write the final report**
+- [x] **Bước 1: Viết báo cáo cuối cùng**
 
-  Cover scope, architecture, feature traceability, test totals, staging
-  deployment, performance result, user-testing result, known limitations,
-  ethical/security safeguards, and exact reproducibility commands. Separate
-  observed outcomes from open human/provider checks.
+Phạm vi bao gồm, kiến trúc, khả năng truy vết chức năng, tổng số kiểm thử, triển khai giai đoạn, kết
+quả hiệu suất, kết quả kiểm tra người dùng, các hạn chế đã biết, các biện pháp bảo vệ đạo đức/bảo
+mật và các lệnh tái tạo chính xác. Tách biệt các kết quả được quan sát khỏi các cuộc kiểm tra mở của
+con người/nhà cung cấp.
 
-- [x] **Step 2: Replace release placeholders with honest status**
+- [x] **Bước 2: Thay thế phần giữ chỗ phát hành bằng trạng thái trung thực**
 
-  In `document/FinalRelease.md`, add the observed staging frontend/backend
-  origins and workflow evidence. Replace unavailable video/tag links with an
-  explicit `Not published in this repository` status and link to the local
-  rehearsal record instead of inventing a URL.
+Trong `document/FinalRelease.md`, thêm bằng chứng về nguồn gốc và quy trình làm việc của
+giao diện/máy chủ trên môi trường tiền sản xuất đã quan sát. Thay thế các liên kết video/thẻ không có sẵn bằng
+trạng thái `Not published in this repository` rõ ràng và liên kết tới bản ghi diễn tập cục bộ thay
+vì phát minh ra URL.
 
-- [x] **Step 3: Create and render the presentation**
+- [x] **Bước 3: Tạo và hiển thị bản trình bày**
 
-  Use the `presentations:Presentations` skill. The deck must contain: problem
-  and users, architecture, feature map, core golden path, quality gates,
-  staging topology, performance result, limitations, and a five-minute demo
-  sequence. Use only synthetic/example data.
+Sử dụng kỹ năng `presentations:Presentations`. Bộ trình chiếu phải chứa: vấn đề và người dùng, kiến trúc,
+bản đồ chức năng, luồng nghiệp vụ chuẩn cốt lõi, cổng chất lượng, cấu trúc liên kết môi trường tiền
+sản xuất, kết quả hiệu suất, các hạn chế và trình tự demo dài 5 phút. Chỉ sử dụng dữ liệu tổng
+hợp/ví dụ.
 
-- [x] **Step 4: Run a timed rehearsal**
+- [x] **Bước 4: Chạy buổi diễn tập theo thời gian**
 
-  Follow the runbook once at normal pace and once at five-minute pace. Record
-  elapsed time, checkpoint results, fallback used, and any follow-up. Render
-  the deck to images/PDF and inspect the output before marking the artifact
-  verified.
+Thực hiện theo sổ chạy một lần với tốc độ bình thường và một lần với tốc độ năm phút. Ghi lại thời
+gian đã trôi qua, kết quả điểm kiểm tra, dự phòng được sử dụng và mọi hoạt động theo dõi. Kết xuất
+bộ trình chiếu thành hình ảnh/PDF và kiểm tra đầu ra trước khi đánh dấu thành phần giả đã được xác minh.
 
-- [x] **Step 5: Commit delivery artifacts**
+- [x] **Bước 5: Cam kết phân phối tệp bàn giao**
 
   ```powershell
   git add docs/release/phase3-final-report.md docs/release/phase3-rehearsal-record.md presentation/phase3-final-defense.pptx document/FinalRelease.md README.md
   git commit -m "docs: complete phase 3 delivery package"
   ```
 
-### Task 5: Run the four-layer final validation and integration
+### Nhiệm vụ 5: Chạy xác thực và tích hợp cuối cùng bốn lớp
 
-**Files:**
-- Modify: `.github/workflows/deploy-staging.yml` only if a proven Phase 3 fix is required
-- Create: `.sdd/reviews/phase3-final-validation-2026-07-19.md`
+**Tệp:**
+- Sửa đổi: `.github/workflows/deploy-staging.yml` chỉ khi yêu cầu sửa lỗi Giai đoạn 3 đã được chứng minh
+- Tạo: `.sdd/reviews/phase3-final-validation-2026-07-19.md`
 
-**Interfaces:**
-- Consumes: all tracked Phase 3 artifacts, current branch commits, staging
-  workflow evidence, and the validation checklist.
-- Produces: a review record that proves or explicitly identifies each required
-  Phase 3 item before integration.
+**Giao diện:**
+- Tiêu thụ: tất cả các tạo phẩm Giai đoạn 3 được theo dõi, cam kết của nhánh hiện tại, môi trường tiền sản xuất
+  bằng chứng về quy trình làm việc và danh sách kiểm tra xác nhận.
+- Tạo ra: một bản ghi đánh giá chứng minh hoặc xác định rõ ràng từng yêu cầu
+  Giai đoạn 3 hạng mục trước khi hội nhập.
 
-- [x] **Step 1: Run the complete local validation set**
+- [x] **Bước 1: Chạy bộ xác thực cục bộ hoàn chỉnh**
 
   ```powershell
   npm.cmd ci
@@ -284,23 +283,23 @@
   npm.cmd run phase3:performance
   ```
 
-- [ ] **Step 2: Dispatch staging from the final branch/main SHA**
+- [ ] **Bước 2: Điều phối dàn từ nhánh cuối cùng/SHA chính**
 
   ```powershell
   gh workflow run deploy-staging.yml --repo SWP391-LibraryManagement/LibraryManagement --ref main
   gh run watch <observed-run-id> --repo SWP391-LibraryManagement/LibraryManagement --exit-status
   ```
 
-  Replace `<observed-run-id>` in the executed command with the actual ID and
-  record the resulting URL; no placeholder may remain in the evidence file.
+Thay thế `<observed-run-id>` trong lệnh đã thực thi bằng ID thực và ghi lại URL kết quả; không có
+phần giữ chỗ nào được giữ lại trong tệp bằng chứng.
 
-- [x] **Step 3: Audit all four validation layers**
+- [x] **Bước 3: Kiểm tra tất cả bốn lớp xác thực**
 
-  Write `.sdd/reviews/phase3-final-validation-2026-07-19.md` with approach,
-  exact files, commands/results, traceability mapping, safety review,
-  acceptance evidence, open human/provider checks, and residual risks.
+Viết `.sdd/reviews/phase3-final-validation-2026-07-19.md` với cách tiếp cận, tệp chính xác, lệnh/kết
+quả, ánh xạ truy vết, đánh giá an toàn, bằng chứng chấp nhận, kiểm tra mở của con người/nhà cung cấp
+và rủi ro còn sót lại.
 
-- [ ] **Step 4: Push a reviewable branch and wait for required CI**
+- [ ] **Bước 4: Đẩy một nhánh có thể xem lại và đợi CI được yêu cầu**
 
   ```powershell
   git push -u origin docs/phase3-polish-delivery
@@ -308,19 +307,18 @@
   gh pr checks <observed-pr-number> --repo SWP391-LibraryManagement/LibraryManagement --watch
   ```
 
-- [ ] **Step 5: Integrate only after validation evidence is complete**
+- [ ] **Bước 5: Chỉ tích hợp sau khi hoàn tất bằng chứng xác thực**
 
-  Merge through the repository's normal review gate, verify post-merge main
-  CI, and update the final validation record with the merge commit. Do not
-  close the goal while any required Phase 3 deliverable is missing or while
-  the evidence is merely inferred.
+Hợp nhất thông qua cổng xem xét thông thường của kho lưu trữ, xác minh CI chính sau hợp nhất và cập
+nhật bản ghi xác thực cuối cùng với cam kết hợp nhất. Không kết thúc mục tiêu khi thiếu bất kỳ sản
+phẩm được yêu cầu nào của Giai đoạn 3 hoặc khi bằng chứng chỉ được suy luận.
 
-## Self-review checklist
+## Danh sách kiểm tra tự đánh giá
 
-- All roadmap Phase 3 outputs map to Tasks 1-5.
-- No unobserved staging, SMTP, SQL, video, or human acceptance claim is marked
+- Tất cả lộ trình của Giai đoạn 3 đều ánh xạ tới Nhiệm vụ 1-5.
+- Không có tuyên bố môi trường tiền sản xuất không được quan sát, SMTP, SQL, video hoặc tuyên bố chấp nhận của con người được đánh dấu
   `PASS`.
-- The plan contains no `TBD`, `TODO`, or vague implementation step.
-- Route splitting preserves every existing route guard and API contract.
-- Every performance and acceptance number in the final report has a command,
-  output, or rendered artifact behind it.
+- Kế hoạch không chứa `TBD`, `TODO` hoặc bước triển khai mơ hồ.
+- Việc tách tuyến duy trì mọi bảo vệ tuyến hiện có và hợp đồng API.
+- Mỗi số hiệu suất và chấp nhận trong báo cáo cuối cùng đều có một lệnh,
+  đầu ra hoặc tạo phẩm được hiển thị đằng sau nó.

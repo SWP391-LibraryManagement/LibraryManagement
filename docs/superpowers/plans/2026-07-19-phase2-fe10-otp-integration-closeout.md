@@ -1,42 +1,50 @@
-# Phase 2 FE10 OTP Integration Closeout Implementation Plan
+# Kế hoạch triển khai kết thúc tích hợp FE10 OTP giai đoạn 2
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Đối với nhân viên đại lý:** BẮT BUỘC SUB-SKILL: Sử dụng siêu năng lực:thực thi các kế hoạch để thực hiện kế hoạch này theo từng nhiệm vụ. Các bước sử dụng cú pháp hộp kiểm (`- [ ]`) để theo dõi.
 
-**Goal:** Close `FE10-S05` with complete ADR-004 verification evidence, targeted coverage additions, synchronized SDD status, merged PR evidence, and exact post-merge `main` CI.
+**Mục tiêu:** Đóng `FE10-S05` với bằng chứng xác minh ADR-004 hoàn chỉnh, bổ sung phạm vi bảo hiểm
+có mục tiêu, trạng thái SDD được đồng bộ hóa, bằng chứng PR đã hợp nhất và CI `main` sau hợp nhất
+chính xác.
 
-**Architecture:** Preserve the existing FE02-bound in-process notification requester and FE10 provider-memory delivery architecture. Add characterization evidence for currently under-specified boundary cases, change production code only if a new assertion exposes non-conformance, then use a two-PR flow so the repository records both implementation integration and post-merge closeout facts.
+**Cấu trúc:** Bảo toàn trình yêu cầu thông báo trong quá trình gắn với FE02 hiện có và kiến trúc
+phân phối bộ nhớ của nhà cung cấp FE10. Thêm bằng chứng mô tả đặc tính cho các trường hợp ranh giới
+hiện chưa được xác định rõ, chỉ thay đổi mã sản xuất nếu một xác nhận mới cho thấy sự không tuân
+thủ, sau đó sử dụng luồng hai PR để kho lưu trữ ghi lại cả sự kiện kết thúc triển khai và tích hợp
+sau hợp nhất.
 
-**Tech Stack:** Node.js, Express.js, Jest, SQL Server contract fixtures, GitHub Actions, GitHub CLI, Markdown SDD artifacts.
+**bộ công nghệ công nghệ:** Node.js, Express.js, Jest, SQL Server đồ đạc hợp đồng, GitHub hành động,
+GitHub CLI, Markdown SDD tệp bàn giao.
 
-## Global Constraints
+## Ràng buộc toàn cầu
 
-- Use Hybrid SDD+ADD at Full depth for OTP ownership/security and Light depth for evidence-only closeout.
-- FE02 owns OTP generation, hashing, expiry, revocation, and validation; FE10 owns rendering, provider delivery, safe status, attempts, and safe metadata.
-- Raw OTP and rendered sensitive content must never enter persistence, audit, logs, HTTP responses, or saved evidence.
-- Keep `CHANGE_PASSWORD_OTP`, legacy token acceptance, FE11 setup, FE04 membership result, FE09 caller integration, frontend UI, real SMTP credentials, schema tables/indexes, and new dependencies out of scope.
-- Use the current worktree branch `feat/phase2-fe10-otp-integration` based on `origin/main@e89c10b`.
-- The repository H2 rule overrides generic frequent-commit guidance: keep generated test/evidence changes uncommitted until the complete diff and validation evidence are reviewed.
-- The user's 2026-07-19 standing approval authorizes inline execution and all review/merge/closeout actions, but every automated and scope gate must still pass before integration.
+- Sử dụng Hybrid SDD+ADD ở Độ sâu đầy đủ để có quyền sở hữu/bảo mật OTP và Độ sâu nhẹ để khóa chỉ bằng bằng chứng.
+- FE02 sở hữu việc tạo, băm, hết hạn, thu hồi và xác thực OTP; FE10 sở hữu kết xuất, phân phối nhà cung cấp, trạng thái an toàn, số lần thử và siêu dữ liệu an toàn.
+- OTP thô và nội dung nhạy cảm được hiển thị không bao giờ được phép lưu trữ lâu dài, kiểm tra, ghi nhật ký, phản hồi HTTP hoặc bằng chứng đã lưu.
+- Giữ `CHANGE_PASSWORD_OTP`, chấp nhận mã thông báo cũ, thiết lập FE11, kết quả thành viên FE04, tích hợp người gọi FE09, giao diện người dùng giao diện người dùng, thông tin xác thực SMTP thực, bảng/chỉ mục lược đồ và các phần phụ thuộc mới nằm ngoài phạm vi.
+- Sử dụng nhánh cây làm việc hiện tại `feat/phase2-fe10-otp-integration` dựa trên `origin/main@e89c10b`.
+- Quy tắc H2 của kho lưu trữ ghi đè hướng dẫn chung về cam kết thường xuyên: giữ nguyên các thay đổi kiểm tra/bằng chứng đã tạo cho đến khi bằng chứng xác thực và khác biệt hoàn chỉnh được xem xét.
+- Phê duyệt thường trực ngày 19 tháng 7 năm 2026 của người dùng cho phép thực thi nội tuyến và tất cả các hành động xem xét/hợp nhất/đóng, nhưng mọi cổng phạm vi và tự động vẫn phải vượt qua trước khi tích hợp.
 
 ---
 
-### Task 1: Lock The Approved Design And Establish The Requirement Audit
+### Nhiệm vụ 1: Khóa thiết kế đã được phê duyệt và thiết lập kiểm tra yêu cầu
 
-**Files:**
-- Modify: `docs/superpowers/specs/2026-07-19-phase2-fe10-otp-integration-closeout-design.md`
-- Create: `docs/superpowers/plans/2026-07-19-phase2-fe10-otp-integration-closeout.md`
+**Tệp:**
+- Sửa đổi: `docs/superpowers/specs/2026-07-19-phase2-fe10-otp-integration-closeout-design.md`
+- Tạo: `docs/superpowers/plans/2026-07-19-phase2-fe10-otp-integration-closeout.md`
 
-**Interfaces:**
-- Consumes: ADR-004 verification contract and approved FE10 `PLAN.md`/`TASKS.md`.
-- Produces: approved design and this executable plan.
+**Giao diện:**
+- Tiêu thụ: Hợp đồng xác minh ADR-004 và FE10 `PLAN.md`/`TASKS.md` được phê duyệt.
+- Sản xuất: thiết kế đã được phê duyệt và kế hoạch thực thi này.
 
-- [ ] **Step 1: Record design approval**
+- [ ] **Bước 1: Ghi nhận phê duyệt thiết kế**
 
-Set design status to `APPROVED BY USER - 2026-07-19` and record standing approval without claiming that validation or integration has already passed.
+Đặt trạng thái thiết kế thành `APPROVED BY USER - 2026-07-19` và ghi lại phê duyệt thường trực mà
+không tuyên bố rằng quá trình xác thực hoặc tích hợp đã được thông qua.
 
-- [ ] **Step 2: Self-review design and plan**
+- [ ] **Bước 2: Tự xem xét thiết kế và kế hoạch**
 
-Run:
+Chạy:
 
 ```powershell
 $placeholderMatches = rg -n -i "TBD|TODO|implement later|fill in details|similar to task" docs/superpowers/specs/2026-07-19-phase2-fe10-otp-integration-closeout-design.md docs/superpowers/plans/2026-07-19-phase2-fe10-otp-integration-closeout.md | Where-Object { $_ -notmatch 'placeholderMatches|Placeholder scan' }
@@ -44,32 +52,33 @@ if ($placeholderMatches) { $placeholderMatches; throw 'Plan contains placeholder
 git diff --check
 ```
 
-Expected: no placeholder matches and no diff errors.
+Dự kiến: không có phần giữ chỗ phù hợp và không có lỗi khác biệt.
 
-- [ ] **Step 3: Commit approved planning artifacts**
+- [ ] **Bước 3: Cam kết các nội dung quy hoạch đã được phê duyệt**
 
 ```powershell
 git add -- docs/superpowers/specs/2026-07-19-phase2-fe10-otp-integration-closeout-design.md docs/superpowers/plans/2026-07-19-phase2-fe10-otp-integration-closeout.md
 git commit -m "docs: approve phase2 FE10 OTP plan"
 ```
 
-Expected: docs-only commit; worktree clean.
+Dự kiến: cam kết chỉ dành cho tài liệu; cây làm việc sạch sẽ.
 
 ---
 
-### Task 2: Expand FE10 Ownership And HTTP Boundary Evidence
+### Nhiệm vụ 2: Mở rộng quyền sở hữu FE10 và bằng chứng ranh giới HTTP
 
-**Files:**
-- Modify: `backend/tests/notificationRoutes.test.js`
-- Test: `backend/tests/notificationRoutes.test.js`
+**Tệp:**
+- Sửa đổi: `backend/tests/notificationRoutes.test.js`
+- Kiểm tra: `backend/tests/notificationRoutes.test.js`
 
-**Interfaces:**
-- Consumes: `createSourceNotificationRequester(sourceFeature)` and `POST /api/notifications/requests`.
-- Produces: direct evidence for ADR-004 verification items 1 and 2.
+**Giao diện:**
+- Tiêu thụ: `createSourceNotificationRequester(sourceFeature)` và `POST /api/notifications/requests`.
+- Tạo ra: bằng chứng trực tiếp cho mục xác minh ADR-004 1 và 2.
 
-- [ ] **Step 1: Strengthen the HTTP source override assertion**
+- [ ] **Bước 1: Tăng cường xác nhận ghi đè nguồn HTTP**
 
-Replace the existing status-only `sourceFeature` HTTP test with exact response and no-side-effect assertions:
+Thay thế kiểm thử `sourceFeature` HTTP chỉ có trạng thái hiện tại bằng phản hồi chính xác và xác
+nhận không có tác dụng phụ:
 
 ```js
 test('rejects an allowlisted sourceFeature supplied through HTTP', async () => {
@@ -107,9 +116,9 @@ test('rejects an allowlisted sourceFeature supplied through HTTP', async () => {
 });
 ```
 
-- [ ] **Step 2: Expand non-FE02 requester coverage to the full allowlist cross-product**
+- [ ] **Bước 2: Mở rộng phạm vi áp dụng của người yêu cầu không thuộc FE02 sang toàn bộ sản phẩm chéo trong danh sách cho phép**
 
-Replace the current two-row parameterization with:
+Thay thế tham số hóa hai hàng hiện tại bằng:
 
 ```js
 const nonFe02Sources = ['FE04', 'FE07', 'FE08', 'FE09', 'FE11', 'SYSTEM'];
@@ -145,35 +154,39 @@ test.each(
 });
 ```
 
-- [ ] **Step 3: Run the focused evidence test**
+- [ ] **Bước 3: Chạy kiểm thử bằng chứng tập trung**
 
-Run:
+Chạy:
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/notificationRoutes.test.js
 ```
 
-Expected: PASS. This is characterization of already-implemented behavior; do not manufacture a production diff if it is pre-existing GREEN.
+Dự kiến: ĐẠT. Đây là đặc điểm của hành vi đã được thực hiện; không tạo ra khác biệt sản xuất nếu nó
+là GREEN có sẵn.
 
-- [ ] **Step 4: If an assertion fails, perform RED-GREEN**
+- [ ] **Bước 4: Nếu xác nhận không thành công, hãy thực hiện RED-GREEN**
 
-Only when Step 3 exposes non-conformance, make the smallest change in `backend/src/services/notificationService.js` or `backend/src/validators/notificationValidators.js`, rerun the exact failing test, then rerun the full focused file. Do not weaken the assertion or broaden the API.
+Chỉ khi Bước 3 cho thấy sự không tuân thủ, hãy thực hiện thay đổi nhỏ nhất trong
+`backend/src/services/notificationService.js` hoặc
+`backend/src/validators/notificationValidators.js`, chạy lại kiểm thử lỗi chính xác, sau đó chạy lại
+tệp tập trung đầy đủ. Không làm suy yếu xác nhận hoặc mở rộng API.
 
 ---
 
-### Task 3: Prove Repeated Password Reset Creates A New Source Event
+### Nhiệm vụ 3: Chứng minh việc đặt lại mật khẩu nhiều lần sẽ tạo ra sự kiện nguồn mới
 
-**Files:**
-- Modify: `backend/tests/authRoutes.test.js`
-- Test: `backend/tests/authRoutes.test.js`
+**Tệp:**
+- Sửa đổi: `backend/tests/authRoutes.test.js`
+- Kiểm tra: `backend/tests/authRoutes.test.js`
 
-**Interfaces:**
-- Consumes: FE02 `forgotPassword`, OTP token repository, and injected FE10 requester.
-- Produces: direct ADR-004 verification evidence for new token ID/idempotency and no duplicate direct delivery.
+**Giao diện:**
+- Tiêu thụ: Kho lưu trữ mã thông báo FE02 `forgotPassword`, OTP và người yêu cầu FE10 được chèn vào.
+- Tạo ra: bằng chứng xác minh ADR-004 trực tiếp cho ID/mã thông báo mới và không có phân phối trực tiếp trùng lặp.
 
-- [ ] **Step 1: Add the repeated forgot-password characterization test**
+- [ ] **Bước 1: Thêm kiểm thử đặc tính quên mật khẩu lặp lại**
 
-Insert after the existing single reset delivery test:
+Chèn sau kiểm thử phân phối thiết lập lại duy nhất hiện có:
 
 ```js
 // @spec BR-FE02-020 BR-FE02-021 FR-FE02-011 FR-FE02-022 AC-FE02-014
@@ -219,56 +232,58 @@ test('repeated forgot-password creates a new token event and requester key witho
 });
 ```
 
-- [ ] **Step 2: Run the focused auth test**
+- [ ] **Bước 2: Chạy kiểm thử xác thực tập trung**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/authRoutes.test.js
 ```
 
-Expected: PASS as pre-existing behavior. If it fails, retain the test as RED and make only the minimal FE02-owned correction in `backend/src/services/authService.js` or its token repository helper.
+Dự kiến: ĐẠT như hành vi đã có từ trước. Nếu thất bại, hãy giữ lại kiểm thử dưới dạng RED và chỉ
+thực hiện chỉnh sửa tối thiểu do FE02 sở hữu trong `backend/src/services/authService.js` hoặc trình
+trợ giúp kho lưu trữ mã thông báo của nó.
 
-- [ ] **Step 3: Run the cross-feature focused gate**
+- [ ] **Bước 3: Chạy cổng tập trung vào nhiều chức năng**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/notificationRoutes.test.js tests/authRoutes.test.js tests/integration.test.js tests/fe10OtpTemplateMigration.test.js
 ```
 
-Expected: all suites and tests PASS with zero snapshots or skipped failures.
+Dự kiến: tất cả các bộ và kiểm thử ĐẠT mà không có ảnh chụp nhanh hoặc lỗi bị bỏ qua.
 
 ---
 
-### Task 4: Reconcile FE10-S05 Pre-Integration Evidence
+### Nhiệm vụ 4: Đối chiếu bằng chứng trước khi tích hợp FE10-S05
 
-**Files:**
-- Modify: `.sdd/specs/feat-auth/PLAN.md`
-- Modify: `.sdd/specs/feat-auth/TASKS.md`
-- Modify: `.sdd/specs/feat-auth/TEST_PLAN.md`
-- Modify: `.sdd/specs/feat-auth/CHANGELOG.md`
-- Modify: `.sdd/specs/feat-notification-management/PLAN.md`
-- Modify: `.sdd/specs/feat-notification-management/TASKS.md`
-- Modify: `.sdd/specs/feat-notification-management/TEST_PLAN.md`
-- Modify: `.sdd/specs/feat-notification-management/CHANGELOG.md`
-- Modify: `.sdd/reviews/fe10-otp-security-reconciliation-validation-2026-07-19.md`
-- Modify: `docs/superpowers/specs/2026-07-19-phase2-fe10-otp-integration-closeout-design.md`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-auth/PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-auth/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-auth/TEST_PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-auth/CHANGELOG.md`
+- Sửa đổi: `.sdd/specs/feat-notification-management/PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-notification-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-notification-management/TEST_PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-notification-management/CHANGELOG.md`
+- Sửa đổi: `.sdd/reviews/fe10-otp-security-reconciliation-validation-2026-07-19.md`
+- Sửa đổi: `docs/superpowers/specs/2026-07-19-phase2-fe10-otp-integration-closeout-design.md`
 
-**Interfaces:**
-- Consumes: Tasks 2-3 test output, baseline SQL evidence already merged in PR #40, and the user's standing approval.
-- Produces: H2/H3-ready evidence without prematurely claiming merge or post-merge CI.
+**Giao diện:**
+- Tiêu thụ: Đầu ra kiểm thử của Nhiệm vụ 2-3, bằng chứng SQL cơ bản đã được hợp nhất trong PR #40 và sự chấp thuận thường trực của người dùng.
+- Tạo ra: Bằng chứng sẵn sàng cho H2/H3 mà không yêu cầu sớm CI hợp nhất hoặc CI sau hợp nhất.
 
-- [ ] **Step 1: Update status accurately before integration**
+- [ ] **Bước 1: Cập nhật chính xác trạng thái trước khi tích hợp**
 
-Use these boundaries:
+Sử dụng các ranh giới sau:
 
 - `PLAN.md`: `FE10-S05 HUMAN ACCEPTANCE APPROVED; PR/MAIN CI PENDING`.
-- `TASKS.md`: keep the task unchecked or `[~]`, but replace `FINAL HUMAN CLOSEOUT PENDING` with `HUMAN ACCEPTANCE APPROVED; PR/MAIN CI PENDING`.
-- FE02 `PLAN.md`/`TASKS.md`: replace the stale OTP delivery implementation/human-closeout pending statements with `HUMAN ACCEPTANCE APPROVED; PR/MAIN CI PENDING`, while leaving unrelated refresh, HTTPS, legacy-token, and future-scope boundaries unchanged.
-- FE02 `CHANGELOG.md`: prepend the same focused evidence and standing-approval record without claiming integration.
-- FE02/FE10 `TEST_PLAN.md`: replace obsolete suite/count/gap statements with the fresh 170/916 evidence and the remaining PR/main-CI boundary.
-- `CHANGELOG.md`: prepend a 2026-07-19 entry describing the expanded ownership/reset-event evidence and standing approval.
-- Validation review: replace obsolete 131/623 counts and old missing-schema/FE02/SQL statements with fresh commands/results; set L4 to approved for injected-provider scope while leaving integration pending.
-- Design: record the final requirement audit result and any production gap or `no product correction required` conclusion.
+- `TASKS.md`: không chọn nhiệm vụ hoặc `[~]`, nhưng thay thế `FINAL HUMAN CLOSEOUT PENDING` bằng `HUMAN ACCEPTANCE APPROVED; PR/MAIN CI PENDING`.
+- FE02 `PLAN.md`/`TASKS.md`: thay thế các câu lệnh đang chờ triển khai phân phối/đóng con người OTP cũ bằng `HUMAN ACCEPTANCE APPROVED; PR/MAIN CI PENDING`, trong khi vẫn giữ nguyên các ranh giới làm mới không liên quan, HTTPS, mã thông báo cũ và phạm vi tương lai.
+- FE02 `CHANGELOG.md`: thêm bằng chứng tập trung và hồ sơ phê duyệt thường trực tương tự mà không yêu cầu tích hợp.
+- FE02/FE10 `TEST_PLAN.md`: thay thế các tuyên bố về bộ/số lượng/khoảng trống lỗi thời bằng bằng chứng 170/916 mới và ranh giới PR/CI chính còn lại.
+- `CHANGELOG.md`: thêm mục nhập 2026-07-19 mô tả bằng chứng về quyền sở hữu/sự kiện đặt lại mở rộng và sự chấp thuận thường trực.
+- Đánh giá xác thực: thay thế số lượng 131/623 lỗi thời và các câu lệnh thiếu lược đồ/FE02/SQL cũ bằng các lệnh/kết quả mới; đặt L4 thành phê duyệt cho phạm vi nhà cung cấp được đưa vào trong khi vẫn đang chờ tích hợp.
+- Thiết kế: ghi lại kết quả kiểm tra yêu cầu cuối cùng và mọi khoảng trống trong sản xuất hoặc kết luận `no product correction required`.
 
-- [ ] **Step 2: Run contradiction and leakage scans**
+- [ ] **Bước 2: Chạy quét mâu thuẫn và rò rỉ**
 
 ```powershell
 rg -n -i "shared schema.*pending|FE02 fan-in.*pending|SQL.*pending|human review pending|FINAL HUMAN CLOSEOUT PENDING|OTP delivery implementation follow-up remains pending" .sdd/specs/feat-auth .sdd/specs/feat-notification-management .sdd/reviews/fe10-otp-security-reconciliation-validation-2026-07-19.md
@@ -277,19 +292,22 @@ rg -n "ACCOUNT_VERIFICATION|PASSWORD_RESET|EMAIL_VERIFY" backend/src/services/au
 git diff --check
 ```
 
-Expected: no active stale-gate statements; any `verificationLink`/`resetLink` matches are absent from production; `EMAIL_VERIFY` remains only the FE02 token type or explicit defensive legacy exclusion, never a notification template alias.
+Dự kiến: không có câu lệnh cổng cũ nào đang hoạt động; mọi trận đấu `verificationLink`/`resetLink`
+đều không được sản xuất; `EMAIL_VERIFY` chỉ còn lại loại mã thông báo FE02 hoặc loại trừ di sản
+phòng vệ rõ ràng, không bao giờ là bí danh mẫu thông báo.
 
 ---
 
-### Task 5: Run H2 Validation And Publish The Integration PR
+### Nhiệm vụ 5: Chạy xác thực H2 và xuất bản PR tích hợp
 
-**Files:** All changed files from Tasks 2-4 plus the approved design/plan commits.
+**Tệp:** Tất cả các tệp đã thay đổi từ Nhiệm vụ 2-4 cùng với các cam kết về thiết kế/kế hoạch đã
+được phê duyệt.
 
-**Interfaces:**
-- Consumes: complete uncommitted test/evidence diff.
-- Produces: one reviewed integration commit and PR.
+**Giao diện:**
+- Tiêu thụ: hoàn thành kiểm thử/bằng chứng khác biệt có sẵn.
+- Tạo ra: một cam kết tích hợp và PR đã được xem xét.
 
-- [ ] **Step 1: Run complete L1 validation**
+- [ ] **Bước 1: Chạy xác thực L1 hoàn chỉnh**
 
 ```powershell
 npm.cmd --prefix backend test
@@ -308,7 +326,7 @@ Pop-Location
 git diff --check
 ```
 
-Run browser E2E on isolated ports if the defaults are occupied by another worktree:
+Chạy trình duyệt E2E trên các cổng bị cô lập nếu mặc định bị chiếm bởi một cây làm việc khác:
 
 ```powershell
 $env:E2E_FRONTEND_PORT = '4187'
@@ -318,9 +336,10 @@ $env:E2E_BACKEND_URL = 'http://127.0.0.1:3102'
 npm.cmd run test:e2e
 ```
 
-Expected: all configured suites and checks PASS. The known non-blocking Vite chunk advisory may remain.
+Dự kiến: tất cả các bộ được cấu hình và kiểm tra ĐẠT. Lời khuyên về đoạn Vite không chặn đã biết có
+thể vẫn còn.
 
-- [ ] **Step 2: Run L2/L3 scope audit**
+- [ ] **Bước 2: Chạy kiểm tra phạm vi L2/L3**
 
 ```powershell
 git diff --name-only
@@ -329,11 +348,13 @@ git diff -- backend/src backend/tests .sdd/specs/feat-auth .sdd/specs/feat-notif
 rg -n -i "password\s*=|api[_-]?key|private[_-]?key|client[_-]?secret|authorization:\s*bearer" $(git diff --name-only)
 ```
 
-Expected: only planned FE10/FE02 tests and evidence files; no credentials, frontend product code, FE09 caller, dependency, schema table/index, or `CHANGE_PASSWORD_OTP` behavior change.
+Dự kiến: chỉ các tệp bằng chứng và kiểm thử FE10/FE02 theo kế hoạch; không có thông tin xác thực, mã
+sản phẩm giao diện người dùng, trình gọi FE09, phần phụ thuộc, bảng/chỉ mục lược đồ hoặc thay đổi
+hành vi của `CHANGE_PASSWORD_OTP`.
 
-- [ ] **Step 3: Record H2 review and commit the exact diff**
+- [ ] **Bước 3: Ghi lại đánh giá H2 và xác nhận sự khác biệt chính xác**
 
-Record the diff hash and validation results in the review packet. Then:
+Ghi lại kết quả băm và xác thực khác biệt trong gói đánh giá. Sau đó:
 
 ```powershell
 git add -- backend/tests/notificationRoutes.test.js backend/tests/authRoutes.test.js .sdd/specs/feat-auth/PLAN.md .sdd/specs/feat-auth/TASKS.md .sdd/specs/feat-auth/TEST_PLAN.md .sdd/specs/feat-auth/CHANGELOG.md .sdd/specs/feat-notification-management/PLAN.md .sdd/specs/feat-notification-management/TASKS.md .sdd/specs/feat-notification-management/TEST_PLAN.md .sdd/specs/feat-notification-management/CHANGELOG.md .sdd/reviews/fe10-otp-security-reconciliation-validation-2026-07-19.md docs/superpowers/specs/2026-07-19-phase2-fe10-otp-integration-closeout-design.md docs/superpowers/plans/2026-07-19-phase2-fe10-otp-integration-closeout.md
@@ -341,48 +362,51 @@ git commit -m "test(fe10): close OTP integration evidence"
 git push -u origin feat/phase2-fe10-otp-integration
 ```
 
-- [ ] **Step 4: Open PR, wait for checks, and merge under standing H3 approval**
+- [ ] **Bước 4: Mở PR, chờ kiểm tra và hợp nhất dưới sự phê duyệt thường trực của H3**
 
-Create a draft PR summarizing ADR-004 coverage and no scope expansion. Mark ready after required checks pass. Verify the exact head SHA is unchanged, then merge with `--match-head-commit`. Record PR number, final head, PR CI run, merge SHA, and exact post-merge `main` CI run.
+Tạo bản nháp PR tóm tắt độ bao phủ của ADR-004 và không mở rộng phạm vi. Đánh dấu sẵn sàng sau khi
+vượt qua các bước kiểm tra được yêu cầu. Xác minh đầu chính xác SHA không thay đổi, sau đó hợp nhất
+với `--match-head-commit`. Ghi lại số PR, đầu cuối cùng, lần chạy PR CI, hợp nhất SHA và lần chạy CI
+`main` sau hợp nhất chính xác.
 
 ---
 
-### Task 6: Publish The Mechanical FE10-S05 Closeout
+### Nhiệm vụ 6: Xuất bản Bản kết thúc FE10-S05 cơ khí
 
-**Files:**
-- Modify: `.sdd/specs/feat-auth/PLAN.md`
-- Modify: `.sdd/specs/feat-auth/TASKS.md`
-- Modify: `.sdd/specs/feat-auth/TEST_PLAN.md`
-- Modify: `.sdd/specs/feat-auth/CHANGELOG.md`
-- Modify: `.sdd/specs/feat-notification-management/PLAN.md`
-- Modify: `.sdd/specs/feat-notification-management/TASKS.md`
-- Modify: `.sdd/specs/feat-notification-management/TEST_PLAN.md`
-- Modify: `.sdd/specs/feat-notification-management/CHANGELOG.md`
-- Modify: `.sdd/reviews/fe10-otp-security-reconciliation-validation-2026-07-19.md`
-- Modify: `.agents/CLAUDE.md` only if its FE10 pending sentence remains stale after Task 5.
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-auth/PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-auth/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-auth/TEST_PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-auth/CHANGELOG.md`
+- Sửa đổi: `.sdd/specs/feat-notification-management/PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-notification-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-notification-management/TEST_PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-notification-management/CHANGELOG.md`
+- Sửa đổi: `.sdd/reviews/fe10-otp-security-reconciliation-validation-2026-07-19.md`
+- Sửa đổi: `.agents/CLAUDE.md` chỉ khi câu đang chờ xử lý FE10 của nó vẫn cũ sau Nhiệm vụ 5.
 
-**Interfaces:**
-- Consumes: merged integration PR and exact successful `main` CI.
-- Produces: repository-native B7 completion state for FE10-S05.
+**Giao diện:**
+- Tiêu thụ: PR tích hợp hợp nhất và `main` CI thành công chính xác.
+- Tạo ra: trạng thái hoàn thành B7 gốc của kho lưu trữ cho FE10-S05.
 
-- [ ] **Step 1: Create a clean closeout worktree from the merged `origin/main`**
+- [ ] **Bước 1: Tạo một sơ đồ kết thúc rõ ràng từ `origin/main` đã hợp nhất**
 
 ```powershell
 git fetch origin main
 git -C D:\SWP391\library-management-system worktree add D:\SWP391\library-management-system\.worktrees\phase2-fe10-otp-closeout -b docs/phase2-fe10-otp-closeout origin/main
 ```
 
-Verify `.worktrees/` remains ignored and the new worktree is clean.
+Xác minh `.worktrees/` vẫn bị bỏ qua và cây làm việc mới sạch sẽ.
 
-- [ ] **Step 2: Apply exact evidence substitutions**
+- [ ] **Bước 2: Áp dụng các thay thế bằng chứng chính xác**
 
-- Mark `FE10-S05` `[x] COMPLETE THROUGH B7`.
-- Mark the FE02 OTP-delivery follow-up validation task complete through B7 and remove only the stale OTP-delivery pending statements.
-- Set FE10 `PLAN.md`/`TASKS.md` top status to complete for OTP/FE02/FE04/schema reconciliation without claiming real SMTP or inbox UI.
-- Record integration PR number, final head SHA, PR CI, merge SHA, post-merge `main` CI, test counts, traceability, standing acceptance, and residual boundaries.
-- Update `.agents/CLAUDE.md` only to remove the stale statement that ADR-004/G8-G10 implementation remains pending.
+- Đánh dấu `FE10-S05` `[x] COMPLETE THROUGH B7`.
+- Đánh dấu hoàn thành nhiệm vụ xác thực theo dõi phân phối FE02 OTP thông qua B7 và chỉ xóa các câu lệnh đang chờ phân phối OTP cũ.
+- Đặt trạng thái hàng đầu của FE10 `PLAN.md`/`TASKS.md` thành hoàn tất cho OTP/FE02/FE04/điều chỉnh lược đồ mà không yêu cầu SMTP thực hoặc giao diện người dùng hộp thư đến.
+- Ghi lại số PR tích hợp, đầu cuối SHA, PR CI, hợp nhất SHA, `main` CI sau hợp nhất, số lượng kiểm tra, truy vết, chấp nhận thường trực và các ranh giới còn lại.
+- Chỉ cập nhật `.agents/CLAUDE.md` để xóa tuyên bố cũ rằng việc triển khai ADR-004/G8-G10 vẫn đang chờ xử lý.
 
-- [ ] **Step 3: Verify the mechanical closeout**
+- [ ] **Bước 3: Xác minh việc đóng máy**
 
 ```powershell
 git diff --check
@@ -390,22 +414,28 @@ git diff --name-only
 rg -n -i "FE10-S05|G8-G10.*pending|human.*pending|merge.*pending|main CI.*pending" .agents/CLAUDE.md .sdd/specs/feat-notification-management .sdd/reviews/fe10-otp-security-reconciliation-validation-2026-07-19.md
 ```
 
-Expected: no stale FE10-S05/G8-G10 pending state; deferred real SMTP/inbox/FE09 boundaries remain explicit.
+Dự kiến: không có trạng thái chờ xử lý FE10-S05/G8-G10 cũ; Các ranh giới thực tế của SMTP/hộp thư đến/FE09
+bị trì hoãn vẫn rõ ràng.
 
-- [ ] **Step 4: Commit, publish, merge, and verify final main CI**
+- [ ] **Bước 4: Cam kết, xuất bản, hợp nhất và xác minh CI chính cuối cùng**
 
-Commit as `docs: close phase2 FE10 OTP integration`, push `docs/phase2-fe10-otp-closeout`, open a docs-only PR, wait for required checks, merge under standing approval, and monitor the exact final `main` CI. Add a persistent PR comment containing merge SHA and CI run ID.
+Cam kết dưới dạng `docs: close phase2 FE10 OTP integration`, đẩy `docs/phase2-fe10-otp-closeout`, mở
+PR chỉ dành cho tài liệu, chờ kiểm tra bắt buộc, hợp nhất theo phê duyệt thường trực và giám sát
+chính xác CI `main` cuối cùng. Thêm nhận xét PR liên tục có chứa ID chạy SHA và CI hợp nhất.
 
 ---
 
-## Self-Review Results
+## Kết quả tự đánh giá
 
-- Spec coverage: Tasks 2-3 directly cover all seven ADR-004 verification items; existing provider leakage tests remain authoritative and are rerun in Tasks 3 and 5.
-- Scope: no new delivery channel, provider credential, schema table/index, UI, FE09 caller, FE11/FE04 behavior, or `CHANGE_PASSWORD_OTP` change is planned.
-- Type consistency: FE02 request types/templates are canonical notification values; the internal FE02 token type `EMAIL_VERIFY` remains separate and is not treated as a notification template alias.
-- Integration completeness: Task 5 proves and merges the evidence diff; Task 6 prevents repository status from remaining falsely pending after merge.
-- Placeholder scan: the plan contains no TBD/TODO/future fill-in steps; every action names exact files, commands, expected results, and gate behavior.
+- Phạm vi đặc tả: Nhiệm vụ 2-3 bao gồm trực tiếp tất cả bảy mục xác minh ADR-004; các kiểm thử rò rỉ của nhà cung cấp hiện tại vẫn có hiệu lực và được thực hiện lại trong Nhiệm vụ 3 và 5.
+- Phạm vi: không có kênh phân phối mới, thông tin xác thực của nhà cung cấp, bảng/chỉ mục lược đồ, giao diện người dùng, người gọi FE09, hành vi FE11/FE04 hoặc thay đổi `CHANGE_PASSWORD_OTP` được lên kế hoạch.
+- Tính nhất quán của loại: Các loại/mẫu yêu cầu FE02 là các giá trị thông báo chuẩn; loại mã thông báo FE02 nội bộ `EMAIL_VERIFY` vẫn riêng biệt và không được coi là bí danh mẫu thông báo.
+- Tích hợp đầy đủ: Nhiệm vụ 5 chứng minh và hợp nhất các khác biệt bằng chứng; Nhiệm vụ 6 ngăn trạng thái kho lưu trữ ở trạng thái chờ xử lý sai sau khi hợp nhất.
+- Quét giữ chỗ: kế hoạch không chứa các bước điền TBD/TODO/trong tương lai; mọi hành động đều đặt tên chính xác cho các tệp, lệnh, kết quả mong đợi và hành vi cổng.
 
-## Execution Handoff
+## Bàn giao thực thi
 
-The user approved the design and granted standing approval on 2026-07-19. Execute inline with `executing-plans`; do not spawn subagents. Stop only for a deterministic failure after the allowed retry budget, secret exposure, or a contract conflict that cannot be resolved from the approved sources.
+Người dùng đã phê duyệt thiết kế và được cấp phê duyệt thường trực vào ngày 19-07-2026. Thực thi nội
+tuyến với `executing-plans`; không sinh ra các tác nhân phụ. Chỉ dừng lại khi xảy ra lỗi xác định
+sau ngân sách thử lại cho phép, lộ bí mật hoặc xung đột hợp đồng không thể giải quyết được từ các
+nguồn đã được phê duyệt.

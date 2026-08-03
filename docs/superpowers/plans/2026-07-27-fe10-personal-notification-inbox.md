@@ -1,45 +1,55 @@
-# FE10 Personal Notification Inbox Implementation Plan
+# FE10 Kế hoạch triển khai Hộp thư thông báo cá nhân
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Đối với nhân viên đại lý:** SUB-SKILL BẮT BUỘC: Sử dụng siêu năng lực:phát triển theo định hướng phụ (được khuyến nghị) hoặc siêu năng lực:thực hiện các kế hoạch để triển khai kế hoạch này theo từng nhiệm vụ. Các bước sử dụng cú pháp hộp kiểm (`- [ ]`) để theo dõi.
 
-**Goal:** Add a secure personal notification inbox for authenticated `MEMBER`, `LIBRARIAN`, and `ADMIN` accounts while preserving the existing email-delivery record, sensitive-content boundary, and Azure staging safety.
+**Mục tiêu:** Thêm hộp thư thông báo cá nhân an toàn cho các tài khoản `MEMBER`, `LIBRARIAN` và
+`ADMIN` đã xác thực trong khi vẫn duy trì bản ghi gửi email hiện có, ranh giới nội dung nhạy cảm và
+sự an toàn trong quá trình tổ chức Azure.
 
-**Architecture:** Extend `Notifications` with nullable `ReadAt`, query only current-user eligible non-sensitive rows in SQL, map rows to a fixed safe DTO and backend-owned action allowlist, expose four authenticated endpoints, then consume them through a shared React inbox context, shell bell, and paginated `/notifications` page. Deploy the additive migration and backend before the frontend.
+**Kiến trúc:** Mở rộng `Notifications` với `ReadAt` có thể rỗng, chỉ truy vấn các hàng không nhạy
+cảm đủ điều kiện của người dùng hiện tại trong SQL, ánh xạ các hàng tới DTO an toàn cố định và danh
+sách cho phép hành động thuộc sở hữu máy chủ, hiển thị bốn điểm cuối đã xác thực, sau đó sử dụng
+chúng thông qua ngữ cảnh hộp thư đến React chung, chuông lớp bao và phân trang Trang `/notifications`.
+Triển khai di chuyển bổ sung và máy chủ trước giao diện người dùng.
 
-**Tech Stack:** SQL Server/Azure SQL, Node.js 22, Express 5, `mssql`, Jest/Supertest, React 19, React Router 7, Axios, Node test runner, Playwright, Azure App Service, Azure Static Web Apps.
+**bộ công nghệ công nghệ:** SQL Server/Azure SQL, Node.js 22, Express 5, `mssql`, Jest/Supertest,
+React 19, React Bộ định tuyến 7, Axios, Trình chạy kiểm thử nút, Playwright, Azure App Service,
+Azure Static Web Apps.
 
-**Plan/H1 approved:** 2026-07-28 by the user in the active task.
+**Kế hoạch/H1 đã được phê duyệt:** 2026-07-28 bởi người dùng trong tác vụ đang hoạt động.
 
-## Global Constraints
+## Ràng buộc toàn cầu
 
-- The approved source contract is `.sdd/specs/feat-notification-management/SPEC.md` v0.5.0 and the approved design is `docs/superpowers/specs/2026-07-27-fe10-notification-inbox-expansion-design.md`.
-- Work only in `codex/docs-fe10-notification-inbox-spec` until the reviewed implementation branch/worktree is chosen. Preserve unrelated root-worktree changes.
-- Start product implementation only after this H1-approved governance
-  activation reaches `main`, as required by the repository Fast-Track rules.
-- Use RED -> GREEN -> focused verification for every task. Do not weaken a failing assertion merely to obtain GREEN.
-- Every repository read or mutation must include the authenticated `UserId` and the exact inbox-eligibility predicate before returning data.
-- Never expose or include `ACCOUNT_VERIFICATION`, `PASSWORD_RESET`, `ACCOUNT_SETUP`, `EMAIL_VERIFY`, userless rows, recipient email, `SafePayload`, idempotency data, provider data, delivery errors, attempts, or source metadata in inbox responses.
-- `ReadAt` is orthogonal to `Status`, `SentAt`, `AttemptCount`, `NotificationAttempts`, source state, and idempotency. Read operations must not send, retry, claim, or alter delivery.
-- Action routes are fixed backend mappings only: `/membership`, `/reservations/mine`, `/borrowing/history`, `/fines/mine`. Unknown/incompatible rows return `actionPath: null`.
-- No WebSocket, service worker, new notification channel, duplicate projection table, global staff log, delete, or archive behavior.
-- Migrations are additive, transactional, repeatable, Azure SQL compatible, and verified twice on a disposable database before staging.
-- Deploy migration/backend before frontend. Application rollback leaves nullable `ReadAt` in place.
+- Hợp đồng nguồn được phê duyệt là `.sdd/specs/feat-notification-management/SPEC.md` v0.5.0 và thiết kế được phê duyệt là `docs/superpowers/specs/2026-07-27-fe10-notification-inbox-expansion-design.md`.
+- Chỉ hoạt động trong `codex/docs-fe10-notification-inbox-spec` cho đến khi nhánh/cây công việc triển khai được xem xét được chọn. Giữ nguyên các thay đổi cây gốc không liên quan.
+- Chỉ bắt đầu triển khai sản phẩm sau khi quản trị được phê duyệt H1 này
+  kích hoạt đạt tới `main`, theo yêu cầu của quy tắc Theo dõi nhanh của kho lưu trữ.
+- Sử dụng RED -> GREEN -> xác minh tập trung cho mọi tác vụ. Đừng làm suy yếu xác nhận không thành công chỉ để có được GREEN.
+- Mỗi lần đọc hoặc thao tác ghi kho lưu trữ phải bao gồm `UserId` đã được xác thực và thuộc tính đủ điều kiện chính xác trong hộp thư đến trước khi trả về dữ liệu.
+- Không bao giờ tiết lộ hoặc bao gồm `ACCOUNT_VERIFICATION`, `PASSWORD_RESET`, `ACCOUNT_SETUP`, `EMAIL_VERIFY`, hàng không có người dùng, email người nhận, `SafePayload`, dữ liệu tạm thời, dữ liệu nhà cung cấp, lỗi gửi, lần thử hoặc siêu dữ liệu nguồn trong phản hồi hộp thư đến.
+- `ReadAt` trực giao với `Status`, `SentAt`, `AttemptCount`, `NotificationAttempts`, trạng thái nguồn và trạng thái chuẩn hóa. Hoạt động đọc không được gửi, thử lại, yêu cầu hoặc thay đổi việc phân phối.
+- Các tuyến hành động chỉ là ánh xạ máy chủ cố định: `/membership`, `/reservations/mine`, `/borrowing/history`, `/fines/mine`. Các hàng không xác định/không tương thích trả về `actionPath: null`.
+- Không có WebSocket, nhân viên dịch vụ, kênh thông báo mới, bảng chiếu trùng lặp, hành vi ghi nhật ký nhân viên toàn cầu, xóa hoặc lưu trữ.
+- Quá trình di chuyển có tính chất bổ sung, giao dịch, có thể lặp lại, tương thích với Azure SQL và được xác minh hai lần trên cơ sở dữ liệu dùng một lần trước khi tiến hành.
+- Triển khai di chuyển/máy chủ trước giao diện người dùng. Việc khôi phục ứng dụng sẽ để lại `ReadAt` có thể vô hiệu hóa.
 
 ---
 
-## Task 1: Add The Canonical Read-State Schema And Repeatable Migration (FE10-I01)
+## Nhiệm vụ 1: Thêm Lược đồ trạng thái đọc chính tắc và di chuyển có thể lặp lại (FE10-I01)
 
-**Files:**
+**Tệp:**
 
-- Create: `database/migrations/2026-07-27-fe10-personal-inbox-read-state.sql`
-- Create: `backend/tests/notificationInboxMigration.test.js`
-- Modify: `database/Librarymanagement.sql`
-- Modify: `backend/src/models/Notification.js`
-- Modify: `.sdd/specs/feat-notification-management/TEST_PLAN.md`
+- Tạo: `database/migrations/2026-07-27-fe10-personal-inbox-read-state.sql`
+- Tạo: `backend/tests/notificationInboxMigration.test.js`
+- Sửa đổi: `database/Librarymanagement.sql`
+- Sửa đổi: `backend/src/models/Notification.js`
+- Sửa đổi: `.sdd/specs/feat-notification-management/TEST_PLAN.md`
 
-- [ ] **Step 1: Write the RED migration contract test**
+- [ ] **Bước 1: Viết kiểm thử hợp đồng di chuyển RED**
 
-Add assertions that both canonical schema and migration contain `ReadAt DATETIME2 NULL`, that the migration is transactional/idempotent, and that backfill runs only in the same first-run branch that adds the column.
+Thêm các xác nhận rằng cả lược đồ chuẩn và quá trình di chuyển đều chứa `ReadAt DATETIME2 NULL`,
+rằng quá trình di chuyển là giao dịch/bình thường và việc chèn lấp đó chỉ chạy trong cùng một nhánh
+chạy đầu tiên có thêm cột.
 
 ```js
 expect(migration).toMatch(/COL_LENGTH\('dbo\.Notifications', 'ReadAt'\) IS NULL/i);
@@ -51,7 +61,7 @@ expect(migration).toMatch(/ROLLBACK TRANSACTION/i);
 expect(migration).toMatch(/THROW/i);
 ```
 
-The test must also assert that the eligibility SQL includes only:
+kiểm thử cũng phải khẳng định rằng tính đủ điều kiện của SQL chỉ bao gồm:
 
 ```text
 GENERAL_SYSTEM + MEMBERSHIP_RESULT
@@ -61,21 +71,23 @@ OVERDUE_NOTICE
 FINE_NOTICE
 ```
 
-and excludes all three canonical sensitive types plus legacy `EMAIL_VERIFY`.
+và loại trừ cả ba loại nhạy cảm chuẩn cộng với `EMAIL_VERIFY` cũ.
 
-- [ ] **Step 2: Run the focused test and capture RED**
+- [ ] **Bước 2: Chạy kiểm thử tập trung và chụp RED**
 
-Run:
+Chạy:
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/notificationInboxMigration.test.js
 ```
 
-Expected: FAIL because the migration file and `ReadAt` schema/model contract do not yet exist.
+Dự kiến: THẤT BẠI vì tệp di chuyển và hợp đồng mô hình/lược đồ `ReadAt` chưa tồn tại.
 
-- [ ] **Step 3: Implement the migration and canonical schema/model**
+- [ ] **Bước 3: Triển khai lược đồ/mô hình di chuyển và chuẩn**
 
-The migration shall enable the SQL Server indexed-object session settings, use `XACT_ABORT`, and keep first-run backfill inside the column-add branch so a repeated run does not mark notifications created after migration as read.
+Quá trình di chuyển sẽ kích hoạt cài đặt phiên đối tượng được lập chỉ mục SQL Server, sử dụng
+`XACT_ABORT` và giữ chèn lấp lần chạy đầu tiên bên trong nhánh thêm cột để lần chạy lặp lại không
+đánh dấu thông báo được tạo sau khi di chuyển là đã đọc.
 
 ```sql
 IF COL_LENGTH('dbo.Notifications', 'ReadAt') IS NULL
@@ -95,20 +107,24 @@ BEGIN
 END;
 ```
 
-Create `IX_Notifications_User_ReadAt_CreatedAt` only when absent, with key columns `(UserId, ReadAt, CreatedAt DESC)` and `NotificationId`, `NotificationType`, `TemplateKey`, `Title`, and `Body` included for the inbox query. Add `{ attribute: 'readAt', name: 'ReadAt', type: 'DATETIME2', nullable: true }` to the model.
+Chỉ tạo `IX_Notifications_User_ReadAt_CreatedAt` khi vắng mặt, với các cột chính `(UserId, ReadAt,
+CreatedAt DESC)` và `NotificationId`, `NotificationType`, `TemplateKey`, `Title` và `Body` được bao
+gồm cho truy vấn hộp thư đến. Thêm `{ attribute: 'readAt', name: 'ReadAt', type: 'DATETIME2',
+nullable: true }` vào mô hình.
 
-- [ ] **Step 4: Run focused GREEN and schema regression tests**
+- [ ] **Bước 4: Chạy kiểm thử hồi quy lược đồ và GREEN tập trung**
 
-Run:
+Chạy:
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/notificationInboxMigration.test.js tests/notificationRepository.test.js tests/fe10OtpTemplateMigration.test.js
 npm.cmd run schema:azure:prepare
 ```
 
-Expected: all selected Jest tests PASS and Azure schema preparation reports a generated schema without create/switch-database statements.
+Dự kiến: tất cả các kiểm thử Jest đã chọn đạt và việc chuẩn bị lược đồ Azure đều báo cáo một lược
+đồ được tạo mà không có câu lệnh tạo/chuyển đổi cơ sở dữ liệu.
 
-- [ ] **Step 5: Commit the bounded schema slice**
+- [ ] **Bước 5: Cam kết lát lược đồ bị chặn**
 
 ```powershell
 git add database/Librarymanagement.sql database/migrations/2026-07-27-fe10-personal-inbox-read-state.sql backend/src/models/Notification.js backend/tests/notificationInboxMigration.test.js .sdd/specs/feat-notification-management/TEST_PLAN.md
@@ -117,27 +133,27 @@ git commit -m "feat(fe10): add personal inbox read state schema"
 
 ---
 
-## Task 2: Add SQL-Owned Inbox Queries And Safe Projection (FE10-I02)
+## Nhiệm vụ 2: Thêm truy vấn hộp thư đến do SQL sở hữu và chiếu an toàn (FE10-I02)
 
-**Files:**
+**Tệp:**
 
-- Create: `backend/src/utils/notificationInbox.js`
-- Create: `backend/tests/notificationInboxRepository.test.js`
-- Modify: `backend/src/repositories/notificationRepository.js`
-- Modify: `backend/tests/helpers/inMemoryNotificationRepositories.js`
-- Modify: `backend/tests/notificationRoutes.test.js`
+- Tạo: `backend/src/utils/notificationInbox.js`
+- Tạo: `backend/tests/notificationInboxRepository.test.js`
+- Sửa đổi: `backend/src/repositories/notificationRepository.js`
+- Sửa đổi: `backend/tests/helpers/inMemoryNotificationRepositories.js`
+- Sửa đổi: `backend/tests/notificationRoutes.test.js`
 
-- [ ] **Step 1: Write RED utility and repository tests**
+- [ ] **Bước 1: Viết các kiểm thử kho lưu trữ và tiện ích RED**
 
-Cover:
+Bìa:
 
-- safe DTO exact keys: `notificationId`, `type`, `title`, `message`, `createdAt`, `readAt`, `actionPath`;
-- exact type/template action mapping and `null` for mismatches;
-- SQL predicates include `UserId`, eligibility, read-state, optional type, `CreatedAt DESC, NotificationId DESC`, `OFFSET`, and `FETCH NEXT`;
-- count applies the same ownership/eligibility predicate;
-- mark-one preserves the first `ReadAt` timestamp on replay;
-- mark-all uses one server timestamp and returns zero on replay;
-- sensitive, userless, and other-user records never materialize.
+- khóa chính xác DTO an toàn: `notificationId`, `type`, `title`, `message`, `createdAt`, `readAt`, `actionPath`;
+- ánh xạ hành động loại/mẫu chính xác và `null` để phát hiện các thông tin không khớp;
+- Các vị từ SQL bao gồm `UserId`, tính đủ điều kiện, trạng thái đọc, loại tùy chọn, `CreatedAt DESC, NotificationId DESC`, `OFFSET` và `FETCH NEXT`;
+- số lượng áp dụng cùng một vị từ quyền sở hữu/đủ điều kiện;
+- mark-one duy trì dấu thời gian `ReadAt` đầu tiên khi phát lại;
+- mark-tất cả sử dụng một dấu thời gian của máy chủ và trả về 0 khi phát lại;
+- các hồ sơ nhạy cảm, không có người dùng và người dùng khác không bao giờ thành hiện thực.
 
 ```js
 expect(toSafeInboxItem(row)).toEqual({
@@ -154,17 +170,17 @@ expect(Object.keys(toSafeInboxItem(row)).sort()).toEqual([
 ]);
 ```
 
-- [ ] **Step 2: Run focused RED**
+- [ ] **Bước 2: Chạy RED tập trung**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/notificationInboxRepository.test.js tests/notificationRoutes.test.js
 ```
 
-Expected: FAIL because the inbox utility/repository operations do not exist.
+Dự kiến: THẤT BẠI vì tiện ích hộp thư đến/hoạt động kho lưu trữ không tồn tại.
 
-- [ ] **Step 3: Implement the fixed utility contract**
+- [ ] **Bước 3: Thực hiện hợp đồng tiện ích cố định**
 
-Export only stable helpers needed by service/tests:
+Chỉ xuất những người trợ giúp ổn định cần thiết cho dịch vụ/kiểm tra:
 
 ```js
 const INBOX_TYPES = Object.freeze([
@@ -179,11 +195,11 @@ function getInboxActionPath(notification) { /* exact type/template switch */ }
 function toSafeInboxItem(notification) { /* exact seven-field DTO */ }
 ```
 
-Do not derive a route from `title`, `body`, `safePayload`, a request parameter, or arbitrary source values.
+Không lấy tuyến đường từ `title`, `body`, `safePayload`, tham số yêu cầu hoặc giá trị nguồn tùy ý.
 
-- [ ] **Step 4: Implement repository operations**
+- [ ] **Bước 4: Thực hiện các thao tác với kho lưu trữ**
 
-Add and export:
+Thêm và xuất:
 
 ```js
 listInboxForUser({ userId, page, limit, readState, type })
@@ -192,19 +208,24 @@ markInboxReadForUser({ notificationId, userId })
 markAllInboxReadForUser(userId)
 ```
 
-`listInboxForUser` returns `{ notifications, total }`; service computes `totalPages`. Filtering and pagination remain inside SQL. `markInboxReadForUser` uses `COALESCE(ReadAt, SYSUTCDATETIME())` on an owned eligible row so replay returns the same timestamp. `markAllInboxReadForUser` captures one `SYSUTCDATETIME()` value and updates only own eligible `ReadAt IS NULL` rows.
+`listInboxForUser` trả về `{ notifications, total }`; dịch vụ tính toán `totalPages`. chức năng lọc
+và phân trang vẫn được duy trì bên trong SQL. `markInboxReadForUser` sử dụng `COALESCE(ReadAt,
+SYSUTCDATETIME())` trên hàng đủ điều kiện được sở hữu để việc phát lại sẽ trả về cùng một dấu thời
+gian. `markAllInboxReadForUser` ghi lại một giá trị `SYSUTCDATETIME()` và chỉ cập nhật các hàng
+`ReadAt IS NULL` đủ điều kiện.
 
-Mirror the same semantics in the in-memory repository so route/integration tests exercise ownership and idempotence, not a permissive fake.
+Phản ánh ngữ nghĩa tương tự trong kho lưu trữ trong bộ nhớ để các kiểm thử định tuyến/tích hợp thực
+hiện quyền sở hữu và quyền bình thường chứ không phải là giả mạo cho phép.
 
-- [ ] **Step 5: Run focused GREEN**
+- [ ] **Bước 5: Chạy GREEN tập trung**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/notificationInboxRepository.test.js tests/notificationRoutes.test.js tests/notificationRepository.test.js
 ```
 
-Expected: all selected tests PASS; existing delivery-claim tests remain green.
+Dự kiến: tất cả các kiểm thử đã chọn ĐẠT; các kiểm thử yêu cầu bàn giao hiện tại vẫn còn xanh.
 
-- [ ] **Step 6: Commit the repository slice**
+- [ ] **Bước 6: Cam kết lát kho lưu trữ**
 
 ```powershell
 git add backend/src/utils/notificationInbox.js backend/src/repositories/notificationRepository.js backend/tests/helpers/inMemoryNotificationRepositories.js backend/tests/notificationInboxRepository.test.js backend/tests/notificationRoutes.test.js
@@ -213,31 +234,31 @@ git commit -m "feat(fe10): add owned notification inbox repository"
 
 ---
 
-## Task 3: Expose Authenticated Inbox APIs With IDOR-Safe Errors (FE10-I03)
+## Nhiệm vụ 3: Hiển thị các API hộp thư đến đã xác thực có lỗi IDOR-Safe (FE10-I03)
 
-**Files:**
+**Tệp:**
 
-- Modify: `backend/src/validators/notificationValidators.js`
-- Modify: `backend/src/services/notificationService.js`
-- Modify: `backend/src/controllers/notificationController.js`
-- Modify: `backend/src/routes/notificationRoutes.js`
-- Modify: `backend/src/docs/openapi.yaml`
-- Modify: `backend/tests/notificationRoutes.test.js`
+- Sửa đổi: `backend/src/validators/notificationValidators.js`
+- Sửa đổi: `backend/src/services/notificationService.js`
+- Sửa đổi: `backend/src/controllers/notificationController.js`
+- Sửa đổi: `backend/src/routes/notificationRoutes.js`
+- Sửa đổi: `backend/src/docs/openapi.yaml`
+- Sửa đổi: `backend/tests/notificationRoutes.test.js`
 
-- [ ] **Step 1: Add RED route/service cases**
+- [ ] **Bước 1: Thêm trường hợp dịch vụ/tuyến đường RED**
 
-Add table-driven tests for `MEMBER`, `LIBRARIAN`, and `ADMIN`, plus:
+Thêm các kiểm thử dựa trên bảng cho `MEMBER`, `LIBRARIAN` và `ADMIN`, cùng với:
 
-- anonymous `401` and authenticated unsupported-role `403`;
-- default and explicit page/limit/read-state/type filters;
-- invalid page, limit, read state, sensitive type, and unknown type return `400 VALIDATION_ERROR`;
-- cross-user, sensitive, and missing mark-one IDs return the same `404` body;
-- list/count exclude all sensitive and userless rows;
-- mark-one replay preserves `readAt`;
-- mark-all updates only own eligible unread rows and replay returns `{ updated: 0 }`;
-- no response contains forbidden metadata or changes delivery status/attempts.
+- `401` ẩn danh và `403` có vai trò không được hỗ trợ đã xác thực;
+- bộ lọc trang/giới hạn/trạng thái đọc/loại mặc định và rõ ràng;
+- trang không hợp lệ, giới hạn, trạng thái đọc, loại nhạy cảm và loại không xác định trả về `400 VALIDATION_ERROR`;
+- ID người dùng chéo, nhạy cảm và ID đánh dấu bị thiếu trả về cùng một nội dung `404`;
+- danh sách/số lượng loại trừ tất cả các hàng nhạy cảm và không có người sử dụng;
+- phát lại đánh dấu một bảo tồn `readAt`;
+- đánh dấu tất cả các bản cập nhật chỉ sở hữu các hàng chưa đọc đủ điều kiện và phát lại trả về `{ updated: 0 }`;
+- không có phản hồi nào chứa siêu dữ liệu bị cấm hoặc thay đổi trạng thái/lần thử gửi.
 
-Use one exact not-found response for all protected-object cases:
+Sử dụng một phản hồi không tìm thấy chính xác cho tất cả các trường hợp đối tượng được bảo vệ:
 
 ```js
 {
@@ -248,17 +269,19 @@ Use one exact not-found response for all protected-object cases:
 }
 ```
 
-- [ ] **Step 2: Run route RED**
+- [ ] **Bước 2: Chạy lộ trình RED**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/notificationRoutes.test.js
 ```
 
-Expected: new inbox cases FAIL with route `404` or missing service methods.
+Dự kiến: các trường hợp hộp thư đến mới THẤT BẠI với tuyến `404` hoặc thiếu phương thức dịch vụ.
 
-- [ ] **Step 3: Add validators and routes in collision-safe order**
+- [ ] **Bước 3: Thêm trình xác nhận và tuyến đường theo thứ tự an toàn khi va chạm**
 
-Import `query` from `express-validator`. Validate default page `1`, default limit `20`, maximum limit `100`, `readState` in `all|unread|read`, and `type` in the five eligible types. Register static `/mine/*` paths before `/:id/read`.
+Nhập `query` từ `express-validator`. Xác thực trang mặc định `1`, giới hạn mặc định `20`, giới hạn
+tối đa `100`, `readState` trong `all|unread|read` và `type` trong năm loại đủ điều kiện. Đăng ký
+đường dẫn `/mine/*` tĩnh trước `/:id/read`.
 
 ```js
 router.get('/mine', authenticate, requireAnyRole('MEMBER', 'LIBRARIAN', 'ADMIN'), listMineValidators, controller.listMine);
@@ -267,9 +290,9 @@ router.patch('/mine/read-all', authenticate, requireAnyRole('MEMBER', 'LIBRARIAN
 router.patch('/:id/read', authenticate, requireAnyRole('MEMBER', 'LIBRARIAN', 'ADMIN'), markReadValidators, controller.markRead);
 ```
 
-- [ ] **Step 4: Add thin controllers and service boundary methods**
+- [ ] **Bước 4: Thêm bộ điều khiển mỏng và phương pháp ranh giới dịch vụ**
 
-Add service methods:
+Thêm phương thức dịch vụ:
 
 ```js
 listMyNotifications(input, actor)
@@ -278,22 +301,27 @@ markMyNotificationRead(notificationId, actor)
 markAllMyNotificationsRead(actor)
 ```
 
-The service rechecks allowed login roles, always takes `userId` from `actor`, maps repository rows through `toSafeInboxItem`, computes pagination, and throws the single safe `NOTIFICATION_NOT_FOUND` error when mark-one returns no owned eligible row. It never accepts `userId` or `actionPath` from HTTP input.
+Dịch vụ này kiểm tra lại các vai trò đăng nhập được phép, luôn lấy `userId` từ `actor`, ánh xạ các
+hàng trong kho lưu trữ thông qua `toSafeInboxItem`, tính toán phân trang và đưa ra lỗi
+`NOTIFICATION_NOT_FOUND` an toàn duy nhất khi đánh dấu một trả về hàng đủ điều kiện không thuộc sở
+hữu. Nó không bao giờ chấp nhận `userId` hoặc `actionPath` từ đầu vào HTTP.
 
-- [ ] **Step 5: Document exact OpenAPI schemas and operations**
+- [ ] **Bước 5: Ghi lại các lược đồ và hoạt động OpenAPI chính xác**
 
-Add `SafeInboxItem`, `NotificationInboxPage`, `UnreadCount`, and `MarkAllReadSummary` schemas with `additionalProperties: false`. Document all four paths, query constraints, allowed roles, safe `400/401/403/404/500` responses, and the seven-field DTO exclusions.
+Thêm các lược đồ `SafeInboxItem`, `NotificationInboxPage`, `UnreadCount` và `MarkAllReadSummary` với
+`additionalProperties: false`. Ghi lại tất cả bốn đường dẫn, ràng buộc truy vấn, vai trò được phép,
+phản hồi `400/401/403/404/500` an toàn và loại trừ DTO bảy trường.
 
-- [ ] **Step 6: Run focused GREEN and coverage gate**
+- [ ] **Bước 6: Chạy GREEN tập trung và cổng phủ sóng**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/notificationRoutes.test.js tests/notificationInboxRepository.test.js
 npm.cmd --prefix backend run test:coverage:ci
 ```
 
-Expected: focused tests PASS and global configured coverage thresholds remain satisfied.
+Dự kiến: các kiểm thử tập trung đạt và ngưỡng phủ sóng được cấu hình toàn cầu vẫn đáp ứng được.
 
-- [ ] **Step 7: Commit the API slice**
+- [ ] **Bước 7: Cam kết lát API**
 
 ```powershell
 git add backend/src/validators/notificationValidators.js backend/src/services/notificationService.js backend/src/controllers/notificationController.js backend/src/routes/notificationRoutes.js backend/src/docs/openapi.yaml backend/tests/notificationRoutes.test.js
@@ -302,27 +330,28 @@ git commit -m "feat(fe10): expose personal notification inbox api"
 
 ---
 
-## Task 4: Add The Frontend Client, View Model, And Shared Inbox Context (FE10-I04)
+## Nhiệm vụ 4: Thêm ứng dụng khách giao diện, Xem mô hình và bối cảnh hộp thư đến chung (FE10-I04)
 
-**Files:**
+**Tệp:**
 
-- Create: `frontend/src/utils/notificationInboxViewModel.js`
-- Create: `frontend/src/context/NotificationInboxContext.jsx`
-- Create: `frontend/test/notificationInboxFrontend.test.js`
-- Modify: `frontend/src/api/libraryFeatureApi.js`
-- Modify: `frontend/src/api/apiErrorMessages.js`
-- Modify: `frontend/src/App.jsx`
+- Tạo: `frontend/src/utils/notificationInboxViewModel.js`
+- Tạo: `frontend/src/context/NotificationInboxContext.jsx`
+- Tạo: `frontend/test/notificationInboxFrontend.test.js`
+- Sửa đổi: `frontend/src/api/libraryFeatureApi.js`
+- Sửa đổi: `frontend/src/api/apiErrorMessages.js`
+- Sửa đổi: `frontend/src/App.jsx`
 
-- [ ] **Step 1: Write RED frontend contract tests**
+- [ ] **Bước 1: Viết kiểm thử hợp đồng giao diện người dùng RED**
 
-Use the existing Node test style. Import pure view-model helpers and inspect JSX/API source for:
+Sử dụng kiểu kiểm tra Node hiện có. Nhập trình trợ giúp mô hình chế độ xem thuần túy và kiểm tra
+nguồn JSX/API để biết:
 
-- four exact endpoint methods;
-- badge values `0 -> null`, `1 -> "1"`, `99 -> "99"`, `100 -> "99+"`;
-- fixed frontend defense-in-depth action allowlist;
-- provider wraps routes, polls every `60000`, refreshes on `focus`, and prevents overlapping count requests;
-- successful read refreshes count;
-- failed read emits safe warning but still navigates when `actionPath` is allowlisted.
+- bốn phương pháp điểm cuối chính xác;
+- giá trị huy hiệu `0 -> null`, `1 -> "1"`, `99 -> "99"`, `100 -> "99+"`;
+- cố định danh sách cho phép hành động chặt chẽ ở giao diện người dùng;
+- nhà cung cấp kết thúc các tuyến đường, thăm dò mọi `60000`, làm mới trên `focus` và ngăn các yêu cầu đếm chồng chéo;
+- số lần làm mới đọc thành công;
+- việc đọc không thành công sẽ đưa ra cảnh báo an toàn nhưng vẫn điều hướng khi `actionPath` được đưa vào danh sách cho phép.
 
 ```js
 assert.equal(formatUnreadBadge(0), null);
@@ -331,17 +360,18 @@ assert.equal(formatUnreadBadge(100), '99+');
 assert.equal(isAllowedNotificationActionPath('https://evil.test'), false);
 ```
 
-- [ ] **Step 2: Run frontend RED**
+- [ ] **Bước 2: Chạy giao diện người dùng RED**
 
 ```powershell
 node --test frontend/test/notificationInboxFrontend.test.js
 ```
 
-Expected: FAIL because the client/view model/context do not exist.
+Dự kiến: THẤT BẠI vì mô hình/bối cảnh máy khách/chế độ xem không tồn tại.
 
-- [ ] **Step 3: Add the authorized client methods**
+- [ ] **Bước 3: Thêm phương thức khách hàng được ủy quyền**
 
-Reuse `authorizedRequest` in `libraryFeatureApi.js` so refresh-token behavior remains consistent.
+Tái sử dụng `authorizedRequest` trong `libraryFeatureApi.js` để hoạt động của mã thông báo làm mới
+vẫn nhất quán.
 
 ```js
 export const notificationInboxApi = {
@@ -352,19 +382,25 @@ export const notificationInboxApi = {
 };
 ```
 
-Add Vietnamese safe error messages for validation, authentication, not-found, and network failures. Do not display backend stack/provider details.
+Thêm thông báo lỗi an toàn tiếng Việt để xác thực, xác thực, không tìm thấy, lỗi mạng. Không hiển
+thị thông tin chi tiết về bộ công nghệ/nhà cung cấp máy chủ.
 
-- [ ] **Step 4: Add pure view-model helpers**
+- [ ] **Bước 4: Thêm trình trợ giúp mô hình khung nhìn thuần túy**
 
-Export `formatUnreadBadge`, `isAllowedNotificationActionPath`, and stable read-state filter constants. Keep URL approval independent of API data.
+Xuất `formatUnreadBadge`, `isAllowedNotificationActionPath` và hằng số bộ lọc trạng thái đọc ổn
+định. Giữ phê duyệt URL độc lập với dữ liệu API.
 
-- [ ] **Step 5: Add the shared provider**
+- [ ] **Bước 5: Thêm nhà cung cấp được chia sẻ**
 
-Mount `NotificationInboxProvider` inside router context and outside route content in `App.jsx`. The provider owns unread count, one non-overlapping refresh, focus/60-second refresh, read-and-navigate behavior, and shared warning toast. It checks stored authentication/roles before calling FE10 and resets count when logged out.
+Gắn `NotificationInboxProvider` bên trong bối cảnh bộ định tuyến và nội dung tuyến đường bên ngoài
+trong `App.jsx`. Nhà cung cấp sở hữu số lượng chưa đọc, một lần làm mới không chồng chéo, làm mới
+tiêu điểm/60 giây, hành vi đọc và điều hướng cũng như thông báo cảnh báo được chia sẻ. Nó kiểm tra
+xác thực/vai trò được lưu trữ trước khi gọi FE10 và đặt lại số lượng khi đăng xuất.
 
-Do not treat an API error as an empty successful inbox. Do not redirect to login merely because the inbox endpoint fails; existing auth-refresh behavior remains authoritative.
+Không coi lỗi API là hộp thư đến thành công trống. Không chuyển hướng đến đăng nhập chỉ vì điểm cuối
+hộp thư đến bị lỗi; hành vi làm mới xác thực hiện tại vẫn có thẩm quyền.
 
-- [ ] **Step 6: Run frontend GREEN, lint, and build**
+- [ ] **Bước 6: Chạy giao diện người dùng GREEN, kiểm tra mã và bản dựng**
 
 ```powershell
 node --test frontend/test/notificationInboxFrontend.test.js
@@ -372,9 +408,9 @@ npm.cmd --prefix frontend run lint
 npm.cmd --prefix frontend run build
 ```
 
-Expected: focused tests PASS; ESLint exits 0; Vite build completes.
+Dự kiến: các kiểm thử tập trung ĐẠT; ESLint thoát 0; Quá trình xây dựng Vite hoàn tất.
 
-- [ ] **Step 7: Commit the shared frontend state slice**
+- [ ] **Bước 7: Cam kết lát trạng thái giao diện người dùng được chia sẻ**
 
 ```powershell
 git add frontend/src/api/libraryFeatureApi.js frontend/src/api/apiErrorMessages.js frontend/src/utils/notificationInboxViewModel.js frontend/src/context/NotificationInboxContext.jsx frontend/src/App.jsx frontend/test/notificationInboxFrontend.test.js
@@ -383,46 +419,54 @@ git commit -m "feat(fe10): add shared notification inbox state"
 
 ---
 
-## Task 5: Add The Authenticated Shell Bell And Five-Item Preview (FE10-I05)
+## Nhiệm vụ 5: Thêm Chuông lớp bao được xác thực và bản xem trước năm mục (FE10-I05)
 
-**Files:**
+**Tệp:**
 
-- Create: `frontend/src/component/notification/NotificationBell.jsx`
-- Modify: `frontend/src/component/layout/Header.jsx`
-- Modify: `frontend/src/styles/app-shell.css`
-- Modify: `frontend/test/notificationInboxFrontend.test.js`
-- Modify: `frontend/test/appShellFrontend.test.js`
+- Tạo: `frontend/src/component/notification/NotificationBell.jsx`
+- Sửa đổi: `frontend/src/component/layout/Header.jsx`
+- Sửa đổi: `frontend/src/styles/app-shell.css`
+- Sửa đổi: `frontend/test/notificationInboxFrontend.test.js`
+- Sửa đổi: `frontend/test/appShellFrontend.test.js`
 
-- [ ] **Step 1: Add RED shell assertions**
+- [ ] **Bước 1: Thêm xác nhận lớp bao RED**
 
-Assert that Header renders `NotificationBell`, the component uses the context count, caps the badge through `formatUnreadBadge`, fetches `readState: 'unread', page: 1, limit: 5` only when opened, exposes explicit loading/empty/error states, and includes `Xem tất cả` -> `/notifications`.
+Xác nhận rằng Tiêu đề hiển thị `NotificationBell`, thành phần sử dụng số lượng ngữ cảnh, giới hạn
+huy hiệu thông qua `formatUnreadBadge`, chỉ tìm nạp `readState: 'unread', page: 1, limit: 5` khi
+được mở, hiển thị trạng thái tải/trống/lỗi rõ ràng và bao gồm `Xem tất cả` -> `/notifications`.
 
-Also assert semantic controls:
+Đồng thời khẳng định các điều khiển ngữ nghĩa:
 
-- bell button has an accessible name and `aria-expanded`;
-- popover has a labelled region/menu;
-- unread items are buttons, not unsafe anchors;
-- no delete/archive/global-log text or method exists.
+- nút chuông có tên có thể truy cập được và `aria-expanded`;
+- cửa sổ bật lên có vùng/menu được gắn nhãn;
+- các mục chưa đọc là các nút chứ không phải là các neo không an toàn;
+- không tồn tại văn bản hoặc phương thức xóa/lưu trữ/nhật ký toàn cầu.
 
-- [ ] **Step 2: Run shell RED**
+- [ ] **Bước 2: Chạy lớp bao RED**
 
 ```powershell
 node --test frontend/test/notificationInboxFrontend.test.js frontend/test/appShellFrontend.test.js
 ```
 
-Expected: FAIL because Header has no notification bell/preview.
+Dự kiến: THẤT BẠI vì Tiêu đề không có chuông thông báo/xem trước.
 
-- [ ] **Step 3: Implement the bell and preview**
+- [ ] **Bước 3: Thực hiện chuông và xem trước**
 
-Use Lucide `Bell`. Fetch preview on closed -> open transition, not on every render. Render at most five newest unread safe items and delegate click behavior to the shared context. Close the popover on outside click, `Escape`, route navigation, and `Xem tất cả`; restore focus to the bell after keyboard dismissal.
+Sử dụng Lucide `Bell`. Tìm nạp bản xem trước khi chuyển đổi đã đóng -> mở, không phải trên mỗi kết
+xuất. Hiển thị tối đa năm mục an toàn chưa đọc mới nhất và ủy quyền hành vi nhấp chuột cho ngữ cảnh
+được chia sẻ. Đóng cửa sổ bật lên khi nhấp chuột bên ngoài, `Escape`, điều hướng tuyến đường và `Xem
+tất cả`; khôi phục tiêu điểm vào chuông sau khi tắt bàn phím.
 
-Place the bell before the account trigger in `.app-topbar-actions`. Keep the existing profile fallback and logout behavior unchanged.
+Đặt chuông trước trình kích hoạt tài khoản trong `.app-topbar-actions`. Giữ nguyên hành vi đăng xuất
+và dự phòng hồ sơ hiện tại.
 
-- [ ] **Step 4: Add responsive, accessible styles**
+- [ ] **Bước 4: Thêm kiểu đáp ứng, dễ tiếp cận**
 
-Add scoped `.notification-*` classes to `app-shell.css`. Verify the popover fits desktop and 390px mobile width without horizontal overflow, badge remains legible at `99+`, unread emphasis is not color-only, and focus rings remain visible.
+Thêm các lớp `.notification-*` có phạm vi vào `app-shell.css`. Xác minh rằng cửa sổ bật lên vừa với
+máy tính để bàn và chiều rộng 390px trên thiết bị di động mà không bị tràn ngang, huy hiệu vẫn rõ
+ràng ở `99+`, phần nhấn mạnh chưa đọc không chỉ có màu và các vòng tiêu điểm vẫn hiển thị.
 
-- [ ] **Step 5: Run shell GREEN, lint, and build**
+- [ ] **Bước 5: Chạy lớp bao GREEN, kiểm tra mã và bản dựng**
 
 ```powershell
 node --test frontend/test/notificationInboxFrontend.test.js frontend/test/appShellFrontend.test.js
@@ -430,9 +474,9 @@ npm.cmd --prefix frontend run lint
 npm.cmd --prefix frontend run build
 ```
 
-Expected: tests PASS, lint exits 0, build succeeds.
+Dự kiến: kiểm tra đạt, kiểm tra mã thoát 0, xây dựng thành công.
 
-- [ ] **Step 6: Commit the shell slice**
+- [ ] **Bước 6: Cam kết lát vỏ**
 
 ```powershell
 git add frontend/src/component/notification/NotificationBell.jsx frontend/src/component/layout/Header.jsx frontend/src/styles/app-shell.css frontend/test/notificationInboxFrontend.test.js frontend/test/appShellFrontend.test.js
@@ -441,49 +485,55 @@ git commit -m "feat(fe10): add notification bell and preview"
 
 ---
 
-## Task 6: Add The Guarded `/notifications` Page (FE10-I06)
+## Nhiệm vụ 6: Thêm trang `/notifications` được bảo vệ (FE10-I06)
 
-**Files:**
+**Tệp:**
 
-- Create: `frontend/src/component/auth/AuthenticatedRouteGuard.jsx`
-- Create: `frontend/src/page/notification/NotificationsPage.jsx`
-- Modify: `frontend/src/App.jsx`
-- Modify: `frontend/src/styles/app-shell.css`
-- Modify: `frontend/test/notificationInboxFrontend.test.js`
+- Tạo: `frontend/src/component/auth/AuthenticatedRouteGuard.jsx`
+- Tạo: `frontend/src/page/notification/NotificationsPage.jsx`
+- Sửa đổi: `frontend/src/App.jsx`
+- Sửa đổi: `frontend/src/styles/app-shell.css`
+- Sửa đổi: `frontend/test/notificationInboxFrontend.test.js`
 
-- [ ] **Step 1: Add RED page and route assertions**
+- [ ] **Bước 1: Thêm xác nhận trang và lộ trình RED**
 
-Cover:
+Bìa:
 
-- lazy `/notifications` route wrapped by the authenticated guard;
-- unauthenticated redirect to `/login` and no role-specific exclusion for MEMBER/LIBRARIAN/ADMIN;
-- `Tất cả`, `Chưa đọc`, `Đã đọc` map to `all`, `unread`, `read`;
-- every list call sends `page`, `limit: 20`, and `readState`;
-- filter change returns to page 1;
-- explicit loading, empty, error, unread/read visual states;
-- `Đánh dấu tất cả đã đọc` invokes the API, refreshes count/list, and disables while pending;
-- click invokes shared read-and-navigate;
-- no delete/archive/global-log control.
+- tuyến đường `/notifications` lười biếng được bao bọc bởi người bảo vệ đã được xác thực;
+- chuyển hướng không được xác thực đến `/login` và không có loại trừ vai trò cụ thể cho Thành viên/Thủ thư/Quản trị viên;
+- Bản đồ `Tất cả`, `Chưa đọc`, `Đã đọc` tới `all`, `unread`, `read`;
+- mọi lệnh gọi danh sách sẽ gửi `page`, `limit: 20` và `readState`;
+- thay đổi bộ lọc quay lại trang 1;
+- trạng thái tải rõ ràng, trống, lỗi, chưa đọc/đọc;
+- `Đánh dấu tất cả đã đọc` gọi API, làm mới số lượng/danh sách và tắt trong khi chờ xử lý;
+- nhấp vào gọi chức năng đọc và điều hướng được chia sẻ;
+- không có kiểm soát xóa/lưu trữ/log toàn cầu.
 
-- [ ] **Step 2: Run page RED**
+- [ ] **Bước 2: Chạy trang RED**
 
 ```powershell
 node --test frontend/test/notificationInboxFrontend.test.js
 ```
 
-Expected: FAIL because the route, guard, and page do not exist.
+Dự kiến: THẤT BẠI vì tuyến đường, bảo vệ và trang không tồn tại.
 
-- [ ] **Step 3: Implement the authenticated guard and lazy route**
+- [ ] **Bước 3: Triển khai tuyến bảo vệ được xác thực và tuyến lười biếng**
 
-The guard checks stored access/refresh token for UX only. Backend authorization remains the security boundary. It accepts any authenticated session and does not reuse the member-only borrowing guard.
+Trình bảo vệ chỉ kiểm tra mã thông báo truy cập/làm mới được lưu trữ cho UX. Ủy quyền máy chủ vẫn là
+ranh giới bảo mật. Nó chấp nhận bất kỳ phiên xác thực nào và không sử dụng lại bộ bảo vệ mượn chỉ
+dành cho thành viên.
 
-- [ ] **Step 4: Implement the page with existing shared primitives**
+- [ ] **Bước 4: Triển khai trang với các nguyên mẫu được chia sẻ hiện có**
 
-Use `AppLayout`, `DataToolbar`, `Pagination`, `LoadingBlock`/table loading, `EmptyState`, `DataNotice`, and shared toast/context behavior. Keep server ordering and pagination; do not client-sort or fetch the full history.
+Sử dụng `AppLayout`, `DataToolbar`, `Pagination`, `LoadingBlock`/tải bảng, `EmptyState`,
+`DataNotice` và hành vi ngữ cảnh/bánh mì nướng được chia sẻ. Giữ thứ tự và phân trang của máy chủ;
+không sắp xếp ứng dụng khách hoặc tìm nạp toàn bộ lịch sử.
 
-`markAllRead` updates only through the API. On success reload the current page and unread count; if the current page becomes empty after filtering, move to the last valid page through a fresh server request.
+`markAllRead` chỉ cập nhật thông qua API. Khi thành công, tải lại trang hiện tại và số lượng chưa
+đọc; nếu trang hiện tại trống sau khi lọc, hãy chuyển đến trang hợp lệ cuối cùng thông qua yêu cầu
+máy chủ mới.
 
-- [ ] **Step 5: Run page GREEN and frontend regression**
+- [ ] **Bước 5: Chạy trang GREEN và hồi quy giao diện người dùng**
 
 ```powershell
 node --test frontend/test/notificationInboxFrontend.test.js
@@ -492,9 +542,9 @@ npm.cmd --prefix frontend run lint
 npm.cmd --prefix frontend run build
 ```
 
-Expected: all frontend tests PASS, lint exits 0, build succeeds.
+Dự kiến: tất cả các kiểm thử giao diện người dùng đều ĐẠT, kiểm tra mã thoát 0, quá trình xây dựng thành công.
 
-- [ ] **Step 6: Commit the page slice**
+- [ ] **Bước 6: Cam kết lát trang**
 
 ```powershell
 git add frontend/src/component/auth/AuthenticatedRouteGuard.jsx frontend/src/page/notification/NotificationsPage.jsx frontend/src/App.jsx frontend/src/styles/app-shell.css frontend/test/notificationInboxFrontend.test.js
@@ -503,68 +553,75 @@ git commit -m "feat(fe10): add personal notifications page"
 
 ---
 
-## Task 7: Prove Cross-Feature Fan-In And Three-Role Browser Behavior (FE10-I07)
+## Nhiệm vụ 7: Chứng minh hành vi trình duyệt đa chức năng và ba vai trò của người hâm mộ (FE10-I07)
 
-**Files:**
+**Tệp:**
 
-- Modify: `backend/tests/membershipRoutes.test.js`
-- Modify: `backend/tests/borrowingRoutes.test.js`
-- Modify: `backend/tests/reservationRoutes.test.js`
-- Modify: `backend/tests/integration.test.js`
-- Modify: `backend/tests/helpers/systemIntegrationHarness.js`
-- Modify: `tests/e2e/support/systemTestServer.js`
-- Create: `tests/e2e/fe10-notification-inbox.spec.js`
-- Modify: `.sdd/specs/feat-notification-management/TEST_PLAN.md`
+- Sửa đổi: `backend/tests/membershipRoutes.test.js`
+- Sửa đổi: `backend/tests/borrowingRoutes.test.js`
+- Sửa đổi: `backend/tests/reservationRoutes.test.js`
+- Sửa đổi: `backend/tests/integration.test.js`
+- Sửa đổi: `backend/tests/helpers/systemIntegrationHarness.js`
+- Sửa đổi: `tests/e2e/support/systemTestServer.js`
+- Tạo: `tests/e2e/fe10-notification-inbox.spec.js`
+- Sửa đổi: `.sdd/specs/feat-notification-management/TEST_PLAN.md`
 
-- [ ] **Step 1: Add RED cross-feature integration assertions**
+- [ ] **Bước 1: Thêm xác nhận tích hợp nhiều chức năng RED**
 
-For FE04 membership result, FE07 due reminder, and FE08 reservation-ready:
+Đối với kết quả thành viên FE04, lời nhắc đến hạn của FE07 và chức năng đặt chỗ FE08:
 
-1. create the source event through the existing feature API/service;
-2. assert exactly one FE10 record with recipient `userId` and existing email channel;
-3. list the recipient inbox and assert the same `notificationId` appears once;
-4. assert another user cannot list/read it;
-5. assert delivery status/attempt count are unchanged by read mutations.
+1. tạo sự kiện nguồn thông qua chức năng API/service hiện có;
+2. xác nhận chính xác một bản ghi FE10 với người nhận `userId` và kênh email hiện có;
+3. liệt kê hộp thư đến của người nhận và xác nhận cùng một `notificationId` xuất hiện một lần;
+4. khẳng định người dùng khác không thể liệt kê/đọc nó;
+5. khẳng định trạng thái phân phối/số lần thử không thay đổi do thao tác ghi đọc.
 
-Do not introduce a second notification call or modify source-feature business outcomes.
+Không thực hiện cuộc gọi thông báo thứ hai hoặc sửa đổi kết quả kinh doanh của chức năng nguồn.
 
-- [ ] **Step 2: Run cross-feature RED**
+- [ ] **Bước 2: Chạy chức năng chéo RED**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/membershipRoutes.test.js tests/borrowingRoutes.test.js tests/reservationRoutes.test.js tests/integration.test.js
 ```
 
-Expected: new inbox fan-in assertions FAIL until the system harness exposes the implemented inbox repository/API state consistently.
+Dự kiến: các xác nhận trong hộp thư đến mới KHÔNG THÀNH CÔNG cho đến khi khai thác hệ thống hiển thị
+trạng thái kho lưu trữ hộp thư đến/API đã triển khai một cách nhất quán.
 
-- [ ] **Step 3: Complete only the bounded harness/integration wiring needed for GREEN**
+- [ ] **Bước 3: Chỉ hoàn thành dây kết nối/dây tích hợp giới hạn cần thiết cho GREEN**
 
-Update shared in-memory dependencies rather than adding test-only product branches. If an existing FE04/FE07/FE08 caller omits `userId`, fix that caller with a focused RED assertion; otherwise leave production source flows unchanged.
+Cập nhật các phần phụ thuộc được chia sẻ trong bộ nhớ thay vì thêm các nhánh sản phẩm chỉ dành cho
+kiểm thử. Nếu người gọi FE04/FE07/FE08 hiện có bỏ qua `userId`, hãy sửa người gọi đó bằng xác nhận
+RED tập trung; nếu không thì giữ nguyên dòng nguồn sản xuất.
 
-- [ ] **Step 4: Add E2E setup controls and browser cases**
+- [ ] **Bước 4: Thêm các điều khiển thiết lập E2E và vỏ trình duyệt**
 
-Extend `POST /__e2e__/setup` to return all three actor IDs when `adminEmail` is provided. Add a test-only control that seeds eligible, sensitive, userless, and cross-user rows directly into the shared in-memory notification repository; add a one-shot read-failure control to prove navigation remains available.
+Mở rộng `POST /__e2e__/setup` để trả về cả ba ID tác nhân khi `adminEmail` được cung cấp. Thêm một
+tùy chọn kiểm soát chỉ dành cho kiểm thử để đưa trực tiếp các hàng đủ điều kiện, nhạy cảm, không có
+người dùng và nhiều người dùng vào kho lưu trữ thông báo trong bộ nhớ được chia sẻ; thêm chức năng
+kiểm soát lỗi đọc một lần để chứng minh chức năng điều hướng vẫn khả dụng.
 
-The Playwright spec must cover:
+Thông số Playwright phải bao gồm:
 
-- MEMBER bell/count/preview/page/filter/mark-one/navigation;
-- LIBRARIAN and ADMIN bell/page access;
-- `99+` badge using 100 unread owned rows;
-- sensitive/userless/cross-user absence;
-- direct cross-user `PATCH` returns the same safe `404` as missing;
-- mark-all and replay;
-- read failure warning plus navigation to the allowlisted business page;
-- 390x844 viewport has no horizontal overflow.
+- MEMBER chuông/đếm/xem trước/trang/bộ lọc/đánh dấu một/điều hướng;
+- Truy cập chuông/trang LIBRARIAN và ADMIN;
+- Huy hiệu `99+` sử dụng 100 hàng thuộc sở hữu chưa đọc;
+- sự vắng mặt nhạy cảm/không có người dùng/người dùng chéo;
+- người dùng chéo trực tiếp `PATCH` trả về `404` an toàn tương tự như bị thiếu;
+- đánh dấu tất cả và phát lại;
+- đọc cảnh báo lỗi và điều hướng đến trang doanh nghiệp có trong danh sách cho phép;
+- Khung nhìn 390x844 không bị tràn ngang.
 
-- [ ] **Step 5: Run integration and E2E GREEN**
+- [ ] **Bước 5: Chạy tích hợp và E2E GREEN**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/membershipRoutes.test.js tests/borrowingRoutes.test.js tests/reservationRoutes.test.js tests/integration.test.js tests/notificationRoutes.test.js
 npm.cmd exec -- playwright test tests/e2e/fe10-notification-inbox.spec.js --project=chromium
 ```
 
-Expected: all selected backend tests PASS and FE10 Playwright cases PASS with no cross-user/sensitive leakage.
+Dự kiến: tất cả các trường hợp kiểm tra máy chủ đã chọn ĐẠT và FE10 Playwright ĐẠT mà không có rò rỉ
+nhạy cảm/người dùng chéo.
 
-- [ ] **Step 6: Commit the integration/browser slice**
+- [ ] **Bước 6: Cam kết phần tích hợp/trình duyệt**
 
 ```powershell
 git add backend/tests/membershipRoutes.test.js backend/tests/borrowingRoutes.test.js backend/tests/reservationRoutes.test.js backend/tests/integration.test.js backend/tests/helpers/systemIntegrationHarness.js tests/e2e/support/systemTestServer.js tests/e2e/fe10-notification-inbox.spec.js .sdd/specs/feat-notification-management/TEST_PLAN.md
@@ -573,52 +630,49 @@ git commit -m "test(fe10): verify inbox fan-in and role flows"
 
 ---
 
-## Task 8: Complete Documentation, Full Gates, H2, And Azure Staging (FE10-I08)
+## Nhiệm vụ 8: Tài liệu hoàn chỉnh, Cổng đầy đủ, H2 và Phân loại Azure (FE10-I08)
 
-**Files:**
+**Tệp:**
 
-- Modify: `docs/architecture/system-architecture.md`
-- Modify: `docs/architecture/feature-integration-map.md`
-- Modify: `docs/user-manual.md`
-- Modify: `docs/testing/master-test-plan.md`
-- Modify: `docs/deployment/azure-staging-guide.md`
-- Modify: `.github/workflows/deploy-staging.yml`
-- Modify: `tests/deployment/stagingWorkflowPolicy.test.js`
-- Modify: `.sdd/specs/feat-notification-management/PLAN.md`
-- Modify: `.sdd/specs/feat-notification-management/TASKS.md`
-- Modify: `.sdd/specs/feat-notification-management/CONTEXT.md`
-- Modify: `.sdd/specs/feat-notification-management/CHANGELOG.md`
-- Modify: `.agents/CLAUDE.md`
-- Create after verification: `.sdd/reviews/fe10-notification-inbox-h2-validation-2026-07-27.md`
-- Create after staging/H3: `.sdd/reviews/fe10-notification-inbox-staging-h3-closeout-2026-07-27.md`
+- Sửa đổi: `docs/architecture/system-architecture.md`
+- Sửa đổi: `docs/architecture/feature-integration-map.md`
+- Sửa đổi: `docs/user-manual.md`
+- Sửa đổi: `docs/testing/master-test-plan.md`
+- Sửa đổi: `docs/deployment/azure-staging-guide.md`
+- Sửa đổi: `.github/workflows/deploy-staging.yml`
+- Sửa đổi: `tests/deployment/stagingWorkflowPolicy.test.js`
+- Sửa đổi: `.sdd/specs/feat-notification-management/PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-notification-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-notification-management/CONTEXT.md`
+- Sửa đổi: `.sdd/specs/feat-notification-management/CHANGELOG.md`
+- Sửa đổi: `.agents/CLAUDE.md`
+- Tạo sau khi xác minh: `.sdd/reviews/fe10-notification-inbox-h2-validation-2026-07-27.md`
+- Tạo sau khi môi trường tiền sản xuất/H3: `.sdd/reviews/fe10-notification-inbox-staging-h3-closeout-2026-07-27.md`
 
-- [ ] **Step 1: Write RED deployment-policy assertions**
+- [ ] **Bước 1: Viết xác nhận chính sách triển khai RED**
 
-Require an explicit operator confirmation that the FE10 migration has already
-passed on staging, require `deploy-backend` to depend on preflight, and require
-`deploy-frontend` to depend on successful backend deployment. Preserve
-fail-closed smoke testing and the newer upstream CI-gated deployment contract
-described in the addendum below.
+Yêu cầu người vận hành xác nhận rõ ràng rằng quá trình di chuyển FE10 đã vượt qua giai đoạn kiểm
+thử, yêu cầu `deploy-backend` phụ thuộc vào ánh sáng trước và yêu cầu `deploy-frontend` phụ thuộc
+vào việc triển khai máy chủ thành công. Duy trì kiểm thử nhanh đóng không thành công và hợp đồng
+triển khai kiểm soát CI ngược dòng mới hơn được mô tả trong phụ lục bên dưới.
 
-H1 deployment addendum approved 2026-07-28: upstream `main@41282b4`
-introduced CI-gated automatic staging deployment while implementation was in
-progress. Preserve that newer contract instead of restoring manual-only mode.
-Both automatic and manual runs must check the exact migration SHA-256 stored in
-the GitHub `staging` Environment; manual runs additionally require the boolean
-confirmation. The FE10 migration proof must therefore exist before H3/merge.
+Phụ lục triển khai H1 được phê duyệt ngày 28 tháng 07 năm 2026: `main@41282b4` thượng nguồn đã giới
+thiệu triển khai môi trường tiền sản xuất tự động theo cổng CI trong khi đang tiến hành triển khai.
+Giữ nguyên hợp đồng mới hơn thay vì khôi phục chế độ chỉ thủ công. Cả chạy tự động và thủ công đều
+phải kiểm tra quá trình di chuyển chính xác SHA-256 được lưu trữ trong Môi trường GitHub `staging`;
+chạy thủ công cũng yêu cầu xác nhận boolean. Do đó, bằng chứng di chuyển FE10 phải tồn tại trước
+H3/hợp nhất.
 
-H1 Core-drift addendum approved 2026-07-28: rebase onto `main@5a3c84b` and
-preserve its packaged `add_change_password_otp_token_type.sql` startup
-migration, readiness guide/tests, and Vietnamese verification-email seed.
-Retain the FE10 migration preflight and ordered deploy, then rerun all gates
-and obtain a new H2 fingerprint before publication.
+Phụ lục H1 lõi-drift được phê duyệt ngày 28-07-2026: khởi động lại `main@5a3c84b` và duy trì quá
+trình di chuyển khởi động `add_change_password_otp_token_type.sql` được đóng gói, hướng dẫn/kiểm tra
+tính sẵn sàng và hạt giống email xác minh bằng tiếng Việt. Giữ lại quá trình di chuyển FE10 trước và
+ra lệnh triển khai, sau đó chạy lại tất cả các cổng và lấy dấu vân tay H2 mới trước khi xuất bản.
 
-Second H1 Core-drift addendum approved 2026-07-28: rebase onto
-`main@db97f17` and preserve its Vietnamese default reservation-cancellation
-reason, responsive return/reservation controls, and all other round-two
-FE07/FE08/FE10/FE12 corrections. Retain the FE10 inbox client and scoped
-notification styles, then rerun all gates and obtain a new H2 fingerprint
-before publication.
+Phụ lục H1 lõi-drift thứ hai được phê duyệt ngày 28-07-2026: khởi động lại `main@db97f17` và giữ
+nguyên lý do hủy đặt chỗ mặc định ở Việt Nam, các điều khiển return/reservation đáp ứng và tất cả
+các chỉnh sửa FE07/FE08/FE10/FE12 vòng hai khác. Giữ lại ứng dụng khách hộp thư đến FE10 và các kiểu
+thông báo trong phạm vi, sau đó chạy lại tất cả các cổng và lấy dấu vân tay H2 mới trước khi xuất
+bản.
 
 ```js
 assert.match(workflow, /fe10_inbox_migration_confirmed/);
@@ -626,62 +680,65 @@ assert.match(workflow, /deploy-backend:[\s\S]*needs: preflight/);
 assert.match(workflow, /deploy-frontend:[\s\S]*needs: deploy-backend/);
 ```
 
-- [ ] **Step 2: Run deployment RED**
+- [ ] **Bước 2: Chạy triển khai RED**
 
 ```powershell
 npm.cmd run test:deployment
 ```
 
-Expected: the new ordering/confirmation test FAILS against the parallel deployment workflow.
+Dự kiến: kiểm thử đặt hàng/xác nhận FAILS mới dựa trên quy trình triển khai song song.
 
-- [ ] **Step 3: Update deployment ordering and operator guide**
+- [ ] **Bước 3: Cập nhật thứ tự triển khai và hướng dẫn vận hành**
 
-Keep upstream `workflow_run` for successful `main` CI and the manual
-`workflow_dispatch` path. Add required boolean input
-`fe10_inbox_migration_confirmed`, and make preflight check the checked-out
-migration SHA-256 against `FE10_INBOX_MIGRATION_SHA256` in the GitHub `staging`
-Environment. Manual runs also fail when the boolean is false.
-`deploy-backend.needs: preflight`, `deploy-frontend.needs: deploy-backend`, and
-smoke continues to depend on both deployed applications.
+Tiếp tục ngược dòng `workflow_run` để có `main` CI thành công và đường dẫn `workflow_dispatch` thủ
+công. Thêm đầu vào boolean bắt buộc `fe10_inbox_migration_confirmed` và thực hiện kiểm tra trước quá
+trình di chuyển đã kiểm xuất SHA-256 so với `FE10_INBOX_MIGRATION_SHA256` trong Môi trường GitHub
+`staging`. Chạy thủ công cũng không thành công khi boolean sai. `deploy-backend.needs: preflight`,
+`deploy-frontend.needs: deploy-backend` và kiểm thử nhanh tiếp tục phụ thuộc vào cả hai ứng dụng được triển
+khai.
 
-Document the exact staging order:
+Ghi lại thứ tự môi trường tiền sản xuất chính xác:
 
-1. open a temporary exact-IP Azure SQL firewall rule;
-2. apply `database/migrations/2026-07-27-fe10-personal-inbox-read-state.sql` twice with `sqlcmd -b` using the approved operator identity;
-3. query column/index/backfill/sensitive-exclusion postconditions;
-4. remove the temporary firewall rule;
-5. dispatch staging with migration confirmation true;
-6. verify backend readiness/API before frontend/browser checks.
+1. mở quy tắc tường lửa Azure SQL Azure chính xác tạm thời;
+2. áp dụng `database/migrations/2026-07-27-fe10-personal-inbox-read-state.sql` hai lần với `sqlcmd -b` bằng cách sử dụng danh tính nhà điều hành đã được phê duyệt;
+3. cột truy vấn/chỉ mục/chèn lấp/hậu điều kiện loại trừ nhạy cảm;
+4. loại bỏ quy tắc tường lửa tạm thời;
+5. phân đoạn công văn với xác nhận di chuyển đúng;
+6. xác minh mức độ sẵn sàng của chương trình máy chủ/API trước khi kiểm tra frontend/browser.
 
-Never put server names, passwords, tokens, publish profiles, or connection strings in the repository or evidence file.
+Không bao giờ đặt tên máy chủ, mật khẩu, mã thông báo, hồ sơ xuất bản hoặc chuỗi kết nối vào kho lưu
+trữ hoặc tệp bằng chứng.
 
-- [ ] **Step 4: Update architecture, integration map, user guidance, and active project memory**
+- [ ] **Bước 4: Cập nhật kiến trúc, bản đồ tích hợp, hướng dẫn người dùng và bộ nhớ dự án đang hoạt động**
 
-Document:
+Tài liệu:
 
-- email record -> own inbox projection -> read state;
-- FE04/FE07/FE08 fan-in and sensitive FE02/FE11 exclusion;
-- four API operations and actor boundary;
-- bell, preview, filters, pagination, mark-all, safe navigation, and error behavior;
-- rollback keeps `ReadAt` and disables/removes only frontend/API use.
-- FE10 `CONTEXT.md`, `.agents/CLAUDE.md`, and the master test plan distinguish
-  the completed historical delivery baseline from the implemented v0.5.0 inbox
-  and no longer describe the inbox as deferred or out of scope.
+- bản ghi email -> chiếu hộp thư đến riêng -> trạng thái đọc;
+- FE04/FE07/FE08 có quạt vào và loại trừ FE02/FE11 nhạy cảm;
+- bốn hoạt động API và ranh giới tác nhân;
+- chuông, xem trước, bộ lọc, phân trang, đánh dấu tất cả, điều hướng an toàn và hành vi lỗi;
+- khôi phục giữ `ReadAt` và vô hiệu hóa/xóa chỉ sử dụng frontend/API.
+- FE10 `CONTEXT.md`, `.agents/CLAUDE.md` và kế hoạch kiểm tra tổng thể phân biệt
+mốc cơ sở phân phối lịch sử đã hoàn thành từ hộp thư đến phiên bản 0.5.0 đã triển khai và không còn
+mô tả hộp thư đến là bị trì hoãn hoặc nằm ngoài phạm vi nữa.
 
-- [ ] **Step 5: Run the disposable SQL migration twice**
+- [ ] **Bước 5: Chạy di chuyển SQL dùng một lần hai lần**
 
-Use a named disposable local SQL database, seed one historical eligible row, one sensitive row, one userless row, and one future/new unread row between run 1 and run 2. Apply the migration twice. Assert:
+Sử dụng cơ sở dữ liệu SQL cục bộ dùng một lần được đặt tên, chọn một hàng đủ điều kiện lịch sử, một
+hàng nhạy cảm, một hàng không có người dùng và một hàng tương lai/hàng chưa đọc mới giữa lần chạy 1
+và lần chạy 2. Áp dụng di chuyển hai lần. Khẳng định:
 
-- one `ReadAt` column;
-- one named index;
-- historical eligible row `ReadAt = CreatedAt`;
-- sensitive and userless rows remain excluded;
-- row inserted after run 1 remains unread after run 2;
-- no notification count, delivery status, attempt, or idempotency change.
+- một cột `ReadAt`;
+- một chỉ mục được đặt tên;
+- hàng đủ điều kiện lịch sử `ReadAt = CreatedAt`;
+- các hàng nhạy cảm và không có người sử dụng vẫn bị loại trừ;
+- hàng được chèn sau lần chạy 1 vẫn chưa được đọc sau lần chạy 2;
+- không có số lượng thông báo, trạng thái gửi, lần thử hoặc thay đổi về trạng thái tạm thời.
 
-Record only non-sensitive aggregate evidence, then drop only the explicitly named disposable database.
+Chỉ ghi lại bằng chứng tổng hợp không nhạy cảm, sau đó chỉ loại bỏ cơ sở dữ liệu dùng một lần được
+đặt tên rõ ràng.
 
-- [ ] **Step 6: Run the full local verification matrix**
+- [ ] **Bước 6: Chạy ma trận xác minh cục bộ đầy đủ**
 
 ```powershell
 npm.cmd --prefix backend test
@@ -697,9 +754,10 @@ git diff --check
 git status --short
 ```
 
-Expected: every command exits 0; traceability covers FR-FE10-001..016; no generated secret, build artifact, or unrelated user file is staged.
+Dự kiến: mọi lệnh đều thoát 0; truy vết bao gồm FR-FE10-001..016; không có bí mật được tạo, tạo phẩm
+xây dựng hoặc tệp người dùng không liên quan nào được tổ chức.
 
-- [ ] **Step 7: Perform focused security and contradiction scans**
+- [ ] **Bước 7: Thực hiện quét xung đột và bảo mật tập trung**
 
 ```powershell
 rg -n "recipientEmail|safePayload|idempotencyKey|providerMessageId|lastErrorMessage|sourceFeature|sourceEntity" frontend/src backend/src/controllers/notificationController.js backend/src/docs/openapi.yaml
@@ -708,51 +766,54 @@ rg -n -i "delete notification|archive notification|global notification log|writt
 rg -n -i "inbox UI.*deferred|User notification inbox/list UI|Inbox UI out of Phase 1 scope unless spec changes" .sdd/specs/feat-notification-management/CONTEXT.md .agents/CLAUDE.md docs/testing/master-test-plan.md
 ```
 
-Expected: forbidden DTO fields are absent from frontend/inbox response code; sensitive identifiers appear only in explicit exclusion tests/predicates; no stale v0.5 approval contradiction remains.
+Dự kiến: các trường DTO bị cấm không có trong mã phản hồi frontend/inbox; số nhận dạng nhạy cảm chỉ
+xuất hiện trong loại trừ rõ ràng tests/predicates; không còn mâu thuẫn phê duyệt v0.5 cũ.
 
-- [ ] **Step 8: Record evidence and request H2**
+- [ ] **Bước 8: Ghi lại bằng chứng và yêu cầu H2**
 
-Update FE10 PLAN/TASKS/CHANGELOG and create the H2 validation record with exact commit, commands, pass counts, migration postconditions, security results, known limitations, and rollback. Do not claim staging or H3 before they occur.
+Cập nhật FE10 PLAN/TASKS/CHANGELOG và tạo bản ghi xác thực H2 với cam kết, lệnh, số lượt chuyển,
+điều kiện sau di chuyển, kết quả bảo mật, các giới hạn đã biết và khôi phục chính xác. Không yêu cầu
+môi trường tiền sản xuất hoặc H3 trước khi chúng xảy ra.
 
-Commit only after H2 approval:
+Chỉ cam kết sau khi được phê duyệt H2:
 
 ```powershell
 git add docs/architecture/system-architecture.md docs/architecture/feature-integration-map.md docs/user-manual.md docs/testing/master-test-plan.md docs/deployment/azure-staging-guide.md .github/workflows/deploy-staging.yml tests/deployment/stagingWorkflowPolicy.test.js .sdd/specs/feat-notification-management/PLAN.md .sdd/specs/feat-notification-management/TASKS.md .sdd/specs/feat-notification-management/CONTEXT.md .sdd/specs/feat-notification-management/CHANGELOG.md .agents/CLAUDE.md .sdd/reviews/fe10-notification-inbox-h2-validation-2026-07-27.md
 git commit -m "docs(fe10): close personal inbox h2 validation"
 ```
 
-- [ ] **Step 9: Deploy and verify Azure staging in approved order**
+- [ ] **Bước 9: Triển khai và xác minh Môi trường tiền sản xuất Azure theo thứ tự đã được phê duyệt**
 
-After push/exact-head CI approval:
+Sau khi phê duyệt CI đẩy/đầu chính xác:
 
-1. apply and verify the migration twice with no PII/secret output;
-2. remove every temporary firewall rule created for the task;
-3. set `FE10_INBOX_MIGRATION_SHA256` to the exact reviewed file hash;
-4. dispatch the manual workflow for the exact PR branch with confirmation true;
-5. verify `/health`, `/health/ready`, and anonymous inbox `401`;
-6. sign in as staging MEMBER, LIBRARIAN, and ADMIN and verify the bell/page;
-7. verify two different users cannot access each other's notification ID;
-8. verify sensitive rows never list/count/read;
-9. verify read operations do not change queue/delivery aggregates;
-10. verify the custom domain and API CORS origin used by the browser.
+1. áp dụng và xác minh quá trình di chuyển hai lần mà không có đầu ra PII/bí mật;
+2. loại bỏ mọi quy tắc tường lửa tạm thời được tạo cho tác vụ;
+3. đặt `FE10_INBOX_MIGRATION_SHA256` thành hàm băm tệp được xem xét chính xác;
+4. gửi quy trình làm việc thủ công cho nhánh PR chính xác với xác nhận đúng;
+5. xác minh `/health`, `/health/ready` và hộp thư đến ẩn danh `401`;
+6. đăng nhập với tư cách là dàn MEMBER, LIBRARIAN và ADMIN và xác minh chuông/trang;
+7. xác minh hai người dùng khác nhau không thể truy cập ID thông báo của nhau;
+8. xác minh các hàng nhạy cảm không bao giờ liệt kê/đếm/đọc;
+9. xác minh các hoạt động đọc không thay đổi tổng hợp hàng đợi/phân phối;
+10. xác minh miền tùy chỉnh và nguồn gốc API CORS được trình duyệt sử dụng.
 
-- [ ] **Step 10: Run H3 against the exact deployed head and merge only on approval**
+- [ ] **Bước 10: Chạy H3 dựa trên đầu được triển khai chính xác và chỉ hợp nhất khi được phê duyệt**
 
-H3 must compare implementation against SPEC v0.5.0, review SQL ownership filters
-and migration repeatability, confirm action paths cannot be injected, inspect
-frontend failure behavior, and reconcile local/CI/staging evidence. Record the
-exact head SHA and run IDs in the closeout file. Merge only after H3 approval
-and exact-head CI success. After merge, monitor both exact post-merge `main` CI
-and the automatically triggered migration-hash-gated staging workflow.
+H3 phải so sánh việc triển khai với SPEC v0.5.0, xem xét các bộ lọc quyền sở hữu SQL và khả năng lặp
+lại quá trình di chuyển, xác nhận không thể chèn đường dẫn hành động, kiểm tra hành vi lỗi giao diện
+người dùng và đối chiếu bằng chứng cục bộ/CI/tổ chức. Ghi lại chính xác đầu SHA và chạy ID trong tệp
+kết thúc. Chỉ hợp nhất sau khi phê duyệt H3 và thành công CI chính xác. Sau khi hợp nhất, hãy giám
+sát chính xác cả CI `main` sau hợp nhất và quy trình làm việc theo giai đoạn di chuyển theo cổng băm
+được kích hoạt tự động.
 
 ---
 
-## Final Self-Review Checklist
+## Danh sách kiểm tra tự đánh giá cuối cùng
 
-- [ ] Every BR-FE10-014..020, FR-FE10-011..016, and AC-FE10-011..016 maps to at least one task and executable test.
-- [ ] No `TBD`, `TODO`, `PLACEHOLDER`, invented endpoint, second channel/table, delete/archive, or global staff log appears in this plan.
-- [ ] Method names, routes, field names, type/template pairs, status codes, and response shapes are consistent across SPEC, plan, backend, frontend, OpenAPI, and tests.
-- [ ] Sensitive types and legacy `EMAIL_VERIFY` are fail-closed at list, count, and read boundaries.
-- [ ] Migration repeatability does not backfill notifications created after the first migration run.
-- [ ] Backend and migration precede frontend deployment; rollback is non-destructive.
-- [ ] Completion is claimed only from fresh command output, browser evidence, Azure staging evidence, H2, and H3.
+- [ ] Mỗi BR-FE10-014..020, FR-FE10-011..016 và AC-FE10-011..016 ánh xạ tới ít nhất một tác vụ và kiểm thử thực thi.
+- [ ] Không có `TBD`, `TODO`, `PLACEHOLDER`, điểm cuối được phát minh, kênh/bảng thứ hai, xóa/lưu trữ hoặc nhật ký nhân viên toàn cầu xuất hiện trong kế hoạch này.
+- [ ] Tên phương thức, tuyến đường, tên trường, cặp loại/mẫu, mã trạng thái và hình dạng phản hồi nhất quán trên SPEC, gói, máy chủ, giao diện người dùng, OpenAPI và các kiểm thử.
+- [ ] Các loại nhạy cảm và `EMAIL_VERIFY` cũ không được đóng ở ranh giới danh sách, số lượng và đọc.
+- [ ] Khả năng lặp lại quá trình di chuyển không chèn lấp các thông báo được tạo sau lần di chuyển đầu tiên.
+- [ ] Phần máy chủ và di chuyển trước khi triển khai giao diện người dùng; hoàn tác là không phá hủy.
+- [ ] Việc hoàn thành chỉ được yêu cầu từ đầu ra lệnh mới, bằng chứng trình duyệt, bằng chứng môi trường tiền sản xuất Azure, H2 và H3.

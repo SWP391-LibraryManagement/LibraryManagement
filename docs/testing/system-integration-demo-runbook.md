@@ -1,23 +1,24 @@
-# System Integration Demo Runbook
+# Sổ tay Trình diễn Tích hợp Hệ thống
 
-Date: 2026-07-14; connected-flow update: 2026-07-29
+Ngày: 2026-07-14; cập nhật luồng kết nối: 29-07-2026
 
-Audience: SWP391 project presentation
+Khán giả: Trình bày dự án SWP391
 
-Target duration: five minutes
+Thời lượng mục tiêu: năm phút
 
-## 1. Evidence Boundary
+## 1. Ranh giới bằng chứng
 
-Use the FE07, FE08, FE10 and FE12 pages for the visible connected workflow.
-The authoritative staging database is Azure SQL. A green `/health` response
-proves only that the backend process is reachable; it does not prove the four
-feature state transitions or Azure SQL business data are correct.
+Sử dụng các trang FE07, FE08, FE10 và FE12 để biết quy trình làm việc được kết nối rõ ràng. Cơ sở dữ
+liệu môi trường tiền sản xuất có thẩm quyền là Azure SQL. Phản hồi `/health` màu xanh lá cây chỉ
+chứng tỏ rằng quy trình máy chủ có thể truy cập được; nó không chứng minh được bốn chuyển đổi trạng
+thái chức năng hoặc dữ liệu kinh doanh Azure SQL là chính xác.
 
-Do not use local-storage sample rows as proof of database integration. Do not display passwords, tokens, notification bodies, `SafePayload`, connection strings, or `.env` content.
+Không sử dụng các hàng mẫu lưu trữ cục bộ làm bằng chứng tích hợp cơ sở dữ liệu. Không hiển thị mật
+khẩu, mã thông báo, nội dung thông báo, `SafePayload`, chuỗi kết nối hoặc nội dung `.env`.
 
-## 2. Preflight
+## 2. Kiểm tra trước
 
-- Run the current read-only staging gate and keep its six check names visible:
+- Chạy cổng môi trường tiền sản xuất chỉ đọc hiện tại và giữ sáu tên kiểm tra của nó hiển thị:
 
 ```powershell
 $env:STAGING_FRONTEND_URL='https://lemon-wave-04db51100.7.azurestaticapps.net'
@@ -25,43 +26,42 @@ $env:STAGING_API_URL='https://app-library-api-staging-nhat714.azurewebsites.net'
 npm.cmd run smoke:staging
 ```
 
-- Run `npm.cmd run phase3:performance` and confirm the documented bcrypt-cost-10
-  timing plus entry-bundle metrics are emitted without identities or tokens.
-- Start both applications with `npm.cmd run dev`.
-- Verify `Invoke-RestMethod http://localhost:3000/health` returns a healthy response.
-- Open the frontend URL printed by Vite and confirm login works for two approved
-  Member accounts (A/B) and one Librarian account.
-- Record one synthetic `copyId` whose status is `AVAILABLE`.
-- Confirm both members are `ACTIVE`, membership is `APPROVED`, each has fewer
-  than five active loans, no overdue active loan and no `UNPAID` fine.
-- Keep a small state sheet with `memberAUserId`, `memberBUserId`,
-  `librarianUserId`, `copyId`, both `requestId` values, `borrowDetailId`,
-  `reservationId` and the four expected `notificationId` values.
-- Never place account passwords or bearer tokens in this file or presentation slides.
+- Chạy `npm.cmd run phase3:performance` và xác nhận số liệu thời gian với hệ số bcrypt 10 cùng gói
+  đầu vào được tạo mà không chứa danh tính hoặc mã thông báo.
+- Khởi động cả hai ứng dụng với `npm.cmd run dev`.
+- Xác minh `Invoke-RestMethod http://localhost:3000/health` trả về trạng thái tốt.
+- Mở URL giao diện do Vite in ra và xác nhận đăng nhập hoạt động cho hai tài khoản Thành viên đã được
+  phê duyệt (A/B) và một tài khoản Thủ thư.
+- Ghi lại một `copyId` tổng hợp có trạng thái là `AVAILABLE`.
+- Xác nhận cả hai thành viên là `ACTIVE`, thành viên là `APPROVED`, mỗi thành viên có ít hơn
+  hơn năm lượt mượn đang hoạt động, không có lượt mượn quá hạn đang hoạt động và không có khoản phạt `UNPAID`.
+- Giữ một bảng trạng thái nhỏ với `memberAUserId`, `memberBUserId`,
+`librarianUserId`, `copyId`, cả hai giá trị `requestId`, `borrowDetailId`, `reservationId` và bốn
+giá trị `notificationId` dự kiến.
+- Không bao giờ đặt mật khẩu tài khoản hoặc mã thông báo ghi tên vào tệp hoặc trang trình bày này.
 
-## 3. Five-Minute Flow
+## 3. Luồng năm phút
 
-| Time | Action | Evidence to show |
+| Thời gian | Hành động | Bằng chứng cho thấy |
 | --- | --- | --- |
-| 0:00-0:25 | Show `/health`, name the Azure SQL boundary and login as Member A. | Reachability is a preflight only; the selected copy is `AVAILABLE`. |
-| 0:25-0:55 | A opens `/borrowing/new` and creates a request. | FE07 request is `PENDING`; detail is `REQUESTED`. |
-| 0:55-1:25 | Librarian opens `/librarian/borrow-requests` and approves. | FE07 request/detail/copy become `APPROVED`/`BORROWED`/`BORROWED`; one `BORROW_REQUEST_APPROVED` request exists. |
-| 1:25-1:50 | A opens the bell item. | FE10 marks it read, opens `/borrowing/history`, and FE07 timeline uses canonical timestamps. |
-| 1:50-2:20 | B opens `/reservations/mine` and reserves that borrowed copy. | FE08 reservation is `ACTIVE`; queue position is copy-scoped. |
-| 2:20-3:05 | Librarian returns A's copy and chooses **Xử lý hàng đợi đặt chỗ**. | FE07 is `RETURNED`; read-only `reservationQueueAction` opens the exact FE08 queue without mutating it. |
-| 3:05-3:35 | Librarian chooses **Giữ sách & thông báo**. | FE08 picks FIFO head, reservation/copy become `NOTIFIED`/`RESERVED`; FE10 contains one `RESERVATION_READY`. |
-| 3:35-4:15 | B opens **Reservation ready**, checks expiry and chooses **Tạo yêu cầu mượn**. | Deep link contains the held `bookId` and exact `copyId`; second FE07 request is `PENDING`. |
-| 4:15-4:40 | Librarian approves B's request. | Second detail/copy become `BORROWED`; FE08 reservation becomes `FULFILLED`. |
-| 4:40-5:00 | Librarian opens `/home`. | Six FE12 KPI values equal the current backend snapshot; pending/open are `0`, active loans are `1`. |
+| 0:00-0:25 | Hiển thị `/health`, đặt tên ranh giới Azure SQL và đăng nhập với tư cách Thành viên A. | Khả năng tiếp cận chỉ là một kiểm thử trước; bản sao được chọn là `AVAILABLE`. |
+| 0:25-0:55 | A mở `/borrowing/new` và tạo yêu cầu. | Yêu cầu FE07 là `PENDING`; chi tiết là `REQUESTED`. |
+| 0:55-1:25 | Thủ thư mở `/librarian/borrow-requests` và phê duyệt. | Yêu cầu/chi tiết/bản sao FE07 trở thành `APPROVED`/`BORROWED`/`BORROWED`; tồn tại một thông báo `BORROW_REQUEST_APPROVED`. |
+| 1:25-1:50 | A mở mục chuông. | FE10 đánh dấu nó đã đọc, mở `/borrowing/history` và dòng thời gian FE07 sử dụng dấu thời gian chuẩn. |
+| 1:50-2:20 | B mở `/reservations/mine` và đặt chỗ bản sao đang được mượn. | Lượt đặt chỗ FE08 là `ACTIVE`; vị trí hàng đợi thuộc phạm vi bản sao. |
+| 2:20-3:05 | Thủ thư trả bản sao của A và chọn **Xử lý hàng đợi đặt chỗ**. | FE07 trở thành `RETURNED`; `reservationQueueAction` chỉ đọc mở đúng hàng đợi FE08 mà không thay đổi dữ liệu. |
+| 3:05-3:35 | Thủ thư chọn **Giữ sách & thông báo**. | FE08 chọn người đầu hàng đợi FIFO; đặt chỗ/bản sao trở thành `NOTIFIED`/`RESERVED`; FE10 chứa một thông báo `RESERVATION_READY`. |
+| 3:35-4:15 | B mở **Đặt chỗ sẵn sàng**, kiểm tra hạn nhận và chọn **Tạo yêu cầu mượn**. | Liên kết sâu chứa `bookId` của sách được giữ và đúng `copyId`; yêu cầu FE07 thứ hai là `PENDING`. |
+| 4:15-4:40 | Thủ thư phê duyệt yêu cầu của B. | Chi tiết/bản sao thứ hai trở thành `BORROWED`; đặt chỗ FE08 trở thành `FULFILLED`. |
+| 4:40-5:00 | Thủ thư mở `/home`. | Sáu giá trị KPI FE12 khớp ảnh chụp trạng thái máy chủ hiện tại; số yêu cầu chờ/đặt chỗ mở là `0`, lượt mượn đang hoạt động là `1`. |
 
-Do not turn the FE07 return button into an automatic FE08 queue mutation. The
-separate confirmation demonstrates responsibility and audit boundaries. If a
-post-commit FE10 request fails, show the safe warning and keep the already
-committed FE07/FE08 source state.
+Đừng biến nút quay lại FE07 thành thao tác ghi hàng đợi FE08 tự động. Việc xác nhận riêng biệt thể hiện
+trách nhiệm và ranh giới kiểm toán. Nếu yêu cầu FE10 sau cam kết không thành công, hãy hiển thị cảnh
+báo an toàn và giữ trạng thái nguồn FE07/FE08 đã được cam kết.
 
-## 4. API Fallback
+## 4. Dự phòng API
 
-Use team-approved tokens only in the current terminal session:
+Chỉ sử dụng mã thông báo được nhóm phê duyệt trong phiên cuối hiện tại:
 
 ```powershell
 $memberHeaders = @{ Authorization = "Bearer $memberToken" }
@@ -101,7 +101,7 @@ Invoke-RestMethod `
   -Headers $staffHeaders
 ```
 
-If the UI or API cannot start, use the deterministic automated evidence:
+Nếu giao diện hoặc API không thể khởi động, hãy sử dụng bằng chứng tự động xác định:
 
 ```powershell
 npm.cmd run test:system
@@ -112,13 +112,12 @@ $env:SYSTEM_SQL_TEST_ENV_FILE = 'D:\SWP391\library-management-system\backend\.en
 npm.cmd --prefix backend run test:sql:system
 ```
 
-The system test and connected Chromium test prove
-FE07 -> FE10 -> FE08 -> FE07 -> FE12 with deterministic synthetic users. The
-optional SQL suite proves the separately documented SQL-backed path and verifies
-cleanup before exiting.
+Kiểm tra hệ thống và kiểm tra Chrome được kết nối chứng minh FE07 -> FE10 -> FE08 -> FE07 -> FE12
+với người dùng tổng hợp xác định. Bộ SQL tùy chọn chứng minh đường dẫn được hỗ trợ SQL được ghi lại
+riêng biệt và xác minh việc dọn dẹp trước khi thoát.
 
-If port `4173` is already used by another local session, preserve that process
-and run the browser evidence on isolated ports:
+Nếu cổng `4173` đã được sử dụng bởi một phiên cục bộ khác, hãy giữ nguyên quy trình đó và chạy bằng
+chứng trình duyệt trên các cổng bị cô lập:
 
 ```powershell
 $env:E2E_FRONTEND_PORT='4273'
@@ -128,9 +127,9 @@ $env:E2E_BACKEND_URL='http://127.0.0.1:3200'
 npm.cmd run test:e2e
 ```
 
-## 5. Safe FE10 Query
+## 5. Truy vấn FE10 an toàn
 
-Select metadata only. Do not select `Body`, `SafePayload`, tokens, or provider details.
+Chỉ chọn siêu dữ liệu. Không chọn chi tiết `Body`, `SafePayload`, mã thông báo hoặc nhà cung cấp.
 
 ```sql
 SELECT
@@ -149,33 +148,33 @@ WHERE SourceFeature = 'FE07'
   );
 ```
 
-## 6. Failure Fallbacks
+## 6. Dự phòng thất bại
 
-| Failure | Fallback |
+| Thất bại | Dự phòng |
 | --- | --- |
-| Frontend does not start | Show API responses from Section 4 and the passing SIT output. |
-| SQL Server is unavailable | Run `npm.cmd run test:system`; state clearly that this is deterministic in-memory integration evidence. |
-| Email delivery is unavailable | Show the queued FE10 notification metadata; delivery is not required to prove the cross-feature request. |
-| Login session has the wrong role | Clear the stale session, log in again, and show the role before continuing. |
-| Live fixture is inconsistent | Stop the live mutation and use the automated SQL proof or pre-captured screenshots. Do not improvise with shared data. |
+| giao diện không bắt đầu | Hiển thị phản hồi API từ Phần 4 và đầu ra SIT đi qua. |
+| SQL Server không có sẵn | Chạy `npm.cmd run test:system`; nói rõ rằng đây là bằng chứng tích hợp trong bộ nhớ mang tính quyết định. |
+| Việc gửi email không khả dụng | Hiển thị siêu dữ liệu thông báo FE10 được xếp hàng đợi; việc phân phối không bắt buộc phải chứng minh yêu cầu chức năng chéo. |
+| Phiên đăng nhập có vai trò sai | Xóa phiên cũ, đăng nhập lại và hiển thị vai trò trước khi tiếp tục. |
+| Lịch thi đấu trực tiếp không nhất quán | Dừng thao tác ghi trực tiếp và sử dụng bằng chứng SQL tự động hoặc ảnh chụp màn hình được chụp trước. Đừng ứng biến với dữ liệu được chia sẻ. |
 
-## 7. Reset Checklist
+## 7. Đặt lại danh sách kiểm tra
 
-- Copy is restored to `AVAILABLE`, unless the team intentionally retains the completed demonstration loan.
-- Borrow request/detail IDs are recorded and left in an understood terminal state or removed by the fixture owner.
-- No demo notification remains unexpectedly `PENDING`; do not delete unrelated notifications.
-- Fine is `PAID` or the synthetic fine is removed by its fixture cleanup.
-- Synthetic Member/Librarian rows and `UserRoles` are removed when disposable accounts were used.
-- Current browser session is logged out and no bearer token remains in shared terminal history or slides.
-- `SIT-SQL-001` ends with `TestUsers=0` and `TestCopies=0` through its assertions.
+- Bản sao được khôi phục về `AVAILABLE`, trừ khi nhóm cố tình giữ lại lượt mượn trình diễn đã hoàn thành.
+- ID yêu cầu/detail mượn được ghi lại và để ở trạng thái đầu cuối dễ hiểu hoặc bị chủ sở hữu thiết bị xóa.
+- Không có thông báo demo nào bất ngờ `PENDING`; không xóa các thông báo không liên quan.
+- khoản phạt là `PAID` hoặc khoản phạt tổng hợp được loại bỏ bằng cách dọn dẹp vật cố định của nó.
+- Các hàng thành viên/thủ thư tổng hợp và `UserRoles` tổng hợp sẽ bị xóa khi sử dụng tài khoản dùng một lần.
+- Phiên trình duyệt hiện tại đã bị đăng xuất và không còn mã thông báo mang nào trong lịch sử hoặc trang trình bày thiết bị đầu cuối được chia sẻ.
+- `SIT-SQL-001` kết thúc bằng `TestUsers=0` và `TestCopies=0` thông qua các xác nhận của nó.
 
-## 8. Rehearsal Record
+## 8. Bản ghi diễn tập
 
-Historical results remain in `.sdd/reviews/system-integration-evidence-2026-07-14.md`.
-The current Phase 3 browser, staging, performance, visual, and reset evidence is
-recorded in `docs/release/phase3-user-testing-record-2026-07-19.md`.
+Kết quả lịch sử vẫn còn trong `.sdd/reviews/system-integration-evidence-2026-07-14.md`. Bằng chứng
+về trình duyệt, giai đoạn, hiệu suất, hình ảnh và thiết lập lại Giai đoạn 3 hiện tại được ghi lại
+trong `docs/release/phase3-user-testing-record-2026-07-19.md`.
 
-Run twice before the defense:
+Chạy hai lần trước buổi bảo vệ:
 
-1. Normal pace: verify every state transition and reset.
-2. Timed pace: finish within five minutes using the fallback evidence when needed.
+1. Tốc độ bình thường: xác minh mọi chuyển đổi trạng thái và thiết lập lại.
+2. Tốc độ theo thời gian: hoàn thành trong vòng năm phút bằng cách sử dụng bằng chứng dự phòng khi cần thiết.

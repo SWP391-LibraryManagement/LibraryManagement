@@ -1,78 +1,79 @@
-# Week 13 Documentation And Azure Staging Design
+# Tài liệu tuần 13 và thiết kế môi trường tiền sản xuất Azure
 
-**Date:** 2026-07-14
-**Status:** Approved direction; written design pending human document review
-**Branch:** `docs/week13-documentation-deployment`
+**Ngày:** 2026-07-14 **Tình trạng:** Phương hướng đã được phê duyệt; thiết kế bằng văn bản đang chờ
+xem xét tài liệu của con người **nhánh:** `docs/week13-documentation-deployment`
 
-## 1. Goal
+## 1. Mục tiêu
 
-Complete the playbook Week 13 deliverables without adding product features:
+Hoàn thành các sản phẩm của Tuần 13 trong cẩm nang mà không cần thêm các chức năng của sản phẩm:
 
-- close the acceptance evidence package for the six implemented features;
-- publish a coherent technical documentation set and user manual;
-- provision an Azure staging environment using the Azure for Students subscription;
-- add a controlled GitHub Actions deployment pipeline;
-- deploy and smoke-test a working staging frontend, API, and Azure SQL database.
+- đóng gói bằng chứng chấp nhận cho sáu chức năng đã triển khai;
+- xuất bản bộ tài liệu kỹ thuật và hướng dẫn sử dụng mạch lạc;
+- cung cấp môi trường staging Azure bằng subscription Azure for Students;
+- thêm workflow triển khai GitHub Actions có kiểm soát;
+- triển khai và kiểm tra kiểm thử giao diện môi trường tiền sản xuất đang hoạt động, cơ sở dữ liệu API và Azure SQL.
 
-The target deliverable is a recorded staging URL, a working API URL, a technical documentation
-draft, a complete repository README, a user manual, and repeatable deployment/smoke evidence.
+Sản phẩm mục tiêu có thể phân phối là URL môi trường tiền sản xuất được ghi lại, API URL đang hoạt
+động, bản nháp tài liệu kỹ thuật, kho lưu trữ hoàn chỉnh README, hướng dẫn sử dụng và bằng chứng
+triển khai/kiểm thử nhanh có thể lặp lại.
 
-## 2. Scope
+## 2. Phạm vi
 
-### In Scope
+### Trong phạm vi
 
-- FE02 Authentication
-- FE07 Borrowing Management
-- FE08 Reservation Management
-- FE09 production-aligned server API
-- FE10 Notification Management
-- FE12 Reporting And Statistics
-- Existing public/book/profile/admin/inventory routes only as required to document or deploy them
-- Azure Static Web Apps frontend staging
-- Azure App Service backend staging
-- Azure SQL Database staging
-- GitHub Actions deployment and smoke-test automation
+- FE02 Xác thực
+- FE07 Quản lý mượn sách
+- FE08 Quản lý đặt chỗ
+- FE09 máy chủ phù hợp với sản xuất API
+- FE10 Quản lý thông báo
+- FE12 Báo cáo và Thống kê
+- Các tuyến public/book/profile/admin/inventory hiện có chỉ theo yêu cầu để ghi lại hoặc triển khai chúng
+- môi trường tiền sản xuất giao diện người dùng Azure Static Web Apps
+- môi trường tiền sản xuất máy chủ Azure App Service
+- Azure SQL môi trường tiền sản xuất cơ sở dữ liệu
+- GitHub Triển khai hành động và tự động hóa kiểm thử nhanh
 
-### Out Of Scope
+### Ngoài phạm vi
 
-- New product features
-- FE09 legacy frontend alignment
-- Closing features currently marked `NOT STARTED` or `DRAFT`
-- Automatic production deployment
-- Automatic database schema mutation from CI
-- Paid Azure resources outside the Azure for Students credit without explicit human approval
-- Migrating from SQL Server to another database
+- chức năng sản phẩm mới
+- FE09 căn chỉnh giao diện người dùng kế thừa
+- Các chức năng đóng hiện được đánh dấu `NOT STARTED` hoặc `DRAFT`
+- Triển khai sản xuất tự động
+- thao tác ghi lược đồ cơ sở dữ liệu tự động từ CI
+- Tài nguyên Azure trả phí ngoài tín dụng Azure for Students khi chưa có phê duyệt rõ ràng của con người
+- Di chuyển từ SQL Server sang cơ sở dữ liệu khác
 
-## 3. Selected Azure Architecture
+## 3. Kiến trúc Azure đã chọn
 
-### 3.1 Components
+### 3.1 Linh kiện
 
-| Component | Azure service | Responsibility |
+| Thành phần | Dịch vụ Azure | Trách nhiệm |
 | --- | --- | --- |
-| Frontend | Azure Static Web Apps Free | Serve the Vite production build over HTTPS. |
-| Backend | Azure App Service for Node.js | Run the Express API with `NODE_ENV=production`. |
-| Database | Azure SQL Database | Host the staging copy of `LibraryManagement`. |
-| Source and automation | GitHub + GitHub Actions | Run quality gates, deploy approved commits, and execute smoke checks. |
-| Secrets | GitHub Environment secrets + App Service configuration | Store deployment token, database credentials, JWT secret, SMTP settings, and URLs. |
+| Giao diện người dùng | Azure Static Web Apps Miễn phí | Phục vụ bản dựng sản xuất Vite trên HTTPS. |
+| máy chủ | Azure App Service cho Node.js | Chạy Express API với `NODE_ENV=production`. |
+| Cơ sở dữ liệu | Cơ sở dữ liệu Azure SQL | Lưu trữ bản sao môi trường tiền sản xuất của `LibraryManagement`. |
+| Nguồn và tự động hóa | GitHub + GitHub Actions | Chạy quality gates, triển khai commit đã phê duyệt và thực hiện smoke test. |
+| Bí mật | GitHub Bí mật môi trường + Cấu hình App Service | Lưu trữ mã thông báo triển khai, thông tin xác thực cơ sở dữ liệu, bí mật JWT, cài đặt SMTP và URL. |
 
-Cost policy:
+Chính sách chi phí:
 
-- App Service starts on the F1 Free plan. If F1 is unavailable or cannot run the application, stop
-  before selecting B1 or another paid plan and request explicit approval.
-- Azure SQL is created only when the portal cost estimate identifies a free allowance or confirms
-  that the selected configuration is covered by the Azure for Students credit. The estimate is
-  recorded before creation.
-- Static Web Apps remains on the Free plan for Week 13.
+- App Service bắt đầu với gói F1 Free. Nếu phím F1 không có hoặc không chạy được ứng dụng thì dừng
+  trước khi chọn B1 hoặc gói trả phí khác và yêu cầu phê duyệt rõ ràng.
+- Azure SQL chỉ được tạo khi ước tính chi phí cổng thông tin xác định trợ cấp miễn phí hoặc xác nhận
+rằng cấu hình đã chọn được bao gồm trong tín dụng Azure for Students. Ước
+tính được ghi lại
+trước khi tạo.
+- Static Web Apps vẫn nằm trong gói Miễn phí trong Tuần 13.
 
-Default region:
+Vùng mặc định:
 
-- App Service: Malaysia West, the nearest region allowed by the Azure for Students subscription
-  policy observed during provisioning.
-- Azure SQL: East Asia. The free limit API rejected Malaysia West during provisioning even though
-  the portal displayed the free offer.
-- Static Web Apps: East Asia when Southeast Asia is not offered by the free plan.
+- App Service: Malaysia West, khu vực gần nhất được subscription Azure for Students cho phép
+  chính sách được tuân thủ trong quá trình cung cấp.
+- Azure SQL: Đông Á. Giới hạn miễn phí API đã từ chối Malaysia West trong quá trình cung cấp mặc dù
+  cổng thông tin hiển thị ưu đãi miễn phí.
+- Static Web Apps: Đông Á khi Đông Nam Á không được cung cấp gói miễn phí.
 
-Resource names use a stable project prefix plus a short uniqueness suffix:
+Tên tài nguyên sử dụng tiền tố dự án ổn định cộng với hậu tố duy nhất ngắn:
 
 ```text
 rg-library-staging
@@ -82,10 +83,10 @@ sql-library-staging-<suffix>
 LibraryManagementStaging
 ```
 
-The suffix is selected once during provisioning and recorded in the deployment evidence. It is not
-embedded in application source.
+Hậu tố được chọn một lần trong quá trình cung cấp và được ghi lại trong bằng chứng triển khai. Nó
+không được nhúng vào nguồn ứng dụng.
 
-### 3.2 Request Flow
+### 3.2 Luồng yêu cầu
 
 ```text
 Browser
@@ -96,81 +97,82 @@ Browser
   -> Azure SQL Database
 ```
 
-The frontend and backend have separate URLs. App Service `CORS_ORIGINS` contains only the Static Web
-Apps staging origin. Same-origin tools and requests without an Origin header remain supported.
+Giao diện người dùng và máy chủ có các URL riêng biệt. App Service `CORS_ORIGINS` chỉ chứa nguồn gốc
+môi trường tiền sản xuất Static Web Apps. Các công cụ và yêu cầu có cùng nguồn gốc không có tiêu đề
+Nguồn gốc vẫn được hỗ trợ.
 
-## 4. Acceptance Gate
+## 4. Cổng tiếp nhận
 
-Week 11 and Week 12 automated gates are complete, but the project test plan still marks Week 10
-core-feature acceptance as in progress. Week 13 begins by assembling one acceptance record for the
-six implemented features.
+Cổng tự động Tuần 11 và Tuần 12 đã hoàn tất, nhưng kế hoạch kiểm thử dự án vẫn đánh dấu việc chấp
+nhận chức năng cốt lõi của Tuần 10 là đang được tiến hành. Tuần 13 bắt đầu bằng việc tập hợp một bản
+ghi chấp nhận cho sáu chức năng đã triển khai.
 
-The record must:
+Hồ sơ phải:
 
-- link each feature to its approved `SPEC.md`, `TASKS.md`, `TEST_PLAN.md`, and review evidence;
-- distinguish automated L1-L3 evidence from human L4 acceptance;
-- reuse the Playwright golden path and system integration evidence;
-- identify FE09 browser alignment and FE10 inbox UI as documented limitations;
-- use `READY FOR HUMAN ACCEPTANCE` until a human records the visual/demo result;
-- never mark a manual observation as PASS based only on agent output.
+- liên kết từng chức năng với `SPEC.md`, `TASKS.md`, `TEST_PLAN.md` đã được phê duyệt và xem xét bằng chứng;
+- phân biệt bằng chứng L1-L3 tự động với sự chấp nhận L4 của con người;
+- tái sử dụng luồng nghiệp vụ chuẩn Playwright và bằng chứng tích hợp hệ thống;
+- xác định căn chỉnh trình duyệt FE09 và giao diện người dùng hộp thư đến FE10 là các hạn chế được ghi lại;
+- sử dụng `READY FOR HUMAN ACCEPTANCE` cho đến khi con người ghi lại kết quả hình ảnh/bản demo;
+- không bao giờ đánh dấu quan sát thủ công là ĐẠT chỉ dựa trên đầu ra của tác nhân.
 
-No feature status is upgraded solely because Week 13 documentation exists.
+Không có trạng thái chức năng nào được nâng cấp chỉ vì tài liệu Tuần 13 tồn tại.
 
-## 5. Documentation Set
+## 5. Bộ tài liệu
 
-### 5.1 Root README
+### 5.1 Gốc README
 
-The root `README.md` becomes the entry point and includes:
+`README.md` gốc trở thành điểm vào và bao gồm:
 
-- system purpose and implemented scope;
-- architecture and technology stack;
-- repository map;
-- local prerequisites and setup;
-- safe environment configuration using tracked example files;
-- local development, test, build, traceability, E2E, and SQL commands;
-- Azure staging architecture and links to deployment documentation;
-- current limitations and security notes;
-- links to API reference, user manual, acceptance evidence, and presentation runbook.
+- mục đích hệ thống và phạm vi thực hiện;
+- bộ công nghệ kiến trúc và công nghệ;
+- bản đồ kho lưu trữ;
+- điều kiện tiên quyết và thiết lập cục bộ;
+- cấu hình môi trường an toàn bằng cách sử dụng các tệp mẫu được theo dõi;
+- phát triển cục bộ, kiểm tra, xây dựng, truy vết, các lệnh E2E và SQL;
+- Kiến trúc môi trường tiền sản xuất Azure và liên kết đến tài liệu triển khai;
+- những hạn chế hiện tại và ghi chú bảo mật;
+- liên kết đến tài liệu tham khảo API, hướng dẫn sử dụng, bằng chứng chấp nhận và sổ tay trình bày.
 
-### 5.2 Technical Documentation
+### 5.2 Tài liệu kỹ thuật
 
-Create or consolidate:
+Tạo hoặc hợp nhất:
 
-- `docs/architecture/system-architecture.md`: runtime components, trust boundaries, data flow,
-  deployment topology, and links to the existing feature integration map.
-- `docs/deployment/azure-staging-guide.md`: Azure resources, configuration, secrets, database
-  initialization, GitHub Environment setup, first deployment, rollback, cleanup, and cost guardrails.
-- `docs/release/week13-acceptance-record.md`: six-feature acceptance matrix and human sign-off area.
-- Existing `backend/src/docs/openapi.yaml` remains the machine-readable API reference; the README and
-  deployment guide link to `/api-docs` and the source file.
+- `docs/architecture/system-architecture.md`: thành phần thời gian chạy, ranh giới tin cậy, luồng dữ liệu,
+  cấu trúc liên kết triển khai và liên kết đến bản đồ tích hợp chức năng hiện có.
+- `docs/deployment/azure-staging-guide.md`: Tài nguyên, cấu hình, bí mật, cơ sở dữ liệu của Azure
+  khởi tạo, thiết lập môi trường GitHub, triển khai lần đầu, khôi phục, dọn dẹp và giới hạn chi phí.
+- `docs/release/week13-acceptance-record.md`: ma trận chấp nhận sáu chức năng và khu vực đăng xuất của con người.
+- `backend/src/docs/openapi.yaml` hiện tại vẫn là tham chiếu API có thể đọc được bằng máy; README và
+  liên kết hướng dẫn triển khai tới `/api-docs` và tệp nguồn.
 
-### 5.3 User Manual
+### 5.3 Hướng dẫn sử dụng
 
-Create `docs/user-manual.md` for Guest, Member, Librarian, and Admin workflows. It must describe only
-implemented behavior and include the critical presentation flow:
+Tạo `docs/user-manual.md` cho quy trình làm việc của Khách, Thành viên, Thủ thư và Quản trị viên. Nó
+chỉ được mô tả hành vi được thực hiện và bao gồm luồng trình bày quan trọng:
 
-- login;
-- browse/select a copy;
-- create and approve a borrow request;
-- return an overdue item;
-- calculate and record a fine through the production-aligned API boundary;
-- view the borrowing report;
-- recover from common authentication, role, API, and connectivity errors.
+- đăng nhập;
+- duyệt/chọn một bản sao;
+- tạo và phê duyệt yêu cầu mượn sách;
+- trả sách một món đồ quá hạn;
+- tính toán và lập hồ sơ phạt qua ranh giới API liên kết sản xuất;
+- xem báo cáo mượn sách;
+- khôi phục từ các lỗi xác thực, vai trò, API và kết nối thông thường.
 
-Screenshots may be captured from the deterministic local Playwright environment or the final staging
-deployment. They must contain synthetic data only and must not show passwords, tokens, notification
-bodies, connection strings, or local `.env` content.
+Ảnh chụp màn hình có thể được chụp từ môi trường Playwright cục bộ xác định hoặc triển khai giai
+đoạn cuối. Chúng chỉ được chứa dữ liệu tổng hợp và không được hiển thị mật khẩu, mã thông báo, nội
+dung thông báo, chuỗi kết nối hoặc nội dung `.env` cục bộ.
 
-## 6. Environment Contract
+## 6. Hợp đồng môi trường
 
-Tracked templates contain placeholders only:
+Các mẫu được theo dõi chỉ chứa phần giữ chỗ:
 
 ```text
 backend/.env.example
 frontend/.env.example
 ```
 
-Required backend staging settings:
+Cài đặt môi trường tiền sản xuất máy chủ bắt buộc:
 
 ```text
 NODE_ENV=production
@@ -187,68 +189,69 @@ CORS_ORIGINS=https://<static-web-app-host>
 FRONTEND_BASE_URL=https://<static-web-app-host>
 ```
 
-Optional SMTP variables stay unset unless the team configures a staging mail provider. SMTP absence
-must not be presented as successful email delivery.
+Các biến SMTP tùy chọn không được đặt trừ khi nhóm định cấu hình nhà cung cấp thư theo giai đoạn. Sự
+vắng mặt của SMTP không được coi là gửi email thành công.
 
-Required frontend build setting:
+Cài đặt xây dựng giao diện người dùng bắt buộc:
 
 ```text
 VITE_API_BASE_URL=https://<app-service-host>/api
 ```
 
-No environment value is committed. GitHub deployment secrets live in a protected `staging`
-Environment; runtime secrets live in App Service configuration.
+Không có giá trị môi trường được cam kết. Bí mật triển khai GitHub tồn tại trong Môi trường
+`staging` được bảo vệ; bí mật thời gian chạy nằm trong cấu hình App Service.
 
-## 7. Database Deployment
+## 7. Triển khai cơ sở dữ liệu
 
-`database/Librarymanagement.sql` remains the schema source. The first staging database initialization
-is an explicit operator action through Azure Query Editor, SSMS, or `sqlcmd` after the target server
-and database are confirmed.
+`database/Librarymanagement.sql` vẫn là nguồn lược đồ. Việc khởi tạo cơ sở dữ liệu theo giai đoạn
+đầu tiên là một hành động rõ ràng của người vận hành thông qua Trình soạn thảo truy vấn Azure, SSMS
+hoặc `sqlcmd` sau khi máy chủ đích và cơ sở dữ liệu được xác nhận.
 
-Guardrails:
+Lan có thể:
 
-- CI does not automatically execute schema SQL.
-- The operator records the target server and database name before execution.
-- The operator reviews the SQL diff and confirms no production/shared database is selected.
-- Only synthetic staging accounts and data are used.
-- Database credentials are entered interactively or stored in Azure configuration, never in Git.
-- Azure SQL firewall access is limited to the App Service outbound addresses and the operator's
-  temporary administration address; no permanent all-Internet rule is accepted.
-- The deployment evidence records schema initialization and a read-only connectivity check, not
-  credential values.
+- CI không tự động thực thi lược đồ SQL.
+- Người vận hành ghi lại máy chủ đích và tên cơ sở dữ liệu trước khi thực hiện.
+- Nhà điều hành xem xét khác biệt SQL và xác nhận không có cơ sở dữ liệu sản xuất/chia sẻ nào được chọn.
+- Chỉ các tài khoản và dữ liệu môi trường tiền sản xuất tổng hợp mới được sử dụng.
+- Thông tin xác thực cơ sở dữ liệu được nhập tương tác hoặc được lưu trữ trong cấu hình Azure, không bao giờ có trong Git.
+- Truy cập tường lửa Azure SQL bị giới hạn ở các địa chỉ gửi đi App Service và địa chỉ của nhà điều hành
+  địa chỉ hành chính tạm thời; không có quy tắc toàn Internet vĩnh viễn nào được chấp nhận.
+- Bằng chứng triển khai ghi lại quá trình khởi tạo lược đồ và kiểm tra kết nối chỉ đọc, không phải
+  các giá trị thông tin xác thực.
 
-## 8. CI/CD Design
+## 8. Thiết kế CI/CD
 
-Add `.github/workflows/deploy-staging.yml` with a manual `workflow_dispatch` trigger. Automatic
-deployment from every push is intentionally deferred until the first staging deployment is verified.
+Thêm `.github/workflows/deploy-staging.yml` bằng trình kích hoạt `workflow_dispatch` thủ công. Việc
+triển khai tự động từ mỗi lần đẩy được trì hoãn có chủ ý cho đến khi lần triển khai giai đoạn đầu
+tiên được xác minh.
 
-Pipeline jobs:
+Công việc đường ống:
 
 1. `quality-gate`
-   - install root, backend, and frontend dependencies;
-   - run backend tests and coverage threshold;
-   - run frontend tests, lint, and build;
-   - run traceability enforcement.
+   - cài đặt các phụ thuộc gốc, máy chủ và giao diện người dùng;
+   - chạy kiểm thử máy chủ và ngưỡng bảo hiểm;
+   - chạy kiểm thử giao diện người dùng, tìm lỗi mã nguồn và xây dựng;
+   - tiến hành thực thi truy vết.
 2. `deploy-backend`
-   - deploy the `backend/` package to the named App Service using a web-app-scoped publish profile
-     stored in the GitHub `staging` Environment;
-   - rely on App Service build automation to install production dependencies;
-   - do not include `.env`, tests, coverage, uploads, or local artifacts.
+   - triển khai gói `backend/` cho App Service có tên bằng cách sử dụng hồ sơ xuất bản trong phạm vi ứng dụng web
+     được lưu trữ trong Môi trường GitHub `staging`;
+   - dựa vào tự động hóa xây dựng App Service để cài đặt các phần phụ thuộc sản xuất;
+   - không bao gồm `.env`, các kiểm thử, mức độ bao phủ, nội dung tải lên hoặc các tạo phẩm cục bộ.
 3. `deploy-frontend`
-   - build `frontend/` with the staging API URL;
-   - deploy `frontend/dist` using the Static Web Apps deployment token stored in the GitHub
-     `staging` Environment.
+   - xây dựng `frontend/` với dàn API URL;
+   - triển khai `frontend/dist` bằng mã thông báo triển khai Static Web Apps được lưu trữ trong GitHub
+     Môi trường `staging`.
 4. `smoke-test`
-   - run only after both deployments succeed;
-   - call the staging frontend and API URLs using the repository smoke script;
-   - fail the workflow on an unavailable frontend, unhealthy API, permissive CORS response, or
-     protected endpoint that does not reject an unauthenticated request.
+   - chỉ chạy sau khi cả hai lần triển khai đều thành công;
+   - gọi giao diện người dùng môi trường tiền sản xuất và URL API bằng cách sử dụng tập lệnh kiểm thử nhanh của kho lưu trữ;
+   - quy trình làm việc không thành công trên giao diện người dùng không khả dụng, API không lành mạnh, phản hồi CORS dễ dãi hoặc
+     điểm cuối được bảo vệ không từ chối yêu cầu không được xác thực.
 
-The pipeline uses least-scope deployment credentials and prints no secret values.
+Quy trình sử dụng thông tin xác thực triển khai ở phạm vi tối thiểu và không in giá trị bí mật.
 
-## 9. Smoke-Test Interface
+## 9. Giao diện kiểm thử nhanh
 
-Add a Node.js script with this command:
+Thêm tập lệnh Node.js bằng lệnh này:
 
 ```powershell
 $env:STAGING_FRONTEND_URL='https://<static-web-app-host>'
@@ -256,57 +259,57 @@ $env:STAGING_API_URL='https://<app-service-host>'
 npm.cmd run smoke:staging
 ```
 
-Checks:
+Kiểm tra:
 
-1. Frontend root returns HTTP 200 and HTML.
-2. `GET <api>/health` returns HTTP 200 with `status: "ok"`.
-3. An allowed-origin request receives the exact configured CORS origin.
-4. An untrusted-origin request does not receive an allow-origin header.
-5. `GET <api>/api/auth/me` without a Bearer token returns HTTP 401.
+1. Root giao diện người dùng trả về HTTP 200 và HTML.
+2. `GET <api>/health` trả về HTTP 200 với `status: "ok"`.
+3. Yêu cầu nguồn gốc được phép nhận được nguồn gốc CORS được định cấu hình chính xác.
+4. Yêu cầu nguồn gốc không đáng tin cậy không nhận được tiêu đề nguồn gốc cho phép.
+5. `GET <api>/api/auth/me` không có mã thông báo Bearer trả về HTTP 401.
 
-The script is read-only. It creates no users, borrowings, fines, notifications, or reports.
+Kịch bản chỉ đọc. Nó không tạo ra người dùng, lượt mượn, khoản phạt, thông báo hoặc báo cáo.
 
-## 10. Error Handling And Rollback
+## 10. Xử lý lỗi và khôi phục
 
-- A quality-gate failure prevents deployment.
-- A backend deployment failure prevents smoke testing and leaves the previous App Service version
-  available through Azure deployment history.
-- A frontend deployment failure does not change the configured backend database.
-- A smoke-test failure marks the workflow failed and blocks the staging acceptance record.
-- Rollback redeploys the last known-good Git commit; database rollback is manual because CI does not
-  mutate schema.
-- If Azure proposes a non-free SKU or cost outside the student credit, provisioning stops before the
-  resource is created and the cost decision returns to the user.
+- Lỗi cổng chất lượng sẽ ngăn cản việc triển khai.
+- Lỗi triển khai máy chủ ngăn cản việc kiểm thử nhanh và rời khỏi phiên bản App Service trước đó
+  có sẵn thông qua lịch sử triển khai Azure.
+- Lỗi triển khai giao diện người dùng không làm thay đổi cơ sở dữ liệu máy chủ đã định cấu hình.
+- Lỗi kiểm thử nhanh đánh dấu quy trình làm việc không thành công và chặn bản ghi chấp nhận môi trường tiền sản xuất.
+- hoàn tác triển khai lại cam kết Git tốt được biết đến cuối cùng; Việc khôi phục cơ sở dữ liệu là thủ công vì CI không
+  lược đồ thao tác ghi.
+- Nếu Azure đề xuất SKU không miễn phí hoặc chi phí ngoài tín dụng sinh viên, việc cung cấp sẽ dừng trước khi
+  tài nguyên được tạo và quyết định chi phí sẽ được trả sách cho người dùng.
 
-## 11. Verification Strategy
+## 11. Chiến lược xác minh
 
-Before the first deployment:
+Trước lần triển khai đầu tiên:
 
-- existing backend, coverage, frontend, build, E2E, SQL integration, dependency audit, and
-  traceability evidence remains green;
-- environment templates contain no secrets;
-- documentation links and commands are reviewed from a clean checkout;
-- the smoke script is test-driven against local HTTP fixtures;
-- workflow changes pass syntax review and `git diff --check`.
+- chương trình máy chủ, phạm vi bảo hiểm, giao diện người dùng, bản dựng hiện có, tích hợp E2E, SQL, kiểm tra phụ thuộc và
+  bằng chứng truy vết vẫn còn xanh;
+- mẫu môi trường không chứa bí mật;
+- các liên kết tài liệu và lệnh được xem xét từ quá trình kiểm tra rõ ràng;
+- tập lệnh kiểm thử nhanh được chạy kiểm thử trên các thiết bị HTTP cục bộ;
+- thay đổi quy trình làm việc vượt qua đánh giá cú pháp và `git diff --check`.
 
-After deployment:
+Sau khi triển khai:
 
-- run the automated staging smoke script;
-- perform one human login and critical-flow visual check using synthetic staging data;
-- record the frontend URL, API URL, deployed commit, smoke timestamp, and human reviewer result;
-- run the five-minute presentation rehearsal against staging, with the existing deterministic local
-  evidence as fallback.
+- chạy tập lệnh kiểm thử nhanh môi trường tiền sản xuất tự động;
+- thực hiện một lần đăng nhập của con người và kiểm tra trực quan luồng quan trọng bằng cách sử dụng dữ liệu môi trường tiền sản xuất tổng hợp;
+- ghi lại giao diện người dùng URL, API URL, cam kết đã triển khai, dấu thời gian kiểm thử nhanh và kết quả đánh giá của con người;
+- tiến hành buổi diễn tập thuyết trình kéo dài năm phút dựa trên sự môi trường tiền sản xuất, với địa phương xác định hiện có
+  bằng chứng làm dự phòng.
 
-## 12. Completion Criteria
+## 12. Tiêu chí hoàn thành
 
-Week 13 is complete only when:
+Tuần 13 chỉ hoàn thành khi:
 
-- the six-feature acceptance record is ready and human-reviewed;
-- README, architecture document, deployment guide, and user manual are committed;
-- environment templates are tracked without credentials;
-- the GitHub staging Environment and deployment secrets are configured;
-- Azure Static Web Apps, App Service, and Azure SQL staging resources exist within approved credit;
-- the database schema is initialized against the confirmed staging database;
-- GitHub Actions deploys the selected commit successfully;
-- the smoke script passes against the public staging URLs;
-- staging evidence records URLs, commit, test results, limitations, and rollback instructions.
+- hồ sơ chấp nhận sáu chức năng đã sẵn sàng và được con người xem xét;
+- README, tài liệu kiến trúc, hướng dẫn triển khai và hướng dẫn sử dụng được cam kết;
+- các mẫu môi trường được theo dõi mà không có thông tin xác thực;
+- bí mật triển khai và môi trường môi trường tiền sản xuất GitHub được định cấu hình;
+- Tài nguyên môi trường tiền sản xuất Azure Static Web Apps, App Service và Azure SQL tồn tại trong phạm vi tín dụng được phê duyệt;
+- lược đồ cơ sở dữ liệu được khởi tạo dựa trên cơ sở dữ liệu môi trường tiền sản xuất đã được xác nhận;
+- GitHub Actions triển khai thành công commit đã chọn;
+- tập lệnh kiểm thử nhanh đi ngược lại các URL môi trường tiền sản xuất công khai;
+- bằng chứng môi trường tiền sản xuất ghi lại URL, cam kết, kết quả kiểm tra, giới hạn và hướng dẫn khôi phục.

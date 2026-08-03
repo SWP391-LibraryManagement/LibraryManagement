@@ -1,55 +1,61 @@
-# FE08 Frontend Correctness Implementation Plan
+# FE08 Kế hoạch thực hiện chính xác giao diện người dùng
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Đối với nhân viên đại lý:** SUB-SKILL BẮT BUỘC: Sử dụng siêu năng lực:phát triển theo định hướng phụ (được khuyến nghị) hoặc siêu năng lực:thực hiện các kế hoạch để triển khai kế hoạch này theo từng nhiệm vụ. Các bước sử dụng cú pháp hộp kiểm (`- [ ]`) để theo dõi.
 
-**Goal:** Align the FE08 reservation frontend with the approved reservation lifecycle and existing backend hold-expiration contract.
+**Mục tiêu:** Căn chỉnh giao diện đặt chỗ FE08 với vòng đời đặt chỗ đã được phê duyệt và hợp đồng
+giữ hết hạn máy chủ hiện có.
 
-**Architecture:** Keep `statusToUi()` as the backend-to-UI status boundary, add small pure FE08 view helpers for queue eligibility and success copy, and isolate reservation errors behind a dedicated resolver used only by `reservationApi`. The librarian page calls the existing backend endpoint and reloads canonical server state instead of simulating fulfillment or deletion locally.
+**Kiến trúc:** Giữ `statusToUi()` làm ranh giới trạng thái máy chủ cho giao diện người dùng, thêm
+các trình trợ giúp chế độ xem FE08 thuần túy nhỏ để xác định tính đủ điều kiện của hàng đợi và bản
+sao thành công, đồng thời cách ly các lỗi đặt chỗ đằng sau một trình phân giải chuyên dụng chỉ được
+sử dụng bởi `reservationApi`. Trang thủ thư gọi điểm cuối máy chủ hiện có và tải lại trạng thái máy
+chủ chuẩn thay vì mô phỏng quá trình thực hiện hoặc xóa cục bộ.
 
-**Tech Stack:** React 19, Vite 8, Axios, Node.js built-in test runner, ESLint, Express/Jest regression suite.
+**Tech bộ công nghệ:** React 19, Vite 8, Axios, Node.js chạy kiểm thử tích hợp, ESLint, bộ hồi quy
+Express/Jest.
 
-## Global Constraints
+## Ràng buộc toàn cầu
 
-- Follow `.sdd/specs/feat-reservation-management/SPEC.md` version 0.3.1 as the behavior source of truth.
-- Use only the existing `POST /api/reservations/expire-holds` backend contract.
-- Do not add backend endpoints, database changes, status values, dependencies, or automatic scheduled expiration.
-- Do not implement FE07 fulfillment, FE10 delivery changes, or server-side pagination.
-- Keep reservation-specific Vietnamese API error messages isolated to `reservationApi`.
-- Remove UI actions that claim server-side fulfillment or deletion while changing only local state.
-- Preserve unrelated untracked files, especially `backend/coverage/` and `docs/briefing-thuyet-trinh-du-an-vi.docx`.
-- Use branch `fix/fe08-frontend-correctness`; do not create a branch containing `codex`.
-
----
-
-## File Structure
-
-- Create `frontend/src/utils/reservationViewState.js`: pure FE08 queue eligibility and expiration-result message helpers.
-- Create `frontend/test/reservationFrontend.test.js`: Node tests for lifecycle mapping, queue eligibility, expiration summary copy, and librarian-page contract.
-- Modify `frontend/src/utils/libraryFeatureViewModels.js`: add canonical mappings for `NOTIFIED` and `FULFILLED`.
-- Modify `frontend/src/api/apiErrorMessages.js`: add and export the reservation-specific error resolver.
-- Modify `frontend/test/apiErrorMessages.test.js`: verify FE08 localization and cross-feature isolation.
-- Modify `frontend/src/api/libraryFeatureApi.js`: route all reservation calls through the FE08 resolver and expose `expireHolds()`.
-- Modify `frontend/src/page/reservation/ReservationsLibrarianPage.jsx`: wire hold expiration, reload server state, filter active queue rows, and remove fake actions.
-- Modify `.sdd/specs/feat-reservation-management/PLAN.md`: describe the completed frontend slice and this correctness pass.
-- Modify `.sdd/specs/feat-reservation-management/TASKS.md`: add FE08 correctness tasks, traceability, and fresh verification evidence.
-- Modify `.sdd/specs/feat-reservation-management/CHANGELOG.md`: record the 2026-07-13 frontend correctness update.
+- Tuân theo `.sdd/specs/feat-reservation-management/SPEC.md` phiên bản 0.3.1 làm nguồn hành vi đáng tin cậy.
+- Chỉ sử dụng hợp đồng máy chủ `POST /api/reservations/expire-holds` hiện có.
+- Không thêm điểm cuối máy chủ, thay đổi cơ sở dữ liệu, giá trị trạng thái, phần phụ thuộc hoặc hết hạn tự động theo lịch trình.
+- Không triển khai thực hiện FE07, thay đổi phân phối FE10 hoặc phân trang phía máy chủ.
+- Giữ các thông báo lỗi API dành riêng cho tiếng Việt được cách ly với `reservationApi`.
+- Xóa các hành động trên giao diện người dùng yêu cầu thực hiện hoặc xóa phía máy chủ trong khi chỉ thay đổi trạng thái cục bộ.
+- Bảo toàn các tập tin không bị theo dõi không liên quan, đặc biệt là `backend/coverage/` và `docs/briefing-thuyet-trinh-du-an-vi.docx`.
+- Sử dụng nhánh `fix/fe08-frontend-correctness`; không tạo nhánh chứa `codex`.
 
 ---
 
-### Task 1: Reservation Lifecycle And View-State Helpers
+## Cấu trúc tệp
 
-**Files:**
-- Create: `frontend/src/utils/reservationViewState.js`
-- Create: `frontend/test/reservationFrontend.test.js`
-- Modify: `frontend/src/utils/libraryFeatureViewModels.js:114`
+- Tạo `frontend/src/utils/reservationViewState.js`: trình trợ giúp về tính đủ điều kiện của hàng đợi FE08 thuần túy và thông báo kết quả hết hạn.
+- Tạo `frontend/test/reservationFrontend.test.js`: Kiểm tra nút để ánh xạ vòng đời, tính đủ điều kiện của hàng đợi, bản sao tóm tắt hết hạn và hợp đồng trang thư viện.
+- Sửa đổi `frontend/src/utils/libraryFeatureViewModels.js`: thêm ánh xạ chuẩn cho `NOTIFIED` và `FULFILLED`.
+- Sửa đổi `frontend/src/api/apiErrorMessages.js`: thêm và xuất trình giải quyết lỗi dành riêng cho việc đặt chỗ.
+- Sửa đổi `frontend/test/apiErrorMessages.test.js`: xác minh bản địa hóa FE08 và cách ly nhiều chức năng.
+- Sửa đổi `frontend/src/api/libraryFeatureApi.js`: định tuyến tất cả các cuộc gọi đặt chỗ thông qua trình phân giải FE08 và hiển thị `expireHolds()`.
+- Sửa đổi `frontend/src/page/reservation/ReservationsLibrarianPage.jsx`: hết hạn giữ dây, tải lại trạng thái máy chủ, lọc các hàng đợi đang hoạt động và xóa các hành động giả mạo.
+- Sửa đổi `.sdd/specs/feat-reservation-management/PLAN.md`: mô tả phần giao diện người dùng đã hoàn thành và mức độ chính xác này.
+- Sửa đổi `.sdd/specs/feat-reservation-management/TASKS.md`: thêm các nhiệm vụ về tính chính xác của FE08, truy vết và bằng chứng xác minh mới.
+- Sửa đổi `.sdd/specs/feat-reservation-management/CHANGELOG.md`: ghi lại bản cập nhật tính chính xác của giao diện người dùng 2026-07-13.
 
-**Interfaces:**
-- Consumes: backend reservation states `ACTIVE`, `NOTIFIED`, `FULFILLED`, `CANCELLED`, and `EXPIRED`.
-- Produces: `statusToUi(status, metadata)`, `isActiveReservationQueueStatus(status)`, `getExpireHoldsSuccessMessage(result)`, and `runHoldExpirationWorkflow(dependencies)`.
+---
 
-- [ ] **Step 1: Write failing lifecycle and view-state tests**
+### Nhiệm vụ 1: Vòng đời đặt chỗ và Người trợ giúp trạng thái xem
 
-Create `frontend/test/reservationFrontend.test.js`:
+**Tệp:**
+- Tạo: `frontend/src/utils/reservationViewState.js`
+- Tạo: `frontend/test/reservationFrontend.test.js`
+- Sửa đổi: `frontend/src/utils/libraryFeatureViewModels.js:114`
+
+**Giao diện:**
+- Tiêu thụ: trạng thái đặt chỗ máy chủ `ACTIVE`, `NOTIFIED`, `FULFILLED`, `CANCELLED` và `EXPIRED`.
+- Sản xuất: `statusToUi(status, metadata)`, `isActiveReservationQueueStatus(status)`, `getExpireHoldsSuccessMessage(result)` và `runHoldExpirationWorkflow(dependencies)`.
+
+- [ ] **Bước 1: Viết các kiểm thử vòng đời và trạng thái xem không thành công**
+
+Tạo `frontend/test/reservationFrontend.test.js`:
 
 ```js
 import assert from 'node:assert/strict';
@@ -109,19 +115,19 @@ test('formats expired and promoted counts from the backend response', async () =
 
 ```
 
-- [ ] **Step 2: Run the new tests and verify they fail**
+- [ ] **Bước 2: Chạy kiểm thử mới và xác minh chúng thất bại**
 
-Run:
+Chạy:
 
 ```powershell
 node --test frontend/test/reservationFrontend.test.js
 ```
 
-Expected: FAIL because `NOTIFIED` is still unmapped and `reservationViewState.js` does not exist.
+Dự kiến: THẤT BẠI vì `NOTIFIED` vẫn chưa được ánh xạ và `reservationViewState.js` không tồn tại.
 
-- [ ] **Step 3: Implement the canonical status mappings**
+- [ ] **Bước 3: Triển khai ánh xạ trạng thái chuẩn**
 
-In `frontend/src/utils/libraryFeatureViewModels.js`, replace the opening FE08 status block with:
+Trong `frontend/src/utils/libraryFeatureViewModels.js`, thay thế khối trạng thái FE08 mở bằng:
 
 ```js
 export function statusToUi(status, { notifiedAt, expiresAt } = {}) {
@@ -135,11 +141,11 @@ export function statusToUi(status, { notifiedAt, expiresAt } = {}) {
   if (normalized === 'PENDING' || normalized === 'REQUESTED') return 'Pending';
 ```
 
-Leave the existing mappings after `PENDING` unchanged.
+Giữ nguyên các ánh xạ hiện có sau `PENDING`.
 
-- [ ] **Step 4: Implement focused reservation view helpers**
+- [ ] **Bước 4: Triển khai công cụ trợ giúp chế độ xem đặt chỗ tập trung**
 
-Create `frontend/src/utils/reservationViewState.js`:
+Tạo `frontend/src/utils/reservationViewState.js`:
 
 ```js
 const ACTIVE_QUEUE_STATUSES = new Set(['Waiting']);
@@ -162,17 +168,17 @@ export async function runHoldExpirationWorkflow({ expireHolds, reloadReservation
 }
 ```
 
-- [ ] **Step 5: Run only the pure helper tests**
+- [ ] **Bước 5: Chỉ chạy các kiểm thử trợ giúp thuần túy**
 
-Run:
+Chạy:
 
 ```powershell
 node --test frontend/test/reservationFrontend.test.js
 ```
 
-Expected: all 3 tests PASS.
+Dự kiến: cả 3 bài thi ĐẠT.
 
-- [ ] **Step 6: Commit the state boundary**
+- [ ] **Bước 6: Cam kết ranh giới bang**
 
 ```powershell
 git add -- frontend/src/utils/libraryFeatureViewModels.js frontend/src/utils/reservationViewState.js frontend/test/reservationFrontend.test.js
@@ -181,20 +187,20 @@ git commit -m "fix: align FE08 reservation view states"
 
 ---
 
-### Task 2: Reservation-Specific Errors And API Contract
+### Nhiệm vụ 2: Lỗi cụ thể dành riêng và hợp đồng API
 
-**Files:**
-- Modify: `frontend/test/apiErrorMessages.test.js`
-- Modify: `frontend/src/api/apiErrorMessages.js`
-- Modify: `frontend/src/api/libraryFeatureApi.js:82,113`
+**Tệp:**
+- Sửa đổi: `frontend/test/apiErrorMessages.test.js`
+- Sửa đổi: `frontend/src/api/apiErrorMessages.js`
+- Sửa đổi: `frontend/src/api/libraryFeatureApi.js:82,113`
 
-**Interfaces:**
-- Consumes: backend error shape `{ error: { code, message, details } }` and existing `authorizedRequest(config, fallbackMessage, resolver)`.
-- Produces: `getReservationErrorMessage(error, fallback)`, `authorizedReservationRequest(config, fallbackMessage)`, and `reservationApi.expireHolds()` returning `{ expiredCount, expired, promoted }`.
+**Giao diện:**
+- Tiêu thụ: hình dạng lỗi máy chủ `{ error: { code, message, details } }` và `authorizedRequest(config, fallbackMessage, resolver)` hiện có.
+- Sản xuất: `getReservationErrorMessage(error, fallback)`, `authorizedReservationRequest(config, fallbackMessage)` và `reservationApi.expireHolds()` trả về `{ expiredCount, expired, promoted }`.
 
-- [ ] **Step 1: Add failing FE08 error-mapping and API contract tests**
+- [ ] **Bước 1: Thêm bản đồ lỗi FE08 không thành công và kiểm tra hợp đồng API**
 
-Append to `frontend/test/apiErrorMessages.test.js`:
+Nối vào `frontend/test/apiErrorMessages.test.js`:
 
 ```js
 const expectedReservationMessages = {
@@ -244,13 +250,13 @@ test('keeps FE08 messages isolated from borrowing and generic feature APIs', asy
 });
 ```
 
-Add this import beside the existing imports in `frontend/test/reservationFrontend.test.js`:
+Thêm mục nhập này bên cạnh các mục nhập hiện có trong `frontend/test/reservationFrontend.test.js`:
 
 ```js
 import { readFile } from 'node:fs/promises';
 ```
 
-Append this API contract test:
+Nối thêm kiểm thử hợp đồng API này:
 
 ```js
 test('reservation API exposes the existing hold-expiration endpoint', async () => {
@@ -266,19 +272,20 @@ test('reservation API exposes the existing hold-expiration endpoint', async () =
 });
 ```
 
-- [ ] **Step 2: Run the error tests and verify the new test fails**
+- [ ] **Bước 2: Chạy kiểm tra lỗi và xác minh kiểm tra mới không thành công**
 
-Run:
+Chạy:
 
 ```powershell
 node --test frontend/test/apiErrorMessages.test.js frontend/test/reservationFrontend.test.js
 ```
 
-Expected: FAIL because `getReservationErrorMessage` is not exported and `reservationApi.expireHolds()` does not exist.
+Dự kiến: THẤT BẠI vì `getReservationErrorMessage` không được xuất và `reservationApi.expireHolds()`
+không tồn tại.
 
-- [ ] **Step 3: Implement the FE08 resolver**
+- [ ] **Bước 3: Triển khai trình phân giải FE08**
 
-In `frontend/src/api/apiErrorMessages.js`, add:
+Trong `frontend/src/api/apiErrorMessages.js`, thêm:
 
 ```js
 const RESERVATION_ERROR_MESSAGES = {
@@ -313,11 +320,11 @@ export function getReservationErrorMessage(error, fallback) {
 }
 ```
 
-Keep `BORROWING_ERROR_MESSAGES`, `getBorrowingErrorMessage()`, and the generic resolver behavior unchanged.
+Giữ nguyên `BORROWING_ERROR_MESSAGES`, `getBorrowingErrorMessage()` và hành vi của trình phân giải chung.
 
-- [ ] **Step 4: Route only reservation requests through the FE08 resolver**
+- [ ] **Bước 4: Chỉ định tuyến các yêu cầu đặt chỗ thông qua trình phân giải FE08**
 
-Update the import and add a wrapper in `frontend/src/api/libraryFeatureApi.js`:
+Cập nhật quá trình nhập và thêm trình bao bọc trong `frontend/src/api/libraryFeatureApi.js`:
 
 ```js
 import {
@@ -331,7 +338,7 @@ function authorizedReservationRequest(config, fallbackMessage) {
 }
 ```
 
-Replace the existing `reservationApi` object with:
+Thay thế đối tượng `reservationApi` hiện có bằng:
 
 ```js
 export const reservationApi = {
@@ -362,19 +369,19 @@ export const reservationApi = {
 };
 ```
 
-- [ ] **Step 5: Run FE07 and FE08 error tests together**
+- [ ] **Bước 5: Chạy kiểm tra lỗi FE07 và FE08 cùng nhau**
 
-Run:
+Chạy:
 
 ```powershell
 node --test frontend/test/apiErrorMessages.test.js frontend/test/reservationFrontend.test.js
 ```
 
-Expected: all matching FE07, FE08, fallback, and isolation tests PASS.
+Dự kiến: tất cả các kiểm thử FE07, FE08, dự phòng và cách ly phù hợp ĐẠT.
 
-- [ ] **Step 6: Run lint on the changed API files**
+- [ ] **Bước 6: Chạy kiểm tra mã trên các tệp API đã thay đổi**
 
-Run:
+Chạy:
 
 ```powershell
 Push-Location frontend
@@ -382,9 +389,9 @@ npm.cmd exec -- eslint src/api/apiErrorMessages.js src/api/libraryFeatureApi.js 
 Pop-Location
 ```
 
-Expected: exit code 0 with no ESLint errors.
+Dự kiến: mã thoát 0 không có lỗi ESLint.
 
-- [ ] **Step 7: Commit the FE08 API boundary**
+- [ ] **Bước 7: Cam kết ranh giới FE08 API**
 
 ```powershell
 git add -- frontend/src/api/apiErrorMessages.js frontend/src/api/libraryFeatureApi.js frontend/test/apiErrorMessages.test.js frontend/test/reservationFrontend.test.js
@@ -393,19 +400,19 @@ git commit -m "fix: localize FE08 reservation API errors"
 
 ---
 
-### Task 3: Librarian Hold-Expiration Workflow
+### Nhiệm vụ 3: Quy trình làm việc Giữ-Hết hạn của Thủ thư
 
-**Files:**
-- Modify: `frontend/src/page/reservation/ReservationsLibrarianPage.jsx:7-143`
-- Test: `frontend/test/reservationFrontend.test.js`
+**Tệp:**
+- Sửa đổi: `frontend/src/page/reservation/ReservationsLibrarianPage.jsx:7-143`
+- Kiểm tra: `frontend/test/reservationFrontend.test.js`
 
-**Interfaces:**
-- Consumes: `reservationApi.expireHolds()`, `isActiveReservationQueueStatus(status)`, `getExpireHoldsSuccessMessage(result)`, and `runHoldExpirationWorkflow(dependencies)` from Tasks 1-2.
-- Produces: a staff action that restores canonical server state and reports expired/promoted counts only after reload succeeds.
+**Giao diện:**
+- Tiêu thụ: `reservationApi.expireHolds()`, `isActiveReservationQueueStatus(status)`, `getExpireHoldsSuccessMessage(result)` và `runHoldExpirationWorkflow(dependencies)` từ Nhiệm vụ 1-2.
+- Tạo ra: một hành động của nhân viên nhằm khôi phục trạng thái máy chủ chuẩn và chỉ báo cáo số lượng đã hết hạn/được thăng cấp sau khi tải lại thành công.
 
-- [ ] **Step 1: Add and run the failing page contract test**
+- [ ] **Bước 1: Thêm và chạy kiểm thử hợp đồng trang bị lỗi**
 
-Append this test to `frontend/test/reservationFrontend.test.js`:
+Nối kiểm thử này vào `frontend/test/reservationFrontend.test.js`:
 
 ```js
 test('librarian page wires the hold expiration workflow and omits local-only actions', async () => {
@@ -426,17 +433,20 @@ test('librarian page wires the hold expiration workflow and omits local-only act
 });
 ```
 
-Run:
+Chạy:
 
 ```powershell
 node --test --test-name-pattern="librarian page" frontend/test/reservationFrontend.test.js
 ```
 
-Expected: FAIL because the page does not wire `runHoldExpirationWorkflow()`, still defines `fulfill()`/`remove()`, and still renders `Đã giao`/`Xóa` controls. The pure helper tests separately verify expiration -> canonical reload -> success ordering and ensure reload failures do not report success.
+Dự kiến: THẤT BẠI vì trang không kết nối `runHoldExpirationWorkflow()`, vẫn xác định
+`fulfill()`/`remove()` và vẫn hiển thị các điều khiển `Đã giao`/`Xóa`. Các kiểm thử trợ giúp thuần
+túy xác minh riêng biệt hết hạn -> tải lại chuẩn -> đặt hàng thành công và đảm bảo các lỗi tải lại
+không báo cáo thành công.
 
-- [ ] **Step 2: Replace imports and add expiration state**
+- [ ] **Bước 2: Thay thế hàng nhập và thêm trạng thái hết hạn**
 
-In `ReservationsLibrarianPage.jsx`:
+Trong `ReservationsLibrarianPage.jsx`:
 
 ```js
 import { Search, CalendarClock, Bell, PackageCheck, ChevronLeft, ChevronRight, Send, RefreshCw } from 'lucide-react';
@@ -447,15 +457,15 @@ import {
 } from '../../utils/reservationViewState';
 ```
 
-Add beside the existing loading state:
+Thêm bên cạnh trạng thái tải hiện có:
 
 ```js
 const [expiringHolds, setExpiringHolds] = useState(false);
 ```
 
-- [ ] **Step 3: Restrict the active queue to the active FE08 state**
+- [ ] **Bước 3: Hạn chế hàng đợi hoạt động ở trạng thái FE08 đang hoạt động**
 
-Replace the queue calculation with:
+Thay thế phép tính hàng đợi bằng:
 
 ```js
 const queue = useMemo(
@@ -466,9 +476,9 @@ const queue = useMemo(
 );
 ```
 
-- [ ] **Step 4: Add the server-backed expiration handler**
+- [ ] **Bước 4: Thêm trình xử lý hết hạn do máy chủ hỗ trợ**
 
-Add after `confirmNotify()` and remove the existing `fulfill()` and `remove()` functions:
+Thêm sau `confirmNotify()` và xóa các chức năng `fulfill()` và `remove()` hiện có:
 
 ```js
 async function expireHolds() {
@@ -487,9 +497,9 @@ async function expireHolds() {
 }
 ```
 
-- [ ] **Step 5: Expose the command and remove unsupported controls**
+- [ ] **Bước 5: Hiển thị lệnh và xóa các điều khiển không được hỗ trợ**
 
-Replace the `AppLayout` actions prop with:
+Thay thế giá trị hành động `AppLayout` bằng:
 
 ```jsx
 actions={(
@@ -509,7 +519,7 @@ actions={(
 )}
 ```
 
-In each queue row, keep only the supported notify action:
+Trong mỗi hàng hàng đợi, chỉ giữ lại hành động thông báo được hỗ trợ:
 
 ```jsx
 <div className="queue-actions">
@@ -521,19 +531,19 @@ In each queue row, keep only the supported notify action:
 </div>
 ```
 
-- [ ] **Step 6: Run the page contract and helper tests**
+- [ ] **Bước 6: Chạy kiểm thử hợp đồng trang và trợ giúp**
 
-Run:
+Chạy:
 
 ```powershell
 node --test frontend/test/reservationFrontend.test.js
 ```
 
-Expected: all 4 matching tests PASS.
+Dự kiến: cả 4 bài thi phù hợp đều ĐẠT.
 
-- [ ] **Step 7: Run focused lint and production build**
+- [ ] **Bước 7: Chạy bản dựng sản xuất và tìm lỗi mã nguồn tập trung**
 
-Run:
+Chạy:
 
 ```powershell
 Push-Location frontend
@@ -542,9 +552,9 @@ Pop-Location
 npm.cmd --prefix frontend run build
 ```
 
-Expected: ESLint exits 0 and Vite production build completes successfully.
+Dự kiến: ESLint thoát 0 và quá trình sản xuất Vite hoàn tất thành công.
 
-- [ ] **Step 8: Commit the librarian workflow**
+- [ ] **Bước 8: Cam kết quy trình làm việc của thủ thư**
 
 ```powershell
 git add -- frontend/src/page/reservation/ReservationsLibrarianPage.jsx frontend/test/reservationFrontend.test.js
@@ -553,72 +563,72 @@ git commit -m "fix: connect FE08 hold expiration workflow"
 
 ---
 
-### Task 4: FE08 Planning And Traceability Documents
+### Nhiệm vụ 4: Tài liệu lập kế hoạch và truy vết FE08
 
-**Files:**
-- Modify: `.sdd/specs/feat-reservation-management/PLAN.md`
-- Modify: `.sdd/specs/feat-reservation-management/TASKS.md`
-- Modify: `.sdd/specs/feat-reservation-management/CHANGELOG.md`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-reservation-management/PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-reservation-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-reservation-management/CHANGELOG.md`
 
-**Interfaces:**
-- Consumes: approved design and verification evidence from Tasks 1-3.
-- Produces: current FE08 scope, task-to-requirement mapping, and a dated change record.
+**Giao diện:**
+- Tiêu thụ: bằng chứng xác minh và thiết kế đã được phê duyệt từ Nhiệm vụ 1-3.
+- Tạo ra: phạm vi FE08 hiện tại, ánh xạ nhiệm vụ theo yêu cầu và bản ghi thay đổi theo ngày.
 
-- [ ] **Step 1: Correct the FE08 plan scope**
+- [ ] **Bước 1: Chỉnh sửa phạm vi gói FE08**
 
-Update `PLAN.md` metadata to `Updated: 2026-07-13`. Replace the backend-only framing with:
-
-```markdown
-## 1. Scope
-
-Maintain the approved Phase 1 FE08 backend and frontend reservation slice from `SPEC.md`.
-
-Included:
-
-- Existing member and staff reservation APIs and frontend screens.
-- Canonical rendering of the approved FE08 reservation lifecycle.
-- Reservation-specific Vietnamese API errors.
-- Manual staff queue processing and manual hold-expiration processing.
-- Server-backed refresh after hold expiration.
-
-Not included:
-
-- FE07 borrow/return or fulfillment implementation.
-- FE10 email delivery worker changes.
-- Server-side reservation pagination.
-- Automatic queue processing or hold-expiration jobs.
-```
-
-Add a `3.6 Frontend Correctness` subsection:
+Cập nhật siêu dữ liệu `PLAN.md` lên `Updated: 2026-07-13`. Thay thế khung chỉ máy chủ bằng:
 
 ```markdown
-### 3.6 Frontend Correctness
+## 1. Phạm vi
 
-- Map `NOTIFIED` to ready for pickup and `FULFILLED` to completed.
-- Keep only `Waiting` (`ACTIVE`) reservations in the librarian queue; show `Ready to pick up` (`NOTIFIED`) in the all-reservations list only.
-- Use a reservation-only Vietnamese error resolver.
-- Expose the existing hold-expiration endpoint to staff and reload server state after success.
-- Do not expose local-only fulfillment or deletion controls.
+Duy trì phần đặt chỗ giao diện người dùng và máy chủ FE08 Giai đoạn 1 đã được phê duyệt từ `SPEC.md`.
+
+Bao gồm:
+
+- API đặt chỗ của thành viên và nhân viên hiện tại và màn hình giao diện người dùng.
+- Kết xuất chuẩn của vòng đời đặt chỗ FE08 đã được phê duyệt.
+- đặt chỗ lỗi API tiếng Việt cụ thể.
+- Xử lý hàng đợi nhân viên thủ công và xử lý giữ hết hạn thủ công.
+- Làm mới được máy chủ hỗ trợ sau khi hết hạn lưu giữ.
+
+Không bao gồm:
+
+- Triển khai mượn/trả hoặc hoàn tất FE07.
+- Thay đổi tiến trình gửi email FE10.
+- Phân trang đặt chỗ phía máy chủ.
+- Tự động xử lý hàng đợi hoặc tác vụ hết hạn giữ sách.
 ```
 
-Update Review Notes so they no longer claim frontend screens are excluded.
-
-- [ ] **Step 2: Add correctness tasks and traceability**
-
-In `TASKS.md`, update `Updated: 2026-07-13` and add:
+Thêm tiểu mục `3.6 Tính đúng đắn của giao diện`:
 
 ```markdown
-## 4. Frontend Correctness Tasks
+### 3.6 Tính đúng đắn của giao diện
 
-- [x] FE08-T22 Map `NOTIFIED` and `FULFILLED` to canonical UI states.
-- [x] FE08-T23 Keep only `Waiting` (`ACTIVE`) reservations in the librarian queue and exclude `NOTIFIED` plus terminal states from queue actions.
-- [x] FE08-T24 Add reservation-specific Vietnamese API errors without affecting other APIs.
-- [x] FE08-T25 Connect staff hold-expiration processing to `POST /api/reservations/expire-holds`.
-- [x] FE08-T26 Remove local-only fulfillment and deletion controls.
-- [x] FE08-T27 Add focused frontend regression tests for lifecycle, error isolation, and page contract.
+- Ánh xạ `NOTIFIED` thành sẵn sàng nhận sách và `FULFILLED` thành đã hoàn tất.
+- Chỉ giữ đặt chỗ `Đang chờ` (`ACTIVE`) trong hàng đợi của Thủ thư; chỉ hiển thị `Sẵn sàng nhận sách` (`NOTIFIED`) trong danh sách tất cả đặt chỗ.
+- Sử dụng bộ phân giải lỗi tiếng Việt riêng cho đặt chỗ.
+- Cho nhân viên sử dụng điểm cuối xử lý lượt giữ hết hạn hiện có và tải lại trạng thái máy chủ sau khi thành công.
+- Không hiển thị điều khiển hoàn tất hoặc xóa chỉ tồn tại cục bộ.
 ```
 
-Renumber the following sections, and add these traceability rows:
+Cập nhật Ghi chú đánh giá để họ không còn yêu cầu loại trừ màn hình giao diện người dùng nữa.
+
+- [ ] **Bước 2: Thêm nhiệm vụ chính xác và truy vết**
+
+Trong `TASKS.md`, cập nhật `Updated: 2026-07-13` và thêm:
+
+```markdown
+## 4. Nhiệm vụ bảo đảm tính đúng đắn của giao diện
+
+- [x] FE08-T22 Ánh xạ `NOTIFIED` và `FULFILLED` thành trạng thái giao diện chuẩn.
+- [x] FE08-T23 Chỉ giữ đặt chỗ `Đang chờ` (`ACTIVE`) trong hàng đợi của Thủ thư; loại `NOTIFIED` và trạng thái kết thúc khỏi thao tác hàng đợi.
+- [x] FE08-T24 Bổ sung lỗi API tiếng Việt riêng cho đặt chỗ mà không ảnh hưởng API khác.
+- [x] FE08-T25 Kết nối xử lý lượt giữ hết hạn của nhân viên với `POST /api/reservations/expire-holds`.
+- [x] FE08-T26 Loại bỏ điều khiển hoàn tất và xóa chỉ tồn tại cục bộ.
+- [x] FE08-T27 Bổ sung kiểm thử hồi quy giao diện tập trung vào vòng đời, cô lập lỗi và hợp đồng trang.
+```
+
+Đánh số lại các phần sau và thêm các hàng truy vết này:
 
 ```markdown
 | FR-FE08-005 | FE08-T17, FE08-T19, FE08-T23 |
@@ -629,34 +639,36 @@ Renumber the following sections, and add these traceability rows:
 | NFR-FE08-UX-001 | FE08-T21, FE08-T24, FE08-T27 |
 ```
 
-Replace the validation checklist with the exact commands actually run during Task 5 and mark only passing commands as complete.
+Thay thế danh sách kiểm tra xác thực bằng các lệnh chính xác thực sự chạy trong Nhiệm vụ 5 và chỉ
+đánh dấu các lệnh chuyển là hoàn thành.
 
-- [ ] **Step 3: Add the changelog entry**
+- [ ] **Bước 3: Thêm mục nhật ký thay đổi**
 
-Add at the top of `CHANGELOG.md` after the title:
+Thêm vào đầu `CHANGELOG.md` sau tiêu đề:
 
 ```markdown
-## 2026-07-13 - Frontend Correctness Aligned With Approved Lifecycle
+## 2026-07-13 - Tính đúng đắn của giao diện được căn chỉnh theo vòng đời đã duyệt
 
-- Mapped `NOTIFIED` to ready for pickup and `FULFILLED` to completed in the shared frontend view model.
-- Added reservation-specific Vietnamese API errors without changing FE07 or generic API behavior.
-- Connected the librarian UI to the existing `POST /api/reservations/expire-holds` endpoint and reloads canonical server state after success.
-- Removed local-only fulfillment and deletion controls that did not persist backend state.
-- Added focused frontend tests and refreshed FE08 plan/task traceability.
-- No backend contract, database schema, FE07 fulfillment, FE10 delivery, or pagination changes.
+- Đã ánh xạ `NOTIFIED` thành sẵn sàng nhận sách và `FULFILLED` thành đã hoàn tất trong mô hình giao diện dùng chung.
+- Đã bổ sung lỗi API tiếng Việt riêng cho đặt chỗ mà không đổi FE07 hoặc hành vi API chung.
+- Đã kết nối giao diện Thủ thư với điểm cuối `POST /api/reservations/expire-holds` và tải lại trạng thái chuẩn của máy chủ sau khi thành công.
+- Đã loại bỏ điều khiển hoàn tất và xóa chỉ tồn tại cục bộ, vốn không lưu trạng thái máy chủ.
+- Đã bổ sung kiểm thử giao diện tập trung và làm mới khả năng truy vết kế hoạch/nhiệm vụ FE08.
+- Không thay đổi hợp đồng máy chủ, lược đồ cơ sở dữ liệu, hoàn tất FE07, gửi FE10 hoặc phân trang.
 ```
 
-- [ ] **Step 4: Validate documentation consistency**
+- [ ] **Bước 4: Xác thực tính nhất quán của tài liệu**
 
-Run:
+Chạy:
 
 ```powershell
 rg -n "backend-only|Frontend reservation screens|FE08-T2[2-7]|FR-FE08-019|Frontend Correctness Aligned" .sdd/specs/feat-reservation-management/PLAN.md .sdd/specs/feat-reservation-management/TASKS.md .sdd/specs/feat-reservation-management/CHANGELOG.md
 ```
 
-Expected: no stale backend-only/excluded-frontend statement; task IDs `FE08-T22` through `FE08-T27`, `FR-FE08-019`, and the dated changelog heading are present.
+Dự kiến: không có câu lệnh chỉ dành cho phần máy chủ/loại trừ phần giao diện người dùng cũ; ID nhiệm
+vụ `FE08-T22` đến `FE08-T27`, `FR-FE08-019` và tiêu đề nhật ký thay đổi ngày đều có mặt.
 
-- [ ] **Step 5: Commit FE08 documentation**
+- [ ] **Bước 5: Cam kết tài liệu FE08**
 
 ```powershell
 git add -- .sdd/specs/feat-reservation-management/PLAN.md .sdd/specs/feat-reservation-management/TASKS.md .sdd/specs/feat-reservation-management/CHANGELOG.md
@@ -665,48 +677,48 @@ git commit -m "docs: refresh FE08 frontend traceability"
 
 ---
 
-### Task 5: Full Verification And Review
+### Nhiệm vụ 5: Xác minh và đánh giá đầy đủ
 
-**Files:**
-- Verify only; modify files only if a discovered defect is directly within the approved FE08 scope.
+**Tệp:**
+- Chỉ xác minh; chỉ sửa đổi tệp nếu lỗi được phát hiện trực tiếp nằm trong phạm vi FE08 đã được phê duyệt.
 
-**Interfaces:**
-- Consumes: all changes from Tasks 1-4.
-- Produces: test, lint, build, backend regression, scope, and review evidence suitable for a pull request.
+**Giao diện:**
+- Tiêu thụ: tất cả các thay đổi từ Nhiệm vụ 1-4.
+- Tạo ra: kiểm tra, tìm lỗi mã nguồn, xây dựng, hồi quy máy chủ, phạm vi và xem xét bằng chứng phù hợp cho yêu cầu hợp nhất.
 
-- [ ] **Step 1: Run the complete frontend test suite**
+- [ ] **Bước 1: Chạy bộ kiểm thử giao diện người dùng hoàn chỉnh**
 
 ```powershell
 npm.cmd --prefix frontend test
 ```
 
-Expected: all frontend Node tests PASS.
+Dự kiến: tất cả các kiểm thử Nút giao diện người dùng ĐẠT.
 
-- [ ] **Step 2: Run the complete frontend lint suite**
+- [ ] **Bước 2: Chạy bộ tìm lỗi mã nguồn giao diện người dùng hoàn chỉnh**
 
 ```powershell
 npm.cmd --prefix frontend run lint
 ```
 
-Expected: exit code 0 with no ESLint errors.
+Dự kiến: mã thoát 0 không có lỗi ESLint.
 
-- [ ] **Step 3: Run the frontend production build**
+- [ ] **Bước 3: Chạy bản dựng sản xuất giao diện người dùng**
 
 ```powershell
 npm.cmd --prefix frontend run build
 ```
 
-Expected: Vite completes successfully and writes `frontend/dist/`.
+Dự kiến: Vite hoàn thành thành công và ghi `frontend/dist/`.
 
-- [ ] **Step 4: Run backend regression tests**
+- [ ] **Bước 4: Chạy kiểm thử hồi quy máy chủ**
 
 ```powershell
 npm.cmd --prefix backend test
 ```
 
-Expected: all Jest suites PASS, including reservation expiration and promotion tests.
+Dự kiến: tất cả các bộ Jest ĐẠT, bao gồm cả các kiểm thử hết hạn đặt chỗ và khuyến mãi.
 
-- [ ] **Step 5: Inspect scope and whitespace**
+- [ ] **Bước 5: Kiểm tra phạm vi và khoảng trắng**
 
 ```powershell
 git diff main...HEAD --check
@@ -714,39 +726,45 @@ git diff main...HEAD --stat
 git status --short
 ```
 
-Expected: only FE08 frontend, tests, approved design/plan docs, and FE08 spec docs are tracked changes; `backend/coverage/` and `docs/briefing-thuyet-trinh-du-an-vi.docx` remain untracked and untouched.
+Dự kiến: chỉ giao diện người dùng FE08, các kiểm thử, tài liệu kế hoạch/thiết kế đã được phê duyệt
+và tài liệu đặc tả FE08 mới được theo dõi các thay đổi; `backend/coverage/` và
+`docs/briefing-thuyet-trinh-du-an-vi.docx` vẫn không bị theo dõi và không bị ảnh hưởng.
 
-- [ ] **Step 6: Review against the approved design**
+- [ ] **Bước 6: Xem xét thiết kế đã được phê duyệt**
 
-Invoke `superpowers:requesting-code-review`. Review specifically for:
+Gọi `superpowers:requesting-code-review`. Đánh giá cụ thể cho:
 
 ```text
-- NOTIFIED and FULFILLED lifecycle correctness
-- reservation error isolation
+- tính đúng đắn của vòng đời NOTIFIED và FULFILLED
+- cô lập lỗi đặt chỗ
 - POST /api/reservations/expire-holds request shape
 - reload-after-success behavior
-- absence of local-only fulfill/delete actions
-- no FE07, pagination, schema, or backend contract expansion
+- không có hành động hoàn tất/xóa chỉ tồn tại cục bộ
+- không mở rộng FE07, phân trang, lược đồ hoặc hợp đồng máy chủ
 ```
 
-Expected: no unresolved high- or medium-severity findings. Fix any in-scope finding with a focused test and commit before continuing.
+Dự kiến: không có phát hiện nào ở mức độ nghiêm trọng cao hoặc trung bình chưa được giải quyết. Khắc
+phục mọi phát hiện trong phạm vi bằng kiểm thử tập trung và cam kết trước khi tiếp tục.
 
-- [ ] **Step 7: Record final verification evidence in TASKS.md if counts changed**
+- [ ] **Bước 7: Ghi lại bằng chứng xác minh cuối cùng trong TASKS.md nếu số lượng thay đổi**
 
-Update only the validation lines in `.sdd/specs/feat-reservation-management/TASKS.md` with the actual passing frontend/backend test counts, then run:
+Chỉ cập nhật các dòng xác thực trong `.sdd/specs/feat-reservation-management/TASKS.md` với số lần
+kiểm tra giao diện/máy chủ thực tế đạt, sau đó chạy:
 
 ```powershell
 git add -- .sdd/specs/feat-reservation-management/TASKS.md
 git commit -m "docs: record FE08 verification evidence"
 ```
 
-Expected: either one verification-evidence commit is created, or no commit is needed because Task 4 already recorded the final exact counts.
+Dự kiến: một cam kết bằng chứng xác minh được tạo hoặc không cần cam kết nào vì Nhiệm vụ 4 đã ghi
+lại số lượng chính xác cuối cùng.
 
-- [ ] **Step 8: Prepare the branch for user review**
+- [ ] **Bước 8: Chuẩn bị nhánh để người dùng xem xét**
 
 ```powershell
 git status --short --branch
 git log --oneline main..HEAD
 ```
 
-Expected: branch is `fix/fe08-frontend-correctness`, tracked worktree is clean, unrelated untracked files remain, and the commit list contains small FE08-only commits.
+Dự kiến: nhánh là `fix/fe08-frontend-correctness`, cây làm việc được theo dõi sạch sẽ, các tệp không
+bị theo dõi không liên quan vẫn còn và danh sách cam kết chứa các cam kết nhỏ chỉ dành cho FE08.

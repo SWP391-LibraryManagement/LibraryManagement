@@ -1,229 +1,229 @@
-# Staging Email Delivery Remediation Implementation Plan
+# Kế hoạch thực hiện khắc phục gửi email theo giai đoạn
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Đối với nhân viên đại lý:** SUB-SKILL BẮT BUỘC: Sử dụng siêu năng lực:phát triển theo định hướng phụ (được khuyến nghị) hoặc siêu năng lực:thực hiện các kế hoạch để triển khai kế hoạch này theo từng nhiệm vụ. Các bước sử dụng cú pháp hộp kiểm (`- [ ]`) để theo dõi.
 
-**Goal:** Restore FE11 account-setup email delivery, persist safe SMTP message
-IDs for sensitive sends, and drain non-sensitive pending notifications through
-an opt-in in-process worker on Azure staging.
+**Mục tiêu:** Khôi phục việc gửi email thiết lập tài khoản FE11, duy trì ID tin nhắn SMTP an toàn
+cho các lần gửi nhạy cảm và loại bỏ các thông báo không nhạy cảm đang chờ xử lý thông qua nhân viên
+chọn tham gia trong quá trình xử lý trên môi trường tiền sản xuất Azure.
 
-**Architecture:** Keep FE10 as the single delivery owner. Add one idempotent
-data migration, preserve the existing provider result in the sensitive terminal
-transition, split the queued-delivery loop behind human and system wrappers,
-then run it through a small lifecycle-managed worker. The existing protected
-manual endpoint and all public DTOs remain unchanged.
+**Kiến trúc:** Giữ FE10 làm chủ sở hữu phân phối duy nhất. Thêm một lần di chuyển dữ liệu tạm thời,
+bảo toàn kết quả của nhà cung cấp hiện tại trong quá trình chuyển đổi thiết bị đầu cuối nhạy cảm,
+tách vòng phân phối được xếp hàng đợi phía sau trình bao bọc con người và hệ thống, sau đó chạy nó
+thông qua một nhân viên được quản lý vòng đời nhỏ. Điểm cuối thủ công được bảo vệ hiện tại và tất cả
+các DTO công khai vẫn không thay đổi.
 
-**Tech Stack:** Node.js 22, CommonJS, Express 5, Jest 30, SQL Server T-SQL,
-Azure App Service F1, Nodemailer SMTP.
+**bộ công nghệ công nghệ:** Node.js 22, CommonJS, Express 5, Jest 30, SQL Server T-SQL, Azure App
+Dịch vụ F1, Nodemailer SMTP.
 
-## Global Constraints
+## Ràng buộc toàn cầu
 
-- Implementation baseline is `origin/main` at
+- mốc cơ sở triển khai là `origin/main` tại
   `ca69dc87badf4d1056c0a63d97e5e411fb4cbd68`.
-- Work only in
-  `D:\SWP391\library-management-system\.worktrees\fix-staging-email-delivery`
-  on branch `codex/fix-staging-email-delivery`.
-- Follow RED -> GREEN -> REFACTOR for every production change.
-- Keep AI-generated implementation changes uncommitted until the complete local
-  diff and L1-L4 evidence receive H2 human approval.
-- Do not push, publish a PR, merge, or change the Azure plan without the
-  corresponding project gate.
-- `ACCOUNT_SETUP` remains synchronous, FE11-owned, and provider-memory-only.
-- `FAILED` notifications remain manual-retry only.
-- The worker may claim only non-sensitive `PENDING` rows.
-- SYSTEM is an internal actor, never a fabricated login role.
-- Worker defaults are disabled, 60,000 ms, and batch size 20.
-- The F1 worker is best-effort while the backend is awake; do not claim
-  guaranteed scheduling.
-- Persist only `providerMessageId`, never a full provider response.
-- Never print or commit SMTP credentials, connection strings, recipient PII,
-  OTPs, tokens, setup links, or rendered sensitive content.
-- Preserve the direct Express app export from `backend/src/index.js`.
-- Do not add dependencies, routes, public response fields, notification types,
-  or database schema objects.
+- Chỉ làm việc ở
+`D:\SWP391\library-management-system\.worktrees\fix-staging-email-delivery` trên nhánh
+`codex/fix-staging-email-delivery`.
+- Theo dõi RED -> GREEN -> REFACTOR để biết mọi thay đổi về sản xuất.
+- Giữ nguyên các thay đổi triển khai do AI tạo cho đến khi hoàn tất các thay đổi cục bộ
+  Bằng chứng khác biệt và L1-L4 nhận được sự chấp thuận của con người H2.
+- Không đẩy, xuất bản PR, hợp nhất hoặc thay đổi gói Azure mà không có
+  cổng dự án tương ứng.
+- `ACCOUNT_SETUP` vẫn đồng bộ, thuộc sở hữu của FE11 và chỉ dành cho bộ nhớ của nhà cung cấp.
+- Thông báo `FAILED` vẫn chỉ được thử lại theo cách thủ công.
+- Nhân viên chỉ có thể yêu cầu các hàng `PENDING` không nhạy cảm.
+- SYSTEM là tác nhân nội bộ, không bao giờ là vai trò đăng nhập giả tạo.
+- Giá trị mặc định của nhân viên bị vô hiệu hóa, 60.000 ms và kích thước lô 20.
+- Nhân viên F1 nỗ lực hết sức trong khi phần máy chủ còn hoạt động; không yêu cầu
+  lịch trình được đảm bảo.
+- Chỉ duy trì `providerMessageId`, không bao giờ có phản hồi đầy đủ của nhà cung cấp.
+- Không bao giờ in hoặc cam kết thông tin xác thực SMTP, chuỗi kết nối, người nhận PII,
+  OTP, mã thông báo, liên kết thiết lập hoặc nội dung nhạy cảm được hiển thị.
+- Giữ nguyên việc xuất ứng dụng Express trực tiếp từ `backend/src/index.js`.
+- Không thêm phần phụ thuộc, tuyến đường, trường phản hồi công khai, loại thông báo,
+  hoặc các đối tượng lược đồ cơ sở dữ liệu.
 
 ---
 
-## File Structure
+## Cấu trúc tệp
 
-| File | Responsibility |
+| Tập tin | Trách nhiệm |
 | --- | --- |
-| `.sdd/specs/feat-notification-management/SPEC.md` | Record the approved v0.4.5 worker and delivery-evidence contract. |
-| `.sdd/specs/feat-notification-management/PLAN.md` | Add the ordered remediation plan and gate boundary. |
-| `.sdd/specs/feat-notification-management/TASKS.md` | Activate FE10-S12 through FE10-S16 with test and evidence ownership. |
-| `.sdd/specs/feat-notification-management/CHANGELOG.md` | Record the approved remediation contract without claiming implementation. |
-| `database/migrations/2026-07-27-fe10-account-setup-template.sql` | Idempotently upsert the canonical active `ACCOUNT_SETUP` template. |
-| `backend/src/services/notificationService.js` | Preserve sensitive provider IDs and expose a construction-bound system queue processor. |
-| `backend/src/services/notificationWorker.js` | Own worker enablement, scheduling, overlap protection, safe failure handling, and stop behavior. |
-| `backend/src/serverRuntime.js` | Couple HTTP server start/stop signals to the worker lifecycle without changing the Express export. |
-| `backend/src/config/env.js` | Parse and validate worker settings. |
-| `backend/src/index.js` | Compose the default worker/runtime and retain `module.exports = app`. |
-| `backend/.env.example` | Document non-secret worker defaults. |
-| `backend/tests/notificationRepository.test.js` | Verify migration shape and canonical baseline synchronization. |
-| `backend/tests/notificationRoutes.test.js` | Prove provider ID persistence, system processing, safe audit identity, and unchanged HTTP authorization. |
-| `backend/tests/notificationWorker.test.js` | Prove disabled/enabled, startup, interval, overlap, failure recovery, and stop behavior. |
-| `backend/tests/serverRuntime.test.js` | Prove the worker starts after listen and stops on SIGTERM/SIGINT. |
-| `backend/tests/envConfig.test.js` | Prove worker defaults and positive-integer validation. |
-| `.sdd/reviews/staging-email-delivery-remediation-validation-2026-07-27.md` | Record local RED/GREEN, full-suite, staging migration, deployment, and safe runtime evidence. |
+| `.sdd/specs/feat-notification-management/SPEC.md` | Ghi lại hợp đồng nhân viên v0.4.5 đã được phê duyệt và hợp đồng bằng chứng bàn giao. |
+| `.sdd/specs/feat-notification-management/PLAN.md` | Thêm kế hoạch khắc phục theo yêu cầu và ranh giới cổng. |
+| `.sdd/specs/feat-notification-management/TASKS.md` | Kích hoạt FE10-S12 thông qua FE10-S16 bằng quyền sở hữu bằng chứng và kiểm thử. |
+| `.sdd/specs/feat-notification-management/CHANGELOG.md` | Ghi lại hợp đồng khắc phục đã được phê duyệt mà không yêu cầu thực hiện. |
+| `database/migrations/2026-07-27-fe10-account-setup-template.sql` | Hoàn toàn nâng cấp mẫu `ACCOUNT_SETUP` đang hoạt động chuẩn. |
+| `backend/src/services/notificationService.js` | Bảo toàn các ID nhà cung cấp nhạy cảm và hiển thị bộ xử lý hàng đợi hệ thống có giới hạn xây dựng. |
+| `backend/src/services/notificationWorker.js` | Hỗ trợ nhân viên riêng, lập kế hoạch, bảo vệ chồng chéo, xử lý lỗi an toàn và dừng hành vi. |
+| `backend/src/serverRuntime.js` | Ghép nối tín hiệu khởi động/dừng máy chủ HTTP với vòng đời của nhân viên mà không thay đổi quá trình xuất Express. |
+| `backend/src/config/env.js` | Phân tích cú pháp và xác thực cài đặt của nhân viên. |
+| `backend/src/index.js` | Soạn công việc/thời gian chạy mặc định và giữ lại `module.exports = app`. |
+| `backend/.env.example` | Tài liệu mặc định của nhân viên không bí mật. |
+| `backend/tests/notificationRepository.test.js` | Xác minh hình dạng di chuyển và đồng bộ hóa mốc cơ sở chuẩn. |
+| `backend/tests/notificationRoutes.test.js` | Chứng minh tính bền vững của ID nhà cung cấp, xử lý hệ thống, nhận dạng kiểm tra an toàn và ủy quyền HTTP không thay đổi. |
+| `backend/tests/notificationWorker.test.js` | Chứng minh hành vi bị tắt/bật, khởi động, ngắt quãng, chồng chéo, khôi phục lỗi và dừng. |
+| `backend/tests/serverRuntime.test.js` | Chứng minh nhân viên bắt đầu sau khi nghe và dừng trên SIGTERM/SIGINT. |
+| `backend/tests/envConfig.test.js` | Chứng minh mặc định của nhân viên và xác thực số nguyên dương. |
+| `.sdd/reviews/staging-email-delivery-remediation-validation-2026-07-27.md` | Ghi lại RED/GREEN cục bộ, toàn bộ, di chuyển theo giai đoạn, triển khai và bằng chứng thời gian chạy an toàn. |
 
 ---
 
-### Task 1: Activate The Approved FE10 Remediation Contract
+### Nhiệm vụ 1: Kích hoạt Hợp đồng khắc phục FE10 đã được phê duyệt
 
-**Files:**
+**Tệp:**
 
-- Modify: `.sdd/specs/feat-notification-management/SPEC.md:1-35,70-190,430-475`
-- Modify: `.sdd/specs/feat-notification-management/PLAN.md:1-20,260-end`
-- Modify: `.sdd/specs/feat-notification-management/TASKS.md:1-20,296-end`
-- Modify: `.sdd/specs/feat-notification-management/CHANGELOG.md:1`
+- Sửa đổi: `.sdd/specs/feat-notification-management/SPEC.md:1-35,70-190,430-475`
+- Sửa đổi: `.sdd/specs/feat-notification-management/PLAN.md:1-20,260-end`
+- Sửa đổi: `.sdd/specs/feat-notification-management/TASKS.md:1-20,296-end`
+- Sửa đổi: `.sdd/specs/feat-notification-management/CHANGELOG.md:1`
 
-**Interfaces:**
+**Giao diện:**
 
-- Consumes: approved design
+- Tiêu thụ: thiết kế đã được phê duyệt
   `docs/superpowers/specs/2026-07-27-staging-email-delivery-remediation-design.md`.
-- Produces: SPEC v0.4.5 and task IDs `FE10-S12` through `FE10-S16`.
+- Tạo ra: SPEC v0.4.5 và ID tác vụ `FE10-S12` đến `FE10-S16`.
 
-- [ ] **Step 1: Update the SPEC header and approved decision**
+- [ ] **Bước 1: Cập nhật tiêu đề SPEC và quyết định được phê duyệt**
 
-Set the header to:
+Đặt tiêu đề thành:
 
 ```markdown
-# Version: 0.4.5
+# Phiên bản: 0.4.5
 
-# Status: APPROVED - STAGING EMAIL DELIVERY REMEDIATION 2026-07-27
+# Trạng thái: ĐÃ PHÊ DUYỆT - KHẮC PHỤC GỬI EMAIL TIỀN SẢN XUẤT 2026-07-27
 ```
 
-Append this current-revision note before the first horizontal rule:
+Nối ghi chú sửa đổi hiện tại này trước quy tắc ngang đầu tiên:
 
 ```markdown
-> Revision v0.4.5 restores three previously approved delivery obligations:
-> existing databases receive the canonical `ACCOUNT_SETUP` template through an
-> idempotent migration; successful sensitive sends retain only the provider
-> message ID in attempt history; and an opt-in SYSTEM worker processes queued
-> non-sensitive `PENDING` records while the backend is awake. The protected
-> manual endpoint and manual-only retry policy remain unchanged. On the staging
-> F1 plan this schedule is explicitly best-effort because Always On is disabled.
-> The user approved the design and written contract on 2026-07-27.
+> Bản sửa đổi v0.4.5 khôi phục ba nghĩa vụ bàn giao đã được phê duyệt trước đó:
+> cơ sở dữ liệu hiện có nhận được mẫu `ACCOUNT_SETUP` chuẩn thông qua một
+> di cư bình thường; gửi nhạy cảm thành công chỉ giữ lại nhà cung cấp
+> ID tin nhắn trong lịch sử thử; và một quy trình công nhân SYSTEM chọn tham gia được xếp hàng đợi
+> Bản ghi `PENDING` không nhạy cảm trong khi phần máy chủ vẫn hoạt động. Được bảo vệ
+> điểm cuối thủ công và chính sách thử lại chỉ thủ công vẫn không thay đổi. Trên sân khấu
+> Kế hoạch F1, lịch trình này rõ ràng là nỗ lực tốt nhất vì Luôn bật bị tắt.
+> Người sử dụng đã phê duyệt thiết kế và văn bản hợp đồng vào ngày 27-07-2026.
 ```
 
-Add this approved decision after the existing `Q-FE10-012`:
+Thêm quyết định đã được phê duyệt này sau `Q-FE10-012` hiện có:
 
 ```markdown
-| Q-FE10-013 | Staging uses an opt-in in-process SYSTEM worker with a 60-second default interval and batch size 20. It runs once after startup, prevents overlapping local passes, processes only non-sensitive `PENDING` rows, and stops with the HTTP server. The existing staff endpoint remains protected and `FAILED` retry remains manual. F1 sleep pauses the worker. | User approval and written design 2026-07-27 | APPROVED |
+|Q-FE10-013|Giai đoạn sử dụng một công cụ SYSTEM được chọn tham gia trong quá trình với khoảng thời gian mặc định là 60 giây và kích thước lô 20. Nó chạy một lần sau khi khởi động, ngăn các thẻ cục bộ chồng chéo, chỉ xử lý các hàng `PENDING` không nhạy cảm và dừng với máy chủ HTTP. Điểm cuối của nhân viên hiện tại vẫn được bảo vệ và việc thử lại `FAILED` vẫn được thực hiện thủ công. Giấc ngủ F1 tạm dừng công nhân.|Phê duyệt của người dùng và thiết kế bằng văn bản 2026-07-27|ĐÃ ĐƯỢC PHÊ DUYỆT|
 ```
 
-Extend the relevant delivery/attempt text with:
+Mở rộng văn bản phân phối/cố gắng có liên quan bằng:
 
 ```markdown
-- A successful provider result persists only its normalized
-  `providerMessageId` in `NotificationAttempts`; no full provider response,
-  rendered sensitive content, token, OTP, setup link, or recipient content is
-  copied into audit, logs, HTTP, or notification content.
-- Automatic SYSTEM processing is construction-bound and writes aggregate audit
-  metadata with `UserId = NULL`; it never fabricates an Admin or Librarian.
+- Kết quả của nhà cung cấp thành công chỉ tồn tại ở trạng thái chuẩn hóa
+  `providerMessageId` trong `NotificationAttempts`; không có phản hồi đầy đủ của nhà cung cấp,
+  nội dung nhạy cảm, mã thông báo, OTP, liên kết thiết lập hoặc nội dung người nhận được hiển thị
+  được sao chép vào nội dung kiểm tra, nhật ký, HTTP hoặc nội dung thông báo.
+- Quá trình xử lý SYSTEM tự động được xây dựng và ghi kiểm tra tổng hợp
+  siêu dữ liệu với `UserId = NULL`; nó không bao giờ tạo ra một Quản trị viên hoặc Thủ thư.
 ```
 
-- [ ] **Step 2: Add PLAN section 14**
+- [ ] **Bước 2: Thêm PLAN phần 14**
 
-Append:
+Nối thêm:
 
 ```markdown
-## 14. V0.4.5 Staging Email Delivery Remediation
+## 14. Khắc phục gửi email tiền sản xuất V0.4.5
 
-Approved design:
+Thiết kế được phê duyệt:
 `docs/superpowers/specs/2026-07-27-staging-email-delivery-remediation-design.md`.
 
-1. Add and verify an idempotent migration for the canonical active
-   `ACCOUNT_SETUP` template; do not rebuild or delete the existing database.
-2. Capture the sensitive provider result and persist only
-   `providerMessageId` through the existing guarded `markSent` transaction.
-3. Extract the existing queued-delivery loop behind a common private core.
-   Preserve the staff-authorized wrapper and add a construction-bound SYSTEM
-   wrapper with null-user aggregate audit metadata.
-4. Add an opt-in worker with an immediate startup pass, 60-second default
-   interval, batch size 20, overlap guard, safe error code, and stop behavior.
-5. Wire the worker to the backend HTTP lifecycle without changing the direct
-   Express app export or starting timers on module import.
-6. Keep generated implementation uncommitted until focused/full validation,
-   secret scans, staging-safe checks, and H2 review pass.
+1. Thêm và xác minh quá trình di chuyển bình thường cho hoạt động chính tắc
+   Mẫu `ACCOUNT_SETUP`; không xây dựng lại hoặc xóa cơ sở dữ liệu hiện có.
+2. Ghi lại kết quả của nhà cung cấp nhạy cảm và chỉ tồn tại
+   `providerMessageId` thông qua giao dịch `markSent` được bảo vệ hiện có.
+3. Trích xuất vòng phân phối được xếp hàng đợi hiện có phía sau lõi riêng chung.
+   Bảo quản trình bao bọc được nhân viên ủy quyền và thêm SYSTEM có giới hạn xây dựng
+   trình bao bọc có siêu dữ liệu kiểm tra tổng hợp của người dùng null.
+4. Thêm nhân viên chọn tham gia với thẻ khởi động ngay lập tức, mặc định 60 giây
+   khoảng thời gian, kích thước lô 20, bảo vệ chồng chéo, mã lỗi an toàn và hành vi dừng.
+5. Kết nối nhân viên với vòng đời HTTP máy chủ mà không thay đổi trực tiếp
+   Xuất ứng dụng Express hoặc bắt đầu tính giờ khi nhập mô-đun.
+6. Duy trì việc triển khai đã tạo cho đến khi xác thực tập trung/đầy đủ,
+   quét bí mật, kiểm tra an toàn theo giai đoạn và vượt qua đánh giá H2.
 ```
 
-- [ ] **Step 3: Add TASKS section 14**
+- [ ] **Bước 3: Thêm TASKS phần 14**
 
-Append:
+Nối thêm:
 
 ```markdown
-## 14. Staging Email Delivery Remediation
+## 14. Khắc phục gửi email tiền sản xuất
 
-### FE10-S12 Activate The Approved Remediation Contract
+### FE10-S12 Kích hoạt hợp đồng khắc phục đã duyệt
 
-- [x] Status: DESIGN AND WRITTEN CONTRACT APPROVED 2026-07-27
-- Files: approved design and FE10 SPEC/PLAN/TASKS/CHANGELOG.
-- DoD: v0.4.5 records the migration, safe provider-ID evidence, SYSTEM worker,
-  best-effort F1 limitation, unchanged HTTP authorization, and manual retry.
+- [x] Trạng thái: DESIGN AND WRITTEN CONTRACT ĐƯỢC PHÊ DUYỆT 27-07-2026
+- Tệp: thiết kế đã được phê duyệt và FE10 SPEC/PLAN/TASKS/CHANGELOG.
+- DoD: v0.4.5 ghi lại quá trình di chuyển, bằng chứng ID nhà cung cấp an toàn, nhân viên SYSTEM,
+  giới hạn F1 nỗ lực tối đa, ủy quyền HTTP không thay đổi và thử lại thủ công.
 
-### FE10-S13 Restore The Existing-Database Account Setup Template
+### FE10-S13 Khôi phục mẫu thiết lập tài khoản cho cơ sở dữ liệu hiện có
 
-- [ ] Status: NOT STARTED
-- Depends on: FE10-S12.
-- Files: `database/migrations/2026-07-27-fe10-account-setup-template.sql`,
+- [ ] Trạng thái: CHƯA BẮT ĐẦU
+- Phụ thuộc vào: FE10-S12.
+- Tập tin: `database/migrations/2026-07-27-fe10-account-setup-template.sql`,
   `backend/tests/notificationRepository.test.js`.
-- DoD: migration is transactional, idempotent, additive, canonical, and passes
-  two executions with exactly one active `ACCOUNT_SETUP` row.
+- DoD: di chuyển là giao dịch, bình thường, bổ sung, chuẩn và vượt qua
+  hai lần thực thi với chính xác một hàng `ACCOUNT_SETUP` đang hoạt động.
 
-### FE10-S14 Preserve Sensitive Provider Message IDs
+### FE10-S14 Bảo toàn ID thông điệp nhạy cảm của nhà cung cấp
 
-- [ ] Status: NOT STARTED
-- Depends on: FE10-S12.
-- Files: `backend/src/services/notificationService.js`,
+- [ ] Trạng thái: CHƯA BẮT ĐẦU
+- Phụ thuộc vào: FE10-S12.
+- Tập tin: `backend/src/services/notificationService.js`,
   `backend/tests/notificationRoutes.test.js`.
-- DoD: FE02 and FE11 sensitive success attempts store only the adapter message
-  ID while persistence, audit, logs, and responses remain credential-free.
+- DoD: Các lần thử thành công nhạy cảm của FE02 và FE11 chỉ lưu trữ thông báo bộ điều hợp
+  ID trong khi tính lưu giữ, kiểm tra, nhật ký và phản hồi vẫn không có thông tin xác thực.
 
-### FE10-S15 Add The Best-Effort SYSTEM Worker
+### FE10-S15 Bổ sung tiến trình SYSTEM nỗ lực tối đa
 
-- [ ] Status: NOT STARTED
-- Depends on: FE10-S12.
-- Files: notification service/worker/runtime/config/index, `.env.example`, and
-  focused service/worker/runtime/config tests.
-- DoD: enabled startup and interval passes are non-overlapping; disabled mode
-  has no timer; safe failures recover; stop clears scheduling; only
-  non-sensitive `PENDING` rows are processed; manual HTTP authorization is
-  unchanged.
+- [ ] Trạng thái: CHƯA BẮT ĐẦU
+- Phụ thuộc vào: FE10-S12.
+- Các tập tin: dịch vụ thông báo/worker/thời gian chạy/config/index, `.env.example` và
+  kiểm tra dịch vụ/công nhân/thời gian chạy/cấu hình tập trung.
+- DoD: bật khởi động và chuyển khoảng thời gian không bị chồng chéo; chế độ vô hiệu hóa
+  không có bộ đếm thời gian; khắc phục sự cố an toàn; dừng xóa lịch trình; chỉ
+  các hàng `PENDING` không nhạy cảm được xử lý; ủy quyền HTTP thủ công là
+  không thay đổi.
 
-### FE10-S16 Pass Local H2 And Staging Validation
+### FE10-S16 Đạt xác nhận H2 cục bộ và tiền sản xuất
 
-- [ ] Status: NOT STARTED
-- Depends on: FE10-S13..S15.
-- Files: FE10 TASKS/CHANGELOG and
+- [ ] Trạng thái: CHƯA BẮT ĐẦU
+- Phụ thuộc vào: FE10-S13..S15.
+- Tập tin: FE10 TASKS/CHANGELOG và
   `.sdd/reviews/staging-email-delivery-remediation-validation-2026-07-27.md`.
-- DoD: focused and full test gates pass; migration passes twice; diff/security
-  review passes; H2 approves commits; staging template/worker settings/deploy
-  and safe queue/provider-attempt evidence are recorded without secrets or PII.
+- DoD: vượt qua các cổng kiểm tra tập trung và đầy đủ; quá trình di cư diễn ra hai lần; khác biệt/bảo mật
+  lượt xem xét; H2 phê duyệt cam kết; mẫu môi trường tiền sản xuất/cài đặt công nhân/triển khai
+  và bằng chứng xếp hàng an toàn/nhà cung cấp cố gắng được ghi lại mà không có bí mật hoặc PII.
 ```
 
-- [ ] **Step 4: Add the CHANGELOG entry**
+- [ ] **Bước 4: Thêm mục CHANGELOG**
 
-Prepend:
+Thêm vào trước:
 
 ```markdown
-## 2026-07-27 - Approve staging email delivery remediation (v0.4.5)
+## 2026-07-27 - Phê duyệt khắc phục gửi email tiền sản xuất (v0.4.5)
 
-- Required an idempotent existing-database upsert for the canonical active
-  `ACCOUNT_SETUP` template.
-- Required successful sensitive sends to retain only the SMTP provider message
-  ID in attempt history.
-- Approved an opt-in, lifecycle-managed SYSTEM worker for non-sensitive
-  `PENDING` rows with defaults of 60 seconds and 20 rows.
-- Preserved protected manual processing, manual-only failed retry, sensitive
-  synchronous delivery, minimal DTOs, and provider-memory-only credentials.
-- Recorded that Azure App Service F1 pauses the worker while the app sleeps.
-- User approved the design and written contract on 2026-07-27; implementation
-  remains unclaimed pending RED/GREEN evidence and H2.
+- Yêu cầu nâng cấp cơ sở dữ liệu hiện có bình thường cho hoạt động chính tắc
+  Mẫu `ACCOUNT_SETUP`.
+- Yêu cầu gửi nhạy cảm thành công để chỉ giữ lại tin nhắn của nhà cung cấp SMTP
+  ID trong lịch sử thử.
+- Đã phê duyệt nhân viên SYSTEM được quản lý vòng đời, chọn tham gia cho các hoạt động không nhạy cảm
+  Các hàng `PENDING` có giá trị mặc định là 60 giây và 20 hàng.
+- Bảo tồn xử lý thủ công được bảo vệ, thử lại không thành công chỉ bằng tay, nhạy cảm
+  phân phối đồng bộ, DTO tối thiểu và thông tin xác thực chỉ dành cho bộ nhớ của nhà cung cấp.
+- Đã ghi lại rằng Azure App Service F1 tạm dừng nhân viên trong khi ứng dụng ở chế độ ngủ.
+- Người dùng đã phê duyệt thiết kế và văn bản hợp đồng vào ngày 27-07-2026; thực hiện
+  vẫn chưa được xác nhận đang chờ xử lý bằng chứng RED/GREEN và H2.
 ```
 
-- [ ] **Step 5: Validate the governance activation diff**
+- [ ] **Bước 5: Xác thực chênh lệch kích hoạt quản trị**
 
-Run:
+Chạy:
 
 ```powershell
 rg -n "0\\.4\\.5|Q-FE10-013|FE10-S1[2-6]|NOTIFICATION_WORKER|best-effort" `
@@ -233,13 +233,12 @@ git diff --check
 npm run trace:enforce
 ```
 
-Expected: all new IDs/settings are found, `git diff --check` reports nothing,
-and traceability enforcement passes.
+Dự kiến: tất cả ID/cài đặt mới đều được tìm thấy, `git diff --check` không báo cáo gì và việc thực
+thi truy vết đã vượt qua.
 
-- [ ] **Step 6: Stop for H1 review and publish only the reviewed governance activation**
+- [ ] **Bước 6: Dừng để xem xét H1 và chỉ xuất bản kích hoạt quản trị đã được đánh giá**
 
-Expected reviewed files are the four FE10 SDD files only. After H1 authorizes
-the exact diff:
+Các tệp được xem xét dự kiến ​​chỉ có bốn tệp FE10 SDD. Sau khi H1 cho phép khác biệt chính xác:
 
 ```powershell
 git add -- `
@@ -250,8 +249,8 @@ git add -- `
 git commit -m "docs: activate FE10 email delivery remediation"
 ```
 
-Publish the governance-only commit to a draft PR, require its checks, and stop
-for H3. After explicit H3 merge approval and merge:
+Xuất bản cam kết chỉ dành cho quản trị đối với PR dự thảo, yêu cầu kiểm tra và dừng ở H3. Sau khi
+phê duyệt và hợp nhất H3 rõ ràng:
 
 ```powershell
 git fetch origin main
@@ -261,27 +260,27 @@ $activationCommit = git log --format=%H `
 git merge-base --is-ancestor $activationCommit origin/main
 ```
 
-Expected: the final command exits 0. Do not start Task 2 until the governance
-activation is authoritative on `origin/main`.
+Dự kiến: lệnh cuối cùng thoát về 0. Không bắt đầu Nhiệm vụ 2 cho đến khi kích hoạt quản trị có hiệu
+lực trên `origin/main`.
 
 ---
 
-### Task 2: Add The Idempotent ACCOUNT_SETUP Template Migration
+### Nhiệm vụ 2: Thêm di chuyển mẫu ACCOUNT_SETUP Idempotent
 
-**Files:**
+**Tệp:**
 
-- Create: `database/migrations/2026-07-27-fe10-account-setup-template.sql`
-- Modify: `backend/tests/notificationRepository.test.js`
+- Tạo: `database/migrations/2026-07-27-fe10-account-setup-template.sql`
+- Sửa đổi: `backend/tests/notificationRepository.test.js`
 
-**Interfaces:**
+**Giao diện:**
 
-- Consumes: canonical seed in `database/Librarymanagement.sql`.
-- Produces: an additive migration that leaves exactly one active canonical
-  `ACCOUNT_SETUP` row when `TemplateCode` is unique.
+- Tiêu thụ: hạt giống chuẩn trong `database/Librarymanagement.sql`.
+- Tạo ra: một quá trình di chuyển bổ sung để lại chính xác một chuẩn hoạt động
+  Hàng `ACCOUNT_SETUP` khi `TemplateCode` là duy nhất.
 
-- [ ] **Step 1: Write the failing migration contract test**
+- [ ] **Bước 1: Viết kiểm thử hợp đồng di chuyển không thành công**
 
-Add:
+Thêm:
 
 ```javascript
 test('account setup template migration is canonical, transactional, and repeatable', () => {
@@ -314,20 +313,19 @@ test('account setup template migration is canonical, transactional, and repeatab
 });
 ```
 
-- [ ] **Step 2: Run the focused test and capture RED**
+- [ ] **Bước 2: Chạy kiểm thử tập trung và chụp RED**
 
-Run:
+Chạy:
 
 ```powershell
 npx jest --runInBand --runTestsByPath tests/notificationRepository.test.js
 ```
 
-Expected: FAIL because
-`2026-07-27-fe10-account-setup-template.sql` does not exist.
+Dự kiến: THẤT BẠI vì `2026-07-27-fe10-account-setup-template.sql` không tồn tại.
 
-- [ ] **Step 3: Add the minimal migration**
+- [ ] **Bước 3: Thêm di chuyển tối thiểu**
 
-Create:
+Tạo:
 
 ```sql
 SET XACT_ABORT ON;
@@ -368,15 +366,15 @@ BEGIN CATCH
 END CATCH;
 ```
 
-- [ ] **Step 4: Run the focused test and capture GREEN**
+- [ ] **Bước 4: Chạy kiểm thử tập trung và chụp GREEN**
 
-Run the Step 2 command again.
+Chạy lại lệnh Bước 2.
 
-Expected: `notificationRepository.test.js` passes.
+Dự kiến: `notificationRepository.test.js` vượt qua.
 
-- [ ] **Step 5: Keep the implementation uncommitted for H2**
+- [ ] **Bước 5: Giữ nguyên việc triển khai cho H2**
 
-Run:
+Chạy:
 
 ```powershell
 git diff --check
@@ -384,27 +382,27 @@ git diff -- database/migrations/2026-07-27-fe10-account-setup-template.sql `
   backend/tests/notificationRepository.test.js
 ```
 
-Expected: only the migration and its focused test appear; no secret or staging
-connection value appears.
+Dự kiến: chỉ xuất hiện quá trình di chuyển và kiểm thử tập trung của nó; không có giá trị kết nối bí
+mật hoặc môi trường tiền sản xuất nào xuất hiện.
 
 ---
 
-### Task 3: Preserve Sensitive Provider Message IDs
+### Nhiệm vụ 3: Lưu giữ ID tin nhắn của nhà cung cấp nhạy cảm
 
-**Files:**
+**Tệp:**
 
-- Modify: `backend/tests/notificationRoutes.test.js:1340-1410,2340-2445`
-- Modify: `backend/src/services/notificationService.js:698-730`
+- Sửa đổi: `backend/tests/notificationRoutes.test.js:1340-1410,2340-2445`
+- Sửa đổi: `backend/src/services/notificationService.js:698-730`
 
-**Interfaces:**
+**Giao diện:**
 
-- Consumes: `emailProvider.send(message) -> { providerMessageId: string | null }`.
-- Produces: `notificationRepository.markSent({ notificationId,
-  providerMessageId })` with no public DTO change.
+- Tiêu thụ: `emailProvider.send(message) -> { providerMessageId: string | null }`.
+- Sản xuất: `notificationRepository.markSent({ notificationId,
+  providerMessageId })` không có thay đổi công khai về DTO.
 
-- [ ] **Step 1: Write failing FE02 and FE11 assertions**
+- [ ] **Bước 1: Viết các xác nhận FE02 và FE11 không thành công**
 
-Change the existing sensitive table assertion to:
+Thay đổi xác nhận bảng nhạy cảm hiện có thành:
 
 ```javascript
 expect(notificationDependencies.state.attempts).toEqual([
@@ -415,7 +413,7 @@ expect(notificationDependencies.state.attempts).toEqual([
 ]);
 ```
 
-Add to the FE11 `ACCOUNT_SETUP` success test:
+Thêm vào kiểm thử thành công FE11 `ACCOUNT_SETUP`:
 
 ```javascript
 expect(notificationDependencies.state.attempts).toEqual([
@@ -426,24 +424,23 @@ expect(notificationDependencies.state.attempts).toEqual([
 ]);
 ```
 
-Keep the existing scans that prove OTP, setup link, rendered subject/body, and
-provider failure details are absent from persisted/audited/exposed data.
+Giữ lại các bản quét hiện có để chứng minh OTP, liên kết thiết lập, chủ đề/nội dung được hiển thị và
+thông tin chi tiết về lỗi của nhà cung cấp không có trong dữ liệu được lưu giữ/kiểm tra/tiếp xúc.
 
-- [ ] **Step 2: Run the focused tests and capture RED**
+- [ ] **Bước 2: Chạy các kiểm thử tập trung và chụp RED**
 
-Run:
+Chạy:
 
 ```powershell
 npx jest --runInBand --runTestsByPath tests/notificationRoutes.test.js `
   -t "sends .* synchronously|allows only the FE11-bound requester"
 ```
 
-Expected: FAIL because the attempts currently contain
-`providerMessageId: null`.
+Dự kiến: THẤT BẠI vì các lần thử hiện chứa `providerMessageId: null`.
 
-- [ ] **Step 3: Capture and pass the provider result**
+- [ ] **Bước 3: Ghi nhận và chuyển kết quả của nhà cung cấp**
 
-Replace the sensitive provider block with:
+Thay thế khối nhà cung cấp nhạy cảm bằng:
 
 ```javascript
 let providerFailed = false;
@@ -485,20 +482,20 @@ if (!providerFailed) {
 }
 ```
 
-- [ ] **Step 4: Run focused GREEN and sensitive regressions**
+- [ ] **Bước 4: Chạy GREEN tập trung và hồi quy nhạy cảm**
 
-Run:
+Chạy:
 
 ```powershell
 npx jest --runInBand --runTestsByPath tests/notificationRoutes.test.js `
   -t "synchronously|ACCOUNT_SETUP|sensitive markSent|sensitive markFailed|provider"
 ```
 
-Expected: all selected tests pass; no stored secret assertion changes.
+Dự kiến: tất cả các kiểm thử đã chọn đều đạt; không có thay đổi xác nhận bí mật được lưu trữ.
 
-- [ ] **Step 5: Keep the implementation uncommitted for H2**
+- [ ] **Bước 5: Giữ nguyên việc triển khai cho H2**
 
-Run:
+Chạy:
 
 ```powershell
 git diff --check
@@ -506,30 +503,30 @@ git diff -- backend/src/services/notificationService.js `
   backend/tests/notificationRoutes.test.js
 ```
 
-Expected: only provider-result capture and the two focused expectations appear.
+Dự kiến: chỉ hiển thị kết quả thu được từ nhà cung cấp và hai kỳ vọng tập trung.
 
 ---
 
-### Task 4: Add A Construction-Bound SYSTEM Queue Processor
+### Nhiệm vụ 4: Thêm bộ xử lý hàng đợi SYSTEM có giới hạn xây dựng
 
-**Files:**
+**Tệp:**
 
-- Modify: `backend/tests/notificationRoutes.test.js:463-675`
-- Modify: `backend/src/services/notificationService.js:870-930`
+- Sửa đổi: `backend/tests/notificationRoutes.test.js:463-675`
+- Sửa đổi: `backend/src/services/notificationService.js:870-930`
 
-**Interfaces:**
+**Giao diện:**
 
-- Consumes: the current private queue claim/send/terminal-transition loop.
-- Produces:
-  `notificationService.createSystemNotificationProcessor() -> Readonly<{
-  processPendingNotifications(input?: { limit?: number }): Promise<Result>
+- Tiêu thụ: vòng lặp yêu cầu/gửi/chuyển tiếp thiết bị đầu cuối riêng tư hiện tại.
+- Sản xuất:
+  `notificationService.createSystemNotificationProcessor() -> Chỉ đọc<{
+  processPendingNotifications(đầu vào?: { giới hạn?: số }): Promise<Result>
   }>`.
-- Preserves:
+- Bảo quản:
   `notificationService.processPendingNotifications(input, actor, context)`.
 
-- [ ] **Step 1: Write the failing system-processor test**
+- [ ] **Bước 1: Viết kiểm thử bộ xử lý hệ thống bị lỗi**
 
-Add after the existing queued-processing tests:
+Thêm sau các kiểm thử xử lý hàng đợi hiện có:
 
 ```javascript
 test('processes queued mail through a construction-bound SYSTEM processor', async () => {
@@ -572,23 +569,22 @@ test('processes queued mail through a construction-bound SYSTEM processor', asyn
 });
 ```
 
-Do not alter the existing public/member `403` route assertions.
+Không thay đổi các xác nhận tuyến đường public/member `403` hiện có.
 
-- [ ] **Step 2: Run the focused test and capture RED**
+- [ ] **Bước 2: Chạy kiểm thử tập trung và chụp RED**
 
-Run:
+Chạy:
 
 ```powershell
 npx jest --runInBand --runTestsByPath tests/notificationRoutes.test.js `
   -t "construction-bound SYSTEM processor"
 ```
 
-Expected: FAIL because
-`createSystemNotificationProcessor` is not a function.
+Dự kiến: THẤT BẠI vì `createSystemNotificationProcessor` không phải là một hàm.
 
-- [ ] **Step 3: Extract one private batch core**
+- [ ] **Bước 3: Trích xuất một lõi lô riêng**
 
-Replace the current processing function with:
+Thay thế chức năng xử lý hiện tại bằng:
 
 ```javascript
 async function processPendingNotificationBatch(
@@ -665,53 +661,52 @@ function createSystemNotificationProcessor() {
 }
 ```
 
-Add `createSystemNotificationProcessor` to the service return object.
+Thêm `createSystemNotificationProcessor` vào đối tượng trả sách dịch vụ.
 
-- [ ] **Step 4: Run system and authorization GREEN**
+- [ ] **Bước 4: Chạy hệ thống và ủy quyền GREEN**
 
-Run:
+Chạy:
 
 ```powershell
 npx jest --runInBand --runTestsByPath tests/notificationRoutes.test.js `
   -t "SYSTEM processor|processes queued|claims one pending|notification APIs are protected"
 ```
 
-Expected: system processor, queue concurrency, and HTTP authorization tests
-pass.
+Dự kiến: bộ xử lý hệ thống, tính đồng thời của hàng đợi và các kiểm thử ủy quyền HTTP đã vượt qua.
 
-- [ ] **Step 5: Keep the implementation uncommitted for H2**
+- [ ] **Bước 5: Giữ nguyên việc triển khai cho H2**
 
-Run `git diff --check` and review the two changed files.
+Chạy `git diff --check` và xem lại hai tệp đã thay đổi.
 
-Expected: the queue loop exists once, the human wrapper still calls
-`requireInternalActor`, and no SYSTEM login role is introduced.
+Dự kiến: vòng lặp hàng đợi tồn tại một lần, trình bao bọc con người vẫn gọi `requireInternalActor`
+và không có vai trò đăng nhập SYSTEM nào được đưa ra.
 
 ---
 
-### Task 5: Add Worker Configuration And Scheduling
+### Nhiệm vụ 5: Thêm cấu hình và lập lịch trình cho nhân viên
 
-**Files:**
+**Tệp:**
 
-- Create: `backend/src/services/notificationWorker.js`
-- Create: `backend/tests/notificationWorker.test.js`
-- Modify: `backend/src/config/env.js:1-90`
-- Modify: `backend/tests/envConfig.test.js`
-- Modify: `backend/.env.example:24-45`
+- Tạo: `backend/src/services/notificationWorker.js`
+- Tạo: `backend/tests/notificationWorker.test.js`
+- Sửa đổi: `backend/src/config/env.js:1-90`
+- Sửa đổi: `backend/tests/envConfig.test.js`
+- Sửa đổi: `backend/.env.example:24-45`
 
-**Interfaces:**
+**Giao diện:**
 
-- Consumes:
+- Tiêu thụ:
   `processor.processPendingNotifications({ limit }): Promise<Result>`.
-- Produces:
-  `createNotificationWorker(options) -> { start(): Promise, runOnce(): Promise,
-  stop(): void }`.
-- Configuration:
+- Sản xuất:
+  `createNotificationWorker(tùy chọn) -> { start(): Hứa, runOnce(): Hứa,
+  stop(): vô hiệu }`.
+- Cấu hình:
   `notificationWorkerEnabled`, `notificationWorkerIntervalMs`,
   `notificationWorkerBatchSize`.
 
-- [ ] **Step 1: Write failing config tests**
+- [ ] **Bước 1: Viết kiểm thử cấu hình không thành công**
 
-Preserve and restore these environment variables in `envConfig.test.js`:
+Bảo tồn và khôi phục các biến môi trường này trong `envConfig.test.js`:
 
 ```javascript
 const workerEnvNames = [
@@ -724,8 +719,7 @@ const originalWorkerEnv = Object.fromEntries(
 );
 ```
 
-Add this restoration loop inside the existing `afterEach` before
-`jest.resetModules()`:
+Thêm vòng lặp khôi phục này bên trong `afterEach` hiện có trước `jest.resetModules()`:
 
 ```javascript
 for (const name of workerEnvNames) {
@@ -737,7 +731,7 @@ for (const name of workerEnvNames) {
 }
 ```
 
-Add:
+Thêm:
 
 ```javascript
 test('uses safe disabled notification worker defaults', () => {
@@ -765,11 +759,11 @@ test.each([
 });
 ```
 
-In `afterEach`, restore all `workerEnvNames` and call `jest.resetModules()`.
+Trong `afterEach`, khôi phục tất cả `workerEnvNames` và gọi `jest.resetModules()`.
 
-- [ ] **Step 2: Write the failing worker tests**
+- [ ] **Bước 2: Viết các kiểm thử công nhân không thành công**
 
-Create:
+Tạo:
 
 ```javascript
 const { createNotificationWorker } = require('../src/services/notificationWorker');
@@ -882,20 +876,20 @@ test('stop clears the active timer and prevents later work', async () => {
 });
 ```
 
-- [ ] **Step 3: Run config and worker tests and capture RED**
+- [ ] **Bước 3: Chạy kiểm thử cấu hình và nhân công rồi chụp RED**
 
-Run:
+Chạy:
 
 ```powershell
 npx jest --runInBand --runTestsByPath `
   tests/envConfig.test.js tests/notificationWorker.test.js
 ```
 
-Expected: FAIL because the worker module/settings do not exist.
+Dự kiến: THẤT BẠI vì mô-đun/cài đặt công nhân không tồn tại.
 
-- [ ] **Step 4: Add worker configuration**
+- [ ] **Bước 4: Thêm cấu hình nhân viên**
 
-Add to `backend/src/config/env.js` exports:
+Thêm vào xuất khẩu `backend/src/config/env.js`:
 
 ```javascript
 notificationWorkerEnabled: booleanFromEnv('NOTIFICATION_WORKER_ENABLED', false),
@@ -909,7 +903,7 @@ notificationWorkerBatchSize: positiveIntegerFromEnv(
 ),
 ```
 
-Add to `backend/.env.example`:
+Thêm vào `backend/.env.example`:
 
 ```dotenv
 # Best-effort queued notification worker. Keep disabled for local development
@@ -919,9 +913,9 @@ NOTIFICATION_WORKER_INTERVAL_MS=60000
 NOTIFICATION_WORKER_BATCH_SIZE=20
 ```
 
-- [ ] **Step 5: Add the minimal worker**
+- [ ] **Bước 5: Thêm nhân viên tối thiểu**
 
-Create:
+Tạo:
 
 ```javascript
 function createNotificationWorker({
@@ -986,15 +980,15 @@ module.exports = {
 };
 ```
 
-- [ ] **Step 6: Run config and worker GREEN**
+- [ ] **Bước 6: Chạy config và worker GREEN**
 
-Run the Step 3 command again.
+Chạy lại lệnh Bước 3.
 
-Expected: both suites pass with no open handles.
+Dự kiến: cả hai dãy đều vượt qua mà không có tay cầm mở.
 
-- [ ] **Step 7: Keep the implementation uncommitted for H2**
+- [ ] **Bước 7: Giữ nguyên việc triển khai cho H2**
 
-Run:
+Chạy:
 
 ```powershell
 git diff --check
@@ -1003,31 +997,31 @@ git diff -- backend/src/services/notificationWorker.js `
   backend/tests/notificationWorker.test.js backend/tests/envConfig.test.js
 ```
 
-Expected: fixed safe log code only; no error object, email, SMTP detail, or
-secret appears in production logging.
+Dự kiến: chỉ cố định mã nhật ký an toàn; không có đối tượng lỗi, email, chi tiết SMTP hoặc bí mật
+nào xuất hiện trong nhật ký sản xuất.
 
 ---
 
-### Task 6: Wire Worker And HTTP Server Lifecycles
+### Nhiệm vụ 6: Vòng đời của Wire Worker và Máy chủ HTTP
 
-**Files:**
+**Tệp:**
 
-- Create: `backend/src/serverRuntime.js`
-- Create: `backend/tests/serverRuntime.test.js`
-- Modify: `backend/src/index.js:1-20`
-- Test: `backend/tests/app.test.js`
+- Tạo: `backend/src/serverRuntime.js`
+- Tạo: `backend/tests/serverRuntime.test.js`
+- Sửa đổi: `backend/src/index.js:1-20`
+- Kiểm tra: `backend/tests/app.test.js`
 
-**Interfaces:**
+**Giao diện:**
 
-- Consumes: Express `app`, configured notification worker, Node process signals.
-- Produces:
-  `createServerRuntime({ app, worker, port, processRef, logger }) -> {
+- Tiêu thụ: Express `app`, nhân viên thông báo đã định cấu hình, tín hiệu xử lý nút.
+- Sản xuất:
+  `createServerRuntime({ ứng dụng, nhân viên, cổng, processRef, trình ghi nhật ký }) -> {
   start(): http.Server, stop(): void }`.
-- Preserves: `require('../src/index')` returns the Express app.
+- Bảo tồn: `require('../src/index')` trả về ứng dụng Express.
 
-- [ ] **Step 1: Write the failing runtime lifecycle tests**
+- [ ] **Bước 1: Viết các kiểm thử vòng đời thời gian chạy không thành công**
 
-Create:
+Tạo:
 
 ```javascript
 const { EventEmitter } = require('events');
@@ -1083,20 +1077,20 @@ test('does not start the same runtime twice', () => {
 });
 ```
 
-- [ ] **Step 2: Run the runtime and app tests and capture RED**
+- [ ] **Bước 2: Chạy kiểm thử thời gian chạy và ứng dụng rồi chụp RED**
 
-Run:
+Chạy:
 
 ```powershell
 npx jest --runInBand --runTestsByPath `
   tests/serverRuntime.test.js tests/app.test.js
 ```
 
-Expected: FAIL because `serverRuntime.js` does not exist.
+Dự kiến: THẤT BẠI vì `serverRuntime.js` không tồn tại.
 
-- [ ] **Step 3: Add the server runtime**
+- [ ] **Bước 3: Thêm thời gian chạy máy chủ**
 
-Create:
+Tạo:
 
 ```javascript
 function createServerRuntime({
@@ -1142,9 +1136,9 @@ module.exports = {
 };
 ```
 
-- [ ] **Step 4: Compose the default runtime without import side effects**
+- [ ] **Bước 4: Soạn thời gian chạy mặc định mà không có tác dụng phụ khi nhập**
 
-Replace `backend/src/index.js` with:
+Thay thế `backend/src/index.js` bằng:
 
 ```javascript
 const path = require('path');
@@ -1181,20 +1175,19 @@ if (require.main === module) {
 module.exports = app;
 ```
 
-- [ ] **Step 5: Run runtime and direct app export GREEN**
+- [ ] **Bước 5: Chạy thời gian chạy và xuất ứng dụng trực tiếp GREEN**
 
-Run the Step 2 command, then:
+Chạy lệnh Bước 2, sau đó:
 
 ```powershell
 node -e "const app = require('./src/index'); if (!app || typeof app.listen !== 'function') process.exit(1)"
 ```
 
-Expected: both suites pass, the import check exits 0, and the import does not
-open a timer or port.
+Dự kiến: cả hai bộ đều đạt, kiểm tra nhập thoát về 0 và quá trình nhập không mở bộ hẹn giờ hoặc cổng.
 
-- [ ] **Step 6: Run the focused FE10 worker integration gate**
+- [ ] **Bước 6: Chạy cổng tích hợp nhân viên FE10 tập trung**
 
-Run:
+Chạy:
 
 ```powershell
 npx jest --runInBand --runTestsByPath `
@@ -1206,37 +1199,36 @@ npx jest --runInBand --runTestsByPath `
   tests/app.test.js
 ```
 
-Expected: all selected suites pass with zero open handles.
+Dự kiến: tất cả các dãy đã chọn đều vượt qua mà không có tay cầm mở nào.
 
-- [ ] **Step 7: Keep the implementation uncommitted for H2**
+- [ ] **Bước 7: Giữ nguyên việc triển khai cho H2**
 
-Run `git status --short`, `git diff --check`, and inspect the complete
-Task 2-6 diff.
+Chạy `git status --short`, `git diff --check` và kiểm tra sự khác biệt hoàn chỉnh của Nhiệm vụ 2-6.
 
-Expected: no public route/DTO/schema/dependency change and no unrelated file.
+Dự kiến: không có lộ trình công khai/DTO/lược đồ/thay đổi phụ thuộc và không có tệp không liên quan.
 
 ---
 
-### Task 7: Complete Validation, H2, Publication, And Staging Repair
+### Nhiệm vụ 7: Hoàn thành xác thực, H2, xuất bản và sửa chữa môi trường tiền sản xuất
 
-**Files:**
+**Tệp:**
 
-- Create:
+- Tạo:
   `.sdd/reviews/staging-email-delivery-remediation-validation-2026-07-27.md`
-- Modify: `.sdd/specs/feat-notification-management/TASKS.md`
-- Modify: `.sdd/specs/feat-notification-management/CHANGELOG.md`
-- External configuration: Azure App Service settings and Azure SQL staging
-  migration only after H2-authorized publication.
+- Sửa đổi: `.sdd/specs/feat-notification-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-notification-management/CHANGELOG.md`
+- Cấu hình bên ngoài: Cài đặt Azure App Service và Môi trường tiền sản xuất Azure SQL
+  chỉ di chuyển sau khi xuất bản được ủy quyền H2.
 
-**Interfaces:**
+**Giao diện:**
 
-- Consumes: complete uncommitted Task 2-6 diff.
-- Produces: L1-L4 evidence, H2-reviewed commits, CI/deploy evidence, and a
-  safely verified staging state.
+- Tiêu thụ: hoàn thành Nhiệm vụ 2-6 không được cam kết.
+- Tạo ra: bằng chứng L1-L4, các cam kết được H2 xem xét, bằng chứng CI/triển khai và một
+  trạng thái môi trường tiền sản xuất đã được xác minh an toàn.
 
-- [ ] **Step 1: Run L1 focused validation**
+- [ ] **Bước 1: Chạy xác thực tập trung L1**
 
-From `backend`:
+Từ `backend`:
 
 ```powershell
 npx jest --runInBand --runTestsByPath `
@@ -1248,11 +1240,11 @@ npx jest --runInBand --runTestsByPath `
   tests/app.test.js
 ```
 
-Expected: all focused suites pass.
+Dự kiến: tất cả các dãy tập trung đều đạt.
 
-- [ ] **Step 2: Run L2 repository validation**
+- [ ] **Bước 2: Chạy xác thực kho lưu trữ L2**
 
-From the worktree root:
+Từ gốc cây công việc:
 
 ```powershell
 npm --prefix backend test
@@ -1265,12 +1257,12 @@ npm --prefix frontend run build
 git diff --check
 ```
 
-Expected baseline minimums: backend at least 1,063 tests, frontend at least 232
-tests, deployment 9 tests; every command exits 0.
+Mức tối thiểu cơ bản dự kiến: máy chủ ít nhất 1.063 kiểm thử, giao diện người dùng ít nhất 232 kiểm
+thử, triển khai 9 kiểm thử; mọi lệnh đều thoát 0.
 
-- [ ] **Step 3: Run L3 security and scope scans**
+- [ ] **Bước 3: Chạy quét phạm vi và bảo mật L3**
 
-Run:
+Chạy:
 
 ```powershell
 git diff --name-only
@@ -1280,15 +1272,15 @@ rg -n "NOTIFICATION_WORKER|createSystemNotificationProcessor|providerMessageId" 
   backend/src backend/tests backend/.env.example
 ```
 
-Expected: changed files match this plan; the secret scan has no credential
-value or unsafe production log; expected variable names may appear only in
-tests/contracts.
+Dự kiến: các tập tin đã thay đổi phù hợp với kế hoạch này; quá trình quét bí mật không có giá trị
+thông tin xác thực hoặc nhật ký sản xuất không an toàn; tên biến dự kiến ​​chỉ có thể xuất hiện
+trong tests/contracts.
 
-- [ ] **Step 4: Prove migration repeatability**
+- [ ] **Bước 4: Chứng minh khả năng lặp lại di chuyển**
 
-Use a disposable SQL database when available. Otherwise, after H2 and before
-deploy, execute the reviewed migration twice against staging through an
-exact-IP temporary firewall rule, then query:
+Sử dụng cơ sở dữ liệu SQL dùng một lần khi có sẵn. Mặt khác, sau H2 và trước khi triển khai, hãy
+thực hiện quá trình di chuyển đã xem xét hai lần theo giai đoạn thông qua quy tắc tường lửa tạm thời
+có IP chính xác, sau đó truy vấn:
 
 ```sql
 SELECT TemplateCode, Subject, Body, Status, COUNT(*) OVER () AS MatchingRows
@@ -1296,48 +1288,47 @@ FROM NotificationTemplates
 WHERE TemplateCode = 'ACCOUNT_SETUP';
 ```
 
-Expected after both executions: one row, `Status = ACTIVE`, canonical subject,
-and both `{{setupLink}}`/`{{expiresInHours}}` variables. Remove the temporary
-firewall rule in a `finally` path and confirm zero task-created rules remain.
+Cần có sau cả hai lần thực thi: một hàng, `Status = ACTIVE`, chủ đề chuẩn và cả hai biến
+`{{setupLink}}`/`{{expiresInHours}}`. Xóa quy tắc tường lửa tạm thời trong đường dẫn `finally` và
+xác nhận không còn quy tắc do tác vụ tạo nào.
 
-- [ ] **Step 5: Write the validation record without secrets or PII**
+- [ ] **Bước 5: Viết bản ghi xác thực không bí mật hoặc PII**
 
-Record:
+Ghi lại:
 
 ```markdown
-# Staging Email Delivery Remediation Validation
+# Xác nhận khắc phục gửi email tiền sản xuất
 
-- Baseline commit and worktree branch
-- RED command/failure for FE10-S13, FE10-S14, and FE10-S15
-- Focused GREEN totals
-- Full backend/frontend/deployment/system/lint/build/trace totals
-- Migration execution 1/2 and 2/2 result
-- Diff, authorization, DTO, secret, and sensitive-content review
-- H2 decision and exact reviewed commit set
-- Azure settings names only, never values for secrets
-- Deployment run/commit
-- Masked aggregate staging counts and provider-ID presence only
-- F1 best-effort limitation and rollback setting
+- Cam kết cơ bản và nhánh cây công việc
+- Lệnh/lỗi RED đối với FE10-S13, FE10-S14 và FE10-S15
+- Tổng số GREEN tập trung
+- Tổng số backend/frontend/deployment/system/lint/build/trace đầy đủ
+- Thực hiện di chuyển kết quả 1/2 và 2/2
+- Đánh giá khác biệt, ủy quyền, DTO, nội dung bí mật và nhạy cảm
+- Quyết định H2 và bộ cam kết được xem xét chính xác
+- Chỉ tên cài đặt Azure, không bao giờ có giá trị cho bí mật
+- Chạy/cam kết triển khai
+- Số lượng dàn tổng hợp được che dấu và chỉ hiện diện ID nhà cung cấp
+- Cài đặt khôi phục và giới hạn nỗ lực tối đa của F1
 ```
 
-- [ ] **Step 6: Stop for H2 human review**
+- [ ] **Bước 6: Dừng để xem xét con người H2**
 
-Present the complete uncommitted Task 2-6 diff plus Steps 1-5 evidence. H2 must
-confirm:
+Trình bày sự khác biệt hoàn chỉnh của Nhiệm vụ 2-6 cùng với bằng chứng từ Bước 1-5. H2 phải xác nhận:
 
-- migration is additive and repeatable;
-- SYSTEM does not become a login role;
-- manual endpoint authorization remains;
-- sensitive provider evidence stores only the message ID;
-- worker cannot overlap locally or auto-retry `FAILED`;
-- F1 limitations are stated accurately;
-- no secrets or real recipient data appear.
+- di chuyển có tính chất cộng thêm và có thể lặp lại;
+- SYSTEM không trở thành vai trò đăng nhập;
+- ủy quyền điểm cuối thủ công vẫn còn;
+- bằng chứng nhạy cảm của nhà cung cấp chỉ lưu trữ ID tin nhắn;
+- nhân viên không thể chồng chéo cục bộ hoặc tự động thử lại `FAILED`;
+- Các giới hạn của F1 được nêu chính xác;
+- không có bí mật hoặc dữ liệu người nhận thực nào xuất hiện.
 
-Do not commit implementation before explicit H2 approval.
+Không cam kết thực hiện trước khi phê duyệt H2 rõ ràng.
 
-- [ ] **Step 7: Commit only the H2-reviewed set**
+- [ ] **Bước 7: Chỉ cam kết bộ được H2 đánh giá**
 
-After H2 approval, make reviewable commits:
+Sau khi phê duyệt H2, hãy thực hiện các cam kết có thể xem xét:
 
 ```powershell
 git add -- `
@@ -1368,15 +1359,14 @@ git add -- `
 git commit -m "docs: record FE10 email remediation evidence"
 ```
 
-- [ ] **Step 8: Publish and require CI before staging**
+- [ ] **Bước 8: Xuất bản và yêu cầu CI trước khi môi trường tiền sản xuất**
 
-Push the reviewed branch and open/update a draft PR only under H2 authority.
-Require the repository CI checks to pass for the exact published head. Do not
-merge before H3.
+Đẩy nhánh đã được xem xét và chỉ mở/cập nhật PR dự thảo dưới thẩm quyền của H2. Yêu cầu kiểm tra CI
+của kho lưu trữ để vượt qua phần đầu được xuất bản chính xác. Không hợp nhất trước H3.
 
-- [ ] **Step 9: Apply staging migration and worker settings**
+- [ ] **Bước 9: Áp dụng cài đặt di chuyển theo giai đoạn và cài đặt của nhân viên**
 
-Apply the reviewed migration, then set only:
+Áp dụng di chuyển đã xem xét, sau đó chỉ đặt:
 
 ```text
 NOTIFICATION_WORKER_ENABLED=true
@@ -1384,28 +1374,28 @@ NOTIFICATION_WORKER_INTERVAL_MS=60000
 NOTIFICATION_WORKER_BATCH_SIZE=20
 ```
 
-Do not change or print SMTP/SQL secret settings.
+Không thay đổi hoặc in cài đặt bí mật SMTP/SQL.
 
-- [ ] **Step 10: Deploy and verify safe staging outcomes**
+- [ ] **Bước 10: Triển khai và xác minh kết quả môi trường tiền sản xuất an toàn**
 
-Verify:
+Xác minh:
 
 ```text
 GET /health -> 200
 deployment smoke -> PASS
-ACCOUNT_SETUP template -> exactly one ACTIVE row
-non-sensitive PENDING rows -> drain to SENT or safe FAILED while app is awake
-new successful attempts -> providerMessageId present when SMTP supplies one
-sensitive Notifications title/body/safe payload -> no OTP, token, or setup link
-manual endpoint anonymous/member access -> still denied
+mẫu ACCOUNT_SETUP -> đúng một bản ghi ACTIVE
+các bản ghi PENDING không nhạy cảm -> được xử lý thành SENT hoặc FAILED an toàn khi ứng dụng đang hoạt động
+lần thử mới thành công -> có providerMessageId khi SMTP cung cấp giá trị này
+tiêu đề/nội dung/dữ liệu gửi an toàn của Notifications nhạy cảm -> không có OTP, mã thông báo hoặc liên kết thiết lập
+truy cập điểm cuối thủ công bằng người dùng ẩn danh/thành viên -> vẫn bị từ chối
 ```
 
-Use masked aggregate evidence only. Do not reuse the expired setup token; an
-authorized Admin resend must create a new token/event if live inbox validation
-is requested.
+Chỉ sử dụng bằng chứng tổng hợp được che giấu. Không sử dụng lại mã thông báo thiết lập đã hết hạn;
+việc gửi lại của Quản trị viên được ủy quyền phải tạo mã thông báo/sự kiện mới nếu yêu cầu xác thực
+hộp thư đến trực tiếp.
 
-- [ ] **Step 11: Perform H3 integration review**
+- [ ] **Bước 11: Thực hiện đánh giá tích hợp H3**
 
-Confirm the branch remains mergeable, required checks passed for the exact
-head, staging evidence matches the approved design, and rollback is
-`NOTIFICATION_WORKER_ENABLED=false`. Merge only after explicit H3 approval.
+Xác nhận nhánh vẫn có thể hợp nhất, các bước kiểm tra bắt buộc được thông qua đối với người đứng đầu
+chính xác, bằng chứng môi trường tiền sản xuất phù hợp với thiết kế đã được phê duyệt và quá trình
+khôi phục là `NOTIFICATION_WORKER_ENABLED=false`. Chỉ hợp nhất sau khi được phê duyệt H3 rõ ràng.

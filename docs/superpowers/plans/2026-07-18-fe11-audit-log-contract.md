@@ -1,43 +1,50 @@
-# FE11 Audit Log Contract Implementation Plan
+# FE11 Nhật ký kiểm tra Kế hoạch thực hiện hợp đồng
 
-> **For agentic workers:** REQUIRED SUB-SKILLS: Use `using-git-worktrees` for Task 0, then `executing-plans` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Đối với nhân viên đại lý:** BẮT BUỘC SUB-SKILLS: Sử dụng `using-git-worktrees` cho Nhiệm vụ 0, sau đó là `executing-plans` để triển khai kế hoạch này theo từng nhiệm vụ. Các bước sử dụng cú pháp hộp kiểm (`- [ ]`) để theo dõi.
 
-**Goal:** Implement `FE11-AUD01` / `TD-024` as one Admin-owned, searchable, filterable, read-only Audit Log boundary with typed SQL pagination, action-aware safe metadata projection, canonical frontend consumption, and explicit retirement of the prototype route.
+**Mục tiêu:** Triển khai `FE11-AUD01` / `TD-024` dưới dạng ranh giới Nhật ký kiểm tra chỉ đọc, có
+thể tìm kiếm, có thể đọc và thuộc quyền sở hữu của Quản trị viên với phân trang SQL đã nhập, trình
+chiếu siêu dữ liệu an toàn nhận biết hành động, sử dụng giao diện người dùng chuẩn và ngừng rõ ràng
+lộ trình nguyên mẫu.
 
-**Architecture:** Keep the existing Express `routes -> controllers -> services -> repositories` flow. The repository owns typed filtering and stable pagination but returns raw rows; `adminService` owns the default-deny DTO projection; the React Admin page consumes only the projected DTO through `adminApi` and never parses raw metadata.
+**Kiến trúc:** Giữ nguyên quy trình Express `routes -> controllers -> services -> repositories` hiện
+có. Kho lưu trữ sở hữu chức năng lọc theo kiểu và phân trang ổn định nhưng trả về các hàng thô;
+`adminService` sở hữu phép chiếu DTO từ chối mặc định; trang Quản trị React chỉ sử dụng DTO được
+chiếu đến `adminApi` và không bao giờ phân tích cú pháp siêu dữ liệu thô.
 
-**Tech Stack:** Node.js CommonJS, Express 5, express-validator 7, Jest 30, SQL Server via `mssql`, React 19, Vite 8, Node test runner, Markdown SDD artifacts.
+**bộ công nghệ công nghệ:** Node.js CommonJS, Express 5, trình xác thực nhanh 7, Jest 30, SQL Server
+qua `mssql`, React 19, Vite 8, Trình chạy kiểm thử nút, Markdown tệp bàn giao SDD.
 
-## Global Constraints
+## Ràng buộc toàn cầu
 
-- Product implementation is blocked until governance PR #32 (`docs/fast-track-delivery-mode`) passes H3 and merges to `main`; planning and plan review may proceed before that merge.
-- Implement only `BR-FE11-018`, `BR-FE11-026`, `FR-FE11-033`, `AC-FE11-018`, `TD-024`, and task `FE11-AUD01`.
-- Canonical endpoint is `GET /api/admin/audit-logs`; accepted query names are exactly `page`, `limit`, `q`, `action`, `actorId`, `from`, and `to`.
-- Defaults are `page = 1` and `limit = 20`; `limit` is restricted to `1..100`.
-- Authentication and Admin authorization run before detailed query validation.
-- Stable order is `CreatedAt DESC, LogId DESC`; every filter and pagination operation runs in SQL with typed `mssql` parameters.
-- Raw `Metadata` and `UserAgent` are never returned. Invalid JSON, top-level arrays/scalars, unknown actions, and invalid field shapes produce `details: {}`.
-- The legacy `GET /api/users/audit-logs` path remains an explicit static route before `/:userId`, always returns `404 NOT_FOUND`, and invokes no authentication, user-management, or audit service.
-- Keep the current approved user-target join only: `USER`, `USERS`, and `ACCOUNT` targets may receive a user label; other target types return `label: null` and the UI renders type/ID.
-- Do not add schema, dependency, authentication, export, audit-write, update/delete, compatibility-alias, or hidden action-filter behavior.
-- Keep whole FE11 `Implementation State: DEFERRED`; this slice closes only after H2, required checks, H3, merge, and post-merge integration evidence.
-- Every production behavior change must have an observed failing test first. Generated implementation remains uncommitted until H2 approval.
+- Việc triển khai sản phẩm bị chặn cho đến khi quản trị PR #32 (`docs/fast-track-delivery-mode`) vượt qua H3 và hợp nhất với `main`; việc lập kế hoạch và xem xét kế hoạch có thể được tiến hành trước khi hợp nhất.
+- Chỉ triển khai `BR-FE11-018`, `BR-FE11-026`, `FR-FE11-033`, `AC-FE11-018`, `TD-024` và nhiệm vụ `FE11-AUD01`.
+- Điểm cuối chuẩn là `GET /api/admin/audit-logs`; tên truy vấn được chấp nhận chính xác là `page`, `limit`, `q`, `action`, `actorId`, `from` và `to`.
+- Mặc định là `page = 1` và `limit = 20`; `limit` bị giới hạn ở `1..100`.
+- Xác thực và ủy quyền quản trị viên chạy trước khi xác thực truy vấn chi tiết.
+- Thứ tự ổn định là `CreatedAt DESC, LogId DESC`; mọi hoạt động lọc và phân trang đều chạy trong SQL với các tham số `mssql` đã nhập.
+- `Metadata` và `UserAgent` thô không bao giờ được trả sách. JSON không hợp lệ, mảng/giá trị vô hướng cấp cao nhất, hành động không xác định và hình dạng trường không hợp lệ tạo ra `details: {}`.
+- Đường dẫn `GET /api/users/audit-logs` cũ vẫn là tuyến tĩnh rõ ràng trước `/:userId`, luôn trả về `404 NOT_FOUND` và không yêu cầu dịch vụ xác thực, quản lý người dùng hoặc kiểm tra.
+- Chỉ giữ lại tham gia mục tiêu người dùng đã được phê duyệt hiện tại: các mục tiêu `USER`, `USERS` và `ACCOUNT` có thể nhận được nhãn người dùng; các loại mục tiêu khác trả về `label: null` và giao diện người dùng hiển thị loại/ID.
+- Không thêm lược đồ, phần phụ thuộc, xác thực, xuất, ghi kiểm tra, cập nhật/xóa, bí danh tương thích hoặc hành vi lọc hành động ẩn.
+- Giữ toàn bộ FE11 `Implementation State: DEFERRED`; lát này chỉ đóng sau H2, kiểm tra bắt buộc, H3, hợp nhất và bằng chứng tích hợp sau hợp nhất.
+- Mọi thay đổi về hành vi sản xuất trước tiên phải có một kiểm thử thất bại được quan sát. Quá trình triển khai đã tạo vẫn có sẵn cho đến khi được phê duyệt H2.
 
 ---
 
-### Task 0: Clear The Governance Gate And Create The Implementation Worktree
+### Nhiệm vụ 0: Xóa cổng quản trị và tạo sơ đồ công việc thực hiện
 
-**Files:**
-- Read only: PR #32 and `origin/main`
-- Create worktree: `.worktrees/fe11-audit-log-implementation`
-- Create branch: `fix/fe11-audit-log-contract`
-- Copy reviewed plan: `docs/superpowers/plans/2026-07-18-fe11-audit-log-contract.md`
+**Tệp:**
+- Chỉ đọc: PR #32 và `origin/main`
+- Tạo cây làm việc: `.worktrees/fe11-audit-log-implementation`
+- Tạo nhánh: `fix/fe11-audit-log-contract`
+- Bản sao kế hoạch được đánh giá: `docs/superpowers/plans/2026-07-18-fe11-audit-log-contract.md`
 
-**Interfaces:**
-- Consumes: governance activation commit `2d93465` and H3 approval for PR #32.
-- Produces: one isolated Builder worktree based on the authoritative activated `main`.
+**Giao diện:**
+- Tiêu thụ: cam kết kích hoạt quản trị `2d93465` và phê duyệt H3 cho PR #32.
+- Tạo ra: một cây công việc Builder riêng biệt dựa trên `main` được kích hoạt chính thức.
 
-- [ ] **Step 1: Verify PR #32 has merged after H3**
+- [ ] **Bước 1: Xác minh PR #32 đã hợp nhất sau H3**
 
 ```powershell
 $pr = gh pr view 32 --json state,isDraft,mergeCommit,statusCheckRollup,mergeable,url | ConvertFrom-Json
@@ -45,9 +52,10 @@ if ($pr.state -ne 'MERGED') { throw 'PR #32 must receive H3 and merge before TD-
 if (-not $pr.mergeCommit.oid) { throw 'PR #32 merge commit is missing.' }
 ```
 
-Expected: `state` is `MERGED`, the exact required check is successful, and a merge commit exists. If the PR is still open, stop at the H3 gate; do not create product-code changes.
+Dự kiến: `state` là `MERGED`, kiểm tra bắt buộc chính xác đã thành công và tồn tại một cam kết hợp
+nhất. Nếu PR vẫn mở thì dừng ở cổng H3; không tạo ra những thay đổi về mã sản phẩm.
 
-- [ ] **Step 2: Refresh the authoritative base and confirm activation ancestry**
+- [ ] **Bước 2: Làm mới cơ sở có thẩm quyền và xác nhận nguồn gốc kích hoạt**
 
 ```powershell
 git fetch origin main
@@ -55,19 +63,20 @@ git merge-base --is-ancestor 2d93465 origin/main
 if ($LASTEXITCODE -ne 0) { throw 'Fast-Track activation commit is not present on origin/main.' }
 ```
 
-Expected: the ancestry command exits `0`.
+Dự kiến: lệnh tổ tiên thoát khỏi `0`.
 
-- [ ] **Step 3: Create the isolated implementation worktree**
+- [ ] **Bước 3: Tạo sơ đồ triển khai riêng biệt**
 
-From repository root:
+Từ kho lưu trữ gốc:
 
 ```powershell
 git worktree add .worktrees/fe11-audit-log-implementation -b fix/fe11-audit-log-contract origin/main
 ```
 
-Expected: the new worktree is on `fix/fe11-audit-log-contract`, based on the merged activation state, and `git status --short` is empty.
+Dự kiến: cây làm việc mới nằm trên `fix/fe11-audit-log-contract`, dựa trên trạng thái kích hoạt đã
+hợp nhất và `git status --short` trống.
 
-- [ ] **Step 4: Carry the reviewed plan into the implementation branch**
+- [ ] **Bước 4: Chuyển kế hoạch đã rà soát vào bộ phận thực hiện**
 
 ```powershell
 Copy-Item -LiteralPath `
@@ -75,29 +84,30 @@ Copy-Item -LiteralPath `
   -Destination '.worktrees/fe11-audit-log-implementation/docs/superpowers/plans/2026-07-18-fe11-audit-log-contract.md'
 ```
 
-Expected: only the reviewed plan is untracked. Do not commit it or any generated implementation before H2.
+Dự kiến: chỉ có kế hoạch được xem xét là không bị theo dõi. Không cam kết nó hoặc bất kỳ triển khai
+nào được tạo trước H2.
 
 ---
 
-### Task 1: Lock The Canonical Admin Route And Retire The Legacy Route
+### Nhiệm vụ 1: Khóa lộ trình quản trị chuẩn và gỡ bỏ lộ trình kế thừa
 
-**Files:**
-- Create: `backend/src/validators/adminValidators.js`
-- Create: `backend/tests/adminAuditLogRoutes.test.js`
-- Modify: `backend/src/routes/adminRoutes.js`
-- Modify: `backend/src/controllers/adminController.js`
-- Modify: `backend/src/routes/userManagementRoutes.js`
-- Modify: `backend/src/controllers/userManagementController.js`
-- Modify: `backend/tests/userManagementRoutes.test.js`
+**Tệp:**
+- Tạo: `backend/src/validators/adminValidators.js`
+- Tạo: `backend/tests/adminAuditLogRoutes.test.js`
+- Sửa đổi: `backend/src/routes/adminRoutes.js`
+- Sửa đổi: `backend/src/controllers/adminController.js`
+- Sửa đổi: `backend/src/routes/userManagementRoutes.js`
+- Sửa đổi: `backend/src/controllers/userManagementController.js`
+- Sửa đổi: `backend/tests/userManagementRoutes.test.js`
 
-**Interfaces:**
-- Produces: `isDateOnly(value)`, `validateAuditDateRange(value, { req })`, `assignValidatedAuditQuery(req, res, next)`, `auditLogQueryValidators`, and `controller.listAuditLogs(req, res, next)`.
-- Produces: normalized service input `{ page, limit, q?, action?, actorId?, from?, to? }` with blank optional fields omitted.
-- Retires: `userManagementController.listAuditLogs` and the functional `/api/users/audit-logs` service path.
+**Giao diện:**
+- Sản xuất: `isDateOnly(value)`, `validateAuditDateRange(value, { req })`, `assignValidatedAuditQuery(req, res, next)`, `auditLogQueryValidators` và `controller.listAuditLogs(req, res, next)`.
+- Tạo ra: đầu vào dịch vụ chuẩn hóa `{ page, limit, q?, action?, actorId?, from?, to? }` với các trường tùy chọn trống bị bỏ qua.
+- Ngừng hoạt động: `userManagementController.listAuditLogs` và đường dẫn dịch vụ `/api/users/audit-logs` chức năng.
 
-- [ ] **Step 1: Write failing canonical route tests**
+- [ ] **Bước 1: Viết các kiểm thử lộ trình chuẩn không thành công**
 
-Create `backend/tests/adminAuditLogRoutes.test.js` with this harness before the cases:
+Tạo `backend/tests/adminAuditLogRoutes.test.js` với dây nịt này trước các thùng máy:
 
 ```js
 process.env.JWT_SECRET = require('crypto').randomBytes(32).toString('hex');
@@ -122,7 +132,7 @@ function makeApp({ roles = ['ADMIN'], adminService } = {}) {
 }
 ```
 
-Cover these exact cases:
+Bao gồm các trường hợp chính xác:
 
 ```js
 test('GET /api/admin/audit-logs requires authentication', async () => {
@@ -167,7 +177,7 @@ test('GET /api/admin/audit-logs sends the normalized canonical query to the serv
 });
 ```
 
-Add this table-driven validation block:
+Thêm khối xác thực theo bảng này:
 
 ```js
 test.each([
@@ -199,9 +209,9 @@ test.each([
 });
 ```
 
-- [ ] **Step 2: Write failing legacy retirement tests**
+- [ ] **Bước 2: Viết các kiểm thử hưu trí kế thừa thất bại**
 
-Update `backend/tests/userManagementRoutes.test.js`:
+Cập nhật `backend/tests/userManagementRoutes.test.js`:
 
 ```js
 test('GET /api/users/audit-logs is retired with NOT_FOUND and invokes no service', async () => {
@@ -219,19 +229,22 @@ test('GET /api/users/audit-logs is retired with NOT_FOUND and invokes no service
 });
 ```
 
-Delete the old Admin-success and non-Admin authorization tests for the functional legacy endpoint. The retired path must return the same `404 NOT_FOUND` without a token and with any token because it is no longer an authenticated resource.
+Xóa các kiểm thử ủy quyền thành công của Quản trị viên và không phải của Quản trị viên cũ cho điểm
+cuối chức năng cũ. Đường dẫn đã ngừng hoạt động phải trả về cùng một `404 NOT_FOUND` không có mã
+thông báo và có bất kỳ mã thông báo nào vì nó không còn là tài nguyên được xác thực.
 
-- [ ] **Step 3: Run the route RED tests**
+- [ ] **Bước 3: Chạy kiểm thử lộ trình RED**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/adminAuditLogRoutes.test.js tests/userManagementRoutes.test.js
 ```
 
-Expected: FAIL because `adminValidators.js`, `/admin/audit-logs`, and `adminController.listAuditLogs` do not exist and the legacy path still invokes the prototype handler.
+Dự kiến: THẤT BẠI vì `adminValidators.js`, `/admin/audit-logs` và `adminController.listAuditLogs`
+không tồn tại và đường dẫn cũ vẫn gọi trình xử lý nguyên mẫu.
 
-- [ ] **Step 4: Implement the canonical query boundary**
+- [ ] **Bước 4: Triển khai ranh giới truy vấn chuẩn**
 
-Create `backend/src/validators/adminValidators.js` with these exports:
+Tạo `backend/src/validators/adminValidators.js` với các bản xuất sau:
 
 ```js
 const { matchedData, query } = require('express-validator');
@@ -264,7 +277,7 @@ function assignValidatedAuditQuery(req, res, next) {
 }
 ```
 
-Define the remainder of the file exactly as follows:
+Xác định phần còn lại của tệp chính xác như sau:
 
 ```js
 const auditLogQueryValidators = [
@@ -315,7 +328,7 @@ module.exports = {
 };
 ```
 
-Wire the route after Admin middleware:
+Nối tuyến đường sau phần mềm trung gian của Quản trị viên:
 
 ```js
 // @spec FR-FE11-033
@@ -327,7 +340,7 @@ router.get(
 );
 ```
 
-Add the controller method:
+Thêm phương thức điều khiển:
 
 ```js
 listAuditLogs: async (req, res, next) => {
@@ -341,9 +354,10 @@ listAuditLogs: async (req, res, next) => {
 },
 ```
 
-- [ ] **Step 5: Implement explicit legacy retirement**
+- [ ] **Bước 5: Thực hiện việc ngừng hoạt động kế thừa rõ ràng**
 
-In `backend/src/routes/userManagementRoutes.js`, import `safeErrors` and keep this static route before `/:userId` without `requireAdmin`:
+Trong `backend/src/routes/userManagementRoutes.js`, nhập `safeErrors` và giữ tuyến tĩnh này trước
+`/:userId` mà không có `requireAdmin`:
 
 ```js
 router.get('/audit-logs', (req, res, next) => (
@@ -351,32 +365,35 @@ router.get('/audit-logs', (req, res, next) => (
 ));
 ```
 
-Remove `listAuditLogs` from `userManagementController`. Do not redirect or alias the retired path.
+Xóa `listAuditLogs` khỏi `userManagementController`. Không chuyển hướng hoặc đặt bí danh cho đường
+dẫn đã ngừng hoạt động.
 
-- [ ] **Step 6: Run the route GREEN tests**
+- [ ] **Bước 6: Chạy kiểm thử lộ trình GREEN**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/adminAuditLogRoutes.test.js tests/userManagementRoutes.test.js
 ```
 
-Expected: both suites PASS; unauthenticated and non-Admin requests are rejected before validation, valid input is normalized, invalid input returns `VALIDATION_ERROR`, and the legacy route returns `NOT_FOUND` without service invocation.
+Dự kiến: cả hai dãy ĐẠT; Các yêu cầu không được xác thực và không phải của Quản trị viên sẽ bị từ
+chối trước khi xác thực, đầu vào hợp lệ được chuẩn hóa, đầu vào không hợp lệ trả về
+`VALIDATION_ERROR` và tuyến đường cũ trả về `NOT_FOUND` mà không cần gọi dịch vụ.
 
 ---
 
-### Task 2: Implement Typed Filtered SQL Pagination
+### Nhiệm vụ 2: Triển khai phân trang SQL được lọc theo kiểu
 
-**Files:**
-- Create: `backend/tests/auditLogRepository.test.js`
-- Modify: `backend/src/repositories/auditLogRepository.js`
+**Tệp:**
+- Tạo: `backend/tests/auditLogRepository.test.js`
+- Sửa đổi: `backend/src/repositories/auditLogRepository.js`
 
-**Interfaces:**
-- Replaces: `listRecent({ page, limit })`.
-- Produces: `listAuditLogs({ page, limit, q, action, actorId, from, to })` returning raw row fields plus `{ page, limit, total, totalPages }`.
-- Preserves: `create(...)` unchanged for all audit writers.
+**Giao diện:**
+- Thay thế: `listRecent({ page, limit })`.
+- Tạo ra: `listAuditLogs({ page, limit, q, action, actorId, from, to })` trả về các trường hàng thô cộng với `{ page, limit, total, totalPages }`.
+- Giữ nguyên: `create(...)` không thay đổi đối với tất cả người viết kiểm tra.
 
-- [ ] **Step 1: Write failing repository tests**
+- [ ] **Bước 1: Viết các kiểm thử kho lưu trữ không thành công**
 
-Create `backend/tests/auditLogRepository.test.js` with this database harness:
+Tạo `backend/tests/auditLogRepository.test.js` với khai thác cơ sở dữ liệu này:
 
 ```js
 jest.mock('../src/config/db', () => ({
@@ -414,7 +431,7 @@ function useRecordsets(recordsets) {
 beforeEach(() => getPool.mockReset());
 ```
 
-Cover:
+Bìa:
 
 ```js
 test('listAuditLogs binds typed pagination and every supplied filter', async () => {
@@ -442,7 +459,7 @@ test('listAuditLogs binds typed pagination and every supplied filter', async () 
 });
 ```
 
-Add these exact assertions and mapping cases:
+Thêm các trường hợp xác nhận và ánh xạ chính xác sau:
 
 ```js
 test('listAuditLogs escapes LIKE metacharacters and keeps request text out of SQL', async () => {
@@ -529,28 +546,30 @@ test('listAuditLogs reports zero pages for an empty result', async () => {
 });
 ```
 
-These cases prove:
+Những trường hợp này chứng minh:
 
-- each filter works independently and all filters combine with `AND`;
-- `q` searches action, actor email, actor full name, target type, and target ID text;
-- data and count statements contain the same generated `WHERE` fragment;
-- order is exactly `ORDER BY al.CreatedAt DESC, al.LogId DESC`;
-- target user joins are restricted to `USER`, `USERS`, and `ACCOUNT`;
-- LIKE metacharacters are escaped and request text never appears literally in SQL;
-- total `0` yields `totalPages: 0`, while nonzero totals use `Math.ceil(total / limit)`;
-- returned rows remain raw repository rows and still contain `metadata` for service-only projection.
+- mỗi bộ lọc hoạt động độc lập và tất cả các bộ lọc kết hợp với `AND`;
+- `q` tìm kiếm hành động, email tác nhân, tên đầy đủ của tác nhân, loại mục tiêu và văn bản ID mục tiêu;
+- các câu lệnh dữ liệu và số lượng chứa cùng một đoạn `WHERE` được tạo;
+- đơn hàng chính xác là `ORDER BY al.CreatedAt DESC, al.LogId DESC`;
+- sự tham gia của người dùng mục tiêu bị giới hạn ở `USER`, `USERS` và `ACCOUNT`;
+- Siêu ký tự LIKE được thoát và văn bản yêu cầu không bao giờ xuất hiện theo nghĩa đen trong SQL;
+- tổng `0` mang lại `totalPages: 0`, trong khi các tổng khác 0 sử dụng `Math.ceil(total / limit)`;
+- các hàng được trả về vẫn là các hàng kho lưu trữ thô và vẫn chứa `metadata` để chiếu chỉ dành cho dịch vụ.
 
-- [ ] **Step 2: Run the repository RED test**
+- [ ] **Bước 2: Chạy kiểm thử RED của kho lưu trữ**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/auditLogRepository.test.js
 ```
 
-Expected: FAIL because only `listRecent` exists and it lacks canonical filters, typed date inputs, shared `WHERE`, and zero-total pagination.
+Dự kiến: THẤT BẠI vì chỉ tồn tại `listRecent` và thiếu bộ lọc chuẩn, thông tin nhập ngày tháng,
+`WHERE` được chia sẻ và tổng số trang bằng 0.
 
-- [ ] **Step 3: Implement `listAuditLogs`**
+- [ ] **Bước 3: Triển khai `listAuditLogs`**
 
-Keep `create(...)` unchanged. Add this helper and replace `listRecent` with the following `listAuditLogs` structure:
+Giữ `create(...)` không thay đổi. Thêm trình trợ giúp này và thay thế `listRecent` bằng cấu trúc
+`listAuditLogs` sau:
 
 ```js
 function escapeLikePattern(value) {
@@ -653,34 +672,36 @@ async function listAuditLogs({
 }
 ```
 
-Export `create` and `listAuditLogs`; do not export `escapeLikePattern`. The fixed `whereSql` is used by both SELECT statements.
+Xuất `create` và `listAuditLogs`; không xuất `escapeLikePattern`. `whereSql` cố định được sử dụng
+bởi cả hai câu lệnh SELECT.
 
-- [ ] **Step 4: Run the repository GREEN test**
+- [ ] **Bước 4: Chạy kiểm thử GREEN của kho lưu trữ**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/auditLogRepository.test.js
 ```
 
-Expected: PASS with typed parameter capture, identical filter scope in data/count queries, stable order, restricted target join, and correct zero-total pagination.
+Dự kiến: đạt với chức năng chụp tham số đã nhập, phạm vi bộ lọc giống hệt nhau trong truy vấn dữ
+liệu/số lượng, thứ tự ổn định, liên kết mục tiêu bị hạn chế và phân trang tổng bằng 0 chính xác.
 
 ---
 
-### Task 3: Add The Action-Aware Default-Deny Projector
+### Nhiệm vụ 3: Thêm máy chiếu từ chối mặc định nhận biết hành động
 
-**Files:**
-- Create: `backend/tests/adminAuditLogService.test.js`
-- Modify: `backend/src/services/adminService.js`
-- Modify: `backend/src/services/userManagementService.js`
-- Modify: `backend/tests/userManagementService.test.js`
+**Tệp:**
+- Tạo: `backend/tests/adminAuditLogService.test.js`
+- Sửa đổi: `backend/src/services/adminService.js`
+- Sửa đổi: `backend/src/services/userManagementService.js`
+- Sửa đổi: `backend/tests/userManagementService.test.js`
 
-**Interfaces:**
-- Produces: `parseMetadataObject(rawMetadata)`, `projectAuditDetails(action, metadata)`, `projectAuditLog(row)`, and `listAuditLogs(query = {})` in `adminService`.
-- Produces helpers: `readPositiveInteger`, `readNonNegativeNumber`, `readIsoDate`, `readPositiveIntegerArray`, `readChangedFields`, `hasProvidedText`, and `stripSensitiveKeys`.
-- Removes: `userManagementService.listAuditLogs` and obsolete `listRecent` mocks/tests.
+**Giao diện:**
+- Sản xuất: `parseMetadataObject(rawMetadata)`, `projectAuditDetails(action, metadata)`, `projectAuditLog(row)` và `listAuditLogs(query = {})` trong `adminService`.
+- Tạo ra các trợ giúp: `readPositiveInteger`, `readNonNegativeNumber`, `readIsoDate`, `readPositiveIntegerArray`, `readChangedFields`, `hasProvidedText` và `stripSensitiveKeys`.
+- Loại bỏ: `userManagementService.listAuditLogs` và các bản mô phỏng/kiểm tra `listRecent` lỗi thời.
 
-- [ ] **Step 1: Write failing service projection tests**
+- [ ] **Bước 1: Viết kiểm thử dự báo dịch vụ không thành công**
 
-Create `backend/tests/adminAuditLogService.test.js` with this seam and row factory:
+Tạo `backend/tests/adminAuditLogService.test.js` với nhà máy sản xuất đường may và hàng này:
 
 ```js
 jest.mock('../src/repositories/auditLogRepository', () => ({
@@ -722,7 +743,7 @@ async function project(action, metadata, overrides) {
 beforeEach(() => auditLogRepository.listAuditLogs.mockReset());
 ```
 
-Assert canonical output:
+Khẳng định đầu ra chuẩn:
 
 ```js
 test('listAuditLogs applies defaults and returns only the canonical DTO', async () => {
@@ -772,7 +793,8 @@ test('non-user targets never borrow a user label', async () => {
 });
 ```
 
-Add this approved projector matrix. Every row is an executable fixture; actions in the same `actions` array share the same projector contract:
+Thêm ma trận máy chiếu đã được phê duyệt này. Mỗi hàng là một vật cố định có thể thực thi được; các
+hành động trong cùng một mảng `actions` có chung hợp đồng máy chiếu:
 
 ```js
 const projectorCases = [
@@ -836,7 +858,7 @@ for (const fixture of projectorCases) {
 }
 ```
 
-Add these derived/empty/default-deny tests:
+Thêm các kiểm thử xuất phát/trống/từ chối mặc định này:
 
 ```js
 const emptyDetailActions = [
@@ -907,29 +929,32 @@ test('projected arrays are capped at 100 values', async () => {
 });
 ```
 
-Together these tests assert:
+Các kiểm thử này cùng nhau khẳng định:
 
-- malformed JSON, arrays, scalars, and unknown actions return `{}`;
-- arrays are capped at 100 scalar values;
-- IDs must be positive integers;
-- counts and monetary values must be finite nonnegative numbers;
-- dates normalize to ISO strings;
-- changed fields use only the action-specific allowlists;
-- nested object values are omitted;
-- raw reason, notes, note, email, message, identifier, path, token ID, and source `AuthToken` identifiers are absent;
-- recursive keys matching password, hash, token, OTP, authorization, cookie, secret, session, credential, API key, setup link, or reset link are removed after projection.
+- JSON không đúng định dạng, mảng, đại lượng vô hướng và hành động không xác định trả về `{}`;
+- mảng được giới hạn ở 100 giá trị vô hướng;
+- ID phải là số nguyên dương;
+- số đếm và giá trị tiền tệ phải là số hữu hạn không âm;
+- ngày bình thường hóa thành chuỗi ISO;
+- các trường đã thay đổi chỉ sử dụng danh sách cho phép dành riêng cho hành động;
+- các giá trị đối tượng lồng nhau bị bỏ qua;
+- lý do thô, ghi chú, ghi chú, email, tin nhắn, số nhận dạng, đường dẫn, ID mã thông báo và số nhận dạng `AuthToken` nguồn không có;
+- các khóa đệ quy khớp với mật khẩu, hàm băm, mã thông báo, OTP, ủy quyền, cookie, bí mật, phiên, thông tin xác thực, khóa API, liên kết thiết lập hoặc liên kết đặt lại sẽ bị xóa sau khi chiếu.
 
-- [ ] **Step 2: Run the service RED tests**
+- [ ] **Bước 2: Chạy kiểm thử dịch vụ RED**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/adminAuditLogService.test.js tests/userManagementService.test.js
 ```
 
-Expected: FAIL because `adminService.listAuditLogs` and the projector do not exist and user management still owns prototype listing tests.
+Dự kiến: THẤT BẠI vì `adminService.listAuditLogs` và máy chiếu không tồn tại và ban quản lý người
+dùng vẫn sở hữu các kiểm thử liệt kê nguyên mẫu.
 
-- [ ] **Step 3: Implement defensive query normalization and DTO mapping**
+- [ ] **Bước 3: Triển khai chuẩn hóa truy vấn phòng vệ và ánh xạ DTO**
 
-Add `const auditLogRepository = require('../repositories/auditLogRepository');` beside the existing repository import. Add these internal query helpers before the public service functions:
+Thêm `const auditLogRepository = require('../repositories/auditLogRepository');` bên cạnh việc nhập
+kho lưu trữ hiện có. Thêm các trình trợ giúp truy vấn nội bộ này trước các chức năng dịch vụ công
+cộng:
 
 ```js
 function validationError(field, message) {
@@ -992,9 +1017,10 @@ function normalizeAuditListQuery(query = {}) {
 }
 ```
 
-- [ ] **Step 4: Implement the exact action allowlist**
+- [ ] **Bước 4: Triển khai danh sách hành động được phép chính xác**
 
-Add the following internal projector implementation after the query helpers. Do not export projector helpers; tests exercise them through `listAuditLogs`.
+Thêm phần triển khai máy chiếu nội bộ sau đây sau trình trợ giúp truy vấn. Không xuất khẩu người trợ
+giúp máy chiếu; các kiểm thử thực hiện chúng thông qua `listAuditLogs`.
 
 ```js
 const INVALID_AUDIT_VALUE = Symbol('INVALID_AUDIT_VALUE');
@@ -1365,7 +1391,7 @@ function projectAuditLog(row) {
 }
 ```
 
-Add the public service function and export it with the existing Admin functions:
+Thêm chức năng dịch vụ công cộng và xuất nó bằng các chức năng Quản trị viên hiện có:
 
 ```js
 // @spec FR-FE11-033, BR-FE11-018, BR-FE11-026, AC-FE11-018
@@ -1379,36 +1405,39 @@ async function listAuditLogs(query = {}) {
 }
 ```
 
-Remove the obsolete audit-list function/export from `userManagementService` and delete its old normalization tests/mocks from `userManagementService.test.js` without weakening account-setup or role-mutation coverage.
+Xóa chức năng/xuất danh sách kiểm tra lỗi thời khỏi `userManagementService` và xóa tests/mocks chuẩn
+hóa cũ khỏi `userManagementService.test.js` mà không làm suy yếu phạm vi thiết lập tài khoản hoặc
+thay đổi vai trò.
 
-- [ ] **Step 5: Run the service GREEN tests**
+- [ ] **Bước 5: Chạy thử dịch vụ GREEN**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/adminAuditLogService.test.js tests/userManagementService.test.js
 ```
 
-Expected: PASS for every approved action family, malformed/hostile metadata, canonical DTO mapping, and removal of the obsolete user-management listing contract.
+Dự kiến: đạt cho mọi nhóm hành động được phê duyệt, siêu dữ liệu không đúng định dạng/thù địch, ánh
+xạ DTO chuẩn và xóa hợp đồng danh sách quản lý người dùng lỗi thời.
 
 ---
 
-### Task 4: Migrate The Admin Frontend To The Canonical DTO
+### Nhiệm vụ 4: Di chuyển giao diện người dùng quản trị sang DTO chuẩn
 
-**Files:**
-- Create: `frontend/test/adminApi.test.js`
-- Modify: `frontend/src/api/adminApi.js`
-- Modify: `frontend/src/api/userManagementApi.js`
-- Modify: `frontend/src/page/UserManagement.jsx`
-- Modify: `frontend/test/userManagementApi.test.js`
-- Modify: `frontend/test/userManagementFrontend.test.js`
+**Tệp:**
+- Tạo: `frontend/test/adminApi.test.js`
+- Sửa đổi: `frontend/src/api/adminApi.js`
+- Sửa đổi: `frontend/src/api/userManagementApi.js`
+- Sửa đổi: `frontend/src/page/UserManagement.jsx`
+- Sửa đổi: `frontend/test/userManagementApi.test.js`
+- Sửa đổi: `frontend/test/userManagementFrontend.test.js`
 
-**Interfaces:**
-- Produces: `adminApi.auditLogs(params = {})` using `GET /admin/audit-logs`.
-- Produces page helpers: `buildAuditLogParams(input)` and `formatAuditDetailEntries(details)`.
-- Removes: `fetchAuditLogs` and every `/users/audit-logs` frontend reference.
+**Giao diện:**
+- Sản xuất: `adminApi.auditLogs(params = {})` sử dụng `GET /admin/audit-logs`.
+- Tạo trình trợ giúp trang: `buildAuditLogParams(input)` và `formatAuditDetailEntries(details)`.
+- Loại bỏ: `fetchAuditLogs` và mọi tham chiếu giao diện người dùng `/users/audit-logs`.
 
-- [ ] **Step 1: Write failing API and UI source-contract tests**
+- [ ] **Bước 1: Viết các kiểm thử hợp đồng nguồn giao diện người dùng và API không thành công**
 
-Create `frontend/test/adminApi.test.js`:
+Tạo `frontend/test/adminApi.test.js`:
 
 ```js
 import assert from 'node:assert/strict';
@@ -1427,7 +1456,7 @@ test('FE11 Audit Logs use the canonical Admin endpoint and authorized wrapper', 
 });
 ```
 
-Append to `frontend/test/userManagementApi.test.js`:
+Nối vào `frontend/test/userManagementApi.test.js`:
 
 ```js
 test('FE11 user-management API no longer owns Audit Logs', async () => {
@@ -1437,7 +1466,7 @@ test('FE11 user-management API no longer owns Audit Logs', async () => {
 });
 ```
 
-Append to `frontend/test/userManagementFrontend.test.js`:
+Nối vào `frontend/test/userManagementFrontend.test.js`:
 
 ```js
 test('FE11 Audit query builder omits blanks and preserves nonblank server validation input', async () => {
@@ -1494,27 +1523,28 @@ test('FE11 Audit renders only the nested safe DTO as React text', async () => {
 });
 ```
 
-These tests assert:
+Những kiểm thử này khẳng định:
 
-- `buildAuditLogParams` trims `q`/`action`, converts a valid actor ID, preserves nonblank invalid input for server rejection, preserves `from`/`to`, and omits only blank optional fields;
-- Apply and Clear call `loadAuditLogs(1, ...)` so pagination resets;
-- refresh calls `loadAuditLogs(auditPagination.page, { announce: true, filters: auditFilters })`;
-- actor reads `log.actor?.fullName` / `log.actor?.email`;
-- target reads `log.target?.label` / `type` / `id`;
-- details use `formatAuditDetailEntries(log.details)` and never `JSON.stringify`, `dangerouslySetInnerHTML`, or raw `metadata`;
-- audit pagination uses limit `20`, while other Admin tables keep the default page size `8`.
+- `buildAuditLogParams` trim `q`/`action`, chuyển đổi ID tác nhân hợp lệ, giữ đầu vào không hợp lệ nhưng không rỗng để backend từ chối, giữ `from`/`to` và chỉ bỏ qua trường tùy chọn rỗng;
+- Áp dụng và Xóa cuộc gọi `loadAuditLogs(1, ...)` để đặt lại phân trang;
+- làm mới cuộc gọi `loadAuditLogs(auditPagination.page, { announce: true, filters: auditFilters })`;
+- tác nhân đọc `log.actor?.fullName` / `log.actor?.email`;
+- mục tiêu đọc `log.target?.label` / `type` / `id`;
+- chi tiết sử dụng `formatAuditDetailEntries(log.details)` và không bao giờ sử dụng `JSON.stringify`, `dangerouslySetInnerHTML` hoặc `metadata` thô;
+- phân trang kiểm tra sử dụng giới hạn `20`, trong khi các bảng Quản trị khác giữ kích thước trang mặc định `8`.
 
-- [ ] **Step 2: Run the frontend RED tests**
+- [ ] **Bước 2: Chạy kiểm thử RED ở giao diện người dùng**
 
 ```powershell
 node --test frontend/test/adminApi.test.js frontend/test/userManagementApi.test.js frontend/test/userManagementFrontend.test.js
 ```
 
-Expected: FAIL because the API still uses the legacy adapter and the page renders flat prototype fields without canonical filters/details.
+Dự kiến: THẤT BẠI vì API vẫn sử dụng bộ điều hợp cũ và trang hiển thị các trường nguyên mẫu phẳng mà
+không có bộ lọc/chi tiết chuẩn.
 
-- [ ] **Step 3: Implement the API migration and query helper**
+- [ ] **Bước 3: Triển khai trình trợ giúp truy vấn và di chuyển API**
 
-Add to `adminApi`:
+Thêm vào `adminApi`:
 
 ```js
 auditLogs(params = {}) {
@@ -1525,9 +1555,9 @@ auditLogs(params = {}) {
 },
 ```
 
-Remove `fetchAuditLogs` from `userManagementApi.js` and its import from `UserManagement.jsx`.
+Xóa `fetchAuditLogs` khỏi `userManagementApi.js` và nhập nó từ `UserManagement.jsx`.
 
-Add near the Admin page constants:
+Thêm hằng số gần trang Quản trị viên:
 
 ```js
 const ADMIN_TABLE_PAGE_SIZE = 8;
@@ -1565,9 +1595,9 @@ function formatAuditDetailValue(value) {
 }
 ```
 
-- [ ] **Step 4: Implement filter state, loading, rendering, and pagination**
+- [ ] **Bước 4: Triển khai trạng thái bộ lọc, tải, hiển thị và phân trang**
 
-Add state beside the existing Audit state and initialize pagination with the canonical default:
+Thêm trạng thái bên cạnh trạng thái Kiểm tra hiện có và khởi tạo phân trang với mặc định chuẩn:
 
 ```js
 const [auditFilters, setAuditFilters] = useState(EMPTY_AUDIT_FILTERS);
@@ -1579,7 +1609,7 @@ const [auditPagination, setAuditPagination] = useState({
 });
 ```
 
-Change the loader signature to:
+Thay đổi chữ ký của trình tải thành:
 
 ```js
 async function loadAuditLogs(
@@ -1618,7 +1648,7 @@ async function loadAuditLogs(
 }
 ```
 
-Replace the Audit refresh branch with:
+Thay thế nhánh làm mới Kiểm toán bằng:
 
 ```js
 else if (activeSection === 'audit') {
@@ -1626,7 +1656,7 @@ else if (activeSection === 'audit') {
 }
 ```
 
-Add this toolbar before the Audit table heading:
+Thêm thanh công cụ này trước tiêu đề bảng Kiểm tra:
 
 ```jsx
 <div className="um-toolbar audit">
@@ -1707,7 +1737,7 @@ Add this toolbar before the Audit table heading:
 </div>
 ```
 
-Add a `Chi tiết an toàn` column and render rows only from the nested DTO:
+Thêm cột `Chi tiết an toàn` và chỉ hiển thị các hàng từ DTO lồng nhau:
 
 ```jsx
 <td>
@@ -1732,9 +1762,9 @@ Add a `Chi tiết an toàn` column and render rows only from the nested DTO:
 </td>
 ```
 
-Do not render raw JSON or HTML. React text escaping remains the only rendering path.
+Không hiển thị JSON hoặc HTML thô. Việc thoát văn bản React vẫn là đường dẫn hiển thị duy nhất.
 
-Change pagination to preserve existing tables:
+Thay đổi phân trang để bảo toàn các bảng hiện có:
 
 ```js
 function AdminTablePagination({
@@ -1748,9 +1778,9 @@ function AdminTablePagination({
 }
 ```
 
-Pass `pageSize={auditPagination.limit || AUDIT_TABLE_PAGE_SIZE}` only for Audit Logs.
+Chỉ chuyển `pageSize={auditPagination.limit || AUDIT_TABLE_PAGE_SIZE}` cho Nhật ký kiểm tra.
 
-- [ ] **Step 5: Run the frontend GREEN tests**
+- [ ] **Bước 5: Chạy kiểm thử GREEN ở giao diện người dùng**
 
 ```powershell
 node --test frontend/test/adminApi.test.js frontend/test/userManagementApi.test.js frontend/test/userManagementFrontend.test.js
@@ -1758,72 +1788,71 @@ npm.cmd --prefix frontend run lint
 npm.cmd --prefix frontend run build
 ```
 
-Expected: source-contract tests, lint, and production build PASS; no legacy endpoint or unsafe metadata rendering remains.
+Dự kiến: kiểm tra hợp đồng nguồn, kiểm tra mã và xây dựng sản xuất đạt; không còn điểm cuối cũ hoặc hiển
+thị siêu dữ liệu không an toàn.
 
 ---
 
-### Task 5: Synchronize Contracts And Assemble The H2 Evidence Package
+### Nhiệm vụ 5: Đồng bộ hóa hợp đồng và tập hợp gói bằng chứng H2
 
-**Files:**
-- Modify: `docs/api/api-contract.md`
-- Modify: `backend/src/docs/openapi.yaml`
-- Modify: `.sdd/specs/feat-user-role-management/TEST_PLAN.md`
-- Modify: `.sdd/specs/feat-user-role-management/CHANGELOG.md`
-- Create: `.sdd/reviews/fe11-audit-log-validation-2026-07-18.md`
+**Tệp:**
+- Sửa đổi: `docs/api/api-contract.md`
+- Sửa đổi: `backend/src/docs/openapi.yaml`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/TEST_PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/CHANGELOG.md`
+- Tạo: `.sdd/reviews/fe11-audit-log-validation-2026-07-18.md`
 
-**Interfaces:**
-- Produces: synchronized human/API documentation for `GET /api/admin/audit-logs` and an L1-L4 H2 review packet.
-- Does not close: `FE11-AUD01` or `TD-024` before H2/H3/merge evidence exists.
+**Giao diện:**
+- Tạo ra: tài liệu con người/API được đồng bộ hóa cho `GET /api/admin/audit-logs` và gói đánh giá L1-L4 H2.
+- Không đóng: `FE11-AUD01` hoặc `TD-024` trước khi tồn tại bằng chứng H2/H3/hợp nhất.
 
-- [ ] **Step 1: Document the canonical API**
+- [ ] **Bước 1: Ghi lại API chuẩn**
 
-Append this FE11 subsection to `docs/api/api-contract.md` before the implementation notes:
+Nối tiểu mục FE11 này vào `docs/api/api-contract.md` trước phần ghi chú triển khai:
 
 ````markdown
 ### GET `/api/admin/audit-logs`
 
-Actor: authenticated Admin. Authentication and Admin authorization run before detailed query validation.
+Tác nhân: Quản trị viên được xác thực. Xác thực và ủy quyền quản trị viên chạy trước khi xác thực truy vấn chi tiết.
 
-| Query | Type | Required | Contract |
+|Truy vấn|Loại|Bắt buộc|hợp đồng|
 | --- | --- | --- | --- |
-| `page` | integer | No | Default `1`; minimum `1` |
-| `limit` | integer | No | Default `20`; range `1..100` |
-| `q` | string | No | Trimmed `1..100`; searches action, actor email/full name, target type, and target ID text |
-| `action` | string | No | Trimmed exact action, `1..100` |
-| `actorId` | integer | No | Positive user ID |
-| `from` | date | No | Inclusive `YYYY-MM-DD` lower bound |
-| `to` | date | No | Inclusive `YYYY-MM-DD` upper bound; must not precede `from` |
+| `page` |số nguyên|Không|`1` mặc định; tối thiểu `1`|
+| `limit` |số nguyên|Không|`20` mặc định; phạm vi `1..100`|
+| `q` |chuỗi|Không|Đã trim `1..100`; tìm kiếm hành động, email/tên đầy đủ của tác nhân, loại mục tiêu và văn bản ID mục tiêu|
+| `action` |chuỗi|Không|Hành động cắt tỉa chính xác, `1..100`|
+| `actorId` |số nguyên|Không|ID người dùng tích cực|
+| `from` |ngày|Không|Bao gồm giới hạn dưới `YYYY-MM-DD`|
+| `to` |ngày|Không|Bao gồm giới hạn trên `YYYY-MM-DD`; không được đặt chỗ `from`|
 
-Response `200`:
+Phản hồi `200`:
 
 ```json
-{
-  "data": [
+{ "dữ liệu": [
     {
       "logId": 10,
-      "action": "USER_ROLE_ASSIGN",
+      "hành động": "USER_ROLE_ASSIGN",
       "actor": {
         "userId": 7,
         "email": "admin@example.test",
-        "fullName": "Admin User"
+        "fullName": "Người dùng quản trị"
       },
-      "target": {
-        "type": "USER",
+      "mục tiêu": {
+        "loại": "USER",
         "id": 15,
-        "label": "member@example.test"
+        "nhãn": "thành viên@example.test"
       },
-      "details": {
+      "chi tiết": {
         "roleId": 2,
         "roleName": "LIBRARIAN"
       },
       "ipAddress": "203.0.113.10",
       "createdAt": "2026-07-18T10:00:00.000Z"
     }
-  ],
-  "pagination": {
-    "page": 1,
-    "limit": 20,
-    "total": 1,
+], "phân trang": {
+    "trang": 1,
+    "giới hạn": 20,
+    "tổng cộng": 1,
     "totalPages": 1
   }
 }
@@ -1831,15 +1860,16 @@ Response `200`:
 
 Rules:
 
-- Rows are ordered by `CreatedAt DESC, LogId DESC`; filtering and pagination run in SQL with typed parameters.
-- `details` is an action-aware allowlist. Raw `Metadata`, `UserAgent`, passwords, hashes, tokens, OTPs, sessions, credentials, setup/reset links, raw notes/reasons/emails/identifiers, raw paths, and nested objects are not returned.
-- Invalid JSON, top-level arrays/scalars, unknown actions, and invalid projected field shapes return `details: {}`.
-- Only targets with type `USER`, `USERS`, or `ACCOUNT` may receive a joined user label. Other target types return `label: null`.
-- An empty result returns `totalPages: 0`.
-- The retired `GET /api/users/audit-logs` path always returns `404 NOT_FOUND` and is not a compatibility alias.
+- Các bản ghi được sắp xếp theo `CreatedAt DESC, LogId DESC`; lọc và phân trang chạy trong SQL bằng tham số có kiểu.
+- `details` là danh sách cho phép theo từng hành động. Không trả về `Metadata`, `UserAgent`, mật khẩu, giá trị băm, mã thông báo, OTP, phiên, thông tin xác thực, liên kết thiết lập/đặt lại, ghi chú/lý do/email/định danh thô, đường dẫn thô hoặc đối tượng lồng nhau.
+- JSON không hợp lệ, mảng/giá trị vô hướng ở cấp cao nhất, hành động không xác định và cấu trúc trường chiếu không hợp lệ đều trả về `details: {}`.
+- Chỉ đối tượng có loại `USER`, `USERS` hoặc `ACCOUNT` mới có thể nhận nhãn người dùng đã nối. Các loại đối tượng khác trả về `label: null`.
+- Kết quả rỗng trả về `totalPages: 0`.
+- Tuyến `GET /api/users/audit-logs` đã ngừng dùng luôn trả về `404 NOT_FOUND` và không phải bí danh tương thích.
 ````
 
-Update the OpenAPI title/description to include FE11, add an `Admin Audit` tag, and add these schemas under `components.schemas`:
+Cập nhật tiêu đề/mô tả OpenAPI để bao gồm FE11, thêm thẻ `Admin Audit` và thêm các lược đồ này trong
+`components.schemas`:
 
 ```yaml
     AuditLogActor:
@@ -1932,7 +1962,7 @@ Update the OpenAPI title/description to include FE11, add an `Admin Audit` tag, 
         pagination: { $ref: '#/components/schemas/AuditLogPagination' }
 ```
 
-Add this path under `paths`:
+Thêm đường dẫn này trong `paths`:
 
 ```yaml
   /api/admin/audit-logs:
@@ -1959,17 +1989,17 @@ Add this path under `paths`:
         '403': { $ref: '#/components/responses/Forbidden' }
 ```
 
-Do not document raw metadata or a legacy alias.
+Không ghi lại siêu dữ liệu thô hoặc bí danh cũ.
 
-- [ ] **Step 2: Run focused backend integration tests**
+- [ ] **Bước 2: Chạy kiểm thử tích hợp máy chủ tập trung**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/adminAuditLogRoutes.test.js tests/adminAuditLogService.test.js tests/auditLogRepository.test.js tests/userManagementRoutes.test.js tests/userManagementService.test.js tests/securityRegression.test.js
 ```
 
-Expected: all six suites PASS.
+Dự kiến: tất cả sáu bộ kiểm thử ĐẠT.
 
-- [ ] **Step 3: Run full L1 validation**
+- [ ] **Bước 3: Chạy xác thực L1 đầy đủ**
 
 ```powershell
 npm.cmd --prefix backend test
@@ -1984,9 +2014,10 @@ npm.cmd run trace:enforce
 git diff --check
 ```
 
-Expected: all commands PASS. A deterministic failure receives at most three total attempts; a suspected E2E flake may be rerun once with evidence.
+Dự kiến: tất cả các lệnh ĐẠT. Một lỗi xác định nhận được tối đa ba lần thử; mảnh E2E bị nghi ngờ có
+thể được chạy lại một lần khi có bằng chứng.
 
-- [ ] **Step 4: Run scope and sensitive-data scans**
+- [ ] **Bước 4: Chạy quét phạm vi và quét dữ liệu nhạy cảm**
 
 ```powershell
 git diff --name-only
@@ -1995,52 +2026,61 @@ git diff -U0 | rg -n "(?i)(password|passwd|token|otp|authorization|cookie|secret
 rg -n "fetchAuditLogs|/users/audit-logs|listRecent" backend frontend
 ```
 
-Expected: changed files remain inside TD-024 ownership; sensitive-term matches are limited to projector deny rules and negative test assertions; no functional legacy call or `listRecent` reference remains.
+Dự kiến: các tệp đã thay đổi vẫn thuộc quyền sở hữu của TD-024; các kết quả phù hợp với thuật ngữ
+nhạy cảm được giới hạn ở các quy tắc từ chối máy chiếu và các xác nhận kiểm tra phủ định; không còn
+lệnh gọi kế thừa chức năng hoặc tham chiếu `listRecent` nào.
 
-- [ ] **Step 5: Record L1-L4 evidence for H2**
+- [ ] **Bước 5: Ghi lại bằng chứng L1-L4 cho H2**
 
-Create `.sdd/reviews/fe11-audit-log-validation-2026-07-18.md` only after the commands finish, recording exact observed suite/test counts and command results.
+Chỉ tạo `.sdd/reviews/fe11-audit-log-validation-2026-07-18.md` sau khi lệnh kết thúc, ghi lại chính
+xác số lượng bộ/kiểm tra được quan sát và kết quả lệnh.
 
-The packet must contain:
+Gói phải chứa:
 
-- L1: observed RED failures, GREEN focused tests, full tests, coverage, lint, build, traceability, diff check, scope scan, and sensitive-data scan.
-- L2: mapping from `FE11-AUD01` code/tests to `FR-FE11-033`, `AC-FE11-018`, `BR-FE11-018`, `BR-FE11-026`, and `TD-024`.
-- L3: Admin-first authorization, boundary validation, typed parameterized SQL, action-aware default-deny projection, no raw metadata/secrets, and no schema/auth/dependency expansion.
-- L4: reviewer-demonstrated filter combinations, pagination/order, safe details, non-user target labels, legacy `404`, frontend read-only flow, and residual environment gaps.
+- L1: các lỗi RED được quan sát, kiểm tra tập trung GREEN, kiểm tra đầy đủ, phạm vi bảo hiểm, tìm lỗi mã nguồn, bản dựng, truy vết, kiểm tra khác biệt, quét phạm vi và quét dữ liệu nhạy cảm.
+- L2: ánh xạ từ mã/kiểm tra `FE11-AUD01` tới `FR-FE11-033`, `AC-FE11-018`, `BR-FE11-018`, `BR-FE11-026` và `TD-024`.
+- L3: Ủy quyền đầu tiên của quản trị viên, xác thực ranh giới, SQL được tham số hóa đã nhập, phép chiếu từ chối mặc định nhận biết hành động, không có siêu dữ liệu/bí mật thô và không mở rộng lược đồ/auth/dependency.
+- L4: các kết hợp bộ lọc do người đánh giá chứng minh, phân trang/thứ tự, chi tiết an toàn, nhãn mục tiêu không dành cho người dùng, `404` cũ, luồng chỉ đọc ở giao diện người dùng và các khoảng trống môi trường còn lại.
 
-Update `TEST_PLAN.md` and `CHANGELOG.md` to say implementation is H2-ready only after evidence exists. Keep `TD-024` `IN PROGRESS` and `FE11-AUD01` unchecked until the authorized closeout gate.
+Cập nhật `TEST_PLAN.md` và `CHANGELOG.md` để cho biết việc triển khai chỉ sẵn sàng cho H2 sau khi có
+bằng chứng. Giữ `TD-024` `IN PROGRESS` và `FE11-AUD01` không được chọn cho đến khi cổng đóng được ủy
+quyền.
 
-- [ ] **Step 6: Stop for H2 review before commit or push**
+- [ ] **Bước 6: Dừng để xem xét H2 trước khi cam kết hoặc đẩy**
 
-Present the complete uncommitted diff and `.sdd/reviews/fe11-audit-log-validation-2026-07-18.md` to the human reviewer. H2 approval authorizes only the reviewed commit set, push, draft PR publication, and ready-for-review transition after required checks pass; H3 remains required before merge.
+Trình bày toàn bộ khác biệt có sẵn và `.sdd/reviews/fe11-audit-log-validation-2026-07-18.md` cho
+người đánh giá. Phê duyệt H2 chỉ cho phép bộ cam kết được xem xét, đẩy, xuất bản PR dự thảo và
+chuyển đổi sẵn sàng để xem xét sau khi vượt qua các bước kiểm tra bắt buộc; H3 vẫn cần thiết trước
+khi hợp nhất.
 
 ---
 
-### Task 6: Publish After H2 And Integrate Only After H3
+### Nhiệm vụ 6: Xuất bản sau H2 và chỉ tích hợp sau H3
 
-**Files:**
-- Commit: the exact H2-reviewed TD-024 diff only
-- Publish branch: `fix/fe11-audit-log-contract`
-- Create PR: one TD-024 implementation PR against `main`
-- Stage later batch closeout evidence: no per-slice closeout PR
+**Tệp:**
+- Cam kết: chỉ khác biệt chính xác với TD-024 được H2 đánh giá
+- nhánh xuất bản: `fix/fe11-audit-log-contract`
+- Tạo PR: một PR triển khai TD-024 so với `main`
+- Bằng chứng kết thúc đợt sau ở giai đoạn sau: không có PR kết thúc theo từng lát
 
-**Interfaces:**
-- Consumes: explicit H2 approval, the unchanged reviewed diff, and passing local L1 evidence.
-- Produces: reviewed commits, required PR CI, an H3 decision packet, merge evidence, and post-merge CI evidence for the final Batch 1 closeout.
+**Giao diện:**
+- Tiêu thụ: phê duyệt H2 rõ ràng, khác biệt được xem xét không thay đổi và chuyển bằng chứng L1 cục bộ.
+- Tạo ra: các cam kết đã được xem xét, PR CI bắt buộc, gói quyết định H3, bằng chứng hợp nhất và bằng chứng CI sau hợp nhất cho lần kết thúc Lô 1 cuối cùng.
 
-- [ ] **Step 1: Confirm the H2-reviewed diff has not changed**
+- [ ] **Bước 1: Xác nhận sự khác biệt được H2 xem xét không thay đổi**
 
-Record the H2 diff hash before approval:
+Ghi lại hàm băm khác biệt H2 trước khi phê duyệt:
 
 ```powershell
 git diff --binary | git hash-object --stdin
 ```
 
-Immediately before committing, rerun the command and require the same hash. If it differs, stop and present the new diff for H2 again.
+Ngay trước khi thực hiện, hãy chạy lại lệnh và yêu cầu hàm băm tương tự. Nếu nó khác, hãy dừng lại
+và trình bày lại điểm khác biệt mới cho H2.
 
-- [ ] **Step 2: Create the approved commit set**
+- [ ] **Bước 2: Tạo bộ cam kết đã được phê duyệt**
 
-After explicit H2 approval, create these reviewable commits without changing content between them:
+Sau khi phê duyệt H2 rõ ràng, hãy tạo các cam kết có thể xem xét này mà không thay đổi nội dung giữa chúng:
 
 ```powershell
 git add -- backend/src/validators/adminValidators.js backend/src/routes/adminRoutes.js backend/src/controllers/adminController.js backend/src/routes/userManagementRoutes.js backend/src/controllers/userManagementController.js backend/src/services/adminService.js backend/src/services/userManagementService.js backend/src/repositories/auditLogRepository.js backend/tests/adminAuditLogRoutes.test.js backend/tests/adminAuditLogService.test.js backend/tests/auditLogRepository.test.js backend/tests/userManagementRoutes.test.js backend/tests/userManagementService.test.js
@@ -2053,39 +2093,40 @@ git add -- docs/superpowers/plans/2026-07-18-fe11-audit-log-contract.md docs/api
 git commit -m "docs: record FE11 audit log validation"
 ```
 
-Expected: `git status --short` is empty. Do not include `SPEC.md`, schema, dependencies, TD-026 files, or unrelated user changes.
+Dự kiến: `git status --short` trống. Không bao gồm `SPEC.md`, lược đồ, phần phụ thuộc, tệp TD-026
+hoặc các thay đổi không liên quan của người dùng.
 
-- [ ] **Step 3: Push and open the draft implementation PR**
+- [ ] **Bước 3: Đẩy và mở dự thảo triển khai PR**
 
 ```powershell
 git push -u origin fix/fe11-audit-log-contract
 @'
-## What changed
+## Nội dung đã thay đổi
 
 - Add canonical Admin-only `GET /api/admin/audit-logs` with `q`, `action`, `actorId`, `from`, `to`, `page`, and `limit`.
 - Apply typed SQL filters/pagination and action-aware default-deny details projection.
 - Migrate the Admin UI and retire `/api/users/audit-logs` with `404 NOT_FOUND`.
 
-## Spec mapping
+## Ánh xạ đặc tả
 
 - BR-FE11-018, BR-FE11-026
 - FR-FE11-033
 - AC-FE11-018
 - FE11-AUD01 / TD-024 only
 
-## Validation
+## Xác nhận
 
 - RED-GREEN route, repository, service, API, and frontend contract tests
 - Full backend/frontend tests, coverage, lint, build, traceability, diff and sensitive-data scans
 - No schema, dependency, authentication, audit-write, or TD-026 change
 
-## Residual gap
+## Khoảng trống còn lại
 
 - SQL Server-backed and browser interaction evidence is recorded explicitly if the local environment cannot provide it; GitHub CI remains required.
 '@ | gh pr create --draft --base main --head fix/fe11-audit-log-contract --title "feat(fe11): add canonical admin audit logs" --body-file -
 ```
 
-- [ ] **Step 4: Require PR checks and prepare H3 evidence**
+- [ ] **Bước 4: Yêu cầu kiểm tra PR và chuẩn bị bằng chứng H3**
 
 ```powershell
 $prNumber = gh pr view --json number --jq .number
@@ -2094,19 +2135,21 @@ gh pr ready $prNumber
 gh pr view $prNumber --json number,url,isDraft,mergeable,mergeStateStatus,statusCheckRollup,commits,files
 ```
 
-Expected: required checks pass, the branch is mergeable, and the PR is ready. Present the exact PR URL, commit SHAs, changed-file scope, L1-L4 packet, and residual risks. Do not merge without explicit H3 approval.
+Dự kiến: yêu cầu vượt qua các bước kiểm tra, nhánh có thể hợp nhất và PR đã sẵn sàng. Trình bày
+chính xác PR URL, cam kết SHA, phạm vi tệp đã thay đổi, gói L1-L4 và các rủi ro còn sót lại. Không
+hợp nhất mà không có sự chấp thuận rõ ràng của H3.
 
-- [ ] **Step 5: Merge only after explicit H3 approval**
+- [ ] **Bước 5: Chỉ hợp nhất sau khi được phê duyệt H3 rõ ràng**
 
-Use the repository's normal non-destructive merge command after the user explicitly approves H3:
+Sử dụng lệnh hợp nhất không phá hủy thông thường của kho lưu trữ sau khi người dùng phê duyệt rõ ràng H3:
 
 ```powershell
 gh pr merge $prNumber --merge --delete-branch
 ```
 
-Do not use admin merge, bypass checks, force push, or a CI waiver.
+Không sử dụng chức năng hợp nhất quản trị viên, bỏ qua kiểm tra, ép buộc hoặc từ bỏ CI.
 
-- [ ] **Step 6: Associate the exact post-merge `main` CI run**
+- [ ] **Bước 6: Liên kết chính xác lần chạy CI `main` sau hợp nhất**
 
 ```powershell
 $mergeSha = gh pr view $prNumber --json mergeCommit --jq .mergeCommit.oid
@@ -2115,19 +2158,23 @@ if (-not $runId) { throw "Post-merge CI run was not found for $mergeSha" }
 gh run watch $runId --exit-status
 ```
 
-Expected: the post-merge `foundation-checks` run passes for the exact merge SHA.
+Dự kiến: quá trình chạy `foundation-checks` sau hợp nhất sẽ đạt được hợp nhất chính xác SHA.
 
-- [ ] **Step 7: Preserve evidence for the Batch 1 closeout**
+- [ ] **Bước 7: Bảo quản bằng chứng cho đợt kết thúc đợt 1**
 
-Record the TD-024 PR number, merge SHA, PR CI run, post-merge CI run, and final L1-L4 result in the pre-reviewed Batch 1 closeout workspace. Do not open a separate TD-024 closeout PR. Keep whole FE11 deferred and proceed next to `TD-026`; the final mechanical Batch 1 closeout occurs only after `TD-024`, `TD-026`, and `TD-027` have each passed their own H2/H3 flow.
+Ghi lại số PR TD-024, hợp nhất SHA, chạy PR CI, chạy CI sau hợp nhất và kết quả L1-L4 cuối cùng
+trong không gian làm việc kết thúc Lô 1 được xem xét trước. Không mở PR đóng TD-024 riêng biệt. Trì
+hoãn toàn bộ FE11 và tiến hành tiếp theo `TD-026`; quá trình đóng Lô 1 cơ học cuối cùng chỉ xảy ra
+sau khi `TD-024`, `TD-026` và `TD-027`, mỗi chiếc đã vượt qua luồng H2/H3 của riêng mình.
 
 ---
 
-## Self-Review
+## Tự xem xét
 
-- Spec coverage: Tasks 1-5 cover canonical ownership, Admin-first validation, all query filters, stable typed SQL pagination, safe action projection, frontend migration, legacy retirement, API docs, and L1-L4 evidence.
-- Type consistency: query names, DTO fields, helper names, repository method, and frontend adapter names are identical across tasks.
-- Scope: no schema, dependency, auth expansion, compatibility alias, export, audit writes, or cross-domain label joins are included.
-- Residual acceptance gap: a real SQL Server execution and browser interaction remain environment-dependent if those environments are unavailable; emitted SQL, source contracts, and component behavior remain automated.
+- Phạm vi đặc tả: Nhiệm vụ 1-5 bao gồm quyền sở hữu chuẩn, xác thực ưu tiên quản trị viên, tất cả các bộ lọc truy vấn, phân trang SQL được nhập ổn định, chiếu hành động an toàn, di chuyển giao diện người dùng, gỡ bỏ kế thừa, tài liệu API và bằng chứng L1-L4.
+- Tính nhất quán của loại: tên truy vấn, trường DTO, tên trợ giúp, phương thức kho lưu trữ và tên bộ điều hợp giao diện người dùng giống hệt nhau trong các tác vụ.
+- Phạm vi: không bao gồm lược đồ, phần phụ thuộc, mở rộng xác thực, bí danh tương thích, xuất, ghi kiểm tra hoặc nối nhãn tên miền chéo.
+- Khoảng cách chấp nhận còn lại: việc thực thi SQL Server thực và tương tác trình duyệt vẫn phụ thuộc vào môi trường nếu những môi trường đó không khả dụng; SQL được phát ra, hợp đồng nguồn và hành vi thành phần vẫn được tự động hóa.
 
-Plan complete and saved to `docs/superpowers/plans/2026-07-18-fe11-audit-log-contract.md`. Execute inline with `executing-plans` only after PR #32 receives H3 and merges.
+Kế hoạch đã hoàn tất và được lưu vào `docs/superpowers/plans/2026-07-18-fe11-audit-log-contract.md`.
+Chỉ thực thi nội tuyến với `executing-plans` sau khi PR #32 nhận được H3 và hợp nhất.

@@ -1,61 +1,68 @@
-# FE11 Admin Navigation And Permissions Implementation Plan
+# FE11 Kế hoạch triển khai quyền và điều hướng của quản trị viên
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Đối với nhân viên đại lý:** SUB-SKILL BẮT BUỘC: Sử dụng siêu năng lực:phát triển theo định hướng phụ (được khuyến nghị) hoặc siêu năng lực:thực hiện các kế hoạch để triển khai kế hoạch này theo từng nhiệm vụ. Các bước sử dụng cú pháp hộp kiểm (`- [ ]`) để theo dõi.
 
-**Goal:** Close `TD-023` by exposing the approved eight-item Admin Console navigation and a read-only, Admin-only FE11 permission matrix composed in the frontend with independent FE12 role counts.
+**Mục tiêu:** Đóng `TD-023` bằng cách hiển thị tám mục đã được phê duyệt trong Bảng điều khiển dành
+cho quản trị viên và ma trận quyền FE11 chỉ đọc, chỉ dành cho quản trị viên được tạo ở giao diện
+người dùng với số lượng vai trò FE12 độc lập.
 
-**Architecture:** FE11 owns a deterministic Phase 1 permission policy in a backend policy module and exposes fresh allowlisted DTOs through `GET /api/admin/permissions`. The React Admin Console consumes that API without a hardcoded matrix, derives module coverage from `allowedRoles`, and joins role counts from the existing FE12 `/api/reports/users` response by `roleName`; FE11 and FE12 loading/error state remain independent.
+**Kiến trúc:** FE11 sở hữu chính sách cấp phép Giai đoạn 1 xác định trong mô-đun chính sách máy chủ
+và hiển thị các DTO mới được đưa vào danh sách cho phép thông qua `GET /api/admin/permissions`. Bảng
+điều khiển dành cho quản trị viên React sử dụng API mà không có ma trận mã hóa cứng, lấy phạm vi
+mô-đun từ `allowedRoles` và kết hợp số lượng vai trò từ phản hồi FE12 `/api/reports/users` hiện có
+của `roleName`; Trạng thái tải/lỗi FE11 và FE12 vẫn độc lập.
 
-**Tech Stack:** Node.js, Express.js, Jest, Supertest, React 19, Vite, Node test runner, Bootstrap-compatible existing Admin Console CSS, OpenAPI 3.0 YAML.
+**Tech bộ công nghệ:** Node.js, Express.js, Jest, Supertest, React 19, Vite, Trình chạy thử Node, Bảng điều
+khiển dành cho quản trị viên hiện có tương thích với Bootstrap CSS, OpenAPI 3.0 YAML.
 
-## Global Constraints
+## Ràng buộc toàn cầu
 
-- Decision mode is Hybrid SDD + ADD at Standard depth: authorization/API/policy/ownership/failure isolation are Core; presentation is Shell.
-- Implement only `TD-023`, `FR-FE11-030`, `FR-FE11-032`, `AC-FE11-016`, and `AC-FE11-017`.
-- The Admin Console sidebar contains exactly `home`, `dashboard`, `library`, `circulation`, `requests`, `users`, `permissions`, and `audit`, in that order.
-- `membership`, Confirm Payment, and Confirm Borrow are not Admin Console sidebar entries; FE04 routes, APIs, components, and product behavior remain untouched.
-- Add only Admin-only `GET /api/admin/permissions`; authentication and Admin authorization execute before the controller.
-- The response top-level keys are exactly `roles` and `permissions`; role and permission object keys match the approved design exactly.
-- The backend is the only product-code owner of the 15-row Phase 1 permission matrix.
-- FE12 `GET /api/reports/users` remains the only owner of global `usersByRole` counts; do not add `/api/admin/user-summary` or derive counts from paginated users.
-- FE11 matrix and FE12 count requests load, fail, retry, and preserve their last successful values independently.
-- Do not add permission editing, role hierarchy, role CRUD, database schema changes, dependencies, FE12 production changes, FE04 production changes, or `TD-025` behavior.
-- Keep `.sdd/specs/feat-user-role-management/TASKS.md` at whole-feature `Implementation State: DEFERRED` throughout this bounded slice.
-- Add `@spec FR-FE11-032` traceability to the backend service/route boundary and preserve existing `FR-FE11-030` frontend traceability expectations.
-- Generated product/test/docs changes remain uncommitted until H2 human review. H3 remains mandatory after PR checks and before merge.
+- Chế độ quyết định là Hybrid SDD + ADD ở Độ sâu tiêu chuẩn: ủy quyền/API/chính sách/quyền sở hữu/cách ly lỗi là lõi; trình bày là lớp bao.
+- Chỉ triển khai `TD-023`, `FR-FE11-030`, `FR-FE11-032`, `AC-FE11-016` và `AC-FE11-017`.
+- Thanh bên của Bảng điều khiển dành cho quản trị viên chứa chính xác `home`, `dashboard`, `library`, `circulation`, `requests`, `users`, `permissions` và `audit` theo thứ tự đó.
+- `membership`, Xác nhận thanh toán và Xác nhận lượt mượn không phải là các mục nhập trong thanh bên của Bảng điều khiển dành cho quản trị viên; Các tuyến, API, thành phần và hành vi sản phẩm của FE04 vẫn không bị ảnh hưởng.
+- Chỉ thêm `GET /api/admin/permissions` chỉ dành cho quản trị viên; xác thực và ủy quyền quản trị viên thực thi trước bộ điều khiển.
+- Các khóa cấp cao nhất phản hồi chính xác là `roles` và `permissions`; Các khóa đối tượng vai trò và quyền khớp chính xác với thiết kế đã được phê duyệt.
+- Phần máy chủ là chủ sở hữu mã sản phẩm duy nhất của ma trận cấp phép Giai đoạn 1 gồm 15 hàng.
+- FE12 `GET /api/reports/users` vẫn là chủ sở hữu duy nhất của số lượng `usersByRole` toàn cầu; không thêm `/api/admin/user-summary` hoặc lấy số lượng từ người dùng được phân trang.
+- FE11 ma trận và số lượng yêu cầu FE12 tải, thất bại, thử lại và duy trì các giá trị thành công cuối cùng của chúng một cách độc lập.
+- Không thêm chỉnh sửa quyền, phân cấp vai trò, vai trò CRUD, thay đổi lược đồ cơ sở dữ liệu, phụ thuộc, thay đổi sản xuất FE12, thay đổi sản xuất FE04 hoặc hành vi `TD-025`.
+- Giữ `.sdd/specs/feat-user-role-management/TASKS.md` ở mức `Implementation State: DEFERRED` đầy đủ chức năng trong suốt lát cắt giới hạn này.
+- Thêm khả năng truy vết `@spec FR-FE11-032` vào ranh giới dịch vụ/tuyến đường máy chủ và duy trì các kỳ vọng về khả năng truy vết của giao diện `FR-FE11-030` hiện có.
+- Các thay đổi về sản phẩm/kiểm thử/tài liệu đã tạo vẫn có sẵn cho đến khi có sự đánh giá của con người H2. H3 vẫn bắt buộc sau khi kiểm tra PR và trước khi hợp nhất.
 
 ---
 
-## File Map
+## Bản đồ tệp
 
-### Create
+### Tạo
 
-- `backend/src/policies/adminPermissionPolicy.js` - immutable canonical role and permission definitions; no service, repository, or transport behavior.
-- `backend/tests/adminPermissionService.test.js` - exact DTO, ordering, allowlist, uniqueness, and fresh-object tests.
-- `backend/tests/adminPermissionRoutes.test.js` - authentication, Admin-first authorization, controller delegation, and exact response tests.
-- `frontend/src/utils/adminPermissions.js` - pure role-summary, module-coverage, and matrix-cell derivation helpers; contains no permission definitions.
-- `frontend/test/adminPermissions.test.js` - executable tests for numeric zero defaults and `allowedRoles` derivation.
-- `.sdd/reviews/fe11-admin-navigation-permissions-validation-2026-07-19.md` - L1-L4 H2/B7 evidence record.
+- `backend/src/policies/adminPermissionPolicy.js` - định nghĩa về quyền và vai trò chuẩn bất biến; không có hành vi dịch vụ, kho lưu trữ hoặc vận chuyển.
+- `backend/tests/adminPermissionService.test.js` - DTO chính xác, kiểm tra thứ tự, danh sách cho phép, tính duy nhất và đối tượng mới.
+- `backend/tests/adminPermissionRoutes.test.js` - xác thực, ủy quyền ưu tiên quản trị viên, ủy quyền bộ điều khiển và kiểm tra phản hồi chính xác.
+- `frontend/src/utils/adminPermissions.js` - trình trợ giúp dẫn xuất mô-đun, mô-đun và tóm tắt vai trò thuần túy; không chứa định nghĩa quyền.
+- `frontend/test/adminPermissions.test.js` - các kiểm thử có thể thực thi đối với các giá trị mặc định bằng số 0 và dẫn xuất `allowedRoles`.
+- `.sdd/reviews/fe11-admin-navigation-permissions-validation-2026-07-19.md` - Bản ghi bằng chứng L1-L4 H2/B7.
 
-### Modify
+### sửa đổi
 
-- `.sdd/specs/feat-user-role-management/PLAN.md` - activate and later close the bounded navigation/permissions slice.
-- `.sdd/specs/feat-user-role-management/TASKS.md` - add `FE11-PERM01..FE11-PERM06` while retaining whole-feature `DEFERRED`.
-- `.sdd/specs/feat-user-role-management/TEST_PLAN.md` - add focused targets and observed evidence.
-- `.sdd/specs/feat-user-role-management/CHANGELOG.md` - record approval, H2 readiness, and later B7 integration without overstating whole FE11.
-- `TECH_DEBT.md` - move `TD-023` from `OPEN` to `IN PROGRESS`, then to Resolved only after merge and post-merge CI.
-- `backend/src/services/adminService.js` - clone the immutable policy into fresh response DTOs.
-- `backend/src/controllers/adminController.js` - add the read-only permissions handler.
-- `backend/src/routes/adminRoutes.js` - register the Admin-first route.
-- `frontend/src/api/adminApi.js` - add `adminApi.permissions()`.
-- `frontend/src/page/UserManagement.jsx` - exact sidebar, Permissions state/load/retry/rendering, dynamic coverage, and independent FE11/FE12 status.
-- `frontend/test/adminApi.test.js` - lock the canonical adapter path.
-- `frontend/test/userManagementFrontend.test.js` - lock exact navigation, API loading, no matrix fallback, dynamic derivation, and failure isolation.
-- `frontend/test/appShellFrontend.test.js` - replace the stale Membership sidebar expectation with the approved Permissions expectation.
-- `docs/api/api-contract.md` - document the exact endpoint and response.
-- `backend/src/docs/openapi.yaml` - add strict schemas and endpoint documentation.
+- `.sdd/specs/feat-user-role-management/PLAN.md` - kích hoạt và sau đó đóng phần điều hướng/quyền được giới hạn.
+- `.sdd/specs/feat-user-role-management/TASKS.md` - thêm `FE11-PERM01..FE11-PERM06` trong khi vẫn giữ lại toàn bộ chức năng `DEFERRED`.
+- `.sdd/specs/feat-user-role-management/TEST_PLAN.md` - thêm mục tiêu tập trung và bằng chứng quan sát được.
+- `.sdd/specs/feat-user-role-management/CHANGELOG.md` - phê duyệt bản ghi, sẵn sàng H2 và tích hợp B7 sau này mà không phóng đại toàn bộ FE11.
+- `TECH_DEBT.md` - di chuyển `TD-023` từ `OPEN` sang `IN PROGRESS`, sau đó sang Đã giải quyết chỉ sau khi hợp nhất và CI sau hợp nhất.
+- `backend/src/services/adminService.js` - sao chép chính sách bất biến vào DTO phản hồi mới.
+- `backend/src/controllers/adminController.js` - thêm trình xử lý quyền chỉ đọc.
+- `backend/src/routes/adminRoutes.js` - đăng ký lộ trình ưu tiên quản trị viên.
+- `frontend/src/api/adminApi.js` - thêm `adminApi.permissions()`.
+- `frontend/src/page/UserManagement.jsx` - thanh bên chính xác, trạng thái Quyền/tải/thử lại/kết xuất, độ bao phủ động và trạng thái FE11/FE12 độc lập.
+- `frontend/test/adminApi.test.js` - khóa đường dẫn bộ điều hợp chuẩn.
+- `frontend/test/userManagementFrontend.test.js` - khóa điều hướng chính xác, tải API, không dự phòng ma trận, dẫn xuất động và cách ly lỗi.
+- `frontend/test/appShellFrontend.test.js` - thay thế kỳ vọng cũ của thanh bên Thành viên bằng kỳ vọng về Quyền đã được phê duyệt.
+- `docs/api/api-contract.md` - ghi lại điểm cuối và phản hồi chính xác.
+- `backend/src/docs/openapi.yaml` - thêm các lược đồ nghiêm ngặt và tài liệu điểm cuối.
 
-## Locked Interfaces
+## Giao diện bị khóa
 
 ```js
 // backend/src/services/adminService.js
@@ -83,40 +90,42 @@ roleAllowsPermission(permission, roleName): boolean
 adminApi.permissions(): Promise<{ roles, permissions }>
 ```
 
-## Plan-Level Exact Choices
+## Lựa chọn chính xác ở cấp độ kế hoạch
 
-- `moduleKey` values are locked in this plan as `USER_ROLE`, `LIBRARY`, `BORROW_RETURN`, `FINE`, and `REPORTS`; `moduleLabel` values remain the approved human-readable labels.
-- Module coverage order is the first appearance order of the canonical permission list: User & Role, Library, Borrow/Return, Fine, Reports.
-- The endpoint consumes no body/query values. No new validation/error branch is added for unused GET input; the controller always calls `getPermissions()` with no arguments.
-- The Permissions role cards are non-interactive `<article>` elements. Manage Roles remains available only from the existing All Users action flow.
-- Existing FE04 Membership code remains in `UserManagement.jsx` even though it is no longer reachable from the Admin Console sidebar; removal/refactoring is outside TD-023.
+- Các giá trị `moduleKey` bị khóa trong gói này dưới dạng `USER_ROLE`, `LIBRARY`, `BORROW_RETURN`, `FINE` và `REPORTS`; Giá trị `moduleLabel` vẫn là nhãn mà con người có thể đọc được đã được phê duyệt.
+- Thứ tự bao phủ mô-đun là thứ tự xuất hiện đầu tiên của danh sách quyền chuẩn: Người dùng & Vai trò, Thư viện, Vay/trả sách, khoản phạt, Báo cáo.
+- Điểm cuối không sử dụng giá trị nội dung/truy vấn. Không có nhánh xác thực/lỗi mới nào được thêm vào cho đầu vào GET chưa sử dụng; bộ điều khiển luôn gọi `getPermissions()` mà không có đối số.
+- Thẻ vai trò Quyền là các phần tử `<article>` không tương tác. Quản lý vai trò vẫn chỉ khả dụng từ luồng hành động Tất cả người dùng hiện có.
+- Mã thành viên FE04 hiện tại vẫn còn trong `UserManagement.jsx` mặc dù không thể truy cập được từ thanh bên của Bảng điều khiển dành cho quản trị viên nữa; việc loại bỏ/tái cấu trúc nằm ngoài TD-023.
 
 ---
 
-### Task 1: Activate The Approved TD-023 Slice In Governance
+### Nhiệm vụ 1: Kích hoạt Phần quản trị TD-023 đã được phê duyệt
 
-**Files:**
-- Modify: `.sdd/specs/feat-user-role-management/PLAN.md`
-- Modify: `.sdd/specs/feat-user-role-management/TASKS.md`
-- Modify: `.sdd/specs/feat-user-role-management/TEST_PLAN.md`
-- Modify: `.sdd/specs/feat-user-role-management/CHANGELOG.md`
-- Modify: `TECH_DEBT.md`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-user-role-management/PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/TEST_PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/CHANGELOG.md`
+- Sửa đổi: `TECH_DEBT.md`
 
-**Interfaces:**
-- Consumes: approved design `docs/superpowers/specs/2026-07-19-fe11-admin-navigation-permissions-design.md` and this reviewed implementation plan.
-- Produces: active task IDs `FE11-PERM01..FE11-PERM06`, explicit file ownership, and `TD-023: IN PROGRESS` before product implementation.
+**Giao diện:**
+- Tiêu thụ: thiết kế `docs/superpowers/specs/2026-07-19-fe11-admin-navigation-permissions-design.md` đã được phê duyệt và kế hoạch triển khai đã được xem xét này.
+- Tạo ra: ID tác vụ đang hoạt động `FE11-PERM01..FE11-PERM06`, quyền sở hữu tệp rõ ràng và `TD-023: IN PROGRESS` trước khi triển khai sản phẩm.
 
-- [ ] **Step 1: Create the isolated execution worktree**
+- [ ] **Bước 1: Tạo cây thực thi riêng biệt**
 
-Use the `using-git-worktrees` skill before execution. Base the feature branch on `docs/fe11-admin-permissions-contract` so the approved design and committed plan are included:
+Sử dụng kỹ năng `using-git-worktrees` trước khi thực hiện. Dựa trên nhánh chức năng trên
+`docs/fe11-admin-permissions-contract` để bao gồm thiết kế đã được phê duyệt và kế hoạch đã cam kết:
 
 ```powershell
 git worktree add .worktrees/fe11-admin-navigation-permissions -b feat/fe11-admin-navigation-permissions docs/fe11-admin-permissions-contract
 ```
 
-Expected: a clean worktree on `feat/fe11-admin-navigation-permissions` containing design commit `dbd59f1` and the plan commit created from this document.
+Dự kiến: một cây làm việc sạch trên `feat/fe11-admin-navigation-permissions` chứa cam kết thiết kế
+`dbd59f1` và cam kết kế hoạch được tạo từ tài liệu này.
 
-- [ ] **Step 2: Verify dependencies and scope before editing**
+- [ ] **Bước 2: Xác minh các phần phụ thuộc và phạm vi trước khi chỉnh sửa**
 
 ```powershell
 git fetch origin main
@@ -126,120 +135,123 @@ git status --short --branch
 rg -n "TD-023|TD-025|Implementation State: DEFERRED|FE11-ENV01" TECH_DEBT.md .sdd/specs/feat-user-role-management
 ```
 
-Expected: both ancestry commands exit `0`; `TD-023` and `TD-025` are `OPEN`; whole FE11 is `DEFERRED`; the new execution worktree is clean.
+Dự kiến: cả hai lệnh tổ tiên đều thoát `0`; `TD-023` và `TD-025` là `OPEN`; toàn bộ FE11 là
+`DEFERRED`; cây công việc thực thi mới sạch sẽ.
 
-- [ ] **Step 3: Add the bounded slice to FE11 PLAN and TASKS**
+- [ ] **Bước 3: Thêm lát cắt giới hạn vào FE11 PLAN và TASKS**
 
-Append this exact PLAN section after Fast-Track Batch 1:
-
-```markdown
-## 14. Admin Navigation And Permissions Slice
-
-Integration State: IN PROGRESS
-
-### In Scope
-
-- Align the Admin Console sidebar to the approved eight entries.
-- Add Admin-only `GET /api/admin/permissions` with the canonical 15-row Phase 1 policy.
-- Compose FE11 permission data with independent FE12 `usersByRole` counts in the frontend.
-- Derive module coverage and matrix cells from `allowedRoles`; keep the view read-only.
-
-### Out Of Scope
-
-- Permission editing, role hierarchy/CRUD, schema changes, FE04 removal, FE12 production changes, and TD-025.
-
-### Validation Gate
-
-- Backend policy/service/route tests prove exact DTOs, fresh objects, and Admin-first authorization.
-- Frontend tests prove exact sidebar order, canonical API usage, no hardcoded matrix fallback, FE12 counts, derived coverage, and isolated retries/errors.
-- Full tests, coverage, lint, build, browser E2E, OpenAPI parse, health import, traceability, diff hygiene, scope scan, and secret scan pass.
-- H2 precedes commit/push; H3 precedes merge; TD-023 closes only after post-merge main CI and closeout evidence.
-```
-
-Insert this exact TASKS group before `## Deferred FE11 Work`:
+Nối phần PLAN chính xác này sau luồng nhanh Lô 1:
 
 ```markdown
-## Admin Navigation And Permissions Tasks
+## 14. Phần điều hướng và quyền của quản trị viên
 
-- [ ] **FE11-PERM01 - Activate the approved TD-023 contract.**
-  - Maps to: TD-023; FR-FE11-030/032; AC-FE11-016/017.
-  - DoD: PLAN/TASKS/TEST_PLAN/CHANGELOG and debt state name the bounded scope; whole FE11 remains deferred.
+Trạng thái tích hợp: ĐANG TIẾN HÀNH
 
-- [ ] **FE11-PERM02 - Add the canonical permission policy and fresh service DTO.**
-  - Maps to: FR-FE11-032; BR-FE11-017; AC-FE11-017.
-  - DoD: backend owns exactly 3 roles and 15 permissions; every call returns independent allowlisted objects with stable order.
+### Trong phạm vi
 
-- [ ] **FE11-PERM03 - Expose Admin-only GET /api/admin/permissions.**
-  - Maps to: BR-FE11-001/011/012/017; FR-FE11-015/032; AC-FE11-017; NFR-FE11-SEC-001/002.
-  - DoD: authentication and Admin authorization run before controller invocation; Admin receives exactly `{ roles, permissions }`.
+- Căn chỉnh thanh bên của Bảng điều khiển dành cho quản trị viên với tám mục nhập đã được phê duyệt.
+- Thêm `GET /api/admin/permissions` chỉ dành cho quản trị viên với chính sách Giai đoạn 1 chuẩn 15 hàng.
+- Soạn dữ liệu quyền FE11 với số lượng FE12 `usersByRole` độc lập ở giao diện người dùng.
+- Lấy vùng phủ mô-đun và các ô ma trận từ `allowedRoles`; giữ chế độ xem chỉ đọc.
 
-- [ ] **FE11-PERM04 - Align Admin navigation and consume the permission API.**
-  - Maps to: BR-FE11-016/017; FR-FE11-030/032; AC-FE11-016/017.
-  - DoD: sidebar has exactly eight approved entries; Permissions is reachable; Membership remains untouched outside the sidebar; no frontend matrix constant remains.
+### Ngoài phạm vi
 
-- [ ] **FE11-PERM05 - Compose FE11 permissions with independent FE12 counts.**
-  - Maps to: FR-FE11-032; AC-FE11-017; TD-026 ownership decision.
-  - DoD: role cards use FE12 `usersByRole`; coverage/cells derive from FE11 `allowedRoles`; independent failures preserve last success and expose retry controls.
+- Chỉnh sửa quyền, phân cấp vai trò/CRUD, thay đổi lược đồ, xóa FE04, thay đổi sản xuất FE12 và TD-025.
 
-- [ ] **FE11-PERM06 - Pass H2/H3/B7 and close TD-023.**
-  - Depends on: FE11-PERM01..FE11-PERM05.
-  - DoD: L1-L4 evidence, human reviews, implementation PR merge, post-merge main CI, closeout PR, and final main CI are recorded; TD-023 is resolved while TD-025 and whole FE11 remain deferred.
+### Cổng xác nhận
+
+- Các kiểm thử chính sách/dịch vụ/tuyến đường máy chủ chứng minh DTO chính xác, đối tượng mới và quyền ưu tiên của Quản trị viên.
+- Các kiểm thử giao diện người dùng chứng minh thứ tự thanh bên chính xác, cách sử dụng API chuẩn, không có ma trận dự phòng được mã hóa cứng, số lượng FE12, mức độ bao phủ xuất phát và các lần thử lại/lỗi riêng lẻ.
+- Kiểm tra đầy đủ, phạm vi bảo hiểm, tìm lỗi mã nguồn, bản dựng, trình duyệt E2E, phân tích cú pháp OpenAPI, nhập tình trạng, truy vết, vệ sinh khác biệt, quét phạm vi và thẻ quét bí mật.
+- H2 đứng trước cam kết/đẩy; H3 đi trước hợp nhất; TD-023 chỉ đóng sau CI chính sau hợp nhất và bằng chứng khóa.
 ```
 
-- [ ] **Step 4: Mark debt and test strategy as active without claiming implementation**
-
-Change only the `TD-023` status cell from `OPEN` to `IN PROGRESS` and update `Last Updated` to `2026-07-19`.
-
-Add this TEST_PLAN section after Fast-Track Batch 1 current targets:
+Chèn nhóm TASKS chính xác này trước `## Deferred FE11 Work`:
 
 ```markdown
-## 3.2 TD-023 Current Targets
+## Nhiệm vụ điều hướng và quyền quản trị
 
-- Exact eight-entry Admin Console sidebar and reachable Permissions section.
-- Admin-first `GET /api/admin/permissions` with exact role/permission DTO keys and 15 canonical rows.
-- Fresh response objects, valid/deduplicated role arrays, and no repository/write dependency.
-- FE12 `usersByRole` counts composed independently from FE11 matrix data.
-- Derived module coverage/matrix cells, retryable isolated errors, and no hardcoded frontend matrix fallback.
+- [ ] **FE11-PERM01 - Kích hoạt hợp đồng TD-023 đã được phê duyệt.**
+  - Bản đồ tới: TD-023; FR-FE11-030/032; AC-FE11-016/017.
+  - DoD: PLAN/TASKS/TEST_PLAN/CHANGELOG và đặt tên trạng thái nợ trong phạm vi giới hạn; toàn bộ FE11 vẫn được hoãn lại.
+
+- [ ] **FE11-PERM02 - Thêm chính sách cấp phép chuẩn và dịch vụ mới DTO.**
+  - Bản đồ tới: FR-FE11-032; BR-FE11-017; AC-FE11-017.
+  - DoD: backend sở hữu chính xác 3 vai trò và 15 quyền; mọi lệnh gọi đều trả về các đối tượng độc lập trong danh sách cho phép với thứ tự ổn định.
+
+- [ ] **FE11-PERM03 - Chỉ dành cho quản trị viên GET /api/admin/permissions.**
+  - Bản đồ tới: BR-FE11-001/011/012/017; FR-FE11-015/032; AC-FE11-017; NFR-FE11-SEC-001/002.
+  - DoD: xác thực và ủy quyền quản trị viên chạy trước khi gọi bộ điều khiển; Quản trị viên nhận được chính xác `{ roles, permissions }`.
+
+- [ ] **FE11-PERM04 - Căn chỉnh điều hướng của Quản trị viên và sử dụng quyền API.**
+  - Bản đồ tới: BR-FE11-016/017; FR-FE11-030/032; AC-FE11-016/017.
+  - DoD: thanh bên có chính xác tám mục được phê duyệt; Quyền có thể truy cập được; Tư cách thành viên vẫn còn nguyên bên ngoài thanh bên; không còn hằng số ma trận giao diện người dùng.
+
+- [ ] **FE11-PERM05 - Soạn các quyền FE11 với số lượng FE12 độc lập.**
+  - Bản đồ tới: FR-FE11-032; AC-FE11-017; Quyết định sở hữu TD-026.
+  - DoD: thẻ vai trò sử dụng FE12 `usersByRole`; vùng phủ sóng/ô lấy từ FE11 `allowedRoles`; những thất bại độc lập sẽ bảo toàn thành công cuối cùng và đưa ra các biện pháp kiểm soát thử lại.
+
+- [ ] **FE11-PERM06 - Vượt qua H2/H3/B7 và đóng TD-023.**
+  - Phụ thuộc vào: FE11-PERM01..FE11-PERM05.
+  - DoD: Bằng chứng L1-L4, đánh giá của con người, hợp nhất PR triển khai, CI chính sau hợp nhất, PR kết thúc và CI chính cuối cùng được ghi lại; TD-023 được giải quyết trong khi TD-025 và toàn bộ FE11 vẫn bị trì hoãn.
 ```
 
-Prepend this CHANGELOG entry:
+- [ ] **Bước 4: Đánh dấu khoản nợ và kiểm thử chiến lược là đang hoạt động mà không cần yêu cầu triển khai**
+
+Chỉ thay đổi ô trạng thái `TD-023` từ `OPEN` thành `IN PROGRESS` và cập nhật `Last Updated` thành
+`2026-07-19`.
+
+Thêm phần TEST_PLAN này sau các mục tiêu hiện tại của luồng nhanh Lô 1:
 
 ```markdown
-## 2026-07-19 - Admin Navigation And Permissions Slice Approved
+## 3.2 Mục tiêu hiện tại của TD-023
 
-- Approved Hybrid SDD + ADD Standard-depth design and implementation plan for `TD-023`.
-- Locked the exact eight-entry Admin Console sidebar, Admin-only `GET /api/admin/permissions`, canonical 15-row FE11 policy, and independent FE12 role counts.
-- Activated `FE11-PERM01..FE11-PERM06` and marked `TD-023` in progress without claiming product implementation.
-- Preserved FE04 Membership, TD-025, and whole-feature `Implementation State: DEFERRED`.
+- Thanh bên Bảng điều khiển dành cho quản trị viên có tám mục chính xác và phần Quyền có thể truy cập.
+- `GET /api/admin/permissions` ưu tiên quản trị viên với các khóa DTO có vai trò/quyền chính xác và 15 hàng chuẩn.
+- Các đối tượng phản hồi mới, mảng vai trò hợp lệ/loại bỏ trùng lặp và không có phần phụ thuộc vào kho lưu trữ/ghi.
+- FE12 Số lượng `usersByRole` được tạo độc lập với dữ liệu ma trận FE11.
+- Phạm vi mô-đun/ô ma trận có nguồn gốc, các lỗi riêng biệt có thể thử lại và không có dự phòng ma trận giao diện người dùng được mã hóa cứng.
 ```
 
-- [ ] **Step 5: Verify the governance activation diff**
+Thêm mục nhập CHANGELOG này:
+
+```markdown
+## 2026-07-19 - Phần điều hướng và quyền của quản trị viên đã được phê duyệt
+
+- Đã phê duyệt Kế hoạch triển khai và thiết kế theo chiều sâu tiêu chuẩn Hybrid SDD + ADD cho `TD-023`.
+- Đã khóa chính xác thanh bên Bảng điều khiển dành cho quản trị viên gồm 8 mục, `GET /api/admin/permissions` chỉ dành cho quản trị viên, chính sách FE11 15 hàng chuẩn và số lượng vai trò FE12 độc lập.
+- Đã kích hoạt `FE11-PERM01..FE11-PERM06` và đánh dấu `TD-023` đang được tiến hành mà không xác nhận việc triển khai sản phẩm.
+- Tư cách thành viên FE04 được bảo tồn, TD-025 và `Implementation State: DEFERRED` toàn bộ chức năng.
+```
+
+- [ ] **Bước 5: Xác minh chênh lệch kích hoạt quản trị**
 
 ```powershell
 rg -n "FE11-PERM01|FE11-PERM06|TD-023.*IN PROGRESS|Implementation State: DEFERRED|TD-025.*OPEN" .sdd/specs/feat-user-role-management TECH_DEBT.md
 git diff --check
 ```
 
-Expected: all six task IDs exist; `TD-023` is in progress; `TD-025` remains open; whole FE11 remains deferred; diff check passes.
+Dự kiến: tất cả sáu ID nhiệm vụ đều tồn tại; `TD-023` đang được tiến hành; `TD-025` vẫn mở; toàn bộ
+FE11 vẫn được hoãn lại; vượt qua kiểm tra khác biệt.
 
-Do not commit this generated governance diff before H2.
+Không cam kết khác biệt quản trị được tạo này trước H2.
 
 ---
 
-### Task 2: Add The Canonical Backend Policy And Fresh Service DTO
+### Nhiệm vụ 2: Thêm Chính sách máy chủ chuẩn và Dịch vụ mới DTO
 
-**Files:**
-- Create: `backend/src/policies/adminPermissionPolicy.js`
-- Create: `backend/tests/adminPermissionService.test.js`
-- Modify: `backend/src/services/adminService.js`
+**Tệp:**
+- Tạo: `backend/src/policies/adminPermissionPolicy.js`
+- Tạo: `backend/tests/adminPermissionService.test.js`
+- Sửa đổi: `backend/src/services/adminService.js`
 
-**Interfaces:**
-- Consumes: no database or repository; exact policy from the approved TD-023 design.
-- Produces: immutable `adminPermissionPolicy` and `adminService.getPermissions()` returning fresh DTOs.
+**Giao diện:**
+- Tiêu thụ: không có cơ sở dữ liệu hoặc kho lưu trữ; chính sách chính xác từ thiết kế TD-023 đã được phê duyệt.
+- Sản xuất: `adminPermissionPolicy` và `adminService.getPermissions()` bất biến trả về DTO mới.
 
-- [ ] **Step 1: Write the failing service contract tests**
+- [ ] **Bước 1: Viết các kiểm thử hợp đồng dịch vụ không thành công**
 
-Create `backend/tests/adminPermissionService.test.js`:
+Tạo `backend/tests/adminPermissionService.test.js`:
 
 ```js
 jest.mock('../src/repositories/adminRepository', () => ({
@@ -330,19 +342,19 @@ test('getPermissions returns fresh nested objects on every call', () => {
 });
 ```
 
-- [ ] **Step 2: Run the service test to observe RED**
+- [ ] **Bước 2: Chạy kiểm thử dịch vụ để quan sát RED**
 
-Run from `backend/`:
+Chạy từ `backend/`:
 
 ```powershell
 npm.cmd test -- --runTestsByPath tests/adminPermissionService.test.js
 ```
 
-Expected: FAIL because `adminService.getPermissions` does not exist.
+Dự kiến: THẤT BẠI vì `adminService.getPermissions` không tồn tại.
 
-- [ ] **Step 3: Create the immutable policy module**
+- [ ] **Bước 3: Tạo mô-đun chính sách bất biến**
 
-Create `backend/src/policies/adminPermissionPolicy.js`:
+Tạo `backend/src/policies/adminPermissionPolicy.js`:
 
 ```js
 function freezePermission(permission) {
@@ -380,15 +392,15 @@ const adminPermissionPolicy = Object.freeze({
 module.exports = { adminPermissionPolicy };
 ```
 
-- [ ] **Step 4: Add the fresh service DTO**
+- [ ] **Bước 4: Thêm dịch vụ mới DTO**
 
-At the top of `backend/src/services/adminService.js` add:
+Ở đầu `backend/src/services/adminService.js` thêm:
 
 ```js
 const { adminPermissionPolicy } = require('../policies/adminPermissionPolicy');
 ```
 
-Add before `getDashboard`:
+Thêm vào trước `getDashboard`:
 
 ```js
 // @spec FR-FE11-032, BR-FE11-017, AC-FE11-017
@@ -406,34 +418,34 @@ function getPermissions() {
 }
 ```
 
-Add `getPermissions` to `module.exports` before `getDashboard`.
+Thêm `getPermissions` vào `module.exports` trước `getDashboard`.
 
-- [ ] **Step 5: Run GREEN and the affected service regression**
+- [ ] **Bước 5: Chạy GREEN và hồi quy dịch vụ bị ảnh hưởng**
 
 ```powershell
 npm.cmd test -- --runTestsByPath tests/adminPermissionService.test.js tests/adminAuditLogService.test.js
 ```
 
-Expected: both suites PASS; the permission tests prove exact shape/order and fresh nested arrays.
+Dự kiến: cả hai dãy ĐẠT; các kiểm thử quyền chứng minh hình dạng/thứ tự chính xác và các mảng lồng nhau mới.
 
-Do not commit before H2.
+Không cam kết trước H2.
 
 ---
 
-### Task 3: Expose The Admin-First Permissions Route
+### Nhiệm vụ 3: Hiển thị Lộ trình cấp quyền ưu tiên của quản trị viên
 
-**Files:**
-- Create: `backend/tests/adminPermissionRoutes.test.js`
-- Modify: `backend/src/controllers/adminController.js`
-- Modify: `backend/src/routes/adminRoutes.js`
+**Tệp:**
+- Tạo: `backend/tests/adminPermissionRoutes.test.js`
+- Sửa đổi: `backend/src/controllers/adminController.js`
+- Sửa đổi: `backend/src/routes/adminRoutes.js`
 
-**Interfaces:**
-- Consumes: `adminService.getPermissions()` from Task 2.
-- Produces: authenticated Admin-only `GET /api/admin/permissions` with no request input and exact service response passthrough.
+**Giao diện:**
+- Tiêu thụ: `adminService.getPermissions()` từ Nhiệm vụ 2.
+- Tạo ra: `GET /api/admin/permissions` chỉ dành cho quản trị viên đã được xác thực mà không cần thông tin đầu vào yêu cầu và thông qua phản hồi dịch vụ chính xác.
 
-- [ ] **Step 1: Write the failing route tests**
+- [ ] **Bước 1: Viết các kiểm thử lộ trình thất bại**
 
-Create `backend/tests/adminPermissionRoutes.test.js`:
+Tạo `backend/tests/adminPermissionRoutes.test.js`:
 
 ```js
 process.env.JWT_SECRET = require('crypto').randomBytes(32).toString('hex');
@@ -510,17 +522,17 @@ test('GET /api/admin/permissions returns the exact service payload to Admin', as
 });
 ```
 
-- [ ] **Step 2: Run the route test to observe RED**
+- [ ] **Bước 2: Chạy kiểm thử lộ trình để quan sát RED**
 
 ```powershell
 npm.cmd test -- --runTestsByPath tests/adminPermissionRoutes.test.js
 ```
 
-Expected: FAIL with `404` because `/api/admin/permissions` is absent.
+Dự kiến: THẤT BẠI với `404` vì `/api/admin/permissions` vắng mặt.
 
-- [ ] **Step 3: Add the controller and route**
+- [ ] **Bước 3: Thêm bộ điều khiển và tuyến đường**
 
-Add this handler to the object returned by `createAdminController`:
+Thêm trình xử lý này vào đối tượng được trả về bởi `createAdminController`:
 
 ```js
 permissions: async (req, res, next) => {
@@ -532,43 +544,44 @@ permissions: async (req, res, next) => {
 },
 ```
 
-Register this route immediately after `/audit-logs` in `backend/src/routes/adminRoutes.js`:
+Đăng ký tuyến đường này ngay sau `/audit-logs` trong `backend/src/routes/adminRoutes.js`:
 
 ```js
 // @spec FR-FE11-032, BR-FE11-017, AC-FE11-017
 router.get('/permissions', ...requireAdmin, controller.permissions);
 ```
 
-- [ ] **Step 4: Run focused backend GREEN**
+- [ ] **Bước 4: Chạy chương trình máy chủ tập trung GREEN**
 
 ```powershell
 npm.cmd test -- --runTestsByPath tests/adminPermissionService.test.js tests/adminPermissionRoutes.test.js tests/adminAuditLogRoutes.test.js tests/securityRegression.test.js
 ```
 
-Expected: all four suites PASS; security regression continues to prove Admin routes require authentication when environment defaults are unsafe.
+Dự kiến: cả bốn dãy ĐẠT; hồi quy bảo mật tiếp tục chứng minh rằng các tuyến Quản trị viên yêu cầu
+xác thực khi các giá trị mặc định của môi trường không an toàn.
 
-Do not commit before H2.
+Không cam kết trước H2.
 
 ---
 
-### Task 4: Align Navigation And Render The Dynamic Permissions View
+### Tác vụ 4: Căn chỉnh điều hướng và hiển thị chế độ xem quyền động
 
-**Files:**
-- Create: `frontend/src/utils/adminPermissions.js`
-- Create: `frontend/test/adminPermissions.test.js`
-- Modify: `frontend/src/api/adminApi.js`
-- Modify: `frontend/src/page/UserManagement.jsx`
-- Modify: `frontend/test/adminApi.test.js`
-- Modify: `frontend/test/userManagementFrontend.test.js`
-- Modify: `frontend/test/appShellFrontend.test.js`
+**Tệp:**
+- Tạo: `frontend/src/utils/adminPermissions.js`
+- Tạo: `frontend/test/adminPermissions.test.js`
+- Sửa đổi: `frontend/src/api/adminApi.js`
+- Sửa đổi: `frontend/src/page/UserManagement.jsx`
+- Sửa đổi: `frontend/test/adminApi.test.js`
+- Sửa đổi: `frontend/test/userManagementFrontend.test.js`
+- Sửa đổi: `frontend/test/appShellFrontend.test.js`
 
-**Interfaces:**
-- Consumes: FE11 `{ roles, permissions }` and existing FE12 `{ usersByRole }`.
-- Produces: exact sidebar, reachable read-only Permissions section, numeric role cards, derived module coverage/matrix cells, and independent retry/error behavior.
+**Giao diện:**
+- Tiêu thụ: FE11 `{ roles, permissions }` và FE12 `{ usersByRole }` hiện có.
+- Tạo ra: thanh bên chính xác, phần Quyền chỉ đọc có thể truy cập, thẻ vai trò số, phạm vi mô-đun/ô ma trận dẫn xuất và hành vi thử lại/lỗi độc lập.
 
-- [ ] **Step 1: Write the failing API and pure derivation tests**
+- [ ] **Bước 1: Viết các kiểm thử đạo hàm thuần túy và API thất bại**
 
-Append to `frontend/test/adminApi.test.js`:
+Nối vào `frontend/test/adminApi.test.js`:
 
 ```js
 test('FE11 Permissions use the canonical Admin endpoint and authorized wrapper', async () => {
@@ -580,7 +593,7 @@ test('FE11 Permissions use the canonical Admin endpoint and authorized wrapper',
 });
 ```
 
-Create `frontend/test/adminPermissions.test.js`:
+Tạo `frontend/test/adminPermissions.test.js`:
 
 ```js
 import assert from 'node:assert/strict';
@@ -630,9 +643,9 @@ test('matrix cells read only the server allowedRoles array', () => {
 });
 ```
 
-- [ ] **Step 2: Add failing source-contract tests for exact navigation and isolation**
+- [ ] **Bước 2: Thêm các kiểm thử hợp đồng nguồn không thành công để điều hướng và cách ly chính xác**
 
-Append to `frontend/test/userManagementFrontend.test.js`:
+Nối vào `frontend/test/userManagementFrontend.test.js`:
 
 ```js
 test('FE11 Admin sidebar exposes exactly the approved eight entries in order', async () => {
@@ -681,25 +694,27 @@ test('FE11 Permissions derives the view from server data without a hardcoded mat
 });
 ```
 
-In `frontend/test/appShellFrontend.test.js`, replace the old label array entry `'Quản lý hội viên'` with `'Phân quyền'`, then add:
+Trong `frontend/test/appShellFrontend.test.js`, thay thế mục nhập mảng nhãn cũ `'Quản lý hội viên'`
+bằng `'Phân quyền'`, sau đó thêm:
 
 ```js
 assert.doesNotMatch(source, /\{ id: 'membership'[^\n]+label: 'Quản lý hội viên'/);
 ```
 
-- [ ] **Step 3: Run frontend RED**
+- [ ] **Bước 3: Chạy giao diện người dùng RED**
 
-Run from `frontend/`:
+Chạy từ `frontend/`:
 
 ```powershell
 node --test test/adminApi.test.js test/adminPermissions.test.js test/userManagementFrontend.test.js test/appShellFrontend.test.js
 ```
 
-Expected: FAIL because the utility and adapter do not exist, Membership remains in the sidebar, Permissions remains unreachable, and the page still owns `permissionRows`/`permissionModules`.
+Dự kiến: THẤT BẠI vì tiện ích và bộ chuyển đổi không tồn tại, Tư cách thành viên vẫn ở thanh bên,
+Quyền vẫn không thể truy cập được và trang vẫn sở hữu `permissionRows`/`permissionModules`.
 
-- [ ] **Step 4: Implement the pure derivation utility**
+- [ ] **Bước 4: Triển khai tiện ích phái sinh thuần túy**
 
-Create `frontend/src/utils/adminPermissions.js`:
+Tạo `frontend/src/utils/adminPermissions.js`:
 
 ```js
 function toNonNegativeCount(value) {
@@ -743,9 +758,9 @@ export function roleAllowsPermission(permission, roleName) {
 }
 ```
 
-- [ ] **Step 5: Add the Admin API adapter and exact sidebar**
+- [ ] **Bước 5: Thêm bộ điều hợp Quản trị API và thanh bên chính xác**
 
-Add to `frontend/src/api/adminApi.js` before `auditLogs`:
+Thêm vào `frontend/src/api/adminApi.js` trước `auditLogs`:
 
 ```js
 permissions() {
@@ -756,7 +771,7 @@ permissions() {
 },
 ```
 
-In `UserManagement.jsx`, import the three utility functions and replace the sidebar items with:
+Trong `UserManagement.jsx`, nhập ba chức năng tiện ích và thay thế các mục thanh bên bằng:
 
 ```js
 // @spec FR-FE11-030, BR-FE11-016, AC-FE11-016
@@ -772,17 +787,19 @@ const items = [
 ];
 ```
 
-Delete only the two frontend product constants beginning `const permissionRows =` and `const permissionModules =`. Do not remove Membership imports, state, loaders, components, or FE04 routes.
+Chỉ xóa hai hằng số sản phẩm giao diện người dùng bắt đầu từ `const permissionRows =` và `const
+permissionModules =`. Không xóa các mục nhập Thành viên, trạng thái, bộ tải, thành phần hoặc các
+tuyến FE04.
 
-Replace the `roles` section metadata key with:
+Thay thế khóa siêu dữ liệu của phần `roles` bằng:
 
 ```js
 permissions: { eyebrow: 'Kiểm soát truy cập', title: 'Phân quyền' },
 ```
 
-- [ ] **Step 6: Add independent state, loaders, and derived view models**
+- [ ] **Bước 6: Thêm trạng thái độc lập, trình tải và mô hình khung nhìn dẫn xuất**
 
-Add component state beside the existing user-statistics state:
+Thêm trạng thái thành phần bên cạnh trạng thái thống kê người dùng hiện có:
 
 ```js
 const [permissionPolicy, setPermissionPolicy] = useState({ roles: [], permissions: [] });
@@ -791,7 +808,7 @@ const [permissionsError, setPermissionsError] = useState('');
 const [permissionsUpdatedAt, setPermissionsUpdatedAt] = useState(null);
 ```
 
-Add the derived values beside existing `useMemo` blocks:
+Thêm các giá trị dẫn xuất bên cạnh các khối `useMemo` hiện có:
 
 ```js
 const permissionRoleSummary = useMemo(
@@ -804,7 +821,7 @@ const permissionModuleCoverage = useMemo(
 );
 ```
 
-Add the loader before `loadUserStatistics`:
+Thêm trình tải trước `loadUserStatistics`:
 
 ```js
 async function loadPermissions({ announce = false } = {}) {
@@ -830,7 +847,7 @@ async function loadPermissions({ announce = false } = {}) {
 }
 ```
 
-Add a dedicated effect so both owners start independently when Permissions opens:
+Thêm hiệu ứng chuyên dụng để cả hai chủ sở hữu bắt đầu độc lập khi Quyền mở:
 
 ```js
 useEffect(() => {
@@ -846,9 +863,11 @@ useEffect(() => {
 }, [activeSection]);
 ```
 
-Add `permissions: permissionsLoading || userStatsLoading` to the active-section loading calculation used by the topbar. In the refresh handler add:
+Thêm `permissions: permissionsLoading || userStatsLoading` vào tính toán tải phần hoạt động được
+thanh trên cùng sử dụng. Trong trình xử lý làm mới thêm:
 
-Replace the repeated inline loading expressions with this exact value after `userDirectoryLoading` is defined:
+Thay thế các biểu thức tải nội tuyến lặp lại bằng giá trị chính xác này sau khi
+`userDirectoryLoading` được xác định:
 
 ```js
 const activeSectionLoading = {
@@ -863,7 +882,8 @@ const activeSectionLoading = {
 }[activeSection] || false;
 ```
 
-Use `activeSectionLoading` for the refresh button's `disabled` property, spinning icon class, and `Đang tải...` label. In the refresh handler add:
+Sử dụng `activeSectionLoading` cho thuộc tính `disabled` của nút làm mới, lớp biểu tượng quay và
+nhãn `Đang tải...`. Trong trình xử lý làm mới thêm:
 
 ```js
 else if (activeSection === 'permissions') {
@@ -872,9 +892,9 @@ else if (activeSection === 'permissions') {
 }
 ```
 
-- [ ] **Step 7: Replace the unreachable hardcoded section with dynamic read-only rendering**
+- [ ] **Bước 7: Thay thế phần được mã hóa cứng không thể truy cập bằng kết xuất chỉ đọc động**
 
-Replace `activeSection === 'roles'` with `activeSection === 'permissions'` and render:
+Thay thế `activeSection === 'roles'` bằng `activeSection === 'permissions'` và kết xuất:
 
 ```jsx
 {activeSection === 'permissions' && (
@@ -965,7 +985,8 @@ Replace `activeSection === 'roles'` with `activeSection === 'permissions'` and r
 )}
 ```
 
-Update the existing CSS selector from `.um-permission-cards button` to `.um-permission-cards article`, remove `cursor: pointer`, include the article selector in the warm-theme border rule, and add:
+Cập nhật bộ chọn CSS hiện có từ `.um-permission-cards button` lên `.um-permission-cards article`,
+xóa `cursor: pointer`, đưa bộ chọn bài viết vào quy tắc viền chủ đề ấm áp và thêm:
 
 ```css
 .um-permission-status-grid {
@@ -986,7 +1007,7 @@ Update the existing CSS selector from `.um-permission-cards button` to `.um-perm
 }
 ```
 
-- [ ] **Step 8: Run frontend GREEN and regression**
+- [ ] **Bước 8: Chạy giao diện người dùng GREEN và hồi quy**
 
 ```powershell
 node --test test/adminApi.test.js test/adminPermissions.test.js test/userManagementFrontend.test.js test/appShellFrontend.test.js
@@ -994,70 +1015,72 @@ npm.cmd run lint
 npm.cmd run build
 ```
 
-Expected: focused tests PASS, ESLint PASS, and production build PASS. The existing non-blocking bundle-size warning may remain.
+Dự kiến: các kiểm thử tập trung đạt, ESLint đạt và xây dựng đạt sản xuất. Cảnh báo kích thước gói
+không chặn hiện tại có thể vẫn còn.
 
-Do not commit before H2.
+Không cam kết trước H2.
 
 ---
 
-### Task 5: Synchronize API Contracts And Assemble H2 Evidence
+### Nhiệm vụ 5: Đồng bộ hóa các hợp đồng API và tập hợp bằng chứng H2
 
-**Files:**
-- Modify: `docs/api/api-contract.md`
-- Modify: `backend/src/docs/openapi.yaml`
-- Modify: `.sdd/specs/feat-user-role-management/TEST_PLAN.md`
-- Modify: `.sdd/specs/feat-user-role-management/CHANGELOG.md`
-- Modify: `.sdd/specs/feat-user-role-management/TASKS.md`
-- Create: `.sdd/reviews/fe11-admin-navigation-permissions-validation-2026-07-19.md`
+**Tệp:**
+- Sửa đổi: `docs/api/api-contract.md`
+- Sửa đổi: `backend/src/docs/openapi.yaml`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/TEST_PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/CHANGELOG.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/TASKS.md`
+- Tạo: `.sdd/reviews/fe11-admin-navigation-permissions-validation-2026-07-19.md`
 
-**Interfaces:**
-- Consumes: complete uncommitted implementation and observed RED/GREEN evidence.
-- Produces: strict human/OpenAPI contract, L1-L4 H2 packet, and accurate in-progress governance state.
+**Giao diện:**
+- Tiêu thụ: hoàn thành quá trình triển khai không cam kết và bằng chứng RED/GREEN được quan sát.
+- Tạo ra: hợp đồng con người/OpenAPI nghiêm ngặt, gói L1-L4 H2 và trạng thái quản trị đang diễn ra chính xác.
 
-- [ ] **Step 1: Add the human-readable API contract**
+- [ ] **Bước 1: Thêm hợp đồng API mà con người có thể đọc được**
 
-Add before the Audit Logs section in `docs/api/api-contract.md`:
+Thêm trước phần Nhật ký kiểm tra trong `docs/api/api-contract.md`:
 
 ```markdown
 ### GET `/api/admin/permissions`
 
-Actor: authenticated Admin. Authentication and Admin authorization execute before controller handling. The endpoint accepts no body or query parameters and performs no mutation.
+Tác nhân: Quản trị viên được xác thực. Xác thực và ủy quyền quản trị viên thực hiện trước khi xử lý bộ điều khiển. Điểm cuối không chấp nhận tham số nội dung hoặc truy vấn và không thực hiện thao tác ghi.
 
-Response `200` has exactly two top-level fields:
+Phản hồi `200` có chính xác hai trường cấp cao nhất:
 
-- `roles`: ordered `ADMIN`, `LIBRARIAN`, `MEMBER`; each object contains only `roleName` and `label`.
-- `permissions`: the 15 ordered Phase 1 rules from the approved TD-023 design; each object contains only `permissionKey`, `label`, `moduleKey`, `moduleLabel`, and `allowedRoles`.
+- `roles`: đặt hàng `ADMIN`, `LIBRARIAN`, `MEMBER`; mỗi đối tượng chỉ chứa `roleName` và `label`.
+- `permissions`: 15 quy tắc Giai đoạn 1 được đặt hàng từ thiết kế TD-023 đã được phê duyệt; mỗi đối tượng chỉ chứa `permissionKey`, `label`, `moduleKey`, `moduleLabel` và `allowedRoles`.
 
-Allowed role values are `ADMIN`, `LIBRARIAN`, and `MEMBER`; arrays are deterministic and contain no duplicates. FE12 `GET /api/reports/users` remains the owner of global `usersByRole` counts and the frontend joins the two responses by `roleName` only.
+Các giá trị vai trò được phép là `ADMIN`, `LIBRARIAN` và `MEMBER`; mảng có tính xác định và không chứa bản sao. FE12 `GET /api/reports/users` vẫn là chủ sở hữu số lượng `usersByRole` toàn cầu và giao diện người dùng chỉ tham gia hai phản hồi bằng `roleName`.
 
-Errors: `401` for missing/invalid authentication and `403` for authenticated non-Admin callers.
+Lỗi: `401` dành cho xác thực bị thiếu/không hợp lệ và `403` dành cho người gọi không phải Quản trị viên đã được xác thực.
 ```
 
-Copy the full 15-row table from the approved design immediately after this text so the shared API document and design remain identical.
+Sao chép toàn bộ bảng 15 hàng từ thiết kế đã được phê duyệt ngay sau văn bản này để tài liệu và
+thiết kế API được chia sẻ vẫn giống hệt nhau.
 
 ```markdown
-| Module | Permission key | Label | Allowed roles |
+|mô-đun|Khóa quyền|Nhãn|Vai trò được phép|
 | --- | --- | --- | --- |
-| User & Role | `USER_VIEW` | View users | ADMIN |
-| User & Role | `USER_CREATE` | Create accounts | ADMIN |
-| User & Role | `USER_UPDATE` | Update accounts | ADMIN |
-| User & Role | `USER_DEACTIVATE` | Deactivate accounts | ADMIN |
-| User & Role | `ROLE_MANAGE` | Manage roles | ADMIN |
-| User & Role | `AUDIT_VIEW` | View audit logs | ADMIN |
-| Library | `CATALOG_MANAGE` | Manage library catalog | ADMIN, LIBRARIAN |
-| Library | `METADATA_MANAGE` | Manage authors/publishers/categories | ADMIN |
-| Borrow/Return | `BORROW_APPROVE_REJECT` | Approve/reject borrow requests | ADMIN, LIBRARIAN |
-| Borrow/Return | `RETURN_RENEW_PROCESS` | Process returns and renewals | ADMIN, LIBRARIAN |
-| Fine | `FINE_CALCULATE_COLLECT` | Calculate and collect fines | ADMIN, LIBRARIAN |
-| Fine | `FINE_WAIVE_CANCEL` | Waive or cancel fines | ADMIN |
-| Reports | `REPORT_VIEW` | View reports | ADMIN, LIBRARIAN |
-| Borrow/Return | `BORROW_REQUEST_CREATE` | Create borrow request | MEMBER |
-| Borrow/Return | `BORROW_HISTORY_VIEW_OWN` | View own borrowing history | MEMBER |
+|Người dùng & Vai trò| `USER_VIEW` |Xem người dùng| ADMIN |
+|Người dùng & Vai trò| `USER_CREATE` |Tạo tài khoản| ADMIN |
+|Người dùng & Vai trò| `USER_UPDATE` |Cập nhật tài khoản| ADMIN |
+|Người dùng & Vai trò| `USER_DEACTIVATE` |Vô hiệu hóa tài khoản| ADMIN |
+|Người dùng & Vai trò| `ROLE_MANAGE` |Quản lý vai trò| ADMIN |
+|Người dùng & Vai trò| `AUDIT_VIEW` |Xem nhật ký kiểm tra| ADMIN |
+|Thư viện| `CATALOG_MANAGE` |Quản lý danh mục thư viện| ADMIN, LIBRARIAN |
+|Thư viện| `METADATA_MANAGE` |Quản lý tác giả/nhà xuất bản/danh mục| ADMIN |
+|Mượn/trả sách| `BORROW_APPROVE_REJECT` |Phê duyệt/từ chối yêu cầu mượn sách| ADMIN, LIBRARIAN |
+|Mượn/trả sách| `RETURN_RENEW_PROCESS` |Quy trình trả sách và gia hạn| ADMIN, LIBRARIAN |
+|Khoản phạt| `FINE_CALCULATE_COLLECT` |Tính và thu khoản phạt| ADMIN, LIBRARIAN |
+|Khoản phạt| `FINE_WAIVE_CANCEL` |Miễn hoặc hủy bỏ khoản phạt| ADMIN |
+|Báo cáo| `REPORT_VIEW` |Xem báo cáo| ADMIN, LIBRARIAN |
+|Mượn/trả sách| `BORROW_REQUEST_CREATE` |Tạo yêu cầu mượn| MEMBER |
+|Mượn/trả sách| `BORROW_HISTORY_VIEW_OWN` |Xem lịch sử mượn của mình| MEMBER |
 ```
 
-- [ ] **Step 2: Add strict OpenAPI schemas and path**
+- [ ] **Bước 2: Thêm lược đồ và đường dẫn OpenAPI nghiêm ngặt**
 
-Add an `Admin Permissions` tag and these component schemas:
+Thêm thẻ `Admin Permissions` và các lược đồ thành phần sau:
 
 ```yaml
     AdminPermissionRole:
@@ -1098,7 +1121,7 @@ Add an `Admin Permissions` tag and these component schemas:
           items: { $ref: '#/components/schemas/AdminPermissionRule' }
 ```
 
-Add the path before `/api/admin/audit-logs`:
+Thêm đường dẫn trước `/api/admin/audit-logs`:
 
 ```yaml
   /api/admin/permissions:
@@ -1116,9 +1139,9 @@ Add the path before `/api/admin/audit-logs`:
         '403': { $ref: '#/components/responses/Forbidden' }
 ```
 
-- [ ] **Step 3: Run all automated validation layers**
+- [ ] **Bước 3: Chạy tất cả các lớp xác thực tự động**
 
-From the repository root:
+Từ kho lưu trữ gốc:
 
 ```powershell
 npm.cmd --prefix backend test
@@ -1130,16 +1153,18 @@ npm.cmd run test:e2e
 npm.cmd run trace:enforce
 ```
 
-From `backend/`:
+Từ `backend/`:
 
 ```powershell
 node -e "require('yamljs').load('src/docs/openapi.yaml'); console.log('OpenAPI OK')"
 node -e "require('./src/app'); console.log('Backend app import OK')"
 ```
 
-Expected: full backend/frontend tests and coverage PASS; lint/build PASS; browser E2E PASS on desktop/mobile golden path; OpenAPI prints `OpenAPI OK`; backend import prints `Backend app import OK`; traceability PASS.
+Dự kiến: các kiểm thử backend/frontend đầy đủ và phạm vi bảo hiểm ĐẠT; kiểm tra mã/xây dựng đạt; trình
+duyệt E2E đạt trên luồng nghiệp vụ chuẩn trên máy tính để bàn/thiết bị di động; OpenAPI in `OpenAPI
+OK`; nhập máy chủ in `Backend app import OK`; truy vết đạt.
 
-- [ ] **Step 4: Run diff, scope, and secret hygiene checks**
+- [ ] **Bước 4: Chạy kiểm tra khác biệt, phạm vi và vệ sinh bí mật**
 
 ```powershell
 git diff --check
@@ -1149,9 +1174,10 @@ git ls-files --others --exclude-standard
 rg -n "const permissionRows =|const permissionModules =|/api/admin/user-summary|id: 'membership'.*Quản lý hội viên|activeSection === 'roles'" frontend backend
 ```
 
-Expected: only files in this plan are changed/untracked; `rg` returns no product-code matches for removed drift patterns.
+Dự kiến: chỉ các tệp trong gói này mới được thay đổi/không bị theo dõi; `rg` không trả về kết quả
+khớp mã sản phẩm nào cho các mẫu trôi dạt đã bị loại bỏ.
 
-Review high-confidence sensitive-term matches:
+Xem lại các kết quả phù hợp với thuật ngữ nhạy cảm có độ tin cậy cao:
 
 ```powershell
 $matches = git diff -U0 | rg -n "(?i)(password|passwd|token|otp|authorization|cookie|secret|session|credential|api[-_]?key|setup[-_]?link|reset[-_]?link)"
@@ -1159,71 +1185,79 @@ if ($LASTEXITCODE -eq 0) { $matches }
 elseif ($LASTEXITCODE -ne 1) { exit $LASTEXITCODE }
 ```
 
-Expected: matches are limited to existing safety documentation/tests or negative assertions; no secret value, credential field, token payload, or real PII is introduced.
+Dự kiến: các kết quả trùng khớp được giới hạn ở các tài liệu/kiểm tra an toàn hiện có hoặc các xác
+nhận tiêu cực; không có giá trị bí mật, trường thông tin xác thực, tải trọng mã thông báo hoặc PII
+thực nào được giới thiệu.
 
-- [ ] **Step 5: Record exact H2 evidence without closing the slice**
+- [ ] **Bước 5: Ghi lại bằng chứng H2 chính xác mà không cần đóng phần **
 
-Create `.sdd/reviews/fe11-admin-navigation-permissions-validation-2026-07-19.md` with these sections and observed command counts/results:
+Tạo `.sdd/reviews/fe11-admin-navigation-permissions-validation-2026-07-19.md` với các phần này và số
+lượng/kết quả lệnh được quan sát:
 
 ```markdown
-# FE11 Admin Navigation And Permissions Validation - 2026-07-19
+# Xác nhận điều hướng và quyền quản trị FE11 - 2026-07-19
 
-Status: H2 REVIEW READY
+Trạng thái: H2 REVIEW SẴN SÀNG
 
-Scope: `FE11-PERM01..FE11-PERM05` / `TD-023` only
+Phạm vi: chỉ `FE11-PERM01..FE11-PERM05` / `TD-023`
 
-Decision: Hybrid SDD + ADD, Standard depth. Core is Admin-first authorization, exact policy/API ownership, FE11/FE12 ownership, and failure isolation; Shell is the read-only responsive presentation.
+Quyết định: Hybrid SDD + ADD, Độ sâu tiêu chuẩn. Cốt lõi là ủy quyền ưu tiên của quản trị viên, chính sách chính xác/quyền sở hữu API, quyền sở hữu FE11/FE12 và cách ly lỗi; lớp bao là bản trình bày đáp ứng chỉ đọc.
 
-## L1 - Automated Evidence
+## L1 - Bằng chứng tự động
 
-## L2 - Specification Compliance
+## L2 - Tuân thủ đặc tả
 
-## L3 - Constitution And Safety
+## L3 - Hiến chương và an toàn
 
-## L4 - Acceptance Evidence
+## L4 - Bằng chứng nghiệm thu
 
-## Residual Risks
+## Rủi ro còn lại
 
-## H2 Review Boundary
+## Ranh giới rà soát H2
 ```
 
-Record the observed RED reason for each new test group, exact GREEN/full command results, coverage, OpenAPI/health/traceability/diff/scope/secret results, and browser evidence. State explicitly that `TD-023`, `FE11-PERM06`, merge, and B7 remain open.
+Ghi lại lý do RED được quan sát cho mỗi nhóm kiểm thử mới, kết quả GREEN/lệnh đầy đủ chính xác, phạm
+vi bao phủ, OpenAPI/sức khỏe/truy vết/khác biệt/phạm vi/kết quả bí mật và bằng chứng trình duyệt. Nêu rõ
+rằng `TD-023`, `FE11-PERM06`, hợp nhất và B7 vẫn mở.
 
-Update TASKS so `FE11-PERM01..FE11-PERM05` are checked only after their DoD and evidence exist; leave `FE11-PERM06` unchecked. Add a CHANGELOG entry titled `Admin Navigation And Permissions H2-Ready` and keep `TD-023` `IN PROGRESS`.
+Cập nhật TASKS để `FE11-PERM01..FE11-PERM05` chỉ được kiểm tra sau khi DoD và bằng chứng tồn tại; bỏ
+chọn `FE11-PERM06`. Thêm mục CHANGELOG có tiêu đề `Admin Navigation And Permissions H2-Ready` và giữ
+`TD-023` `IN PROGRESS`.
 
-- [ ] **Step 6: Freeze and present the complete uncommitted H2 diff**
+- [ ] **Bước 6: Cố định và trình bày khác biệt H2 hoàn chỉnh có sẵn**
 
-Make new files visible to `git diff` without staging their contents:
+Hiển thị các tệp mới với `git diff` mà không sắp xếp nội dung của chúng:
 
 ```powershell
 git add -N -- backend/src/policies/adminPermissionPolicy.js backend/tests/adminPermissionService.test.js backend/tests/adminPermissionRoutes.test.js frontend/src/utils/adminPermissions.js frontend/test/adminPermissions.test.js .sdd/reviews/fe11-admin-navigation-permissions-validation-2026-07-19.md
 git diff --binary | git hash-object --stdin
 ```
 
-Record the hash in the validation file, rerun `git diff --check`, and present the exact uncommitted diff for H2. Stop before commit or push.
+Ghi lại hàm băm vào tệp xác thực, chạy lại `git diff --check` và hiển thị sai khác chính xác có sẵn
+cho H2. Dừng lại trước khi cam kết hoặc đẩy.
 
 ---
 
-### Task 6: Publish The H2-Reviewed Implementation And Integrate Only After H3
+### Nhiệm vụ 6: Xuất bản Triển khai đã được đánh giá H2 và chỉ tích hợp sau H3
 
-**Files:**
-- Commit: exact H2-reviewed files from Tasks 1-5
-- PR target: `main`
+**Tệp:**
+- Cam kết: chính xác các tệp được H2 xem xét từ Nhiệm vụ 1-5
+- Mục tiêu PR: `main`
 
-**Interfaces:**
-- Consumes: explicit H2 approval, unchanged diff hash, and green local L1-L4 evidence.
-- Produces: reviewable implementation PR with passing required checks; no merge before explicit H3.
+**Giao diện:**
+- Tiêu thụ: phê duyệt H2 rõ ràng, hàm băm khác biệt không thay đổi và bằng chứng L1-L4 cục bộ màu xanh lục.
+- Tạo ra: PR triển khai có thể xem xét được với việc vượt qua các bước kiểm tra bắt buộc; không hợp nhất trước H3 rõ ràng.
 
-- [ ] **Step 1: Confirm the reviewed diff is unchanged**
+- [ ] **Bước 1: Xác nhận rằng khác biệt đã xem xét không thay đổi**
 
 ```powershell
 git diff --binary | git hash-object --stdin
 git diff --check
 ```
 
-Expected: the hash equals the H2 record. Any mismatch requires renewed H2 review.
+Dự kiến: hàm băm bằng bản ghi H2. Bất kỳ sự không phù hợp nào đều cần phải xem xét lại H2.
 
-- [ ] **Step 2: Create the reviewed commit set**
+- [ ] **Bước 2: Tạo bộ cam kết đã được đánh giá**
 
 ```powershell
 git add -- backend/src/policies/adminPermissionPolicy.js backend/src/services/adminService.js backend/src/controllers/adminController.js backend/src/routes/adminRoutes.js backend/tests/adminPermissionService.test.js backend/tests/adminPermissionRoutes.test.js
@@ -1236,27 +1270,31 @@ git add -- docs/api/api-contract.md backend/src/docs/openapi.yaml .sdd/specs/fea
 git commit -m "docs: record FE11 permissions validation"
 ```
 
-Expected: three commits, no content changes between H2 approval and commit.
+Dự kiến: ba lần cam kết, không có thay đổi nội dung nào giữa phê duyệt H2 và cam kết.
 
-- [ ] **Step 3: Push and open the implementation PR**
+- [ ] **Bước 3: Đẩy và mở PR triển khai**
 
 ```powershell
 git push -u origin feat/fe11-admin-navigation-permissions
 gh pr create --base main --head feat/fe11-admin-navigation-permissions --draft --title "feat(fe11): align admin navigation and permissions" --body "Implements TD-023 / FE11-PERM01..FE11-PERM05 from the approved FE11 Admin Navigation And Permissions design and plan. Adds Admin-only GET /api/admin/permissions, the exact eight-entry Admin sidebar, FE12-backed role counts, derived read-only coverage/matrix rendering, tests, contracts, and H2 evidence. Excludes FE04 removal, permission mutation, schema changes, FE12 production changes, TD-025, and whole-feature FE11 completion."
 ```
 
-Edit the PR body to identify `SPEC.md`, this plan, `FE11-PERM01..FE11-PERM06`, `TD-023`, L1-L4 evidence, and explicit exclusions. Mark ready only after required checks pass.
+Chỉnh sửa phần PR để xác định `SPEC.md`, kế hoạch này, `FE11-PERM01..FE11-PERM06`, `TD-023`, bằng
+chứng L1-L4 và các loại trừ rõ ràng. Chỉ đánh dấu sẵn sàng sau khi vượt qua các bước kiểm tra bắt
+buộc.
 
-- [ ] **Step 4: Wait for checks and request H3**
+- [ ] **Bước 4: Chờ kiểm tra và yêu cầu H3**
 
 ```powershell
 gh pr checks --watch
 gh pr view --json number,state,isDraft,mergeable,statusCheckRollup,url
 ```
 
-Expected: all required checks PASS and the PR is mergeable. Present the PR diff, check results, spec/safety/acceptance evidence, residual risks, and confirmation that whole FE11/TD-025 remain deferred. Stop for explicit H3 approval.
+Dự kiến: tất cả các bước kiểm tra bắt buộc ĐẠT và PR có thể hợp nhất được. Trình bày sự khác biệt
+PR, kiểm tra kết quả, bằng chứng đặc tả/an toàn/chấp nhận, rủi ro còn sót lại và xác nhận rằng toàn
+bộ FE11/TD-025 vẫn được hoãn lại. Dừng để phê duyệt H3 rõ ràng.
 
-- [ ] **Step 5: Merge only after H3 and verify main CI**
+- [ ] **Bước 5: Chỉ hợp nhất sau H3 và xác minh CI chính**
 
 ```powershell
 gh pr merge --merge --delete-branch
@@ -1266,48 +1304,54 @@ gh run list --branch main --commit $mergeSha --limit 5
 gh run watch (gh run list --branch main --commit $mergeSha --limit 1 --json databaseId --jq '.[0].databaseId')
 ```
 
-Expected: implementation PR is merged and the exact merge commit receives a successful `main` CI run. Do not mark `TD-023` resolved until Task 7 closeout is merged.
+Dự kiến: PR triển khai được hợp nhất và cam kết hợp nhất chính xác sẽ nhận được lần chạy CI `main`
+thành công. Không đánh dấu `TD-023` đã được giải quyết cho đến khi kết thúc Nhiệm vụ 7 được hợp
+nhất.
 
 ---
 
-### Task 7: Close TD-023 With Exact B7 Evidence
+### Nhiệm vụ 7: Đóng TD-023 với bằng chứng B7 chính xác
 
-**Files:**
-- Modify: `.sdd/specs/feat-user-role-management/PLAN.md`
-- Modify: `.sdd/specs/feat-user-role-management/TASKS.md`
-- Modify: `.sdd/specs/feat-user-role-management/TEST_PLAN.md`
-- Modify: `.sdd/specs/feat-user-role-management/CHANGELOG.md`
-- Modify: `.sdd/reviews/fe11-admin-navigation-permissions-validation-2026-07-19.md`
-- Modify: `TECH_DEBT.md`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-user-role-management/PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/TEST_PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/CHANGELOG.md`
+- Sửa đổi: `.sdd/reviews/fe11-admin-navigation-permissions-validation-2026-07-19.md`
+- Sửa đổi: `TECH_DEBT.md`
 
-**Interfaces:**
-- Consumes: implementation PR number, merge SHA, PR checks, H3 approval, and exact post-merge main CI run.
-- Produces: `FE11-PERM06` complete, `TD-023` resolved, and bounded B7 evidence without changing product code or whole-feature state.
+**Giao diện:**
+- Tiêu thụ: số PR triển khai, hợp nhất SHA, kiểm tra PR, phê duyệt H3 và chạy CI chính chính xác sau hợp nhất.
+- Tạo ra: `FE11-PERM06` hoàn chỉnh, `TD-023` đã giải quyết và giới hạn bằng chứng B7 mà không thay đổi mã sản phẩm hoặc trạng thái toàn bộ chức năng.
 
-- [ ] **Step 1: Create a closeout branch from successful main**
+- [ ] **Bước 1: Tạo nhánh kết thúc từ nhánh chính thành công**
 
 ```powershell
 git fetch origin main
 git worktree add .worktrees/fe11-admin-permissions-closeout -b docs/fe11-admin-permissions-closeout origin/main
 ```
 
-Expected: clean closeout worktree at the successful implementation merge.
+Dự kiến: làm sạch sơ đồ công việc kết thúc khi hợp nhất triển khai thành công.
 
-- [ ] **Step 2: Apply only exact evidence transitions**
+- [ ] **Bước 2: Chỉ áp dụng các chuyển đổi bằng chứng chính xác**
 
-Update the validation record status to `B7 INTEGRATION COMPLETE` and add:
+Cập nhật trạng thái bản ghi xác thực thành `B7 INTEGRATION COMPLETE` và thêm:
 
-- H2 and H3 approval dates.
-- implementation PR number and URL.
-- implementation merge SHA.
-- required PR check result.
-- exact post-merge `main` CI run ID and result.
+- Ngày phê duyệt H2 và H3.
+- số PR thực hiện và URL.
+- triển khai hợp nhất SHA.
+- kết quả kiểm tra PR cần thiết.
+- ID và kết quả chạy CI `main` sau hợp nhất chính xác.
 
-Change PLAN section 14 to `Integration State: COMPLETE THROUGH B7`. Check `FE11-PERM06` and add its integration evidence. Add the observed test totals to TEST_PLAN current evidence. Prepend a B7 CHANGELOG entry.
+Thay đổi PLAN phần 14 thành `Integration State: COMPLETE THROUGH B7`. Kiểm tra `FE11-PERM06` và thêm
+bằng chứng tích hợp của nó. Thêm tổng số kiểm thử được quan sát vào bằng chứng hiện tại của
+TEST_PLAN. Thêm mục nhập B7 CHANGELOG vào trước.
 
-Move `TD-023` from Open debt to Resolved with a concise summary and the implementation merge short SHA. Keep `TD-025` `OPEN`, keep all unrelated debt unchanged, and keep whole FE11 `Implementation State: DEFERRED`.
+Chuyển `TD-023` từ Nợ mở sang Đã giải quyết bằng một bản tóm tắt ngắn gọn và triển khai hợp nhất SHA
+ngắn. Giữ `TD-025` `OPEN`, giữ nguyên tất cả các khoản nợ không liên quan và giữ toàn bộ FE11
+`Implementation State: DEFERRED`.
 
-- [ ] **Step 3: Verify closeout scope and facts**
+- [ ] **Bước 3: Xác minh phạm vi và thông tin khóa sổ**
 
 ```powershell
 git diff --check
@@ -1320,11 +1364,12 @@ gh pr view $implementationPr --json state,mergeCommit,statusCheckRollup,url
 gh run view $mainRun --json conclusion,headSha,url
 ```
 
-Expected: only the six closeout documents changed; GitHub reports the implementation PR merged and the exact merge SHA's main run successful.
+Dự kiến: chỉ có sáu tài liệu khóa sổ được thay đổi; GitHub báo cáo việc triển khai PR đã được hợp
+nhất và việc hợp nhất chính xác hoạt động chính của SHA đã thành công.
 
-- [ ] **Step 4: Obtain closeout H2/H3 and merge**
+- [ ] **Bước 4: Lấy H2/H3 khóa sổ và hợp nhất**
 
-Present the exact documentation-only diff for H2. After approval:
+Trình bày sự khác biệt chính xác chỉ có trong tài liệu cho H2. Sau khi phê duyệt:
 
 ```powershell
 git add -- .sdd/specs/feat-user-role-management/PLAN.md .sdd/specs/feat-user-role-management/TASKS.md .sdd/specs/feat-user-role-management/TEST_PLAN.md .sdd/specs/feat-user-role-management/CHANGELOG.md .sdd/reviews/fe11-admin-navigation-permissions-validation-2026-07-19.md TECH_DEBT.md
@@ -1334,21 +1379,23 @@ gh pr create --base main --head docs/fe11-admin-permissions-closeout --title "do
 gh pr checks --watch
 ```
 
-Request explicit H3 after checks. After H3:
+Yêu cầu H3 rõ ràng sau khi kiểm tra. Sau H3:
 
 ```powershell
 gh pr merge --merge --delete-branch
 ```
 
-Record the closeout merge and final `main` CI in the final handoff. No required work remains for `TD-023`; `TD-025` and the rest of deferred FE11 remain the next independent work.
+Ghi lại quá trình hợp nhất kết thúc và CI `main` cuối cùng trong lần chuyển giao cuối cùng. Không
+còn công việc cần thiết nào cho `TD-023`; `TD-025` và phần còn lại của FE11 bị trì hoãn vẫn là tác
+phẩm độc lập tiếp theo.
 
 ---
 
-## Self-Review Results
+## Kết quả tự đánh giá
 
-- Spec coverage: Tasks 1-7 cover exact navigation (`FR-FE11-030`, `AC-FE11-016`), Admin-only read boundary, 15-row policy, fresh DTOs, FE12 count ownership, derived coverage/cells, independent failures/retries (`FR-FE11-032`, `AC-FE11-017`), docs, L1-L4, H2/H3, merge, and B7 closeout.
-- Scope coverage: FE04 product files, FE12 product files, SQL/schema, authentication implementation, permission mutation, and TD-025 are absent from the file map and commit set.
-- Placeholder scan: implementation steps provide exact paths, signatures, test code, policy rows, response schemas, commands, expected RED/GREEN behavior, and gate transitions. Integration-only IDs are retrieved from GitHub before closeout and written as observed evidence.
-- Type consistency: backend uses `getPermissions`, frontend uses `adminApi.permissions`, policy fields are `permissionKey`, `label`, `moduleKey`, `moduleLabel`, `allowedRoles`, and all joins use `roleName`.
-- State consistency: `permissionPolicy` and `userStats` have separate loading/error setters; neither catch resets the other owner or its own last successful value.
-- Governance consistency: `FE11-PERM01..FE11-PERM05` can become H2-ready; only `FE11-PERM06` and `TD-023` close after implementation merge, post-merge CI, and closeout integration. Whole FE11 remains deferred.
+- Phạm vi đặc tả: Nhiệm vụ 1-7 bao gồm điều hướng chính xác (`FR-FE11-030`, `AC-FE11-016`), ranh giới chỉ đọc của quản trị viên, chính sách 15 hàng, DTO mới, quyền sở hữu số lượng FE12, phạm vi/ô dẫn xuất, lỗi/thử lại độc lập (`FR-FE11-032`, `AC-FE11-017`), tài liệu, L1-L4, H2/H3, hợp nhất và đóng cửa B7.
+- Phạm vi phạm vi: Tệp sản phẩm FE04, tệp sản phẩm FE12, SQL/lược đồ, triển khai xác thực, thao tác ghi quyền và TD-025 không có trong bản đồ tệp và bộ cam kết.
+- Quét giữ chỗ: các bước triển khai cung cấp đường dẫn chính xác, chữ ký, mã kiểm tra, hàng chính sách, lược đồ phản hồi, lệnh, hành vi RED/GREEN dự kiến và chuyển tiếp cổng. ID chỉ tích hợp được truy xuất từ ​​GitHub trước khi khóa và được ghi dưới dạng bằng chứng quan sát được.
+- Tính nhất quán của loại: máy chủ sử dụng `getPermissions`, giao diện người dùng sử dụng `adminApi.permissions`, các trường chính sách là `permissionKey`, `label`, `moduleKey`, `moduleLabel`, `allowedRoles` và tất cả các phép nối đều sử dụng `roleName`.
+- Tính nhất quán của trạng thái: `permissionPolicy` và `userStats` có bộ cài đặt tải/lỗi riêng biệt; không bắt lại chủ sở hữu khác hoặc giá trị thành công cuối cùng của chính nó.
+- Tính nhất quán trong quản trị: `FE11-PERM01..FE11-PERM05` có thể sẵn sàng cho H2; chỉ `FE11-PERM06` và `TD-023` đóng sau khi hợp nhất triển khai, CI sau hợp nhất và tích hợp kết thúc. Toàn bộ FE11 vẫn được hoãn lại.

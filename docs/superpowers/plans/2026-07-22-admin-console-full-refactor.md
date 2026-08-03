@@ -1,67 +1,75 @@
-# Admin Console Full Frontend Refactor Implementation Plan
+# Bảng điều khiển dành cho quản trị viên Kế hoạch triển khai công cụ tái cấu trúc giao diện người dùng đầy đủ
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Đối với nhân viên đại lý:** SUB-SKILL BẮT BUỘC: Sử dụng siêu năng lực:phát triển theo định hướng phụ (được khuyến nghị) hoặc siêu năng lực:thực hiện các kế hoạch để triển khai kế hoạch này theo từng nhiệm vụ. Các bước sử dụng cú pháp hộp kiểm (`- [ ]`) để theo dõi.
 
-**Goal:** Replace the 3,000-line FE11 Admin Console monolith with a modular, accessible, responsive single-route frontend and deploy the verified result to Azure Staging without changing backend or business contracts.
+**Mục tiêu:** Thay thế khối nguyên khối 3.000 dòng của Bảng điều khiển dành cho quản trị viên FE11
+bằng giao diện người dùng một tuyến đáp ứng, có thể truy cập và mô-đun và triển khai kết quả đã được
+xác minh vào Giai đoạn Azure mà không thay đổi hợp đồng kinh doanh hoặc máy chủ.
 
-**Architecture:** Keep `/admin/users` as the only Admin Console route and keep `frontend/src/page/UserManagement.jsx` as a compatibility entry. Build `AdminConsolePage` from a shared shell, small presentation primitives, and independently owned Dashboard, Library, Circulation, Requests, Users, Permissions, and Audit modules. Preserve existing API adapters and safe DTOs; extract only presentation and section state.
+**Kiến trúc:** Giữ `/admin/users` làm tuyến Bảng điều khiển dành cho quản trị viên duy nhất và giữ
+`frontend/src/page/UserManagement.jsx` làm mục nhập tương thích. Xây dựng `AdminConsolePage` từ một
+lớp vỏ dùng chung, các bản trình bày gốc nhỏ và các mô-đun Bảng điều khiển, Thư viện, Lưu hành, Yêu
+cầu, Người dùng, Quyền và Kiểm tra được sở hữu độc lập. Bảo tồn bộ điều hợp API hiện có và DTO an
+toàn; chỉ trích xuất phần trình bày và trạng thái phần.
 
-**Tech Stack:** React 19, React Router, Lucide React, existing Bootstrap/shared CSS tokens, Node test runner, ESLint, Vite, Playwright, Express/Jest regression suite, GitHub Actions, Azure Static Web Apps/App Service.
+**bộ công nghệ công nghệ:** React 19, Bộ định tuyến React, Lucide React, Bootstrap hiện có/mã thông
+báo CSS được chia sẻ, trình chạy kiểm thử nút, ESLint, Vite, Playwright, Express/Jest bộ hồi quy,
+GitHub Actions, Azure Static Web Apps/App Service.
 
-## Global Constraints
+## Ràng buộc toàn cầu
 
-- The public Admin entry URL remains exactly `/admin/users`.
-- The default Admin section remains User Management.
-- Navigation remains exactly Home, Dashboard, Library, Borrowing Management, Request Management, All Users, Permissions, and Audit Logs in the approved order.
-- No backend endpoint, request payload, response DTO, authorization rule, business outcome, or database schema changes.
-- Backend authorization remains authoritative; no development bypass or client-only permission decision.
-- FE07 continues to own borrow-request mutations; FE11 request terminal states remain read-only.
-- FE11 owns the permission matrix; FE12 owns role counts and reporting data.
-- Audit raw values remain canonical and only their presentation is localized.
-- FE04 Membership and FE09 Fine functionality outside the Admin Console remain untouched.
-- No new runtime dependency is introduced.
-- Every behavior change follows RED-GREEN-REFACTOR and preserves existing tests.
-- Human visual acceptance remains separate from automated responsive evidence.
+- Mục quản trị công khai URL vẫn giữ nguyên chính xác là `/admin/users`.
+- Phần Quản trị mặc định vẫn là Quản lý người dùng.
+- Điều hướng vẫn chính xác là Trang chủ, Trang tổng quan, Thư viện, Quản lý lượt mượn, Quản lý yêu cầu, Tất cả người dùng, Quyền và Nhật ký kiểm tra theo thứ tự đã được phê duyệt.
+- Không có điểm cuối máy chủ, tải trọng yêu cầu, phản hồi DTO, quy tắc ủy quyền, kết quả kinh doanh hoặc thay đổi lược đồ cơ sở dữ liệu.
+- Ủy quyền máy chủ vẫn có thẩm quyền; không có quyết định bỏ qua phát triển hoặc quyết định cấp phép chỉ dành cho khách hàng.
+- FE07 tiếp tục sở hữu thao tác ghi yêu cầu mượn sách; Trạng thái đầu cuối yêu cầu FE11 vẫn ở chế độ chỉ đọc.
+- FE11 sở hữu ma trận quyền; FE12 sở hữu số lượng vai trò và dữ liệu báo cáo.
+- Kiểm tra các giá trị thô vẫn mang tính chuẩn mực và chỉ phần trình bày của chúng được bản địa hóa.
+- FE04 Tư cách thành viên và FE09 Chức năng tốt bên ngoài Bảng điều khiển dành cho quản trị viên vẫn được giữ nguyên.
+- Không có phần phụ thuộc thời gian chạy mới nào được giới thiệu.
+- Mọi thay đổi hành vi đều tuân theo RED-GREEN-REFACTOR và duy trì các kiểm thử hiện có.
+- Sự chấp nhận trực quan của con người vẫn tách biệt với bằng chứng giao diện thích ứng tự động.
 
 ---
 
-## File Map
+## Bản đồ tệp
 
-### New production files
+### Tập tin sản xuất mới
 
-- `frontend/src/page/admin/AdminConsolePage.jsx` — route-level access guard, active section, logout, section composition.
-- `frontend/src/page/admin/adminAccess.js` — pure stored-identity parsing.
-- `frontend/src/page/admin/adminNavigation.js` — the canonical eight-entry navigation definition.
-- `frontend/src/page/admin/components/AdminShell.jsx` — desktop sidebar and mobile navigation panel.
-- `frontend/src/page/admin/components/AdminPageHeader.jsx` — section title, refresh, primary action.
-- `frontend/src/page/admin/components/AdminFilterBar.jsx` — labeled responsive filter layout.
-- `frontend/src/page/admin/components/AdminDateField.jsx` — persistent label around native date input.
-- `frontend/src/page/admin/components/AdminActionButton.jsx` — icon plus visible action label.
-- `frontend/src/page/admin/components/AdminEmptyState.jsx` — loading/error/empty/filtered-empty presentation.
-- `frontend/src/page/admin/components/AdminPagination.jsx` — bounded pagination controls.
-- `frontend/src/page/admin/dashboard/AdminDashboardSection.jsx` — dashboard data ownership and rendering.
-- `frontend/src/page/admin/dashboard/adminDashboardViewModel.js` — positive top-five chart transformation.
-- `frontend/src/page/admin/users/AdminUsersSection.jsx` — list, statistics, filters, detail, lifecycle and role UI.
-- `frontend/src/page/admin/users/UserEditorModal.jsx` — create/edit form.
-- `frontend/src/page/admin/users/UserRoleModal.jsx` — authoritative role diff UI.
-- `frontend/src/page/admin/users/UserDetailDrawer.jsx` — safe detail DTO presentation.
-- `frontend/src/page/admin/users/userPresentation.js` — primary role, date, validation and role-plan helpers.
-- `frontend/src/page/admin/requests/AdminRequestsSection.jsx` — canonical request list/detail/export and FE07 mutation delegation.
-- `frontend/src/page/admin/permissions/AdminPermissionsSection.jsx` — FE11 matrix plus FE12 counts.
-- `frontend/src/page/admin/permissions/permissionPresentation.js` — localized labels and allow/deny decision objects.
-- `frontend/src/page/admin/audit/AdminAuditSection.jsx` — canonical audit filters and safe rows.
-- `frontend/src/page/admin/audit/adminAuditPresentation.js` — localized action/detail labels over raw values.
-- `frontend/src/page/admin/library/AdminLibrarySection.jsx` — approved library read/presentation ownership.
-- `frontend/src/page/admin/circulation/AdminCirculationSection.jsx` — approved circulation presentation and actions.
-- `frontend/src/page/admin/admin-console.css` — Admin tokens, desktop, mobile, focus and reduced-motion rules.
+- `frontend/src/page/admin/AdminConsolePage.jsx` — bảo vệ truy cập cấp tuyến, phần hoạt động, đăng xuất, thành phần phần.
+- `frontend/src/page/admin/adminAccess.js` — phân tích cú pháp nhận dạng được lưu trữ thuần túy.
+- `frontend/src/page/admin/adminNavigation.js` — định nghĩa điều hướng tám mục tiêu chuẩn.
+- `frontend/src/page/admin/components/AdminShell.jsx` — thanh bên của máy tính để bàn và bảng điều hướng trên thiết bị di động.
+- `frontend/src/page/admin/components/AdminPageHeader.jsx` — tiêu đề phần, làm mới, hành động chính.
+- `frontend/src/page/admin/components/AdminFilterBar.jsx` — bố cục bộ lọc đáp ứng được gắn nhãn.
+- `frontend/src/page/admin/components/AdminDateField.jsx` - nhãn liên tục xung quanh đầu vào ngày gốc.
+- `frontend/src/page/admin/components/AdminActionButton.jsx` — biểu tượng cộng với nhãn hành động hiển thị.
+- `frontend/src/page/admin/components/AdminEmptyState.jsx` — bản trình bày đang tải/lỗi/trống/đã lọc-trống.
+- `frontend/src/page/admin/components/AdminPagination.jsx` - điều khiển phân trang giới hạn.
+- `frontend/src/page/admin/dashboard/AdminDashboardSection.jsx` — quyền sở hữu và hiển thị dữ liệu bảng điều khiển.
+- `frontend/src/page/admin/dashboard/adminDashboardViewModel.js` — chuyển đổi tích cực trong biểu đồ top 5.
+- `frontend/src/page/admin/users/AdminUsersSection.jsx` - danh sách, số liệu thống kê, bộ lọc, chi tiết, vòng đời và giao diện người dùng vai trò.
+- `frontend/src/page/admin/users/UserEditorModal.jsx` — tạo/chỉnh sửa biểu mẫu.
+- `frontend/src/page/admin/users/UserRoleModal.jsx` — giao diện người dùng khác biệt về vai trò có thẩm quyền.
+- `frontend/src/page/admin/users/UserDetailDrawer.jsx` — chi tiết an toàn bản trình bày DTO.
+- `frontend/src/page/admin/users/userPresentation.js` — người trợ giúp về vai trò chính, ngày tháng, xác thực và lập kế hoạch vai trò.
+- `frontend/src/page/admin/requests/AdminRequestsSection.jsx` — danh sách/chi tiết/xuất yêu cầu chuẩn và ủy quyền thao tác ghi FE07.
+- `frontend/src/page/admin/permissions/AdminPermissionsSection.jsx` - Ma trận FE11 cộng với số lượng FE12.
+- `frontend/src/page/admin/permissions/permissionPresentation.js` - nhãn được bản địa hóa và các đối tượng quyết định cho phép/từ chối.
+- `frontend/src/page/admin/audit/AdminAuditSection.jsx` — bộ lọc kiểm tra chuẩn và hàng an toàn.
+- `frontend/src/page/admin/audit/adminAuditPresentation.js` — nhãn hành động/chi tiết được bản địa hóa trên các giá trị thô.
+- `frontend/src/page/admin/library/AdminLibrarySection.jsx` — quyền sở hữu đọc/trình bày thư viện đã được phê duyệt.
+- `frontend/src/page/admin/circulation/AdminCirculationSection.jsx` — trình bày và hành động lưu hành đã được phê duyệt.
+- `frontend/src/page/admin/admin-console.css` — Mã thông báo quản trị, máy tính để bàn, thiết bị di động, tiêu điểm và quy tắc giảm chuyển động.
 
-### New or replaced tests
+### Các xét nghiệm mới hoặc thay thế
 
 - `frontend/test/adminConsolePresentation.test.js`
 - `frontend/test/adminConsoleStructure.test.js`
 - `tests/e2e/fe11-admin-request-management.spec.js`
 
-### Modified governance and compatibility files
+### Các tập tin quản trị và tương thích đã sửa đổi
 
 - `.sdd/specs/feat-user-role-management/PLAN.md`
 - `.sdd/specs/feat-user-role-management/TASKS.md`
@@ -76,67 +84,68 @@
 
 ---
 
-### Task 1: Activate The Bounded FE11 UX Refactor Records
+### Nhiệm vụ 1: Kích hoạt Bản ghi tái cấu trúc UX FE11 bị ràng buộc
 
-**Files:**
-- Modify: `.sdd/specs/feat-user-role-management/PLAN.md`
-- Modify: `.sdd/specs/feat-user-role-management/TASKS.md`
-- Modify: `.sdd/specs/feat-user-role-management/CHANGELOG.md`
+**Tệp:**
+- Sửa đổi: `.sdd/specs/feat-user-role-management/PLAN.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/CHANGELOG.md`
 
-**Interfaces:**
-- Consumes: approved design `docs/superpowers/specs/2026-07-22-admin-console-full-refactor-design.md`.
-- Produces: task IDs `FE11-UXR01` through `FE11-UXR07` used by implementation comments and validation evidence.
+**Giao diện:**
+- Tiêu thụ: thiết kế `docs/superpowers/specs/2026-07-22-admin-console-full-refactor-design.md` đã được phê duyệt.
+- Tạo ra: ID nhiệm vụ `FE11-UXR01` đến `FE11-UXR07` được sử dụng bởi các nhận xét triển khai và bằng chứng xác thực.
 
-- [ ] **Step 1: Add the approved plan slice**
+- [ ] **Bước 1: Thêm phần kế hoạch đã được phê duyệt**
 
-Append this exact bounded slice to `PLAN.md`:
-
-```markdown
-## 18. Admin Console Full Frontend Refactor Slice
-
-Decision: APPROVED BY HUMAN - 2026-07-22.
-
-This Shell-only refactor preserves `/admin/users`, all FE11/FE07/FE12 API and ownership contracts, server authorization, safe DTOs, and database state. It splits the Admin Console into a guarded shell, shared presentation primitives, and independent Dashboard, Library, Circulation, Requests, Users, Permissions, and Audit modules.
-
-Implementation order: governance -> pure presentation RED/GREEN -> shared shell -> Dashboard -> Users -> Requests -> Permissions -> Audit -> Library/Circulation -> legacy removal -> full validation and Azure Staging acceptance.
-```
-
-- [ ] **Step 2: Add the task group**
-
-Append to `TASKS.md` with every item initially unchecked:
+Nối lát cắt giới hạn chính xác này vào `PLAN.md`:
 
 ```markdown
-## Admin Console Full Frontend Refactor Tasks
+## 18. Lát cắt tái cấu trúc toàn bộ giao diện bảng quản trị
 
-- [ ] **FE11-UXR01 - Add pure navigation, dashboard, permission, and audit presentation contracts.**
-- [ ] **FE11-UXR02 - Build the responsive Admin shell and shared presentation primitives.**
-- [ ] **FE11-UXR03 - Migrate Dashboard and User Management with desktop/mobile parity.**
-- [ ] **FE11-UXR04 - Migrate Requests, Permissions, and Audit without changing API ownership.**
-- [ ] **FE11-UXR05 - Migrate Library/Circulation and remove unreachable membership/payment Admin code.**
-- [ ] **FE11-UXR06 - Cut over `/admin/users` and pass focused/full automated validation.**
-- [ ] **FE11-UXR07 - Pass authenticated desktop/mobile Azure Staging acceptance and publish validation evidence.**
+Quyết định: ĐƯỢC PHÊ DUYỆT BỞI HUMAN - 22/07/2026.
+
+Công cụ tái cấu trúc chỉ có lớp bao này bảo tồn `/admin/users`, tất cả FE11/FE07/FE12 API và các hợp đồng sở hữu, ủy quyền máy chủ, DTO an toàn và trạng thái cơ sở dữ liệu. Nó chia Bảng điều khiển dành cho quản trị viên thành một lớp vỏ được bảo vệ, các nguyên mẫu trình bày được chia sẻ và các mô-đun Bảng điều khiển, Thư viện, Lưu hành, Yêu cầu, Người dùng, Quyền và Kiểm tra độc lập.
+
+Trình tự triển khai: quản trị -> trình bày thuần túy RED/GREEN -> lớp bao chia sẻ -> Bảng điều khiển -> Người dùng -> Yêu cầu -> Quyền -> Kiểm tra -> Thư viện/Lưu thông -> xóa kế thừa -> xác thực đầy đủ và chấp nhận Giai đoạn Azure.
 ```
 
-- [ ] **Step 3: Record the approved change**
+- [ ] **Bước 2: Thêm nhóm nhiệm vụ**
 
-Prepend to `CHANGELOG.md`:
+Thêm vào `TASKS.md` với mọi mục ban đầu không được chọn:
 
 ```markdown
-## 2026-07-22 - Admin Console full frontend refactor approved
+## Nhiệm vụ tái cấu trúc toàn bộ giao diện bảng quản trị
 
-- Approved a Shell-only modular refactor under `FE11-UXR01..UXR07`.
-- Preserves all backend, API, authorization, database, FE07 mutation, FE11 permission/audit, and FE12 reporting contracts.
-- Adds responsive user cards, decision-focused charts, labeled actions, localized audit presentation, distinct permission decisions, persistent filter labels, and explicit loading/error/empty states.
-- Removes only unreachable Admin Console membership/payment code; canonical FE04 and FE09 functionality remains unchanged.
+- [ ] **FE11-UXR01 - Thêm các hợp đồng trình bày điều hướng, bảng điều khiển, quyền và kiểm tra thuần túy.**
+- [ ] **FE11-UXR02 - Xây dựng trình quản trị đáp ứng nhanh và các nguyên mẫu trình bày được chia sẻ.**
+- [ ] **FE11-UXR03 - Di chuyển bảng điều khiển và quản lý người dùng với tính tương đương trên máy tính để bàn/thiết bị di động.**
+- [ ] **FE11-UXR04 - Di chuyển yêu cầu, quyền và kiểm tra mà không thay đổi quyền sở hữu API.**
+- [ ] **FE11-UXR05 - Di chuyển Thư viện/Truyền thông và xóa mã quản trị thanh toán/thành viên không thể truy cập được.**
+- [ ] **FE11-UXR06 - Cắt qua `/admin/users` và vượt qua xác thực tập trung/hoàn toàn tự động.**
+- [ ] **FE11-UXR07 - Đạt được xác thực trên máy tính để bàn/thiết bị di động Azure Chấp nhận theo giai đoạn và xuất bản bằng chứng xác thực.**
 ```
 
-- [ ] **Step 4: Verify governance remains enforceable**
+- [ ] **Bước 3: Ghi lại thay đổi đã được phê duyệt**
 
-Run: `npm.cmd run trace:enforce`
+Thêm vào `CHANGELOG.md`:
 
-Expected: exit `0`, all feature traceability remains above the enforcement threshold, and no FE11 requirement becomes `NOT STARTED`.
+```markdown
+## 2026-07-22 - Đã phê duyệt tái cấu trúc toàn bộ giao diện bảng quản trị
 
-- [ ] **Step 5: Commit the governance activation**
+- Đã phê duyệt công cụ tái cấu trúc mô-đun chỉ dành cho lớp bao theo `FE11-UXR01..UXR07`.
+- Bảo toàn tất cả phần máy chủ, API, ủy quyền, cơ sở dữ liệu, thao tác ghi FE07, quyền/kiểm tra FE11 và hợp đồng báo cáo FE12.
+- Thêm thẻ người dùng phản hồi, biểu đồ tập trung vào quyết định, hành động được gắn nhãn, bản trình bày kiểm tra bản địa hóa, quyết định cấp phép riêng biệt, nhãn bộ lọc liên tục và trạng thái tải/lỗi/trống rõ ràng.
+- Chỉ xóa mã thanh toán/thành viên Bảng điều khiển dành cho quản trị viên không thể truy cập được; Chức năng FE04 và FE09 chuẩn vẫn không thay đổi.
+```
+
+- [ ] **Bước 4: Xác minh việc quản trị vẫn có hiệu lực**
+
+Chạy: `npm.cmd run trace:enforce`
+
+Dự kiến: thoát khỏi `0`, tất cả khả năng truy vết chức năng vẫn ở trên ngưỡng thực thi và không có
+yêu cầu FE11 nào trở thành `NOT STARTED`.
+
+- [ ] **Bước 5: Cam kết kích hoạt quản trị**
 
 ```powershell
 git add .sdd/specs/feat-user-role-management/PLAN.md .sdd/specs/feat-user-role-management/TASKS.md .sdd/specs/feat-user-role-management/CHANGELOG.md
@@ -145,20 +154,20 @@ git commit -m "docs: activate admin console frontend refactor"
 
 ---
 
-### Task 2: Add Pure Presentation Contracts
+### Nhiệm vụ 2: Thêm hợp đồng trình bày thuần túy
 
-**Files:**
-- Create: `frontend/test/adminConsolePresentation.test.js`
-- Create: `frontend/src/page/admin/adminNavigation.js`
-- Create: `frontend/src/page/admin/dashboard/adminDashboardViewModel.js`
-- Create: `frontend/src/page/admin/permissions/permissionPresentation.js`
-- Create: `frontend/src/page/admin/audit/adminAuditPresentation.js`
+**Tệp:**
+- Tạo: `frontend/test/adminConsolePresentation.test.js`
+- Tạo: `frontend/src/page/admin/adminNavigation.js`
+- Tạo: `frontend/src/page/admin/dashboard/adminDashboardViewModel.js`
+- Tạo: `frontend/src/page/admin/permissions/permissionPresentation.js`
+- Tạo: `frontend/src/page/admin/audit/adminAuditPresentation.js`
 
-**Interfaces:**
-- Produces: `ADMIN_NAVIGATION`, `selectOperationalChartRows(rows, limit)`, `getPermissionDecision(allowed)`, `formatAuditAction(action)`, `formatAuditDetailKey(key)`.
-- Consumes: canonical raw role, permission, audit, and chart values without mutating them.
+**Giao diện:**
+- Sản xuất: `ADMIN_NAVIGATION`, `selectOperationalChartRows(rows, limit)`, `getPermissionDecision(allowed)`, `formatAuditAction(action)`, `formatAuditDetailKey(key)`.
+- Tiêu thụ: các giá trị vai trò thô, quyền, kiểm tra và biểu đồ chuẩn mà không làm thay đổi chúng.
 
-- [ ] **Step 1: Write the failing pure-contract tests**
+- [ ] **Bước 1: Viết các kiểm thử hợp đồng thuần túy thất bại**
 
 ```js
 import assert from 'node:assert/strict';
@@ -207,13 +216,13 @@ test('Audit presentation localizes known values and preserves unknown safe value
 });
 ```
 
-- [ ] **Step 2: Run RED and confirm the expected failure**
+- [ ] **Bước 2: Chạy RED và xác nhận lỗi dự kiến**
 
-Run from `frontend`: `node --test test/adminConsolePresentation.test.js`
+Chạy từ `frontend`: `node --test test/adminConsolePresentation.test.js`
 
-Expected: FAIL with `ERR_MODULE_NOT_FOUND` for `src/page/admin/adminNavigation.js`.
+Dự kiến: THẤT BẠI với `ERR_MODULE_NOT_FOUND` dành cho `src/page/admin/adminNavigation.js`.
 
-- [ ] **Step 3: Implement the minimal pure modules**
+- [ ] **Bước 3: Triển khai các mô-đun thuần túy tối thiểu**
 
 ```js
 // adminNavigation.js
@@ -279,13 +288,13 @@ export function formatAuditDetailKey(key) {
 }
 ```
 
-- [ ] **Step 4: Run GREEN**
+- [ ] **Bước 4: Chạy GREEN**
 
-Run from `frontend`: `node --test test/adminConsolePresentation.test.js`
+Chạy từ `frontend`: `node --test test/adminConsolePresentation.test.js`
 
-Expected: PASS, 4 tests, 0 failures.
+Dự kiến: ĐẠT, 4 lần kiểm tra, 0 trượt.
 
-- [ ] **Step 5: Commit the pure contracts**
+- [ ] **Bước 5: Cam kết hợp đồng thuần túy**
 
 ```powershell
 git add frontend/test/adminConsolePresentation.test.js frontend/src/page/admin/adminNavigation.js frontend/src/page/admin/dashboard/adminDashboardViewModel.js frontend/src/page/admin/permissions/permissionPresentation.js frontend/src/page/admin/audit/adminAuditPresentation.js
@@ -294,25 +303,28 @@ git commit -m "test: define admin console presentation contracts"
 
 ---
 
-### Task 3: Build Shared Admin Primitives And Styles
+### Nhiệm vụ 3: Xây dựng các nguyên tắc và kiểu dáng quản trị được chia sẻ
 
-**Files:**
-- Create: `frontend/test/adminConsoleStructure.test.js`
-- Create: `frontend/src/page/admin/components/AdminPageHeader.jsx`
-- Create: `frontend/src/page/admin/components/AdminFilterBar.jsx`
-- Create: `frontend/src/page/admin/components/AdminDateField.jsx`
-- Create: `frontend/src/page/admin/components/AdminActionButton.jsx`
-- Create: `frontend/src/page/admin/components/AdminEmptyState.jsx`
-- Create: `frontend/src/page/admin/components/AdminPagination.jsx`
-- Create: `frontend/src/page/admin/admin-console.css`
+**Tệp:**
+- Tạo: `frontend/test/adminConsoleStructure.test.js`
+- Tạo: `frontend/src/page/admin/components/AdminPageHeader.jsx`
+- Tạo: `frontend/src/page/admin/components/AdminFilterBar.jsx`
+- Tạo: `frontend/src/page/admin/components/AdminDateField.jsx`
+- Tạo: `frontend/src/page/admin/components/AdminActionButton.jsx`
+- Tạo: `frontend/src/page/admin/components/AdminEmptyState.jsx`
+- Tạo: `frontend/src/page/admin/components/AdminPagination.jsx`
+- Tạo: `frontend/src/page/admin/admin-console.css`
 
-**Interfaces:**
-- Produces: presentation-only components with no API imports.
-- Consumes: labels, values, callbacks, icons, and children from section modules.
+**Giao diện:**
+- Sản xuất: các thành phần chỉ dành cho bản trình bày mà không cần nhập API.
+- Tiêu thụ: nhãn, giá trị, lệnh gọi lại, biểu tượng và phần tử con từ các mô-đun phần.
 
-- [ ] **Step 1: Write RED source-boundary tests**
+- [ ] **Bước 1: Viết kiểm thử ranh giới nguồn RED**
 
-The test reads each new file and asserts that shared components do not import `api/`, date fields have visible labels, action buttons render visible text, CSS includes focus/reduced-motion/mobile-card contracts, and pagination bounds page buttons to a five-page window.
+Quá trình kiểm tra sẽ đọc từng tệp mới và xác nhận rằng các thành phần được chia sẻ không nhập
+`api/`, các trường ngày có nhãn hiển thị, các nút hành động hiển thị văn bản hiển thị, CSS bao gồm
+các hợp đồng tiêu điểm/giảm chuyển động/thẻ di động và các nút trang giới hạn phân trang cho một cửa
+sổ năm trang.
 
 ```js
 import assert from 'node:assert/strict';
@@ -345,15 +357,15 @@ test('Admin CSS defines mobile cards, focus and reduced motion', async () => {
 });
 ```
 
-- [ ] **Step 2: Run RED**
+- [ ] **Bước 2: Chạy RED**
 
-Run from `frontend`: `node --test test/adminConsoleStructure.test.js`
+Chạy từ `frontend`: `node --test test/adminConsoleStructure.test.js`
 
-Expected: FAIL because `components/AdminPageHeader.jsx` does not exist.
+Dự kiến: THẤT BẠI vì `components/AdminPageHeader.jsx` không tồn tại.
 
-- [ ] **Step 3: Implement the shared primitives**
+- [ ] **Bước 3: Triển khai các nguyên mẫu được chia sẻ**
 
-Use these exact public signatures:
+Sử dụng các chữ ký công khai chính xác sau:
 
 ```jsx
 export function AdminPageHeader({ eyebrow, title, refreshing = false, onRefresh, primaryAction })
@@ -364,11 +376,14 @@ export function AdminEmptyState({ icon: Icon, title, description, action })
 export function AdminPagination({ page, totalItems, pageSize = 8, onPageChange })
 ```
 
-`AdminDateField` must render `<label htmlFor={id}><span>{label}</span><input id={id} type="date" value={value} onChange={onChange} min={min} max={max} /></label>`. `AdminActionButton` must render `<Icon aria-hidden="true" />` and `<span>{label}</span>`. `AdminPagination` must calculate a centered page window of at most five page numbers and always expose Previous/Next controls.
+`AdminDateField` phải hiển thị `<label htmlFor={id}><span>{label}</span><input id={id} type="date"
+value={value} onChange={onChange} min={min} max={max} /></label>`. `AdminActionButton` phải hiển thị
+`<Icon aria-hidden="true" />` và `<span>{label}</span>`. `AdminPagination` phải tính toán cửa sổ
+trang ở giữa có tối đa năm số trang và luôn hiển thị các điều khiển Trước/Tiếp theo.
 
-- [ ] **Step 4: Add the style foundation**
+- [ ] **Bước 4: Thêm kem nền**
 
-Start `admin-console.css` with the approved tokens and required accessibility contracts:
+Bắt đầu `admin-console.css` với các mã thông báo được phê duyệt và các hợp đồng truy cập bắt buộc:
 
 ```css
 .admin-console {
@@ -409,18 +424,18 @@ Start `admin-console.css` with the approved tokens and required accessibility co
 }
 ```
 
-- [ ] **Step 5: Run GREEN and lint the new files**
+- [ ] **Bước 5: Chạy GREEN và tìm kiếm các tệp mới**
 
-Run from `frontend`:
+Chạy từ `frontend`:
 
 ```powershell
 node --test test/adminConsoleStructure.test.js
 npm.cmd run lint
 ```
 
-Expected: both commands exit `0`.
+Dự kiến: cả hai lệnh đều thoát `0`.
 
-- [ ] **Step 6: Commit shared presentation**
+- [ ] **Bước 6: Cam kết bài thuyết trình được chia sẻ**
 
 ```powershell
 git add frontend/test/adminConsoleStructure.test.js frontend/src/page/admin/components frontend/src/page/admin/admin-console.css
@@ -429,40 +444,45 @@ git commit -m "feat: add admin console presentation primitives"
 
 ---
 
-### Task 4: Build The Guarded Responsive Shell
+### Nhiệm vụ 4: Xây dựng lớp bao phản hồi được bảo vệ
 
-**Files:**
-- Create: `frontend/src/page/admin/adminAccess.js`
-- Create: `frontend/src/page/admin/components/AdminShell.jsx`
-- Create: `frontend/src/page/admin/AdminConsolePage.jsx`
-- Modify: `frontend/test/adminConsoleStructure.test.js`
+**Tệp:**
+- Tạo: `frontend/src/page/admin/adminAccess.js`
+- Tạo: `frontend/src/page/admin/components/AdminShell.jsx`
+- Tạo: `frontend/src/page/admin/AdminConsolePage.jsx`
+- Sửa đổi: `frontend/test/adminConsoleStructure.test.js`
 
-**Interfaces:**
-- `readStoredAdminAccess()` returns `{ authenticated, isAdmin, user }`.
-- `AdminShell` consumes `activeSection`, `currentUser`, `onSectionChange`, `onHome`, `onLogout`, and `children`.
-- `AdminConsolePage` owns `activeSection = 'users'` and renders no protected section before access succeeds.
+**Giao diện:**
+- `readStoredAdminAccess()` trả về `{ authenticated, isAdmin, user }`.
+- `AdminShell` tiêu thụ `activeSection`, `currentUser`, `onSectionChange`, `onHome`, `onLogout` và `children`.
+- `AdminConsolePage` sở hữu `activeSection = 'users'` và không hiển thị phần được bảo vệ trước khi truy cập thành công.
 
-- [ ] **Step 1: Add failing shell tests**
+- [ ] **Bước 1: Thêm các kiểm thử lớp bao không thành công**
 
-Assert that the shell imports `ADMIN_NAVIGATION`, uses `aria-current`, exposes `aria-expanded`/`aria-controls` on a `Menu` button, handles Escape, and that `AdminConsolePage` performs `<Navigate to="/login" replace />` and `<Navigate to="/home" replace />` before section rendering.
+Xác nhận rằng lớp bao nhập `ADMIN_NAVIGATION`, sử dụng `aria-current`, hiển thị
+`aria-expanded`/`aria-controls` trên nút `Menu`, xử lý Escape và `AdminConsolePage` thực hiện
+`<Navigate to="/login" replace />` và `<Navigate to="/home" replace />` trước khi hiển thị phần.
 
-- [ ] **Step 2: Run RED**
+- [ ] **Bước 2: Chạy RED**
 
-Run from `frontend`: `node --test test/adminConsoleStructure.test.js`
+Chạy từ `frontend`: `node --test test/adminConsoleStructure.test.js`
 
-Expected: FAIL because `AdminShell.jsx`, `adminAccess.js`, and `AdminConsolePage.jsx` are absent.
+Dự kiến: THẤT BẠI vì `AdminShell.jsx`, `adminAccess.js` và `AdminConsolePage.jsx` không có mặt.
 
-- [ ] **Step 3: Move the existing access parser without semantic changes**
+- [ ] **Bước 3: Di chuyển trình phân tích cú pháp truy cập hiện có mà không thay đổi ngữ nghĩa**
 
-Move `readStoredAdminAccess` from the current `UserManagement.jsx` into `adminAccess.js`, keep its storage keys and role normalization unchanged, and export it.
+Di chuyển `readStoredAdminAccess` từ `UserManagement.jsx` hiện tại sang `adminAccess.js`, giữ nguyên
+các khóa lưu trữ và chuẩn hóa vai trò của nó rồi xuất nó.
 
-- [ ] **Step 4: Implement `AdminShell`**
+- [ ] **Bước 4: Triển khai `AdminShell`**
 
-The shell must derive every navigation control from `ADMIN_NAVIGATION`, map `home` to `onHome`, map the other entries to `onSectionChange(id)`, close the mobile panel after navigation, close on Escape, and return focus to the Menu trigger. It must not import feature APIs.
+lớp bao phải lấy mọi điều khiển điều hướng từ `ADMIN_NAVIGATION`, ánh xạ `home` đến `onHome`, ánh xạ
+các mục khác tới `onSectionChange(id)`, đóng bảng điều khiển di động sau khi điều hướng, đóng Escape
+và chuyển tiêu điểm về trình kích hoạt Menu. Nó không được nhập API chức năng.
 
-- [ ] **Step 5: Implement the route-level composition contract**
+- [ ] **Bước 5: Thực hiện hợp đồng sáng tác cấp tuyến**
 
-`AdminConsolePage` starts with:
+`AdminConsolePage` bắt đầu bằng:
 
 ```jsx
 const access = readStoredAdminAccess();
@@ -472,11 +492,12 @@ if (!access.authenticated) return <Navigate to="/login" replace />;
 if (!access.isAdmin) return <Navigate to="/home" replace />;
 ```
 
-For this task it may render an explicit section placeholder inside `AdminShell`; it is not wired from `UserManagement.jsx` until Task 11.
+Đối với tác vụ này, nó có thể hiển thị một trình giữ chỗ phần rõ ràng bên trong `AdminShell`; nó
+không được nối dây từ `UserManagement.jsx` cho đến Nhiệm vụ 11.
 
-- [ ] **Step 6: Run GREEN, full frontend tests and build**
+- [ ] **Bước 6: Chạy GREEN, kiểm tra giao diện người dùng đầy đủ và xây dựng**
 
-Run from `frontend`:
+Chạy từ `frontend`:
 
 ```powershell
 node --test test/adminConsoleStructure.test.js
@@ -484,9 +505,10 @@ npm.cmd test
 npm.cmd run build
 ```
 
-Expected: all commands exit `0`; the live route is still backed by the legacy entry at this checkpoint.
+Dự kiến: tất cả các lệnh thoát `0`; tuyến đường trực tiếp vẫn được hỗ trợ bởi mục nhập cũ tại điểm
+kiểm tra này.
 
-- [ ] **Step 7: Commit the shell**
+- [ ] **Bước 7: Cam kết lớp bao**
 
 ```powershell
 git add frontend/src/page/admin/adminAccess.js frontend/src/page/admin/components/AdminShell.jsx frontend/src/page/admin/AdminConsolePage.jsx frontend/test/adminConsoleStructure.test.js
@@ -495,31 +517,34 @@ git commit -m "feat: add guarded responsive admin shell"
 
 ---
 
-### Task 5: Migrate Dashboard With Decision-Focused Charts
+### Nhiệm vụ 5: Di chuyển bảng điều khiển với các biểu đồ tập trung vào quyết định
 
-**Files:**
-- Create: `frontend/src/page/admin/dashboard/AdminDashboardSection.jsx`
-- Modify: `frontend/test/adminConsoleStructure.test.js`
-- Modify: `frontend/src/page/admin/AdminConsolePage.jsx`
+**Tệp:**
+- Tạo: `frontend/src/page/admin/dashboard/AdminDashboardSection.jsx`
+- Sửa đổi: `frontend/test/adminConsoleStructure.test.js`
+- Sửa đổi: `frontend/src/page/admin/AdminConsolePage.jsx`
 
-**Interfaces:**
-- `AdminDashboardSection()` owns `adminApi.dashboard()` loading/error/last-success state.
-- It consumes `selectOperationalChartRows` before rendering every chart.
-- It renders `AdminPageHeader`, approved summary cards, `AdminLineChart`, and `AdminEmptyState`.
+**Giao diện:**
+- `AdminDashboardSection()` sở hữu trạng thái tải/lỗi/thành công cuối cùng của `adminApi.dashboard()`.
+- Nó tiêu thụ `selectOperationalChartRows` trước khi hiển thị mọi biểu đồ.
+- Nó hiển thị `AdminPageHeader`, thẻ tóm tắt đã được phê duyệt, `AdminLineChart` và `AdminEmptyState`.
 
-- [ ] **Step 1: Add RED dashboard structure tests**
+- [ ] **Bước 1: Thêm các kiểm thử cấu trúc bảng điều khiển RED**
 
-Assert that the new section calls `adminApi.dashboard()`, guards stale responses with `createLatestRequestGuard`, passes all three datasets through `selectOperationalChartRows`, and renders `Dữ liệu sẽ xuất hiện khi có giao dịch phù hợp.` for an empty transformed dataset.
+Khẳng định rằng phần mới gọi `adminApi.dashboard()`, bảo vệ các phản hồi cũ bằng
+`createLatestRequestGuard`, chuyển cả ba tập dữ liệu qua `selectOperationalChartRows` và hiển thị
+`Dữ liệu sẽ xuất hiện khi có giao dịch phù hợp.` cho một tập dữ liệu đã chuyển đổi trống.
 
-- [ ] **Step 2: Run RED**
+- [ ] **Bước 2: Chạy RED**
 
-Run from `frontend`: `node --test test/adminConsolePresentation.test.js test/adminConsoleStructure.test.js`
+Chạy từ `frontend`: `node --test test/adminConsolePresentation.test.js test/adminConsoleStructure.test.js`
 
-Expected: FAIL because `AdminDashboardSection.jsx` is absent.
+Dự kiến: THẤT BẠI vì `AdminDashboardSection.jsx` vắng mặt.
 
-- [ ] **Step 3: Move and tighten the chart implementation**
+- [ ] **Bước 3: Di chuyển và siết chặt việc thực hiện biểu đồ**
 
-Move the existing `formatChartLabel` and `AdminLineChart` presentation into `AdminDashboardSection.jsx`. The section must transform each dataset first:
+Di chuyển bản trình bày `formatChartLabel` và `AdminLineChart` hiện có vào
+`AdminDashboardSection.jsx`. Phần này phải chuyển đổi từng tập dữ liệu trước:
 
 ```js
 const mostBorrowed = selectOperationalChartRows(data?.charts?.mostBorrowed);
@@ -527,19 +552,21 @@ const overdue = selectOperationalChartRows(data?.charts?.overdue);
 const returnedToday = selectOperationalChartRows(data?.charts?.returnedToday);
 ```
 
-`AdminLineChart` must treat `rows.length === 0` as its only empty branch because all-zero rows have already been removed.
+`AdminLineChart` phải coi `rows.length === 0` là nhánh trống duy nhất của nó vì các hàng toàn 0 đã bị xóa.
 
-- [ ] **Step 4: Preserve refresh behavior**
+- [ ] **Bước 4: Giữ nguyên hành vi làm mới**
 
-Use one `createLatestRequestGuard()` stored in `useRef`, keep the last successful `data` after a later error, show `Đang cập nhật...` during refresh, and show an inline retry action after failure.
+Sử dụng một `createLatestRequestGuard()` được lưu trữ trong `useRef`, giữ `data` thành công cuối
+cùng sau một lỗi sau đó, hiển thị `Đang cập nhật...` trong khi làm mới và hiển thị hành động thử lại
+nội tuyến sau khi thất bại.
 
-- [ ] **Step 5: Wire Dashboard into `AdminConsolePage`**
+- [ ] **Bước 5: Nối dây bảng điều khiển vào `AdminConsolePage`**
 
-Render `<AdminDashboardSection />` only when `activeSection === 'dashboard'`.
+Chỉ hiển thị `<AdminDashboardSection />` khi `activeSection === 'dashboard'`.
 
-- [ ] **Step 6: Run GREEN and build**
+- [ ] **Bước 6: Chạy GREEN và xây dựng**
 
-Run from `frontend`:
+Chạy từ `frontend`:
 
 ```powershell
 node --test test/adminConsolePresentation.test.js test/adminConsoleStructure.test.js
@@ -547,9 +574,9 @@ npm.cmd run lint
 npm.cmd run build
 ```
 
-Expected: exit `0` for every command.
+Dự kiến: thoát `0` cho mọi lệnh.
 
-- [ ] **Step 7: Commit Dashboard**
+- [ ] **Bước 7: Bảng điều khiển cam kết**
 
 ```powershell
 git add frontend/src/page/admin/dashboard frontend/src/page/admin/AdminConsolePage.jsx frontend/test/adminConsoleStructure.test.js
@@ -558,50 +585,58 @@ git commit -m "feat: refactor admin dashboard presentation"
 
 ---
 
-### Task 6: Migrate User Management And Mobile Cards
+### Nhiệm vụ 6: Di chuyển quản lý người dùng và thẻ di động
 
-**Files:**
-- Create: `frontend/src/page/admin/users/AdminUsersSection.jsx`
-- Create: `frontend/src/page/admin/users/UserEditorModal.jsx`
-- Create: `frontend/src/page/admin/users/UserRoleModal.jsx`
-- Create: `frontend/src/page/admin/users/UserDetailDrawer.jsx`
-- Create: `frontend/src/page/admin/users/userPresentation.js`
-- Modify: `frontend/test/userManagementFrontend.test.js`
-- Modify: `frontend/test/userManagementApi.test.js`
-- Modify: `frontend/test/adminConsoleStructure.test.js`
-- Modify: `frontend/src/page/admin/AdminConsolePage.jsx`
-- Modify: `frontend/src/page/admin/admin-console.css`
+**Tệp:**
+- Tạo: `frontend/src/page/admin/users/AdminUsersSection.jsx`
+- Tạo: `frontend/src/page/admin/users/UserEditorModal.jsx`
+- Tạo: `frontend/src/page/admin/users/UserRoleModal.jsx`
+- Tạo: `frontend/src/page/admin/users/UserDetailDrawer.jsx`
+- Tạo: `frontend/src/page/admin/users/userPresentation.js`
+- Sửa đổi: `frontend/test/userManagementFrontend.test.js`
+- Sửa đổi: `frontend/test/userManagementApi.test.js`
+- Sửa đổi: `frontend/test/adminConsoleStructure.test.js`
+- Sửa đổi: `frontend/src/page/admin/AdminConsolePage.jsx`
+- Sửa đổi: `frontend/src/page/admin/admin-console.css`
 
-**Interfaces:**
-- `AdminUsersSection({ onToast })` owns user list/statistics/roles/detail/mutation state.
-- `userPresentation.js` exports `validateUserForm`, `normalizeEditableRoleCatalog`, `buildRoleMutationPlan`, `getPrimaryRole`, and `formatAdminDate`.
-- Desktop table and mobile cards consume the same `users` array and the same action callbacks.
+**Giao diện:**
+- `AdminUsersSection({ onToast })` sở hữu danh sách người dùng/thống kê/vai trò/chi tiết/trạng thái thao tác ghi.
+- `userPresentation.js` xuất `validateUserForm`, `normalizeEditableRoleCatalog`, `buildRoleMutationPlan`, `getPrimaryRole` và `formatAdminDate`.
+- Máy tính để bàn và thẻ di động sử dụng cùng một mảng `users` và các lệnh gọi lại hành động giống nhau.
 
-- [ ] **Step 1: Redirect existing source-contract tests to the new owners and add RED mobile assertions**
+- [ ] **Bước 1: Chuyển hướng các kiểm thử hợp đồng nguồn hiện có sang chủ sở hữu mới và thêm các xác nhận trên thiết bị di động RED**
 
-Update tests so form/role helpers are read or imported from `users/userPresentation.js`, API behavior is asserted in `AdminUsersSection.jsx`, and the structure test requires both `.admin-user-table` and `.admin-user-cards`. Add assertions that visible action text contains `Chỉnh sửa`, `Phân quyền`, and `Vô hiệu hóa`.
+Cập nhật kiểm tra để trình trợ giúp biểu mẫu/vai trò được đọc hoặc nhập từ
+`users/userPresentation.js`, hành vi API được xác nhận trong `AdminUsersSection.jsx` và kiểm tra cấu
+trúc yêu cầu cả `.admin-user-table` và `.admin-user-cards`. Thêm xác nhận rằng văn bản hành động
+hiển thị chứa `Chỉnh sửa`, `Phân quyền` và `Vô hiệu hóa`.
 
-- [ ] **Step 2: Run RED**
+- [ ] **Bước 2: Chạy RED**
 
-Run from `frontend`:
+Chạy từ `frontend`:
 
 ```powershell
 node --test test/userManagementFrontend.test.js test/userManagementApi.test.js test/adminConsoleStructure.test.js
 ```
 
-Expected: FAIL because the new user module files do not exist.
+Dự kiến: THẤT BẠI vì tệp mô-đun người dùng mới không tồn tại.
 
-- [ ] **Step 3: Move pure user helpers**
+- [ ] **Bước 3: Di chuyển người trợ giúp người dùng thuần túy**
 
-Move the current implementations of `validateUserForm`, `normalizeEditableRoleCatalog`, `buildRoleMutationPlan`, `getPrimaryRole`, and `formatDate` into `userPresentation.js`. Rename only `formatDate` to `formatAdminDate` to avoid ambiguous imports. Preserve validation limits and role mutation order exactly.
+Di chuyển các triển khai hiện tại của `validateUserForm`, `normalizeEditableRoleCatalog`,
+`buildRoleMutationPlan`, `getPrimaryRole` và `formatDate` vào `userPresentation.js`. Chỉ đổi tên
+`formatDate` thành `formatAdminDate` để tránh việc nhập không rõ ràng. Giữ nguyên giới hạn xác thực
+và thứ tự thay đổi vai trò một cách chính xác.
 
-- [ ] **Step 4: Move modals and drawer without changing business behavior**
+- [ ] **Bước 4: Di chuyển các phương thức và ngăn kéo mà không thay đổi hành vi kinh doanh**
 
-Move `UserModal` to `UserEditorModal`, `RoleModal` to `UserRoleModal`, and the current user-detail JSX into `UserDetailDrawer`. Preserve effective-version payloads, librarian fields, setup-note behavior, catalog validation, authoritative reconciliation, and safe detail summaries.
+Di chuyển `UserModal` sang `UserEditorModal`, `RoleModal` sang `UserRoleModal` và chi tiết người
+dùng hiện tại JSX vào `UserDetailDrawer`. Giữ nguyên tải trọng của phiên bản hiệu quả, trường thủ
+thư, hành vi ghi chú thiết lập, xác thực danh mục, đối chiếu chính xác và tóm tắt chi tiết an toàn.
 
-- [ ] **Step 5: Implement desktop and mobile rendering from one data source**
+- [ ] **Bước 5: Triển khai hiển thị trên máy tính để bàn và thiết bị di động từ một nguồn dữ liệu**
 
-The desktop container must use the approved eight-column table contract:
+Vùng chứa máy tính để bàn phải sử dụng hợp đồng bảng tám cột đã được phê duyệt:
 
 ```jsx
 <div className="admin-user-table" aria-label="Danh sách người dùng dạng bảng">
@@ -615,7 +650,7 @@ The desktop container must use the approved eight-column table contract:
 </div>
 ```
 
-The mobile container must map the same `users`:
+Vùng chứa di động phải ánh xạ cùng một `users`:
 
 ```jsx
 <div className="admin-user-cards" aria-label="Danh sách người dùng dạng thẻ">
@@ -640,19 +675,25 @@ The mobile container must map the same `users`:
 </div>
 ```
 
-Every action uses `AdminActionButton` with visible labels. Disabled deactivation uses title `Tài khoản này đã ngừng hoạt động.`.
+Mọi hành động đều sử dụng `AdminActionButton` với các nhãn hiển thị. Việc hủy kích hoạt bị vô hiệu
+hóa sử dụng tiêu đề `Tài khoản này đã ngừng hoạt động.`.
 
-- [ ] **Step 6: Preserve data and mutation ownership**
+- [ ] **Bước 6: Bảo toàn quyền sở hữu dữ liệu và thao tác ghi**
 
-Move `loadUsers`, `refreshUserDirectory`, `loadUserStatistics`, `loadRoles`, `openUserDetail`, create/edit/deactivate, and role-save logic into `AdminUsersSection`. Preserve independent errors, stale guards, safe DTO fields, optimistic timestamps, no-op role saves, assignment-before-revocation, and reconciliation after partial failure.
+Di chuyển `loadUsers`, `refreshUserDirectory`, `loadUserStatistics`, `loadRoles`, `openUserDetail`,
+tạo/chỉnh sửa/hủy kích hoạt và logic lưu vai trò vào `AdminUsersSection`. Giữ nguyên các lỗi độc
+lập, bảo vệ cũ, trường DTO an toàn, dấu thời gian lạc quan, lưu vai trò không hoạt động, phân công
+trước khi thu hồi và đối chiếu sau lỗi một phần.
 
-- [ ] **Step 7: Wire Users and styles**
+- [ ] **Bước 7: Người sử dụng dây và kiểu dáng**
 
-Render `<AdminUsersSection onToast={setToast} />` for `activeSection === 'users'`. At widths above 900px hide cards; at or below 900px hide the table and show cards. At 1366px apply controlled `text-overflow: ellipsis` to email/username cells instead of `overflow-wrap: anywhere`.
+Kết xuất `<AdminUsersSection onToast={setToast} />` cho `activeSection === 'users'`. Ở độ rộng trên
+900px thẻ ẩn; bằng hoặc dưới 900px, ẩn bảng và hiển thị thẻ. Ở 1366px, áp dụng `text-overflow:
+ellipsis` được kiểm soát cho các ô email/tên người dùng thay vì `overflow-wrap: mọi nơi`.
 
-- [ ] **Step 8: Run GREEN and affected regressions**
+- [ ] **Bước 8: Chạy GREEN và các hồi quy bị ảnh hưởng**
 
-Run from `frontend`:
+Chạy từ `frontend`:
 
 ```powershell
 node --test test/userManagementFrontend.test.js test/userManagementApi.test.js test/adminConsolePresentation.test.js test/adminConsoleStructure.test.js
@@ -660,9 +701,9 @@ npm.cmd run lint
 npm.cmd run build
 ```
 
-Expected: all commands exit `0`.
+Dự kiến: tất cả các lệnh thoát `0`.
 
-- [ ] **Step 9: Commit User Management**
+- [ ] **Bước 9: Cam kết quản lý người dùng**
 
 ```powershell
 git add frontend/src/page/admin/users frontend/src/page/admin/AdminConsolePage.jsx frontend/src/page/admin/admin-console.css frontend/test/userManagementFrontend.test.js frontend/test/userManagementApi.test.js frontend/test/adminConsoleStructure.test.js
@@ -671,40 +712,47 @@ git commit -m "feat: refactor admin user management experience"
 
 ---
 
-### Task 7: Migrate Request Management Without Ownership Drift
+### Nhiệm vụ 7: Di chuyển quản lý yêu cầu mà không có quyền sở hữu
 
-**Files:**
-- Create: `frontend/src/page/admin/requests/AdminRequestsSection.jsx`
-- Modify: `frontend/test/adminRequestManagementFrontend.test.js`
-- Modify: `frontend/test/adminConsoleStructure.test.js`
-- Modify: `frontend/src/page/admin/AdminConsolePage.jsx`
-- Modify: `frontend/src/page/admin/admin-console.css`
+**Tệp:**
+- Tạo: `frontend/src/page/admin/requests/AdminRequestsSection.jsx`
+- Sửa đổi: `frontend/test/adminRequestManagementFrontend.test.js`
+- Sửa đổi: `frontend/test/adminConsoleStructure.test.js`
+- Sửa đổi: `frontend/src/page/admin/AdminConsolePage.jsx`
+- Sửa đổi: `frontend/src/page/admin/admin-console.css`
 
-**Interfaces:**
-- `AdminRequestsSection({ onToast })` owns filters, server pagination, detail, DOCX export, and FE07 mutation delegation.
-- Consumes: `adminApi.requests`, `adminApi.requestDetail`, existing request/export helpers, `borrowingApi.approveRequest`, and `borrowingApi.rejectRequest` exactly as the legacy flow does.
+**Giao diện:**
+- `AdminRequestsSection({ onToast })` sở hữu các bộ lọc, phân trang máy chủ, chi tiết, xuất DOCX và ủy quyền thao tác ghi FE07.
+- Tiêu thụ: `adminApi.requests`, `adminApi.requestDetail`, trình trợ giúp yêu cầu/xuất hiện có, `borrowingApi.approveRequest` và `borrowingApi.rejectRequest` chính xác như luồng kế thừa.
 
-- [ ] **Step 1: Move request contract tests to the new module and add RED labeled-date assertions**
+- [ ] **Bước 1: Di chuyển các kiểm thử hợp đồng yêu cầu sang mô-đun mới và thêm các xác nhận ngày được gắn nhãn RED**
 
-Require `AdminDateField` for `request-from` and `request-to`, preserve `Lọc trạng thái`, page size 20, terminal-state controls, canonical detail fetch, and DOCX export across all filtered pages.
+Yêu cầu `AdminDateField` cho `request-from` và `request-to`, giữ nguyên `Lọc trạng thái`, kích thước
+trang 20, kiểm soát trạng thái đầu cuối, tìm nạp chi tiết chuẩn và xuất DOCX trên tất cả các trang
+được lọc.
 
-- [ ] **Step 2: Run RED**
+- [ ] **Bước 2: Chạy RED**
 
-Run from `frontend`: `node --test test/adminRequestManagementFrontend.test.js test/adminConsoleStructure.test.js`
+Chạy từ `frontend`: `node --test test/adminRequestManagementFrontend.test.js test/adminConsoleStructure.test.js`
 
-Expected: FAIL because `AdminRequestsSection.jsx` is absent.
+Dự kiến: THẤT BẠI vì `AdminRequestsSection.jsx` vắng mặt.
 
-- [ ] **Step 3: Move the request state and handlers**
+- [ ] **Bước 3: Di chuyển trạng thái yêu cầu và trình xử lý**
 
-Move `loadRequests`, `applyRequestFilters`, `openRequestDetail`, `exportRequests`, request detail state, and FE07 approve/reject handlers into `AdminRequestsSection`. Preserve raw statuses, server page/limit totals, invalid date-range guard, frozen export filters, and `409 BORROW_REQUEST_NOT_PENDING` behavior.
+Di chuyển `loadRequests`, `applyRequestFilters`, `openRequestDetail`, `exportRequests`, trạng thái
+chi tiết yêu cầu và FE07 phê duyệt/từ chối trình xử lý vào `AdminRequestsSection`. Giữ nguyên trạng
+thái thô, tổng số trang/giới hạn của máy chủ, bảo vệ phạm vi ngày không hợp lệ, bộ lọc xuất bị đóng
+băng và hành vi `409 BORROW_REQUEST_NOT_PENDING`.
 
-- [ ] **Step 4: Replace the dense toolbar**
+- [ ] **Bước 4: Thay thế thanh công cụ dày đặc**
 
-Use `AdminFilterBar` with search/status/date fields in `.admin-filter-grid` and Apply/Reset/Export in `.admin-filter-actions`. Render Reset only when any filter differs from `{ q: '', status: 'ALL', from: '', to: '' }`.
+Sử dụng `AdminFilterBar` với các trường tìm kiếm/trạng thái/ngày trong `.admin-filter-grid` và Áp
+dụng/Đặt lại/Xuất trong `.admin-filter-actions`. Chỉ đặt lại kết xuất khi có bất kỳ bộ lọc nào khác
+với `{ q: '', status: 'ALL', from: '', to: '' }`.
 
-- [ ] **Step 5: Wire Requests and verify**
+- [ ] **Bước 5: Gửi yêu cầu và xác minh**
 
-Run from `frontend`:
+Chạy từ `frontend`:
 
 ```powershell
 node --test test/adminRequestManagementFrontend.test.js test/adminConsoleStructure.test.js
@@ -712,9 +760,9 @@ npm.cmd run lint
 npm.cmd run build
 ```
 
-Expected: all commands exit `0`.
+Dự kiến: tất cả các lệnh thoát `0`.
 
-- [ ] **Step 6: Commit Request Management**
+- [ ] **Bước 6: Cam kết quản lý yêu cầu**
 
 ```powershell
 git add frontend/src/page/admin/requests frontend/src/page/admin/AdminConsolePage.jsx frontend/src/page/admin/admin-console.css frontend/test/adminRequestManagementFrontend.test.js frontend/test/adminConsoleStructure.test.js
@@ -723,46 +771,51 @@ git commit -m "feat: refactor admin request management layout"
 
 ---
 
-### Task 8: Migrate Permissions With Distinct Decisions
+### Nhiệm vụ 8: Di chuyển quyền với các quyết định riêng biệt
 
-**Files:**
-- Create: `frontend/src/page/admin/permissions/AdminPermissionsSection.jsx`
-- Modify: `frontend/test/userManagementFrontend.test.js`
-- Modify: `frontend/src/page/admin/AdminConsolePage.jsx`
-- Modify: `frontend/src/page/admin/admin-console.css`
+**Tệp:**
+- Tạo: `frontend/src/page/admin/permissions/AdminPermissionsSection.jsx`
+- Sửa đổi: `frontend/test/userManagementFrontend.test.js`
+- Sửa đổi: `frontend/src/page/admin/AdminConsolePage.jsx`
+- Sửa đổi: `frontend/src/page/admin/admin-console.css`
 
-**Interfaces:**
-- `AdminPermissionsSection()` independently loads `adminApi.permissions()` and `reportApi.users()`.
-- Consumes: existing `buildPermissionRoleSummary`, `buildPermissionModuleCoverage`, `roleAllowsPermission`, localized role/module/permission labels, and `getPermissionDecision`.
+**Giao diện:**
+- `AdminPermissionsSection()` tải độc lập `adminApi.permissions()` và `reportApi.users()`.
+- Tiêu thụ: `buildPermissionRoleSummary`, `buildPermissionModuleCoverage`, `roleAllowsPermission` hiện có, nhãn vai trò/mô-đun/quyền được bản địa hóa và `getPermissionDecision`.
 
-- [ ] **Step 1: Add RED copy and decision assertions**
+- [ ] **Bước 1: Thêm bản sao RED và xác nhận quyết định**
 
-Require `Dữ liệu phân quyền`, `Thống kê tài khoản theo vai trò`, the multi-role explanation, and classes `permission-decision allowed` / `permission-decision denied`. Reject `Ma trận FE11` and `Thống kê FE12`.
+Yêu cầu `Dữ liệu phân quyền`, `Thống kê tài khoản theo vai trò`, phần giải thích đa vai trò và các
+lớp `permission-decision allowed` / `permission-decision denied`. Từ chối `Ma trận FE11` và `Thống
+kê FE12`.
 
-- [ ] **Step 2: Run RED**
+- [ ] **Bước 2: Chạy RED**
 
-Run from `frontend`: `node --test test/userManagementFrontend.test.js test/adminConsolePresentation.test.js`
+Chạy từ `frontend`: `node --test test/userManagementFrontend.test.js test/adminConsolePresentation.test.js`
 
-Expected: FAIL because `AdminPermissionsSection.jsx` is absent.
+Dự kiến: THẤT BẠI vì `AdminPermissionsSection.jsx` vắng mặt.
 
-- [ ] **Step 3: Move independent loading behavior**
+- [ ] **Bước 3: Di chuyển hành vi tải độc lập**
 
-Move permission and user-statistics loaders into the section. Preserve last-success values and independent retry controls. Do not add a hardcoded permission matrix or derive counts from paginated users.
+Di chuyển quyền và trình tải thống kê người dùng vào phần này. Bảo toàn các giá trị thành công cuối
+cùng và các điều khiển thử lại độc lập. Không thêm ma trận quyền được mã hóa cứng hoặc lấy số lượng
+từ người dùng được phân trang.
 
-- [ ] **Step 4: Render semantic decisions**
+- [ ] **Bước 4: Đưa ra quyết định ngữ nghĩa**
 
-For every role/permission cell:
+Đối với mọi ô vai trò/quyền:
 
 ```jsx
 const decision = getPermissionDecision(roleAllowsPermission(permission, role.roleName));
 return <span className={`permission-decision ${decision.tone}`}><b aria-hidden="true">{decision.symbol}</b>{decision.label}</span>;
 ```
 
-Use sticky table headers and neutral denied styling; do not communicate decisions by color alone.
+Sử dụng các tiêu đề bảng cố định và kiểu dáng bị từ chối trung tính; không truyền đạt các quyết định
+chỉ bằng màu sắc.
 
-- [ ] **Step 5: Wire, verify and commit**
+- [ ] **Bước 5: Chuyển khoản, xác minh và cam kết**
 
-Run from `frontend`:
+Chạy từ `frontend`:
 
 ```powershell
 node --test test/adminConsolePresentation.test.js test/userManagementFrontend.test.js
@@ -770,7 +823,7 @@ npm.cmd run lint
 npm.cmd run build
 ```
 
-Expected: all commands exit `0`.
+Dự kiến: tất cả các lệnh thoát `0`.
 
 ```powershell
 git add frontend/src/page/admin/permissions frontend/src/page/admin/AdminConsolePage.jsx frontend/src/page/admin/admin-console.css frontend/test/userManagementFrontend.test.js
@@ -779,46 +832,51 @@ git commit -m "feat: clarify admin permission decisions"
 
 ---
 
-### Task 9: Migrate Audit Logs With Localized Presentation
+### Nhiệm vụ 9: Di chuyển nhật ký kiểm tra bằng bản trình bày được bản địa hóa
 
-**Files:**
-- Create: `frontend/src/page/admin/audit/AdminAuditSection.jsx`
-- Modify: `frontend/test/userManagementFrontend.test.js`
-- Modify: `frontend/src/page/admin/AdminConsolePage.jsx`
-- Modify: `frontend/src/page/admin/admin-console.css`
+**Tệp:**
+- Tạo: `frontend/src/page/admin/audit/AdminAuditSection.jsx`
+- Sửa đổi: `frontend/test/userManagementFrontend.test.js`
+- Sửa đổi: `frontend/src/page/admin/AdminConsolePage.jsx`
+- Sửa đổi: `frontend/src/page/admin/admin-console.css`
 
-**Interfaces:**
-- `AdminAuditSection()` owns the canonical `q`, `action`, `actorId`, `from`, `to`, page, and limit filter state.
-- Consumes: `formatAuditAction`, `formatAuditDetailKey`, the safe DTO-only detail formatter, and `adminApi.auditLogs`.
+**Giao diện:**
+- `AdminAuditSection()` sở hữu trạng thái `q`, `action`, `actorId`, `from`, `to`, trang và bộ lọc giới hạn chuẩn.
+- Tiêu thụ: `formatAuditAction`, `formatAuditDetailKey`, bộ định dạng chi tiết chỉ dành cho DTO an toàn và `adminApi.auditLogs`.
 
-- [ ] **Step 1: Add RED audit presentation assertions**
+- [ ] **Bước 1: Thêm xác nhận bản trình bày kiểm tra RED**
 
-Keep the exact filter param builder assertions. Require persistent visible labels `Hành động`, `Mã người thực hiện`, `Từ ngày`, and `Đến ngày`. Require `formatAuditAction(log.action)` and `formatAuditDetailKey(key)`. Reject direct `<span>{log.action}</span>` rendering.
+Giữ các xác nhận chính xác của trình tạo thông số bộ lọc. Yêu cầu các nhãn hiển thị liên tục `Hành
+động`, `Mã tác nhân`, `Từ ngày` và `Đến ngày`. Yêu cầu `formatAuditAction(log.action)` và
+`formatAuditDetailKey(key)`. Từ chối hiển thị `<span>{log.action}</span>` trực tiếp.
 
-- [ ] **Step 2: Run RED**
+- [ ] **Bước 2: Chạy RED**
 
-Run from `frontend`: `node --test test/userManagementFrontend.test.js test/adminConsolePresentation.test.js`
+Chạy từ `frontend`: `node --test test/userManagementFrontend.test.js test/adminConsolePresentation.test.js`
 
-Expected: FAIL because `AdminAuditSection.jsx` is absent.
+Dự kiến: THẤT BẠI vì `AdminAuditSection.jsx` vắng mặt.
 
-- [ ] **Step 3: Move audit state and safe DTO formatting**
+- [ ] **Bước 3: Di chuyển trạng thái kiểm tra và định dạng DTO an toàn**
 
-Move `buildAuditLogParams`, safe detail-entry filtering, target projection, value formatting, loader, independent last-success/error state, and pagination into `AdminAuditSection`. Preserve authorization, pagination, redaction, raw action filter values, and unknown safe detail keys.
+Di chuyển `buildAuditLogParams`, lọc mục nhập chi tiết an toàn, chiếu mục tiêu, định dạng giá trị,
+trình tải, trạng thái lỗi/thành công cuối cùng độc lập và phân trang vào `AdminAuditSection`. Giữ
+nguyên ủy quyền, phân trang, biên tập, giá trị bộ lọc hành động thô và các khóa chi tiết an toàn
+không xác định.
 
-- [ ] **Step 4: Render localized labels over raw values**
+- [ ] **Bước 4: Hiển thị nhãn đã bản địa hóa trên giá trị thô**
 
-Render each action as:
+Kết xuất từng hành động dưới dạng:
 
 ```jsx
 const action = formatAuditAction(log.action);
 <span className="admin-audit-action" title={action.raw}>{action.label}</span>
 ```
 
-Render each safe detail `dt` with `formatAuditDetailKey(key)` and keep the raw value formatter unchanged.
+Kết xuất từng chi tiết an toàn `dt` bằng `formatAuditDetailKey(key)` và giữ nguyên định dạng giá trị thô.
 
-- [ ] **Step 5: Replace the audit toolbar and verify**
+- [ ] **Bước 5: Thay thế thanh công cụ kiểm tra và xác minh**
 
-Use a labeled responsive filter grid. Keep `Áp dụng` and `Xóa lọc` in a separate action row. Run:
+Sử dụng lưới lọc đáp ứng được gắn nhãn. Giữ `Áp dụng` và `Xóa lọc` ở một hàng hành động riêng biệt. Chạy:
 
 ```powershell
 node --test test/adminConsolePresentation.test.js test/userManagementFrontend.test.js
@@ -826,9 +884,9 @@ npm.cmd run lint
 npm.cmd run build
 ```
 
-Expected: all commands exit `0`.
+Dự kiến: tất cả các lệnh thoát `0`.
 
-- [ ] **Step 6: Commit Audit**
+- [ ] **Bước 6: Cam kết kiểm tra**
 
 ```powershell
 git add frontend/src/page/admin/audit frontend/src/page/admin/AdminConsolePage.jsx frontend/src/page/admin/admin-console.css frontend/test/userManagementFrontend.test.js
@@ -837,50 +895,60 @@ git commit -m "feat: localize admin audit presentation"
 
 ---
 
-### Task 10: Migrate Library And Circulation, Then Remove Legacy Hidden Paths
+### Nhiệm vụ 10: Di chuyển thư viện và lưu hành, sau đó xóa các đường dẫn ẩn cũ
 
-**Files:**
-- Create: `frontend/src/page/admin/library/AdminLibrarySection.jsx`
-- Create: `frontend/src/page/admin/circulation/AdminCirculationSection.jsx`
-- Modify: `frontend/src/page/admin/AdminConsolePage.jsx`
-- Modify: `frontend/test/userManagementFrontend.test.js`
-- Modify: `frontend/test/membershipFrontend.test.js`
-- Modify: `frontend/test/fineManagementFrontend.test.js`
+**Tệp:**
+- Tạo: `frontend/src/page/admin/library/AdminLibrarySection.jsx`
+- Tạo: `frontend/src/page/admin/circulation/AdminCirculationSection.jsx`
+- Sửa đổi: `frontend/src/page/admin/AdminConsolePage.jsx`
+- Sửa đổi: `frontend/test/userManagementFrontend.test.js`
+- Sửa đổi: `frontend/test/membershipFrontend.test.js`
+- Sửa đổi: `frontend/test/fineManagementFrontend.test.js`
 
-**Interfaces:**
-- `AdminLibrarySection({ onToast })` preserves approved FE05 read-only book ownership and existing metadata presentation/actions.
-- `AdminCirculationSection({ onToast })` preserves approved FE07 circulation behavior.
-- Neither section imports FE04 membership components nor local-storage fine helpers.
+**Giao diện:**
+- `AdminLibrarySection({ onToast })` duy trì quyền sở hữu sách chỉ đọc FE05 đã được phê duyệt và bản trình bày/hành động siêu dữ liệu hiện có.
+- `AdminCirculationSection({ onToast })` duy trì hành vi lưu hành FE07 đã được phê duyệt.
+- Không phần nào nhập các thành phần thành viên FE04 cũng như các trình trợ giúp tốt về lưu trữ cục bộ.
 
-- [ ] **Step 1: Add RED ownership tests**
+- [ ] **Bước 1: Thêm kiểm thử quyền sở hữu RED**
 
-Require the new Library section to avoid duplicate FE05 book mutation adapters, the Circulation section to use the existing borrowing API, and all Admin module sources to exclude `getFineRecords`, `saveFineRecords`, `MembershipApplicationsTable`, `MembershipFilter`, `MembershipReviewModal`, `activeSection === 'membership'`, and `activeSection === 'payments'`.
+Yêu cầu phần Thư viện mới để tránh các bộ điều hợp thao tác ghi sách FE05 trùng lặp, phần Lưu thông để
+sử dụng API mượn hiện có và tất cả các nguồn mô-đun Quản trị viên để loại trừ `getFineRecords`,
+`saveFineRecords`, `MembershipApplicationsTable`, `MembershipFilter`, `MembershipReviewModal`,
+`activeSection === 'membership'` và `activeSection === 'payments'`.
 
-- [ ] **Step 2: Run RED**
+- [ ] **Bước 2: Chạy RED**
 
-Run from `frontend`:
+Chạy từ `frontend`:
 
 ```powershell
 node --test test/userManagementFrontend.test.js test/membershipFrontend.test.js test/fineManagementFrontend.test.js
 ```
 
-Expected: FAIL because new section files are absent and legacy imports still exist in `UserManagement.jsx`.
+Dự kiến: THẤT BẠI vì không có tệp phần mới và nội dung nhập cũ vẫn tồn tại trong `UserManagement.jsx`.
 
-- [ ] **Step 3: Move approved Library behavior**
+- [ ] **Bước 3: Di chuyển hành vi Thư viện đã được phê duyệt**
 
-Move library resource tabs, loaders, read-only book table, metadata presentation, export, and any already-approved metadata action handlers into `AdminLibrarySection`. Preserve the canonical FE05 navigation for book mutations and do not introduce `adminApi.createBook`, `updateBook`, or `deactivateBook`.
+Di chuyển các tab tài nguyên thư viện, trình tải, bảng sách chỉ đọc, bản trình bày siêu dữ liệu,
+xuất và mọi trình xử lý hành động siêu dữ liệu đã được phê duyệt vào `AdminLibrarySection`. Giữ
+nguyên điều hướng FE05 chuẩn cho các thao tác ghi sách và không giới thiệu `adminApi.createBook`,
+`updateBook` hoặc `deactivateBook`.
 
-- [ ] **Step 4: Move approved Circulation behavior**
+- [ ] **Bước 4: Di chuyển hành vi Lưu hành đã được phê duyệt**
 
-Move circulation filters, list, renew/return UI, pagination, and existing borrowing API calls into `AdminCirculationSection` without changing request/status values or validation.
+Di chuyển các bộ lọc lưu thông, liệt kê, gia hạn/trả sách giao diện người dùng, phân trang và các
+lệnh gọi API mượn hiện có vào `AdminCirculationSection` mà không thay đổi giá trị yêu cầu/trạng thái
+hoặc xác thực.
 
-- [ ] **Step 5: Remove only unreachable Admin Console legacy code**
+- [ ] **Bước 5: Chỉ xóa mã cũ của Bảng điều khiển dành cho quản trị viên không thể truy cập**
 
-Delete membership/payment imports, state, loaders, section metadata, render branches, and local-storage fine review handlers from the Admin Console implementation. Do not edit FE04 membership production files or FE09 fine production files.
+Xóa các mục nhập thành viên/thanh toán, trạng thái, trình tải, siêu dữ liệu phần, nhánh kết xuất và
+trình xử lý đánh giá tốt về bộ nhớ cục bộ khỏi quá trình triển khai Bảng điều khiển dành cho quản
+trị viên. Không chỉnh sửa tệp sản xuất thành viên FE04 hoặc tệp sản xuất tốt FE09.
 
-- [ ] **Step 6: Wire, verify and commit**
+- [ ] **Bước 6: Chuyển khoản, xác minh và cam kết**
 
-Run from `frontend`:
+Chạy từ `frontend`:
 
 ```powershell
 node --test test/userManagementFrontend.test.js test/membershipFrontend.test.js test/fineManagementFrontend.test.js test/borrowingFrontend.test.js
@@ -888,7 +956,7 @@ npm.cmd run lint
 npm.cmd run build
 ```
 
-Expected: all commands exit `0`.
+Dự kiến: tất cả các lệnh thoát `0`.
 
 ```powershell
 git add frontend/src/page/admin/library frontend/src/page/admin/circulation frontend/src/page/admin/AdminConsolePage.jsx frontend/test/userManagementFrontend.test.js frontend/test/membershipFrontend.test.js frontend/test/fineManagementFrontend.test.js
@@ -897,29 +965,30 @@ git commit -m "refactor: complete admin section migration"
 
 ---
 
-### Task 11: Cut Over The Compatibility Entry And Responsive E2E
+### Nhiệm vụ 11: Cắt bỏ mục tương thích và E2E đáp ứng
 
-**Files:**
-- Replace: `frontend/src/page/UserManagement.jsx`
-- Modify: `frontend/test/appShellFrontend.test.js`
-- Modify: `frontend/test/appCodeSplitting.test.js`
-- Modify: `frontend/test/vietnameseUi.test.js`
-- Modify: `frontend/test/userManagementFrontend.test.js`
-- Modify: `tests/e2e/fe11-admin-request-management.spec.js`
+**Tệp:**
+- Thay thế: `frontend/src/page/UserManagement.jsx`
+- Sửa đổi: `frontend/test/appShellFrontend.test.js`
+- Sửa đổi: `frontend/test/appCodeSplitting.test.js`
+- Sửa đổi: `frontend/test/vietnameseUi.test.js`
+- Sửa đổi: `frontend/test/userManagementFrontend.test.js`
+- Sửa đổi: `tests/e2e/fe11-admin-request-management.spec.js`
 
-**Interfaces:**
-- `UserManagement.jsx` exports the new page without changing `App.jsx` or `/admin/users`.
-- E2E continues to use the real system test server and canonical Admin login.
+**Giao diện:**
+- `UserManagement.jsx` xuất trang mới mà không thay đổi `App.jsx` hoặc `/admin/users`.
+- E2E tiếp tục sử dụng máy chủ kiểm thử hệ thống thực và đăng nhập Quản trị chuẩn.
 
-- [ ] **Step 1: Add RED compatibility and responsive assertions**
+- [ ] **Bước 1: Thêm khả năng tương thích RED và xác nhận phản hồi**
 
-Require the compatibility entry to be exactly:
+Yêu cầu mục nhập tương thích phải chính xác:
 
 ```jsx
 export { default } from './admin/AdminConsolePage';
 ```
 
-Update source scans to read `page/admin/**/*.jsx` plus `admin-console.css`. In the E2E mobile block replace `internalTableScroll === true` with these expectations:
+Cập nhật quét nguồn để đọc `page/admin/**/*.jsx` cộng với `admin-console.css`. Trong khối di động
+E2E thay thế `internalTableScroll === true` bằng những kỳ vọng sau:
 
 ```js
 await expect(page.locator('.admin-user-table')).toBeHidden();
@@ -928,26 +997,29 @@ await expect(page.getByRole('button', { name: 'Chỉnh sửa', exact: true }).fi
 expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
 ```
 
-At 1366px assert the table is visible, cards are hidden, and no page overflow exists.
+Ở 1366px khẳng định bảng hiển thị, thẻ bị ẩn và không tồn tại tràn trang.
 
-- [ ] **Step 2: Run RED against the old entry**
+- [ ] **Bước 2: Chạy RED theo mục cũ**
 
-Run from repo root:
+Chạy từ gốc repo:
 
 ```powershell
 npm.cmd --prefix frontend test
 npx.cmd playwright test tests/e2e/fe11-admin-request-management.spec.js --project=chromium
 ```
 
-Expected: frontend contract or responsive E2E fails because the old monolith is still the route entry and mobile still uses internal table scrolling.
+Dự kiến: hợp đồng giao diện người dùng hoặc E2E đáp ứng không thành công vì khối nguyên khối cũ vẫn
+là mục nhập tuyến và thiết bị di động vẫn sử dụng chức năng cuộn bảng nội bộ.
 
-- [ ] **Step 3: Replace the compatibility entry and update source scans**
+- [ ] **Bước 3: Thay thế mục tương thích và cập nhật quét nguồn**
 
-Replace `UserManagement.jsx` with the one-line export above. Update tests that previously read only that file to read their new owning module or concatenate the Admin module tree for localization/source checks.
+Thay thế `UserManagement.jsx` bằng xuất một dòng ở trên. Cập nhật các kiểm thử mà trước đây chỉ đọc
+tệp đó để đọc mô-đun sở hữu mới của chúng hoặc nối cây mô-đun Quản trị để kiểm tra bản địa
+hóa/nguồn.
 
-- [ ] **Step 4: Run GREEN focused/full frontend and E2E**
+- [ ] **Bước 4: Chạy GREEN tập trung/đầy đủ giao diện người dùng và E2E**
 
-Run from repo root:
+Chạy từ gốc repo:
 
 ```powershell
 npm.cmd --prefix frontend test
@@ -956,9 +1028,10 @@ npm.cmd --prefix frontend run build
 npx.cmd playwright test tests/e2e/fe11-admin-request-management.spec.js --project=chromium
 ```
 
-Expected: all commands exit `0`; E2E proves mobile cards, laptop table, request behavior, and no page overflow.
+Dự kiến: tất cả các lệnh thoát `0`; E2E chứng minh thẻ di động, bàn máy tính xách tay, hành vi yêu
+cầu và không bị tràn trang.
 
-- [ ] **Step 5: Commit the cutover**
+- [ ] **Bước 5: Cam kết cắt bỏ**
 
 ```powershell
 git add frontend/src/page/UserManagement.jsx frontend/test tests/e2e/fe11-admin-request-management.spec.js
@@ -967,20 +1040,20 @@ git commit -m "refactor: cut over modular admin console"
 
 ---
 
-### Task 12: Full Validation, Evidence, Azure Staging Deployment And Acceptance
+### Nhiệm vụ 12: Xác thực đầy đủ, Bằng chứng, Triển khai và chấp nhận giai đoạn Azure
 
-**Files:**
-- Create: `.sdd/reviews/admin-console-full-refactor-validation-2026-07-22.md`
-- Modify: `.sdd/specs/feat-user-role-management/TASKS.md`
-- Modify: `.sdd/specs/feat-user-role-management/CHANGELOG.md`
+**Tệp:**
+- Tạo: `.sdd/reviews/admin-console-full-refactor-validation-2026-07-22.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/TASKS.md`
+- Sửa đổi: `.sdd/specs/feat-user-role-management/CHANGELOG.md`
 
-**Interfaces:**
-- Consumes: completed `FE11-UXR01..UXR06`, clean automated results, browser screenshots, workflow run URL and deployed SHA.
-- Produces: `FE11-UXR07` acceptance evidence and an honest release boundary between automated checks and human signoff.
+**Giao diện:**
+- Tiêu thụ: `FE11-UXR01..UXR06` đã hoàn thành, kết quả tự động rõ ràng, ảnh chụp màn hình trình duyệt, chạy quy trình làm việc URL và SHA đã triển khai.
+- Tạo ra: Bằng chứng chấp nhận `FE11-UXR07` và ranh giới phát hành trung thực giữa kiểm tra tự động và phê duyệt của con người.
 
-- [ ] **Step 1: Run fresh full automated validation**
+- [ ] **Bước 1: Chạy xác thực hoàn toàn tự động mới**
 
-Run from repo root:
+Chạy từ gốc repo:
 
 ```powershell
 npm.cmd --prefix frontend test
@@ -994,37 +1067,41 @@ git diff --check
 git status --short
 ```
 
-Expected: every command exits `0`; `git diff --check` prints nothing; `git status --short` lists only intended governance/evidence updates before their commit.
+Dự kiến: mọi lệnh đều thoát `0`; `git diff --check` không in được gì; `git status --short` chỉ liệt
+kê các cập nhật bằng chứng/quản trị dự định trước cam kết của họ.
 
-- [ ] **Step 2: Perform local/browser visual acceptance**
+- [ ] **Bước 2: Thực hiện chấp nhận hình ảnh cục bộ/trình duyệt**
 
-Using an authenticated Admin session, inspect at 1366x768 and 390x844:
+Sử dụng phiên Quản trị viên đã được xác thực, kiểm tra ở 1366x768 và 390x844:
 
-- Dashboard: no all-zero chart and no more than five plotted rows.
-- Users: laptop table readable; mobile cards visible; labeled actions; no page overflow.
-- Requests: labeled dates, responsive filters, pending/terminal actions unchanged.
-- Permissions: no FE11/FE12 copy and allowed/denied decisions are distinct.
-- Audit: localized action labels, raw values available through title/secondary text, labeled filters.
-- Keyboard focus and reduced-motion behavior.
+- Trang tổng quan: không có biểu đồ hoàn toàn bằng 0 và không quá năm hàng được vẽ.
+- Người sử dụng: bàn laptop có thể đọc được; thẻ di động hiển thị; hành động được dán nhãn; không tràn trang.
+- Yêu cầu: ngày được gắn nhãn, bộ lọc phản hồi, hành động đang chờ xử lý/đầu cuối không thay đổi.
+- Quyền: không có bản sao FE11/FE12 và các quyết định được phép/từ chối là khác nhau.
+- Kiểm tra: nhãn hành động được bản địa hóa, giá trị thô có sẵn thông qua tiêu đề/văn bản phụ, bộ lọc được gắn nhãn.
+- Tiêu điểm bàn phím và hành vi giảm chuyển động.
 
-Do not mark human acceptance complete until the reviewer explicitly confirms it.
+Không đánh dấu sự chấp nhận của con người là hoàn thành cho đến khi người đánh giá xác nhận rõ ràng.
 
-- [ ] **Step 3: Write the validation record**
+- [ ] **Bước 3: Viết bản ghi xác nhận**
 
-Record exact commands, pass/fail counts, commit SHA, browser viewport evidence, known limitations, and the separation between automated evidence and human approval. Do not write `PASS` for any command that was not run in this execution.
+Ghi lại các lệnh chính xác, số lần đạt/không đạt, cam kết SHA, bằng chứng khung nhìn trình duyệt,
+các giới hạn đã biết và sự tách biệt giữa bằng chứng tự động và sự phê duyệt của con người. Không
+viết `PASS` cho bất kỳ lệnh nào không được chạy trong quá trình thực thi này.
 
-- [ ] **Step 4: Close completed task records**
+- [ ] **Bước 4: Đóng hồ sơ nhiệm vụ đã hoàn thành**
 
-Mark `FE11-UXR01..UXR06` complete after their evidence exists. Mark `FE11-UXR07` complete only after the authenticated Staging walkthrough and human visual approval.
+Đánh dấu `FE11-UXR01..UXR06` hoàn thành sau khi có bằng chứng. Đánh dấu `FE11-UXR07` chỉ hoàn thành
+sau khi có hướng dẫn về Giai đoạn được xác thực và phê duyệt trực quan của con người.
 
-- [ ] **Step 5: Commit the reviewed implementation/evidence set**
+- [ ] **Bước 5: Cam kết triển khai/bộ bằng chứng đã được đánh giá**
 
 ```powershell
 git add .sdd/specs/feat-user-role-management/TASKS.md .sdd/specs/feat-user-role-management/CHANGELOG.md .sdd/reviews/admin-console-full-refactor-validation-2026-07-22.md
 git commit -m "docs: validate admin console frontend refactor"
 ```
 
-- [ ] **Step 6: Push the branch and deploy Azure Staging**
+- [ ] **Bước 6: Đẩy nhánh và triển khai Azure môi trường tiền sản xuất**
 
 ```powershell
 git push origin chore/release-closeout-reconciliation
@@ -1032,7 +1109,7 @@ gh workflow run deploy-staging.yml --ref chore/release-closeout-reconciliation
 gh run list --workflow deploy-staging.yml --branch chore/release-closeout-reconciliation --limit 1
 ```
 
-Use the returned run ID:
+Sử dụng ID chạy được trả về:
 
 ```powershell
 $runId = gh run list --workflow deploy-staging.yml --branch chore/release-closeout-reconciliation --limit 1 --json databaseId --jq '.[0].databaseId'
@@ -1040,19 +1117,22 @@ gh run watch $runId --exit-status
 gh run view $runId --json status,conclusion,headSha,url,jobs
 ```
 
-Expected: backend deploy, frontend deploy, and smoke-test jobs all conclude `success`; `headSha` equals the pushed branch SHA.
+Dự kiến: các công việc triển khai máy chủ, triển khai giao diện người dùng và kiểm thử nhanh đều kết
+thúc `success`; `headSha` bằng nhánh được đẩy SHA.
 
-- [ ] **Step 7: Verify deployed assets and health**
+- [ ] **Bước 7: Xác minh tài sản và tình trạng đã triển khai**
 
 ```powershell
 Invoke-RestMethod -Uri 'https://app-library-api-staging-nhat714.azurewebsites.net/health' | ConvertTo-Json -Compress
 ```
 
-Expected: JSON contains `"status":"ok"`.
+Dự kiến: JSON chứa `"status":"ok"`.
 
-Open `https://lemon-wave-04db51100.7.azurestaticapps.net/admin/users` in the authenticated browser, repeat the desktop/mobile acceptance checklist, and record the deployed workflow URL and SHA in the validation record.
+Mở `https://lemon-wave-04db51100.7.azurestaticapps.net/admin/users` trong trình duyệt đã xác thực,
+lặp lại danh sách kiểm tra chấp nhận trên máy tính để bàn/thiết bị di động và ghi lại quy trình làm
+việc đã triển khai URL và SHA vào bản ghi xác thực.
 
-- [ ] **Step 8: Final diff and worktree check**
+- [ ] **Bước 8: Kiểm tra sự khác biệt và sơ đồ công việc cuối cùng**
 
 ```powershell
 git diff --check
@@ -1060,16 +1140,17 @@ git status --short --branch
 git log -5 --oneline
 ```
 
-Expected: no unstaged product/evidence changes, branch points at the deployed SHA, and the documented validation commit is present.
+Dự kiến: không có thay đổi về sản phẩm/bằng chứng chưa được phân loại, các điểm nhánh tại SHA đã
+triển khai và có cam kết xác thực được ghi lại.
 
 ---
 
-## Plan Self-Review Checklist
+## Danh sách kiểm tra tự đánh giá kế hoạch
 
-- Design sections 1-16 map to at least one task above.
-- Every product-code task begins with a failing test and records the expected RED reason.
-- `ADMIN_NAVIGATION`, `selectOperationalChartRows`, `getPermissionDecision`, `formatAuditAction`, and `formatAuditDetailKey` use consistent names across tasks.
-- `/admin/users`, the default `users` section, FE07 mutation ownership, FE11 permission/audit ownership, and FE12 statistics ownership remain unchanged.
-- FE04/FE09 canonical files are regression-tested but not modified.
-- No runtime dependency, backend change, schema change, separate Admin URL, or unapproved business behavior is introduced.
-- Automated responsive evidence and human visual approval remain separate.
+- Thiết kế các phần 1-16 liên quan đến ít nhất một nhiệm vụ ở trên.
+- Mọi tác vụ mã sản phẩm đều bắt đầu bằng việc kiểm tra lỗi và ghi lại lý do RED dự kiến.
+- `ADMIN_NAVIGATION`, `selectOperationalChartRows`, `getPermissionDecision`, `formatAuditAction` và `formatAuditDetailKey` sử dụng tên nhất quán trong các tác vụ.
+- `/admin/users`, phần `users` mặc định, quyền sở hữu thao tác ghi FE07, quyền sở hữu quyền/kiểm tra FE11 và quyền sở hữu số liệu thống kê FE12 vẫn không thay đổi.
+- Các tệp chuẩn FE04/FE09 đã được kiểm tra hồi quy nhưng không được sửa đổi.
+- Không có sự phụ thuộc thời gian chạy, thay đổi máy chủ, thay đổi lược đồ, URL quản trị riêng biệt hoặc hành vi kinh doanh không được phê duyệt nào được đưa vào.
+- bằng chứng giao diện thích ứng tự động và phê duyệt trực quan của con người vẫn tách biệt.

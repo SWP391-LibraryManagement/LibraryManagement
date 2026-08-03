@@ -1,82 +1,79 @@
-# Admin Membership Review Integration Design
+# Đánh giá thành viên quản trị viên Thiết kế tích hợp
 
-Status: APPROVED BY HUMAN - 2026-07-22
+Trạng thái: ĐƯỢC PHÊ DUYỆT BỞI HUMAN - 22-2026-07-07
 
-Date: 2026-07-22
+Ngày: 22-07-2026
 
-## 1. Decision
+## 1. Quyết định
 
-Use Hybrid SDD + ADD at Standard depth. FE04 membership review state,
-authorization, atomic transitions, audit persistence, and FE10 result delivery
-remain Core. The Admin navigation, responsive list/cards, modal, and feedback
-presentation are Shell.
+Sử dụng Hybrid SDD + ADD ở độ sâu Tiêu chuẩn. Trạng thái đánh giá tư cách thành viên FE04, ủy quyền,
+chuyển đổi nguyên tử, tính bền bỉ kiểm tra và phân phối kết quả FE10 vẫn là Cốt lõi. Điều hướng của
+Quản trị viên, danh sách/thẻ phản hồi, phương thức và trình bày phản hồi là lớp bao.
 
-The Admin Console shall add a real `Duyệt hội viên` section after `Quản lý
-người dùng`. Selecting it renders the FE04 review workflow inside the current
-Admin shell instead of navigating to the separate `/membership` workspace.
+Bảng điều khiển dành cho quản trị viên sẽ thêm phần `Duyệt hội viên` thực sau `Quản lý người dùng`.
+Việc chọn nó sẽ hiển thị quy trình đánh giá FE04 bên trong giao diện Quản trị hiện tại thay vì điều
+hướng đến không gian làm việc `/membership` riêng biệt.
 
-## 2. Problem And Existing Baseline
+## 2. Vấn đề và mốc cơ sở hiện tại
 
-FE04 already exposes the approved staff endpoints and the canonical
-`/membership` workspace supports both Librarian and Admin review. The modular
-Admin Console refactor deliberately removed its old unreachable membership
-render path and locked the sidebar to seven entries. Authenticated review then
-showed that Admin users reasonably expect membership approval in the Admin
-Console itself.
+FE04 đã hiển thị các điểm cuối của nhân viên được phê duyệt và không gian làm việc `/membership`
+chuẩn hỗ trợ đánh giá của cả Thủ thư và Quản trị viên. Trình tái cấu trúc mô-đun của Bảng điều khiển
+dành cho quản trị viên đã cố tình xóa đường dẫn hiển thị thành viên cũ không thể truy cập được và
+khóa thanh bên ở bảy mục. Sau đó, đánh giá đã được xác thực cho thấy rằng người dùng Quản trị viên
+mong đợi một cách hợp lý sự chấp thuận tư cách thành viên trong Bảng điều khiển dành cho quản trị
+viên.
 
-This design supersedes only the earlier decisions that excluded FE04 from the
-Admin Console and fixed the corrected sidebar at seven entries. It does not
-restore the removed Permissions item, payment workflow, demo data, or the old
-Admin monolith.
+Thiết kế này chỉ thay thế các quyết định trước đó đã loại trừ FE04 khỏi Bảng điều khiển dành cho
+quản trị viên và sửa thanh bên đã sửa ở bảy mục nhập. Nó không khôi phục mục Quyền đã xóa, quy trình
+thanh toán, dữ liệu demo hoặc khối nguyên khối Quản trị viên cũ.
 
-## 3. Scope
+## 3. Phạm vi
 
-### In scope
+### Trong phạm vi
 
-- Add `Duyệt hội viên` after `Quản lý người dùng` in desktop and mobile Admin
-  navigation.
-- Render an Admin-native FE04 application list, filters, pagination, detail,
-  approve, and reject flow inside `AdminConsolePage`.
-- Preserve canonical FE04 server behavior, including pending-only transitions,
-  required rejection reason, audit atomicity, and non-blocking FE10 delivery.
-- Provide loading, empty, error, retry, conflict, and safe notification-result
-  feedback.
-- Use table presentation on wide screens and cards at 1440px and below.
-- Retain the existing `/membership` Member/Librarian workspace and its API.
+- Thêm `Duyệt hội viên` sau `Quản lý người dùng` trong quản trị viên trên máy tính để bàn và thiết bị di động
+  điều hướng.
+- Hiển thị danh sách ứng dụng FE04 gốc dành cho quản trị viên, các bộ lọc, phân trang, chi tiết,
+  phê duyệt và từ chối luồng bên trong `AdminConsolePage`.
+- Duy trì hoạt động của máy chủ FE04 chuẩn, bao gồm các chuyển đổi chỉ đang chờ xử lý,
+  lý do từ chối bắt buộc, kiểm tra tính nguyên tử và phân phối FE10 không chặn.
+- Cung cấp tải, trống, lỗi, thử lại, xung đột và kết quả thông báo an toàn
+  phản hồi.
+- Sử dụng bản trình bày bảng trên màn hình rộng và thẻ ở độ phân giải 1440px trở xuống.
+- Giữ lại không gian làm việc của Thành viên/Thư viện `/membership` hiện có và API của nó.
 
-### Out of scope
+### Ngoài phạm vi
 
-- Database, migration, public API, DTO, or FE04 state-machine changes.
-- Membership expiry, renewal, payment, membership-number, or bulk review.
-- Role assignment as a side effect of membership approval.
-- Moving Librarian or Member workflows into the Admin Console.
-- Restoring the standalone Permissions sidebar item.
+- Cơ sở dữ liệu, di chuyển, thay đổi máy trạng thái API, DTO hoặc FE04 công khai.
+- Hết hạn thành viên, gia hạn, thanh toán, số thành viên hoặc xem xét hàng loạt.
+- Phân công vai trò là một tác dụng phụ của việc phê duyệt thành viên.
+- Di chuyển quy trình làm việc của Thủ thư hoặc Thành viên vào Bảng điều khiển dành cho quản trị viên.
+- Khôi phục mục thanh bên Quyền độc lập.
 
-## 4. Ownership And Architecture
+## 4. Quyền sở hữu và kiến trúc
 
-FE11 owns the Admin shell and its navigation entry. FE04 owns all membership
-review data and mutations. The Admin module consumes `membershipApi` directly;
-it does not create an `/api/admin/membership` alias or copy business rules into
-the frontend.
+FE11 sở hữu lớp bao Quản trị và mục điều hướng của nó. FE04 sở hữu tất cả dữ liệu đánh giá thành viên
+và các thao tác ghi. Mô-đun Quản trị sử dụng trực tiếp `membershipApi`; nó không tạo bí danh
+`/api/admin/membership` hoặc sao chép các quy tắc nghiệp vụ vào giao diện người dùng.
 
-Planned presentation units:
+Các đơn vị trình bày dự kiến:
 
-- `admin/membership/AdminMembershipSection.jsx`: orchestration, filters,
-  pagination, authoritative reload, and toast requests.
-- `admin/membership/AdminMembershipReviewModal.jsx`: read-only applicant detail,
-  approval confirmation, and bounded rejection input.
-- `admin/membership/adminMembershipPresentation.js`: pure normalization and
-  safe notification/status presentation helpers.
-- `adminNavigation.js` and `AdminConsolePage.jsx`: navigation and section
-  composition only.
+- `admin/membership/AdminMembershipSection.jsx`: điều phối, bộ lọc,
+  phân trang, tải lại có thẩm quyền và yêu cầu nâng cốc.
+- `admin/membership/AdminMembershipReviewModal.jsx`: chi tiết người nộp đơn chỉ đọc,
+  xác nhận phê duyệt và đầu vào từ chối có giới hạn.
+- `admin/membership/adminMembershipPresentation.js`: chuẩn hóa thuần túy và
+  người trợ giúp trình bày trạng thái/thông báo an toàn.
+- `adminNavigation.js` và `AdminConsolePage.jsx`: điều hướng và phần
+  chỉ thành phần.
 
-The existing `MembershipPage.jsx` remains the canonical non-Admin-shell
-workspace. Domain API ownership is shared; visual shell components are not
-shared when doing so would mix the AppLayout and Admin design systems.
+`MembershipPage.jsx` hiện tại vẫn là không gian làm việc chuẩn không thuộc lớp bao quản trị. Quyền sở
+hữu miền API được chia sẻ; các thành phần lớp bao trực quan không được chia sẻ khi làm như vậy sẽ trộn
+lẫn hệ thống thiết kế AppLayout và Quản trị viên.
 
-## 5. Navigation Contract
+## 5. Hợp đồng điều hướng
 
-The Admin sidebar shall contain exactly eight entries in this order:
+Thanh bên Quản trị sẽ chứa chính xác tám mục theo thứ tự sau:
 
 1. Trang chủ
 2. Tổng quan
@@ -84,103 +81,101 @@ The Admin sidebar shall contain exactly eight entries in this order:
 4. Quản lý mượn trả
 5. Quản lý yêu cầu
 6. Quản lý người dùng
-7. Duyệt hội viên
+7. Duyệt Thành viên
 8. Nhật ký hoạt động
 
-`Phân quyền`, `Xác nhận thanh toán`, and `Xác nhận mượn` remain absent. Manage
-Roles remains available from User Management.
+`Phân quyền`, `Xác nhận thanh toán` và `Xác nhận mượn` vẫn vắng mặt. Quản lý vai trò vẫn có sẵn từ
+Quản lý người dùng.
 
-## 6. Review Experience
+## 6. Đánh giá kinh nghiệm
 
-The section opens with `PENDING` selected and exposes:
+Phần mở ra với `PENDING` được chọn và hiển thị:
 
-- server search by application ID, name, username, or email;
-- status filter for `PENDING`, `APPROVED`, `REJECTED`, or all;
-- server pagination with a limit of 10;
-- application ID, applicant identity/contact, applied date, status, and action;
-- an Admin-native table above 1440px and responsive cards at/below 1440px.
+- tìm kiếm máy chủ theo ID ứng dụng, tên, tên người dùng hoặc email;
+- bộ lọc trạng thái cho `PENDING`, `APPROVED`, `REJECTED` hoặc tất cả;
+- phân trang máy chủ với giới hạn 10;
+- ID đơn đăng ký, danh tính/thông tin liên hệ của người nộp đơn, ngày nộp đơn, trạng thái và hành động;
+- bảng gốc dành cho quản trị viên có kích thước trên 1440px và thẻ phản hồi ở/dưới 1440px.
 
-Selecting a row opens a modal. Only a `PENDING` row exposes decision controls.
-Approval requires an explicit confirmation. Rejection requires trimmed input of
-1..500 characters. Final applications remain view-only.
+Việc chọn một hàng sẽ mở ra một phương thức. Chỉ một hàng `PENDING` hiển thị các điều khiển quyết
+định. Phê duyệt yêu cầu xác nhận rõ ràng. Từ chối yêu cầu đầu vào được cắt bớt 1..500 ký tự. Các ứng
+dụng cuối cùng vẫn ở chế độ chỉ xem.
 
-## 7. Data Flow And Error Handling
+## 7. Luồng dữ liệu và xử lý lỗi
 
-1. Load `GET /api/membership/applications` with frozen applied values for `q`,
-   `status`, `page`, and `limit`.
-2. Approve with `PATCH /api/membership/applications/{id}/approve` or reject with
-   `PATCH /api/membership/applications/{id}/reject` and `{ reason }`.
-3. Never optimistically finalize a row. After success or `409
-   MEMBERSHIP_APPLICATION_NOT_PENDING`, reload authoritative server data.
-4. On a successful decision, close the modal and show success. If
-   `notificationStatus = FAILED`, show a non-blocking warning that the decision
-   succeeded but the result notification was not sent. `PENDING`, `SENT`,
-   `FAILED`, and `NOT_CONFIGURED` are the only safe presentation states.
-5. Display safe localized feedback for `400`, `401`, `403`, `404`, `409`, and
-   network/server failures. Never display raw stacks or provider errors.
+1. Tải `GET /api/membership/applications` với các giá trị được áp dụng cố định cho `q`,
+   `status`, `page` và `limit`.
+2. Phê duyệt bằng `PATCH /api/membership/applications/{id}/approve` hoặc từ chối bằng
+   `PATCH /api/membership/applications/{id}/reject` và `{ reason }`.
+3. Đừng bao giờ lạc quan hoàn thành một hàng. Sau khi thành công hoặc `409
+   MEMBERSHIP_APPLICATION_NOT_PENDING`, tải lại dữ liệu máy chủ có thẩm quyền.
+4. Khi quyết định thành công, hãy đóng phương thức và hiển thị thành công. Nếu
+`notificationStatus = FAILED`, hiển thị cảnh báo không chặn rằng quyết định đã thành công nhưng
+thông báo kết quả không được gửi. `PENDING`, `SENT`, `FAILED` và `NOT_CONFIGURED` là các trạng thái
+trình bày an toàn duy nhất.
+5. Hiển thị phản hồi cục bộ an toàn cho `400`, `401`, `403`, `404`, `409` và
+   lỗi mạng/máy chủ. Không bao giờ hiển thị bộ công nghệ thô hoặc lỗi của nhà cung cấp.
 
-## 8. Responsive And Accessibility Contract
+## 8. Hợp đồng đáp ứng và tiếp cận
 
-- No document-level horizontal overflow at 1440, 1366, 1280, or 390 pixels.
-- Table headers, controls, modal title, rejection label, and buttons have
-  accessible names.
-- Keyboard users can search with Enter, close the modal, and reach both decision
-  controls in logical order.
-- Loading state prevents duplicate mutations; controls expose disabled state.
-- Focus returns to the row action that opened the modal after the modal closes.
-- Reduced-motion and the existing Admin focus-visible contracts are preserved.
+- Không tràn ngang cấp tài liệu ở 1440, 1366, 1280 hoặc 390 pixel.
+- Tiêu đề bảng, điều khiển, tiêu đề phương thức, nhãn từ chối và nút có
+  những cái tên có thể truy cập được.
+- Người dùng bàn phím có thể tìm kiếm bằng Enter, đóng phương thức và đưa ra cả hai quyết định
+  điều khiển theo trình tự logic.
+- Trạng thái tải ngăn chặn các thao tác ghi trùng lặp; điều khiển hiển thị trạng thái bị vô hiệu hóa.
+- Tiêu điểm quay lại hành động hàng đã mở phương thức sau khi phương thức đóng.
+- Giảm chuyển động và các hợp đồng hiển thị tập trung vào Quản trị viên hiện tại được giữ nguyên.
 
-## 9. Security And Business Safety
+## 9. An ninh và An toàn Kinh doanh
 
-- Server-side FE04 authentication and `ADMIN`/`LIBRARIAN` authorization remain
-  authoritative.
-- Only `PENDING` applications may transition.
-- Rejection reason is validated on both client and server, with the server
-  authoritative.
-- Application, canonical member projection, reviewer metadata, and audit entry
-  continue to commit atomically.
-- FE10 delivery remains post-commit and non-blocking.
-- The UI consumes only the safe FE04 list/review response and introduces no
-  unsafe HTML or credential fields.
+- Xác thực FE04 phía máy chủ và ủy quyền `ADMIN`/`LIBRARIAN` vẫn được duy trì
+  có thẩm quyền.
+- Chỉ các ứng dụng `PENDING` mới có thể chuyển đổi.
+- Lý do từ chối được xác thực trên cả máy khách và máy chủ, với máy chủ
+  có thẩm quyền.
+- Ứng dụng, phép chiếu thành viên chuẩn, siêu dữ liệu của người đánh giá và mục nhập kiểm tra
+  tiếp tục cam kết nguyên tử.
+- FE10 việc phân phối vẫn duy trì sau cam kết và không bị chặn.
+- Giao diện người dùng chỉ sử dụng phản hồi đánh giá/danh sách FE04 an toàn và không đưa ra
+  HTML hoặc các trường thông tin xác thực không an toàn.
 
-## 10. Test Strategy
+## 10. Chiến lược kiểm thử
 
-Test-first implementation shall prove:
+Việc triển khai kiểm thử đầu tiên sẽ chứng minh:
 
-- exact eight-entry navigation order with Membership Review present and
-  Permissions absent;
-- Admin section composition uses `membershipApi` and no Admin mutation alias;
-- `q`, `status`, `page`, and `limit` remain server-owned;
-- only pending rows expose approve/reject actions;
-- approval confirmation and rejection reason bounds;
-- authoritative reload after success and review conflict;
-- safe FE10 `FAILED` warning without reporting the decision as failed;
-- loading, empty, error, retry, desktop table, responsive cards, and no page
-  overflow at 1440/1366/1280/390;
-- existing Member/Librarian `/membership` tests remain green;
-- focused FE04 backend authorization/transition tests remain green.
+- thứ tự điều hướng chính xác gồm tám mục có sự hiện diện của Đánh giá tư cách thành viên và
+  Quyền vắng mặt;
+- Thành phần phần quản trị sử dụng `membershipApi` và không có bí danh thao tác ghi Quản trị viên;
+- `q`, `status`, `page` và `limit` vẫn thuộc sở hữu của máy chủ;
+- chỉ các hàng đang chờ xử lý mới hiển thị các hành động phê duyệt/từ chối;
+- giới hạn xác nhận phê duyệt và lý do từ chối;
+- tải lại có thẩm quyền sau khi thành công và xem xét xung đột;
+- cảnh báo FE10 `FAILED` an toàn mà không báo cáo quyết định là thất bại;
+- đang tải, trống, lỗi, thử lại, bảng trên máy tính để bàn, thẻ phản hồi và không có trang
+  tràn ở mức 1440/1366/1280/390;
+- các kiểm thử `/membership` của Thành viên/Thư viện hiện tại vẫn xanh;
+- các kiểm thử chuyển tiếp/ủy quyền máy chủ FE04 tập trung vẫn có màu xanh.
 
-## 11. Acceptance Criteria
+## 11. Tiêu chí chấp nhận
 
-- Given an authenticated Admin on `/admin/users`, when `Duyệt hội viên` is
-  selected, then the integrated FE04 review section opens without leaving the
-  Admin shell.
-- Given pending applications, when the Admin searches, filters, or changes page,
-  then results come from the canonical FE04 list endpoint.
-- Given a pending application, when the Admin confirms approval or submits a
-  valid rejection reason, then the canonical FE04 mutation runs once and the
-  list reloads from the server.
-- Given another reviewer finalized the application first, when the Admin acts,
-  then the UI reports the conflict and refreshes without claiming success.
-- Given the decision commits but notification delivery fails, then the UI
-  reports the decision as successful and shows a non-blocking delivery warning.
-- Given an approved/rejected application, then the modal is view-only.
-- Given a desktop, laptop, or mobile review viewport, then the section remains
-  usable without document-level horizontal scrolling.
+- Cung cấp một Quản trị viên được xác thực trên `/admin/users`, khi `Duyệt hội viên` được
+được chọn, sau đó phần đánh giá FE04 tích hợp sẽ mở ra mà không cần rời khỏi giao diện Quản trị.
+- Với các ứng dụng đang chờ xử lý, khi Quản trị viên tìm kiếm, lọc hoặc thay đổi trang,
+  thì kết quả sẽ đến từ điểm cuối danh sách FE04 chuẩn.
+- Với một ứng dụng đang chờ xử lý, khi Quản trị viên xác nhận phê duyệt hoặc gửi đơn đăng ký
+lý do từ chối hợp lệ thì thao tác ghi FE04 chuẩn sẽ chạy một lần và danh sách sẽ tải lại từ máy chủ.
+- Cho một người đánh giá khác hoàn thiện đơn đăng ký trước, khi Quản trị viên hành động,
+  sau đó giao diện người dùng báo cáo xung đột và làm mới mà không xác nhận thành công.
+- Đưa ra quyết định cam kết nhưng việc gửi thông báo không thành công thì giao diện người dùng
+  báo cáo quyết định là thành công và hiển thị cảnh báo gửi không bị chặn.
+- Với một ứng dụng được phê duyệt/từ chối thì phương thức này chỉ ở chế độ xem.
+- Với khung xem đánh giá trên máy tính để bàn, máy tính xách tay hoặc thiết bị di động thì phần này vẫn giữ nguyên
+  có thể sử dụng mà không cần cuộn ngang cấp tài liệu.
 
-## 12. Approved Assumptions
+## 12. Các giả định được phê duyệt
 
-- The sidebar label is `Duyệt hội viên` and follows User Management.
-- Admin receives an embedded module; Librarian and Member keep `/membership`.
-- The current FE04 API and schema are sufficient.
-- No role changes occur during membership approval.
+- Nhãn thanh bên là `Duyệt hội viên` và tuân theo Quản lý người dùng.
+- Quản trị viên nhận được một mô-đun nhúng; Thủ thư và Thành viên giữ `/membership`.
+- FE04 API và lược đồ hiện tại là đủ.
+- Không có thay đổi vai trò nào xảy ra trong quá trình phê duyệt thành viên.

@@ -1,94 +1,96 @@
-# Member Demo Hotfix Design
+# Thiết kế bản sửa nóng trình diễn Thành viên
 
-## Status
+## Trạng thái
 
-APPROVED IN CHAT by Nhat on 2026-07-22 with the exact phrase `duyệt demo hotfix`. Written-design review was approved by the follow-up instruction `tiếp tục đi`; implementation planning and RED-GREEN work may proceed.
+ĐƯỢC PHÊ DUYỆT TẠI CHAT bởi Nhật vào ngày 22/07/2026 với cụm từ chính xác là `duyệt demo hotfix`.
+Đánh giá thiết kế bằng văn bản đã được phê duyệt theo hướng dẫn tiếp theo `tiếp tục đi`; lập kế
+hoạch triển khai và công việc RED-GREEN có thể được tiến hành.
 
-## Batch Contract
+## Hợp đồng theo lô
 
-- Batch ID: `DEMO-HOTFIX-USER-2026-07-22`
-- Goal: make the highest-value Member demo path truthful and reliable within a two-hour timebox.
-- Delivery form: local, uncommitted RED-GREEN implementation after this design is reviewed; no product-code commit, push, merge, schema change, or deployment is authorized by this document.
-- Core ownership: the backend remains authoritative for authorization, validation, business rules, pagination, and stored state; the frontend renders and invokes existing approved contracts.
+- ID lô: `DEMO-HOTFIX-USER-2026-07-22`
+- Mục tiêu: làm cho đường dẫn giới thiệu Thành viên có giá trị cao nhất trở nên trung thực và đáng tin cậy trong khoảng thời gian hai giờ.
+- Hình thức phân phối: triển khai RED-GREEN cục bộ, không cam kết sau khi thiết kế này được xem xét; không có cam kết, đẩy, hợp nhất, thay đổi lược đồ hoặc triển khai mã sản phẩm nào được tài liệu này cho phép.
+- Quyền sở hữu cốt lõi: phần máy chủ vẫn có thẩm quyền ủy quyền, xác thực, quy tắc nghiệp vụ, phân trang và trạng thái được lưu trữ; giao diện người dùng hiển thị và gọi các hợp đồng đã được phê duyệt hiện có.
 
-## In Scope
+## Trong phạm vi
 
-### 1. Member dashboard summary
+### 1. Tóm tắt bảng điều khiển thành viên
 
-- Consume the canonical FE07 member-history envelope (`borrowings`, `pagination`) instead of the staff-only `borrowRequests` key.
-- Show non-zero active and completed counts for canonical rows returned by the existing endpoint.
-- Keep the change inside the dashboard view model/page and add a regression test using the real member response shape.
+- Sử dụng phong bì lịch sử thành viên FE07 chuẩn (`borrowings`, `pagination`) thay vì khóa `borrowRequests` chỉ dành cho nhân viên.
+- Hiển thị số lượng hoạt động và số lượng đã hoàn thành khác 0 cho các hàng chuẩn được điểm cuối hiện có trả về.
+- Giữ thay đổi bên trong mô hình/trang xem bảng điều khiển và thêm kiểm thử hồi quy bằng cách sử dụng hình dạng phản hồi của thành viên thực.
 
-### 2. Reservation terminal-state handling
+### 2. Xử lý trạng thái thiết bị đầu cuối dành riêng
 
-- Preserve the raw FE08 status in the reservation view model.
-- Treat only `ACTIVE` and `NOTIFIED` as open/cancellable.
-- Treat `FULFILLED`, `CANCELLED`, and `EXPIRED` as terminal for duplicate checks and action rendering.
-- A fulfilled reservation must neither show a cancel action nor block a later reservation for the same copy.
+- Giữ nguyên trạng thái FE08 thô trong mô hình chế độ xem đặt chỗ.
+- Chỉ coi `ACTIVE` và `NOTIFIED` là mở/có thể hủy.
+- Coi `FULFILLED`, `CANCELLED` và `EXPIRED` làm thiết bị đầu cuối để kiểm tra trùng lặp và hiển thị hành động.
+- Việc đặt chỗ đã hoàn tất không được hiển thị hành động hủy cũng như không chặn việc đặt chỗ sau đó cho cùng một bản sao.
 
-### 3. Read-only Member fine page
+### 3. Trang tốt dành cho Thành viên chỉ đọc
 
-- Add `fineApi.listMine(params)` backed by the existing `GET /api/fines/me` endpoint.
-- Add a guarded Member route and navigation item for `/fines/mine`.
-- Render a read-only, server-paginated table containing book, reason, overdue days, amount, status, and related borrowing identifier.
-- Do not expose collection, mark-paid, waive, cancel, or calculation actions to Members.
+- Thêm `fineApi.listMine(params)` được hỗ trợ bởi điểm cuối `GET /api/fines/me` hiện có.
+- Thêm tuyến Thành viên được bảo vệ và mục điều hướng cho `/fines/mine`.
+- Hiển thị bảng chỉ đọc, được phân trang trên máy chủ chứa sách, lý do, ngày quá hạn, số tiền, trạng thái và mã định danh lượt mượn có liên quan.
+- Không tiết lộ các hành động thu nợ, thanh toán đánh dấu, từ bỏ, hủy bỏ hoặc tính toán cho Thành viên.
 
-### 4. Guest navigation
+### 4. Điều hướng khách
 
-- Route every visible guest `Đăng ký` action to `/register` and every `Đăng nhập` action to `/login`.
-- Remove no-op footer account actions.
-- Preserve the current visual structure and responsive layout.
+- Định tuyến mọi hành động `Đăng ký` của khách hiển thị đến `/register` và mọi hành động `Đăng nhập` tới `/login`.
+- Loại bỏ các hành động tài khoản chân trang không hoạt động.
+- Giữ nguyên cấu trúc hình ảnh hiện tại và bố cục đáp ứng.
 
-### 5. Empty public search
+### 5. Tìm kiếm công khai trống
 
-- Submitting a blank/whitespace search must call the canonical default public list instead of rejecting the user.
-- Clear stale search errors/results and render the returned default catalog.
-- Do not add a new category endpoint or client-owned full-catalog pagination in this timebox.
+- Việc gửi tìm kiếm trống/khoảng trắng phải gọi danh sách công khai mặc định chuẩn thay vì từ chối người dùng.
+- Xóa các lỗi/kết quả tìm kiếm cũ và hiển thị danh mục mặc định được trả về.
+- Không thêm điểm cuối danh mục mới hoặc phân trang danh mục đầy đủ do khách hàng sở hữu trong hộp thời gian này.
 
-### 6. Truthful membership copy
+### 6. Bản sao thành viên trung thực
 
-- Remove visible claims for paid tiers, unlimited borrowing, e-books/audio books, private events, reading lists, or new-book alerts.
-- State only the approved entitlement: active `MEMBER` accounts may request up to 3 copies per business day; FE04-approved membership raises that daily tier to 5, subject to the five-active-copy limit and other FE07 blockers.
-- Remove dormant paid-plan modal code when it has no reachable approved workflow.
+- Xóa các xác nhận quyền sở hữu hiển thị đối với các cấp độ trả phí, mượn không giới hạn, sách điện tử/sách nói, sự kiện riêng tư, danh sách đọc hoặc thông báo về sách mới.
+- Chỉ nêu rõ quyền được phê duyệt: tài khoản `MEMBER` đang hoạt động có thể yêu cầu tối đa 3 bản sao mỗi ngày làm việc; Tư cách thành viên được FE04 phê duyệt sẽ nâng cấp hàng ngày đó lên 5, tuân theo giới hạn năm bản sao hoạt động và các trình chặn FE07 khác.
+- Xóa mã phương thức gói trả phí không hoạt động khi mã đó không có quy trình làm việc được phê duyệt có thể truy cập được.
 
-## Explicitly Out Of Scope
+## Rõ ràng nằm ngoài phạm vi
 
-- Multi-copy selection redesign for FE07 borrow requests.
-- Full public-catalog or own-reservation pagination redesign.
-- Member portal refactoring, global state management, or API-client consolidation.
-- Database/schema migrations, new backend endpoints, or permission changes.
-- FE11 Admin Membership Review files currently modified in the working tree.
-- Deployment, release tagging, pushing, PR creation, or merging.
+- Thiết kế lại lựa chọn nhiều bản sao cho các yêu cầu mượn FE07.
+- Thiết kế lại phân trang đầy đủ theo danh mục công cộng hoặc đặt chỗ riêng.
+- Tái cấu trúc cổng thông tin thành viên, quản lý trạng thái toàn cầu hoặc hợp nhất máy khách API.
+- Di chuyển cơ sở dữ liệu/lược đồ, điểm cuối máy chủ mới hoặc thay đổi quyền.
+- FE11 Các tệp đánh giá tư cách thành viên của quản trị viên hiện được sửa đổi trong cây làm việc.
+- Triển khai, gắn thẻ phát hành, đẩy, tạo PR hoặc hợp nhất.
 
-## Components And Data Flow
+## Thành phần và luồng dữ liệu
 
-1. `RoleDashboardPage` calls the existing FE07/FE08 adapters; `dashboardViewModel` consumes the member envelope and derives display counts.
-2. `MyReservationsPage` maps each server status to display text while retaining `rawStatus` for action eligibility.
-3. `MyFinesPage` calls `fineApi.listMine({ status?, page, limit })`, renders only the returned page, and uses server pagination metadata.
-4. `HomePage` keeps FE01 read-only, sends empty search as the default list request, and routes guest account actions to existing auth pages.
-5. Membership promotional copy is static presentation derived from FE04/FE07 approved limits; it performs no business mutation.
+1. `RoleDashboardPage` gọi các bộ điều hợp FE07/FE08 hiện có; `dashboardViewModel` sử dụng phong bì thành viên và lấy số lượng hiển thị.
+2. `MyReservationsPage` ánh xạ từng trạng thái máy chủ để hiển thị văn bản trong khi vẫn giữ lại `rawStatus` để đủ điều kiện hành động.
+3. `MyFinesPage` gọi `fineApi.listMine({ status?, page, limit })`, chỉ hiển thị trang được trả về và sử dụng siêu dữ liệu phân trang của máy chủ.
+4. `HomePage` giữ FE01 ở chế độ chỉ đọc, gửi tìm kiếm trống dưới dạng yêu cầu danh sách mặc định và định tuyến các hành động của tài khoản khách đến các trang xác thực hiện có.
+5. Bản sao quảng cáo dành cho thành viên là bản trình bày tĩnh bắt nguồn từ các giới hạn được phê duyệt FE04/FE07; nó không thực hiện thao tác ghi kinh doanh.
 
-## Error Handling
+## Xử lý lỗi
 
-- Existing authorized-request token refresh and feature-specific safe error mapping remain in use.
-- Member fines show loading, empty, error, and retry states without fabricating data.
-- Reservation mutations reload canonical server state after success or conflict.
-- Empty public search clears stale failure state before applying default results.
+- chức năng làm mới mã thông báo yêu cầu được ủy quyền hiện có và ánh xạ lỗi an toàn theo chức năng cụ thể vẫn được sử dụng.
+- khoản phạt thành viên hiển thị trạng thái tải, trống, lỗi và thử lại mà không cần giả mạo dữ liệu.
+- thao tác ghi đặt chỗ tải lại trạng thái máy chủ chuẩn sau khi thành công hoặc xung đột.
+- Tìm kiếm công khai trống sẽ xóa trạng thái lỗi cũ trước khi áp dụng kết quả mặc định.
 
-## Test Strategy
+## Chiến lược kiểm thử
 
-Use strict RED-GREEN cycles:
+Sử dụng chu trình RED-GREEN nghiêm ngặt:
 
-1. Extend `frontend/test/appShellFrontend.test.js` with the real `{ borrowings, pagination }` dashboard envelope and watch the old key fail.
-2. Extend `frontend/test/reservationFrontend.test.js` for fulfilled re-reservation and cancellable-state rendering and watch current logic fail.
-3. Add focused Member-fine frontend tests covering adapter URL, guarded route/navigation, pagination, read-only rendering, and absence of staff mutations.
-4. Extend FE01/auth shell tests for blank search, `/register`, `/login`, and removal of unsupported membership claims.
-5. Run focused tests after each minimal fix, then run full frontend tests, lint, production build, relevant backend route tests, traceability if required by changed source tags, and `git diff --check`.
+1. Mở rộng `frontend/test/appShellFrontend.test.js` bằng phong bì bảng điều khiển `{ borrowings, pagination }` thực và xem chìa khóa cũ bị lỗi.
+2. Mở rộng `frontend/test/reservationFrontend.test.js` để hoàn thành việc đặt chỗ lại và hiển thị trạng thái có thể hủy cũng như xem lỗi logic hiện tại.
+3. Thêm các kiểm thử giao diện người dùng tốt dành cho Thành viên tập trung bao gồm bộ điều hợp URL, tuyến đường/điều hướng được bảo vệ, phân trang, hiển thị chỉ đọc và không có thao tác ghi nhân viên.
+4. Mở rộng các kiểm thử lớp bao FE01/auth để tìm kiếm trống, `/register`, `/login` và xóa các yêu cầu thành viên không được hỗ trợ.
+5. Chạy các kiểm thử tập trung sau mỗi lần sửa lỗi tối thiểu, sau đó chạy kiểm thử toàn bộ giao diện người dùng, tìm lỗi mã nguồn, bản dựng sản xuất, kiểm thử lộ trình máy chủ có liên quan, truy vết nếu các thẻ nguồn đã thay đổi yêu cầu và `git diff --check`.
 
-## Success Criteria
+## Tiêu chí thành công
 
-- The six scoped demo issues have regression tests that failed before implementation and pass afterward.
-- The Member demo path can navigate through home, dashboard, reservations, own fines, and authentication entry points without false actions or false business claims.
-- Full frontend tests, lint, and production build pass.
-- Relevant FE07/FE08/FE09 backend tests pass without backend production changes.
-- No FE11 working-tree file is staged or modified by this batch.
+- Sáu vấn đề demo trong phạm vi có các kiểm thử hồi quy không thành công trước khi triển khai và vượt qua sau đó.
+- Đường dẫn demo Thành viên có thể điều hướng qua trang chủ, bảng điều khiển, đặt chỗ, khoản phạt riêng và các điểm nhập xác thực mà không có hành động sai hoặc tuyên bố kinh doanh sai.
+- Kiểm tra giao diện người dùng đầy đủ, tìm lỗi mã nguồn và bản dựng sản xuất.
+- Các kiểm thử máy chủ FE07/FE08/FE09 có liên quan đã vượt qua mà không có thay đổi về sản xuất máy chủ.
+- Không có tệp cây làm việc FE11 nào được sắp xếp hoặc sửa đổi theo lô này.
