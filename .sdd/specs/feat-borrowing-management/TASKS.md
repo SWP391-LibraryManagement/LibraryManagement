@@ -396,7 +396,7 @@ Phần thay đổi của sản phẩm vẫn giữ chưa được commit cho tớ
 
 ## 2026-08-03 - Candidate shell và fixture staging v0.10.0
 
-- [x] **FE07-T062 - RED/GREEN trạng thái rỗng ứng viên trung thực.**
+- [x] **FE07-T062 - RED/GREEN trạng thái rỗng của danh sách đủ điều kiện trung thực.**
   - Ánh xạ: BR-FE07-038, FR-FE07-045, AC-FE07-037, AC-BCSF-005.
   - DoD: server-empty, search-empty và lỗi API có ba cách trình bày không nhập nhằng.
 - [x] **FE07-T063 - RED/GREEN công cụ staging có cổng bảo vệ.**

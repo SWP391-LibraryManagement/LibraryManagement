@@ -20,7 +20,7 @@
 ## 2026-08-03 - H1 candidate shell và fixture staging v0.10.0
 
 - Mở FE07-T062..064 cho empty state trung thực và công cụ fixture staging thủ công.
-- Giữ nguyên endpoint/điều kiện ứng viên FE07 và toàn bộ hành vi hàng đợi FE08.
+- Giữ nguyên endpoint/điều kiện đối tượng đủ điều kiện FE07 và toàn bộ hành vi hàng đợi FE08.
 - Quy định reset chỉ sở hữu hai fixture synthetic, bắt buộc staging/flag/transaction/audit;
   thay đổi sản phẩm giữ chưa commit tới H2 và không mutate staging trước H3.
 
