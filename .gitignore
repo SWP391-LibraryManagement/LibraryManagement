@@ -45,6 +45,11 @@ Thumbs.db
 # Logs
 *.log
 
+# Generated inspection and Python cache artifacts
+*.inspect.ndjson
+__pycache__/
+*.py[cod]
+
 # Scratch / temporary working files (not part of the project)
 tmp/
 .worktrees/
