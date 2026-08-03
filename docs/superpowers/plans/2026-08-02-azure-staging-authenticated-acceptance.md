@@ -36,6 +36,7 @@ Server, PowerShell trên Windows.
 - Cleanup mới dùng `npm.cmd --prefix backend run cleanup:staging-acceptance` để dry-run và chỉ thêm `--execute` sau khi xác minh đúng `4 users / 1 book / 1 copy` cho mỗi run.
 - Cleanup hard-delete graph exact-run trong transaction trên `LibraryManagementStaging`; không chuyển `Books`, `BookCopies` hoặc `Users` sang `INACTIVE` để giữ lại trong giao diện quản lý.
 - Mọi sai lệch identity, khóa ngoại ngoài dự kiến hoặc residue sau xóa phải rollback và trả lỗi.
+- Đối chiếu staging sau merge xác nhận các hàng 2026-08-02 đã lưu full run ID trong username/email (`acc_member_a_<runId>`, `member-a.<runId>@lms.invalid`), khác với block `<suffix>` được lập kế hoạch ở dưới. Operator được theo dữ liệu persisted thực tế; block cũ được giữ nguyên làm bằng chứng kế hoạch lịch sử.
 
 ---
 

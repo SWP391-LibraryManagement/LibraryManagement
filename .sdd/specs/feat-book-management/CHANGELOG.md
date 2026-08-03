@@ -5,6 +5,8 @@
 - Sau lệnh trạng thái một sách, giữ tìm kiếm/thể loại nhưng chuyển bộ lọc trạng thái sang `Tất cả trạng thái` để các hàng không bị ảnh hưởng vẫn hiển thị trạng thái riêng.
 - Hiển thị rõ bộ lọc trạng thái đã áp dụng trên panel danh sách.
 - Bổ sung công cụ operator dry-run mặc định, giới hạn `LibraryManagementStaging`, để hard-delete chính xác graph dữ liệu acceptance đã xác minh.
+- Sửa identity key của dữ liệu acceptance lịch sử từ suffix tám ký tự sang full run ID persisted; giữ suffix tám ký tự chỉ cho ISBN tổng hợp tương lai.
+- Ghi nhận closeout staging: 10 graph đã xóa, residue user/sách/bản sao bằng 0 và browser xác minh trạng thái từng sách độc lập.
 - Giữ ISBN tùy chọn cho sách thật, không đổi schema/API/role và không chuyển quyền sở hữu trạng thái bản sao khỏi FE06.
 
 ## 2026-08-03 - Giữ sách vừa đổi trạng thái hiển thị (v0.6.12)
