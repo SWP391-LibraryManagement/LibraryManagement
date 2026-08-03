@@ -1,44 +1,45 @@
-# Azure Staging Deployment Guide
+# Hướng dẫn triển khai môi trường tiền sản xuất Azure
 
-## Purpose
+## Mục đích
 
-This guide deploys the Week 13 release candidate to Azure for Students using separate frontend,
-backend, and database resources. It is a staging deployment, not a production deployment.
+Hướng dẫn này triển khai release candidate Tuần 13 lên môi trường staging dùng Azure for Students
+bằng các tài nguyên frontend, backend và cơ sở dữ liệu riêng biệt. Đây là triển khai staging, không
+phải triển khai production.
 
-The operator must stop before creating or resizing any resource that is not clearly covered by a
-free allowance or the approved Azure for Students credit.
+Người vận hành phải dừng lại trước khi tạo hoặc thay đổi kích thước bất kỳ tài nguyên nào không được
+bao gồm rõ ràng trong hạn mức miễn phí hoặc tín dụng Azure for Students đã được phê duyệt.
 
-## Cost Guardrails
+## Rào chắn chi phí
 
-- Use Azure Static Web Apps Free.
-- Create the App Service plan with F1 Free. Do not retry with B1 or another paid SKU without explicit
-  team approval.
-- Create Azure SQL only after the portal pricing page shows the selected database is inside a free
-  allowance or the Azure for Students credit.
-- Review Azure Cost Management after provisioning and again after the first deployment.
-- Delete the resource group when staging is no longer needed; deleting the resource group removes
-  all resources in this guide.
+- Sử dụng Azure Static Web Apps miễn phí.
+- Tạo gói App Service với F1 Free. Không thử lại với B1 hoặc SKU trả phí khác mà không rõ ràng
+  phê duyệt của đội.
+- Chỉ tạo Azure SQL sau khi trang định giá cổng thông tin hiển thị cơ sở dữ liệu đã chọn nằm trong một cơ sở dữ liệu miễn phí
+  hạn mức hoặc tín dụng Azure for Students.
+- Xem lại Quản lý chi phí Azure sau khi cung cấp và xem lại sau lần triển khai đầu tiên.
+- Xóa nhóm tài nguyên khi môi trường tiền sản xuất không còn cần thiết nữa; xóa nhóm tài nguyên sẽ xóa
+  tất cả các tài nguyên trong hướng dẫn này.
 
-## Resource Names And Regions
+## Tên tài nguyên và khu vực
 
-| Resource | Name | Region/SKU |
+| Tài nguyên | Tên | Region/SKU |
 | --- | --- | --- |
-| Resource group | `rg-library-staging` | Southeast Asia |
-| App Service plan | `plan-library-staging` | Malaysia West, Linux, F1 Free |
-| Backend web app | `app-library-api-staging-nhat714` | Malaysia West, Node.js 22 LTS |
-| Static Web App | `swa-library-staging-nhat714` | East Asia, Free |
-| SQL logical server | `sql-library-staging-ea-nhat714` | East Asia |
-| SQL database | `LibraryManagementStaging` | Portal-confirmed free/student-credit configuration |
-| SQL administrator | `libraryadmin` | Password entered privately by the operator |
+| Nhóm tài nguyên | `rg-library-staging` | Đông Nam Á |
+| Gói App Service | `plan-library-staging` | Tây Malaysia, Linux, F1 miễn phí |
+| Ứng dụng web máy chủ | `app-library-api-staging-nhat714` | Tây Malaysia, Node.js 22 LTS |
+| Ứng dụng web tĩnh | `swa-library-staging-nhat714` | Đông Á, Miễn phí |
+| Máy chủ logic SQL | `sql-library-staging-ea-nhat714` | Đông Á |
+| Cơ sở dữ liệu SQL | `LibraryManagementStaging` | Cấu hình free/student-credit đã được cổng thông tin xác nhận |
+| Quản trị viên SQL | `libraryadmin` | Mật khẩu do nhà điều hành nhập riêng |
 
-Azure resource names such as the web app and SQL server are globally unique. If Azure reports that
-one of the names is unavailable, stop and record the alternative suffix before changing workflow or
-documentation values.
+Tên tài nguyên Azure như ứng dụng web và máy chủ SQL là duy nhất trên toàn cầu. Nếu Azure báo cáo
+rằng một trong các tên không có sẵn, hãy dừng và ghi lại hậu tố thay thế trước khi thay đổi giá trị
+quy trình làm việc hoặc tài liệu.
 
-## Install And Sign In To Azure CLI
+## Cài đặt và đăng nhập vào Azure CLI
 
-Azure CLI was not present during the Week 13 design check. Install and authenticate from an
-interactive PowerShell terminal:
+Azure CLI không có mặt trong quá trình kiểm tra thiết kế Tuần 13. Cài đặt và xác thực từ thiết bị
+đầu cuối PowerShell tương tác:
 
 ```powershell
 winget install --exact --id Microsoft.AzureCLI
@@ -47,16 +48,17 @@ az account list --output table
 az account show --output table
 ```
 
-Confirm the selected subscription is Azure for Students. If another subscription is selected, use:
+Xác nhận subscription đã chọn là `Azure for Students`. Nếu subscription khác được
+chọn, hãy sử dụng:
 
 ```powershell
 az account set --subscription 'Azure for Students'
 az account show --output table
 ```
 
-Do not continue until the correct subscription is active.
+Không tiếp tục cho đến khi đăng ký chính xác được kích hoạt.
 
-## Create Resource Group And App Service F1
+## Tạo nhóm tài nguyên và App Service F1
 
 ```powershell
 az group create --name rg-library-staging --location southeastasia
@@ -80,7 +82,7 @@ az webapp config set `
   --startup-file "npm start"
 ```
 
-Verify the plan before continuing:
+Xác minh kế hoạch trước khi tiếp tục:
 
 ```powershell
 az appservice plan show `
@@ -90,37 +92,38 @@ az appservice plan show `
   --output table
 ```
 
-Expected SKU: `F1`. Stop rather than resizing automatically.
+SKU dự kiến: `F1`. Dừng thay vì tự động thay đổi kích thước.
 
-## Create Azure Static Web Apps Free
+## Tạo Azure Static Web Apps miễn phí
 
-In Azure Portal:
+Trong Cổng thông tin Azure:
 
-1. Create Static Web App `swa-library-staging-nhat714` in `rg-library-staging`.
-2. Select the Free plan and East Asia.
-3. Select `Other` as deployment source so the repository workflow controls deployment.
-4. Record the generated `https://*.azurestaticapps.net` URL.
-5. Copy the deployment token directly into the GitHub `staging` Environment secret named
+1. Tạo ứng dụng web tĩnh `swa-library-staging-nhat714` trong `rg-library-staging`.
+2. Chọn gói miễn phí và Đông Á.
+3. Chọn `Other` làm nguồn triển khai để quy trình làm việc của kho lưu trữ kiểm soát việc triển khai.
+4. Ghi lại `https://*.azurestaticapps.net` URL được tạo.
+5. Sao chép mã thông báo triển khai trực tiếp vào bí mật Môi trường GitHub `staging` có tên
    `AZURE_STATIC_WEB_APPS_API_TOKEN`.
 
-Do not store the deployment token in a local file, shell profile, document, screenshot, or chat.
+Không lưu trữ mã thông báo triển khai trong tệp cục bộ, hồ sơ lớp bao, tài liệu, ảnh chụp màn hình
+hoặc trò chuyện.
 
-## Create Azure SQL Inside Student Credit
+## Tạo Azure SQL Tín dụng nội bộ sinh viên
 
-Use Azure Portal so the operator can review the displayed cost before creation:
+Sử dụng Cổng thông tin Azure để người vận hành có thể xem lại chi phí được hiển thị trước khi tạo:
 
-1. Create SQL server `sql-library-staging-ea-nhat714` in `rg-library-staging`, East Asia. The free
-   limit API rejected Malaysia West during provisioning even though the portal displayed the offer.
-2. Set SQL administrator username to `libraryadmin` and generate a new staging-only password.
-3. Create database `LibraryManagementStaging`.
-4. On the compute/storage page, choose a free allowance when Azure offers it. Otherwise confirm the
-   displayed estimate is covered by the remaining Azure for Students credit.
-5. Stop if the estimate is unclear or exceeds approved credit.
-6. Record only the chosen SKU and free/credit decision in deployment evidence, never the password.
+1. Tạo máy chủ SQL `sql-library-staging-ea-nhat714` tại `rg-library-staging`, Đông Á. miễn phí
+   limit API đã từ chối Malaysia West trong quá trình cung cấp mặc dù cổng thông tin đã hiển thị ưu đãi.
+2. Đặt tên người dùng quản trị viên SQL thành `libraryadmin` và tạo mật khẩu chỉ dành cho môi trường tiền sản xuất mới.
+3. Tạo cơ sở dữ liệu `LibraryManagementStaging`.
+4. Trên trang compute/storage, chọn trợ cấp miễn phí khi Azure cung cấp. Nếu không hãy xác nhận
+   chi phí ước tính được bao gồm trong tín dụng Azure for Students còn lại.
+5. Dừng lại nếu ước tính không rõ ràng hoặc vượt quá mức tín dụng được phê duyệt.
+6. Chỉ ghi lại quyết định SKU và free/credit đã chọn trong bằng chứng triển khai, không bao giờ ghi lại mật khẩu.
 
-## Configure Azure SQL Firewall
+## Định cấu hình tường lửa Azure SQL
 
-Get the backend outbound addresses:
+Nhận các địa chỉ gửi đi máy chủ:
 
 ```powershell
 az webapp show `
@@ -130,44 +133,44 @@ az webapp show `
   --output tsv
 ```
 
-In Azure SQL Networking:
+Trong mạng Azure SQL:
 
-- add rules for the App Service outbound addresses;
-- add the operator's current IP only while initializing or reviewing the database;
-- remove the temporary operator rule when it is no longer needed;
-- do not leave a `0.0.0.0` to `255.255.255.255` rule or other all-Internet range.
+- thêm quy tắc cho các địa chỉ gửi đi App Service;
+- chỉ thêm IP hiện tại của nhà điều hành khi khởi tạo hoặc xem lại cơ sở dữ liệu;
+- loại bỏ quy tắc toán tử tạm thời khi không còn cần thiết nữa;
+- không để lại quy tắc `0.0.0.0` đến `255.255.255.255` hoặc phạm vi toàn Internet khác.
 
-## Prepare And Execute The Azure-Compatible Schema
+## Chuẩn bị và thực thi lược đồ tương thích Azure
 
-Generate the derived deployment script from the canonical schema:
+Tạo tập lệnh triển khai bắt nguồn từ lược đồ chuẩn:
 
 ```powershell
 npm.cmd run schema:azure:prepare
 ```
 
-The generated file is `tmp/azure/LibraryManagementStaging.sql`. It is ignored by Git and removes the
-local `CREATE DATABASE` and `USE` batches while retaining application tables and constraints.
+Tệp được tạo là `tmp/azure/LibraryManagementStaging.sql`. Nó bị Git bỏ qua và loại bỏ các lô `CREATE
+DATABASE` và `USE` cục bộ trong khi vẫn giữ lại các bảng ứng dụng và các ràng buộc.
 
-Before executing:
+Trước khi thực hiện:
 
-1. Review the generated SQL.
-2. Before touching staging, execute every candidate migration twice on a specifically named,
-   disposable local SQL Server database, retain the result as idempotence evidence, and remove that
-   database.
-3. If operator access is required, add one exact temporary firewall rule for the operator's current
-   IP. Do not widen the range.
-4. Confirm the connected database is `LibraryManagementStaging`.
-5. Execute through Azure Query Editor, SSMS, or `sqlcmd`: use the generated schema once for an empty
-   database, or execute the following operator-owned migrations once and in order for an existing
-   pre-reconciliation database:
+1. Xem lại SQL đã tạo.
+2. Trước khi chạm vào giai đoạn, hãy thực hiện mỗi lần di chuyển ứng viên hai lần trên một tên cụ thể,
+cơ sở dữ liệu SQL Server cục bộ dùng một lần, giữ lại kết quả dưới dạng bằng chứng bình thường và
+xóa cơ sở dữ liệu đó.
+3. Nếu cần có quyền truy cập của nhà điều hành, hãy thêm một quy tắc tường lửa tạm thời chính xác cho quyền truy cập hiện tại của nhà điều hành
+   IP. Đừng mở rộng phạm vi.
+4. Xác nhận cơ sở dữ liệu được kết nối là `LibraryManagementStaging`.
+5. Thực thi thông qua Trình soạn thảo truy vấn Azure, SSMS hoặc `sqlcmd`: sử dụng lược đồ được tạo một lần cho một khoảng trống
+cơ sở dữ liệu hoặc thực hiện các quá trình di chuyển do nhà điều hành sở hữu sau đây một lần và theo
+thứ tự cho cơ sở dữ liệu đã được điều chỉnh trước hiện có:
 
-   Book Management will return the safe `INTERNAL_ERROR`/`Không thể xử lý yêu cầu` response when
-   `Books.RowVersion` or the metadata `Status` columns are absent. FE10 delivery requests cannot
-   enter the durable `PROCESSING` state until the notification status constraint is upgraded.
-   Most SQL migrations remain operator-applied. The one documented exception is
-   `2026-07-22-library-metadata-compatibility.sql`: the backend package carries this reviewed,
-   idempotent script and applies it before opening the HTTP listener so legacy author, publisher,
-   and category tables cannot leave the deployed Admin Library page broken.
+Quản lý Sách sẽ trả về phản hồi `INTERNAL_ERROR`/`Không thể xử lý yêu cầu` an toàn khi cột
+`Books.RowVersion` hoặc siêu dữ liệu `Status` không có. Yêu cầu gửi FE10 không thể chuyển sang trạng
+thái `PROCESSING` lâu bền cho đến khi hạn chế trạng thái thông báo được nâng cấp. Hầu hết các quá
+trình di chuyển SQL vẫn do nhà điều hành áp dụng. Một ngoại lệ được ghi lại là
+`2026-07-22-library-metadata-compatibility.sql`: gói máy chủ mang tập lệnh bình thường, đã được xem
+xét này và áp dụng nó trước khi mở trình nghe HTTP để các bảng tác giả, nhà xuất bản và danh mục kế
+thừa không thể khiến trang Thư viện quản trị viên đã triển khai bị hỏng.
 
 ```text
 database/migrations/2026-07-19-fe04-membership-concurrency.sql
@@ -181,10 +184,10 @@ database/migrations/2026-07-27-fe10-personal-inbox-read-state.sql
 database/migrations/2026-07-29-fe10-borrowing-result-templates.sql
 ```
 
-Do not run `2026-07-22-library-metadata-compatibility.sql` manually. The backend startup gate owns
-that one packaged migration and applies it before the HTTP listener opens.
+Không chạy `2026-07-22-library-metadata-compatibility.sql` theo cách thủ công. Cổng khởi động máy
+chủ sở hữu một gói di chuyển được đóng gói đó và áp dụng nó trước khi trình nghe HTTP mở ra.
 
-6. Verify the target, table count, and reconciliation columns:
+6. Xác minh các cột mục tiêu, số lượng bảng và đối chiếu:
 
 ```sql
 SELECT
@@ -202,46 +205,43 @@ SELECT
   ) THEN 1 ELSE 0 END AS NotificationProcessingAllowed;
 ```
 
-Expected database: `LibraryManagementStaging`, table count `21`, and each listed reconciliation
-column length `8`; `NotificationProcessingAllowed` must be `1`. CI must not execute this schema
-automatically.
+Expected database: `LibraryManagementStaging`, table count `21`; độ dài mỗi cột đối chiếu được
+liệt kê `8`; `NotificationProcessingAllowed` phải là `1`. CI không được tự động thực thi lược đồ
+này.
 
-7. Remove the exact temporary operator firewall rule immediately after the reviewed migration and
-   read-only checks. Staging must not be used to prove migration idempotence.
+7. Xóa quy tắc tường lửa tạm thời chính xác của nhà điều hành ngay sau khi di chuyển được xem xét và
+   kiểm tra chỉ đọc. Không được sử dụng giai đoạn để chứng minh tính không có khả năng di chuyển.
 
-If deployment cannot start or reports `API schema readiness check failed with HTTP 503`, do not
-remove or skip the readiness check. Inspect App Service startup logs for the safe
-`Backend startup failed` message. Confirm that the configured application database principal can
-alter `Authors`, `Publishers`, and `Categories`; the startup gate must add only the missing
-`Status`/`CreatedAt` columns through the packaged reviewed migration. Do not expose Azure SQL to
-GitHub-hosted runner IP ranges or widen the firewall.
+Nếu quá trình triển khai không thể bắt đầu hoặc báo cáo `API lược đồ readiness kiểm tra không đạt với HTTP
+503`, đừng xóa hoặc bỏ qua bước kiểm tra mức độ sẵn sàng. Kiểm tra nhật ký khởi động App Service để
+tìm thông báo `Backend startup failed` an toàn. Xác nhận rằng cơ sở dữ liệu chính của ứng dụng được
+định cấu hình có thể thay đổi `Authors`, `Publishers` và `Categories`; cổng khởi động chỉ được thêm
+các cột `Status`/`CreatedAt` bị thiếu thông qua quá trình di chuyển được xem xét đóng gói. Không để
+lộ Azure SQL cho dải IP của GitHub-hosted runner hoặc mở rộng phạm vi tường lửa.
 
-After startup succeeds, verify `GET /health/ready` returns HTTP `200` with
-`checks.catalogMetadata = "ok"`. A successful `main` CI run automatically starts the staging
-workflow for that exact commit; `workflow_dispatch` remains available for an operator rerun. Both
-paths are fail-closed behind the exact FE10 migration file hashes stored in the GitHub `staging`
-Environment. The workflow itself does not connect to SQL or execute SQL; schema reconciliation runs
-inside the configured backend application identity before listen. The deployment package includes
-both the catalog metadata compatibility migration and the `CHANGE_PASSWORD_OTP` token-type
-compatibility migration plus the reviewed FE10 borrowing-result template and Unicode-repair scripts.
-The FE10 scripts remain operator-owned and are packaged only for auditable release evidence; startup
-does not execute them.
+Sau khi khởi động thành công, xác minh `GET /health/ready` trả HTTP `200` với
+`checks.catalogMetadata = "ok"`. Một successful `main` CI run tự động khởi chạy workflow staging cho
+đúng commit; `workflow_dispatch` vẫn cho phép người vận hành chạy lại. Cả hai đường dẫn đều fail-closed
+theo exact migration file hash được lưu trong GitHub Environment `staging`. Workflow không kết nối
+hoặc thực thi SQL; schema reconciliation chạy bằng application identity của backend trước khi mở
+listener. Gói triển khai chứa migration tương thích metadata catalog, migration tương thích loại token
+`CHANGE_PASSWORD_OTP`, script template kết quả mượn FE10 và Unicode repair đã review. Các script FE10
+vẫn do người vận hành sở hữu, chỉ được đóng gói làm bằng chứng phát hành và không chạy khi startup.
 
-### FE10 Migration Gates
+### FE10 Cổng di chuyển
 
-All three FE10 migrations are operator-owned and must finish before either application is deployed:
-`database/migrations/2026-07-27-fe10-personal-inbox-read-state.sql` and
-`database/migrations/2026-07-29-fe10-borrowing-result-templates.sql`, followed by
-`database/migrations/2026-08-03-fe10-unicode-repair.sql`. Apply each migration twice with
-`sqlcmd -b -f 65001`. The second execution is an idempotence check; the inbox migration must not
-backfill notifications created after its first execution. The Unicode repair must also complete its
-binary exact-value assertions before deployment continues.
+Cả ba migration FE10 đều do người vận hành sở hữu và phải hoàn tất trước khi triển khai ứng dụng:
+`database/migrations/2026-07-27-fe10-personal-inbox-read-state.sql`,
+`database/migrations/2026-07-29-fe10-borrowing-result-templates.sql`, sau đó là
+`database/migrations/2026-08-03-fe10-unicode-repair.sql`. Apply each migration twice bằng
+`sqlcmd -b -f 65001`. Lần chạy thứ hai kiểm tra idempotence; migration inbox không được backfill
+notification tạo sau lần chạy đầu. Unicode repair cũng phải đạt binary exact-value assertions.
 
-1. Resolve the operator's current public IP without logging credentials.
-2. Add one temporary Azure SQL firewall rule whose start and end values are that exact IP.
-3. Set the target server, database, and approved operator identity in the interactive shell. Keep the
-   password in a secure process environment or interactive prompt; never save it in the repository.
-4. Run the migration twice, stopping on the first SQL error:
+1. Giải quyết IP công cộng hiện tại của nhà điều hành mà không cần thông tin đăng nhập.
+2. Thêm một temporary firewall rule của Azure SQL có giá trị bắt đầu và kết thúc là IP chính xác.
+3. Đặt máy chủ đích, cơ sở dữ liệu và danh tính nhà điều hành được phê duyệt trong trình bao tương tác. Giữ
+   mật khẩu trong môi trường quy trình an toàn hoặc lời nhắc tương tác; không bao giờ lưu nó vào kho lưu trữ.
+4. Chạy quá trình di chuyển hai lần, dừng ở lỗi SQL đầu tiên:
 
 ```powershell
 $fe10InboxMigration = Resolve-Path 'database/migrations/2026-07-27-fe10-personal-inbox-read-state.sql'
@@ -263,7 +263,7 @@ foreach ($fe10Migration in @(
 }
 ```
 
-5. Query only aggregate postconditions: one nullable `ReadAt` column; one
+5. Chỉ truy vấn aggregate postconditions: một cột `ReadAt` nullable; một
    `IX_Notifications_User_ReadAt_CreatedAt` index; eligible historical rows backfilled to
    `CreatedAt`; sensitive, userless, and post-first-run rows still unread; and unchanged row count,
    delivery status, attempt count, and idempotency-key count. Confirm exactly one active template
@@ -296,16 +296,16 @@ WHERE actual.TemplateId IS NULL
    OR actual.Status <> N'ACTIVE';
 ```
 
-6. Remove the exact temporary firewall rule immediately, even when a command fails.
-7. Compute each reviewed migration SHA-256 and store it as non-secret GitHub `staging`
-   Environment variables `FE10_INBOX_MIGRATION_SHA256` and
-   `FE10_BORROWING_RESULT_TEMPLATES_SHA256` and `FE10_UNICODE_REPAIR_SHA256`. These values prove
-   the exact migration file hashes that were applied; never set or update them before steps 1-6 pass:
+6. Xóa temporary firewall rule chính xác ngay lập tức, kể cả khi lệnh thất bại.
+7. Tính SHA-256 cho mỗi migration đã review và lưu dưới dạng các biến không bí mật của GitHub
+   Environment `staging`: `FE10_INBOX_MIGRATION_SHA256`,
+   `FE10_BORROWING_RESULT_TEMPLATES_SHA256` và `FE10_UNICODE_REPAIR_SHA256`. Các giá trị này chứng
+   minh exact migration file hash đã áp dụng; không đặt hoặc cập nhật trước khi bước 1-6 đạt.
 
-   Record the hash of the bytes actually applied by the operator. Git may render the same UTF-8
-   text with LF on the Linux deployment runner and CRLF on Windows. The preflight derives the exact
-   LF and CRLF byte renderings of the checked-out text and accepts the stored hash only when it
-   matches one of those two renderings. It does not accept any migration-content change.
+Ghi lại hash of the bytes actually applied. Git có thể hiển thị cùng một văn bản UTF-8 với LF trên
+runner Linux và CRLF trên Windows. Bước preflight tạo LF and CRLF byte renderings chính xác của văn
+bản đã checkout và chỉ chấp nhận hàm băm được lưu trữ khi nó khớp với
+một trong hai kết xuất đó. Nó không chấp nhận bất kỳ thay đổi nội dung di chuyển nào.
 
 ```powershell
 $fe10InboxMigrationHash = (Get-FileHash -Algorithm SHA256 $fe10InboxMigration).Hash.ToLowerInvariant()
@@ -325,24 +325,21 @@ gh variable set FE10_UNICODE_REPAIR_SHA256 `
   --body $fe10UnicodeRepairMigrationHash
 ```
 
-8. Before H3, run `Deploy staging` manually for the exact PR branch with
+8. Trước H3, chạy thủ công `Deploy staging` cho đúng nhánh PR với
    `fe10_inbox_migration_confirmed=true` and
    `fe10_borrowing_result_templates_confirmed=true` and
-   `fe10_unicode_repair_confirmed=true`. The booleans are additional operator
-   acknowledgements; preflight still compares all checked-out migration files with their
-   corresponding staging Environment variables.
+   `fe10_unicode_repair_confirmed=true`. Các boolean là xác nhận bổ sung của người vận hành; preflight
+   vẫn so sánh mọi migration file đã checkout với biến staging Environment tương ứng.
 
-Deployment then proceeds in a fixed order: preflight, backend, frontend, fail-closed smoke, and
-browser verification. The backend package runs `npm ci --omit=dev` inside `deploy/backend`
-before OneDeploy so production dependencies are included in the artifact; the App Service
-`SCM_DO_BUILD_DURING_DEPLOYMENT=false` setting keeps OneDeploy from invoking a second Oryx build
-over the self-contained artifact and is not treated as the dependency-install gate. Verify
-backend `/health`, `/health/ready`, and anonymous inbox `401` before
-checking the frontend bell/page or custom-domain browser behavior.
+Triển khai theo thứ tự cố định: preflight, backend, frontend, fail-closed smoke và browser
+verification. Gói backend chạy `npm ci --omit=dev` trong `deploy/backend` trước OneDeploy để artifact
+chứa production dependencies; `SCM_DO_BUILD_DURING_DEPLOYMENT=false` ngăn OneDeploy gọi thêm một Oryx
+build và không thay thế dependency-install gate. Xác minh backend `/health`, `/health/ready` và inbox
+ẩn danh `401` trước khi kiểm tra bell/page frontend hoặc hành vi trình duyệt trên custom domain.
 
-## Configure App Service Runtime Settings
+## Định cấu hình cài đặt thời gian chạy App Service
 
-Set non-secret values with Azure CLI:
+Đặt các giá trị không bí mật với Azure CLI:
 
 ```powershell
 az webapp config appsettings set `
@@ -360,13 +357,12 @@ az webapp config appsettings set `
     SCM_DO_BUILD_DURING_DEPLOYMENT=false
 ```
 
-`TRUST_PROXY=true` is required on Azure App Service because TLS terminates at
-the Azure proxy. The backend uses the forwarded protocol when enforcing HTTPS
-for `/api/auth/*`; without this setting a real HTTPS request can be interpreted
-as the internal HTTP hop and return `400 HTTPS_REQUIRED` instead of reaching
-authentication and returning the expected `401` for an anonymous request.
+`TRUST_PROXY=true` được yêu cầu trên Azure App Service vì TLS kết thúc tại proxy Azure. Phần máy chủ
+sử dụng giao thức được chuyển tiếp khi thực thi HTTPS cho `/api/auth/*`; không có cài đặt này, yêu
+cầu HTTPS thực có thể được hiểu là bước nhảy HTTP nội bộ và trả về `400 HTTPS_REQUIRED` thay vì đạt
+được xác thực và trả về `401` dự kiến ​​cho một yêu cầu ẩn danh.
 
-Use App Service -> Configuration to enter secret values:
+Sử dụng App Service -> Cấu hình để nhập các giá trị bí mật:
 
 - `JWT_SECRET`
 - `DB_USER=libraryadmin`
@@ -378,21 +374,21 @@ Use App Service -> Configuration to enter secret values:
 - `SMTP_PASSWORD`
 - `MAIL_FROM`
 
-SMTP is required for staging registration, verification/reset OTP, and account-setup delivery. A
-successful code deployment does not create or replace these App Service settings. For Gmail SMTP,
-use an account with two-step verification and a dedicated App Password; never use or commit the
-normal mailbox password. `MAIL_FROM` must be an address the configured SMTP account is permitted
-to send as.
+Cần có SMTP để đăng ký theo giai đoạn, xác minh/đặt lại OTP và phân phối thiết lập tài khoản. Việc
+triển khai mã thành công không tạo hoặc thay thế các cài đặt App Service này. Đối với Gmail SMTP,
+hãy sử dụng tài khoản có xác minh hai bước và Mật khẩu ứng dụng chuyên dụng; không bao giờ sử dụng
+hoặc commit mật khẩu hộp thư thông thường. `MAIL_FROM` phải là địa chỉ mà tài khoản SMTP đã định
+cấu hình được phép gửi dưới dạng.
 
-Generate `JWT_SECRET` locally:
+Tạo `JWT_SECRET` cục bộ:
 
 ```powershell
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
-Paste it directly into Azure configuration. Do not save or print it again.
+Dán trực tiếp vào cấu hình Azure. Đừng lưu hoặc in lại.
 
-After Static Web Apps exists, configure its exact URL:
+Sau khi Static Web Apps tồn tại, hãy định cấu hình URL chính xác của nó:
 
 ```powershell
 $staticUrl = Read-Host 'Paste the exact Azure Static Web Apps URL'
@@ -405,7 +401,7 @@ az webapp config appsettings set `
     "FRONTEND_BASE_URL=$staticUrl"
 ```
 
-Restart the web app after changing runtime settings:
+Khởi động lại ứng dụng web sau khi thay đổi cài đặt thời gian chạy:
 
 ```powershell
 az webapp restart `
@@ -413,11 +409,11 @@ az webapp restart `
   --resource-group rg-library-staging
 ```
 
-## Configure GitHub Environment Variables And Secrets
+## Định cấu hình các biến và bí mật môi trường GitHub
 
-In GitHub repository Settings -> Environments, create `staging`.
+Trong Cài đặt kho lưu trữ GitHub -> Môi trường, tạo `staging`.
 
-Variables:
+Biến:
 
 ```text
 AZURE_WEBAPP_NAME=app-library-api-staging-nhat714
@@ -427,89 +423,87 @@ FE10_BORROWING_RESULT_TEMPLATES_SHA256=<lowercase SHA-256 set only after the ver
 FE10_UNICODE_REPAIR_SHA256=<lowercase SHA-256 set only after the verified migration>
 ```
 
-Create `STAGING_FRONTEND_URL` using the exact Azure-generated Static Web Apps URL.
+Tạo `STAGING_FRONTEND_URL` bằng cách sử dụng Azure chính xác do Static Web Apps URL tạo ra.
 
-Secrets:
+Bí mật:
 
 ```text
 AZURE_WEBAPP_PUBLISH_PROFILE
 AZURE_STATIC_WEB_APPS_API_TOKEN
 ```
 
-Download the backend publish profile from App Service and paste it directly into the first secret.
-Paste the Static Web Apps deployment token directly into the second. Enable required reviewer
-approval for the environment when the repository plan supports it.
+Tải xuống hồ sơ xuất bản máy chủ từ App Service và dán trực tiếp vào bí mật đầu tiên. Dán mã thông
+báo triển khai Static Web Apps trực tiếp vào mã thứ hai. Cho phép phê duyệt cần thiết của người đánh
+giá đối với môi trường khi gói kho lưu trữ hỗ trợ nó.
 
-## CI-Gated Continuous Deployment
+## CI-Gated Continuous Deployment (Triển khai liên tục qua cổng CI)
 
-The staging workflow deploys after a successful `main` CI run only when its migration preflight
-passes. For FE10, the operator-owned migration must be proven before merge because successful
-`main` CI can deploy automatically:
+Quy trình staging chỉ triển khai sau một successful `main` CI run và bước kiểm tra sẵn sàng cho
+migration dữ liệu thành công. Bằng chứng migration phải khớp exact migration file hash. Đối với FE10,
+migration do người vận hành sở hữu phải được chứng minh trước khi hợp nhất vì CI thành công trên
+`main` có thể triển khai tự động:
 
-1. Wait for exact-head PR CI to pass.
-2. Apply all FE10 migrations twice, verify aggregate and exact Unicode postconditions, and remove the exact
-   temporary firewall rule.
-3. Set `FE10_INBOX_MIGRATION_SHA256`, `FE10_BORROWING_RESULT_TEMPLATES_SHA256`, and
-   `FE10_UNICODE_REPAIR_SHA256` to their exact migration file hashes.
-4. Manually run `Deploy staging` for the exact PR branch with
+1. Đợi exact-head PR CI đạt.
+2. Apply all FE10 migrations twice, xác minh aggregate và exact Unicode postconditions, rồi xóa
+   temporary firewall rule chính xác.
+3. Đặt `FE10_INBOX_MIGRATION_SHA256`, `FE10_BORROWING_RESULT_TEMPLATES_SHA256` và
+   `FE10_UNICODE_REPAIR_SHA256` theo exact migration file hash tương ứng.
+4. Chạy thủ công `Deploy staging` cho đúng nhánh PR với
    `fe10_inbox_migration_confirmed=true` and
    `fe10_borrowing_result_templates_confirmed=true` and
    `fe10_unicode_repair_confirmed=true`.
-5. Confirm preflight, backend startup reconciles the packaged catalog and auth-token migrations,
-   `/health/ready` returns `200`, frontend and smoke pass, and MEMBER/LIBRARIAN/ADMIN browser checks
-   succeed before H3.
-6. After H3, merge the approved head into `main`.
-7. GitHub Actions completes `CI` for the resulting `main` commit and `Deploy staging` checks out that
-   same commit automatically.
-8. Confirm the automatic preflight matches the stored migration hash, backend finishes first,
-   frontend starts only after backend success, and fail-closed smoke passes.
+5. Xác nhận preflight; backend startup đối soát catalog và auth-token migration đã đóng gói;
+   `/health/ready` trả `200`; frontend, smoke và kiểm tra browser MEMBER/LIBRARIAN/ADMIN đạt trước H3.
+6. Sau H3, merge head đã phê duyệt vào `main`.
+7. GitHub Actions hoàn tất `CI` cho commit kết quả trên `main`; `Deploy staging` tự động checkout đúng
+   commit đó.
+8. Xác nhận preflight tự động khớp migration hash đã lưu, backend hoàn tất trước, frontend chỉ bắt đầu
+   sau khi backend thành công và fail-closed smoke đạt.
 
-Failed CI runs do not deploy. `workflow_dispatch` remains available for an operator rerun after any
-required operator-owned migration is applied. A missing or mismatched migration hash blocks both
-automatic and manual deployment without changing Azure SQL. If Azure SQL is paused or quota-blocked,
-do not set any hash or trigger a deployment; resume only after the database can be reached and all
-required idempotence checks have completed.
+CI thất bại không triển khai. `workflow_dispatch` vẫn cho phép người vận hành chạy lại sau khi áp dụng
+migration bắt buộc. Migration hash thiếu hoặc không khớp chặn cả triển khai tự động và thủ công mà
+không thay đổi Azure SQL. Nếu Azure SQL đang pause hoặc bị chặn quota, không đặt hash hay kích hoạt
+deployment; chỉ tiếp tục khi truy cập được database và mọi kiểm tra idempotence đã hoàn tất.
 
-After changing App Service settings, allow the F1 instance to warm up before
-judging the smoke result. A first request may return `503` while the application
-restarts. Re-run the read-only smoke check after `/health` returns `200`; do not
-hide a persistent `503` as warm-up.
+Sau khi thay đổi cài đặt App Service, hãy để phiên bản F1 khởi động trước khi đánh giá kết quả kiểm thử nhanh.
+Yêu cầu đầu tiên có thể trả về `503` trong khi ứng dụng khởi động lại. Chạy lại kiểm thử nhanh chỉ
+đọc sau khi `/health` trả về `200`; đừng che giấu `503` liên tục khi khởi động.
 
-## Free-Tier Staging Keepalive
+## Free-Tier Staging Keepalive (Keepalive cho staging free-tier)
 
-The `Staging keepalive` GitHub Actions workflow sends a read-only request to the
-public backend `/health` endpoint every 10 minutes. It also supports
-`workflow_dispatch` for an operator check. The workflow needs no repository
-secret and must not call an authentication, notification-processing, or other
-mutation endpoint.
+Workflow GitHub Actions `Staging keepalive` gửi yêu cầu chỉ đọc đến endpoint `/health` của backend
+chủ công khai cứ sau 10 phút. Nó cũng hỗ trợ `workflow_dispatch` để kiểm tra người vận hành. Quy
+trình công việc không cần bí mật kho lưu trữ và không được gọi xác thực, xử lý thông báo hoặc điểm
+cuối thao tác ghi khác.
 
-This is a best-effort staging/demo measure. GitHub can delay scheduled workflow
-runs, and Azure App Service F1 can unload an idle application. Do not describe
-this configuration as guaranteed uptime or guaranteed notification timing.
-GitHub also disables scheduled workflows in a public repository after 60 days
-without repository activity. Check and re-enable this workflow when reviving an
-inactive staging environment:
+Đây là cơ chế best-effort cho môi trường staging/demo. GitHub có thể trì hoãn việc chạy quy
+trình làm việc theo
+lịch trình và Azure App Service F1 có thể dỡ bỏ một ứng dụng không hoạt động. Không mô tả cấu hình
+này là thời gian hoạt động được đảm bảo hoặc thời gian thông báo được đảm bảo. GitHub cũng vô hiệu
+hóa các quy trình công việc đã lên lịch trong kho lưu trữ công cộng sau 60 days (60 ngày) không có hoạt động
+trong kho lưu trữ. Kiểm tra và kích hoạt lại quy trình làm việc này khi khôi phục môi trường chạy
+thử không hoạt động:
 
 ```powershell
 gh workflow view staging-keepalive.yml
 gh workflow enable staging-keepalive.yml
 ```
 
-Keep the backend on B1 with Always On enabled until the workflow is merged into
-the default branch. Scheduled workflows do not protect staging while they exist
-only on a feature branch. Use this transition order:
+Giữ phần máy chủ trên B1 với chức năng Luôn bật cho đến khi quy trình làm việc được hợp nhất vào
+nhánh mặc định. Quy trình làm việc theo lịch trình không bảo vệ việc môi trường tiền sản xuất trong
+khi chúng chỉ tồn tại trên một nhánh chức năng. Sử dụng thứ tự chuyển tiếp này:
 
-1. Merge the reviewed workflow into `main` and require the exact `main` CI run
-   to pass.
-2. Start the workflow manually:
+1. Hợp nhất quy trình công việc đã xem xét vào `main` và yêu cầu chạy CI `main` chính xác
+   để vượt qua.
+2. Bắt đầu quy trình làm việc theo cách thủ công:
 
    ```powershell
    gh workflow run staging-keepalive.yml --ref main
    gh run list --workflow staging-keepalive.yml --limit 1
    ```
 
-3. Wait until the manual `Staging keepalive` run succeeds.
-4. Disable Always On:
+3. Chỉ tiếp tục khi manual `Staging keepalive` run succeeds.
+4. Vô hiệu hóa Luôn bật:
 
    ```powershell
    az webapp config set `
@@ -518,7 +512,7 @@ only on a feature branch. Use this transition order:
      --always-on false
    ```
 
-5. Confirm `alwaysOn=false`, then scale `plan-library-staging` to F1:
+5. Xác nhận `alwaysOn=false`, sau đó chia tỷ lệ `plan-library-staging` thành F1:
 
    ```powershell
    az appservice plan update `
@@ -527,7 +521,7 @@ only on a feature branch. Use this transition order:
      --sku F1
    ```
 
-6. Verify the live state without printing secret settings:
+6. Xác minh trạng thái trực tiếp mà không in cài đặt bí mật:
 
    ```powershell
    az appservice plan show `
@@ -557,20 +551,19 @@ only on a feature branch. Use this transition order:
      -UseBasicParsing
    ```
 
-Expected settings are `NOTIFICATION_WORKER_ENABLED=true`,
-`NOTIFICATION_WORKER_INTERVAL_MS=60000`, and
-`NOTIFICATION_WORKER_BATCH_SIZE=20`. Record only aggregate notification queue
-counts; do not include recipients, rendered content, tokens, credentials, or
-connection strings in deployment evidence.
+Cài đặt dự kiến là `NOTIFICATION_WORKER_ENABLED=true`, `NOTIFICATION_WORKER_INTERVAL_MS=60000` và
+`NOTIFICATION_WORKER_BATCH_SIZE=20`. Chỉ ghi lại số lượng hàng đợi thông báo tổng hợp; không bao gồm
+người nhận, nội dung được hiển thị, mã thông báo, thông tin xác thực hoặc chuỗi kết nối trong bằng
+chứng triển khai.
 
-If the keepalive repeatedly fails or staging becomes unreliable,
-scale the plan back to B1 and set `alwaysOn=true`, then repeat the health, public catalog,
-worker-setting, and aggregate queue checks. Disabling the workflow alone does not restore availability
-on F1.
+Nếu keepalive liên tục thất bại hoặc staging trở nên không đáng tin cậy, scale the plan back to B1
+rồi set `alwaysOn=true`, sau đó lặp lại kiểm tra tình trạng, danh mục công khai, cài
+đặt của nhân viên và hàng đợi tổng hợp. Chỉ vô hiệu hóa quy trình làm việc sẽ không khôi phục tính
+khả dụng trên F1.
 
-## Run Smoke Tests
+## Chạy kiểm thử nhanh
 
-Run an independent local check after GitHub Actions succeeds:
+Chạy kiểm tra cục bộ độc lập sau khi GitHub Actions thành công:
 
 ```powershell
 $env:STAGING_FRONTEND_URL = Read-Host 'Paste the exact Azure Static Web Apps URL'
@@ -578,10 +571,10 @@ $env:STAGING_API_URL='https://app-library-api-staging-nhat714.azurewebsites.net'
 npm.cmd run smoke:staging
 ```
 
-The smoke script is read-only and checks frontend HTML, API health, allowed/blocked CORS, and
-anonymous rejection from `/api/auth/me`.
+Tập lệnh kiểm thử nhanh ở chế độ chỉ đọc và kiểm tra giao diện người dùng HTML, tình trạng API,
+allowed/blocked CORS và từ chối ẩn danh từ `/api/auth/me`.
 
-## Guarded Borrow Candidate Demo Fixtures
+## Fixture demo ứng viên mượn có bảo vệ
 
 The backend staging artifact packages `scripts/stagingBorrowCandidates.js` for
 manual operator use. Deployment and application startup never invoke it.
@@ -621,21 +614,22 @@ unrelated rows, leaves audit markers and restores exactly two distinct available
 fixture titles. A non-zero exit requires manual review; do not bypass the guard
 with ad hoc bulk SQL.
 
-## Rollback
+## Khôi phục
 
-- Backend: redeploy the last known-good commit or use App Service deployment history.
-- Frontend: rerun the workflow from the last known-good commit.
-- Database: CI performs no schema mutation. The backend startup exception only adds the canonical
-  metadata compatibility columns through the reviewed idempotent script; any database rollback
-  remains an explicit operator action.
-- FE10 inbox rollback is non-destructive: keep `Notifications.ReadAt` and its index, then disable or
-  redeploy only the inbox API/frontend use. Do not erase read history or roll back email delivery rows.
-- Smoke failure: do not mark staging accepted; inspect App Service logs and GitHub job output without
-  printing secret settings.
+- Backend: triển khai lại commit ổn định gần nhất hoặc sử dụng lịch sử triển khai App Service.
+- Frontend: chạy lại workflow từ commit ổn định gần nhất.
+- Cơ sở dữ liệu: CI không thực hiện thao tác ghi lược đồ. Ngoại lệ khởi động máy chủ chỉ thêm chuẩn
+các cột tương thích siêu dữ liệu thông qua tập lệnh bình thường được xem xét; bất kỳ việc khôi phục
+cơ sở dữ liệu nào vẫn là một hành động rõ ràng của người vận hành.
+- FE10 khôi phục hộp thư đến không phá hủy: giữ `Notifications.ReadAt` và chỉ mục của nó, sau đó tắt hoặc
+  triển khai lại chỉ sử dụng hộp thư đến API/giao diện. Không xóa lịch sử đọc hoặc khôi phục các hàng
+  gửi email.
+- Lỗi kiểm thử nhanh: không đánh dấu giai đoạn được chấp nhận; kiểm tra nhật ký App Service và đầu ra công việc GitHub mà không cần
+  in cài đặt bí mật.
 
-## Stop/Delete Resources
+## Tài nguyên Stop/Delete
 
-Stop the backend temporarily:
+Dừng phần máy chủ tạm thời:
 
 ```powershell
 az webapp stop `
@@ -643,11 +637,12 @@ az webapp stop `
   --resource-group rg-library-staging
 ```
 
-Delete the full staging environment only after confirming no required evidence or data remains:
+Chỉ xóa toàn bộ môi trường môi trường tiền sản xuất sau khi xác nhận không còn bằng chứng hoặc dữ
+liệu cần thiết nào:
 
 ```powershell
 az group delete --name rg-library-staging
 ```
 
-Azure asks for confirmation. Deleting the resource group is irreversible and removes the web app,
-Static Web App, SQL server, and database.
+Azure yêu cầu xác nhận. Việc xóa nhóm tài nguyên là không thể đảo ngược và sẽ xóa ứng dụng web, Ứng
+dụng web tĩnh, máy chủ SQL và cơ sở dữ liệu.
