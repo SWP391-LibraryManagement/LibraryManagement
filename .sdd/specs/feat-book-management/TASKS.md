@@ -219,8 +219,10 @@ Trạng thái quy trình: đã hoàn tất cho phạm vi Giai đoạn 2 đã ph�
 
 ## 2026-08-04 Vệ sinh dữ liệu catalog staging và sửa trình bày trạng thái
 
-- [~] **FE05-T021 - Hiển thị độc lập trạng thái từng sách và dọn graph acceptance chính xác.**
+- [x] **FE05-T021 - Hiển thị độc lập trạng thái từng sách và dọn graph acceptance chính xác.**
   - Ánh xạ tới: FR-FE05-029, AC-FE05-020, AC-FE05-023, NFR-FE05-UX-004, NFR-FE05-UX-005.
   - RED: kiểm thử frontend thất bại khi lệnh một sách đổi sang bộ lọc trạng thái đích hoặc thiếu nhãn bộ lọc đã áp dụng; kiểm thử operator thất bại khi chưa có cleanup staging-only, dry-run mặc định và hard-delete exact-run.
   - GREEN: cả hai điểm vào giữ tìm kiếm/thể loại, chuyển trạng thái sang `Tất cả trạng thái`, đặt lại trang 1 và tải danh sách nhiều trạng thái; công cụ operator chỉ xóa graph acceptance đã xác minh trong một transaction trên `LibraryManagementStaging`.
+  - Bằng chứng: PR #112 merge `a2d22910b24d18ce876acfa7572f1b6d478f207f`; CI sau merge `30839756115` và staging deployment `30840132636` đạt. Mười graph exact-run (`4 users / 1 book / 1 copy` mỗi graph) đã bị xóa; xác minh SQL cuối trả `0 / 0 / 0` user/sách/bản sao acceptance.
+  - Browser QA: nhãn áp dụng là `Tất cả trạng thái`; sách QA A chuyển sang `Ngừng hoạt động` trong khi sách B vẫn `Đang hoạt động`; cả hai ISBN hiển thị riêng; tìm `Acceptance Book lms-acceptance-` trả 0 sách và console không có lỗi.
   - Ranh giới: không đổi schema, public API, role, dependency, quy tắc ISBN tùy chọn hoặc quyền sở hữu trạng thái bản sao FE06.
