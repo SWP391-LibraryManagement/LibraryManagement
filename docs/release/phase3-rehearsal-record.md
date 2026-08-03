@@ -1,39 +1,39 @@
-# Phase 3 Rehearsal Record
+# Biên bản diễn tập giai đoạn 3
 
-Date: 2026-07-19  
-Branch: `docs/phase3-polish-delivery`
+Ngày: 2026-07-19
+nhánh: `docs/phase3-polish-delivery`
 
-## Normal browser rehearsal
+## Diễn tập trình duyệt thông thường
 
-- Command: `npm.cmd run test:e2e` with frontend port `4273`, backend port `3200`,
-  and matching explicit URL variables.
-- Result: **PASS**, 4/4 Playwright tests in 24.4 seconds.
-- Path: login -> borrow -> approve -> return -> fine -> report, plus FE08, FE09,
-  and FE11 focused browser flows.
-- Evidence: `docs/assets/phase3/system-golden-path-desktop.png` and
+- Lệnh: `npm.cmd run test:e2e` với cổng giao diện người dùng `4273`, cổng máy chủ `3200`,
+  và khớp các biến URL rõ ràng.
+- Kết quả: **ĐẠT**, 4/4 Playwright kiểm tra trong 24,4 giây.
+- Đường dẫn: đăng nhập -> mượn -> phê duyệt -> trả sách -> phạt -> báo cáo, cộng với FE08, FE09,
+  và các luồng trình duyệt tập trung vào FE11.
+- Bằng chứng: `docs/assets/phase3/system-golden-path-desktop.png` và
   `docs/assets/phase3/system-golden-path-mobile.png`.
 
-## Five-minute defense path
+## Kịch bản bảo vệ đồ án trong năm phút
 
-1. Login with synthetic `example.test` identity.
-2. Borrow one catalog item as Member.
-3. Approve and allocate the request as Librarian.
-4. Return the overdue copy and show the 70,000 VND fine handoff.
-5. Record payment and open the read-only report.
-6. If a browser step is unavailable, show the six-check staging smoke, the
-   deterministic `test:system` fallback, and the verified screenshots.
+1. Đăng nhập bằng danh tính `example.test` tổng hợp.
+2. Mượn một mục danh mục với tư cách là Thành viên.
+3. Phê duyệt và phân bổ yêu cầu với tư cách là Thủ thư.
+4. trả sách bản sao quá hạn và hiển thị bản chuyển giao khoản phạt 70.000 VND.
+5. Ghi lại khoản thanh toán và mở báo cáo chỉ đọc.
+6. Nếu một bước của trình duyệt không khả dụng, hãy hiển thị kiểm thử nhanh môi trường tiền sản xuất gồm sáu dấu kiểm,
+   dự phòng `test:system` xác định và ảnh chụp màn hình đã được xác minh.
 
-## Preflight and reset
+## kiểm tra trước và thiết lập lại
 
-- Run `npm.cmd run smoke:staging` before presenting the public staging surface.
-- Run `npm.cmd run test:system` as the deterministic API fallback.
-- The browser server recreates in-memory data for each setup and terminates at
-  the end of the run; no shared SQL row is mutated.
-- Use only synthetic `example.test` identities. Do not display credentials,
-  bearer tokens, raw OTPs, SMTP bodies, or connection strings.
+- Chạy `npm.cmd run smoke:staging` trước khi trình bày bề mặt tổ chức công khai.
+- Chạy `npm.cmd run test:system` làm dự phòng API xác định.
+- Máy chủ trình duyệt tạo lại dữ liệu trong bộ nhớ cho mỗi lần thiết lập và kết thúc tại
+  kết thúc cuộc chạy; không có hàng SQL chia sẻ nào bị thay đổi.
+- Chỉ sử dụng danh tính `example.test` tổng hợp. Không hiển thị thông tin xác thực,
+  mã thông báo mang, OTP thô, phần thân SMTP hoặc chuỗi kết nối.
 
-## Boundaries
+## ranh giới
 
-This record proves repeatable local rehearsal and public staging preflight. It
-does not claim external human observation of authenticated Azure workflows or
-real provider inbox delivery.
+Kỷ lục này chứng tỏ sự lặp lại của buổi diễn tập tại địa phương và buổi chiếu trước công chúng. Nó
+không yêu cầu sự quan sát của con người bên ngoài về quy trình làm việc Azure đã được xác thực hoặc
+việc gửi hộp thư đến của nhà cung cấp thực sự.

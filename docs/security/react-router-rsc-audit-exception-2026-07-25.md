@@ -1,23 +1,23 @@
-# React Router RSC Audit Exception — 2026-07-25
+# Ngoại lệ kiểm tra bộ định tuyến React RSC — 25-07-2026
 
-## Decision
+## Quyết định
 
-The frontend temporarily accepts only `GHSA-qwww-vcr4-c8h2` for
-`react-router@7.18.1` and `react-router-dom@7.18.1`.
+Giao diện người dùng tạm thời chỉ chấp nhận `GHSA-qwww-vcr4-c8h2` cho `react-router@7.18.1` và
+`react-router-dom@7.18.1`.
 
-The upstream advisory states that the issue affects unstable React Server
-Components APIs. This frontend uses React Router Declarative Mode through
-`BrowserRouter`, `Routes`, and `Route`; it does not use RSC, Framework Mode, or
-server actions.
+Tư vấn ngược dòng cho biết rằng sự cố này ảnh hưởng đến các API Thành phần Máy chủ React không ổn
+định. Giao diện người dùng này sử dụng Chế độ khai báo bộ định tuyến React thông qua
+`BrowserRouter`, `Routes` và `Route`; nó không sử dụng RSC, Chế độ khung hoặc các hành động của máy
+chủ.
 
-## Enforcement
+## Thực thi
 
-`frontend/scripts/audit-high.js` still runs `npm audit` and fails for every
-other High or Critical finding. The exception also fails closed if:
+`frontend/scripts/audit-high.js` vẫn chạy `npm audit` và không thành công đối với mọi phát hiện Cao
+hoặc Quan trọng khác. Ngoại lệ cũng không đóng được nếu:
 
-- either React Router package is not exactly `7.18.1`;
-- `BrowserRouter` is no longer present; or
-- a blocked RSC or data-router API appears in frontend source.
+- gói Bộ định tuyến React không chính xác là `7.18.1`;
+- `BrowserRouter` không còn tồn tại; hoặc
+- RSC hoặc Data Router API bị chặn xuất hiện trong mã nguồn frontend.
 
 Remove the exception and restore the plain audit command through a separately
 approved migration to a compatible React Router version outside the affected
