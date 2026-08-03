@@ -20,8 +20,5 @@
   "devDependencies": {
     "@playwright/test": "^1.61.1",
     "concurrently": "^9.2.4"
-  },
-  "dependencies": {
-    "nodemailer": "^9.0.1"
   }
 }
