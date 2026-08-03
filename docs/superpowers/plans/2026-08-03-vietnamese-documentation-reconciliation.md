@@ -192,12 +192,45 @@ Expected staged paths before commit: đúng tám file được liệt kê trong 
 - Modify: `docs/phase_1_foundation/07_master_feature_list.md`
 - Modify: `docs/tong-quan-he-thong-vi.md`
 - Modify: `docs/user-manual.md`
+- Create: `scripts/vietnamese-documentation-semantics.test.js`
 
 **Interfaces:**
 - Consumes: API routes, actor names, FE01-FE12 identifiers và architecture relationships hiện có.
 - Produces: tài liệu nền tảng tiếng Việt giữ nguyên contract kỹ thuật và topology hệ thống.
 
-- [ ] **Step 1: Quét identifier và tên riêng có nguy cơ bị dịch**
+- [ ] **Step 1: Viết regression test cho thuật ngữ actor**
+
+Tạo `scripts/vietnamese-documentation-semantics.test.js`:
+
+```javascript
+const assert = require('node:assert/strict');
+const { readFile } = require('node:fs/promises');
+const path = require('node:path');
+const test = require('node:test');
+
+const root = path.resolve(__dirname, '..');
+
+test('actor list uses software-domain terminology instead of performer wording', async () => {
+  const actorList = await readFile(
+    path.join(root, 'docs', 'phase_1_foundation', '03_actor_list.md'),
+    'utf8'
+  );
+
+  assert.doesNotMatch(actorList, /diễn viên|người thực hiện/iu);
+  assert.match(actorList, /# Danh sách tác nhân/);
+  assert.match(actorList, /Tác nhân con người/);
+});
+```
+
+Run:
+
+```powershell
+node --test scripts/vietnamese-documentation-semantics.test.js
+```
+
+Expected: FAIL vì file hiện còn `Danh sách diễn viên`, `Diễn viên con người` và `người thực hiện`.
+
+- [ ] **Step 2: Quét identifier và tên riêng có nguy cơ bị dịch**
 
 Run:
 
@@ -207,7 +240,7 @@ rg -n "Azureh|Á hậu|Hành động GitHub|giao diện người dùng|máy ch�
 
 Expected: mọi hit được phân loại; sửa hit là lỗi dịch máy, giữ hit là tiếng Việt tự nhiên có chủ đích.
 
-- [ ] **Step 2: Đối chiếu các contract kỹ thuật**
+- [ ] **Step 3: Đối chiếu các contract kỹ thuật**
 
 Run:
 
@@ -217,7 +250,14 @@ rg -n "(/api/|GET |POST |PUT |PATCH |DELETE |MEMBER|LIBRARIAN|ADMIN|FE0[1-9]|FE1
 
 So sánh các hit thay đổi với `HEAD`; khôi phục chính xác endpoint, HTTP method, role, ID, số lượng và dependency direction nếu bản dịch đã thay đổi chúng.
 
-- [ ] **Step 3: Review Markdown links và code fences**
+- [ ] **Step 4: Sửa toàn bộ actor list theo nghĩa miền phần mềm**
+
+Dùng `tác nhân` cho UML/software actor, `Tác nhân con người` cho `Human actor`, và sửa các lỗi dịch
+máy liên quan trong cùng file như `fine` thành `khoản phạt`, `book copy` thành `bản sao sách`,
+`borrowing history` thành `lịch sử mượn`, `audit log` thành `nhật ký kiểm toán`. Không thêm quyền hoặc
+tương tác mới ngoài bản tiếng Anh tại `HEAD`.
+
+- [ ] **Step 5: Review Markdown links và code fences**
 
 Run:
 
@@ -227,20 +267,21 @@ rg -n "\]\([^)]*\)|^```" docs/api/api-contract.md docs/architecture/feature-inte
 
 Expected: path/URL/code fence không bị dịch, không có link tương đối trỏ tới file không tồn tại.
 
-- [ ] **Step 4: Chạy gates liên quan và commit**
+- [ ] **Step 6: Chạy regression test và các gates liên quan**
 
 Run:
 
 ```powershell
 npm run trace:enforce
 npm run test:deployment
+node --test scripts/vietnamese-documentation-semantics.test.js
 git diff --check -- docs/api docs/architecture docs/phase_1_foundation docs/tong-quan-he-thong-vi.md docs/user-manual.md
-git add -- docs/api/api-contract.md docs/architecture/feature-integration-map.md docs/architecture/system-architecture.md docs/phase_1_foundation/01_project_overview.md docs/phase_1_foundation/02_scope.md docs/phase_1_foundation/03_actor_list.md docs/phase_1_foundation/07_master_feature_list.md docs/tong-quan-he-thong-vi.md docs/user-manual.md
+git add -- docs/api/api-contract.md docs/architecture/feature-integration-map.md docs/architecture/system-architecture.md docs/phase_1_foundation/01_project_overview.md docs/phase_1_foundation/02_scope.md docs/phase_1_foundation/03_actor_list.md docs/phase_1_foundation/07_master_feature_list.md docs/tong-quan-he-thong-vi.md docs/user-manual.md scripts/vietnamese-documentation-semantics.test.js
 git diff --cached --name-status
 git commit -m "docs: reconcile Vietnamese system documentation"
 ```
 
-Expected: deployment `20/20`, traceability exit `0`, staged paths đúng chín file.
+Expected: deployment `20/20`, regression/traceability exit `0`, staged paths đúng mười file.
 
 ---
 
@@ -504,6 +545,7 @@ npm run test:deployment
 npm run test:secrets
 npm run trace:enforce
 node --test scripts/fe07-fe12-vietnamese-semantics.test.js
+node --test scripts/vietnamese-documentation-semantics.test.js
 npm --prefix frontend test
 npm --prefix frontend run lint
 npm --prefix frontend run build
