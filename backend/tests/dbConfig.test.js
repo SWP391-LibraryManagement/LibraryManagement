@@ -1,8 +1,8 @@
-jest.mock('mssql', () => ({
+jest.mock('../src/node_modules/mssql', () => ({
   connect: jest.fn(),
 }));
 
-const sql = require('mssql');
+const sql = require('../src/node_modules/mssql');
 const { getPool, resetPoolForTests } = require('../src/config/db');
 
 describe('SQL connection pool bootstrap', () => {

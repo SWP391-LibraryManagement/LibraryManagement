@@ -1,7 +1,7 @@
 process.env.JWT_SECRET = require('crypto').randomBytes(32).toString('hex');
 
 const crypto = require('crypto');
-const jwt = require('jsonwebtoken');
+const jwt = require('../src/node_modules/jsonwebtoken');
 const { generateOtp } = require('../src/services/authService');
 const { validatePasswordPolicy } = require('../src/utils/passwordPolicy');
 const {
