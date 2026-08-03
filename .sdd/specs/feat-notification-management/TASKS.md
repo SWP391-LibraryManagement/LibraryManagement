@@ -862,8 +862,8 @@ Các bước chi tiết, lệnh trước và sau khi sửa và ranh giới commi
     toàn khi chạy lại; tích hợp hệ thống đạt 11/11; kiểm thử liên hoàn Chromium
     đạt 1/1, chứng minh bốn thông báo không trùng, đường dẫn thao tác cố định và
     không lộ lý do từ chối.
-- [ ] **FE10-I13 - Sửa dữ liệu Unicode staging và ngăn migration FE10 tái diễn lỗi encoding.**
-  - Trạng thái: H2 ĐÃ DUYỆT - CHỜ COMMIT/PR/CI/H3/STAGING.
+- [x] **FE10-I13 - Sửa dữ liệu Unicode staging và ngăn migration FE10 tái diễn lỗi encoding.**
+  - Trạng thái: HOÀN TẤT - H3/PR/CI/STAGING/UNICODE VERIFICATION ĐẠT.
   - Ánh xạ tới: BR-FE10-010/014/015/018, FR-FE10-017/019,
     AC-FE10-017/019.
   - Tệp: migration repair FE10, workflow/runbook staging, kiểm thử migration/deployment,
@@ -872,6 +872,25 @@ Các bước chi tiết, lệnh trước và sau khi sửa và ranh giới commi
     migration chạy hai lần an toàn; mọi lệnh `sqlcmd` dùng UTF-8 code page 65001; Books 34-40
     và BookCopies 60-64 staging được sửa bằng exact preimage guards; SQL/API/browser checks đạt;
     temporary firewall rule đã được xóa.
+  - Bằng chứng tích hợp: PR #104 hợp nhất thành `d5464c06eb4ee5f804bd4ca97b49869179aa42ab`;
+    PR #105 bổ sung `SET QUOTED_IDENTIFIER ON` và hợp nhất thành
+    `827e877c792718bbaa6c9841fe66e13009213008`; CI hậu hợp nhất `30775755119` đạt đúng SHA này.
+  - Bằng chứng staging: migration SHA-256
+    `a9b3f5c02500a634a7ea0d4fd5775d22c0045d8b9fc0df40fb80fb8d01aa040f` chạy thành công
+    hai lần với `sqlcmd -b -f 65001`; deployment thủ công `30776148777` đạt preflight, backend,
+    frontend và smoke test trên đúng `main@827e877`.
+  - Bằng chứng dữ liệu: repair có tham số sửa 7 Books, 5 BookCopies, 4 template và 17 notification;
+    lần chạy lũy đẳng tiếp theo không sửa thêm dòng nào. API xác nhận mô tả Books 34-40 khớp chính
+    xác; SQL hash xác nhận BookCopies 60-64 và bốn template `ACTIVE`; 17 notification FE07 không
+    null, không còn bảy pattern mojibake của migration hoặc ký tự box-drawing.
+  - Bằng chứng browser: catalog công khai và `/borrowing/new` hiển thị đủ bảy sách, không mojibake
+    hoặc tràn ngang tại 1440x900 và 390x844. Inbox Member hiện tại có hai thông báo; notification
+    gia hạn FE07 hiển thị đúng Unicode ở cả hai viewport. Tài khoản này không có notification
+    approved/returned, nên bằng chứng cho các loại đó được giới hạn ở migration assertion và SQL,
+    không mở rộng thành tuyên bố browser chưa quan sát.
+  - Dọn dẹp: các firewall rule tạm và script repair tạm đều không còn; secret process variables đã
+    được xóa; worktree chỉ có đúng hai tệp bằng chứng closeout đang chờ H2 và checkout gốc đang
+    dirty được giữ nguyên.
   - Thiết kế: `docs/superpowers/specs/2026-08-03-staging-unicode-data-repair-design.md`.
   - Kế hoạch: `docs/superpowers/plans/2026-08-03-staging-unicode-data-repair.md`.
 
