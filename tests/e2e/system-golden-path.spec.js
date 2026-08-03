@@ -1,6 +1,7 @@
 const { mkdirSync } = require('fs');
 const { randomUUID } = require('crypto');
 const { test, expect } = require('@playwright/test');
+const { solveCaptcha } = require('./support/solveCaptcha');
 
 const FRONTEND_URL = process.env.E2E_FRONTEND_URL || 'http://127.0.0.1:4173';
 const BACKEND_URL = process.env.E2E_BACKEND_URL || 'http://127.0.0.1:3100';
@@ -10,6 +11,7 @@ async function login(page, email, password, expectedPath) {
   await page.goto(`${FRONTEND_URL}/login`);
   await page.getByLabel('Tài khoản của bạn').fill(email);
   await page.getByRole('textbox', { name: 'Mật khẩu', exact: true }).fill(password);
+  await solveCaptcha(page);
   await page.getByRole('button', { name: 'Đăng nhập' }).click();
   await expect.poll(() => new URL(page.url()).pathname).toBe(expectedPath);
 }

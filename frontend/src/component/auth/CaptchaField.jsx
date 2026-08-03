@@ -16,7 +16,7 @@ export default function CaptchaField({ onChange, refreshKey = 0, disabled = fals
       const next = await getCaptcha();
       setChallenge(next);
       setError('');
-    } catch (_error) {
+    } catch {
       setError('Không tải được CAPTCHA. Vui lòng thử lại.');
     }
   };
@@ -37,7 +37,7 @@ export default function CaptchaField({ onChange, refreshKey = 0, disabled = fals
   return (
     <Stack spacing={1}>
       {challenge && <img src={challenge.image} alt="CAPTCHA gồm 4 đến 6 chữ cái" width="180" height="54" />}
-      <Stack direction="row" spacing={1} alignItems="start">
+      <Stack direction="row" spacing={1} sx={{ alignItems: 'flex-start' }}>
         <TextField
           fullWidth
           label="Nhập mã CAPTCHA"
